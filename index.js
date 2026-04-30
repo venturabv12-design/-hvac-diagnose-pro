@@ -5,7 +5,7 @@ const path = require("path");
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "25mb" }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "Public")));
 
 app.post("/api/ai", async (req, res) => {
   const { system, messages, max_tokens = 1024 } = req.body;
@@ -39,7 +39,8 @@ app.get("/api/health", (req, res) => {
 });
 
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+res.sendFile(path.join(__dirname, "Public", "index.html"));
+
 });
 
 const PORT = process.env.PORT || 3000;

@@ -1,1 +1,1106 @@
+<!DOCTYPE html>
 
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HVAC Diagnose Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body { background: #f8f9fb; font-family: 'Inter', -apple-system, sans-serif; color: #1a1a2e; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 6px; }
+
+```
+@keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes spin   { to { transform:rotate(360deg); } }
+@keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes wave   { 0%,100%{transform:scaleY(.3)} 50%{transform:scaleY(1)} }
+@keyframes ripple { 0%{transform:scale(1);opacity:.5} 100%{transform:scale(2.4);opacity:0} }
+
+.fu  { animation: fadeUp .45s cubic-bezier(.16,1,.3,1) both; }
+.fi  { animation: fadeIn .35s ease both; }
+.spinning { animation: spin .8s linear infinite; }
+.pulsing  { animation: pulse 1.5s ease infinite; }
+
+/* Layout */
+.nav { background:#fff; border-bottom:1px solid #e8eaf0; position:sticky; top:0; z-index:50; }
+.nav-inner { max-width:720px; margin:0 auto; padding:0 16px; display:flex; align-items:center; justify-content:space-between; height:60px; }
+.nav-logo { display:flex; align-items:center; gap:10px; }
+.nav-logo-icon { width:36px; height:36px; background:linear-gradient(135deg,#2563eb,#0ea5e9); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.nav-logo-text { font-size:15px; font-weight:800; color:#111827; line-height:1; }
+.nav-logo-sub  { font-size:11px; color:#6b7280; margin-top:2px; }
+.nav-status { display:flex; align-items:center; gap:6px; }
+.status-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 6px #22c55e; }
+.status-dot.red { background:#ef4444; box-shadow:0 0 6px #ef4444; }
+.status-text { font-size:12px; color:#6b7280; font-weight:500; }
+
+.page { max-width:720px; margin:0 auto; padding:28px 16px 72px; }
+
+/* Cards */
+.card { background:#fff; border-radius:16px; border:1px solid #e8eaf0; padding:24px; margin-bottom:16px; }
+
+/* Form elements */
+.field-label { display:block; font-size:14px; font-weight:600; color:#374151; margin-bottom:7px; }
+.field-sub   { font-size:13px; color:#6b7280; margin-bottom:12px; line-height:1.5; }
+input, textarea, select {
+  width:100%; background:#fff; border:1.5px solid #e2e8f0; border-radius:10px;
+  padding:13px 16px; font-size:16px; font-family:'Inter',sans-serif; color:#1a1a2e;
+  outline:none; transition:border-color .15s, box-shadow .15s;
+}
+input:focus, textarea:focus, select:focus {
+  border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1);
+}
+input::placeholder, textarea::placeholder { color:#9ca3af; }
+select { cursor:pointer; appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 14px center; padding-right:40px;
+}
+textarea { resize:vertical; line-height:1.6; min-height:96px; }
+
+/* Buttons */
+.btn { font-family:'Inter',sans-serif; font-weight:600; border:none; border-radius:12px; cursor:pointer; transition:all .18s; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-size:15px; padding:13px 22px; }
+.btn:disabled { opacity:.45; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
+.btn-blue   { background:#2563eb; color:#fff; }
+.btn-blue:not(:disabled):hover   { background:#1d4ed8; transform:translateY(-1px); box-shadow:0 4px 16px rgba(37,99,235,.3); }
+.btn-orange { background:#ea580c; color:#fff; }
+.btn-orange:not(:disabled):hover { background:#c2410c; transform:translateY(-1px); box-shadow:0 4px 16px rgba(234,88,12,.3); }
+.btn-green  { background:#16a34a; color:#fff; }
+.btn-green:not(:disabled):hover  { background:#15803d; transform:translateY(-1px); box-shadow:0 4px 16px rgba(22,163,74,.3); }
+.btn-purple { background:#7c3aed; color:#fff; }
+.btn-purple:not(:disabled):hover { background:#6d28d9; transform:translateY(-1px); box-shadow:0 4px 16px rgba(124,58,237,.3); }
+.btn-outline { background:#fff; color:#374151; border:1.5px solid #d1d5db; }
+.btn-outline:hover { background:#f9fafb; border-color:#9ca3af; }
+.btn-full { width:100%; padding:16px; font-size:16px; }
+.btn-sm   { font-size:13px; padding:8px 14px; border-radius:8px; }
+
+/* Mode tabs */
+.mode-tabs { display:flex; border-bottom:1px solid #e8eaf0; }
+.mode-tab  { flex:1; padding:14px 16px; background:transparent; border:none; font-family:'Inter',sans-serif; font-weight:600; font-size:16px; cursor:pointer; transition:all .2s; border-bottom:2.5px solid transparent; color:#6b7280; display:flex; align-items:center; justify-content:center; gap:8px; }
+.mode-tab.active-home { color:#2563eb; border-bottom-color:#2563eb; }
+.mode-tab.active-pro  { color:#ea580c; border-bottom-color:#ea580c; }
+.mode-tab:hover:not(.active-home):not(.active-pro) { color:#374151; }
+.pro-badge { padding:2px 8px; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; font-size:12px; color:#ea580c; font-weight:700; }
+
+/* Pro sub-tabs */
+.sub-tabs { display:flex; gap:6px; padding:6px; }
+.sub-tab  { flex:1; padding:10px 8px; background:transparent; border:none; font-family:'Inter',sans-serif; font-weight:600; font-size:13px; cursor:pointer; transition:all .2s; border-radius:8px; color:#6b7280; }
+.sub-tab:hover:not(.st-active) { background:#f9fafb; color:#374151; }
+.sub-tab.st-diag    { color:#ea580c; background:#fff7ed; }
+.sub-tab.st-warrant { color:#7c3aed; background:#f5f3ff; }
+.sub-tab.st-revenue { color:#16a34a; background:#f0fdf4; }
+
+/* Symptoms grid */
+.symptoms-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:8px; }
+.chip { border:1.5px solid #e2e8f0; border-radius:10px; padding:12px 14px; background:#fff; color:#374151; font-family:'Inter',sans-serif; font-size:14px; font-weight:500; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:9px; text-align:left; line-height:1.3; }
+.chip:hover { border-color:#93c5fd; background:#eff6ff; }
+.chip.sel-blue   { border-color:#2563eb; background:#eff6ff; color:#1d4ed8; font-weight:600; }
+.chip.sel-orange { border-color:#ea580c; background:#fff7ed; color:#c2410c; font-weight:600; }
+.chip-icon { font-size:20px; flex-shrink:0; }
+
+/* Drop zone */
+.drop-zone { border:2px dashed #d1d5db; border-radius:14px; padding:36px 20px; text-align:center; cursor:pointer; transition:all .2s; background:#fafafa; }
+.drop-zone:hover, .drop-zone.drag { border-color:#2563eb; background:#eff6ff; }
+.drop-zone.has-file { border-style:solid; border-color:#16a34a; background:#f0fdf4; }
+.drop-icon { font-size:44px; margin-bottom:12px; display:block; }
+.drop-title { font-size:17px; font-weight:600; color:#374151; margin-bottom:6px; }
+.drop-sub   { font-size:14px; color:#9ca3af; margin-bottom:16px; }
+
+/* Voice recorder */
+.recorder { background:#f9fafb; border:1.5px solid #e2e8f0; border-radius:12px; padding:16px; transition:all .3s; }
+.recorder.recording { background:#fff5f5; border-color:#fca5a5; }
+.recorder.done      { background:#f0fdf4; border-color:#86efac; }
+.recorder-row { display:flex; align-items:center; gap:12px; }
+.rec-btn-wrap { position:relative; flex-shrink:0; }
+.rec-ring { position:absolute; inset:-7px; border-radius:50%; border:2px solid #ef4444; animation:ripple 1.2s ease infinite; }
+.wave-bars { display:flex; align-items:flex-end; gap:2px; height:20px; }
+.wave-bar  { width:3px; border-radius:3px; background:#ef4444; transform-origin:bottom; animation:wave .55s ease infinite; }
+
+/* Result */
+.result-body { font-size:16px; line-height:1.8; color:#1f2937; white-space:pre-wrap; }
+.result-body strong { color:#1d4ed8; font-weight:600; }
+.sev-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
+.sev-badge { padding:6px 16px; border-radius:99px; font-size:14px; font-weight:700; }
+
+/* Revenue cards */
+.rec-card { background:#fff; border:1.5px solid #e8eaf0; border-radius:14px; padding:20px; margin-bottom:12px; cursor:pointer; transition:all .2s; }
+.rec-card:hover { border-color:#d1d5db; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+
+/* Info boxes */
+.info-box  { border-radius:12px; padding:16px; margin-bottom:16px; }
+.info-blue { background:#eff6ff; border:1px solid #bfdbfe; }
+.info-green{ background:#f0fdf4; border:1px solid #bbf7d0; }
+.info-amber{ background:#fffbeb; border:1px solid #fde68a; }
+.info-red  { background:#fff1f2; border:1px solid #fecdd3; }
+.info-purple{background:#f5f3ff; border:1px solid #ddd6fe; }
+
+/* Media preview */
+.media-preview { width:100%; max-height:220px; object-fit:cover; border-radius:10px; margin-top:14px; border:1px solid #e2e8f0; display:block; }
+
+/* Footer */
+.footer { text-align:center; margin-top:56px; padding-top:28px; border-top:1px solid #e8eaf0; }
+
+/* Grid */
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+/* Spinner */
+.spinner { display:inline-block; width:18px; height:18px; border:2.5px solid rgba(255,255,255,.25); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; }
+
+@media(max-width:560px) {
+  .grid2 { grid-template-columns:1fr; }
+  .symptoms-grid { grid-template-columns:1fr 1fr; }
+  .chip { font-size:13px; padding:10px 11px; }
+}
+```
+
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <div class="nav-logo-icon">❄️</div>
+      <div>
+        <div class="nav-logo-text">HVAC Diagnose Pro</div>
+        <div class="nav-logo-sub">Powered by AI</div>
+      </div>
+    </div>
+    <div class="nav-status">
+      <div class="status-dot" id="statusDot"></div>
+      <span class="status-text" id="statusText">Checking…</span>
+    </div>
+  </div>
+</nav>
+
+<div class="page" id="app">
+
+  <!-- HERO -->
+
+  <div class="fu" style="text-align:center;margin-bottom:28px;">
+    <h1 style="font-size:clamp(24px,5vw,38px);font-weight:800;color:#111827;letter-spacing:-0.5px;line-height:1.15;margin-bottom:10px;" id="heroTitle">
+      What's Wrong With Your HVAC?
+    </h1>
+    <p style="font-size:17px;color:#6b7280;line-height:1.65;max-width:460px;margin:0 auto;" id="heroSub">
+      Upload a photo or video, describe what's happening, and our AI will tell you exactly what's wrong.
+    </p>
+  </div>
+
+  <!-- MODE TABS -->
+
+  <div class="card fu" style="padding:0;overflow:hidden;animationDelay:.04s">
+    <div class="mode-tabs">
+      <button class="mode-tab active-home" id="tabHome" onclick="setMode('home')">
+        🏠 Homeowner
+      </button>
+      <button class="mode-tab" id="tabPro" onclick="setMode('pro')">
+        🔧 Contractor <span class="pro-badge">PRO</span>
+      </button>
+    </div>
+    <div style="padding:14px 20px;background:#f9fafb;">
+      <p style="font-size:14px;color:#6b7280;line-height:1.5;" id="modeDesc">
+        Easy-to-understand explanations, safety guidance, and connections to certified local technicians.
+      </p>
+    </div>
+  </div>
+
+  <!-- PRO SUB-TABS (hidden by default) -->
+
+  <div class="card fu" style="padding:6px;margin-bottom:16px;display:none;" id="proTabs">
+    <div class="sub-tabs">
+      <button class="sub-tab st-diag"    onclick="setProTab('diag')"    id="stDiag">🔬 Diagnostic</button>
+      <button class="sub-tab"            onclick="setProTab('warranty')" id="stWarranty">🛡️ Warranty</button>
+      <button class="sub-tab"            onclick="setProTab('revenue')"  id="stRevenue">💰 Revenue Builder</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+
+  <!--  DIAGNOSTIC PANEL                           -->
+
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div id="panelDiag">
+
+```
+<!-- Upload -->
+<div class="card fu">
+  <label class="field-label" id="uploadLabel">Show Us Your System</label>
+  <p class="field-sub" id="uploadSub">A short video or photo helps our AI see exactly what's happening</p>
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+       ondragover="event.preventDefault();this.classList.add('drag')"
+       ondragleave="this.classList.remove('drag')"
+       ondrop="handleDrop(event)">
+    <span class="drop-icon" id="dropIcon">📷</span>
+    <div class="drop-title" id="dropTitle">Tap to upload a photo or video</div>
+    <div class="drop-sub">MP4, MOV, JPG, PNG — up to 50MB</div>
+    <button class="btn btn-outline btn-sm" type="button">Browse Files</button>
+    <input type="file" id="fileInput" accept="video/*,image/*" style="display:none" onchange="handleFileSelect(event)"/>
+  </div>
+  <img    id="imgPreview"   class="media-preview" style="display:none"/>
+  <video  id="videoPreview" class="media-preview" controls style="display:none"></video>
+</div>
+
+<!-- Voice -->
+<div class="card fu">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+    <label class="field-label" style="margin:0">Voice Description</label>
+    <span style="padding:4px 10px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:99px;font-size:12px;font-weight:600;color:#7c3aed;">AI Listens</span>
+  </div>
+  <p class="field-sub" id="voiceSub">Describe the problem or hold your phone near the system so the AI can hear the sounds</p>
+  <div class="recorder" id="recorder">
+    <div class="recorder-row">
+      <div class="rec-btn-wrap" id="recBtnWrap">
+        <button class="btn btn-purple btn-sm" id="recBtn" onclick="toggleRecording()">🎙️ Record Voice</button>
+      </div>
+      <div id="recStatus" style="flex:1;">
+        <p style="font-size:14px;color:#6b7280;">Record yourself describing the issue, or hold near the unit</p>
+      </div>
+    </div>
+    <div id="transcriptBox" style="display:none;margin-top:12px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
+      <p style="font-size:12px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">AI Audio Analysis</p>
+      <p style="font-size:14px;color:#4b5563;line-height:1.65;" id="transcriptText"></p>
+    </div>
+  </div>
+</div>
+
+<!-- System Info -->
+<div class="card fu">
+  <label class="field-label">System Information</label>
+  <p class="field-sub">The more details you give, the more accurate the diagnosis</p>
+  <div class="grid2" style="margin-bottom:14px;">
+    <div>
+      <label class="field-label">System Type</label>
+      <select id="sysType"><option value="">Select type…</option></select>
+    </div>
+    <div>
+      <label class="field-label">Approximate Age</label>
+      <select id="sysAge"><option value="">Select age…</option></select>
+    </div>
+  </div>
+  <div id="brandRow" style="display:none;">
+    <label class="field-label">Brand / Manufacturer</label>
+    <select id="brand"><option value="">Select brand…</option></select>
+  </div>
+</div>
+
+<!-- Symptoms -->
+<div class="card fu">
+  <label class="field-label" id="symptomsLabel">What is your system doing?</label>
+  <p class="field-sub">Select everything that applies</p>
+  <div class="symptoms-grid" id="symptomsGrid"></div>
+</div>
+
+<!-- Description -->
+<div class="card fu">
+  <label class="field-label" id="descLabel">Describe the problem in your own words</label>
+  <p class="field-sub" id="descSub">When did it start? Is it getting worse? Anything else you've noticed?</p>
+  <textarea id="desc" placeholder="e.g. My air conditioner runs all day but the house never gets below 78°. Started 3 days ago. I can hear a loud humming from the outside unit…"></textarea>
+</div>
+
+<!-- AI Inputs Summary -->
+<div id="inputsSummary" style="display:none;margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+  <span style="font-size:14px;color:#6b7280;font-weight:500;">AI will analyze:</span>
+  <span id="tagFile"  style="display:none;padding:5px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:99px;font-size:13px;color:#1d4ed8;font-weight:600;"></span>
+  <span id="tagVoice" style="display:none;padding:5px 12px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:99px;font-size:13px;color:#7c3aed;font-weight:600;">🎙️ Voice Recording</span>
+  <span id="tagSymps" style="display:none;padding:5px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:99px;font-size:13px;color:#16a34a;font-weight:600;"></span>
+</div>
+
+<!-- Run Button -->
+<button class="btn btn-blue btn-full fu" id="runBtn" onclick="runDiagnostic()">
+  ⚡ Run AI Diagnostic
+</button>
+
+<!-- Result -->
+<div id="resultPanel" style="display:none;margin-top:24px;" class="fi">
+  <div class="sev-bar">
+    <span style="font-size:18px;font-weight:800;color:#111827;">Your Diagnostic Report</span>
+    <span class="sev-badge" id="sevBadge"></span>
+  </div>
+  <div class="card" id="resultCard" style="margin-bottom:16px;">
+    <div class="result-body" id="resultText"></div>
+  </div>
+
+  <!-- Homeowner CTA -->
+  <div id="homeownerCTA" class="info-box info-blue" style="display:none;">
+    <div style="display:flex;gap:14px;align-items:flex-start;">
+      <div style="width:48px;height:48px;background:#2563eb;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🛠️</div>
+      <div style="flex:1;">
+        <p style="font-size:17px;font-weight:700;color:#1e40af;margin-bottom:6px;">Need a Certified HVAC Technician?</p>
+        <p style="font-size:15px;color:#3b5998;line-height:1.6;margin-bottom:14px;">
+          Get connected with a licensed, insured HVAC pro in <strong>Manassas Park, VA</strong>. Free estimates, same-day service, financing available.
+        </p>
+        <button class="btn btn-blue" onclick="alert('Lead captured! Connect this to your phone number or booking link.')">
+          📞 Request a Free Estimate
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contractor Revenue Nudge -->
+  <div id="contractorNudge" class="info-box info-green" style="display:none;">
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:24px;flex-shrink:0;">💰</span>
+      <div style="flex:1;">
+        <p style="font-size:15px;font-weight:700;color:#14532d;margin-bottom:4px;">Turn This Visit Into More Revenue</p>
+        <p style="font-size:14px;color:#166534;line-height:1.5;">Use <strong>Revenue Builder</strong> to get personalized add-on recommendations and conversation scripts for this home.</p>
+      </div>
+      <button class="btn btn-green btn-sm" onclick="setProTab('revenue')" style="flex-shrink:0;">Revenue Builder →</button>
+    </div>
+  </div>
+
+  <button class="btn btn-outline btn-full" onclick="resetDiagnostic()" style="margin-top:8px;">
+    + Start a New Diagnosis
+  </button>
+</div>
+```
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+
+  <!--  WARRANTY PANEL                             -->
+
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div id="panelWarranty" style="display:none;">
+    <div class="info-box info-purple" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
+      <div style="width:52px;height:52px;background:#7c3aed;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🛡️</div>
+      <div>
+        <p style="font-size:17px;font-weight:700;color:#4c1d95;margin-bottom:4px;">Warranty Lookup</p>
+        <p style="font-size:14px;color:#5b21b6;line-height:1.5;">Enter model and serial number to decode the manufacture date and check warranty coverage for any brand.</p>
+      </div>
+    </div>
+
+```
+<div class="card">
+  <label class="field-label">Manufacturer</label>
+  <select id="wBrand" onchange="showWarrantyLinks()" style="margin-bottom:0;">
+    <option value="">Choose manufacturer…</option>
+  </select>
+  <div id="warrantyLinks" style="display:none;margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+</div>
+
+<div class="card">
+  <label class="field-label">Unit Details</label>
+  <div class="grid2" style="margin-bottom:14px;">
+    <div>
+      <label class="field-label">Model Number</label>
+      <input type="text" id="wModel" placeholder="e.g. 24ACC636A003"/>
+    </div>
+    <div>
+      <label class="field-label">Serial Number *</label>
+      <input type="text" id="wSerial" placeholder="e.g. 4816E12345"/>
+    </div>
+  </div>
+  <label class="field-label">Additional Notes</label>
+  <textarea id="wNotes" rows="2" placeholder="e.g. Homeowner unsure if unit was registered. Compressor just failed."></textarea>
+</div>
+
+<div class="info-box info-amber" style="margin-bottom:20px;">
+  <p style="font-size:14px;font-weight:600;color:#92400e;margin-bottom:6px;">📍 Where to find the serial number</p>
+  <p style="font-size:14px;color:#78350f;line-height:1.65;">
+    <strong>Outdoor unit:</strong> metal data plate on side panel &nbsp;·&nbsp;
+    <strong>Air handler:</strong> inside the cabinet door &nbsp;·&nbsp;
+    <strong>Furnace:</strong> inside front cover &nbsp;·&nbsp;
+    <strong>Mini-split:</strong> side of the unit
+  </p>
+</div>
+
+<button class="btn btn-purple btn-full" id="warrantyBtn" onclick="runWarranty()">
+  🛡️ Check Warranty Coverage
+</button>
+
+<div id="warrantyResult" style="display:none;margin-top:20px;" class="fi">
+  <div class="card" style="border-left:4px solid #7c3aed;">
+    <p style="font-size:14px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">🛡️ Warranty Analysis Report</p>
+    <div class="result-body" id="warrantyText" style="font-size:15px;"></div>
+  </div>
+  <div id="warrantyVerifyLink" style="display:none;margin-top:12px;" class="info-box info-purple">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <p style="font-size:14px;color:#5b21b6;flex:1;">Always verify directly with the manufacturer:</p>
+      <a id="warrantyVerifyBtn" href="#" target="_blank" style="padding:9px 20px;background:#7c3aed;border-radius:9px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">Verify Online →</a>
+    </div>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+
+  <!--  REVENUE BUILDER PANEL                      -->
+
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div id="panelRevenue" style="display:none;">
+    <div class="info-box info-green" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
+      <div style="width:52px;height:52px;background:#16a34a;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">💰</div>
+      <div>
+        <p style="font-size:17px;font-weight:700;color:#14532d;margin-bottom:4px;">Revenue Builder</p>
+        <p style="font-size:14px;color:#166534;line-height:1.5;">Tell us about the home and system. Get personalized recommendations with word-for-word scripts to grow your ticket on every visit.</p>
+      </div>
+    </div>
+
+```
+<div class="card">
+  <label class="field-label">System & Home Details</label>
+  <div class="grid2">
+    <div>
+      <label class="field-label">System Type</label>
+      <select id="rSysType"><option value="">Select…</option></select>
+    </div>
+    <div>
+      <label class="field-label">System Age</label>
+      <select id="rSysAge"><option value="">Select…</option></select>
+    </div>
+    <div>
+      <label class="field-label">Brand</label>
+      <select id="rBrand"><option value="">Select…</option></select>
+    </div>
+    <div>
+      <label class="field-label">Home Size</label>
+      <select id="rHomeSize"><option value="">Select…</option></select>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <label class="field-label">Home & Family Situation</label>
+  <p class="field-sub">Select everything that applies — helps target the right recommendations</p>
+  <div class="symptoms-grid" id="concernsGrid"></div>
+</div>
+
+<div class="card">
+  <label class="field-label">What You Observed On-Site</label>
+  <p class="field-sub">Any details help the AI tailor the recommendations</p>
+  <textarea id="rNotes" placeholder="e.g. Dirty evaporator coil, no UV light, basic 1-inch filter, homeowner has bad allergies, 14-year-old system with no service agreement, no CO detector visible…"></textarea>
+</div>
+
+<button class="btn btn-green btn-full" id="revenueBtn" onclick="runRevenue()">
+  💰 Build Revenue Recommendations
+</button>
+
+<div id="revenueResult" style="display:none;margin-top:24px;" class="fi">
+  <div class="info-box info-green" style="margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+      <div style="flex:1;">
+        <p style="font-size:13px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">💰 Revenue Opportunity</p>
+        <p style="font-size:15px;color:#1f2937;line-height:1.6;" id="revSummary"></p>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <p style="font-size:28px;font-weight:800;color:#16a34a;line-height:1;" id="revRange"></p>
+        <p style="font-size:12px;color:#6b7280;margin-top:3px;">potential add-on revenue</p>
+        <p style="font-size:14px;color:#d97706;font-weight:700;margin-top:4px;" id="revProfit"></p>
+      </div>
+    </div>
+  </div>
+  <div id="revenueCards"></div>
+  <div class="info-box info-amber" style="margin-top:16px;display:flex;gap:12px;">
+    <span style="font-size:22px;flex-shrink:0;">💡</span>
+    <p style="font-size:14px;color:#78350f;line-height:1.65;margin:0;">
+      <strong>Pro tip:</strong> Present 2–3 recommendations max per visit. Always lead with the Safety item first — homeowners almost always say yes. Then offer one Comfort or IAQ upgrade.
+    </p>
+  </div>
+  <button class="btn btn-outline btn-full" onclick="resetRevenue()" style="margin-top:14px;">+ New Analysis</button>
+</div>
+```
+
+  </div>
+
+  <!-- FOOTER -->
+
+  <div class="footer">
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">
+      <div style="width:28px;height:28px;background:linear-gradient(135deg,#2563eb,#0ea5e9);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;">❄️</div>
+      <p style="font-size:15px;font-weight:700;color:#374151;">HVAC Diagnose Pro</p>
+    </div>
+    <p style="font-size:14px;color:#9ca3af;margin-bottom:6px;">Homeowner $9.99/mo &nbsp;·&nbsp; Contractor Pro $29.99/mo</p>
+    <p style="font-size:12px;color:#d1d5db;line-height:1.6;max-width:400px;margin:0 auto;">
+      AI diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician.
+    </p>
+  </div>
+
+</div><!-- end .page -->
+
+<script>
+// ── Data ───────────────────────────────────────────────────────
+const SYS_TYPES  = ["Central AC (Split System)","Heat Pump","Gas Furnace","Electric Furnace","Mini-Split / Ductless","Package Unit","Boiler / Radiant Heat","Window Unit","PTAC Unit","Geothermal","VRF / VRV System"];
+const SYS_AGES   = ["0–5 years","5–10 years","10–15 years","15–20 years","20+ years","Not sure"];
+const BRANDS     = ["Carrier","Bryant","Payne","Trane","American Standard","Lennox","Goodman","Amana","Daikin","Rheem","Ruud","York","Coleman","Heil","Tempstar","Mitsubishi Electric","Fujitsu","LG","Bosch","Weil-McLain","Other / Unknown"];
+const HOME_SIZES = ["Under 1,000 sq ft","1,000–1,500 sq ft","1,500–2,000 sq ft","2,000–2,500 sq ft","2,500–3,000 sq ft","3,000–4,000 sq ft","4,000+ sq ft"];
+const HOME_SYMPTOMS = [
+  {icon:"❄️",label:"Not cooling"},{icon:"🔥",label:"Not heating"},{icon:"💨",label:"Weak airflow"},
+  {icon:"💧",label:"Water leaking"},{icon:"🔊",label:"Strange noises"},{icon:"💸",label:"High energy bills"},
+  {icon:"🌡️",label:"Uneven temperatures"},{icon:"🤧",label:"Poor air quality"},{icon:"🔄",label:"Keeps cycling on/off"},
+  {icon:"❌",label:"Won't turn on"},{icon:"🧊",label:"Ice forming on unit"},{icon:"👃",label:"Burning smell"},
+];
+const PRO_SYMPTOMS = [
+  {icon:"⚡",label:"Electrical fault"},{icon:"🌡️",label:"Refrigerant issue"},{icon:"🔧",label:"Compressor failure"},
+  {icon:"💨",label:"Blower motor"},{icon:"🔌",label:"Capacitor fault"},{icon:"🌊",label:"Drain blockage"},
+  {icon:"🔥",label:"Heat exchanger"},{icon:"📡",label:"Controls / Board"},{icon:"💧",label:"Refrigerant leak"},
+  {icon:"📊",label:"Low static pressure"},{icon:"🔩",label:"Bearing / belt wear"},{icon:"🏠",label:"Ductwork issue"},
+];
+const CONCERNS = [
+  {icon:"😷",label:"Allergies or Asthma"},{icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},
+  {icon:"🐾",label:"Pets in home"},{icon:"💧",label:"Humidity problems"},{icon:"🌡️",label:"Hot or cold rooms"},
+  {icon:"💰",label:"High energy bills"},{icon:"🔒",label:"No service plan yet"},{icon:"🛢️",label:"Old R-22 system"},
+  {icon:"🏚️",label:"Older home"},{icon:"🔥",label:"Gas appliances"},{icon:"💨",label:"Poor ventilation"},
+];
+const WARRANTY_INFO = {
+  "Carrier":{url:"https://www.carrier.com/residential/en/us/support/warranty-lookup/",phone:"1-800-227-7437"},
+  "Bryant":{url:"https://www.bryant.com/en/us/support/warranty/",phone:"1-800-428-4326"},
+  "Trane":{url:"https://www.trane.com/residential/en/resources/warranty/",phone:"1-800-872-6381"},
+  "American Standard":{url:"https://www.americanstandardair.com/support/warranty/",phone:"1-800-821-7143"},
+  "Lennox":{url:"https://www.lennox.com/resources/warranty-info",phone:"1-800-953-6669"},
+  "Goodman":{url:"https://www.goodmanmfg.com/resources/warranty",phone:"1-877-254-4729"},
+  "Amana":{url:"https://www.amana-hac.com/resources/warranty",phone:"1-877-254-4729"},
+  "Daikin":{url:"https://www.daikincomfort.com/resources/warranty",phone:"1-855-770-2905"},
+  "Rheem":{url:"https://www.rheem.com/warranty/",phone:"1-800-621-5622"},
+  "Ruud":{url:"https://www.ruud.com/warranty/",phone:"1-800-848-7883"},
+  "York":{url:"https://www.york.com/resources/warranty",phone:"1-800-967-5465"},
+  "Mitsubishi Electric":{url:"https://www.mitsubishicomfort.com/support/warranty",phone:"1-800-433-4822"},
+};
+const CAT_STYLE = {
+  Safety:     {bg:"#fff1f2",border:"#fecdd3",text:"#be123c",icon:"🛡️"},
+  IAQ:        {bg:"#eff6ff",border:"#bfdbfe",text:"#1d4ed8",icon:"🌬️"},
+  Comfort:    {bg:"#f5f3ff",border:"#ddd6fe",text:"#7c3aed",icon:"🌡️"},
+  Efficiency: {bg:"#f0fdf4",border:"#bbf7d0",text:"#15803d",icon:"⚡"},
+  Maintenance:{bg:"#fffbeb",border:"#fde68a",text:"#b45309",icon:"🔧"},
+};
+
+// ── State ──────────────────────────────────────────────────────
+let mode = "home";
+let proTab = "diag";
+let selectedSymptoms = [];
+let selectedConcerns = [];
+let uploadedFile = null;
+let audioTranscript = "";
+let mediaRecorder = null;
+let audioChunks = [];
+let recTimer = null;
+let recSeconds = 0;
+
+// ── Init ───────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  populateSelects();
+  buildSymptomGrid("home");
+  buildConcernsGrid();
+  checkHealth();
+});
+
+function checkHealth() {
+  fetch("/api/health")
+    .then(r => r.json())
+    .then(d => {
+      const dot  = document.getElementById("statusDot");
+      const text = document.getElementById("statusText");
+      if (d.aiReady) {
+        dot.className = "status-dot";
+        text.textContent = "AI Ready";
+      } else {
+        dot.className = "status-dot red";
+        text.textContent = "No API Key";
+      }
+    })
+    .catch(() => {
+      document.getElementById("statusDot").className = "status-dot red";
+      document.getElementById("statusText").textContent = "Offline";
+    });
+}
+
+function populateSelects() {
+  const selects = {
+    sysType:   SYS_TYPES,
+    sysAge:    SYS_AGES,
+    brand:     BRANDS,
+    wBrand:    BRANDS,
+    rSysType:  SYS_TYPES,
+    rSysAge:   SYS_AGES,
+    rBrand:    BRANDS,
+    rHomeSize: HOME_SIZES,
+  };
+  for (const [id, opts] of Object.entries(selects)) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    opts.forEach(o => {
+      const opt = document.createElement("option");
+      opt.value = opt.textContent = o;
+      el.appendChild(opt);
+    });
+  }
+}
+
+// ── Mode switching ─────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  const isPro = m === "pro";
+  document.getElementById("tabHome").className = "mode-tab" + (m==="home" ? " active-home" : "");
+  document.getElementById("tabPro").className  = "mode-tab" + (m==="pro"  ? " active-pro"  : "");
+  document.getElementById("proTabs").style.display   = isPro ? "block" : "none";
+  document.getElementById("heroTitle").textContent   = isPro ? "Professional HVAC Diagnostics" : "What's Wrong With Your HVAC?";
+  document.getElementById("heroSub").textContent     = isPro
+    ? "Upload a video, record your observations, and get a complete technical diagnostic report instantly."
+    : "Upload a photo or video of your system, describe what's happening, and our AI will tell you exactly what's wrong.";
+  document.getElementById("modeDesc").textContent    = isPro
+    ? "Full technical reports with measurements, part numbers, repair procedures, and replace-vs-repair analysis."
+    : "Easy-to-understand explanations, safety guidance, and connections to certified local technicians.";
+  document.getElementById("uploadLabel").textContent = isPro ? "Upload a Photo or Video" : "Show Us Your System";
+  document.getElementById("uploadSub").textContent   = isPro
+    ? "Upload a photo or video of the unit for visual AI analysis"
+    : "A short video or photo helps our AI see exactly what's happening";
+  document.getElementById("voiceSub").textContent    = isPro
+    ? "Record your verbal observations — readings, sounds you hear, anything you notice on-site"
+    : "Describe the problem or hold your phone near the system so the AI can hear the sounds";
+  document.getElementById("symptomsLabel").textContent = isPro ? "Select All Fault Indicators" : "What is your system doing?";
+  document.getElementById("descLabel").textContent     = isPro ? "Technical Notes" : "Describe the problem in your own words";
+  document.getElementById("descSub").textContent       = isPro
+    ? "Include any measurements, readings, or observations"
+    : "When did it start? Is it getting worse? Anything else you've noticed?";
+  document.getElementById("brandRow").style.display    = isPro ? "block" : "none";
+  document.getElementById("desc").placeholder          = isPro
+    ? "e.g. Suction 58 PSI, head 285 PSI at 85°F. Compressor draws 18A then trips breaker. Capacitor tested good 45µF…"
+    : "e.g. My air conditioner runs all day but the house never gets below 78°. Started 3 days ago. I can hear a loud humming from the outside unit…";
+  selectedSymptoms = [];
+  buildSymptomGrid(m);
+  if (isPro) setProTab("diag");
+  else {
+    document.getElementById("panelDiag").style.display = "block";
+    document.getElementById("panelWarranty").style.display = "none";
+    document.getElementById("panelRevenue").style.display  = "none";
+  }
+  resetDiagnostic();
+}
+
+function setProTab(tab) {
+  proTab = tab;
+  document.getElementById("panelDiag").style.display    = tab==="diag"    ? "block" : "none";
+  document.getElementById("panelWarranty").style.display= tab==="warranty" ? "block" : "none";
+  document.getElementById("panelRevenue").style.display = tab==="revenue"  ? "block" : "none";
+  document.getElementById("stDiag").className    = "sub-tab" + (tab==="diag"    ? " st-diag"    : "");
+  document.getElementById("stWarranty").className= "sub-tab" + (tab==="warranty"? " st-warrant" : "");
+  document.getElementById("stRevenue").className = "sub-tab" + (tab==="revenue" ? " st-revenue" : "");
+}
+
+// ── Symptom grid ───────────────────────────────────────────────
+function buildSymptomGrid(m) {
+  const syms = m==="pro" ? PRO_SYMPTOMS : HOME_SYMPTOMS;
+  const grid = document.getElementById("symptomsGrid");
+  grid.innerHTML = "";
+  syms.forEach(({icon, label}) => {
+    const btn = document.createElement("button");
+    btn.className = "chip";
+    btn.innerHTML = `<span class="chip-icon">${icon}</span><span>${label}</span>`;
+    btn.onclick = () => {
+      const idx = selectedSymptoms.indexOf(label);
+      if (idx > -1) { selectedSymptoms.splice(idx,1); btn.className = "chip"; }
+      else { selectedSymptoms.push(label); btn.className = "chip " + (m==="pro" ? "sel-orange" : "sel-blue"); }
+      updateInputsSummary();
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function buildConcernsGrid() {
+  const grid = document.getElementById("concernsGrid");
+  CONCERNS.forEach(({icon, label}) => {
+    const btn = document.createElement("button");
+    btn.className = "chip";
+    btn.innerHTML = `<span class="chip-icon">${icon}</span><span>${label}</span>`;
+    btn.onclick = () => {
+      const idx = selectedConcerns.indexOf(label);
+      if (idx > -1) { selectedConcerns.splice(idx,1); btn.className = "chip"; }
+      else { selectedConcerns.push(label); btn.className = "chip sel-blue"; }
+    };
+    grid.appendChild(btn);
+  });
+}
+
+// ── File upload ────────────────────────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById("dropZone").classList.remove("drag");
+  const file = e.dataTransfer.files[0];
+  if (file) setFile(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) setFile(file);
+}
+function setFile(file) {
+  uploadedFile = file;
+  const isImg = file.type.startsWith("image/");
+  const url = URL.createObjectURL(file);
+  document.getElementById("dropZone").classList.add("has-file");
+  document.getElementById("dropIcon").textContent  = isImg ? "🖼️" : "🎬";
+  document.getElementById("dropTitle").textContent = file.name;
+  const img = document.getElementById("imgPreview");
+  const vid = document.getElementById("videoPreview");
+  if (isImg) { img.src=url; img.style.display="block"; vid.style.display="none"; }
+  else       { vid.src=url; vid.style.display="block"; img.style.display="none"; }
+  updateInputsSummary();
+}
+
+// ── Voice recording ────────────────────────────────────────────
+async function toggleRecording() {
+  if (!mediaRecorder || mediaRecorder.state==="inactive") {
+    await startRecording();
+  } else {
+    stopRecording();
+  }
+}
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg";
+    mediaRecorder = new MediaRecorder(stream, {mimeType:mime});
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => { if(e.data.size>0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = () => processAudio(mime);
+    mediaRecorder.start(200);
+    recSeconds = 0;
+    recTimer = setInterval(() => {
+      recSeconds++;
+      const m = String(Math.floor(recSeconds/60)).padStart(2,"0");
+      const s = String(recSeconds%60).padStart(2,"0");
+      document.getElementById("recStatus").innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="wave-bars">
+            ${[10,16,12,18,8].map((h,i)=>`<div class="wave-bar" style="height:${h}px;animation-delay:${i*.1}s"></div>`).join("")}
+          </div>
+          <span style="color:#ef4444;font-weight:700;font-size:15px;">${m}:${s}</span>
+          <span class="pulsing" style="color:#6b7280;font-size:13px;">Recording…</span>
+        </div>`;
+    }, 1000);
+    document.getElementById("recorder").className = "recorder recording";
+    document.getElementById("recBtnWrap").innerHTML = `<div class="rec-ring"></div><button class="btn btn-sm" onclick="toggleRecording()" style="background:#ef4444;color:#fff;width:44px;height:44px;border-radius:50%;border:none;font-size:18px;cursor:pointer;padding:0;">⏹</button>`;
+  } catch { alert("Please allow microphone access to use voice recording."); }
+}
+function stopRecording() {
+  if (mediaRecorder?.state==="recording") mediaRecorder.stop();
+  mediaRecorder?.stream?.getTracks().forEach(t=>t.stop());
+  clearInterval(recTimer);
+  document.getElementById("recStatus").innerHTML = `<p class="pulsing" style="font-size:14px;color:#7c3aed;font-weight:600;">AI is analyzing your audio…</p>`;
+}
+async function processAudio(mime) {
+  const blob = new Blob(audioChunks, {type:mime});
+  const b64  = await blobToBase64(blob);
+  try {
+    const res = await callAI("", [{role:"user",content:[
+      {type:"text",text:`Analyze this HVAC diagnostic audio. Transcribe any speech. Identify mechanical sounds (banging, clicking, hissing, humming, squealing, rattling, grinding).\nRespond with:\nSPEECH: [transcription or "No speech detected"]\nSOUNDS: [sound descriptions or "No distinct sounds"]\nSUMMARY: [1-2 sentences about what this tells us about the HVAC system]`},
+      {type:"document",source:{type:"base64",media_type:mime,data:b64}}
+    ]}]);
+    audioTranscript = res;
+  } catch { audioTranscript = "Audio recorded — will be referenced in diagnosis."; }
+  document.getElementById("recorder").className = "recorder done";
+  document.getElementById("recBtnWrap").innerHTML = `<button class="btn btn-outline btn-sm" onclick="resetRecording()">🔄 Re-record</button>`;
+  document.getElementById("recStatus").innerHTML = `<p style="font-size:14px;color:#16a34a;font-weight:600;">✓ Audio captured and analyzed</p>`;
+  document.getElementById("transcriptText").textContent = audioTranscript;
+  document.getElementById("transcriptBox").style.display = "block";
+  updateInputsSummary();
+}
+function resetRecording() {
+  audioTranscript = "";
+  document.getElementById("recorder").className = "recorder";
+  document.getElementById("recBtnWrap").innerHTML = `<button class="btn btn-purple btn-sm" onclick="toggleRecording()">🎙️ Record Voice</button>`;
+  document.getElementById("recStatus").innerHTML = `<p style="font-size:14px;color:#6b7280;">Record yourself describing the issue, or hold near the unit</p>`;
+  document.getElementById("transcriptBox").style.display = "none";
+  updateInputsSummary();
+}
+
+// ── Inputs summary tags ────────────────────────────────────────
+function updateInputsSummary() {
+  const tagFile  = document.getElementById("tagFile");
+  const tagVoice = document.getElementById("tagVoice");
+  const tagSymps = document.getElementById("tagSymps");
+  const isImg = uploadedFile?.type.startsWith("image/");
+  tagFile.textContent  = uploadedFile ? `📹 ${isImg?"Photo":"Video"}` : "";
+  tagFile.style.display  = uploadedFile ? "inline-block" : "none";
+  tagVoice.style.display = audioTranscript ? "inline-block" : "none";
+  tagSymps.textContent   = selectedSymptoms.length ? `✓ ${selectedSymptoms.length} symptom${selectedSymptoms.length>1?"s":""}` : "";
+  tagSymps.style.display = selectedSymptoms.length ? "inline-block" : "none";
+}
+
+// ── AI call ────────────────────────────────────────────────────
+async function callAI(system, messages, max_tokens=1024) {
+  const res = await fetch("/api/ai", {
+    method:  "POST",
+    headers: {"Content-Type":"application/json"},
+    body:    JSON.stringify({system, messages, max_tokens}),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data.text;
+}
+
+async function blobToBase64(blob) {
+  return new Promise((res,rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(",")[1]);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+
+async function grabVideoFrame(file) {
+  return new Promise((res,rej) => {
+    const v=document.createElement("video"),c=document.createElement("canvas");
+    v.muted=true; v.src=URL.createObjectURL(file);
+    v.onloadeddata=()=>{v.currentTime=Math.min(2,v.duration*.1);};
+    v.onseeked=()=>{c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0);URL.revokeObjectURL(v.src);res(c.toDataURL("image/jpeg",.85).split(",")[1]);};
+    v.onerror=rej;
+  });
+}
+
+// ── Diagnostic ─────────────────────────────────────────────────
+async function runDiagnostic() {
+  const sysType = document.getElementById("sysType").value;
+  const sysAge  = document.getElementById("sysAge").value;
+  const brand   = document.getElementById("brand").value;
+  const desc    = document.getElementById("desc").value;
+  const isPro   = mode === "pro";
+
+  if (!sysType && !selectedSymptoms.length && !desc && !uploadedFile && !audioTranscript) {
+    alert("Please add at least one detail — select a system type, describe the problem, or upload a photo.");
+    return;
+  }
+
+  const btn = document.getElementById("runBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Analyzing your system…</span>`;
+
+  try {
+    const symsText = selectedSymptoms.length ? selectedSymptoms.join(", ") : "None selected";
+    const audText  = audioTranscript ? `\nAUDIO ANALYSIS:\n${audioTranscript}\n` : "";
+
+    let messages;
+    if (uploadedFile) {
+      btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Reading file…</span>`;
+      const isImg = uploadedFile.type.startsWith("image/");
+      const b64   = isImg ? await blobToBase64(uploadedFile) : await grabVideoFrame(uploadedFile);
+      const mime  = isImg ? uploadedFile.type : "image/jpeg";
+      const prompt = buildDiagPrompt(isPro, sysType, sysAge, brand, symsText, desc, audText, true, isImg);
+      messages = [{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:prompt}]}];
+    } else {
+      messages = [{role:"user",content:buildDiagPrompt(isPro, sysType, sysAge, brand, symsText, desc, audText, false, false)}];
+    }
+
+    btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Analyzing your system…</span>`;
+    const SYSTEM = isPro
+      ? `You are HVACGenius AI — the world's most advanced HVAC diagnostic intelligence. All brands, all systems, full technical knowledge. EPA 608, ASHRAE, ACCA. All refrigerants. RULES: First line = severity only: CRITICAL, HIGH, MEDIUM, or LOW. Use **Bold Headers**. Be precise and technical with measurements, part numbers, specs.`
+      : `You are HVACGenius AI — the world's most advanced HVAC diagnostic intelligence. All brands, all systems, full technical knowledge. RULES: First line = severity only: CRITICAL, HIGH, MEDIUM, or LOW. Use **Bold Headers**. Use plain friendly English — no jargon. This is a homeowner who is not an HVAC expert.`;
+
+    const raw    = await callAI(SYSTEM, messages);
+    const lines  = raw.trim().split("\n");
+    const sevW   = lines[0].trim().toUpperCase();
+    const knownSev = ["CRITICAL","HIGH","MEDIUM","LOW"];
+    const sev    = knownSev.includes(sevW) ? sevW : "MEDIUM";
+    const body   = knownSev.includes(sevW) ? lines.slice(1).join("\n").trim() : raw;
+
+    showResult(sev, body, isPro);
+  } catch(e) {
+    alert("AI request failed: " + e.message + "\n\nMake sure your ANTHROPIC_API_KEY is set in Replit Secrets.");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `⚡ Run AI Diagnostic`;
+  }
+}
+
+function buildDiagPrompt(isPro, sysType, sysAge, brand, syms, desc, aud, hasVisual, isImg) {
+  const vis = hasVisual ? `\nVISUAL: ${isImg?"Photo":"Video frame"} of system provided for visual analysis.` : "";
+  if (isPro) return `CONTRACTOR DIAGNOSTIC REQUEST\nSystem: ${sysType||"N/A"} | Brand: ${brand||"N/A"} | Age: ${sysAge||"N/A"}\nFault Indicators: ${syms}\nNotes: ${desc||"None"}${aud}${vis}\n\nProvide FULL TECHNICAL REPORT:\n**ROOT CAUSE ANALYSIS**\n**AUDIO/VISUAL EVIDENCE** (if provided)\n**DIFFERENTIAL DIAGNOSIS** (2-3 alternatives with probability %)\n**DIAGNOSTIC PROCEDURE** (specific tests, measurements, pressures, voltages)\n**REFRIGERANT DATA** (superheat/subcooling targets if applicable)\n**PARTS REQUIRED** (part numbers, specs, estimated cost)\n**REPAIR PROCEDURE** (step-by-step)\n**SAFETY HAZARDS**\n**REPLACE vs REPAIR** (cost-benefit analysis)\n**ESTIMATED LABOR HOURS**`;
+  return `HOMEOWNER DIAGNOSTIC REQUEST\nSystem: ${sysType||"N/A"} | Age: ${sysAge||"N/A"}\nSymptoms: ${syms}\nDescription: ${desc||"None"}${aud}${vis}\n\nProvide FRIENDLY REPORT:\n**WHAT'S HAPPENING** (plain English, no jargon)\n**WHAT THOSE SOUNDS MEAN** (if audio provided, explain in simple terms)\n**HOW URGENT IS THIS?** (Today / This week / Can wait)\n**SAFE CHECKS YOU CAN DO** (1-2 simple safe steps)\n**SAFETY WARNINGS** (plain language)\n**DO YOU NEED A PRO?** (honest answer)\n**ESTIMATED COST** (repair vs replacement range)\n**ENERGY SAVING TIP** (one relevant tip)\n\nEnd with a warm recommendation to contact a certified local HVAC technician.`;
+}
+
+function showResult(sev, body, isPro) {
+  const SEV_STYLES = {
+    CRITICAL:{badge:"background:#fee2e2;color:#b91c1c",left:"#dc2626",label:"🚨 Critical — Act Now"},
+    HIGH:    {badge:"background:#fef9c3;color:#92400e",left:"#d97706",label:"⚠️ High Priority"},
+    MEDIUM:  {badge:"background:#dbeafe;color:#1e40af",left:"#2563eb",label:"🔵 Medium Priority"},
+    LOW:     {badge:"background:#dcfce7;color:#166534",left:"#16a34a",label:"✅ Low Priority"},
+  };
+  const s = SEV_STYLES[sev] || SEV_STYLES.MEDIUM;
+  document.getElementById("sevBadge").style.cssText = s.badge + ";padding:6px 16px;border-radius:99px;font-size:14px;font-weight:700;";
+  document.getElementById("sevBadge").textContent = s.label;
+  document.getElementById("resultCard").style.borderLeft = `4px solid ${s.left}`;
+  document.getElementById("resultText").innerHTML = body
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, "<br/>");
+  document.getElementById("homeownerCTA").style.display  = isPro ? "none" : "block";
+  document.getElementById("contractorNudge").style.display = isPro ? "block" : "none";
+  document.getElementById("resultPanel").style.display = "block";
+  document.getElementById("resultPanel").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function resetDiagnostic() {
+  document.getElementById("resultPanel").style.display = "none";
+  document.getElementById("desc").value = "";
+  document.getElementById("sysType").selectedIndex = 0;
+  document.getElementById("sysAge").selectedIndex  = 0;
+  document.getElementById("brand").selectedIndex   = 0;
+  selectedSymptoms = [];
+  buildSymptomGrid(mode);
+  uploadedFile = null;
+  document.getElementById("dropZone").className = "drop-zone";
+  document.getElementById("dropIcon").textContent  = "📷";
+  document.getElementById("dropTitle").textContent = "Tap to upload a photo or video";
+  document.getElementById("imgPreview").style.display   = "none";
+  document.getElementById("videoPreview").style.display = "none";
+  resetRecording();
+  updateInputsSummary();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+// ── Warranty ───────────────────────────────────────────────────
+function showWarrantyLinks() {
+  const brand = document.getElementById("wBrand").value;
+  const info  = WARRANTY_INFO[brand];
+  const div   = document.getElementById("warrantyLinks");
+  if (info) {
+    div.style.display = "flex";
+    div.innerHTML = `
+      <a href="${info.url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#7c3aed;border-radius:9px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">🌐 Warranty Portal</a>
+      <span style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#fff;border:1.5px solid #e2e8f0;border-radius:9px;color:#374151;font-size:14px;font-weight:600;">📞 ${info.phone}</span>`;
+  } else {
+    div.style.display = "none";
+    div.innerHTML = "";
+  }
+}
+
+async function runWarranty() {
+  const brand  = document.getElementById("wBrand").value;
+  const model  = document.getElementById("wModel").value;
+  const serial = document.getElementById("wSerial").value;
+  const notes  = document.getElementById("wNotes").value;
+  if (!brand || !serial) { alert("Please select a manufacturer and enter the serial number."); return; }
+  const btn = document.getElementById("warrantyBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Looking up warranty…</span>`;
+  const info = WARRANTY_INFO[brand];
+  const prompt = `WARRANTY LOOKUP\nBrand: ${brand}\nModel: ${model||"N/A"}\nSerial: ${serial}\nNotes: ${notes||"None"}\n${info?`Portal: ${info.url}\nPhone: ${info.phone}`:""}`;
+  try {
+    const SYSTEM = `You are an HVAC warranty expert AI. SERIAL DECODING: Carrier/Bryant pos 5-8=week+year. Trane 1st=year 2nd-3rd=week. Lennox first 2=year. Goodman/Amana 1st=decade 2nd=year 3rd-4th=week. Rheem/Ruud 1st 2=year 3rd-4th=week. York letter=decade digit=year. TERMS: Carrier/Bryant 10yr reg/5yr unreg. Trane 10yr/5yr. Lennox 10yr/5yr. Goodman lifetime compressor+10yr reg. Amana lifetime unit replacement. Rheem/Ruud 10yr/5yr. Mitsubishi 12yr/7yr. Daikin 12yr/5yr. Sections: **UNIT IDENTIFICATION** **WARRANTY STATUS** **REGISTERED vs UNREGISTERED** **WHAT'S COVERED** **WHAT'S NOT COVERED** **VERIFY WARRANTY** **TECHNICIAN FLAGS**`;
+    const txt = await callAI(SYSTEM, [{role:"user",content:prompt}]);
+    document.getElementById("warrantyText").innerHTML = txt.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#7c3aed">$1</strong>').replace(/\n/g,"<br/>");
+    document.getElementById("warrantyResult").style.display = "block";
+    if (info) {
+      document.getElementById("warrantyVerifyLink").style.display = "block";
+      document.getElementById("warrantyVerifyBtn").href = info.url;
+    }
+    document.getElementById("warrantyResult").scrollIntoView({behavior:"smooth",block:"start"});
+  } catch(e) { alert("Warranty lookup failed: " + e.message); }
+  finally { btn.disabled=false; btn.innerHTML="🛡️ Check Warranty Coverage"; }
+}
+
+// ── Revenue Builder ────────────────────────────────────────────
+async function runRevenue() {
+  const sysType  = document.getElementById("rSysType").value;
+  const sysAge   = document.getElementById("rSysAge").value;
+  const brand    = document.getElementById("rBrand").value;
+  const homeSize = document.getElementById("rHomeSize").value;
+  const notes    = document.getElementById("rNotes").value;
+  if (!sysType && !selectedConcerns.length && !notes) {
+    alert("Please fill in at least the system type or select some home/family details.");
+    return;
+  }
+  const btn = document.getElementById("revenueBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Building recommendations…</span>`;
+  const SYSTEM = `You are an HVAC business revenue consultant. Help contractors identify genuine upsell opportunities. Products: UV-C lights, REME HALO, iWave ionizers, MERV 13/16 filters, HEPA, dehumidifiers, ERV/HRV, smart thermostats, zoning, CO detectors, gas detectors, Aeroseal duct sealing, service agreements, filter subscriptions. RULES: Safety first. Honest ROI. Include word-for-word conversation scripts. Return ONLY valid JSON no markdown: {"summary":"string","totalOpportunityLow":0,"totalOpportunityHigh":0,"recommendations":[{"category":"Safety|IAQ|Comfort|Efficiency|Maintenance","priority":"High|Medium|Low","title":"string","why":"string","homeownerBenefit":"string","priceLow":0,"priceHigh":0,"techProfit":0,"roi":"string","script":"string"}]}`;
+  const prompt = `System: ${sysType||"Unknown"} | Brand: ${brand||"Unknown"} | Age: ${sysAge||"Unknown"} | Home: ${homeSize||"Unknown"}\nConcerns: ${selectedConcerns.length ? selectedConcerns.join(", ") : "None"}\nNotes: ${notes||"None"}\nGenerate personalized recommendations.`;
+  try {
+    const raw   = await callAI(SYSTEM, [{role:"user",content:prompt}]);
+    const clean = raw.replace(/```json|```/g,"").trim();
+    const data  = JSON.parse(clean);
+    showRevenueResults(data);
+  } catch(e) { alert("Revenue builder failed: " + e.message + "\n\nTry adding more details about the system and home."); }
+  finally { btn.disabled=false; btn.innerHTML="💰 Build Revenue Recommendations"; }
+}
+
+function showRevenueResults(data) {
+  const fmt$ = n => `$${Number(n||0).toLocaleString()}`;
+  document.getElementById("revSummary").textContent = data.summary || "";
+  document.getElementById("revRange").textContent   = `${fmt$(data.totalOpportunityLow)}–${fmt$(data.totalOpportunityHigh)}`;
+  const totalProfit = data.recommendations?.reduce((s,r)=>s+(r.techProfit||0),0)||0;
+  const profitEl = document.getElementById("revProfit");
+  profitEl.textContent = totalProfit > 0 ? `~${fmt$(totalProfit)} est. your profit` : "";
+
+  const container = document.getElementById("revenueCards");
+  container.innerHTML = "";
+  (data.recommendations||[]).forEach((rec, i) => {
+    const cs = CAT_STYLE[rec.category] || CAT_STYLE.Maintenance;
+    const priColor = rec.priority==="High" ? "#dc2626" : rec.priority==="Medium" ? "#d97706" : "#16a34a";
+    const card = document.createElement("div");
+    card.className = "rec-card";
+    card.style.borderLeft = `4px solid ${cs.border.replace("e8","b0")}`;
+    card.innerHTML = `
+      <div style="display:flex;align-items:flex-start;gap:14px;" onclick="toggleRecCard(${i})">
+        <div style="width:46px;height:46px;border-radius:10px;background:${cs.bg};border:1px solid ${cs.border};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${cs.icon}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;">
+            <span style="font-size:16px;font-weight:700;color:#111827;">${rec.title}</span>
+            <span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:600;background:${cs.bg};color:${cs.text};border:1px solid ${cs.border};">${rec.category}</span>
+            <span style="font-size:12px;font-weight:600;color:${priColor};">${rec.priority} Priority</span>
+          </div>
+          <p style="font-size:14px;color:#6b7280;line-height:1.5;margin:0;">${rec.homeownerBenefit}</p>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <p style="font-size:17px;font-weight:700;color:#16a34a;">${fmt$(rec.priceLow)}–${fmt$(rec.priceHigh)}</p>
+          ${rec.techProfit ? `<p style="font-size:13px;color:#d97706;font-weight:600;">~${fmt$(rec.techProfit)} profit</p>` : ""}
+          <p style="font-size:18px;color:#9ca3af;margin-top:4px;" id="chevron-${i}">▼</p>
+        </div>
+      </div>
+      <div id="recDetail-${i}" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #f3f4f6;">
+        <div style="background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:12px;">
+          <p style="font-size:12px;font-weight:700;color:${cs.text};text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why This Home Needs It</p>
+          <p style="font-size:14px;color:#4b5563;line-height:1.65;">${rec.why}</p>
+        </div>
+        ${rec.roi ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;margin-bottom:12px;display:flex;gap:10px;align-items:center;"><span style="font-size:20px;">📈</span><p style="font-size:14px;color:#166534;margin:0;line-height:1.5;"><strong>ROI:</strong> ${rec.roi}</p></div>` : ""}
+        <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <p style="font-size:12px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px;">🗣️ Conversation Script</p>
+            <button class="btn btn-outline btn-sm" onclick="copyScript('script-${i}')">Copy</button>
+          </div>
+          <p id="script-${i}" style="font-size:15px;color:#1f2937;line-height:1.7;font-style:italic;">"${rec.script}"</p>
+        </div>
+      </div>`;
+    container.appendChild(card);
+  });
+
+  document.getElementById("revenueResult").style.display = "block";
+  document.getElementById("revenueResult").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function toggleRecCard(i) {
+  const detail  = document.getElementById(`recDetail-${i}`);
+  const chevron = document.getElementById(`chevron-${i}`);
+  const isOpen  = detail.style.display !== "none";
+  detail.style.display  = isOpen ? "none" : "block";
+  chevron.textContent   = isOpen ? "▼" : "▲";
+}
+
+function copyScript(id) {
+  const txt = document.getElementById(id)?.textContent || "";
+  navigator.clipboard.writeText(txt).then(() => alert("Script copied to clipboard!")).catch(()=>{});
+}
+
+function resetRevenue() {
+  document.getElementById("revenueResult").style.display = "none";
+  document.getElementById("rSysType").selectedIndex  = 0;
+  document.getElementById("rSysAge").selectedIndex   = 0;
+  document.getElementById("rBrand").selectedIndex    = 0;
+  document.getElementById("rHomeSize").selectedIndex = 0;
+  document.getElementById("rNotes").value = "";
+  selectedConcerns = [];
+  buildConcernsGrid();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+</script>
+
+</body>
+</html>

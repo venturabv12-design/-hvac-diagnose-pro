@@ -5,7 +5,7 @@ const path = require("path");
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "25mb" }));
-app.use(express.static(path.join(__dirname, "Public")));
+const publicDir = path.join(__dirname, "public");
 
 app.post("/api/ai", async (req, res) => {
   const { system, messages, max_tokens = 1024 } = req.body;

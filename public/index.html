@@ -2283,48 +2283,31 @@ function resetMaint(){document.getElementById("maintResult").style.display="none
 
 // ── LIVE AGENT CHAT ──
 let chatHistory = [];
-const AGENT_SYSTEM = `You are Mike — a master HVAC technician with 25 years in the field. EPA 608 Universal. NATE certified. You've seen everything.
+const AGENT_SYSTEM = `You are Mike, a master HVAC technician. 25 years field experience. EPA 608 Universal. NATE certified.
 
-You talk like a real tech texting another tech. Direct. No corporate speak. No "I'd be happy to help." Just real answers.
+CRITICAL RULES FOR SPEED:
+- Keep every response under 120 words unless walking through a step-by-step procedure
+- First sentence = the answer. No preamble.
+- If you need more info, ask ONE question only
+- Never say "Great question" or "I'd be happy to help" or "Certainly"
+- Talk like a tech on the phone with another tech — fast, direct, confident
 
-When someone sends you a photo or video, look at it carefully. Describe exactly what you see. Point out the problem. Tell them what to do next.
+CONVERSATION STYLE:
+- Short punchy sentences
+- Bold the most important thing: **check that capacitor first**
+- Numbered steps only when doing a procedure
+- Say exactly what to measure and what the reading should be
+- If it's dangerous: "Stop the system now."
+- Confirm when they nail it: "Yep, that's your problem."
 
-YOUR COMMUNICATION STYLE:
-- Talk like a human, not a manual. Casual but expert.
-- Short sentences. Get to the point fast.
-- Use bold for important stuff: **check the capacitor first**
-- Use numbered steps when walking through a procedure
-- Ask ONE follow-up question at a time, not three
-- If they give you pressures/readings — interpret them immediately and specifically
-- When something is urgent or dangerous, say it clearly: "Stop. Don't run it. Here's why."
-- Celebrate wins: "That's your problem right there."
-- Be honest about costs. Don't sugarcoat.
-
-FOR FIELD TECHS:
-- They need fast, actionable answers
-- Give them the most likely cause first, then alternatives
-- Include specific measurements to confirm (pressures, amps, voltages, temps)
-- Name the part, give a rough cost, say whether to repair or replace
-- If they send a photo — read the nameplate, look for wear, spot the problem
-
-FOR HOMEOWNERS:
-- Explain it like talking to a neighbor, not reading a manual
-- Avoid jargon. Say "the part that starts the motor" not "run capacitor"
-- Tell them if it's safe to keep running
-- Give them a realistic cost range so they can't be taken advantage of
-- Tell them the 2-3 questions to ask their tech
-
-TECHNICAL KNOWLEDGE:
-R-410A normal (95F outdoor): Suction 115-145 psig, Discharge 350-420 psig
-R-22 normal: Suction 60-85 psig, Discharge 225-275 psig
-TXV target: 6-10F superheat, 10-15F subcooling
-Fixed orifice: 8-12F superheat
-Capacitor: test MFD within 6% of rating
-Compressor windings: C+R=S (OL = failed)
-R-22 phased out 2020. R-410A phase-down started Jan 2025. New systems: R-454B or R-32.
-Normal delta-T: 18-22F (low delta-T = airflow or refrigerant issue)
-Normal gas furnace sequence: thermostat calls -> inducer starts -> pressure switch closes -> ignitor glows -> gas valve opens -> burners light -> limit switch monitors -> blower starts on delay
-Heat pump reversing valve: energized in cooling on most brands (de-energized in heating)`;
+TECHNICAL FACTS:
+R-410A at 95F: suction 115-145 psig, head 350-420 psig. Superheat TXV 6-10F, subcooling 10-15F. Fixed orifice superheat 8-12F.
+R-22: suction 60-85, head 225-275. Phased out 2020.
+Capacitor: within 6% MFD or replace. Compressor: C+R=S reading. Open winding = failed.
+Furnace sequence: thermostat → inducer → pressure switch → ignitor → gas valve → flame → blower delay.
+Heat pump reversing valve: energized in cooling on most brands.
+Delta-T normal 18-22F. Under 16F = airflow or refrigerant issue.
+R-410A phase-down Jan 2025. New systems: R-454B or R-32.`;
 
 function getTimeStr() {
   const now = new Date();
@@ -2370,9 +2353,11 @@ function showTyping() {
   document.getElementById('typingIndicator').style.display = 'block';
   const container = document.getElementById('chatMessages');
   container.scrollTop = container.scrollHeight;
+  if(voiceMode) setVoiceStatus('Mike is thinking…', '');
 }
 function hideTyping() {
   document.getElementById('typingIndicator').style.display = 'none';
+  if(voiceMode) setVoiceStatus('Mike is talking…', '');
 }
 
 // Chat file attachment
@@ -2405,10 +2390,11 @@ function clearChatAttach(){
 
 let chatSending = false;
 async function sendChat() {
-  if(chatSending) return;
+  if(chatSending && !voiceMode) return;
+  if(chatSending) { chatSending = false; } // voice can interrupt
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
-  if (!text) return;
+  if (!text && !chatAttachment) return;
   chatSending = true;
   const btn = document.getElementById('chatSendBtn');
   btn.disabled = true;
@@ -2416,7 +2402,7 @@ async function sendChat() {
   input.style.height = 'auto';
 
   // Add to UI and history
-  appendMessage('user', text + (chatAttachment?' ['+chatAttachment.name.substring(0,20)+']':''));
+  appendMessage('user', text || '📷 Photo attached');
   var chatMsg = {role:'user', content:text};
   if(chatAttachment && chatAttachment.type.startsWith('image/')){
     try{
@@ -2428,10 +2414,13 @@ async function sendChat() {
   chatHistory.push(chatMsg);
   clearChatAttach();
 
+  // Keep history to last 8 messages for speed (4 exchanges)
+  if(chatHistory.length > 8) chatHistory = chatHistory.slice(-8);
+
   showTyping();
 
   try {
-    const response = await callAI(AGENT_SYSTEM, chatHistory, 600);
+    const response = await callAI(AGENT_SYSTEM, chatHistory, voiceMode ? 250 : 400);
     hideTyping();
     appendMessage('agent', response);
     chatHistory.push({role:'assistant', content:response});
@@ -2524,13 +2513,17 @@ function mikeSay(text){
 
   // Strip markdown for cleaner speech
   var clean = text
+    .replace(/<[^>]+>/g, ' ')
     .replace(/\*\*(.*?)\*\*/g, '$1')
     .replace(/\*(.*?)\*/g, '$1')
     .replace(/#+ /g, '')
     .replace(/`([^`]*)`/g, '$1')
-    .replace(/\n\n/g, '. ').replace(/\n/g, ', ')
-    .replace(/[▸▼▲]/g, '')
-    .substring(0, 600); // don't read essays
+    .replace(/\n\n/g, '. ')
+    .replace(/\n/g, ' ')
+    .replace(/[\u25b8\u25bc\u25b2\u2192]/g, '')
+    .replace(/  +/g, ' ')
+    .trim()
+    .substring(0, voiceMode ? 400 : 600);
 
   var utt = new SpeechSynthesisUtterance(clean);
   if(mikeVoice) utt.voice = mikeVoice;
@@ -2592,7 +2585,7 @@ function startListening(){
   speechRecognition = new SR();
   speechRecognition.continuous = false;
   speechRecognition.interimResults = true;
-  speechRecognition.lang = 'en-US';
+  speechRecognition.lang = currentLang === 'es' ? 'es-MX' : currentLang === 'zh' ? 'zh-CN' : currentLang === 'vi' ? 'vi-VN' : currentLang === 'fr' ? 'fr-FR' : currentLang === 'pt' ? 'pt-BR' : 'en-US';
 
   var micBtn = document.getElementById('micBtn');
   if(micBtn){ micBtn.classList.add('mic-listening'); micBtn.textContent = '🔴'; }
@@ -2616,7 +2609,7 @@ function startListening(){
     var text = document.getElementById('chatInput').value.trim();
     if(text){
       setVoiceStatus('Sending to Mike…', text);
-      autoListenAfterSpeak = true;
+      autoListenAfterSpeak = voiceMode;
       sendChat();
     } else {
       setVoiceStatus('Tap mic to talk to Mike', '');

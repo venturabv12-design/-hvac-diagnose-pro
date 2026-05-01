@@ -5,162 +5,448 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>HVAC Diagnose Pro</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet"/>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { font-size: 16px; }
-    body { background: #f8f9fb; font-family: 'Inter', -apple-system, sans-serif; color: #1a1a2e; }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 6px; }
+    :root {
+      --black:     #1a1a1a;
+      --black2:    #2c2c2c;
+      --teal:      #00b5b5;
+      --teal2:     #009999;
+      --teal-lt:   #e6f9f9;
+      --bg:        #f0f0f0;
+      --white:     #ffffff;
+      --border:    #d8d8d8;
+      --border2:   #c0c0c0;
+      --text:      #1a1a1a;
+      --text2:     #555555;
+      --text3:     #999999;
+      --green:     #2e7d32;
+      --green-lt:  #e8f5e9;
+      --red:       #c62828;
+      --red-lt:    #ffebee;
+      --amber:     #e65100;
+      --amber-lt:  #fff3e0;
+      --blue:      #1565c0;
+      --blue-lt:   #e3f2fd;
+      --purple:    #4527a0;
+      --purple-lt: #ede7f6;
+    }
 
 ```
-@keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
-@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-@keyframes spin   { to { transform:rotate(360deg); } }
-@keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:.4} }
-@keyframes wave   { 0%,100%{transform:scaleY(.3)} 50%{transform:scaleY(1)} }
-@keyframes ripple { 0%{transform:scale(1);opacity:.5} 100%{transform:scale(2.4);opacity:0} }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html { font-size:16px; }
+body {
+  background: var(--bg);
+  font-family: 'Roboto', -apple-system, sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-thumb { background:#c0c0c0; border-radius:4px; }
 
-.fu  { animation: fadeUp .45s cubic-bezier(.16,1,.3,1) both; }
-.fi  { animation: fadeIn .35s ease both; }
-.spinning { animation: spin .8s linear infinite; }
-.pulsing  { animation: pulse 1.5s ease infinite; }
+@keyframes fadeUp   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn   { from{opacity:0} to{opacity:1} }
+@keyframes spin     { to{transform:rotate(360deg)} }
+@keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes wave     { 0%,100%{transform:scaleY(.3)} 50%{transform:scaleY(1)} }
+@keyframes ripple   { 0%{transform:scale(1);opacity:.5} 100%{transform:scale(2.5);opacity:0} }
+@keyframes scanline { 0%{top:0%} 100%{top:96%} }
 
-/* Layout */
-.nav { background:#fff; border-bottom:1px solid #e8eaf0; position:sticky; top:0; z-index:50; }
-.nav-inner { max-width:720px; margin:0 auto; padding:0 16px; display:flex; align-items:center; justify-content:space-between; height:60px; }
+.fu  { animation:fadeUp .3s cubic-bezier(.16,1,.3,1) both; }
+.fi  { animation:fadeIn .2s ease both; }
+.spinning { animation:spin .7s linear infinite; }
+.pulsing  { animation:pulse 1.5s ease infinite; }
+
+/* ── NAV ── */
+.nav {
+  background: var(--black);
+  position: sticky; top: 0; z-index: 50;
+}
+.nav-inner { max-width:720px; margin:0 auto; padding:0 16px; display:flex; align-items:center; justify-content:space-between; height:52px; }
 .nav-logo { display:flex; align-items:center; gap:10px; }
-.nav-logo-icon { width:36px; height:36px; background:linear-gradient(135deg,#2563eb,#0ea5e9); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
-.nav-logo-text { font-size:15px; font-weight:800; color:#111827; line-height:1; }
-.nav-logo-sub  { font-size:11px; color:#6b7280; margin-top:2px; }
-.nav-status { display:flex; align-items:center; gap:6px; }
-.status-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 6px #22c55e; }
-.status-dot.red { background:#ef4444; box-shadow:0 0 6px #ef4444; }
-.status-text { font-size:12px; color:#6b7280; font-weight:500; }
+.nav-logo-icon {
+  width:32px; height:32px;
+  background: var(--teal);
+  border-radius:6px;
+  display:flex; align-items:center; justify-content:center; font-size:16px;
+}
+.nav-logo-text { font-family:'Roboto Condensed',sans-serif; font-size:16px; font-weight:700; color:#fff; line-height:1; letter-spacing:.5px; text-transform:uppercase; }
+.nav-logo-sub  { font-size:10px; color:rgba(255,255,255,.5); margin-top:1px; letter-spacing:.3px; }
+.nav-status {
+  display:flex; align-items:center; gap:6px;
+  padding:5px 10px;
+  background: rgba(255,255,255,.1);
+  border-radius:4px;
+}
+.status-dot { width:7px; height:7px; border-radius:50%; background:#4caf50; box-shadow:0 0 6px #4caf50; }
+.status-dot.red { background:#f44336; box-shadow:0 0 6px #f44336; }
+.status-text { font-size:11px; color:rgba(255,255,255,.8); font-weight:500; letter-spacing:.3px; }
 
-.page { max-width:720px; margin:0 auto; padding:28px 16px 72px; }
+/* ── PAGE ── */
+.page { max-width:720px; margin:0 auto; padding:16px 14px 72px; }
 
-/* Cards */
-.card { background:#fff; border-radius:16px; border:1px solid #e8eaf0; padding:24px; margin-bottom:16px; }
+/* ── SECTION HEADER (like ST's black category bar) ── */
+.st-section-bar {
+  background: var(--black);
+  color: #fff;
+  padding: 14px 16px;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 6px 6px 0 0;
+}
+.st-section-bar-title {
+  font-family: 'Roboto Condensed', sans-serif;
+  font-size: 15px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+.st-section-bar-action {
+  font-size: 12px; color: var(--teal); font-weight: 600; cursor: pointer; letter-spacing: .3px;
+}
 
-/* Form elements */
-.field-label { display:block; font-size:14px; font-weight:600; color:#374151; margin-bottom:7px; }
-.field-sub   { font-size:13px; color:#6b7280; margin-bottom:12px; line-height:1.5; }
+/* ── CARD ── */
+.card {
+  background: var(--white);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  padding: 18px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+.card-flush {
+  border-radius: 0 0 6px 6px;
+  margin-top: 0;
+}
+
+/* ── FORM ── */
+.field-label { display:block; font-size:11px; font-weight:700; color:var(--text3); margin-bottom:6px; letter-spacing:.5px; text-transform:uppercase; }
+.field-sub   { font-size:13px; color:var(--text2); margin-bottom:10px; line-height:1.5; }
+
 input, textarea, select {
-  width:100%; background:#fff; border:1.5px solid #e2e8f0; border-radius:10px;
-  padding:13px 16px; font-size:16px; font-family:'Inter',sans-serif; color:#1a1a2e;
-  outline:none; transition:border-color .15s, box-shadow .15s;
+  width:100%; background:var(--white);
+  border: 1px solid var(--border2);
+  border-radius: 4px; padding: 11px 13px;
+  font-size: 15px; font-family:'Roboto',sans-serif; color:var(--text);
+  outline: none; transition: border-color .15s, box-shadow .15s;
 }
 input:focus, textarea:focus, select:focus {
-  border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1);
+  border-color: var(--teal);
+  box-shadow: 0 0 0 2px rgba(0,181,181,.15);
 }
-input::placeholder, textarea::placeholder { color:#9ca3af; }
-select { cursor:pointer; appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:right 14px center; padding-right:40px;
+input::placeholder, textarea::placeholder { color:var(--text3); }
+select {
+  cursor:pointer; appearance:none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 12px center; padding-right:36px;
 }
-textarea { resize:vertical; line-height:1.6; min-height:96px; }
+select option { background:var(--white); color:var(--text); }
+textarea { resize:vertical; line-height:1.6; min-height:88px; }
 
-/* Buttons */
-.btn { font-family:'Inter',sans-serif; font-weight:600; border:none; border-radius:12px; cursor:pointer; transition:all .18s; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-size:15px; padding:13px 22px; }
-.btn:disabled { opacity:.45; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
-.btn-blue   { background:#2563eb; color:#fff; }
-.btn-blue:not(:disabled):hover   { background:#1d4ed8; transform:translateY(-1px); box-shadow:0 4px 16px rgba(37,99,235,.3); }
-.btn-orange { background:#ea580c; color:#fff; }
-.btn-orange:not(:disabled):hover { background:#c2410c; transform:translateY(-1px); box-shadow:0 4px 16px rgba(234,88,12,.3); }
-.btn-green  { background:#16a34a; color:#fff; }
-.btn-green:not(:disabled):hover  { background:#15803d; transform:translateY(-1px); box-shadow:0 4px 16px rgba(22,163,74,.3); }
-.btn-purple { background:#7c3aed; color:#fff; }
-.btn-purple:not(:disabled):hover { background:#6d28d9; transform:translateY(-1px); box-shadow:0 4px 16px rgba(124,58,237,.3); }
-.btn-outline { background:#fff; color:#374151; border:1.5px solid #d1d5db; }
-.btn-outline:hover { background:#f9fafb; border-color:#9ca3af; }
-.btn-full { width:100%; padding:16px; font-size:16px; }
-.btn-sm   { font-size:13px; padding:8px 14px; border-radius:8px; }
+/* ── BUTTONS ── */
+.btn {
+  font-family:'Roboto',sans-serif; font-weight:700; border:none; border-radius:4px;
+  cursor:pointer; transition:all .15s; display:inline-flex; align-items:center;
+  justify-content:center; gap:7px; font-size:14px; padding:11px 20px;
+  letter-spacing:.3px; text-transform:uppercase;
+}
+.btn:disabled { opacity:.4; cursor:not-allowed; transform:none !important; }
+.btn-blue   { background:var(--black); color:#fff; }
+.btn-blue:not(:disabled):hover   { background:var(--black2); }
+.btn-orange { background:var(--amber); color:#fff; }
+.btn-orange:not(:disabled):hover { background:#bf360c; }
+.btn-green  { background:var(--green); color:#fff; }
+.btn-green:not(:disabled):hover  { background:#1b5e20; }
+.btn-purple { background:var(--purple); color:#fff; }
+.btn-purple:not(:disabled):hover { background:#311b92; }
+.btn-teal   { background:var(--teal); color:#fff; }
+.btn-teal:not(:disabled):hover   { background:var(--teal2); }
+.btn-gold   { background:var(--amber); color:#fff; }
+.btn-gold:not(:disabled):hover   { background:#bf360c; }
+.btn-outline {
+  background:var(--white); color:var(--text);
+  border: 1px solid var(--border2);
+}
+.btn-outline:hover { background:var(--bg); }
 
-/* Mode tabs */
-.mode-tabs { display:flex; border-bottom:1px solid #e8eaf0; }
-.mode-tab  { flex:1; padding:14px 16px; background:transparent; border:none; font-family:'Inter',sans-serif; font-weight:600; font-size:16px; cursor:pointer; transition:all .2s; border-bottom:2.5px solid transparent; color:#6b7280; display:flex; align-items:center; justify-content:center; gap:8px; }
-.mode-tab.active-home { color:#2563eb; border-bottom-color:#2563eb; }
-.mode-tab.active-pro  { color:#ea580c; border-bottom-color:#ea580c; }
-.mode-tab:hover:not(.active-home):not(.active-pro) { color:#374151; }
-.pro-badge { padding:2px 8px; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; font-size:12px; color:#ea580c; font-weight:700; }
+/* ST-style teal action button */
+.btn-st-primary {
+  background: var(--teal); color: #fff;
+  font-family:'Roboto Condensed',sans-serif;
+  font-weight: 700; letter-spacing: .8px;
+  padding: 13px 20px; font-size: 15px;
+  text-transform: uppercase; border-radius: 4px; border: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; width: 100%; cursor: pointer; transition: all .15s;
+}
+.btn-st-primary:not(:disabled):hover { background:var(--teal2); }
+.btn-st-primary:disabled { opacity:.4; cursor:not-allowed; }
 
-/* Pro sub-tabs */
-.sub-tabs { display:flex; gap:6px; padding:6px; }
-.sub-tab  { flex:1; padding:10px 8px; background:transparent; border:none; font-family:'Inter',sans-serif; font-weight:600; font-size:13px; cursor:pointer; transition:all .2s; border-radius:8px; color:#6b7280; }
-.sub-tab:hover:not(.st-active) { background:#f9fafb; color:#374151; }
-.sub-tab.st-diag    { color:#ea580c; background:#fff7ed; }
-.sub-tab.st-warrant { color:#7c3aed; background:#f5f3ff; }
-.sub-tab.st-revenue { color:#16a34a; background:#f0fdf4; }
+.btn-full { width:100%; padding:13px; font-size:15px; }
+.btn-sm   { font-size:12px; padding:6px 12px; text-transform:none; letter-spacing:0; font-weight:600; }
 
-/* Symptoms grid */
-.symptoms-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:8px; }
-.chip { border:1.5px solid #e2e8f0; border-radius:10px; padding:12px 14px; background:#fff; color:#374151; font-family:'Inter',sans-serif; font-size:14px; font-weight:500; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:9px; text-align:left; line-height:1.3; }
-.chip:hover { border-color:#93c5fd; background:#eff6ff; }
-.chip.sel-blue   { border-color:#2563eb; background:#eff6ff; color:#1d4ed8; font-weight:600; }
-.chip.sel-orange { border-color:#ea580c; background:#fff7ed; color:#c2410c; font-weight:600; }
-.chip-icon { font-size:20px; flex-shrink:0; }
+/* ── MODE TABS ── */
+.mode-tabs { display:flex; background:var(--black); border-radius:0; }
+.mode-tab  {
+  flex:1; padding:14px 12px; background:transparent; border:none;
+  font-family:'Roboto Condensed',sans-serif; font-weight:700; font-size:13px;
+  cursor:pointer; transition:all .15s;
+  border-bottom:3px solid transparent;
+  color:rgba(255,255,255,.5);
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  letter-spacing:.5px; text-transform:uppercase;
+}
+.mode-tab.active-home { color:#fff; border-bottom-color:var(--teal); }
+.mode-tab.active-pro  { color:#fff; border-bottom-color:var(--teal); }
+.mode-tab:hover:not(.active-home):not(.active-pro) { color:rgba(255,255,255,.75); }
+.pro-badge {
+  padding:2px 6px; background:var(--teal);
+  border-radius:3px; font-size:10px; color:#fff; font-weight:700; letter-spacing:.3px;
+}
 
-/* Drop zone */
-.drop-zone { border:2px dashed #d1d5db; border-radius:14px; padding:36px 20px; text-align:center; cursor:pointer; transition:all .2s; background:#fafafa; }
-.drop-zone:hover, .drop-zone.drag { border-color:#2563eb; background:#eff6ff; }
-.drop-zone.has-file { border-style:solid; border-color:#16a34a; background:#f0fdf4; }
-.drop-icon { font-size:44px; margin-bottom:12px; display:block; }
-.drop-title { font-size:17px; font-weight:600; color:#374151; margin-bottom:6px; }
-.drop-sub   { font-size:14px; color:#9ca3af; margin-bottom:16px; }
+/* ── SUB TABS ── */
+.sub-tabs {
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:6px; padding:10px;
+  background:#1a1a1a;
+  border-radius:0 0 6px 6px;
+}
+.sub-tab {
+  padding:13px 8px;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);
+  font-family:'Roboto Condensed',sans-serif; font-weight:700; font-size:13px;
+  cursor:pointer; transition:all .15s; border-radius:5px;
+  color:rgba(255,255,255,.55); text-align:center;
+  line-height:1.3; letter-spacing:.3px; text-transform:uppercase;
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+}
+.sub-tab .tab-icon { font-size:20px; display:block; }
+.sub-tab:hover { background:rgba(255,255,255,.14); color:#fff; }
+.sub-tab.st-diag    { color:#fff; background:var(--teal); border-color:var(--teal2); }
+.sub-tab.st-scan    { color:#fff; background:var(--teal); border-color:var(--teal2); }
+.sub-tab.st-refrig  { color:#fff; background:var(--teal); border-color:var(--teal2); }
+.sub-tab.st-warrant { color:#fff; background:var(--teal); border-color:var(--teal2); }
+.sub-tab.st-revenue { color:#fff; background:var(--teal); border-color:var(--teal2); }
+.sub-tab.st-maint   { color:#fff; background:var(--teal); border-color:var(--teal2); }
+.sub-tab.st-chat    { color:#fff; background:#1a1a1a; border:1px solid #444; }
 
-/* Voice recorder */
-.recorder { background:#f9fafb; border:1.5px solid #e2e8f0; border-radius:12px; padding:16px; transition:all .3s; }
-.recorder.recording { background:#fff5f5; border-color:#fca5a5; }
-.recorder.done      { background:#f0fdf4; border-color:#86efac; }
+/* ── CHIPS ── */
+.symptoms-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:8px; }
+.chip {
+  border:1px solid var(--border);
+  border-radius:6px; padding:13px 14px;
+  background:var(--white); color:var(--text2);
+  font-family:'Roboto',sans-serif; font-size:14px; font-weight:500;
+  cursor:pointer; transition:all .12s;
+  display:flex; align-items:center; gap:10px; text-align:left; line-height:1.3;
+}
+.chip:hover { border-color:var(--teal); background:var(--teal-lt); color:var(--text); }
+.chip.sel-blue   { border-color:var(--teal); background:var(--teal-lt); color:var(--teal2); font-weight:700; }
+.chip.sel-orange { border-color:var(--teal); background:var(--teal-lt); color:var(--teal2); font-weight:700; }
+.chip-icon { font-size:22px; flex-shrink:0; }
+
+/* ── DROP ZONE ── */
+.drop-zone {
+  border:none;
+  border-radius:8px;
+  padding:0;
+  cursor:pointer;
+  transition:all .15s;
+  background:#1a1a1a;
+  overflow:hidden;
+  position:relative;
+}
+.drop-zone-inner {
+  padding:32px 20px;
+  text-align:center;
+  border:1.5px solid rgba(255,255,255,.1);
+  border-radius:8px;
+  transition:all .15s;
+}
+.drop-zone:hover .drop-zone-inner, .drop-zone.drag .drop-zone-inner {
+  border-color:var(--teal);
+  background:rgba(0,181,181,.06);
+}
+.drop-zone.has-file .drop-zone-inner {
+  border-color:var(--green);
+  background:rgba(46,125,50,.08);
+}
+.drop-icon  { font-size:36px; margin-bottom:10px; display:block; }
+.drop-title { font-family:'Roboto Condensed',sans-serif; font-size:15px; font-weight:700; color:#fff; margin-bottom:5px; text-transform:uppercase; letter-spacing:.8px; }
+.drop-sub   { font-size:12px; color:rgba(255,255,255,.35); margin-bottom:16px; letter-spacing:.3px; }
+
+/* ── RECORDER ── */
+.recorder { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:14px; transition:all .2s; }
+.recorder.recording { background:#fff5f5; border-color:#ffcdd2; }
+.recorder.done      { background:var(--green-lt); border-color:#a5d6a7; }
 .recorder-row { display:flex; align-items:center; gap:12px; }
 .rec-btn-wrap { position:relative; flex-shrink:0; }
-.rec-ring { position:absolute; inset:-7px; border-radius:50%; border:2px solid #ef4444; animation:ripple 1.2s ease infinite; }
-.wave-bars { display:flex; align-items:flex-end; gap:2px; height:20px; }
-.wave-bar  { width:3px; border-radius:3px; background:#ef4444; transform-origin:bottom; animation:wave .55s ease infinite; }
+.rec-ring { position:absolute; inset:-7px; border-radius:50%; border:2px solid var(--red); animation:ripple 1.2s ease infinite; pointer-events:none; }
+.wave-bars { display:flex; align-items:flex-end; gap:2px; height:18px; }
+.wave-bar  { width:3px; border-radius:2px; background:var(--red); transform-origin:bottom; animation:wave .55s ease infinite; }
 
-/* Result */
-.result-body { font-size:16px; line-height:1.8; color:#1f2937; white-space:pre-wrap; }
-.result-body strong { color:#1d4ed8; font-weight:600; }
+/* ── RESULTS ── */
+.result-body { font-size:15px; line-height:1.8; color:var(--text); white-space:pre-wrap; }
+.result-body strong { color:var(--black); font-weight:700; }
 .sev-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
-.sev-badge { padding:6px 16px; border-radius:99px; font-size:14px; font-weight:700; }
+.sev-badge { padding:4px 12px; border-radius:3px; font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
 
-/* Revenue cards */
-.rec-card { background:#fff; border:1.5px solid #e8eaf0; border-radius:14px; padding:20px; margin-bottom:12px; cursor:pointer; transition:all .2s; }
-.rec-card:hover { border-color:#d1d5db; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+/* ── DIAGNOSTIC REPORT SECTIONS ── */
+.diag-report { display:flex; flex-direction:column; gap:0; }
+.diag-section { border-bottom:1px solid var(--border); padding:14px 0; }
+.diag-section:last-child { border-bottom:none; padding-bottom:0; }
+.diag-section:first-child { padding-top:0; }
+.diag-label {
+  display:flex; align-items:center; gap:7px;
+  font-family:'Roboto Condensed',sans-serif;
+  font-size:10px; font-weight:700; color:var(--text3);
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:7px;
+}
+.diag-label-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.diag-body { font-size:15px; line-height:1.75; color:var(--text); }
+.diag-body strong { color:#1a1a1a; font-weight:700; }
+.diag-chips { display:flex; gap:6px; flex-wrap:wrap; }
+.diag-chip {
+  flex:1; min-width:90px; padding:11px 10px;
+  border-radius:6px; text-align:center; border:1.5px solid;
+}
+.diag-chip-val { font-family:'Roboto Condensed',sans-serif; font-size:17px; font-weight:900; display:block; margin-bottom:2px; }
+.diag-chip-lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; opacity:.65; }
+.diag-step { display:flex; gap:11px; align-items:flex-start; padding:9px 0; border-bottom:1px solid var(--border); }
+.diag-step:last-child { border-bottom:none; }
+.diag-step-num {
+  width:24px; height:24px; border-radius:50%;
+  background:#1a1a1a; color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Roboto Condensed',sans-serif; font-size:12px; font-weight:700;
+  flex-shrink:0; margin-top:2px;
+}
+.diag-step-text { font-size:14px; line-height:1.65; color:var(--text); flex:1; }
+.diag-warning { background:#ffebee; border-left:3px solid #c62828; border-radius:0 4px 4px 0; padding:10px 12px; margin:4px 0; font-size:14px; color:#c62828; font-weight:600; }
+.diag-info    { background:#e6f9f9; border-left:3px solid #00b5b5; border-radius:0 4px 4px 0; padding:10px 12px; margin:4px 0; font-size:14px; color:#00838f; }
 
-/* Info boxes */
-.info-box  { border-radius:12px; padding:16px; margin-bottom:16px; }
-.info-blue { background:#eff6ff; border:1px solid #bfdbfe; }
-.info-green{ background:#f0fdf4; border:1px solid #bbf7d0; }
-.info-amber{ background:#fffbeb; border:1px solid #fde68a; }
-.info-red  { background:#fff1f2; border:1px solid #fecdd3; }
-.info-purple{background:#f5f3ff; border:1px solid #ddd6fe; }
+/* ── CHAT BUBBLES ── */
+.msg-agent { display:flex; flex-direction:column; align-items:flex-start; max-width:94%; }
+.msg-user  { display:flex; flex-direction:column; align-items:flex-end; max-width:88%; align-self:flex-end; }
+.msg-bubble { padding:12px 15px; font-size:15px; line-height:1.72; font-family:'Roboto',sans-serif; word-break:break-word; }
+.msg-bubble-agent { background:#fff; color:#1a1a1a; border-radius:3px 14px 14px 14px; border:1px solid var(--border); box-shadow:0 1px 4px rgba(0,0,0,.06); }
+.msg-bubble-user  { background:#1a1a1a; color:#fff; border-radius:14px 3px 14px 14px; }
+.msg-bubble strong { font-weight:700; }
+.msg-bubble-agent strong { color:#1a1a1a; }
+.msg-bubble-user  strong { color:#fff; }
+.msg-section-head { font-family:'Roboto Condensed',sans-serif; font-size:11px; font-weight:700; color:var(--teal); text-transform:uppercase; letter-spacing:1px; margin:12px 0 5px; display:block; }
+.msg-section-head:first-child { margin-top:0; }
+.msg-list-item { display:flex; gap:8px; align-items:flex-start; padding:3px 0; font-size:14px; line-height:1.6; color:#1a1a1a; }
+.msg-list-item::before { content:'▸'; color:var(--teal); font-size:11px; flex-shrink:0; margin-top:3px; }
+.msg-time { font-size:11px; color:var(--text3); margin-top:4px; padding:0 4px; }
 
-/* Media preview */
-.media-preview { width:100%; max-height:220px; object-fit:cover; border-radius:10px; margin-top:14px; border:1px solid #e2e8f0; display:block; }
+/* ── REC CARDS ── */
+.rec-card { background:var(--white); border:1px solid var(--border); border-radius:4px; padding:16px; margin-bottom:8px; cursor:pointer; transition:all .12s; }
+.rec-card:hover { border-color:var(--teal); box-shadow:0 2px 8px rgba(0,0,0,.1); }
 
-/* Footer */
-.footer { text-align:center; margin-top:56px; padding-top:28px; border-top:1px solid #e8eaf0; }
+/* ── INFO BOXES ── */
+.info-box   { border-radius:4px; padding:14px 14px 14px 16px; margin-bottom:10px; }
+.info-blue  { background:var(--blue-lt);   border-left:4px solid var(--blue);   border:1px solid #90caf9; border-left:4px solid var(--blue); }
+.info-green { background:var(--green-lt);  border:1px solid #a5d6a7; border-left:4px solid var(--green); }
+.info-amber { background:var(--amber-lt);  border:1px solid #ffcc80; border-left:4px solid var(--amber); }
+.info-red   { background:var(--red-lt);    border:1px solid #ef9a9a; border-left:4px solid var(--red); }
+.info-purple{ background:var(--purple-lt); border:1px solid #b39ddb; border-left:4px solid var(--purple); }
+.info-teal  { background:var(--teal-lt);   border:1px solid #80deea; border-left:4px solid var(--teal); }
 
-/* Grid */
-.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+/* ── MISC ── */
+.media-preview { width:100%; max-height:220px; object-fit:cover; border-radius:4px; margin-top:12px; border:1px solid var(--border); display:block; }
+.footer { text-align:center; margin-top:48px; padding-top:20px; border-top:1px solid var(--border); }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
 
-/* Spinner */
-.spinner { display:inline-block; width:18px; height:18px; border:2.5px solid rgba(255,255,255,.25); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; }
+/* ── SCAN ZONE ── */
+.scan-zone {
+  border:2px dashed #80deea; border-radius:4px; overflow:hidden;
+  position:relative; min-height:150px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer; background:var(--teal-lt); transition:all .15s;
+}
+.scan-zone:hover { border-color:var(--teal); }
+.scan-zone.has-img { border-style:solid; min-height:0; }
+.scan-line { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--teal),transparent); animation:scanline 2s ease-in-out infinite alternate; pointer-events:none; z-index:2; }
+.scan-preview { width:100%; max-height:200px; object-fit:cover; display:block; }
+
+/* ── DECODE GRID ── */
+.decode-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+.decode-item { background:var(--bg); border-radius:4px; padding:13px; border:1px solid var(--border); }
+.decode-label { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.6px; margin-bottom:5px; }
+.decode-value { font-size:20px; font-weight:900; color:var(--text); line-height:1.1; font-family:'Roboto Condensed',sans-serif; }
+.decode-sub   { font-size:12px; color:var(--text3); margin-top:3px; }
+.decode-item.good   { background:var(--green-lt); border-color:#a5d6a7; }
+.decode-item.good .decode-value   { color:var(--green); }
+.decode-item.warn   { background:var(--amber-lt); border-color:#ffcc80; }
+.decode-item.warn .decode-value   { color:var(--amber); }
+.decode-item.danger { background:var(--red-lt); border-color:#ef9a9a; }
+.decode-item.danger .decode-value { color:var(--red); }
+
+/* ── PITCH ── */
+.pitch-section { background:var(--white); border-radius:4px; border:1px solid var(--border); border-left:4px solid var(--teal); padding:18px; margin-bottom:10px; }
+
+/* ── PRICE TAG (ST style teal price) ── */
+.price-tag { color:var(--teal); font-weight:700; font-size:17px; }
+
+/* ── CHAT ── */
+.quick-chip {
+  background:#fff; border:1px solid #d8d8d8; border-radius:99px;
+  padding:6px 13px; font-size:12px; font-family:'Roboto',sans-serif;
+  font-weight:600; color:#555; cursor:pointer; transition:all .12s;
+  white-space:nowrap;
+}
+.quick-chip:hover { border-color:#00b5b5; color:#00b5b5; background:#e6f9f9; }
+
+.msg-agent { display:flex; flex-direction:column; align-items:flex-start; max-width:88%; }
+.msg-user  { display:flex; flex-direction:column; align-items:flex-end;   max-width:88%; align-self:flex-end; }
+
+.msg-bubble {
+  padding:12px 16px; border-radius:16px; font-size:15px;
+  line-height:1.65; font-family:'Roboto',sans-serif; word-break:break-word;
+}
+.msg-bubble-agent {
+  background:#f0f0f0; color:#1a1a1a;
+  border-radius:4px 16px 16px 16px;
+  border-left:3px solid #00b5b5;
+}
+.msg-bubble-user {
+  background:#00b5b5; color:#fff;
+  border-radius:16px 4px 16px 16px;
+}
+.msg-bubble strong { font-weight:700; }
+.msg-bubble-agent strong { color:#1a1a1a; }
+.msg-bubble-user  strong { color:#fff; }
+.msg-time { font-size:11px; color:#999; margin-top:4px; padding:0 4px; }
+
+/* Typing animation */
+.typing-dots { display:flex; align-items:center; gap:4px; padding:10px 14px; background:#f0f0f0; border-radius:4px 16px 16px 16px; border-left:3px solid #00b5b5; }
+.typing-dots span { width:7px; height:7px; border-radius:50%; background:#00b5b5; animation:typing-bounce .8s ease infinite; }
+.typing-dots span:nth-child(2) { animation-delay:.15s; }
+.typing-dots span:nth-child(3) { animation-delay:.3s; }
+@keyframes typing-bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+/* Chat input focus */
+#chatInput:focus { border-color:#00b5b5; box-shadow:0 0 0 2px rgba(0,181,181,.12); }
+
+.sub-tab.st-chat { color:#fff; background:#1a1a1a; border:1px solid #333; }
 
 @media(max-width:560px) {
   .grid2 { grid-template-columns:1fr; }
   .symptoms-grid { grid-template-columns:1fr 1fr; }
-  .chip { font-size:13px; padding:10px 11px; }
+  .chip { font-size:12px; padding:9px 10px; }
+  .decode-grid { grid-template-columns:1fr 1fr; }
+  .sub-tab { font-size:9px; padding:6px 3px; }
 }
 ```
 
   </style>
 </head>
 <body>
-
-<!-- NAV -->
 
 <nav class="nav">
   <div class="nav-inner">
@@ -178,110 +464,102 @@ textarea { resize:vertical; line-height:1.6; min-height:96px; }
   </div>
 </nav>
 
-<div class="page" id="app">
+<div class="page" id="app"><div class="hero-glow"></div>
 
-  <!-- HERO -->
-
-  <div class="fu" style="text-align:center;margin-bottom:28px;">
-    <h1 style="font-size:clamp(24px,5vw,38px);font-weight:800;color:#111827;letter-spacing:-0.5px;line-height:1.15;margin-bottom:10px;" id="heroTitle">
-      What's Wrong With Your HVAC?
-    </h1>
-    <p style="font-size:17px;color:#6b7280;line-height:1.65;max-width:460px;margin:0 auto;" id="heroSub">
-      Upload a photo or video, describe what's happening, and our AI will tell you exactly what's wrong.
-    </p>
+  <div class="fu" style="margin-bottom:20px;">
+    <!-- Hero banner - clean black card like ST -->
+    <div style="background:#1a1a1a;border-radius:8px;padding:22px 20px;text-align:center;position:relative;overflow:hidden;">
+      <!-- Subtle teal accent line at top -->
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00b5b5,#009999);"></div>
+      <!-- Small label -->
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,181,181,.15);border:1px solid rgba(0,181,181,.3);border-radius:99px;padding:4px 12px;margin-bottom:12px;">
+        <span style="width:6px;height:6px;background:#00b5b5;border-radius:50%;display:inline-block;box-shadow:0 0 6px #00b5b5;"></span>
+        <span style="font-family:'Roboto Condensed',sans-serif;font-size:11px;font-weight:700;color:#00b5b5;letter-spacing:1px;text-transform:uppercase;">HVAC Diagnose Pro</span>
+      </div>
+      <h1 style="font-family:'Roboto Condensed',sans-serif;font-size:clamp(26px,6vw,36px);font-weight:900;color:#ffffff;letter-spacing:.5px;text-transform:uppercase;line-height:1.1;margin-bottom:10px;" id="heroTitle">What's Wrong With Your HVAC?</h1>
+      <p style="font-size:15px;color:rgba(255,255,255,.55);line-height:1.6;max-width:400px;margin:0 auto;" id="heroSub">Upload a photo or video, describe what's happening, and we'll tell you exactly what's wrong.</p>
+    </div>
   </div>
 
   <!-- MODE TABS -->
 
-  <div class="card fu" style="padding:0;overflow:hidden;animationDelay:.04s">
+  <div class="card fu" style="padding:0;overflow:hidden;">
     <div class="mode-tabs">
-      <button class="mode-tab active-home" id="tabHome" onclick="setMode('home')">
-        🏠 Homeowner
-      </button>
-      <button class="mode-tab" id="tabPro" onclick="setMode('pro')">
-        🔧 Contractor <span class="pro-badge">PRO</span>
-      </button>
+      <button class="mode-tab active-home" id="tabHome" onclick="setMode('home')">🏠 Homeowner</button>
+      <button class="mode-tab" id="tabPro" onclick="setMode('pro')">🔧 Contractor <span class="pro-badge">PRO</span></button>
     </div>
-    <div style="padding:14px 20px;background:#f9fafb;">
-      <p style="font-size:14px;color:#6b7280;line-height:1.5;" id="modeDesc">
-        Easy-to-understand explanations, safety guidance, and connections to certified local technicians.
-      </p>
+    <div style="padding:14px 20px;background:#f5f5f5;border-top:1px solid #d8d8d8;">
+      <p style="font-size:14px;color:#555555;line-height:1.5;font-family:'Roboto',sans-serif;" id="modeDesc">Easy-to-understand explanations, safety guidance, and connections to certified local technicians.</p>
     </div>
   </div>
 
-  <!-- PRO SUB-TABS (hidden by default) -->
+  <!-- PRO SUB-TABS -->
 
   <div class="card fu" style="padding:6px;margin-bottom:16px;display:none;" id="proTabs">
     <div class="sub-tabs">
-      <button class="sub-tab st-diag"    onclick="setProTab('diag')"    id="stDiag">🔬 Diagnostic</button>
-      <button class="sub-tab"            onclick="setProTab('warranty')" id="stWarranty">🛡️ Warranty</button>
-      <button class="sub-tab"            onclick="setProTab('revenue')"  id="stRevenue">💰 Revenue Builder</button>
+      <button class="sub-tab st-diag"    onclick="setProTab('diag')"    id="stDiag"><span class="tab-icon">🔬</span>Diagnose</button>
+      <button class="sub-tab"            onclick="setProTab('scan')"    id="stScan"><span class="tab-icon">📷</span>Nameplate</button>
+      <button class="sub-tab"            onclick="setProTab('refrig')"  id="stRefrig"><span class="tab-icon">❄️</span>Refrigerant</button>
+      <button class="sub-tab"            onclick="setProTab('warranty')"id="stWarranty"><span class="tab-icon">🛡️</span>Warranty</button>
+      <button class="sub-tab"            onclick="setProTab('revenue')" id="stRevenue"><span class="tab-icon">💰</span>Revenue</button>
+      <button class="sub-tab"            onclick="setProTab('maint')"   id="stMaint"><span class="tab-icon">📋</span>Maintenance</button>
+      <button class="sub-tab"            onclick="setProTab('chat')"    id="stChat"><span class="tab-icon">💬</span>Live Agent</button>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════ -->
-
-  <!--  DIAGNOSTIC PANEL                           -->
-
-  <!-- ═══════════════════════════════════════════ -->
+  <!-- ═══ DIAGNOSTIC PANEL ═══ -->
 
   <div id="panelDiag">
+    <div class="card fu">
+      <label class="field-label" id="uploadLabel">Show Us Your System</label>
+      <p class="field-sub" id="uploadSub">A short video or photo helps us see exactly what's happening</p>
+      <div class="drop-zone" id="dropZone"
+           ondragover="event.preventDefault();this.classList.add('drag')"
+           ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)"
+           onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" accept="video/*,image/*" style="display:none" onchange="handleFileSelect(event)"/>
+        <div class="drop-zone-inner">
+          <span class="drop-icon" id="dropIcon">📷</span>
+          <div class="drop-title" id="dropTitle">Tap to Upload a Photo or Video</div>
+          <div class="drop-sub">MP4 · MOV · JPG · PNG · up to 50MB</div>
+          <div style="display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#fff;border-radius:4px;padding:9px 20px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;">
+            📁 Browse Files
+          </div>
+        </div>
+      </div>
+      <img id="imgPreview" class="media-preview" style="display:none"/>
+      <video id="videoPreview" class="media-preview" controls style="display:none"></video>
+    </div>
 
 ```
-<!-- Upload -->
-<div class="card fu">
-  <label class="field-label" id="uploadLabel">Show Us Your System</label>
-  <p class="field-sub" id="uploadSub">A short video or photo helps our AI see exactly what's happening</p>
-  <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
-       ondragover="event.preventDefault();this.classList.add('drag')"
-       ondragleave="this.classList.remove('drag')"
-       ondrop="handleDrop(event)">
-    <span class="drop-icon" id="dropIcon">📷</span>
-    <div class="drop-title" id="dropTitle">Tap to upload a photo or video</div>
-    <div class="drop-sub">MP4, MOV, JPG, PNG — up to 50MB</div>
-    <button class="btn btn-outline btn-sm" type="button">Browse Files</button>
-    <input type="file" id="fileInput" accept="video/*,image/*" style="display:none" onchange="handleFileSelect(event)"/>
-  </div>
-  <img    id="imgPreview"   class="media-preview" style="display:none"/>
-  <video  id="videoPreview" class="media-preview" controls style="display:none"></video>
-</div>
-
-<!-- Voice -->
 <div class="card fu">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
     <label class="field-label" style="margin:0">Voice Description</label>
-    <span style="padding:4px 10px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:99px;font-size:12px;font-weight:600;color:#7c3aed;">AI Listens</span>
+    <span style="padding:4px 10px;background:#ede7f6;border:1px solid #b39ddb;border-radius:99px;font-size:12px;font-weight:600;color:#4527a0;">Smart Listening</span>
   </div>
-  <p class="field-sub" id="voiceSub">Describe the problem or hold your phone near the system so the AI can hear the sounds</p>
+  <p class="field-sub" id="voiceSub">Describe the problem or hold your phone near the system so we can hear the sounds</p>
   <div class="recorder" id="recorder">
     <div class="recorder-row">
       <div class="rec-btn-wrap" id="recBtnWrap">
-        <button class="btn btn-purple btn-sm" id="recBtn" onclick="toggleRecording()">🎙️ Record Voice</button>
+        <button class="btn btn-purple btn-sm" onclick="toggleRecording()">🎙️ Record Voice</button>
       </div>
       <div id="recStatus" style="flex:1;">
-        <p style="font-size:14px;color:#6b7280;">Record yourself describing the issue, or hold near the unit</p>
+        <p style="font-size:14px;color:#999999;">Record yourself describing the issue, or hold near the unit</p>
       </div>
     </div>
     <div id="transcriptBox" style="display:none;margin-top:12px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
-      <p style="font-size:12px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">AI Audio Analysis</p>
-      <p style="font-size:14px;color:#4b5563;line-height:1.65;" id="transcriptText"></p>
+      <p style="font-size:12px;font-weight:700;color:#4527a0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Audio Analysis</p>
+      <p style="font-size:14px;color:#555555;line-height:1.65;" id="transcriptText"></p>
     </div>
   </div>
 </div>
 
-<!-- System Info -->
 <div class="card fu">
   <label class="field-label">System Information</label>
   <p class="field-sub">The more details you give, the more accurate the diagnosis</p>
   <div class="grid2" style="margin-bottom:14px;">
-    <div>
-      <label class="field-label">System Type</label>
-      <select id="sysType"><option value="">Select type…</option></select>
-    </div>
-    <div>
-      <label class="field-label">Approximate Age</label>
-      <select id="sysAge"><option value="">Select age…</option></select>
-    </div>
+    <div><label class="field-label">System Type</label><select id="sysType"><option value="">Select type…</option></select></div>
+    <div><label class="field-label">Approximate Age</label><select id="sysAge"><option value="">Select age…</option></select></div>
   </div>
   <div id="brandRow" style="display:none;">
     <label class="field-label">Brand / Manufacturer</label>
@@ -289,248 +567,508 @@ textarea { resize:vertical; line-height:1.6; min-height:96px; }
   </div>
 </div>
 
-<!-- Symptoms -->
 <div class="card fu">
   <label class="field-label" id="symptomsLabel">What is your system doing?</label>
   <p class="field-sub">Select everything that applies</p>
   <div class="symptoms-grid" id="symptomsGrid"></div>
 </div>
 
-<!-- Description -->
 <div class="card fu">
   <label class="field-label" id="descLabel">Describe the problem in your own words</label>
   <p class="field-sub" id="descSub">When did it start? Is it getting worse? Anything else you've noticed?</p>
-  <textarea id="desc" placeholder="e.g. My air conditioner runs all day but the house never gets below 78°. Started 3 days ago. I can hear a loud humming from the outside unit…"></textarea>
+  <textarea id="desc" placeholder="e.g. My air conditioner runs all day but the house never gets below 78°…"></textarea>
 </div>
 
-<!-- AI Inputs Summary -->
-<div id="inputsSummary" style="display:none;margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-  <span style="font-size:14px;color:#6b7280;font-weight:500;">AI will analyze:</span>
-  <span id="tagFile"  style="display:none;padding:5px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:99px;font-size:13px;color:#1d4ed8;font-weight:600;"></span>
-  <span id="tagVoice" style="display:none;padding:5px 12px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:99px;font-size:13px;color:#7c3aed;font-weight:600;">🎙️ Voice Recording</span>
-  <span id="tagSymps" style="display:none;padding:5px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:99px;font-size:13px;color:#16a34a;font-weight:600;"></span>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+  <span style="font-size:14px;color:#999999;font-weight:500;">Will analyze:</span>
+  <span id="tagFile"  style="display:none;padding:5px 12px;background:#e3f2fd;border:1px solid #90caf9;border-radius:99px;font-size:13px;color:#1565c0;font-weight:600;"></span>
+  <span id="tagVoice" style="display:none;padding:5px 12px;background:#ede7f6;border:1px solid #b39ddb;border-radius:99px;font-size:13px;color:#4527a0;font-weight:600;">🎙️ Voice Recording</span>
+  <span id="tagSymps" style="display:none;padding:5px 12px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:99px;font-size:13px;color:#2e7d32;font-weight:600;"></span>
 </div>
 
-<!-- Run Button -->
-<button class="btn btn-blue btn-full fu" id="runBtn" onclick="runDiagnostic()">
-  ⚡ Run AI Diagnostic
-</button>
+<button id="runBtn" onclick="runDiagnostic()" class="fu" style="
+  width:100%; padding:18px; border:none; border-radius:6px; cursor:pointer;
+  background:#00b5b5; color:#fff;
+  font-family:'Roboto Condensed',sans-serif; font-size:20px; font-weight:700;
+  letter-spacing:.8px; text-transform:uppercase;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  box-shadow: 0 4px 16px rgba(0,181,181,.4), 0 2px 4px rgba(0,0,0,.15);
+  transition: all .15s;
+" onmouseover="this.style.background='#009999';this.style.boxShadow='0 6px 24px rgba(0,181,181,.5)'"
+   onmouseout="this.style.background='#00b5b5';this.style.boxShadow='0 4px 16px rgba(0,181,181,.4), 0 2px 4px rgba(0,0,0,.15)'"
+>⚡ Run Diagnostic</button>
 
-<!-- Result -->
 <div id="resultPanel" style="display:none;margin-top:24px;" class="fi">
   <div class="sev-bar">
-    <span style="font-size:18px;font-weight:800;color:#111827;">Your Diagnostic Report</span>
+    <span style="font-size:17px;font-weight:900;color:#1a1a1a;font-family:'Roboto Condensed',sans-serif;letter-spacing:.3px;text-transform:uppercase;">Your Diagnostic Report</span>
     <span class="sev-badge" id="sevBadge"></span>
   </div>
   <div class="card" id="resultCard" style="margin-bottom:16px;">
     <div class="result-body" id="resultText"></div>
   </div>
 
-  <!-- Homeowner CTA -->
+  <!-- Education Mode (Pro only) -->
+  <div id="eduPanel" style="display:none;margin-bottom:16px;">
+    <div class="info-box info-blue" style="margin-bottom:0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+          <p style="font-size:15px;font-weight:700;color:#1565c0;margin-bottom:3px;">📚 Homeowner Education Mode</p>
+          <p style="font-size:13px;color:#1565c0;">Generate a plain-English explanation to show your customer</p>
+        </div>
+        <button class="btn btn-blue btn-sm" onclick="runEduMode()" id="eduBtn">Generate Explanation</button>
+      </div>
+      <div id="eduContent" style="display:none;margin-top:14px;background:#ffffff;border-radius:10px;padding:16px;">
+        <div id="eduText" style="font-size:15px;line-height:1.8;color:#555555;"></div>
+        <button class="btn btn-outline btn-sm" onclick="copyEdu()" style="margin-top:12px;">📋 Copy to Show Customer</button>
+      </div>
+    </div>
+  </div>
+
   <div id="homeownerCTA" class="info-box info-blue" style="display:none;">
     <div style="display:flex;gap:14px;align-items:flex-start;">
       <div style="width:48px;height:48px;background:#2563eb;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🛠️</div>
       <div style="flex:1;">
-        <p style="font-size:17px;font-weight:700;color:#1e40af;margin-bottom:6px;">Need a Certified HVAC Technician?</p>
-        <p style="font-size:15px;color:#3b5998;line-height:1.6;margin-bottom:14px;">
-          Get connected with a licensed, insured HVAC pro in <strong>Manassas Park, VA</strong>. Free estimates, same-day service, financing available.
-        </p>
-        <button class="btn btn-blue" onclick="alert('Lead captured! Connect this to your phone number or booking link.')">
-          📞 Request a Free Estimate
-        </button>
+        <p style="font-size:17px;font-weight:700;color:#1565c0;margin-bottom:6px;">Need a Certified HVAC Technician?</p>
+        <p style="font-size:15px;color:#1565c0;line-height:1.6;margin-bottom:14px;">Get connected with a licensed, insured HVAC pro in <strong>Manassas Park, VA</strong>. Free estimates, same-day service, financing available.</p>
+        <button class="btn btn-blue" onclick="alert('Lead captured! Connect this to your phone number or booking link.')">📞 Request a Free Estimate</button>
       </div>
     </div>
   </div>
 
-  <!-- Contractor Revenue Nudge -->
-  <div id="contractorNudge" class="info-box info-green" style="display:none;">
-    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
-      <span style="font-size:24px;flex-shrink:0;">💰</span>
-      <div style="flex:1;">
-        <p style="font-size:15px;font-weight:700;color:#14532d;margin-bottom:4px;">Turn This Visit Into More Revenue</p>
-        <p style="font-size:14px;color:#166534;line-height:1.5;">Use <strong>Revenue Builder</strong> to get personalized add-on recommendations and conversation scripts for this home.</p>
+  <div id="contractorNudge" style="display:none;">
+    <div class="info-box info-green">
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:24px;">💰</span>
+        <div style="flex:1;">
+          <p style="font-size:15px;font-weight:700;color:#2e7d32;margin-bottom:4px;">Turn This Visit Into More Revenue</p>
+          <p style="font-size:14px;color:#2e7d32;line-height:1.5;">Use <strong>Revenue Builder</strong> to get personalized add-on recommendations and conversation scripts.</p>
+        </div>
+        <button class="btn btn-green btn-sm" onclick="setProTab('revenue')">Revenue Builder →</button>
       </div>
-      <button class="btn btn-green btn-sm" onclick="setProTab('revenue')" style="flex-shrink:0;">Revenue Builder →</button>
+    </div>
+    <div class="info-box info-amber">
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:24px;">📋</span>
+        <div style="flex:1;">
+          <p style="font-size:15px;font-weight:700;color:#1565c0;margin-bottom:4px;">Pitch a Maintenance Agreement</p>
+          <p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.5;">Get a custom word-for-word script to sell a maintenance plan on this visit.</p>
+        </div>
+        <button class="btn btn-sm" style="background:#b45309;color:#fff;flex-shrink:0;" onclick="setProTab('maint')">Build Pitch →</button>
+      </div>
     </div>
   </div>
 
-  <button class="btn btn-outline btn-full" onclick="resetDiagnostic()" style="margin-top:8px;">
-    + Start a New Diagnosis
-  </button>
+  <button class="btn btn-outline btn-full" onclick="resetDiagnostic()" style="margin-top:8px;">+ Start a New Diagnosis</button>
 </div>
 ```
 
   </div>
 
-  <!-- ═══════════════════════════════════════════ -->
+  <!-- ═══ NAMEPLATE SCANNER ═══ -->
 
-  <!--  WARRANTY PANEL                             -->
+  <div id="panelScan" style="display:none;">
+    <div class="info-box info-teal" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
+      <div style="width:52px;height:52px;background:#0d9488;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">📷</div>
+      <div>
+        <p style="font-size:17px;font-weight:700;color:#00838f;margin-bottom:4px;">Nameplate Scanner</p>
+        <p style="font-size:14px;color:#00838f;line-height:1.5;">Snap a photo of any HVAC nameplate — Instantly reads the brand, model, and serial number, then decodes the age and warranty status for every major manufacturer.</p>
+      </div>
+    </div>
 
-  <!-- ═══════════════════════════════════════════ -->
+```
+<div class="card">
+  <label class="field-label">📷 Photograph the Nameplate</label>
+  <p class="field-sub">Take a clear, close-up photo of the data plate on the unit. Works on all major brands — Carrier, Trane, Lennox, Goodman, Rheem, York, Mitsubishi, and more.</p>
+  <input type="file" id="scanInput" accept="image/*" capture="environment" style="display:none" onchange="handleScanSelect(event)"/>
+  <input type="file" id="scanInputLib" accept="image/*" style="display:none" onchange="handleScanSelect(event)"/>
+  <div class="scan-zone" id="scanZone" style="cursor:default;">
+    <div class="scan-line"></div>
+    <img id="scanPreview" class="scan-preview" style="display:none"/>
+    <div id="scanPrompt" style="padding:28px 20px;text-align:center;width:100%;">
+      <div style="font-size:44px;margin-bottom:10px;">📋</div>
+      <div style="font-family:'Roboto Condensed',sans-serif;font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px;">Scan the Nameplate</div>
+      <div style="font-size:13px;color:#999;margin-bottom:18px;">Take a photo or choose from your library</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button onclick="document.getElementById('scanInput').click()" style="background:#00b5b5;color:#fff;border:none;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:700;font-family:'Roboto',sans-serif;cursor:pointer;min-width:140px;">📸 Take Photo</button>
+        <button onclick="document.getElementById('scanInputLib').click()" style="background:#fff;color:#1a1a1a;border:1px solid #d8d8d8;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:700;font-family:'Roboto',sans-serif;cursor:pointer;min-width:140px;">🖼️ Photo Library</button>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:12px;text-align:center;">
+    <button class="btn btn-outline btn-sm" onclick="toggleManualEntry()">✏️ Enter Manually Instead</button>
+  </div>
+</div>
+
+<div class="card" id="manualEntry" style="display:none;">
+  <label class="field-label">Manual Entry</label>
+  <div class="grid2" style="margin-bottom:14px;">
+    <div><label class="field-label">Brand</label><select id="scanBrand"><option value="">Select brand…</option></select></div>
+    <div><label class="field-label">Serial Number *</label><input type="text" id="scanSerial" placeholder="e.g. 4816E12345"/></div>
+  </div>
+  <label class="field-label">Model Number (optional)</label>
+  <input type="text" id="scanModel" placeholder="e.g. 24ACC636A003"/>
+</div>
+
+<button class="btn btn-teal btn-full" id="scanBtn" onclick="runNameplateScan()" style="margin-top:4px;">🔍 Decode Nameplate</button>
+
+<div id="scanResult" style="display:none;margin-top:20px;" class="fi">
+  <div class="card" style="border-left:4px solid #0d9488;margin-bottom:16px;">
+    <p style="font-size:14px;font-weight:700;color:#00838f;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📋 What We Read From the Nameplate</p>
+    <p style="font-size:14px;color:#555555;" id="scanExtracted"></p>
+  </div>
+  <div class="decode-grid" id="decodeGrid"></div>
+  <div class="card" style="margin-top:16px;border-left:4px solid #7c3aed;">
+    <p style="font-size:14px;font-weight:700;color:#4527a0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">🛡️ Warranty & Age Analysis</p>
+    <div class="result-body" id="scanWarrantyText" style="font-size:15px;"></div>
+  </div>
+  <div id="scanVerifyLink" style="display:none;" class="info-box info-purple">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <p style="font-size:14px;color:#4527a0;flex:1;">Verify warranty directly with manufacturer:</p>
+      <a id="scanVerifyBtn" href="#" target="_blank" style="padding:9px 20px;background:#7c3aed;border-radius:9px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">Verify Online →</a>
+    </div>
+  </div>
+  <button class="btn btn-outline btn-full" onclick="resetScan()" style="margin-top:8px;">📷 Scan Another Nameplate</button>
+</div>
+```
+
+  </div>
+
+  <!-- ═══ REFRIGERANT IDENTIFIER ═══ -->
+
+  <div id="panelRefrig" style="display:none;">
+    <div class="info-box info-blue" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
+      <div style="width:52px;height:52px;background:#2563eb;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">❄️</div>
+      <div>
+        <p style="font-size:17px;font-weight:700;color:#1565c0;margin-bottom:4px;">Refrigerant Identifier</p>
+        <p style="font-size:14px;color:#1565c0;line-height:1.5;">Identify the correct refrigerant for any system, check phase-out status, and get replacement options.</p>
+      </div>
+    </div>
+    <div class="card">
+      <label class="field-label">Unit Details</label>
+      <div class="grid2" style="margin-bottom:14px;">
+        <div><label class="field-label">Brand</label><select id="rBrandRefrig"><option value="">Select brand…</option></select></div>
+        <div><label class="field-label">System Type</label><select id="rTypeRefrig"><option value="">Select type…</option></select></div>
+        <div><label class="field-label">Approximate Age</label><select id="rAgeRefrig"><option value="">Select age…</option></select></div>
+        <div><label class="field-label">Model Number (optional)</label><input type="text" id="rModelRefrig" placeholder="e.g. 24ACC636A003"/></div>
+      </div>
+      <label class="field-label">Notes</label>
+      <textarea id="rNotesRefrig" rows="2" placeholder="e.g. Old R-22 system, homeowner wants options. Nameplate says R-410A."></textarea>
+    </div>
+    <div class="info-box info-amber" style="margin-bottom:20px;">
+      <p style="font-size:14px;font-weight:700;color:#1565c0;margin-bottom:6px;">⚠️ Phase-Out Alert</p>
+      <p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.6;">R-22 production ended in 2020. R-410A phase-down is underway under the AIM Act. Always verify the refrigerant before ordering parts or charging a system.</p>
+    </div>
+    <button class="btn btn-blue btn-full" id="refrigBtn" onclick="runRefrigLookup()">❄️ Identify Refrigerant</button>
+    <div id="refrigResult" style="display:none;margin-top:20px;" class="fi">
+      <div id="refrigCards"></div>
+      <button class="btn btn-outline btn-full" onclick="resetRefrig()" style="margin-top:8px;">+ New Lookup</button>
+    </div>
+  </div>
+
+  <!-- ═══ WARRANTY PANEL ═══ -->
 
   <div id="panelWarranty" style="display:none;">
     <div class="info-box info-purple" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
       <div style="width:52px;height:52px;background:#7c3aed;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🛡️</div>
       <div>
-        <p style="font-size:17px;font-weight:700;color:#4c1d95;margin-bottom:4px;">Warranty Lookup</p>
-        <p style="font-size:14px;color:#5b21b6;line-height:1.5;">Enter model and serial number to decode the manufacture date and check warranty coverage for any brand.</p>
+        <p style="font-size:17px;font-weight:700;color:#4527a0;margin-bottom:4px;">Warranty Lookup</p>
+        <p style="font-size:14px;color:#4527a0;line-height:1.5;">Photograph the nameplate or enter details manually to decode age and warranty coverage for any brand.</p>
       </div>
     </div>
 
 ```
+<!-- NAMEPLATE PHOTO SCAN -->
 <div class="card">
-  <label class="field-label">Manufacturer</label>
-  <select id="wBrand" onchange="showWarrantyLinks()" style="margin-bottom:0;">
-    <option value="">Choose manufacturer…</option>
-  </select>
-  <div id="warrantyLinks" style="display:none;margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+  <label class="field-label">📷 Scan Nameplate (Fastest)</label>
+  <p class="field-sub">Take a photo of the data plate — Reads brand, model, serial, and decodes warranty automatically</p>
+  <input type="file" id="wScanInput" accept="image/*" capture="environment" style="display:none" onchange="handleWarrantyScan(event)"/>
+  <input type="file" id="wScanInputLib" accept="image/*" style="display:none" onchange="handleWarrantyScan(event)"/>
+  <div class="scan-zone" id="wScanZone" style="cursor:default;border-color:#b39ddb;background:#f5f3ff;">
+    <div class="scan-line" style="background:linear-gradient(90deg,transparent,#4527a0,transparent);"></div>
+    <img id="wScanPreview" class="scan-preview" style="display:none"/>
+    <div id="wScanPrompt" style="padding:28px 20px;text-align:center;width:100%;">
+      <div style="font-size:44px;margin-bottom:10px;">📋</div>
+      <div style="font-family:'Roboto Condensed',sans-serif;font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px;">Scan the Nameplate</div>
+      <div style="font-size:13px;color:#999;margin-bottom:18px;">Carrier, Trane, Lennox, Goodman, Rheem and more</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button onclick="document.getElementById('wScanInput').click()" style="background:#4527a0;color:#fff;border:none;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:700;font-family:'Roboto',sans-serif;cursor:pointer;min-width:140px;">📸 Take Photo</button>
+        <button onclick="document.getElementById('wScanInputLib').click()" style="background:#fff;color:#1a1a1a;border:1px solid #d8d8d8;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:700;font-family:'Roboto',sans-serif;cursor:pointer;min-width:140px;">🖼️ Photo Library</button>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;" id="wScanActions">
+    <button class="btn btn-purple btn-sm" id="wScanBtn" onclick="runWarrantyScan()" style="display:none;">🔍 Decode This Nameplate</button>
+    <button class="btn btn-outline btn-sm" id="wClearBtn" onclick="clearWarrantyScan()" style="display:none;">✕ Clear</button>
+  </div>
+</div>
+
+<!-- DIVIDER -->
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+  <div style="flex:1;height:1px;background:#d8d8d8;"></div>
+  <span style="font-size:13px;font-weight:600;color:#999999;">OR ENTER MANUALLY</span>
+  <div style="flex:1;height:1px;background:#d8d8d8;"></div>
 </div>
 
 <div class="card">
+  <label class="field-label">Manufacturer</label>
+  <select id="wBrand" onchange="showWarrantyLinks()"><option value="">Choose manufacturer…</option></select>
+  <div id="warrantyLinks" style="display:none;margin-top:12px;gap:8px;flex-wrap:wrap;"></div>
+</div>
+<div class="card">
   <label class="field-label">Unit Details</label>
   <div class="grid2" style="margin-bottom:14px;">
-    <div>
-      <label class="field-label">Model Number</label>
-      <input type="text" id="wModel" placeholder="e.g. 24ACC636A003"/>
-    </div>
-    <div>
-      <label class="field-label">Serial Number *</label>
-      <input type="text" id="wSerial" placeholder="e.g. 4816E12345"/>
-    </div>
+    <div><label class="field-label">Model Number</label><input type="text" id="wModel" placeholder="e.g. 24ACC636A003"/></div>
+    <div><label class="field-label">Serial Number *</label><input type="text" id="wSerial" placeholder="e.g. 4816E12345"/></div>
   </div>
   <label class="field-label">Additional Notes</label>
   <textarea id="wNotes" rows="2" placeholder="e.g. Homeowner unsure if unit was registered. Compressor just failed."></textarea>
 </div>
-
 <div class="info-box info-amber" style="margin-bottom:20px;">
-  <p style="font-size:14px;font-weight:600;color:#92400e;margin-bottom:6px;">📍 Where to find the serial number</p>
-  <p style="font-size:14px;color:#78350f;line-height:1.65;">
-    <strong>Outdoor unit:</strong> metal data plate on side panel &nbsp;·&nbsp;
-    <strong>Air handler:</strong> inside the cabinet door &nbsp;·&nbsp;
-    <strong>Furnace:</strong> inside front cover &nbsp;·&nbsp;
-    <strong>Mini-split:</strong> side of the unit
-  </p>
+  <p style="font-size:14px;font-weight:600;color:#1565c0;margin-bottom:6px;">📍 Where to find the serial number</p>
+  <p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.65;"><strong>Outdoor unit:</strong> metal data plate on side panel &nbsp;·&nbsp; <strong>Air handler:</strong> inside the cabinet door &nbsp;·&nbsp; <strong>Furnace:</strong> inside front cover &nbsp;·&nbsp; <strong>Mini-split:</strong> side of the unit</p>
 </div>
-
-<button class="btn btn-purple btn-full" id="warrantyBtn" onclick="runWarranty()">
-  🛡️ Check Warranty Coverage
-</button>
+<button class="btn btn-purple btn-full" id="warrantyBtn" onclick="runWarranty()">🛡️ Check Warranty Coverage</button>
 
 <div id="warrantyResult" style="display:none;margin-top:20px;" class="fi">
-  <div class="card" style="border-left:4px solid #7c3aed;">
-    <p style="font-size:14px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">🛡️ Warranty Analysis Report</p>
-    <div class="result-body" id="warrantyText" style="font-size:15px;"></div>
+  <div class="card" style="border-left:4px solid #7c3aed;margin-bottom:12px;">
+    <p style="font-size:14px;font-weight:700;color:#4527a0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">🛡️ Warranty & Age Report</p>
+    <div id="warrantyText" style="display:flex;flex-direction:column;gap:10px;font-size:15px;"></div>
   </div>
-  <div id="warrantyVerifyLink" style="display:none;margin-top:12px;" class="info-box info-purple">
+  <div id="warrantyVerifyLink" style="display:none;" class="info-box info-purple">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <p style="font-size:14px;color:#5b21b6;flex:1;">Always verify directly with the manufacturer:</p>
-      <a id="warrantyVerifyBtn" href="#" target="_blank" style="padding:9px 20px;background:#7c3aed;border-radius:9px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">Verify Online →</a>
+      <p style="font-size:14px;color:#4527a0;flex:1;">Verify directly with the manufacturer:</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a id="warrantyVerifyBtn" href="#" target="_blank" style="padding:9px 18px;background:#7c3aed;border-radius:9px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">🌐 Warranty Portal</a>
+        <span id="warrantyPhone" style="padding:9px 14px;background:#fff;border:1.5px solid #ddd6fe;border-radius:9px;color:#4527a0;font-size:14px;font-weight:600;"></span>
+      </div>
     </div>
   </div>
+  <button class="btn btn-outline btn-full" onclick="resetWarranty()" style="margin-top:12px;">+ New Lookup</button>
 </div>
 ```
 
   </div>
 
-  <!-- ═══════════════════════════════════════════ -->
-
-  <!--  REVENUE BUILDER PANEL                      -->
-
-  <!-- ═══════════════════════════════════════════ -->
+  <!-- ═══ REVENUE BUILDER ═══ -->
 
   <div id="panelRevenue" style="display:none;">
     <div class="info-box info-green" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
       <div style="width:52px;height:52px;background:#16a34a;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">💰</div>
       <div>
-        <p style="font-size:17px;font-weight:700;color:#14532d;margin-bottom:4px;">Revenue Builder</p>
-        <p style="font-size:14px;color:#166534;line-height:1.5;">Tell us about the home and system. Get personalized recommendations with word-for-word scripts to grow your ticket on every visit.</p>
+        <p style="font-size:17px;font-weight:700;color:#2e7d32;margin-bottom:4px;">Revenue Builder</p>
+        <p style="font-size:14px;color:#2e7d32;line-height:1.5;">Get personalized add-on recommendations with word-for-word scripts to grow your ticket on every visit.</p>
       </div>
     </div>
-
-```
-<div class="card">
-  <label class="field-label">System & Home Details</label>
-  <div class="grid2">
-    <div>
-      <label class="field-label">System Type</label>
-      <select id="rSysType"><option value="">Select…</option></select>
+    <div class="card">
+      <label class="field-label">System & Home Details</label>
+      <div class="grid2">
+        <div><label class="field-label">System Type</label><select id="rSysType"><option value="">Select…</option></select></div>
+        <div><label class="field-label">System Age</label><select id="rSysAge"><option value="">Select…</option></select></div>
+        <div><label class="field-label">Brand</label><select id="rBrand"><option value="">Select…</option></select></div>
+        <div><label class="field-label">Home Size</label><select id="rHomeSize"><option value="">Select…</option></select></div>
+      </div>
     </div>
-    <div>
-      <label class="field-label">System Age</label>
-      <select id="rSysAge"><option value="">Select…</option></select>
+    <div class="card">
+      <label class="field-label">Home & Family Situation</label>
+      <p class="field-sub">Select everything that applies</p>
+      <div class="symptoms-grid" id="concernsGrid"></div>
     </div>
-    <div>
-      <label class="field-label">Brand</label>
-      <select id="rBrand"><option value="">Select…</option></select>
+    <div class="card">
+      <label class="field-label">What You Observed On-Site</label>
+      <p class="field-sub">Any details help tailor the recommendations</p>
+      <textarea id="rNotes" placeholder="e.g. Dirty evaporator coil, no UV light, basic 1-inch filter, homeowner has bad allergies, 14-year-old system, no service agreement, no CO detector visible…"></textarea>
     </div>
-    <div>
-      <label class="field-label">Home Size</label>
-      <select id="rHomeSize"><option value="">Select…</option></select>
+    <button class="btn btn-green btn-full" id="revenueBtn" onclick="runRevenue()">💰 Build Revenue Recommendations</button>
+    <div id="revenueResult" style="display:none;margin-top:24px;" class="fi">
+      <div class="info-box info-green" style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+          <div style="flex:1;"><p style="font-size:13px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">💰 Revenue Opportunity</p><p style="font-size:15px;color:#555555;line-height:1.6;" id="revSummary"></p></div>
+          <div style="text-align:right;flex-shrink:0;">
+            <p style="font-size:28px;font-weight:800;color:#2e7d32;line-height:1;" id="revRange"></p>
+            <p style="font-size:12px;color:#999999;margin-top:3px;">potential add-on revenue</p>
+            <p style="font-size:14px;color:#1565c0;font-weight:700;margin-top:4px;" id="revProfit"></p>
+          </div>
+        </div>
+      </div>
+      <div id="revenueCards"></div>
+      <div class="info-box info-amber" style="margin-top:16px;display:flex;gap:12px;">
+        <span style="font-size:22px;flex-shrink:0;">💡</span>
+        <p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.65;margin:0;"><strong>Pro tip:</strong> Present 2–3 recommendations max per visit. Always lead with the Safety item first — homeowners almost always say yes. Then offer one Comfort or IAQ upgrade.</p>
+      </div>
+      <button class="btn btn-outline btn-full" onclick="resetRevenue()" style="margin-top:14px;">+ New Analysis</button>
     </div>
   </div>
-</div>
 
-<div class="card">
-  <label class="field-label">Home & Family Situation</label>
-  <p class="field-sub">Select everything that applies — helps target the right recommendations</p>
-  <div class="symptoms-grid" id="concernsGrid"></div>
-</div>
+  <!-- ═══ MAINTENANCE AGREEMENT PITCHER ═══ -->
 
-<div class="card">
-  <label class="field-label">What You Observed On-Site</label>
-  <p class="field-sub">Any details help the AI tailor the recommendations</p>
-  <textarea id="rNotes" placeholder="e.g. Dirty evaporator coil, no UV light, basic 1-inch filter, homeowner has bad allergies, 14-year-old system with no service agreement, no CO detector visible…"></textarea>
-</div>
+  <div id="panelMaint" style="display:none;">
+    <div class="info-box info-amber" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
+      <div style="width:52px;height:52px;background:#b45309;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">📋</div>
+      <div>
+        <p style="font-size:17px;font-weight:700;color:rgba(245,158,11,.85);margin-bottom:4px;">Maintenance Agreement Pitcher</p>
+        <p style="font-size:14px;color:#1565c0;line-height:1.5;">Get a word-for-word customized pitch script to sell a maintenance agreement — tailored to this system's age, condition, and the homeowner's situation.</p>
+      </div>
+    </div>
+    <div class="card">
+      <label class="field-label">System Details</label>
+      <div class="grid2" style="margin-bottom:0;">
+        <div><label class="field-label">System Type</label><select id="mSysType"><option value="">Select…</option></select></div>
+        <div><label class="field-label">System Age</label><select id="mSysAge"><option value="">Select…</option></select></div>
+        <div style="margin-top:14px;"><label class="field-label">Brand</label><select id="mBrand"><option value="">Select…</option></select></div>
+        <div style="margin-top:14px;">
+          <label class="field-label">Last Serviced</label>
+          <select id="mLastService">
+            <option value="">Select…</option>
+            <option>Never serviced</option>
+            <option>1+ years ago</option>
+            <option>6–12 months ago</option>
+            <option>Within 6 months</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <label class="field-label">Homeowner Situation</label>
+      <p class="field-sub">Select everything that applies — powers a more persuasive, targeted pitch</p>
+      <div class="symptoms-grid" id="maintConcernsGrid"></div>
+    </div>
+    <div class="card">
+      <label class="field-label">What Did You Find On This Visit?</label>
+      <p class="field-sub">The more specific, the more powerful the script</p>
+      <textarea id="mFindings" placeholder="e.g. Dirty coil, worn belts, no surge protection, homeowner mentioned high bills, 13-year-old system, no prior service agreement, child with asthma…"></textarea>
+    </div>
+    <div class="card">
+      <label class="field-label">Your Maintenance Plan Details</label>
+      <div class="grid2">
+        <div><label class="field-label">Plan Price / Year</label><input type="text" id="mPrice" placeholder="e.g. $179"/></div>
+        <div>
+          <label class="field-label">Visits Included</label>
+          <select id="mVisits">
+            <option value="">Select…</option>
+            <option>1 visit per year</option>
+            <option>2 visits per year</option>
+            <option>Quarterly (4 visits)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-full" style="background:#b45309;color:#fff;" id="maintBtn" onclick="runMaintenancePitch()">📋 Generate Pitch Script</button>
+    <div id="maintResult" style="display:none;margin-top:24px;" class="fi">
+      <div class="pitch-section">
+        <p style="font-size:14px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;">📋 Your Customized Pitch Script</p>
+        <div id="maintScriptText" style="font-size:15px;line-height:1.85;color:#555555;"></div>
+        <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+          <button class="btn btn-sm" style="background:#b45309;color:#fff;" onclick="copyMaintScript()">📋 Copy Script</button>
+          <button class="btn btn-outline btn-sm" onclick="resetMaint()">+ New Pitch</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<button class="btn btn-green btn-full" id="revenueBtn" onclick="runRevenue()">
-  💰 Build Revenue Recommendations
-</button>
+  <!-- ═══ LIVE AGENT CHAT PANEL ═══ -->
 
-<div id="revenueResult" style="display:none;margin-top:24px;" class="fi">
-  <div class="info-box info-green" style="margin-bottom:20px;">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+  <div id="panelChat" style="display:none;">
+    <div style="background:#1a1a1a;border-radius:6px 6px 0 0;padding:16px 18px;display:flex;align-items:center;gap:14px;">
+      <div style="position:relative;flex-shrink:0;">
+        <div style="width:46px;height:46px;background:#00b5b5;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;">🧑‍🔧</div>
+        <div style="position:absolute;bottom:1px;right:1px;width:12px;height:12px;background:#4caf50;border-radius:50%;border:2px solid #1a1a1a;"></div>
+      </div>
       <div style="flex:1;">
-        <p style="font-size:13px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">💰 Revenue Opportunity</p>
-        <p style="font-size:15px;color:#1f2937;line-height:1.6;" id="revSummary"></p>
+        <div style="font-family:'Roboto Condensed',sans-serif;font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px;">HVAC Expert Agent</div>
+        <div style="font-size:12px;color:#00b5b5;font-weight:500;">● Online — Master Technician</div>
       </div>
-      <div style="text-align:right;flex-shrink:0;">
-        <p style="font-size:28px;font-weight:800;color:#16a34a;line-height:1;" id="revRange"></p>
-        <p style="font-size:12px;color:#6b7280;margin-top:3px;">potential add-on revenue</p>
-        <p style="font-size:14px;color:#d97706;font-weight:700;margin-top:4px;" id="revProfit"></p>
+      <button onclick="clearChat()" style="background:rgba(255,255,255,.1);border:none;border-radius:4px;padding:6px 12px;color:rgba(255,255,255,.6);font-size:12px;font-family:'Roboto',sans-serif;cursor:pointer;font-weight:600;">Clear</button>
+    </div>
+    <div style="background:#f5f5f5;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;padding:10px 12px;">
+      <p style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Quick Start</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="quick-chip" onclick="sendQuick('Unit not cooling, compressor is running')">Not cooling</button>
+        <button class="quick-chip" onclick="sendQuick('No heat, furnace won't ignite')">No heat</button>
+        <button class="quick-chip" onclick="sendQuick('Strange noise from the air handler')">Strange noise</button>
+        <button class="quick-chip" onclick="sendQuick('System keeps short cycling on and off')">Short cycling</button>
+        <button class="quick-chip" onclick="sendQuick('Walk me through checking refrigerant pressures')">Check pressures</button>
+        <button class="quick-chip" onclick="sendQuick('Unit is freezing up, ice on the coil')">Freezing up</button>
+        <button class="quick-chip" onclick="sendQuick('High head pressure, possible causes')">High head pressure</button>
+        <button class="quick-chip" onclick="sendQuick('Capacitor keeps failing, what should I check')">Capacitor failing</button>
       </div>
     </div>
-  </div>
-  <div id="revenueCards"></div>
-  <div class="info-box info-amber" style="margin-top:16px;display:flex;gap:12px;">
-    <span style="font-size:22px;flex-shrink:0;">💡</span>
-    <p style="font-size:14px;color:#78350f;line-height:1.65;margin:0;">
-      <strong>Pro tip:</strong> Present 2–3 recommendations max per visit. Always lead with the Safety item first — homeowners almost always say yes. Then offer one Comfort or IAQ upgrade.
-    </p>
-  </div>
-  <button class="btn btn-outline btn-full" onclick="resetRevenue()" style="margin-top:14px;">+ New Analysis</button>
-</div>
-```
-
+    <div id="chatMessages" style="background:#fff;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:380px;max-height:520px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;">
+      <div class="msg-agent">
+        <div class="msg-bubble msg-bubble-agent">
+          <p style="margin-bottom:8px;">Hey! I'm your HVAC Expert Agent — think of me as a master tech you can text anytime.</p>
+          <p style="margin-bottom:8px;">Tell me what's going on with the system. Brand, age, symptoms, any readings you have — the more detail the better.</p>
+          <p>What are you dealing with today?</p>
+        </div>
+        <div class="msg-time">Just now</div>
+      </div>
+    </div>
+    <div id="typingIndicator" style="display:none;background:#fff;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;padding:10px 16px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:32px;height:32px;background:#00b5b5;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🧑‍🔧</div>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #d8d8d8;border-top:2px solid #00b5b5;border-radius:0 0 6px 6px;padding:12px;">
+      <div style="display:flex;gap:10px;align-items:flex-end;">
+        <textarea id="chatInput" placeholder="Describe what's happening…" rows="2"
+          style="flex:1;border:1px solid #d8d8d8;border-radius:6px;padding:10px 13px;font-size:15px;font-family:'Roboto',sans-serif;resize:none;min-height:44px;max-height:120px;line-height:1.5;outline:none;transition:border-color .15s;"
+          onkeydown="handleChatKey(event)"
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+        <button onclick="sendChat()" id="chatSendBtn"
+          style="background:#00b5b5;color:#fff;border:none;border-radius:6px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:20px;">
+          ➤
+        </button>
+      </div>
+      <p style="font-size:11px;color:#999;margin-top:8px;text-align:center;">Master Technician · EPA 608 · All brands & systems</p>
+    </div>
   </div>
 
   <!-- FOOTER -->
 
   <div class="footer">
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">
-      <div style="width:28px;height:28px;background:linear-gradient(135deg,#2563eb,#0ea5e9);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;">❄️</div>
-      <p style="font-size:15px;font-weight:700;color:#374151;">HVAC Diagnose Pro</p>
+      <div style="width:28px;height:28px;background:#00b5b5;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;">❄️</div>
+      <p style="font-family:'Roboto',sans-serif;font-size:16px;font-weight:700;color:#1565c0;letter-spacing:.5px;text-transform:uppercase;">HVAC Diagnose Pro</p>
     </div>
-    <p style="font-size:14px;color:#9ca3af;margin-bottom:6px;">Homeowner $9.99/mo &nbsp;·&nbsp; Contractor Pro $29.99/mo</p>
-    <p style="font-size:12px;color:#d1d5db;line-height:1.6;max-width:400px;margin:0 auto;">
-      AI diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician.
-    </p>
+    <p style="font-size:14px;color:#555555;margin-bottom:6px;">Homeowner $9.99/mo &nbsp;·&nbsp; Contractor Pro $29.99/mo</p>
+    <p style="font-family:'Roboto',sans-serif;font-size:11px;color:#999999;line-height:1.6;max-width:400px;margin:0 auto;">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician.</p>
   </div>
 
-</div><!-- end .page -->
+</div>
 
 <script>
-// ── Data ───────────────────────────────────────────────────────
-const SYS_TYPES  = ["Central AC (Split System)","Heat Pump","Gas Furnace","Electric Furnace","Mini-Split / Ductless","Package Unit","Boiler / Radiant Heat","Window Unit","PTAC Unit","Geothermal","VRF / VRV System"];
+const SYS_TYPES = [
+  // Air Conditioners
+  "Air Conditioner – Split System",
+  "Air Conditioner – Package Unit",
+  "AC Condenser (Outdoor Unit Only)",
+  "Heat Pump Condenser (Outdoor Unit Only)",
+  // Heat Pumps
+  "Heat Pump – Split System",
+  "Heat Pump – Package Unit",
+  "Heat Pump – Dual Fuel",
+  // Air Handlers
+  "Air Handler – Electric",
+  "Air Handler – with Electric Heat Strip",
+  // Furnaces
+  "Gas Furnace",
+  "Electric Furnace",
+  "Oil Furnace",
+  // Ductless
+  "Mini-Split – Single Zone",
+  "Mini-Split – Multi Zone",
+  // Package / RTU
+  "Package Unit – Gas/Electric",
+  "Package Unit – Electric",
+  // Specialty
+  "Boiler – Hot Water",
+  "Boiler – Steam",
+  "Geothermal Heat Pump",
+  "VRF / VRV System",
+  "PTAC / PTHP",
+  "Window AC",
+  "Radiant / In-Floor Heat",
+];
 const SYS_AGES   = ["0–5 years","5–10 years","10–15 years","15–20 years","20+ years","Not sure"];
 const BRANDS     = ["Carrier","Bryant","Payne","Trane","American Standard","Lennox","Goodman","Amana","Daikin","Rheem","Ruud","York","Coleman","Heil","Tempstar","Mitsubishi Electric","Fujitsu","LG","Bosch","Weil-McLain","Other / Unknown"];
 const HOME_SIZES = ["Under 1,000 sq ft","1,000–1,500 sq ft","1,500–2,000 sq ft","2,000–2,500 sq ft","2,500–3,000 sq ft","3,000–4,000 sq ft","4,000+ sq ft"];
@@ -552,553 +1090,864 @@ const CONCERNS = [
   {icon:"💰",label:"High energy bills"},{icon:"🔒",label:"No service plan yet"},{icon:"🛢️",label:"Old R-22 system"},
   {icon:"🏚️",label:"Older home"},{icon:"🔥",label:"Gas appliances"},{icon:"💨",label:"Poor ventilation"},
 ];
+const MAINT_CONCERNS = [
+  {icon:"💸",label:"Worried about bills"},{icon:"🔒",label:"Wants peace of mind"},{icon:"😷",label:"Health / air quality"},
+  {icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},{icon:"🏠",label:"Older home"},
+  {icon:"💔",label:"Had a breakdown before"},{icon:"🔥",label:"Gas system"},{icon:"📅",label:"Snowbird / seasonal"},
+];
 const WARRANTY_INFO = {
-  "Carrier":{url:"https://www.carrier.com/residential/en/us/support/warranty-lookup/",phone:"1-800-227-7437"},
-  "Bryant":{url:"https://www.bryant.com/en/us/support/warranty/",phone:"1-800-428-4326"},
-  "Trane":{url:"https://www.trane.com/residential/en/resources/warranty/",phone:"1-800-872-6381"},
-  "American Standard":{url:"https://www.americanstandardair.com/support/warranty/",phone:"1-800-821-7143"},
-  "Lennox":{url:"https://www.lennox.com/resources/warranty-info",phone:"1-800-953-6669"},
-  "Goodman":{url:"https://www.goodmanmfg.com/resources/warranty",phone:"1-877-254-4729"},
-  "Amana":{url:"https://www.amana-hac.com/resources/warranty",phone:"1-877-254-4729"},
-  "Daikin":{url:"https://www.daikincomfort.com/resources/warranty",phone:"1-855-770-2905"},
-  "Rheem":{url:"https://www.rheem.com/warranty/",phone:"1-800-621-5622"},
-  "Ruud":{url:"https://www.ruud.com/warranty/",phone:"1-800-848-7883"},
-  "York":{url:"https://www.york.com/resources/warranty",phone:"1-800-967-5465"},
-  "Mitsubishi Electric":{url:"https://www.mitsubishicomfort.com/support/warranty",phone:"1-800-433-4822"},
+  "Carrier":          {url:"https://www.carrier.com/residential/en/us/support/warranty-lookup/",phone:"1-800-227-7437",terms:"10 yr registered / 5 yr unregistered"},
+  "Bryant":           {url:"https://www.bryant.com/en/us/support/warranty/",phone:"1-800-428-4326",terms:"10 yr registered / 5 yr unregistered"},
+  "Payne":            {url:"https://www.payne.com/en/us/support/warranty/",phone:"1-800-227-7437",terms:"10 yr registered / 5 yr unregistered"},
+  "Trane":            {url:"https://www.trane.com/residential/en/resources/warranty/",phone:"1-800-872-6381",terms:"10 yr registered / 5 yr unregistered"},
+  "American Standard":{url:"https://www.americanstandardair.com/support/warranty/",phone:"1-800-821-7143",terms:"10 yr registered / 5 yr unregistered"},
+  "Lennox":           {url:"https://www.lennox.com/resources/warranty-info",phone:"1-800-953-6669",terms:"10 yr registered / 5 yr unregistered"},
+  "Goodman":          {url:"https://www.goodmanmfg.com/resources/warranty",phone:"1-877-254-4729",terms:"Lifetime compressor + 10 yr parts registered / 5 yr unregistered"},
+  "Amana":            {url:"https://www.amana-hac.com/resources/warranty",phone:"1-877-254-4729",terms:"Lifetime unit replacement + 10 yr parts registered"},
+  "Daikin":           {url:"https://www.daikincomfort.com/resources/warranty",phone:"1-855-770-2905",terms:"12 yr registered / 5 yr unregistered"},
+  "Rheem":            {url:"https://www.rheem.com/warranty/",phone:"1-800-621-5622",terms:"10 yr registered / 5 yr unregistered"},
+  "Ruud":             {url:"https://www.ruud.com/warranty/",phone:"1-800-848-7883",terms:"10 yr registered / 5 yr unregistered"},
+  "York":             {url:"https://www.york.com/resources/warranty",phone:"1-800-967-5465",terms:"10 yr registered / 5 yr unregistered"},
+  "Coleman":          {url:"https://www.colemanac.com/resources/warranty",phone:"1-800-967-5465",terms:"10 yr registered / 5 yr unregistered"},
+  "Heil":             {url:"https://www.heil-hvac.com/en/us/resources/warranty/",phone:"1-800-967-5465",terms:"10 yr registered / 5 yr unregistered"},
+  "Tempstar":         {url:"https://www.tempstar.com/en/us/resources/warranty/",phone:"1-800-967-5465",terms:"10 yr registered / 5 yr unregistered"},
+  "Mitsubishi Electric":{url:"https://www.mitsubishicomfort.com/support/warranty",phone:"1-800-433-4822",terms:"12 yr registered / 7 yr unregistered"},
+  "Fujitsu":          {url:"https://www.fujitsugeneral.com/us/support/warranty.html",phone:"1-888-888-3424",terms:"12 yr registered / 5 yr unregistered"},
+  "LG":               {url:"https://www.lg.com/us/hvac/warranty",phone:"1-800-243-0000",terms:"10 yr compressor / 5 yr parts"},
+  "Bosch":            {url:"https://www.bosch-thermotechnology.us/en/us/residential/service/warranty/",phone:"1-866-642-3198",terms:"10 yr registered / 5 yr unregistered"},
+  "Weil-McLain":      {url:"https://www.weil-mclain.com/en/support/warranty/",phone:"1-860-945-3281",terms:"Varies by product — check portal"},
 };
 const CAT_STYLE = {
-  Safety:     {bg:"#fff1f2",border:"#fecdd3",text:"#be123c",icon:"🛡️"},
-  IAQ:        {bg:"#eff6ff",border:"#bfdbfe",text:"#1d4ed8",icon:"🌬️"},
-  Comfort:    {bg:"#f5f3ff",border:"#ddd6fe",text:"#7c3aed",icon:"🌡️"},
-  Efficiency: {bg:"#f0fdf4",border:"#bbf7d0",text:"#15803d",icon:"⚡"},
+  Safety:     {bg:"#ffebee",border:"#ef9a9a",text:"#be123c",icon:"🛡️"},
+  IAQ:        {bg:"#e3f2fd",border:"#90caf9",text:"#1565c0",icon:"🌬️"},
+  Comfort:    {bg:"#ede7f6",border:"#b39ddb",text:"#4527a0",icon:"🌡️"},
+  Efficiency: {bg:"#e8f5e9",border:"#a5d6a7",text:"#15803d",icon:"⚡"},
   Maintenance:{bg:"#fffbeb",border:"#fde68a",text:"#b45309",icon:"🔧"},
 };
 
-// ── State ──────────────────────────────────────────────────────
-let mode = "home";
-let proTab = "diag";
-let selectedSymptoms = [];
-let selectedConcerns = [];
-let uploadedFile = null;
-let audioTranscript = "";
-let mediaRecorder = null;
-let audioChunks = [];
-let recTimer = null;
-let recSeconds = 0;
+// State
+let mode = "home", proTab = "diag";
+let selectedSymptoms = [], selectedConcerns = [], selectedMaintConcerns = [];
+let uploadedFile = null, scanFile = null;
+let audioTranscript = "", lastDiagResult = "";
+let mediaRecorder = null, audioChunks = [], recTimer = null, recSeconds = 0;
+let manualEntryVisible = false;
 
-// ── Init ───────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   populateSelects();
   buildSymptomGrid("home");
   buildConcernsGrid();
+  buildMaintConcernsGrid();
   checkHealth();
 });
 
-function checkHealth() {
-  fetch("/api/health")
-    .then(r => r.json())
-    .then(d => {
-      const dot  = document.getElementById("statusDot");
-      const text = document.getElementById("statusText");
-      if (d.aiReady) {
-        dot.className = "status-dot";
-        text.textContent = "AI Ready";
-      } else {
-        dot.className = "status-dot red";
-        text.textContent = "No API Key";
-      }
-    })
-    .catch(() => {
-      document.getElementById("statusDot").className = "status-dot red";
-      document.getElementById("statusText").textContent = "Offline";
-    });
+function checkHealth(retry=0) {
+  fetch("/api/health").then(r=>r.json()).then(d=>{
+    const dot=document.getElementById("statusDot"),txt=document.getElementById("statusText");
+    if(d.aiReady){dot.className="status-dot";txt.textContent="AI Ready";}
+    else{dot.className="status-dot red";txt.textContent="No API Key";}
+  }).catch(()=>{
+    document.getElementById("statusDot").className="status-dot red";
+    document.getElementById("statusText").textContent="Offline";
+    // Retry up to 3 times with backoff
+    if(retry < 3) setTimeout(()=>checkHealth(retry+1), 3000*(retry+1));
+  });
 }
 
 function populateSelects() {
-  const selects = {
-    sysType:   SYS_TYPES,
-    sysAge:    SYS_AGES,
-    brand:     BRANDS,
-    wBrand:    BRANDS,
-    rSysType:  SYS_TYPES,
-    rSysAge:   SYS_AGES,
-    rBrand:    BRANDS,
-    rHomeSize: HOME_SIZES,
+  const map = {
+    sysType:SYS_TYPES, sysAge:SYS_AGES, brand:BRANDS, wBrand:BRANDS,
+    rSysType:SYS_TYPES, rSysAge:SYS_AGES, rBrand:BRANDS, rHomeSize:HOME_SIZES,
+    scanBrand:BRANDS, rBrandRefrig:BRANDS, rTypeRefrig:SYS_TYPES, rAgeRefrig:SYS_AGES,
+    mSysType:SYS_TYPES, mSysAge:SYS_AGES, mBrand:BRANDS
   };
-  for (const [id, opts] of Object.entries(selects)) {
-    const el = document.getElementById(id);
-    if (!el) continue;
-    opts.forEach(o => {
-      const opt = document.createElement("option");
-      opt.value = opt.textContent = o;
-      el.appendChild(opt);
-    });
+  for(const [id,opts] of Object.entries(map)){
+    const el=document.getElementById(id); if(!el)continue;
+    opts.forEach(o=>{const opt=document.createElement("option");opt.value=opt.textContent=o;el.appendChild(opt);});
   }
 }
 
-// ── Mode switching ─────────────────────────────────────────────
 function setMode(m) {
-  mode = m;
-  const isPro = m === "pro";
-  document.getElementById("tabHome").className = "mode-tab" + (m==="home" ? " active-home" : "");
-  document.getElementById("tabPro").className  = "mode-tab" + (m==="pro"  ? " active-pro"  : "");
-  document.getElementById("proTabs").style.display   = isPro ? "block" : "none";
-  document.getElementById("heroTitle").textContent   = isPro ? "Professional HVAC Diagnostics" : "What's Wrong With Your HVAC?";
-  document.getElementById("heroSub").textContent     = isPro
-    ? "Upload a video, record your observations, and get a complete technical diagnostic report instantly."
-    : "Upload a photo or video of your system, describe what's happening, and our AI will tell you exactly what's wrong.";
-  document.getElementById("modeDesc").textContent    = isPro
-    ? "Full technical reports with measurements, part numbers, repair procedures, and replace-vs-repair analysis."
-    : "Easy-to-understand explanations, safety guidance, and connections to certified local technicians.";
-  document.getElementById("uploadLabel").textContent = isPro ? "Upload a Photo or Video" : "Show Us Your System";
-  document.getElementById("uploadSub").textContent   = isPro
-    ? "Upload a photo or video of the unit for visual AI analysis"
-    : "A short video or photo helps our AI see exactly what's happening";
-  document.getElementById("voiceSub").textContent    = isPro
-    ? "Record your verbal observations — readings, sounds you hear, anything you notice on-site"
-    : "Describe the problem or hold your phone near the system so the AI can hear the sounds";
-  document.getElementById("symptomsLabel").textContent = isPro ? "Select All Fault Indicators" : "What is your system doing?";
-  document.getElementById("descLabel").textContent     = isPro ? "Technical Notes" : "Describe the problem in your own words";
-  document.getElementById("descSub").textContent       = isPro
-    ? "Include any measurements, readings, or observations"
-    : "When did it start? Is it getting worse? Anything else you've noticed?";
-  document.getElementById("brandRow").style.display    = isPro ? "block" : "none";
-  document.getElementById("desc").placeholder          = isPro
-    ? "e.g. Suction 58 PSI, head 285 PSI at 85°F. Compressor draws 18A then trips breaker. Capacitor tested good 45µF…"
-    : "e.g. My air conditioner runs all day but the house never gets below 78°. Started 3 days ago. I can hear a loud humming from the outside unit…";
-  selectedSymptoms = [];
-  buildSymptomGrid(m);
-  if (isPro) setProTab("diag");
-  else {
-    document.getElementById("panelDiag").style.display = "block";
-    document.getElementById("panelWarranty").style.display = "none";
-    document.getElementById("panelRevenue").style.display  = "none";
-  }
+  mode=m; const isPro=m==="pro";
+  document.getElementById("tabHome").className="mode-tab"+(m==="home"?" active-home":"");
+  document.getElementById("tabPro").className ="mode-tab"+(m==="pro" ?" active-pro" :"");
+  document.getElementById("proTabs").style.display=isPro?"block":"none";
+  document.getElementById("heroTitle").textContent=isPro?"Professional HVAC Diagnostics":"What's Wrong With Your HVAC?";
+  document.getElementById("heroSub").textContent=isPro
+    ?"Upload a video, record your observations, and get a complete technical diagnostic report instantly."
+    :"Upload a photo or video, describe what's happening, and we'll tell you exactly what's wrong.";
+  document.getElementById("modeDesc").textContent=isPro
+    ?"Full technical reports with measurements, part numbers, repair procedures, and replace-vs-repair analysis."
+    :"Easy-to-understand explanations, safety guidance, and connections to certified local technicians.";
+  document.getElementById("uploadLabel").textContent=isPro?"Upload a Photo or Video":"Show Us Your System";
+  document.getElementById("uploadSub").textContent=isPro?"Upload a photo or video of the unit for visual analysis":"A short video or photo helps us see exactly what's happening";
+  document.getElementById("voiceSub").textContent=isPro?"Record your observations — readings, sounds, anything you notice on-site":"Describe the problem or hold your phone near the system so we can hear the sounds";
+  document.getElementById("symptomsLabel").textContent=isPro?"Select All Fault Indicators":"What is your system doing?";
+  document.getElementById("descLabel").textContent=isPro?"Technical Notes":"Describe the problem in your own words";
+  document.getElementById("descSub").textContent=isPro?"Include any measurements, readings, or observations":"When did it start? Is it getting worse? Anything else you've noticed?";
+  document.getElementById("brandRow").style.display=isPro?"block":"none";
+  document.getElementById("desc").placeholder=isPro
+    ?"e.g. Suction 58 PSI, head 285 PSI at 85°F. Compressor draws 18A then trips breaker…"
+    :"e.g. My air conditioner runs all day but the house never gets below 78°. Started 3 days ago…";
+  selectedSymptoms=[]; buildSymptomGrid(m);
+  if(isPro) setProTab("diag");
+  else { ["panelDiag","panelScan","panelRefrig","panelWarranty","panelRevenue","panelMaint"].forEach(id=>document.getElementById(id).style.display=id==="panelDiag"?"block":"none"); }
   resetDiagnostic();
 }
 
 function setProTab(tab) {
-  proTab = tab;
-  document.getElementById("panelDiag").style.display    = tab==="diag"    ? "block" : "none";
-  document.getElementById("panelWarranty").style.display= tab==="warranty" ? "block" : "none";
-  document.getElementById("panelRevenue").style.display = tab==="revenue"  ? "block" : "none";
-  document.getElementById("stDiag").className    = "sub-tab" + (tab==="diag"    ? " st-diag"    : "");
-  document.getElementById("stWarranty").className= "sub-tab" + (tab==="warranty"? " st-warrant" : "");
-  document.getElementById("stRevenue").className = "sub-tab" + (tab==="revenue" ? " st-revenue" : "");
+  proTab=tab;
+  const panels={diag:"panelDiag",scan:"panelScan",refrig:"panelRefrig",warranty:"panelWarranty",revenue:"panelRevenue",maint:"panelMaint",chat:"panelChat"};
+  for(const[t,id] of Object.entries(panels)) document.getElementById(id).style.display=t===tab?"block":"none";
+  const tabs={diag:"stDiag",scan:"stScan",refrig:"stRefrig",warranty:"stWarranty",revenue:"stRevenue",maint:"stMaint",chat:"stChat"};
+  const styles={diag:"st-diag",scan:"st-scan",refrig:"st-refrig",warranty:"st-warrant",revenue:"st-revenue",maint:"st-maint",chat:"st-chat"};
+  for(const[t,id] of Object.entries(tabs)) document.getElementById(id).className="sub-tab"+(t===tab?" "+styles[t]:"");
 }
 
-// ── Symptom grid ───────────────────────────────────────────────
 function buildSymptomGrid(m) {
-  const syms = m==="pro" ? PRO_SYMPTOMS : HOME_SYMPTOMS;
-  const grid = document.getElementById("symptomsGrid");
-  grid.innerHTML = "";
-  syms.forEach(({icon, label}) => {
-    const btn = document.createElement("button");
-    btn.className = "chip";
-    btn.innerHTML = `<span class="chip-icon">${icon}</span><span>${label}</span>`;
-    btn.onclick = () => {
-      const idx = selectedSymptoms.indexOf(label);
-      if (idx > -1) { selectedSymptoms.splice(idx,1); btn.className = "chip"; }
-      else { selectedSymptoms.push(label); btn.className = "chip " + (m==="pro" ? "sel-orange" : "sel-blue"); }
-      updateInputsSummary();
-    };
+  const syms=m==="pro"?PRO_SYMPTOMS:HOME_SYMPTOMS;
+  const grid=document.getElementById("symptomsGrid"); grid.innerHTML="";
+  syms.forEach(({icon,label})=>{
+    const btn=document.createElement("button"); btn.className="chip";
+    btn.innerHTML=`<span class="chip-icon">${icon}</span><span>${label}</span>`;
+    btn.onclick=()=>{const idx=selectedSymptoms.indexOf(label);if(idx>-1){selectedSymptoms.splice(idx,1);btn.className="chip";}else{selectedSymptoms.push(label);btn.className="chip "+(m==="pro"?"sel-orange":"sel-blue");}updateInputsSummary();};
     grid.appendChild(btn);
   });
 }
 
 function buildConcernsGrid() {
-  const grid = document.getElementById("concernsGrid");
-  CONCERNS.forEach(({icon, label}) => {
-    const btn = document.createElement("button");
-    btn.className = "chip";
-    btn.innerHTML = `<span class="chip-icon">${icon}</span><span>${label}</span>`;
-    btn.onclick = () => {
-      const idx = selectedConcerns.indexOf(label);
-      if (idx > -1) { selectedConcerns.splice(idx,1); btn.className = "chip"; }
-      else { selectedConcerns.push(label); btn.className = "chip sel-blue"; }
-    };
+  const grid=document.getElementById("concernsGrid");
+  CONCERNS.forEach(({icon,label})=>{
+    const btn=document.createElement("button");btn.className="chip";
+    btn.innerHTML=`<span class="chip-icon">${icon}</span><span>${label}</span>`;
+    btn.onclick=()=>{const idx=selectedConcerns.indexOf(label);if(idx>-1){selectedConcerns.splice(idx,1);btn.className="chip";}else{selectedConcerns.push(label);btn.className="chip sel-blue";}};
     grid.appendChild(btn);
   });
 }
 
-// ── File upload ────────────────────────────────────────────────
-function handleDrop(e) {
-  e.preventDefault();
-  document.getElementById("dropZone").classList.remove("drag");
-  const file = e.dataTransfer.files[0];
-  if (file) setFile(file);
+function buildMaintConcernsGrid() {
+  const grid=document.getElementById("maintConcernsGrid");
+  MAINT_CONCERNS.forEach(({icon,label})=>{
+    const btn=document.createElement("button");btn.className="chip";
+    btn.innerHTML=`<span class="chip-icon">${icon}</span><span>${label}</span>`;
+    btn.onclick=()=>{const idx=selectedMaintConcerns.indexOf(label);if(idx>-1){selectedMaintConcerns.splice(idx,1);btn.className="chip";}else{selectedMaintConcerns.push(label);btn.className="chip sel-blue";}};
+    grid.appendChild(btn);
+  });
 }
-function handleFileSelect(e) {
-  const file = e.target.files[0];
-  if (file) setFile(file);
-}
-function setFile(file) {
-  uploadedFile = file;
-  const isImg = file.type.startsWith("image/");
-  const url = URL.createObjectURL(file);
+
+// File upload
+function handleDrop(e){e.preventDefault();document.getElementById("dropZone").classList.remove("drag");const f=e.dataTransfer.files[0];if(f)setFile(f);}
+function handleFileSelect(e){const f=e.target.files[0];if(f)setFile(f);}
+function setFile(file){
+  // Normalize HEIC/HEIF to jpeg mime type for display
+  const isHeic = file.name&&(file.name.toLowerCase().endsWith('.heic')||file.name.toLowerCase().endsWith('.heif'));
+  if(isHeic && !file.type) Object.defineProperty(file,'type',{value:'image/jpeg'});
+  uploadedFile=file;const isImg=file.type.startsWith("image/")||isHeic;const url=URL.createObjectURL(file);
   document.getElementById("dropZone").classList.add("has-file");
-  document.getElementById("dropIcon").textContent  = isImg ? "🖼️" : "🎬";
-  document.getElementById("dropTitle").textContent = file.name;
-  const img = document.getElementById("imgPreview");
-  const vid = document.getElementById("videoPreview");
-  if (isImg) { img.src=url; img.style.display="block"; vid.style.display="none"; }
-  else       { vid.src=url; vid.style.display="block"; img.style.display="none"; }
+  document.getElementById("dropIcon").textContent=isImg?"🖼️":"🎬";
+  // Truncate long filenames
+  const name = file.name.length > 30 ? file.name.substring(0,27)+'...' : file.name;
+  document.getElementById("dropTitle").textContent=name;
+  const img=document.getElementById("imgPreview"),vid=document.getElementById("videoPreview");
+  if(isImg){img.src=url;img.style.display="block";vid.style.display="none";}
+  else{vid.src=url;vid.style.display="block";img.style.display="none";}
   updateInputsSummary();
 }
 
-// ── Voice recording ────────────────────────────────────────────
-async function toggleRecording() {
-  if (!mediaRecorder || mediaRecorder.state==="inactive") {
-    await startRecording();
-  } else {
-    stopRecording();
-  }
+// Nameplate scanner
+function handleScanSelect(e){
+  const file=e.target.files[0];if(!file)return;
+  scanFile=file;
+  const url=URL.createObjectURL(file);
+  document.getElementById("scanPreview").src=url;
+  document.getElementById("scanPreview").style.display="block";
+  document.getElementById("scanPrompt").style.display="none";
+  document.getElementById("scanZone").classList.add("has-img");
 }
-async function startRecording() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-    const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg";
-    mediaRecorder = new MediaRecorder(stream, {mimeType:mime});
-    audioChunks = [];
-    mediaRecorder.ondataavailable = e => { if(e.data.size>0) audioChunks.push(e.data); };
-    mediaRecorder.onstop = () => processAudio(mime);
-    mediaRecorder.start(200);
-    recSeconds = 0;
-    recTimer = setInterval(() => {
-      recSeconds++;
-      const m = String(Math.floor(recSeconds/60)).padStart(2,"0");
-      const s = String(recSeconds%60).padStart(2,"0");
-      document.getElementById("recStatus").innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div class="wave-bars">
-            ${[10,16,12,18,8].map((h,i)=>`<div class="wave-bar" style="height:${h}px;animation-delay:${i*.1}s"></div>`).join("")}
-          </div>
-          <span style="color:#ef4444;font-weight:700;font-size:15px;">${m}:${s}</span>
-          <span class="pulsing" style="color:#6b7280;font-size:13px;">Recording…</span>
-        </div>`;
-    }, 1000);
-    document.getElementById("recorder").className = "recorder recording";
-    document.getElementById("recBtnWrap").innerHTML = `<div class="rec-ring"></div><button class="btn btn-sm" onclick="toggleRecording()" style="background:#ef4444;color:#fff;width:44px;height:44px;border-radius:50%;border:none;font-size:18px;cursor:pointer;padding:0;">⏹</button>`;
-  } catch { alert("Please allow microphone access to use voice recording."); }
+function toggleManualEntry(){
+  manualEntryVisible=!manualEntryVisible;
+  document.getElementById("manualEntry").style.display=manualEntryVisible?"block":"none";
 }
-function stopRecording() {
-  if (mediaRecorder?.state==="recording") mediaRecorder.stop();
-  mediaRecorder?.stream?.getTracks().forEach(t=>t.stop());
-  clearInterval(recTimer);
-  document.getElementById("recStatus").innerHTML = `<p class="pulsing" style="font-size:14px;color:#7c3aed;font-weight:600;">AI is analyzing your audio…</p>`;
-}
-async function processAudio(mime) {
-  const blob = new Blob(audioChunks, {type:mime});
-  const b64  = await blobToBase64(blob);
-  try {
-    const res = await callAI("", [{role:"user",content:[
-      {type:"text",text:`Analyze this HVAC diagnostic audio. Transcribe any speech. Identify mechanical sounds (banging, clicking, hissing, humming, squealing, rattling, grinding).\nRespond with:\nSPEECH: [transcription or "No speech detected"]\nSOUNDS: [sound descriptions or "No distinct sounds"]\nSUMMARY: [1-2 sentences about what this tells us about the HVAC system]`},
-      {type:"document",source:{type:"base64",media_type:mime,data:b64}}
-    ]}]);
-    audioTranscript = res;
-  } catch { audioTranscript = "Audio recorded — will be referenced in diagnosis."; }
-  document.getElementById("recorder").className = "recorder done";
-  document.getElementById("recBtnWrap").innerHTML = `<button class="btn btn-outline btn-sm" onclick="resetRecording()">🔄 Re-record</button>`;
-  document.getElementById("recStatus").innerHTML = `<p style="font-size:14px;color:#16a34a;font-weight:600;">✓ Audio captured and analyzed</p>`;
-  document.getElementById("transcriptText").textContent = audioTranscript;
-  document.getElementById("transcriptBox").style.display = "block";
-  updateInputsSummary();
-}
-function resetRecording() {
-  audioTranscript = "";
-  document.getElementById("recorder").className = "recorder";
-  document.getElementById("recBtnWrap").innerHTML = `<button class="btn btn-purple btn-sm" onclick="toggleRecording()">🎙️ Record Voice</button>`;
-  document.getElementById("recStatus").innerHTML = `<p style="font-size:14px;color:#6b7280;">Record yourself describing the issue, or hold near the unit</p>`;
-  document.getElementById("transcriptBox").style.display = "none";
-  updateInputsSummary();
-}
-
-// ── Inputs summary tags ────────────────────────────────────────
-function updateInputsSummary() {
-  const tagFile  = document.getElementById("tagFile");
-  const tagVoice = document.getElementById("tagVoice");
-  const tagSymps = document.getElementById("tagSymps");
-  const isImg = uploadedFile?.type.startsWith("image/");
-  tagFile.textContent  = uploadedFile ? `📹 ${isImg?"Photo":"Video"}` : "";
-  tagFile.style.display  = uploadedFile ? "inline-block" : "none";
-  tagVoice.style.display = audioTranscript ? "inline-block" : "none";
-  tagSymps.textContent   = selectedSymptoms.length ? `✓ ${selectedSymptoms.length} symptom${selectedSymptoms.length>1?"s":""}` : "";
-  tagSymps.style.display = selectedSymptoms.length ? "inline-block" : "none";
-}
-
-// ── AI call ────────────────────────────────────────────────────
-async function callAI(system, messages, max_tokens=1024) {
-  const res = await fetch("/api/ai", {
-    method:  "POST",
-    headers: {"Content-Type":"application/json"},
-    body:    JSON.stringify({system, messages, max_tokens}),
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return data.text;
-}
-
-async function blobToBase64(blob) {
-  return new Promise((res,rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result.split(",")[1]);
-    r.onerror = rej;
-    r.readAsDataURL(blob);
-  });
-}
-
-async function grabVideoFrame(file) {
-  return new Promise((res,rej) => {
-    const v=document.createElement("video"),c=document.createElement("canvas");
-    v.muted=true; v.src=URL.createObjectURL(file);
-    v.onloadeddata=()=>{v.currentTime=Math.min(2,v.duration*.1);};
-    v.onseeked=()=>{c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0);URL.revokeObjectURL(v.src);res(c.toDataURL("image/jpeg",.85).split(",")[1]);};
-    v.onerror=rej;
-  });
-}
-
-// ── Diagnostic ─────────────────────────────────────────────────
-async function runDiagnostic() {
-  const sysType = document.getElementById("sysType").value;
-  const sysAge  = document.getElementById("sysAge").value;
-  const brand   = document.getElementById("brand").value;
-  const desc    = document.getElementById("desc").value;
-  const isPro   = mode === "pro";
-
-  if (!sysType && !selectedSymptoms.length && !desc && !uploadedFile && !audioTranscript) {
-    alert("Please add at least one detail — select a system type, describe the problem, or upload a photo.");
-    return;
-  }
-
-  const btn = document.getElementById("runBtn");
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Analyzing your system…</span>`;
-
-  try {
-    const symsText = selectedSymptoms.length ? selectedSymptoms.join(", ") : "None selected";
-    const audText  = audioTranscript ? `\nAUDIO ANALYSIS:\n${audioTranscript}\n` : "";
-
-    let messages;
-    if (uploadedFile) {
-      btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Reading file…</span>`;
-      const isImg = uploadedFile.type.startsWith("image/");
-      const b64   = isImg ? await blobToBase64(uploadedFile) : await grabVideoFrame(uploadedFile);
-      const mime  = isImg ? uploadedFile.type : "image/jpeg";
-      const prompt = buildDiagPrompt(isPro, sysType, sysAge, brand, symsText, desc, audText, true, isImg);
-      messages = [{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:prompt}]}];
-    } else {
-      messages = [{role:"user",content:buildDiagPrompt(isPro, sysType, sysAge, brand, symsText, desc, audText, false, false)}];
+async function runNameplateScan(){
+  const btn=document.getElementById("scanBtn");
+  const hasImg=!!scanFile, manualSerial=document.getElementById("scanSerial").value, manualBrand=document.getElementById("scanBrand").value;
+  if(!hasImg&&!manualSerial){alert("Please photograph the nameplate or enter the serial number manually.");return;}
+  btn.disabled=true;btn.innerHTML=`<span class="spinner"></span><span class="pulsing">Reading nameplate…</span>`;
+  try{
+    let result;
+    if(hasImg){
+      const b64=await blobToBase64(scanFile),mime=scanFile.type;
+      const SYSTEM=`You are an expert HVAC nameplate reader and serial number decoder. Read any HVAC data plate and extract all information.
+SERIAL DECODING (current year is 2026):
+- Carrier/Bryant/Payne: positions 5-8 = week+year (e.g. 1216 = week 12, year 2016)
+- Trane/American Standard: 1st char=year letter (A=1980,B=1981...use letter position), 2nd-3rd=week
+- Lennox: first 2 digits=year, next 2=week (e.g. 2314 = year 2023, week 14)
+- Goodman/Amana/Daikin: 1st=decade, 2nd=year, 3rd-4th=week (e.g. 1324 = 2013, week 24)
+- Rheem/Ruud: first 2 digits=year, 3rd-4th=week
+- York/Coleman/Heil/Tempstar: letter=decade (F=1990s,G=2000s,H=2010s,J=2020s), digit=year
+- Mitsubishi: look for manufacture date on plate
+WARRANTY: Carrier/Bryant 10yr reg/5yr unreg. Trane 10yr/5yr. Lennox 10yr/5yr. Goodman lifetime+10yr. Amana lifetime. Rheem/Ruud 10yr/5yr. Mitsubishi 12yr/7yr. Daikin 12yr/5yr. York 10yr/5yr.
+Return ONLY valid JSON no markdown:
+{"brand":"","model":"","serial":"","refrigerant":"","voltage":"","tonnage":"","seer":"","manufactureYear":0,"manufactureMonth":0,"ageYears":0,"warrantyStatus":"Expired|Active|Likely Expired|Unknown","warrantyExpireYear":0,"registrationStatus":"Unknown","summary":"","techFlags":""}`;
+      const raw=await callAI(SYSTEM,[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:"Read this HVAC nameplate completely. Decode all information. Return JSON only."}]}],800);
+      result=JSON.parse(raw.replace(/```json|```/g,"").trim());
+    }else{
+      const SYSTEM=`You are an expert HVAC serial number decoder. Current year is 2026.
+DECODING: Carrier/Bryant pos 5-8=week+year. Trane 1st=year letter, 2nd-3rd=week. Lennox first 2=year. Goodman/Amana 1st=decade,2nd=year,3rd-4th=week. Rheem/Ruud first 2=year,3rd-4th=week. York letter=decade,digit=year.
+WARRANTY: Carrier/Bryant/Trane/Lennox/Rheem/York=10yr reg/5yr unreg. Goodman=lifetime+10yr. Amana=lifetime. Mitsubishi=12yr/7yr. Daikin=12yr/5yr.
+Return ONLY valid JSON no markdown:
+{"brand":"${manualBrand}","model":"${document.getElementById("scanModel").value||""}","serial":"${manualSerial}","refrigerant":"","voltage":"","tonnage":"","seer":"","manufactureYear":0,"manufactureMonth":0,"ageYears":0,"warrantyStatus":"","warrantyExpireYear":0,"registrationStatus":"Unknown","summary":"","techFlags":""}`;
+      const raw=await callAI(SYSTEM,[{role:"user",content:`Decode: Brand=${manualBrand}, Serial=${manualSerial}. Return JSON only.`}],500);
+      result=JSON.parse(raw.replace(/```json|```/g,"").trim());
     }
+    showScanResult(result);
+  }catch(e){alert("Nameplate scan failed: "+e.message+"\n\nTry entering details manually.");}
+  finally{btn.disabled=false;btn.innerHTML="🔍 Decode Nameplate";}
+}
 
-    btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Analyzing your system…</span>`;
-    const SYSTEM = isPro
-      ? `You are HVACGenius AI — the world's most advanced HVAC diagnostic intelligence. All brands, all systems, full technical knowledge. EPA 608, ASHRAE, ACCA. All refrigerants. RULES: First line = severity only: CRITICAL, HIGH, MEDIUM, or LOW. Use **Bold Headers**. Be precise and technical with measurements, part numbers, specs.`
-      : `You are HVACGenius AI — the world's most advanced HVAC diagnostic intelligence. All brands, all systems, full technical knowledge. RULES: First line = severity only: CRITICAL, HIGH, MEDIUM, or LOW. Use **Bold Headers**. Use plain friendly English — no jargon. This is a homeowner who is not an HVAC expert.`;
+function showScanResult(r){
+  const age = r.ageYears || (r.manufactureYear ? 2026 - r.manufactureYear : null);
+  const ageClass = age >= 15 ? "danger" : age >= 10 ? "warn" : "good";
+  const wClass = r.warrantyStatus==="Expired" ? "danger" : r.warrantyStatus==="Likely Expired" ? "warn" : r.warrantyStatus==="Active" ? "good" : "";
+  const info = WARRANTY_INFO[r.brand];
 
-    const raw    = await callAI(SYSTEM, messages);
-    const lines  = raw.trim().split("\n");
-    const sevW   = lines[0].trim().toUpperCase();
-    const knownSev = ["CRITICAL","HIGH","MEDIUM","LOW"];
-    const sev    = knownSev.includes(sevW) ? sevW : "MEDIUM";
-    const body   = knownSev.includes(sevW) ? lines.slice(1).join("\n").trim() : raw;
+  // Extracted data summary line
+  const parts = [r.brand, r.model, r.serial, r.refrigerant, r.voltage, r.tonnage, r.seer ? r.seer+" SEER" : ""].filter(Boolean);
+  document.getElementById("scanExtracted").textContent = parts.join("  ·  ") || "Data extracted from nameplate";
 
-    showResult(sev, body, isPro);
+  // 4 decode cards
+  document.getElementById("decodeGrid").innerHTML = `
+    <div class="decode-item ${ageClass}">
+      <div class="decode-label">System Age</div>
+      <div class="decode-value">${age ? age + " yrs" : "Unknown"}</div>
+      <div class="decode-sub">${r.manufactureYear ? "Manufactured " + r.manufactureYear : "Estimate only"}</div>
+    </div>
+    <div class="decode-item ${wClass}">
+      <div class="decode-label">Warranty Status</div>
+      <div class="decode-value">${r.warrantyStatus || "Unknown"}</div>
+      <div class="decode-sub">${r.warrantyExpireYear ? "Expires ~" + r.warrantyExpireYear : "Verify with manufacturer"}</div>
+    </div>
+    <div class="decode-item">
+      <div class="decode-label">Refrigerant</div>
+      <div class="decode-value">${r.refrigerant || "N/A"}</div>
+      <div class="decode-sub">${r.tonnage || ""}</div>
+    </div>
+    <div class="decode-item">
+      <div class="decode-label">Registration</div>
+      <div class="decode-value" style="font-size:15px;">${r.registrationStatus || "Unknown"}</div>
+      <div class="decode-sub">${r.registrationStatus==="Unregistered" ? "⚠️ Shorter warranty" : r.registrationStatus==="Registered" ? "✅ Full coverage" : "Check with mfr"}</div>
+    </div>`;
+
+  // Clean warranty section — replace scattered paragraphs with structured rows
+  const wColor = wClass==="danger" ? "#be123c" : wClass==="warn" ? "#b45309" : "#0d9488";
+  let warrantyHtml = `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;">
+        <span style="font-size:13px;font-weight:600;color:#999999;">Brand</span>
+        <span style="font-size:15px;font-weight:700;color:#1a1a1a;">${r.brand || "Unknown"}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;">
+        <span style="font-size:13px;font-weight:600;color:#999999;">Manufacture Date</span>
+        <span style="font-size:15px;font-weight:700;color:#1a1a1a;">${r.manufactureYear ? r.manufactureYear + (r.manufactureMonth ? " (Month " + r.manufactureMonth + ")" : "") : "Unknown"}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;">
+        <span style="font-size:13px;font-weight:600;color:#999999;">System Age</span>
+        <span style="font-size:15px;font-weight:700;color:${wColor};">${age ? age + " years old" : "Unknown"}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;">
+        <span style="font-size:13px;font-weight:600;color:#999999;">Warranty Status</span>
+        <span style="font-size:15px;font-weight:700;color:${wColor};">${r.warrantyStatus || "Unknown"}</span>
+      </div>
+      ${r.warrantyExpireYear ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;"><span style="font-size:13px;font-weight:600;color:#999999;">Est. Warranty Expiry</span><span style="font-size:15px;font-weight:700;color:#1a1a1a;">~${r.warrantyExpireYear}</span></div>` : ""}
+      ${info ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;"><span style="font-size:13px;font-weight:600;color:#999999;">Standard Terms</span><span style="font-size:14px;font-weight:600;color:#555555;text-align:right;max-width:60%;">${info.terms}</span></div>` : ""}
+      ${r.summary ? `<div style="padding:14px;background:#f0fdfa;border-radius:10px;border:1px solid #99f6e4;"><p style="font-size:13px;font-weight:700;color:#00838f;margin-bottom:6px;">Summary</p><p style="font-size:14px;color:#00838f;line-height:1.65;">${r.summary}</p></div>` : ""}
+      ${r.techFlags ? `<div style="padding:14px;background:#fffbeb;border-radius:10px;border:1px solid #fde68a;"><p style="font-size:13px;font-weight:700;color:#e65100;margin-bottom:6px;">⚠️ Tech Note</p><p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.65;">${r.techFlags}</p></div>` : ""}
+    </div>`;
+  document.getElementById("scanWarrantyText").innerHTML = warrantyHtml;
+
+  // Verify link with phone number
+  if (info) {
+    document.getElementById("scanVerifyLink").style.display = "block";
+    document.getElementById("scanVerifyBtn").href = info.url;
+    document.getElementById("scanVerifyLink").innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <p style="font-size:14px;color:#4527a0;flex:1;">Verify warranty directly with <strong>${r.brand}</strong>:</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a href="${info.url}" target="_blank" style="padding:9px 18px;background:#1a1a1a;border-radius:4px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">🌐 Warranty Portal</a>
+          <span style="padding:9px 14px;background:#fff;border:1px solid #b39ddb;border-radius:4px;color:#4527a0;font-size:14px;font-weight:600;">📞 ${info.phone}</span>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById("scanResult").style.display = "block";
+  document.getElementById("scanResult").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function resetScan(){
+  scanFile=null;
+  document.getElementById("scanResult").style.display="none";
+  document.getElementById("scanPreview").style.display="none";
+  document.getElementById("scanPrompt").style.display="flex";
+  document.getElementById("scanZone").classList.remove("has-img");
+  document.getElementById("scanInput").value="";
+  document.getElementById("scanBrand").selectedIndex=0;
+  document.getElementById("scanSerial").value="";
+  document.getElementById("scanModel").value="";
+}
+
+// Voice
+async function toggleRecording(){if(!mediaRecorder||mediaRecorder.state==="inactive")await startRecording();else stopRecording();}
+async function startRecording(){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    // iOS Safari requires audio/mp4, Chrome uses audio/webm
+    const mimeTypes = ["audio/webm;codecs=opus","audio/webm","audio/mp4","audio/ogg"];
+    const mime = mimeTypes.find(t => MediaRecorder.isTypeSupported(t)) || "audio/mp4";
+    mediaRecorder=new MediaRecorder(stream,{mimeType:mime});audioChunks=[];
+    mediaRecorder.ondataavailable=e=>{if(e.data.size>0)audioChunks.push(e.data);};
+    mediaRecorder.onstop=()=>processAudio(mime);mediaRecorder.start(200);recSeconds=0;
+    recTimer=setInterval(()=>{recSeconds++;const m=String(Math.floor(recSeconds/60)).padStart(2,"0"),s=String(recSeconds%60).padStart(2,"0");document.getElementById("recStatus").innerHTML=`<div style="display:flex;align-items:center;gap:10px;"><div class="wave-bars">${[10,16,12,18,8].map((h,i)=>`<div class="wave-bar" style="height:${h}px;animation-delay:${i*.1}s"></div>`).join("")}</div><span style="color:#ef4444;font-weight:700;">${m}:${s}</span><span class="pulsing" style="color:#999999;font-size:13px;">Recording…</span></div>`;},1000);
+    document.getElementById("recorder").className="recorder recording";
+    document.getElementById("recBtnWrap").innerHTML=`<div style="position:relative;display:inline-block;"><div class="rec-ring"></div><button onclick="stopRecording()" style="position:relative;z-index:10;background:#ef4444;color:#fff;width:52px;height:52px;border-radius:50%;border:none;font-size:20px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;">⏹</button></div>`;
+  }catch{alert("Please allow microphone access to use voice recording.");}
+}
+function stopRecording(){if(mediaRecorder?.state==="recording")mediaRecorder.stop();mediaRecorder?.stream?.getTracks().forEach(t=>t.stop());clearInterval(recTimer);document.getElementById("recStatus").innerHTML=`<p class="pulsing" style="font-size:14px;color:#4527a0;font-weight:600;">Analyzing your audio…</p>`;}
+async function processAudio(mime){
+  const blob=new Blob(audioChunks,{type:mime}),b64=await blobToBase64(blob);
+  try{const res=await callAI("",[{role:"user",content:[{type:"text",text:`Analyze this HVAC diagnostic audio. Transcribe speech. Identify mechanical sounds.\nSPEECH: [transcription]\nSOUNDS: [sound descriptions]\nSUMMARY: [1-2 sentences about what this tells us]`},{type:"document",source:{type:"base64",media_type:mime,data:b64}}]}]);audioTranscript=res;}
+  catch{audioTranscript="Audio recorded — will be referenced in diagnosis.";}
+  document.getElementById("recorder").className="recorder done";
+  document.getElementById("recBtnWrap").innerHTML=`<button class="btn btn-outline btn-sm" onclick="resetRecording()">🔄 Re-record</button>`;
+  document.getElementById("recStatus").innerHTML=`<p style="font-size:14px;color:#2e7d32;font-weight:600;">✓ Audio captured and analyzed</p>`;
+  document.getElementById("transcriptText").textContent=audioTranscript;
+  document.getElementById("transcriptBox").style.display="block";updateInputsSummary();
+}
+function resetRecording(){
+  audioTranscript="";
+  document.getElementById("recorder").className="recorder";
+  document.getElementById("recBtnWrap").innerHTML=`<button class="btn btn-purple btn-sm" onclick="toggleRecording()">🎙️ Record Voice</button>`;
+  document.getElementById("recStatus").innerHTML=`<p style="font-size:14px;color:#999999;">Record yourself describing the issue, or hold near the unit</p>`;
+  document.getElementById("transcriptBox").style.display="none";updateInputsSummary();
+}
+function updateInputsSummary(){
+  const isImg=uploadedFile?.type.startsWith("image/");
+  document.getElementById("tagFile").textContent=uploadedFile?`📹 ${isImg?"Photo":"Video"}`:"";
+  document.getElementById("tagFile").style.display=uploadedFile?"inline-block":"none";
+  document.getElementById("tagVoice").style.display=audioTranscript?"inline-block":"none";
+  document.getElementById("tagSymps").textContent=selectedSymptoms.length?`✓ ${selectedSymptoms.length} symptom${selectedSymptoms.length>1?"s":""}`:""
+  document.getElementById("tagSymps").style.display=selectedSymptoms.length?"inline-block":"none";
+}
+
+async function callAI(system,messages,max_tokens=1024){
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+  try {
+    const res = await fetch("/api/ai", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({system,messages,max_tokens}),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    return data.text;
   } catch(e) {
-    alert("AI request failed: " + e.message + "\n\nMake sure your ANTHROPIC_API_KEY is set in Replit Secrets.");
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = `⚡ Run AI Diagnostic`;
+    clearTimeout(timeout);
+    if(e.name === 'AbortError') throw new Error('Request timed out. Check your connection and try again.');
+    throw e;
   }
 }
+async function blobToBase64(blob, maxSizeKB=1500){
+  // Compress images larger than maxSizeKB to avoid API payload limits
+  if(blob.type && blob.type.startsWith('image/') && blob.size > maxSizeKB * 1024) {
+    return new Promise((res,rej) => {
+      const img = new Image();
+      const url = URL.createObjectURL(blob);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement('canvas');
+        let {width:w, height:h} = img;
+        const maxDim = 1600;
+        if(w > maxDim || h > maxDim) {
+          if(w > h) { h = Math.round(h * maxDim/w); w = maxDim; }
+          else { w = Math.round(w * maxDim/h); h = maxDim; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const quality = Math.min(0.85, (maxSizeKB * 1024) / blob.size);
+        res(canvas.toDataURL('image/jpeg', quality).split(',')[1]);
+      };
+      img.onerror = rej;
+      img.src = url;
+    });
+  }
+  return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=rej;r.readAsDataURL(blob);});
+}
+async function grabVideoFrame(file){return new Promise((res,rej)=>{const v=document.createElement("video"),c=document.createElement("canvas");v.muted=true;v.src=URL.createObjectURL(file);v.onloadeddata=()=>{v.currentTime=Math.min(2,v.duration*.1);};v.onseeked=()=>{c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0);URL.revokeObjectURL(v.src);res(c.toDataURL("image/jpeg",.85).split(",")[1]);};v.onerror=rej;});}
 
-function buildDiagPrompt(isPro, sysType, sysAge, brand, syms, desc, aud, hasVisual, isImg) {
-  const vis = hasVisual ? `\nVISUAL: ${isImg?"Photo":"Video frame"} of system provided for visual analysis.` : "";
-  if (isPro) return `CONTRACTOR DIAGNOSTIC REQUEST\nSystem: ${sysType||"N/A"} | Brand: ${brand||"N/A"} | Age: ${sysAge||"N/A"}\nFault Indicators: ${syms}\nNotes: ${desc||"None"}${aud}${vis}\n\nProvide FULL TECHNICAL REPORT:\n**ROOT CAUSE ANALYSIS**\n**AUDIO/VISUAL EVIDENCE** (if provided)\n**DIFFERENTIAL DIAGNOSIS** (2-3 alternatives with probability %)\n**DIAGNOSTIC PROCEDURE** (specific tests, measurements, pressures, voltages)\n**REFRIGERANT DATA** (superheat/subcooling targets if applicable)\n**PARTS REQUIRED** (part numbers, specs, estimated cost)\n**REPAIR PROCEDURE** (step-by-step)\n**SAFETY HAZARDS**\n**REPLACE vs REPAIR** (cost-benefit analysis)\n**ESTIMATED LABOR HOURS**`;
-  return `HOMEOWNER DIAGNOSTIC REQUEST\nSystem: ${sysType||"N/A"} | Age: ${sysAge||"N/A"}\nSymptoms: ${syms}\nDescription: ${desc||"None"}${aud}${vis}\n\nProvide FRIENDLY REPORT:\n**WHAT'S HAPPENING** (plain English, no jargon)\n**WHAT THOSE SOUNDS MEAN** (if audio provided, explain in simple terms)\n**HOW URGENT IS THIS?** (Today / This week / Can wait)\n**SAFE CHECKS YOU CAN DO** (1-2 simple safe steps)\n**SAFETY WARNINGS** (plain language)\n**DO YOU NEED A PRO?** (honest answer)\n**ESTIMATED COST** (repair vs replacement range)\n**ENERGY SAVING TIP** (one relevant tip)\n\nEnd with a warm recommendation to contact a certified local HVAC technician.`;
+// Diagnostic
+async function runDiagnostic(){
+  const sysType=document.getElementById("sysType").value,sysAge=document.getElementById("sysAge").value,brand=document.getElementById("brand").value,desc=document.getElementById("desc").value,isPro=mode==="pro";
+  if(!sysType&&!selectedSymptoms.length&&!desc&&!uploadedFile&&!audioTranscript){alert("Please add at least one detail — select a system type, describe the problem, or upload a photo.");return;}
+  const btn=document.getElementById("runBtn");btn.disabled=true;btn.style.background="#009999";btn.innerHTML=`<span class="spinner"></span><span class="pulsing" style="font-family:'Roboto Condensed',sans-serif;font-size:18px;letter-spacing:.5px;">Analyzing your system…</span>`;
+  try{
+    const symsText=selectedSymptoms.length?selectedSymptoms.join(", "):"None selected",audText=audioTranscript?`\nAUDIO ANALYSIS:\n${audioTranscript}\n`:"";
+    let messages;
+    if(uploadedFile){
+      btn.innerHTML=`<span class="spinner"></span><span class="pulsing">Reading file…</span>`;
+      const isImg=uploadedFile.type.startsWith("image/"),b64=isImg?await blobToBase64(uploadedFile):await grabVideoFrame(uploadedFile),mime=isImg?uploadedFile.type:"image/jpeg";
+      messages=[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:buildDiagPrompt(isPro,sysType,sysAge,brand,symsText,desc,audText,true,isImg)}]}];
+    }else{messages=[{role:"user",content:buildDiagPrompt(isPro,sysType,sysAge,brand,symsText,desc,audText,false,false)}];}
+    btn.innerHTML=`<span class="spinner"></span><span class="pulsing">Analyzing your system…</span>`;
+    const SYSTEM=isPro
+      ?`You are HVACGenius AI — the world's most advanced HVAC diagnostic intelligence. All brands, systems, full technical knowledge. EPA 608, ASHRAE, ACCA. RULES: First line = severity only: CRITICAL, HIGH, MEDIUM, or LOW. Use **Bold Headers**. Be precise and technical.`
+      :`You are HVACGenius AI — the world's most advanced HVAC diagnostic intelligence. RULES: First line = severity only: CRITICAL, HIGH, MEDIUM, or LOW. Use **Bold Headers**. Plain friendly English — no jargon. Homeowner audience.`;
+    const raw=await callAI(SYSTEM,messages);lastDiagResult=raw;
+    const lines=raw.trim().split("\n"),sevW=lines[0].trim().toUpperCase(),knownSev=["CRITICAL","HIGH","MEDIUM","LOW"];
+    const sev=knownSev.includes(sevW)?sevW:"MEDIUM",body=knownSev.includes(sevW)?lines.slice(1).join("\n").trim():raw;
+    showResult(sev,body,isPro);
+  }catch(e){const msg = e.message || "Unknown error";
+    if(msg.includes("timed out")) { alert("⏱️ Request timed out — the server is busy. Please try again."); }
+    else if(msg.includes("API key") || msg.includes("x-api-key")) { alert("🔑 API key issue — check your ANTHROPIC_API_KEY in Railway Variables."); }
+    else if(msg.includes("fetch")) { alert("📵 Network error — check your internet connection."); }
+    else { alert("Request failed: " + msg); }}
+  finally{btn.disabled=false;btn.style.background="#00b5b5";btn.innerHTML="⚡ Run Diagnostic";}
 }
 
-function showResult(sev, body, isPro) {
-  const SEV_STYLES = {
-    CRITICAL:{badge:"background:#fee2e2;color:#b91c1c",left:"#dc2626",label:"🚨 Critical — Act Now"},
-    HIGH:    {badge:"background:#fef9c3;color:#92400e",left:"#d97706",label:"⚠️ High Priority"},
-    MEDIUM:  {badge:"background:#dbeafe;color:#1e40af",left:"#2563eb",label:"🔵 Medium Priority"},
-    LOW:     {badge:"background:#dcfce7;color:#166534",left:"#16a34a",label:"✅ Low Priority"},
+function buildDiagPrompt(isPro,sysType,sysAge,brand,syms,desc,aud,hasVisual,isImg){
+  const vis=hasVisual?`\nVISUAL: ${isImg?"Photo":"Video frame"} of system provided.`:"";
+  if(isPro) return `CONTRACTOR DIAGNOSTIC REQUEST
+System: ${sysType||"N/A"} | Brand: ${brand||"N/A"} | Age: ${sysAge||"N/A"}
+Fault Indicators: ${syms}
+Notes: ${desc||"None"}${aud}${vis}
+
+Return ONLY valid JSON no markdown:
+{"severity":"CRITICAL|HIGH|MEDIUM|LOW","rootCause":"string","confidence":"85%","urgency":"Today|This week|Can wait","summary":"1 sentence plain summary","sections":[{"label":"Root Cause","icon":"🔍","body":"string"},{"label":"Differential Diagnosis","icon":"📊","body":"Alt 1 (70%): ... Alt 2 (20%): ..."},{"label":"Diagnostic Procedure","icon":"🔧","steps":["step1","step2","step3"]},{"label":"Refrigerant Data","icon":"❄️","body":"string or null"},{"label":"Parts Required","icon":"🔩","body":"string with part numbers and costs"},{"label":"Safety Hazards","icon":"⚠️","body":"string"},{"label":"Replace vs Repair","icon":"💡","body":"string"},{"label":"Est. Labor Hours","icon":"⏱️","body":"string"}]}`;
+  return `HOMEOWNER DIAGNOSTIC REQUEST
+System: ${sysType||"N/A"} | Age: ${sysAge||"N/A"}
+Symptoms: ${syms}
+Description: ${desc||"None"}${aud}${vis}
+
+Return ONLY valid JSON no markdown:
+{"severity":"CRITICAL|HIGH|MEDIUM|LOW","urgency":"Today|This week|Can wait","urgencyColor":"#c62828|#e65100|#1565c0|#2e7d32","summary":"1 sentence plain English summary","estimatedCost":"$X–$X","sections":[{"label":"What's Happening","icon":"💡","body":"plain English explanation"},{"label":"How Urgent","icon":"🕐","body":"string"},{"label":"Safe Checks You Can Do","icon":"✅","steps":["step1","step2"]},{"label":"Safety Warnings","icon":"⚠️","body":"string or null"},{"label":"Do You Need a Pro?","icon":"🛠️","body":"honest answer"},{"label":"Estimated Cost","icon":"💰","body":"repair vs replacement range"}]}`;
+}
+
+function showResult(sev,body,isPro){
+  const SEV={
+    CRITICAL:{color:"#c62828",bg:"#ffebee",label:"🚨 CRITICAL",border:"#c62828"},
+    HIGH:    {color:"#e65100",bg:"#fff3e0",label:"⚠️ HIGH PRIORITY",border:"#e65100"},
+    MEDIUM:  {color:"#1565c0",bg:"#e3f2fd",label:"📋 MEDIUM PRIORITY",border:"#1565c0"},
+    LOW:     {color:"#2e7d32",bg:"#e8f5e9",label:"✅ LOW PRIORITY",border:"#2e7d32"},
   };
-  const s = SEV_STYLES[sev] || SEV_STYLES.MEDIUM;
-  document.getElementById("sevBadge").style.cssText = s.badge + ";padding:6px 16px;border-radius:99px;font-size:14px;font-weight:700;";
-  document.getElementById("sevBadge").textContent = s.label;
-  document.getElementById("resultCard").style.borderLeft = `4px solid ${s.left}`;
-  document.getElementById("resultText").innerHTML = body
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, "<br/>");
-  document.getElementById("homeownerCTA").style.display  = isPro ? "none" : "block";
-  document.getElementById("contractorNudge").style.display = isPro ? "block" : "none";
-  document.getElementById("resultPanel").style.display = "block";
+  const s=SEV[sev]||SEV.MEDIUM;
+  let data=null;
+  try{const clean=body.replace(/```json|```/g,"").trim();data=JSON.parse(clean);}catch(e){}
+
+  // Severity badge
+  document.getElementById("sevBadge").style.cssText=`background:${s.bg};color:${s.color};padding:5px 14px;border-radius:3px;font-size:11px;font-weight:700;font-family:'Roboto Condensed',sans-serif;letter-spacing:.8px;border:1px solid ${s.border}`;
+  document.getElementById("sevBadge").textContent=s.label;
+  document.getElementById("resultCard").style.borderLeft=`4px solid ${s.color}`;
+
+  if(data&&data.sections){ renderDiagCards(data,s); }
+  else {
+    document.getElementById("resultText").innerHTML=`<div class="diag-body">${body.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,"<br/>")}</div>`;
+  }
+  document.getElementById("homeownerCTA").style.display=isPro?"none":"block";
+  document.getElementById("contractorNudge").style.display=isPro?"block":"none";
+  document.getElementById("eduPanel").style.display=isPro?"block":"none";
+  document.getElementById("resultPanel").style.display="block";
   document.getElementById("resultPanel").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
-function resetDiagnostic() {
-  document.getElementById("resultPanel").style.display = "none";
-  document.getElementById("desc").value = "";
-  document.getElementById("sysType").selectedIndex = 0;
-  document.getElementById("sysAge").selectedIndex  = 0;
-  document.getElementById("brand").selectedIndex   = 0;
-  selectedSymptoms = [];
-  buildSymptomGrid(mode);
-  uploadedFile = null;
-  document.getElementById("dropZone").className = "drop-zone";
-  document.getElementById("dropIcon").textContent  = "📷";
-  document.getElementById("dropTitle").textContent = "Tap to upload a photo or video";
-  document.getElementById("imgPreview").style.display   = "none";
-  document.getElementById("videoPreview").style.display = "none";
-  resetRecording();
-  updateInputsSummary();
+function renderDiagCards(data,s){
+  const el=document.getElementById("resultText");
+  let html=`<div style="background:${s.bg};border-radius:6px;padding:14px 16px;margin-bottom:4px;border:1px solid ${s.border};">`;
+  if(data.summary) html+=`<p style="font-size:16px;font-weight:600;color:#1a1a1a;line-height:1.5;margin-bottom:${data.confidence||data.estimatedCost?'10px':'0'}">${data.summary}</p>`;
+  const stats=[];
+  if(data.confidence) stats.push({val:data.confidence,lbl:"Confidence",color:s.color});
+  if(data.urgency)    stats.push({val:data.urgency,lbl:"Urgency",color:data.urgencyColor||s.color});
+  if(data.estimatedCost) stats.push({val:data.estimatedCost,lbl:"Est. Cost",color:"#2e7d32"});
+  if(stats.length){
+    html+=`<div style="display:flex;gap:8px;flex-wrap:wrap;">`;
+    stats.forEach(st=>{
+      html+=`<div style="flex:1;min-width:80px;background:rgba(255,255,255,.75);border-radius:5px;padding:10px;text-align:center;border:1px solid rgba(0,0,0,.06);"><span style="font-family:'Roboto Condensed',sans-serif;font-size:17px;font-weight:900;color:${st.color};display:block;line-height:1.1;">${st.val}</span><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#999;">${st.lbl}</span></div>`;
+    });
+    html+=`</div>`;
+  }
+  html+=`</div><div class="diag-report">`;
+  (data.sections||[]).forEach(sec=>{
+    if(!sec||(!sec.body&&!sec.steps)) return;
+    html+=`<div class="diag-section"><div class="diag-label"><span class="diag-label-dot" style="background:${s.color};"></span>${sec.icon||""} ${sec.label||""}</div>`;
+    if(sec.body&&sec.body!=="null"&&sec.body!=="string"){
+      const fmt=sec.body.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/(WARNING|DANGER|CRITICAL|CAUTION):?/gi,'<span style="color:#c62828;font-weight:700;">$1:</span>');
+      html+=`<div class="diag-body">${fmt}</div>`;
+    }
+    if(sec.steps&&sec.steps.length){
+      html+=`<div style="margin-top:4px;">`;
+      sec.steps.forEach((step,i)=>{
+        if(!step) return;
+        html+=`<div class="diag-step"><div class="diag-step-num">${i+1}</div><div class="diag-step-text">${step.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div></div>`;
+      });
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  });
+  html+=`</div>`;
+  el.innerHTML=html;
+}
+
+// Education Mode
+async function runEduMode(){
+  if(!lastDiagResult)return;const btn=document.getElementById("eduBtn");
+  btn.disabled=true;btn.innerHTML=`<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span> Generating…`;
+  try{
+    const result=await callAI(`You are an HVAC expert who explains technical problems to homeowners in simple, friendly language. No jargon. Use analogies. Be reassuring but honest.`,[{role:"user",content:`Based on this technical HVAC diagnosis, create a simple homeowner-friendly explanation:\n\n${lastDiagResult}\n\n**What's happening with your system** (1-2 sentences, simple analogy)\n**Why this matters** (impact on comfort, safety, energy bills)\n**What happens if you wait** (honest but not scary)\n**What the technician will do** (reassure them about the process)\n**Good questions to ask your technician** (2-3 questions)`}]);
+    document.getElementById("eduText").innerHTML=result.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#1565c0">$1</strong>').replace(/\n/g,"<br/>");
+    document.getElementById("eduContent").style.display="block";
+  }catch(e){alert("Failed: "+e.message);}
+  finally{btn.disabled=false;btn.innerHTML="Generate Explanation";}
+}
+function copyEdu(){navigator.clipboard.writeText(document.getElementById("eduText")?.textContent||"").then(()=>alert("Copied! Show this to your customer.")).catch(()=>{});}
+
+function resetDiagnostic(){
+  document.getElementById("resultPanel").style.display="none";
+  document.getElementById("desc").value="";
+  ["sysType","sysAge","brand"].forEach(id=>document.getElementById(id).selectedIndex=0);
+  selectedSymptoms=[];buildSymptomGrid(mode);uploadedFile=null;lastDiagResult="";
+  document.getElementById("dropZone").className="drop-zone";
+  document.getElementById("dropIcon").textContent="📷";
+  document.getElementById("dropTitle").textContent="Tap to Upload a Photo or Video";
+  document.getElementById("imgPreview").style.display="none";
+  document.getElementById("videoPreview").style.display="none";
+  document.getElementById("eduContent").style.display="none";
+  resetRecording();updateInputsSummary();window.scrollTo({top:0,behavior:"smooth"});
+}
+
+// Warranty scan functions
+let wScanFile = null;
+function handleWarrantyScan(e) {
+  const file = e.target.files[0]; if(!file) return;
+  wScanFile = file;
+  const url = URL.createObjectURL(file);
+  document.getElementById("wScanPreview").src = url;
+  document.getElementById("wScanPreview").style.display = "block";
+  document.getElementById("wScanPrompt").style.display = "none";
+  document.getElementById("wScanBtn").style.display = "inline-flex";
+  document.getElementById("wClearBtn").style.display = "inline-flex";
+}
+function clearWarrantyScan() {
+  wScanFile = null;
+  document.getElementById("wScanPreview").style.display = "none";
+  document.getElementById("wScanPrompt").style.display = "block";
+  document.getElementById("wScanBtn").style.display = "none";
+  document.getElementById("wClearBtn").style.display = "none";
+  document.getElementById("wScanInput").value = "";
+}
+async function runWarrantyScan() {
+  if(!wScanFile) return;
+  const btn = document.getElementById("wScanBtn");
+  btn.disabled = true; btn.innerHTML = `<span class="spinner"></span><span class="pulsing"> Reading nameplate…</span>`;
+  try {
+    const b64 = await blobToBase64(wScanFile), mime = wScanFile.type;
+    const SYSTEM = `You are an expert HVAC nameplate reader. Read the data plate and decode all information. Current year is 2026.
+SERIAL DECODING: Carrier/Bryant/Payne pos 5-8=week+year. Trane 1st=year letter,2nd-3rd=week. Lennox first 2=year,next 2=week. Goodman/Amana/Daikin 1st=decade,2nd=year,3rd-4th=week. Rheem/Ruud first 2=year,3rd-4th=week. York/Coleman/Heil letter=decade(F=90s,G=00s,H=10s,J=20s),digit=year.
+WARRANTY: Carrier/Bryant/Trane/Lennox/Rheem/York=10yr reg/5yr unreg. Goodman=lifetime+10yr. Amana=lifetime. Mitsubishi=12yr/7yr. Daikin=12yr/5yr.
+Return ONLY valid JSON: {"brand":"","model":"","serial":"","refrigerant":"","voltage":"","tonnage":"","seer":"","manufactureYear":0,"ageYears":0,"warrantyStatus":"Active|Expired|Likely Expired|Unknown","warrantyExpireYear":0,"registrationStatus":"Unknown","summary":"","techFlags":""}`;
+    const raw = await callAI(SYSTEM, [{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:"Read this HVAC nameplate completely and return JSON only."}]}], 600);
+    const r = JSON.parse(raw.replace(/```json|```/g,"").trim());
+    // Auto-fill the manual fields
+    if(r.brand) { const sel=document.getElementById("wBrand"); for(let o of sel.options){if(o.value===r.brand){sel.value=r.brand;showWarrantyLinks();break;}} }
+    if(r.model)  document.getElementById("wModel").value = r.model;
+    if(r.serial) document.getElementById("wSerial").value = r.serial;
+    if(r.brand||r.model||r.serial) document.getElementById("wNotes").value = `Scanned from nameplate. Age: ~${r.ageYears||"unknown"} yrs. Refrigerant: ${r.refrigerant||"N/A"}. ${r.techFlags||""}`.trim();
+    // Show instant result
+    showWarrantyRows(r.brand, r.model, r.serial, r.ageYears, r.manufactureYear, r.warrantyStatus, r.warrantyExpireYear, r.registrationStatus, r.summary, r.techFlags, r.refrigerant);
+    document.getElementById("warrantyResult").style.display = "block";
+    document.getElementById("warrantyResult").scrollIntoView({behavior:"smooth",block:"start"});
+  } catch(e) { alert("Scan failed: "+e.message+"\n\nTry entering details manually below."); }
+  finally { btn.disabled=false; btn.innerHTML="🔍 Decode This Nameplate"; }
+}
+
+function showWarrantyRows(brand, model, serial, age, mfgYear, wStatus, wExpire, regStatus, summary, techFlags, refrigerant) {
+  const wColor = wStatus==="Expired"?"#be123c":wStatus==="Likely Expired"?"#b45309":wStatus==="Active"?"#0d9488":"#6b7280";
+  const ageColor = age>=15?"#be123c":age>=10?"#b45309":"#0d9488";
+  const info = WARRANTY_INFO[brand];
+  let rows = "";
+  if(brand)    rows += warrantyRow("Brand", brand);
+  if(model)    rows += warrantyRow("Model Number", model);
+  if(serial)   rows += warrantyRow("Serial Number", serial);
+  if(refrigerant) rows += warrantyRow("Refrigerant", refrigerant);
+  if(mfgYear)  rows += warrantyRow("Manufacture Year", mfgYear, `Built ${mfgYear}`);
+  if(age)      rows += warrantyRow("System Age", age+" years old", age>=15?"⚠️ Past typical lifespan":age>=10?"Approaching end of life":"Within expected lifespan", ageColor);
+  if(wStatus)  rows += warrantyRow("Warranty Status", wStatus, wExpire?"Expires ~"+wExpire:"Verify with manufacturer", wColor);
+  if(regStatus && regStatus!=="Unknown") rows += warrantyRow("Registration", regStatus, regStatus==="Unregistered"?"⚠️ Shorter warranty coverage":regStatus==="Registered"?"✅ Full coverage applies":"");
+  if(info)     rows += warrantyRow("Standard Terms", info.terms);
+  if(summary)  rows += `<div style="padding:14px;background:#f0fdfa;border-radius:10px;border:1px solid #99f6e4;"><p style="font-size:12px;font-weight:700;color:#00838f;margin-bottom:6px;">SUMMARY</p><p style="font-size:14px;color:#00838f;line-height:1.65;">${summary}</p></div>`;
+  if(techFlags) rows += `<div style="padding:14px;background:#fffbeb;border-radius:10px;border:1px solid #fde68a;"><p style="font-size:12px;font-weight:700;color:#e65100;margin-bottom:6px;">⚠️ TECH NOTE</p><p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.65;">${techFlags}</p></div>`;
+  document.getElementById("warrantyText").innerHTML = rows;
+  if(info) {
+    document.getElementById("warrantyVerifyLink").style.display = "block";
+    document.getElementById("warrantyVerifyBtn").href = info.url;
+    document.getElementById("warrantyPhone").textContent = "📞 " + info.phone;
+  }
+}
+
+function warrantyRow(label, value, sub="", valueColor="#111827") {
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;gap:12px;flex-wrap:wrap;">
+    <span style="font-size:13px;font-weight:600;color:#999999;">${label}</span>
+    <div style="text-align:right;">
+      <span style="font-size:15px;font-weight:700;color:${valueColor};">${value}</span>
+      ${sub?`<div style="font-size:12px;color:#999999;margin-top:2px;">${sub}</div>`:""}
+    </div>
+  </div>`;
+}
+
+function resetWarranty() {
+  document.getElementById("warrantyResult").style.display="none";
+  document.getElementById("wBrand").selectedIndex=0;
+  document.getElementById("wModel").value="";
+  document.getElementById("wSerial").value="";
+  document.getElementById("wNotes").value="";
+  document.getElementById("warrantyLinks").style.display="none";
+  clearWarrantyScan();
   window.scrollTo({top:0,behavior:"smooth"});
 }
-
-// ── Warranty ───────────────────────────────────────────────────
-function showWarrantyLinks() {
-  const brand = document.getElementById("wBrand").value;
-  const info  = WARRANTY_INFO[brand];
-  const div   = document.getElementById("warrantyLinks");
-  if (info) {
-    div.style.display = "flex";
-    div.innerHTML = `
-      <a href="${info.url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#7c3aed;border-radius:9px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">🌐 Warranty Portal</a>
-      <span style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#fff;border:1.5px solid #e2e8f0;border-radius:9px;color:#374151;font-size:14px;font-weight:600;">📞 ${info.phone}</span>`;
-  } else {
-    div.style.display = "none";
-    div.innerHTML = "";
-  }
-}
-
-async function runWarranty() {
-  const brand  = document.getElementById("wBrand").value;
-  const model  = document.getElementById("wModel").value;
-  const serial = document.getElementById("wSerial").value;
-  const notes  = document.getElementById("wNotes").value;
-  if (!brand || !serial) { alert("Please select a manufacturer and enter the serial number."); return; }
-  const btn = document.getElementById("warrantyBtn");
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Looking up warranty…</span>`;
-  const info = WARRANTY_INFO[brand];
-  const prompt = `WARRANTY LOOKUP\nBrand: ${brand}\nModel: ${model||"N/A"}\nSerial: ${serial}\nNotes: ${notes||"None"}\n${info?`Portal: ${info.url}\nPhone: ${info.phone}`:""}`;
-  try {
-    const SYSTEM = `You are an HVAC warranty expert AI. SERIAL DECODING: Carrier/Bryant pos 5-8=week+year. Trane 1st=year 2nd-3rd=week. Lennox first 2=year. Goodman/Amana 1st=decade 2nd=year 3rd-4th=week. Rheem/Ruud 1st 2=year 3rd-4th=week. York letter=decade digit=year. TERMS: Carrier/Bryant 10yr reg/5yr unreg. Trane 10yr/5yr. Lennox 10yr/5yr. Goodman lifetime compressor+10yr reg. Amana lifetime unit replacement. Rheem/Ruud 10yr/5yr. Mitsubishi 12yr/7yr. Daikin 12yr/5yr. Sections: **UNIT IDENTIFICATION** **WARRANTY STATUS** **REGISTERED vs UNREGISTERED** **WHAT'S COVERED** **WHAT'S NOT COVERED** **VERIFY WARRANTY** **TECHNICIAN FLAGS**`;
-    const txt = await callAI(SYSTEM, [{role:"user",content:prompt}]);
-    document.getElementById("warrantyText").innerHTML = txt.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#7c3aed">$1</strong>').replace(/\n/g,"<br/>");
-    document.getElementById("warrantyResult").style.display = "block";
-    if (info) {
-      document.getElementById("warrantyVerifyLink").style.display = "block";
-      document.getElementById("warrantyVerifyBtn").href = info.url;
-    }
-    document.getElementById("warrantyResult").scrollIntoView({behavior:"smooth",block:"start"});
-  } catch(e) { alert("Warranty lookup failed: " + e.message); }
-  finally { btn.disabled=false; btn.innerHTML="🛡️ Check Warranty Coverage"; }
-}
-
-// ── Revenue Builder ────────────────────────────────────────────
-async function runRevenue() {
-  const sysType  = document.getElementById("rSysType").value;
-  const sysAge   = document.getElementById("rSysAge").value;
-  const brand    = document.getElementById("rBrand").value;
-  const homeSize = document.getElementById("rHomeSize").value;
-  const notes    = document.getElementById("rNotes").value;
-  if (!sysType && !selectedConcerns.length && !notes) {
-    alert("Please fill in at least the system type or select some home/family details.");
-    return;
-  }
-  const btn = document.getElementById("revenueBtn");
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Building recommendations…</span>`;
-  const SYSTEM = `You are an HVAC business revenue consultant. Help contractors identify genuine upsell opportunities. Products: UV-C lights, REME HALO, iWave ionizers, MERV 13/16 filters, HEPA, dehumidifiers, ERV/HRV, smart thermostats, zoning, CO detectors, gas detectors, Aeroseal duct sealing, service agreements, filter subscriptions. RULES: Safety first. Honest ROI. Include word-for-word conversation scripts. Return ONLY valid JSON no markdown: {"summary":"string","totalOpportunityLow":0,"totalOpportunityHigh":0,"recommendations":[{"category":"Safety|IAQ|Comfort|Efficiency|Maintenance","priority":"High|Medium|Low","title":"string","why":"string","homeownerBenefit":"string","priceLow":0,"priceHigh":0,"techProfit":0,"roi":"string","script":"string"}]}`;
-  const prompt = `System: ${sysType||"Unknown"} | Brand: ${brand||"Unknown"} | Age: ${sysAge||"Unknown"} | Home: ${homeSize||"Unknown"}\nConcerns: ${selectedConcerns.length ? selectedConcerns.join(", ") : "None"}\nNotes: ${notes||"None"}\nGenerate personalized recommendations.`;
-  try {
-    const raw   = await callAI(SYSTEM, [{role:"user",content:prompt}]);
-    const clean = raw.replace(/```json|```/g,"").trim();
-    const data  = JSON.parse(clean);
-    showRevenueResults(data);
-  } catch(e) { alert("Revenue builder failed: " + e.message + "\n\nTry adding more details about the system and home."); }
-  finally { btn.disabled=false; btn.innerHTML="💰 Build Revenue Recommendations"; }
-}
-
-function showRevenueResults(data) {
-  const fmt$ = n => `$${Number(n||0).toLocaleString()}`;
-  document.getElementById("revSummary").textContent = data.summary || "";
-  document.getElementById("revRange").textContent   = `${fmt$(data.totalOpportunityLow)}–${fmt$(data.totalOpportunityHigh)}`;
-  const totalProfit = data.recommendations?.reduce((s,r)=>s+(r.techProfit||0),0)||0;
-  const profitEl = document.getElementById("revProfit");
-  profitEl.textContent = totalProfit > 0 ? `~${fmt$(totalProfit)} est. your profit` : "";
-
-  const container = document.getElementById("revenueCards");
-  container.innerHTML = "";
-  (data.recommendations||[]).forEach((rec, i) => {
-    const cs = CAT_STYLE[rec.category] || CAT_STYLE.Maintenance;
-    const priColor = rec.priority==="High" ? "#dc2626" : rec.priority==="Medium" ? "#d97706" : "#16a34a";
-    const card = document.createElement("div");
-    card.className = "rec-card";
-    card.style.borderLeft = `4px solid ${cs.border.replace("e8","b0")}`;
-    card.innerHTML = `
-      <div style="display:flex;align-items:flex-start;gap:14px;" onclick="toggleRecCard(${i})">
-        <div style="width:46px;height:46px;border-radius:10px;background:${cs.bg};border:1px solid ${cs.border};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${cs.icon}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;">
-            <span style="font-size:16px;font-weight:700;color:#111827;">${rec.title}</span>
-            <span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:600;background:${cs.bg};color:${cs.text};border:1px solid ${cs.border};">${rec.category}</span>
-            <span style="font-size:12px;font-weight:600;color:${priColor};">${rec.priority} Priority</span>
-          </div>
-          <p style="font-size:14px;color:#6b7280;line-height:1.5;margin:0;">${rec.homeownerBenefit}</p>
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <p style="font-size:17px;font-weight:700;color:#16a34a;">${fmt$(rec.priceLow)}–${fmt$(rec.priceHigh)}</p>
-          ${rec.techProfit ? `<p style="font-size:13px;color:#d97706;font-weight:600;">~${fmt$(rec.techProfit)} profit</p>` : ""}
-          <p style="font-size:18px;color:#9ca3af;margin-top:4px;" id="chevron-${i}">▼</p>
-        </div>
+function showWarrantyLinks(){
+  const brand=document.getElementById("wBrand").value,info=WARRANTY_INFO[brand],div=document.getElementById("warrantyLinks");
+  if(info){
+    div.style.display="flex";div.style.flexDirection="column";div.style.gap="10px";
+    div.innerHTML=`
+      <div style="padding:12px 14px;background:#ede7f6;border:1px solid #b39ddb;border-radius:10px;">
+        <p style="font-size:12px;font-weight:700;color:#4527a0;margin-bottom:3px;">STANDARD WARRANTY TERMS</p>
+        <p style="font-size:14px;color:#4527a0;font-weight:600;">${info.terms}</p>
       </div>
-      <div id="recDetail-${i}" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #f3f4f6;">
-        <div style="background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:12px;">
-          <p style="font-size:12px;font-weight:700;color:${cs.text};text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why This Home Needs It</p>
-          <p style="font-size:14px;color:#4b5563;line-height:1.65;">${rec.why}</p>
-        </div>
-        ${rec.roi ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;margin-bottom:12px;display:flex;gap:10px;align-items:center;"><span style="font-size:20px;">📈</span><p style="font-size:14px;color:#166534;margin:0;line-height:1.5;"><strong>ROI:</strong> ${rec.roi}</p></div>` : ""}
-        <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:16px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <p style="font-size:12px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px;">🗣️ Conversation Script</p>
-            <button class="btn btn-outline btn-sm" onclick="copyScript('script-${i}')">Copy</button>
-          </div>
-          <p id="script-${i}" style="font-size:15px;color:#1f2937;line-height:1.7;font-style:italic;">"${rec.script}"</p>
-        </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="${info.url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#1a1a1a;border-radius:4px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">🌐 Warranty Portal</a>
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#fff;border:1px solid #b39ddb;border-radius:4px;color:#4527a0;font-size:14px;font-weight:600;">📞 ${info.phone}</span>
       </div>`;
+  } else { div.style.display="none"; div.innerHTML=""; }
+}
+async function runWarranty(){
+  const brand=document.getElementById("wBrand").value,model=document.getElementById("wModel").value,serial=document.getElementById("wSerial").value,notes=document.getElementById("wNotes").value;
+  if(!brand||!serial){alert("Please select a manufacturer and enter the serial number.");return;}
+  const btn=document.getElementById("warrantyBtn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span><span class="pulsing">Looking up warranty…</span>`;
+  try{
+    const SYSTEM=`You are an HVAC warranty expert. Current year is 2026. SERIAL DECODING: Carrier/Bryant pos 5-8=week+year. Trane 1st=year letter,2nd-3rd=week. Lennox first 2=year. Goodman/Amana 1st=decade,2nd=year,3rd-4th=week. Rheem/Ruud first 2=year. York letter=decade,digit=year. WARRANTY: Carrier/Bryant/Trane/Lennox/Rheem/York=10yr reg/5yr unreg. Goodman=lifetime+10yr. Amana=lifetime. Mitsubishi=12yr/7yr. Daikin=12yr/5yr. Return ONLY valid JSON: {"manufactureYear":0,"ageYears":0,"warrantyStatus":"Active|Expired|Likely Expired|Unknown","warrantyExpireYear":0,"registrationStatus":"Unknown","summary":"","techFlags":""}`;
+    const raw=await callAI(SYSTEM,[{role:"user",content:`Brand: ${brand}\nModel: ${model||"N/A"}\nSerial: ${serial}\nNotes: ${notes||"None"}`}],500);
+    const d=JSON.parse(raw.replace(/```json|```/g,"").trim());
+    showWarrantyRows(brand,model,serial,d.ageYears,d.manufactureYear,d.warrantyStatus,d.warrantyExpireYear,d.registrationStatus,d.summary,d.techFlags,"");
+    document.getElementById("warrantyResult").style.display="block";
+    document.getElementById("warrantyResult").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){alert("Warranty lookup failed: "+e.message);}
+  finally{btn.disabled=false;btn.innerHTML="🛡️ Check Warranty Coverage";}
+}
+
+// Refrigerant
+async function runRefrigLookup(){
+  const brand=document.getElementById("rBrandRefrig").value,type=document.getElementById("rTypeRefrig").value,age=document.getElementById("rAgeRefrig").value,model=document.getElementById("rModelRefrig").value,notes=document.getElementById("rNotesRefrig").value;
+  if(!brand&&!type&&!model){alert("Please select at least the brand and system type.");return;}
+  const btn=document.getElementById("refrigBtn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span><span class="pulsing">Identifying refrigerant…</span>`;
+  try{
+    const SYSTEM=`You are an HVAC refrigerant expert. Know which refrigerant every brand/model/year uses. Know AIM Act phase-down for R-410A, R-22 production ban (2020), transition to R-454B/R-32/A2L refrigerants. Return ONLY valid JSON no markdown:
+{"refrigerant":"R-410A","phaseStatus":"Active|Phase-Down|Phased Out","phaseYear":2025,"dropInReplacement":"R-454B","dropInNotes":"string","chargeAmount":"string","systemNotes":"string","safetyWarning":null,"techTips":"string","urgency":"Low|Medium|High","urgencyReason":"string"}`;
+    const raw=await callAI(SYSTEM,[{role:"user",content:`Brand: ${brand||"Unknown"}\nType: ${type||"Unknown"}\nAge: ${age||"Unknown"}\nModel: ${model||"N/A"}\nNotes: ${notes||"None"}\nIdentify the refrigerant and provide full details. JSON only.`}],600);
+    showRefrigResult(JSON.parse(raw.replace(/```json|```/g,"").trim()));
+  }catch(e){alert("Refrigerant lookup failed: "+e.message);}
+  finally{btn.disabled=false;btn.innerHTML="❄️ Identify Refrigerant";}
+}
+function showRefrigResult(d){
+  const pc={"Active":"#16a34a","Phase-Down":"#d97706","Phased Out":"#dc2626"},color=pc[d.phaseStatus]||"#6b7280";
+  let html=`<div style="background:#fff;border:1px solid #90caf9;border-radius:6px;padding:18px;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+      <div><p style="font-size:13px;color:#999999;font-weight:600;margin-bottom:4px;">REFRIGERANT TYPE</p><p style="font-size:32px;font-weight:800;color:#1a1a1a;">${d.refrigerant}</p></div>
+      <span style="padding:6px 16px;border-radius:4px;font-size:14px;font-weight:700;background:${color}20;color:${color};border:1.5px solid ${color}40;">${d.phaseStatus}</span>
+    </div>`;
+  if(d.phaseStatus==="Phased Out")html+=`<div class="info-box info-red" style="margin-bottom:14px;"><p style="font-size:14px;font-weight:700;color:#c62828;margin-bottom:4px;">⚠️ R-22 Production Ended 2020</p><p style="font-size:14px;color:rgba(244,63,94,.85);line-height:1.6;">This system uses ${d.refrigerant} which is no longer produced. Supply is expensive and limited. Consider system replacement or refrigerant conversion.</p></div>`;
+  else if(d.phaseStatus==="Phase-Down")html+=`<div class="info-box info-amber" style="margin-bottom:14px;"><p style="font-size:14px;font-weight:700;color:#e65100;margin-bottom:4px;">⚠️ Phase-Down Underway (AIM Act)</p><p style="font-size:14px;color:#e65100;line-height:1.6;">${d.refrigerant} is being phased down. Inform the homeowner — this affects future service costs and replacement timelines.</p></div>`;
+  if(d.dropInReplacement)html+=`<div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:14px;margin-bottom:14px;"><p style="font-size:13px;font-weight:700;color:#2e7d32;margin-bottom:6px;">✅ Drop-In Replacement</p><p style="font-size:17px;font-weight:700;color:#2e7d32;">${d.dropInReplacement}</p><p style="font-size:14px;color:#2e7d32;margin-top:4px;line-height:1.6;">${d.dropInNotes||""}</p></div>`;
+  html+=`<div class="grid2" style="margin-bottom:14px;"><div style="background:#f5f5f5;border-radius:4px;padding:14px;border:1px solid #dfe1e6;"><p style="font-size:12px;font-weight:700;color:#999999;margin-bottom:4px;">CHARGE AMOUNT</p><p style="font-size:15px;font-weight:600;color:#1a1a1a;">${d.chargeAmount||"See nameplate"}</p></div><div style="background:#f5f5f5;border-radius:4px;padding:14px;border:1px solid #dfe1e6;"><p style="font-size:12px;font-weight:700;color:#999999;margin-bottom:4px;">URGENCY</p><p style="font-size:15px;font-weight:700;color:${d.urgency==="High"?"#dc2626":d.urgency==="Medium"?"#d97706":"#16a34a"};">${d.urgency||"Low"}</p></div></div>`;
+  if(d.techTips)html+=`<div style="background:#e3f2fd;border:1px solid #90caf9;border-radius:10px;padding:14px;margin-bottom:14px;"><p style="font-size:13px;font-weight:700;color:#1565c0;margin-bottom:6px;">💡 Tech Tips</p><p style="font-size:14px;color:#1565c0;line-height:1.65;">${d.techTips}</p></div>`;
+  if(d.safetyWarning)html+=`<div class="info-box info-red"><p style="font-size:14px;font-weight:700;color:#c62828;margin-bottom:4px;">⚠️ Safety Warning</p><p style="font-size:14px;color:rgba(244,63,94,.85);line-height:1.6;">${d.safetyWarning}</p></div>`;
+  html+=`</div>`;
+  document.getElementById("refrigCards").innerHTML=html;
+  document.getElementById("refrigResult").style.display="block";
+  document.getElementById("refrigResult").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function resetRefrig(){document.getElementById("refrigResult").style.display="none";["rBrandRefrig","rTypeRefrig","rAgeRefrig"].forEach(id=>document.getElementById(id).selectedIndex=0);document.getElementById("rModelRefrig").value="";document.getElementById("rNotesRefrig").value="";}
+
+// Revenue Builder
+async function runRevenue(){
+  const sysType=document.getElementById("rSysType").value,sysAge=document.getElementById("rSysAge").value,brand=document.getElementById("rBrand").value,homeSize=document.getElementById("rHomeSize").value,notes=document.getElementById("rNotes").value;
+  if(!sysType&&!selectedConcerns.length&&!notes){alert("Please fill in at least the system type or select some home/family details.");return;}
+  const btn=document.getElementById("revenueBtn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span><span class="pulsing">Building recommendations…</span>`;
+  try{
+    const SYSTEM=`You are an HVAC business revenue consultant. Help contractors identify genuine upsell opportunities. Products: UV-C lights, REME HALO, iWave ionizers, MERV 13/16 filters, HEPA, dehumidifiers, ERV/HRV, smart thermostats, zoning, CO detectors, gas detectors, Aeroseal duct sealing, service agreements, filter subscriptions. RULES: Safety first. Honest ROI. Include word-for-word conversation scripts. Return ONLY valid JSON no markdown: {"summary":"string","totalOpportunityLow":0,"totalOpportunityHigh":0,"recommendations":[{"category":"Safety|IAQ|Comfort|Efficiency|Maintenance","priority":"High|Medium|Low","title":"string","why":"string","homeownerBenefit":"string","priceLow":0,"priceHigh":0,"techProfit":0,"roi":"string","script":"string"}]}`;
+    const raw=await callAI(SYSTEM,[{role:"user",content:`System: ${sysType||"Unknown"} | Brand: ${brand||"Unknown"} | Age: ${sysAge||"Unknown"} | Home: ${homeSize||"Unknown"}\nConcerns: ${selectedConcerns.length?selectedConcerns.join(", "):"None"}\nNotes: ${notes||"None"}`}]);
+    showRevenueResults(JSON.parse(raw.replace(/```json|```/g,"").trim()));
+  }catch(e){alert("Revenue builder failed: "+e.message);}
+  finally{btn.disabled=false;btn.innerHTML="💰 Build Revenue Recommendations";}
+}
+function showRevenueResults(data){
+  const f=n=>`$${Number(n||0).toLocaleString()}`;
+  document.getElementById("revSummary").textContent=data.summary||"";
+  document.getElementById("revRange").textContent=`${f(data.totalOpportunityLow)}–${f(data.totalOpportunityHigh)}`;
+  const tp=data.recommendations?.reduce((s,r)=>s+(r.techProfit||0),0)||0;
+  document.getElementById("revProfit").textContent=tp>0?`~${f(tp)} est. your profit`:"";
+  const container=document.getElementById("revenueCards");container.innerHTML="";
+  (data.recommendations||[]).forEach((rec,i)=>{
+    const cs=CAT_STYLE[rec.category]||CAT_STYLE.Maintenance,pc=rec.priority==="High"?"#dc2626":rec.priority==="Medium"?"#d97706":"#16a34a";
+    const card=document.createElement("div");card.className="rec-card";card.style.borderLeft=`4px solid ${cs.border.replace("e8","b0")}`;
+    card.innerHTML=`<div style="display:flex;align-items:flex-start;gap:14px;" onclick="toggleRecCard(${i})"><div style="width:46px;height:46px;border-radius:10px;background:${cs.bg};border:1px solid ${cs.border};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${cs.icon}</div><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;"><span style="font-size:16px;font-weight:700;color:#1a1a1a;">${rec.title}</span><span style="padding:3px 9px;border-radius:4px;font-size:12px;font-weight:600;background:${cs.bg};color:${cs.text};border:1px solid ${cs.border};">${rec.category}</span><span style="font-size:12px;font-weight:600;color:${pc};">${rec.priority} Priority</span></div><p style="font-size:14px;color:#999999;line-height:1.5;margin:0;">${rec.homeownerBenefit}</p></div><div style="text-align:right;flex-shrink:0;"><p style="font-size:17px;font-weight:700;color:#2e7d32;">${f(rec.priceLow)}–${f(rec.priceHigh)}</p>${rec.techProfit?`<p style="font-size:13px;color:#1565c0;font-weight:600;">~${f(rec.techProfit)} profit</p>`:""}<p style="font-size:18px;color:#999999;margin-top:4px;" id="chevron-${i}">▼</p></div></div><div id="recDetail-${i}" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #dfe1e6;"><div style="background:#f5f5f5;border-radius:4px;padding:14px;margin-bottom:12px;"><p style="font-size:12px;font-weight:700;color:${cs.text};text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why This Home Needs It</p><p style="font-size:14px;color:#555555;line-height:1.65;">${rec.why}</p></div>${rec.roi?`<div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:12px;margin-bottom:12px;display:flex;gap:10px;align-items:center;"><span style="font-size:20px;">📈</span><p style="font-size:14px;color:#2e7d32;margin:0;line-height:1.5;"><strong>ROI:</strong> ${rec.roi}</p></div>`:""}<div style="background:#ede7f6;border:1px solid #b39ddb;border-radius:10px;padding:16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><p style="font-size:12px;font-weight:700;color:#4527a0;text-transform:uppercase;letter-spacing:.5px;">🗣️ Conversation Script</p><button class="btn btn-outline btn-sm" onclick="copyScript('script-${i}')">Copy</button></div><p id="script-${i}" style="font-size:15px;color:#555555;line-height:1.7;font-style:italic;">"${rec.script}"</p></div></div>`;
     container.appendChild(card);
   });
-
-  document.getElementById("revenueResult").style.display = "block";
+  document.getElementById("revenueResult").style.display="block";
   document.getElementById("revenueResult").scrollIntoView({behavior:"smooth",block:"start"});
 }
+function toggleRecCard(i){const d=document.getElementById(`recDetail-${i}`),c=document.getElementById(`chevron-${i}`),o=d.style.display!=="none";d.style.display=o?"none":"block";c.textContent=o?"▼":"▲";}
+function copyScript(id){navigator.clipboard.writeText(document.getElementById(id)?.textContent||"").then(()=>alert("Script copied!")).catch(()=>{});}
+function resetRevenue(){document.getElementById("revenueResult").style.display="none";["rSysType","rSysAge","rBrand","rHomeSize"].forEach(id=>document.getElementById(id).selectedIndex=0);document.getElementById("rNotes").value="";selectedConcerns=[];buildConcernsGrid();window.scrollTo({top:0,behavior:"smooth"});}
 
-function toggleRecCard(i) {
-  const detail  = document.getElementById(`recDetail-${i}`);
-  const chevron = document.getElementById(`chevron-${i}`);
-  const isOpen  = detail.style.display !== "none";
-  detail.style.display  = isOpen ? "none" : "block";
-  chevron.textContent   = isOpen ? "▼" : "▲";
+// Maintenance Pitcher
+async function runMaintenancePitch(){
+  const sysType=document.getElementById("mSysType").value,sysAge=document.getElementById("mSysAge").value,brand=document.getElementById("mBrand").value,lastSvc=document.getElementById("mLastService").value,findings=document.getElementById("mFindings").value,price=document.getElementById("mPrice").value,visits=document.getElementById("mVisits").value;
+  if(!sysType&&!findings&&!selectedMaintConcerns.length){alert("Please fill in the system details or describe what you found on this visit.");return;}
+  const btn=document.getElementById("maintBtn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span><span class="pulsing">Crafting your pitch…</span>`;
+  try{
+    const SYSTEM=`You are a master HVAC sales trainer who helps technicians sell maintenance agreements. Write conversational, natural-sounding scripts that feel helpful — not pushy. You know what motivates residential homeowners: peace of mind, avoiding big bills, protecting family health, and convenience. Create pitches that are honest, benefit-focused, and easy to deliver on the doorstep.`;
+    const prompt=`Create a customized maintenance agreement pitch script:\n\nSystem: ${sysType||"Unknown"} | Brand: ${brand||"Unknown"} | Age: ${sysAge||"Unknown"}\nLast Service: ${lastSvc||"Unknown"}\nHomeowner Situation: ${selectedMaintConcerns.length?selectedMaintConcerns.join(", "):"Not specified"}\nWhat I Found Today: ${findings||"Standard service call"}\nPlan Price: ${price||"Not specified"} | Visits: ${visits||"Not specified"}\n\nWrite a complete pitch script with these sections:\n\n**THE OPENING LINE** (natural transition after finishing the work)\n\n**THE PITCH** (2-3 minute word-for-word script, conversational, references what you found today)\n\n**IF THEY SAY "I NEED TO THINK ABOUT IT"**\n\n**IF THEY SAY "THAT SEEMS EXPENSIVE"** (break down cost per day, compare to one service call)\n\n**IF THEY SAY "I'LL CALL YOU WHEN SOMETHING BREAKS"**\n\n**THE CLOSE** (simple, low-pressure ask)\n\n**KEY BENEFITS TO EMPHASIZE** (based on their specific situation)`;
+    const result=await callAI(SYSTEM,[{role:"user",content:prompt}],1500);
+    document.getElementById("maintScriptText").innerHTML=result.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#e65100">$1</strong>').replace(/\n/g,"<br/>");
+    document.getElementById("maintResult").style.display="block";
+    document.getElementById("maintResult").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){alert("Pitch generation failed: "+e.message);}
+  finally{btn.disabled=false;btn.innerHTML="📋 Generate Pitch Script";}
+}
+function copyMaintScript(){navigator.clipboard.writeText(document.getElementById("maintScriptText")?.textContent||"").then(()=>alert("Script copied! Go close the deal 💪")).catch(()=>{});}
+function resetMaint(){document.getElementById("maintResult").style.display="none";["mSysType","mSysAge","mBrand","mLastService","mVisits"].forEach(id=>document.getElementById(id).selectedIndex=0);document.getElementById("mFindings").value="";document.getElementById("mPrice").value="";selectedMaintConcerns=[];buildMaintConcernsGrid();window.scrollTo({top:0,behavior:"smooth"});}
+
+// ── LIVE AGENT CHAT ──
+let chatHistory = [];
+const AGENT_SYSTEM = `You are an elite HVAC master technician with 25+ years of field experience. You know every brand, every system, every failure mode. You have EPA 608 Universal certification, NATE certification, and deep knowledge of all refrigerants including R-22, R-410A, R-454B, and A2L refrigerants.
+
+Your personality: Direct, confident, practical — like a master tech giving a second opinion. Not overly formal.
+
+How you format responses:
+- Use **SECTION HEADERS** in bold caps for multi-part answers (e.g. **MOST LIKELY CAUSE**, **CHECK THESE FIRST**, **PARTS NEEDED**)
+- Use numbered lists for diagnostic steps
+- Use bullet points for multiple options or findings
+- Keep each response focused — don't ramble
+- Bold key values, part numbers, and critical warnings
+
+Rules:
+- Ask 1-2 focused follow-up questions when you need readings or more info
+- Give specific measurements, part numbers, and costs when relevant
+- Flag safety hazards clearly with WARNING:
+- Give honest replace vs repair opinions based on age and cost
+- If they give you pressure/temp readings, interpret them immediately and specifically`;
+
+function getTimeStr() {
+  const now = new Date();
+  return now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 }
 
-function copyScript(id) {
-  const txt = document.getElementById(id)?.textContent || "";
-  navigator.clipboard.writeText(txt).then(() => alert("Script copied to clipboard!")).catch(()=>{});
+function appendMessage(role, text) {
+  const container = document.getElementById('chatMessages');
+  const isAgent = role === 'agent';
+  const div = document.createElement('div');
+  div.className = isAgent ? 'msg-agent' : 'msg-user';
+
+  let formatted;
+  if(isAgent) {
+    // Format agent responses with section headers and lists
+    formatted = text
+      // Section headers: **HEADING** on its own line → teal label
+      .replace(/^\*\*([A-Z][^*]{2,40})\*\*\s*$/gm, '<span class="msg-section-head">$1</span>')
+      // Bold inline
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      // Numbered lists: 1. item
+      .replace(/^(\d+)\.\s+(.+)$/gm, (m,n,t) =>
+        `<div class="diag-step" style="padding:5px 0;border-bottom:none;"><div class="diag-step-num" style="width:22px;height:22px;font-size:11px;">${n}</div><div class="diag-step-text" style="font-size:14px;">${t}</div></div>`)
+      // Bullet lists: - item or • item
+      .replace(/^[-•]\s+(.+)$/gm, '<div class="msg-list-item">$1</div>')
+      // Line breaks
+      .replace(/\n{2,}/g, '<br/>')
+      .replace(/\n/g, '<br/>');
+  } else {
+    formatted = text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br/>');
+  }
+
+  div.innerHTML = `
+    <div class="msg-bubble ${isAgent ? 'msg-bubble-agent' : 'msg-bubble-user'}">${formatted}</div>
+    <div class="msg-time">${getTimeStr()}</div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
 }
 
-function resetRevenue() {
-  document.getElementById("revenueResult").style.display = "none";
-  document.getElementById("rSysType").selectedIndex  = 0;
-  document.getElementById("rSysAge").selectedIndex   = 0;
-  document.getElementById("rBrand").selectedIndex    = 0;
-  document.getElementById("rHomeSize").selectedIndex = 0;
-  document.getElementById("rNotes").value = "";
-  selectedConcerns = [];
-  buildConcernsGrid();
-  window.scrollTo({top:0,behavior:"smooth"});
+function showTyping() {
+  document.getElementById('typingIndicator').style.display = 'block';
+  const container = document.getElementById('chatMessages');
+  container.scrollTop = container.scrollHeight;
+}
+function hideTyping() {
+  document.getElementById('typingIndicator').style.display = 'none';
+}
+
+let chatSending = false;
+async function sendChat() {
+  if(chatSending) return;
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  chatSending = true;
+  const btn = document.getElementById('chatSendBtn');
+  btn.disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Add to UI and history
+  appendMessage('user', text);
+  chatHistory.push({role:'user', content:text});
+
+  showTyping();
+
+  try {
+    const response = await callAI(AGENT_SYSTEM, chatHistory, 1024);
+    hideTyping();
+    appendMessage('agent', response);
+    chatHistory.push({role:'assistant', content:response});
+  } catch(e) {
+    hideTyping();
+    appendMessage('agent', 'Connection issue — try again in a moment.');
+  } finally {
+    chatSending = false;
+    btn.disabled = false;
+    input.focus();
+  }
+}
+
+function sendQuick(text) {
+  document.getElementById('chatInput').value = text;
+  sendChat();
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChat();
+  }
+}
+
+function clearChat() {
+  chatHistory = [];
+  const container = document.getElementById('chatMessages');
+  container.innerHTML = `
+    <div class="msg-agent">
+      <div class="msg-bubble msg-bubble-agent">
+        <p style="margin-bottom:8px;">Chat cleared. What are you working on?</p>
+      </div>
+      <div class="msg-time">${getTimeStr()}</div>
+    </div>`;
 }
 </script>
 

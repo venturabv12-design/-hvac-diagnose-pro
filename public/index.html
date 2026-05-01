@@ -2133,15 +2133,49 @@ Return a concise bullet list of observations that would help a tech recommend ad
 }
 
 async function runRevenue(){
-  const sysType=document.getElementById("rSysType").value,sysAge=document.getElementById("rSysAge").value,brand=document.getElementById("rBrand").value,homeSize=document.getElementById("rHomeSize").value,notes=document.getElementById("rNotes").value;
-  if(!sysType&&!selectedConcerns.length&&!notes){alert("Please fill in at least the system type or select some home/family details.");return;}
-  const btn=document.getElementById("revenueBtn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span><span class="pulsing">Building recommendations…</span>`;
+  var sysType=document.getElementById("rSysType").value;
+  var sysAge=document.getElementById("rSysAge").value;
+  var brand=document.getElementById("rBrand").value;
+  var homeSize=document.getElementById("rHomeSize").value;
+  var notes=document.getElementById("rNotes").value;
+
+  if(!sysType && !selectedConcerns.length && !notes && !revenueMediaFile){
+    alert("Upload a photo or video, or fill in system details.");
+    return;
+  }
+
+  var btn=document.getElementById("revenueBtn");
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span><span class="pulsing">'+(revenueMediaFile?"Analyzing your system...":"Building recommendations...")+'</span>';
+
+  var SYSTEM='You are an expert HVAC technician AND revenue consultant with 20 years field experience reviewing a real customer system. Analyze everything you see/hear. Identify every genuine upsell opportunity based on actual observations - age, dirty components, missing equipment, sounds, safety risks.\n\nPRODUCTS: UV-C lights, REME HALO/iWave, MERV 13/16 filters, HEPA, dehumidifiers, ERV/HRV, smart thermostats, zoning, CO detectors, gas detectors, Aeroseal, surge protectors, service agreements, filter subscriptions, hard start kits.\n\nRules: Base on what you see/hear. Safety = HIGH priority. Specific evidence. Word-for-word scripts.\n\nReturn ONLY valid JSON:\n{"summary":"observations and opportunity","totalOpportunityLow":0,"totalOpportunityHigh":0,"recommendations":[{"category":"Safety|IAQ|Comfort|Efficiency|Maintenance","priority":"High|Medium|Low","title":"string","why":"specific observation","homeownerBenefit":"string","priceLow":0,"priceHigh":0,"techProfit":0,"roi":"string","script":"exact words to say"}]}';
+
+  var ctx="System: "+(sysType||"Unknown")+" | Brand: "+(brand||"Unknown")+" | Age: "+(sysAge||"Unknown")+" | Home: "+(homeSize||"Unknown")+"\nConcerns: "+(selectedConcerns.length?selectedConcerns.join(", "):"None")+"\nNotes: "+(notes||"None");
+  var messages;
+
   try{
-    const SYSTEM=`You are an HVAC business revenue consultant. Help contractors identify genuine upsell opportunities. Products: UV-C lights, REME HALO, iWave ionizers, MERV 13/16 filters, HEPA, dehumidifiers, ERV/HRV, smart thermostats, zoning, CO detectors, gas detectors, Aeroseal duct sealing, service agreements, filter subscriptions. RULES: Safety first. Honest ROI. Include word-for-word conversation scripts. Return ONLY valid JSON no markdown: {"summary":"string","totalOpportunityLow":0,"totalOpportunityHigh":0,"recommendations":[{"category":"Safety|IAQ|Comfort|Efficiency|Maintenance","priority":"High|Medium|Low","title":"string","why":"string","homeownerBenefit":"string","priceLow":0,"priceHigh":0,"techProfit":0,"roi":"string","script":"string"}]}`;
-    const raw=await callAI(SYSTEM,[{role:"user",content:`System: ${sysType||"Unknown"} | Brand: ${brand||"Unknown"} | Age: ${sysAge||"Unknown"} | Home: ${homeSize||"Unknown"}\nConcerns: ${selectedConcerns.length?selectedConcerns.join(", "):"None"}\nNotes: ${notes||"None"}`}],800);
-    showRevenueResults(JSON.parse(raw.replace(/```json|```/g,"").trim()));
-  }catch(e){alert("Revenue builder failed: "+e.message);}
-  finally{btn.disabled=false;btn.innerHTML="💰 Build Revenue Recommendations";}
+    if(revenueMediaFile && revenueMediaFile.type.startsWith("image/")){
+      var mime=revenueMediaFile.type||"image/jpeg";
+      var b64=await blobToBase64(revenueMediaFile);
+      messages=[{role:"user",content:[
+        {type:"image",source:{type:"base64",media_type:mime,data:b64}},
+        {type:"text",text:ctx+"\n\nAnalyze this HVAC system photo. Identify every upsell opportunity you can see. Return JSON only."}
+      ]}];
+    } else {
+      var extra=revenueMediaFile?"\n\nTechnician recorded a video walkthrough of this system. Use all observations to identify revenue opportunities.":"";
+      messages=[{role:"user",content:ctx+extra}];
+    }
+
+    var raw=await callAI(SYSTEM,messages,900);
+    var parsed=parseJSON(raw);
+    if(parsed) showRevenueResults(parsed);
+    else throw new Error("Could not parse response");
+  }catch(e){
+    alert("Revenue builder failed: "+e.message);
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML="&#128176; Build Revenue Recommendations";
+  }
 }
 function showRevenueResults(data){
   const f=n=>`$${Number(n||0).toLocaleString()}`;

@@ -888,28 +888,58 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
     </div>
     <div class="card">
       <label class="field-label">What You Observed On-Site</label>
-      <p class="field-sub">Any details help tailor the recommendations</p>
-      <textarea id="rNotes" placeholder="e.g. Dirty evaporator coil, no UV light, basic 1-inch filter, homeowner has bad allergies, 14-year-old system, no service agreement, no CO detector visible…"></textarea>
-    </div>
-    <button class="btn btn-green btn-full" id="revenueBtn" onclick="runRevenue()">💰 Build Revenue Recommendations</button>
-    <div id="revenueResult" style="display:none;margin-top:24px;" class="fi">
-      <div class="info-box info-green" style="margin-bottom:20px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
-          <div style="flex:1;"><p style="font-size:13px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">💰 Revenue Opportunity</p><p style="font-size:15px;color:#6B7190;line-height:1.6;" id="revSummary"></p></div>
-          <div style="text-align:right;flex-shrink:0;">
-            <p style="font-size:28px;font-weight:800;color:#059669;line-height:1;" id="revRange"></p>
-            <p style="font-size:12px;color:#9499B0;margin-top:3px;">potential add-on revenue</p>
-            <p style="font-size:14px;color:#2563EB;font-weight:700;margin-top:4px;" id="revProfit"></p>
-          </div>
-        </div>
+      <p class="field-sub">Scan the system or type what you see — the more detail, the better the recommendations</p>
+
+```
+  <!-- Photo/Video Scan -->
+  <input type="file" id="revenueMediaInput" accept="image/*,video/*" capture="environment" style="display:none" onchange="handleRevenueScan(event)"/>
+  <input type="file" id="revenueMediaLib" accept="image/*,video/*" style="display:none" onchange="handleRevenueScan(event)"/>
+
+  <div style="display:flex;gap:8px;margin-bottom:10px;">
+    <button onclick="document.getElementById('revenueMediaInput').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;background:#0F0F0F;color:#fff;border:none;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">
+      📸 Scan System
+    </button>
+    <button onclick="document.getElementById('revenueMediaLib').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;background:#fff;color:#6B7190;border:1.5px solid #E2E4ED;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">
+      🖼️ Library
+    </button>
+  </div>
+
+  <!-- Scan status -->
+  <div id="revScanStatus" style="display:none;padding:10px 12px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:6px;margin-bottom:10px;font-size:13px;color:#059669;font-weight:600;align-items:center;gap:8px;">
+    <span class="spinner" style="border-color:rgba(16,185,129,.2);border-top-color:#10B981;"></span>
+    <span>Analyzing system…</span>
+  </div>
+
+  <!-- Preview -->
+  <div id="revMediaPreview" style="display:none;margin-bottom:10px;position:relative;">
+    <img id="revImgPreview" style="display:none;width:100%;max-height:200px;object-fit:contain;border-radius:8px;border:1px solid #E2E4ED;background:#F5F6FA;"/>
+    <video id="revVidPreview" style="display:none;width:100%;border-radius:8px;border:1px solid #E2E4ED;" controls></video>
+    <button onclick="clearRevenueScan()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">×</button>
+  </div>
+
+  <textarea id="rNotes" placeholder="e.g. Dirty evaporator coil, no UV light, basic 1-inch filter, homeowner has bad allergies, 14-year-old system, no service agreement, no CO detector visible…"></textarea>
+</div>
+<button class="btn btn-green btn-full" id="revenueBtn" onclick="runRevenue()">💰 Build Revenue Recommendations</button>
+<div id="revenueResult" style="display:none;margin-top:24px;" class="fi">
+  <div class="info-box info-green" style="margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+      <div style="flex:1;"><p style="font-size:13px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">💰 Revenue Opportunity</p><p style="font-size:15px;color:#6B7190;line-height:1.6;" id="revSummary"></p></div>
+      <div style="text-align:right;flex-shrink:0;">
+        <p style="font-size:28px;font-weight:800;color:#059669;line-height:1;" id="revRange"></p>
+        <p style="font-size:12px;color:#9499B0;margin-top:3px;">potential add-on revenue</p>
+        <p style="font-size:14px;color:#2563EB;font-weight:700;margin-top:4px;" id="revProfit"></p>
       </div>
-      <div id="revenueCards"></div>
-      <div class="info-box info-amber" style="margin-top:16px;display:flex;gap:12px;">
-        <span style="font-size:22px;flex-shrink:0;">💡</span>
-        <p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.65;margin:0;"><strong>Pro tip:</strong> Present 2–3 recommendations max per visit. Always lead with the Safety item first — homeowners almost always say yes. Then offer one Comfort or IAQ upgrade.</p>
-      </div>
-      <button class="btn btn-outline btn-full" onclick="resetRevenue()" style="margin-top:14px;">+ New Analysis</button>
     </div>
+  </div>
+  <div id="revenueCards"></div>
+  <div class="info-box info-amber" style="margin-top:16px;display:flex;gap:12px;">
+    <span style="font-size:22px;flex-shrink:0;">💡</span>
+    <p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.65;margin:0;"><strong>Pro tip:</strong> Present 2–3 recommendations max per visit. Always lead with the Safety item first — homeowners almost always say yes. Then offer one Comfort or IAQ upgrade.</p>
+  </div>
+  <button class="btn btn-outline btn-full" onclick="resetRevenue()" style="margin-top:14px;">+ New Analysis</button>
+</div>
+```
+
   </div>
 
   <!-- ═══ MAINTENANCE AGREEMENT PITCHER ═══ -->
@@ -2045,6 +2075,64 @@ function showRefrigResult(d){
 function resetRefrig(){document.getElementById("refrigResult").style.display="none";["rBrandRefrig","rTypeRefrig","rAgeRefrig"].forEach(id=>document.getElementById(id).selectedIndex=0);document.getElementById("rModelRefrig").value="";document.getElementById("rNotesRefrig").value="";}
 
 // Revenue Builder
+var revenueMediaFile = null;
+
+function clearRevenueScan(){
+  revenueMediaFile = null;
+  document.getElementById("revMediaPreview").style.display="none";
+  document.getElementById("revImgPreview").style.display="none";
+  document.getElementById("revVidPreview").style.display="none";
+  document.getElementById("revenueMediaInput").value="";
+  document.getElementById("revenueMediaLib").value="";
+}
+
+async function handleRevenueScan(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  e.target.value="";
+  revenueMediaFile = file;
+
+  // Show preview
+  const url = URL.createObjectURL(file);
+  const isImg = file.type.startsWith("image/");
+  document.getElementById("revMediaPreview").style.display="block";
+  if(isImg){
+    const img = document.getElementById("revImgPreview");
+    img.src=url; img.style.display="block";
+    document.getElementById("revVidPreview").style.display="none";
+  } else {
+    const vid = document.getElementById("revVidPreview");
+    vid.src=url; vid.style.display="block";
+    document.getElementById("revImgPreview").style.display="none";
+  }
+
+  // Auto-analyze image and fill notes
+  if(isImg){
+    const status = document.getElementById("revScanStatus");
+    status.style.display="flex";
+    try {
+      const mime = file.type||"image/jpeg";
+      const b64 = await blobToBase64(file);
+      const SYSTEM = `You are an expert HVAC technician reviewing a photo of an HVAC system or components.
+Identify everything visible that could lead to a service recommendation or add-on sale.
+Look for: dirty filters, dirty coils, missing UV lights, old equipment, rust/corrosion, no surge protector, basic thermostats, exposed wiring, refrigerant line issues, drain pan condition, duct condition, age indicators, missing insulation, no float switch, no CO detector visible.
+Return a concise bullet list of observations that would help a tech recommend add-ons. Be specific. Max 8 bullets.`;
+      const raw = await callAI(SYSTEM,[{role:"user",content:[
+        {type:"image",source:{type:"base64",media_type:mime,data:b64}},
+        {type:"text",text:"What do you observe in this HVAC system photo that could lead to service recommendations?"}
+      ]}],400);
+      // Append to notes
+      const notes = document.getElementById("rNotes");
+      const existing = notes.value.trim();
+      var prefix="\ud83d\udcf8 From scan:"; notes.value = existing ? existing + "\n\n" + prefix + "\n" + raw : prefix + "\n" + raw;
+    } catch(err){
+      // Silently fail - scan is optional
+    } finally {
+      status.style.display="none";
+    }
+  }
+}
+
 async function runRevenue(){
   const sysType=document.getElementById("rSysType").value,sysAge=document.getElementById("rSysAge").value,brand=document.getElementById("rBrand").value,homeSize=document.getElementById("rHomeSize").value,notes=document.getElementById("rNotes").value;
   if(!sysType&&!selectedConcerns.length&&!notes){alert("Please fill in at least the system type or select some home/family details.");return;}
@@ -2074,7 +2162,7 @@ function showRevenueResults(data){
 }
 function toggleRecCard(i){const d=document.getElementById(`recDetail-${i}`),c=document.getElementById(`chevron-${i}`),o=d.style.display!=="none";d.style.display=o?"none":"block";c.textContent=o?"▼":"▲";}
 function copyScript(id){navigator.clipboard.writeText(document.getElementById(id)?.textContent||"").then(()=>alert("Script copied!")).catch(()=>{});}
-function resetRevenue(){document.getElementById("revenueResult").style.display="none";["rSysType","rSysAge","rBrand","rHomeSize"].forEach(id=>document.getElementById(id).selectedIndex=0);document.getElementById("rNotes").value="";selectedConcerns=[];buildConcernsGrid();window.scrollTo({top:0,behavior:"smooth"});}
+function resetRevenue(){clearRevenueScan();document.getElementById("revenueResult").style.display="none";["rSysType","rSysAge","rBrand","rHomeSize"].forEach(id=>document.getElementById(id).selectedIndex=0);document.getElementById("rNotes").value="";selectedConcerns=[];buildConcernsGrid();window.scrollTo({top:0,behavior:"smooth"});}
 
 // Maintenance Pitcher
 async function runMaintenancePitch(){

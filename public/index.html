@@ -1680,71 +1680,124 @@ Return ONLY valid JSON (no markdown fences):
 
 function showResult(sev,body,isPro){
   const SEV={
-    CRITICAL:{color:"#c62828",bg:"#ffebee",label:"🚨 CRITICAL",border:"#c62828"},
+    CRITICAL:{color:"#c62828",bg:"#ffebee",label:"🚨 CRITICAL — Act Now",border:"#c62828"},
     HIGH:    {color:"#e65100",bg:"#fff3e0",label:"⚠️ HIGH PRIORITY",border:"#e65100"},
     MEDIUM:  {color:"#1565c0",bg:"#e3f2fd",label:"📋 MEDIUM PRIORITY",border:"#1565c0"},
     LOW:     {color:"#2e7d32",bg:"#e8f5e9",label:"✅ LOW PRIORITY",border:"#2e7d32"},
   };
-  const s=SEV[sev]||SEV.MEDIUM;
-  let data=null;
-  try{
-    let clean=body.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
-    data=JSON.parse(clean);
-  }catch(e){
-    try{const m=body.match(/\{[\s\S]*\}/);if(m)data=JSON.parse(m[0]);}catch(e2){}
+  const s = SEV[sev] || SEV.MEDIUM;
+
+  // Parse JSON — strip fences first, then find the object
+  let data = null;
+  try {
+    // Remove ```json ... ``` fences
+    let b = body.trim();
+    if(b.indexOf("```") !== -1) {
+      b = b.replace(/```json/gi,"").replace(/```/g,"").trim();
+    }
+    // Find first { and last }
+    const first = b.indexOf("{");
+    const last  = b.lastIndexOf("}");
+    if(first !== -1 && last !== -1 && last > first) {
+      data = JSON.parse(b.substring(first, last+1));
+    }
+  } catch(err) {
+    data = null;
   }
 
   // Severity badge
-  document.getElementById("sevBadge").style.cssText=`background:${s.bg};color:${s.color};padding:5px 14px;border-radius:3px;font-size:11px;font-weight:700;font-family:'Roboto Condensed',sans-serif;letter-spacing:.8px;border:1px solid ${s.border}`;
-  document.getElementById("sevBadge").textContent=s.label;
-  document.getElementById("resultCard").style.borderLeft=`4px solid ${s.color}`;
+  const badge = document.getElementById("sevBadge");
+  badge.style.cssText = "background:"+s.bg+";color:"+s.color+";padding:5px 14px;border-radius:3px;font-size:11px;font-weight:700;font-family:'Roboto Condensed',sans-serif;letter-spacing:.8px;border:1px solid "+s.border;
+  badge.textContent = s.label;
+  document.getElementById("resultCard").style.borderLeft = "4px solid "+s.color;
 
-  if(data&&data.sections){ renderDiagCards(data,s); }
-  else {
-    document.getElementById("resultText").innerHTML=`<div class="diag-body">${body.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,"<br/>")}</div>`;
+  if(data && data.sections && data.sections.length > 0) {
+    renderDiagCards(data, s);
+  } else {
+    // Fallback: show plain clean text, strip any JSON artifacts
+    let clean = body
+      .replace(/```json/gi,"").replace(/```/g,"")
+      .replace(/\{|\}/g,"").replace(/\"[a-z]+\":/gi,"")
+      .replace(/\\n/g,"\n").trim();
+    document.getElementById("resultText").innerHTML =
+      "<div style='font-size:15px;line-height:1.8;color:#333;'>"+
+      clean.replace(/\n/g,"<br/>")+"</div>";
   }
-  document.getElementById("homeownerCTA").style.display=isPro?"none":"block";
-  document.getElementById("contractorNudge").style.display=isPro?"block":"none";
-  document.getElementById("eduPanel").style.display=isPro?"block":"none";
-  document.getElementById("resultPanel").style.display="block";
+
+  document.getElementById("homeownerCTA").style.display   = isPro?"none":"block";
+  document.getElementById("contractorNudge").style.display = isPro?"block":"none";
+  document.getElementById("eduPanel").style.display        = isPro?"block":"none";
+  document.getElementById("resultPanel").style.display     = "block";
   document.getElementById("resultPanel").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
-function renderDiagCards(data,s){
-  const el=document.getElementById("resultText");
-  let html=`<div style="background:${s.bg};border-radius:6px;padding:14px 16px;margin-bottom:4px;border:1px solid ${s.border};">`;
-  if(data.summary) html+=`<p style="font-size:17px;font-weight:700;color:#1a1a1a;line-height:1.6;margin-bottom:${data.confidence||data.estimatedCost?'10px':'0'}">${data.summary}</p>`;
-  const stats=[];
-  if(data.confidence) stats.push({val:data.confidence,lbl:"Confidence",color:s.color});
-  if(data.urgency)    stats.push({val:data.urgency,lbl:"Urgency",color:data.urgencyColor||s.color});
-  if(data.estimatedCost) stats.push({val:data.estimatedCost,lbl:"Est. Cost",color:"#2e7d32"});
-  if(stats.length){
-    html+=`<div style="display:flex;gap:8px;flex-wrap:wrap;">`;
-    stats.forEach(st=>{
-      html+=`<div style="flex:1;min-width:80px;background:rgba(255,255,255,.75);border-radius:5px;padding:10px;text-align:center;border:1px solid rgba(0,0,0,.06);"><span style="font-family:'Roboto Condensed',sans-serif;font-size:17px;font-weight:900;color:${st.color};display:block;line-height:1.1;">${st.val}</span><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#999;">${st.lbl}</span></div>`;
-    });
-    html+=`</div>`;
+function renderDiagCards(data, s) {
+  const el = document.getElementById("resultText");
+  let html = "";
+
+  // ── SUMMARY BANNER ──
+  html += "<div style='background:"+s.bg+";border-radius:8px;padding:16px;margin-bottom:10px;border:1.5px solid "+s.border+";'>";
+  if(data.summary) {
+    html += "<p style='font-size:17px;font-weight:700;color:#1a1a1a;line-height:1.55;margin-bottom:"+(data.confidence||data.estimatedCost?"12px":"0")+"'>"+data.summary+"</p>";
   }
-  html+=`</div><div class="diag-report">`;
-  (data.sections||[]).forEach(sec=>{
-    if(!sec||(!sec.body&&!sec.steps)) return;
-    html+=`<div class="diag-section"><div class="diag-label"><span class="diag-label-dot" style="background:${s.color};"></span>${sec.icon||""} ${sec.label||""}</div>`;
-    if(sec.body&&sec.body!=="null"&&sec.body!=="string"){
-      const fmt=sec.body.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/(WARNING|DANGER|CRITICAL|CAUTION):?/gi,'<span style="color:#c62828;font-weight:700;">$1:</span>');
-      html+=`<div class="diag-body">${fmt}</div>`;
+
+  // Stat chips
+  const stats = [];
+  if(data.confidence)    stats.push({val:data.confidence,    lbl:"Confidence", color:s.color});
+  if(data.urgency)       stats.push({val:data.urgency,       lbl:"Urgency",    color:data.urgencyColor||s.color});
+  if(data.estimatedCost) stats.push({val:data.estimatedCost, lbl:"Est. Cost",  color:"#2e7d32"});
+
+  if(stats.length) {
+    html += "<div style='display:flex;gap:6px;flex-wrap:wrap;'>";
+    stats.forEach(function(st){
+      html += "<div style='flex:1;min-width:90px;background:rgba(255,255,255,.8);border-radius:6px;padding:10px;text-align:center;border:1px solid rgba(0,0,0,.06);'>"
+        +"<div style='font-family:Roboto Condensed,sans-serif;font-size:16px;font-weight:900;color:"+st.color+";display:block;line-height:1.1;'>"+st.val+"</div>"
+        +"<div style='font-size:10px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;'>"+st.lbl+"</div>"
+        +"</div>";
+    });
+    html += "</div>";
+  }
+  html += "</div>";
+
+  // ── SECTIONS ──
+  (data.sections||[]).forEach(function(sec) {
+    if(!sec) return;
+    const hasBody  = sec.body  && sec.body  !== "null" && sec.body  !== "None" && sec.body.trim().length > 2;
+    const hasSteps = sec.steps && sec.steps.length > 0;
+    if(!hasBody && !hasSteps) return;
+
+    html += "<div style='background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:16px;margin-bottom:8px;'>";
+
+    // Section header
+    html += "<div style='display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;'>"
+      +"<span style='font-size:20px;'>"+(sec.icon||"📌")+"</span>"
+      +"<span style='font-family:Roboto Condensed,sans-serif;font-size:14px;font-weight:700;color:#1a1a1a;text-transform:uppercase;letter-spacing:.5px;'>"+(sec.label||"")+"</span>"
+      +"</div>";
+
+    // Body text
+    if(hasBody) {
+      const bodyFmt = sec.body
+        .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
+        .replace(/(WARNING|DANGER|CAUTION):?/gi,"<span style='color:#c62828;font-weight:700;'>⚠️ $1:</span>");
+      html += "<p style='font-size:15px;line-height:1.75;color:#333;'>"+bodyFmt+"</p>";
     }
-    if(sec.steps&&sec.steps.length){
-      html+=`<div style="margin-top:4px;">`;
-      sec.steps.forEach((step,i)=>{
-        if(!step) return;
-        html+=`<div class="diag-step"><div class="diag-step-num">${i+1}</div><div class="diag-step-text" style="font-size:15px;line-height:1.7;">${step.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div></div>`;
+
+    // Numbered steps
+    if(hasSteps) {
+      sec.steps.forEach(function(step, i) {
+        if(!step || step === "null") return;
+        const stepFmt = step.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>");
+        html += "<div style='display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-top:1px solid #f5f5f5;'>"
+          +"<div style='width:26px;height:26px;background:#1a1a1a;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:2px;'>"+(i+1)+"</div>"
+          +"<div style='font-size:15px;line-height:1.7;color:#333;flex:1;'>"+stepFmt+"</div>"
+          +"</div>";
       });
-      html+=`</div>`;
     }
-    html+=`</div>`;
+
+    html += "</div>";
   });
-  html+=`</div>`;
-  el.innerHTML=html;
+
+  el.innerHTML = html;
 }
 
 // Education Mode

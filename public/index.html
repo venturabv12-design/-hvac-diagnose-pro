@@ -3,301 +3,255 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>HVAC Diagnose Pro</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
     :root {
-      --black:     #1a1a1a;
-      --black2:    #2c2c2c;
-      --teal:      #00b5b5;
-      --teal2:     #009999;
-      --teal-lt:   #e6f9f9;
-      --bg:        #f0f0f0;
-      --white:     #ffffff;
-      --border:    #d8d8d8;
-      --border2:   #c0c0c0;
-      --text:      #1a1a1a;
-      --text2:     #555555;
-      --text3:     #999999;
-      --green:     #2e7d32;
-      --green-lt:  #e8f5e9;
-      --red:       #c62828;
-      --red-lt:    #ffebee;
-      --amber:     #e65100;
-      --amber-lt:  #fff3e0;
-      --blue:      #1565c0;
-      --blue-lt:   #e3f2fd;
-      --purple:    #4527a0;
-      --purple-lt: #ede7f6;
+      --bg:        #F5F6FA;
+      --white:     #FFFFFF;
+      --black:     #0F0F0F;
+      --gray-50:   #F8F9FC;
+      --gray-100:  #F0F1F6;
+      --gray-200:  #E2E4ED;
+      --gray-300:  #C8CBD8;
+      --gray-400:  #9499B0;
+      --gray-500:  #6B7190;
+      --gray-600:  #4A5070;
+      --teal:      #00C2B2;
+      --teal-dark: #009E90;
+      --teal-lt:   #E6FAF8;
+      --teal-mid:  #B2F0EA;
+      --red:       #E8354A;
+      --red-lt:    #FFF0F2;
+      --amber:     #F59E0B;
+      --amber-lt:  #FFFBEB;
+      --green:     #10B981;
+      --green-lt:  #ECFDF5;
+      --blue:      #3B82F6;
+      --blue-lt:   #EFF6FF;
+      --purple:    #8B5CF6;
+      --purple-lt: #F5F3FF;
+      --font:      'Plus Jakarta Sans', -apple-system, sans-serif;
+      --mono:      'DM Mono', monospace;
+      --radius:    14px;
+      --radius-sm: 8px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+      --shadow:    0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+      --shadow-lg: 0 10px 32px rgba(0,0,0,.1), 0 4px 8px rgba(0,0,0,.05);
     }
 
 ```
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-html { font-size:16px; }
+html { font-size:16px; -webkit-text-size-adjust:100%; }
 body {
   background: var(--bg);
-  font-family: 'Roboto', -apple-system, sans-serif;
-  color: var(--text);
+  font-family: var(--font);
+  color: var(--black);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 ::-webkit-scrollbar { width:4px; }
-::-webkit-scrollbar-thumb { background:#c0c0c0; border-radius:4px; }
+::-webkit-scrollbar-thumb { background:var(--gray-300); border-radius:4px; }
 
-@keyframes fadeUp   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp   { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
 @keyframes spin     { to{transform:rotate(360deg)} }
 @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:.4} }
 @keyframes wave     { 0%,100%{transform:scaleY(.3)} 50%{transform:scaleY(1)} }
-@keyframes ripple   { 0%{transform:scale(1);opacity:.5} 100%{transform:scale(2.5);opacity:0} }
+@keyframes ripple   { 0%{transform:scale(1);opacity:.5} 100%{transform:scale(2.4);opacity:0} }
 @keyframes scanline { 0%{top:0%} 100%{top:96%} }
+@keyframes slideUp  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 
-.fu  { animation:fadeUp .3s cubic-bezier(.16,1,.3,1) both; }
-.fi  { animation:fadeIn .2s ease both; }
+.fu  { animation:fadeUp .35s cubic-bezier(.16,1,.3,1) both; }
+.fi  { animation:fadeIn .25s ease both; }
 .spinning { animation:spin .7s linear infinite; }
-.pulsing  { animation:pulse 1.5s ease infinite; }
+.pulsing  { animation:pulse 1.4s ease infinite; }
 
 /* ── NAV ── */
 .nav {
-  background: var(--black);
-  position: sticky; top: 0; z-index: 50;
+  background:var(--white);
+  border-bottom:1px solid var(--gray-200);
+  position:sticky; top:0; z-index:100;
+  box-shadow: var(--shadow-sm);
 }
-.nav-inner { max-width:720px; margin:0 auto; padding:0 16px; display:flex; align-items:center; justify-content:space-between; height:52px; }
+.nav-inner {
+  max-width:720px; margin:0 auto; padding:0 16px;
+  display:flex; align-items:center; justify-content:space-between; height:56px;
+}
 .nav-logo { display:flex; align-items:center; gap:10px; }
 .nav-logo-icon {
-  width:32px; height:32px;
-  background: var(--teal);
-  border-radius:6px;
+  width:34px; height:34px; background:var(--teal); border-radius:9px;
   display:flex; align-items:center; justify-content:center; font-size:16px;
+  box-shadow: 0 2px 8px rgba(0,194,178,.35);
 }
-.nav-logo-text { font-family:'Roboto Condensed',sans-serif; font-size:16px; font-weight:700; color:#fff; line-height:1; letter-spacing:.5px; text-transform:uppercase; }
-.nav-logo-sub  { font-size:10px; color:rgba(255,255,255,.5); margin-top:1px; letter-spacing:.3px; }
+.nav-logo-text { font-size:15px; font-weight:800; color:var(--black); line-height:1; letter-spacing:-.3px; }
+.nav-logo-sub  { font-size:10px; color:var(--gray-400); margin-top:1px; letter-spacing:.2px; }
 .nav-status {
   display:flex; align-items:center; gap:6px;
-  padding:5px 10px;
-  background: rgba(255,255,255,.1);
-  border-radius:4px;
+  padding:5px 12px; background:var(--gray-50);
+  border:1px solid var(--gray-200); border-radius:99px;
 }
-.status-dot { width:7px; height:7px; border-radius:50%; background:#4caf50; box-shadow:0 0 6px #4caf50; }
-.status-dot.red { background:#f44336; box-shadow:0 0 6px #f44336; }
-.status-text { font-size:11px; color:rgba(255,255,255,.8); font-weight:500; letter-spacing:.3px; }
+.status-dot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 2px rgba(16,185,129,.2); }
+.status-dot.red { background:var(--red); box-shadow:0 0 0 2px rgba(232,53,74,.2); }
+.status-text { font-size:12px; color:var(--gray-500); font-weight:600; }
 
 /* ── PAGE ── */
-.page { max-width:720px; margin:0 auto; padding:16px 14px 72px; }
-
-/* ── SECTION HEADER (like ST's black category bar) ── */
-.st-section-bar {
-  background: var(--black);
-  color: #fff;
-  padding: 14px 16px;
-  margin-bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-radius: 6px 6px 0 0;
-}
-.st-section-bar-title {
-  font-family: 'Roboto Condensed', sans-serif;
-  font-size: 15px; font-weight: 700;
-  letter-spacing: 1px; text-transform: uppercase;
-}
-.st-section-bar-action {
-  font-size: 12px; color: var(--teal); font-weight: 600; cursor: pointer; letter-spacing: .3px;
-}
+.page { max-width:720px; margin:0 auto; padding:20px 14px 88px; }
 
 /* ── CARD ── */
 .card {
-  background: var(--white);
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  padding: 18px;
-  margin-bottom: 10px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.08);
-}
-.card-flush {
-  border-radius: 0 0 6px 6px;
-  margin-top: 0;
+  background:var(--white); border-radius:var(--radius);
+  border:1px solid var(--gray-200); padding:20px; margin-bottom:10px;
+  box-shadow:var(--shadow-sm);
 }
 
 /* ── FORM ── */
-.field-label { display:block; font-size:11px; font-weight:700; color:var(--text3); margin-bottom:6px; letter-spacing:.5px; text-transform:uppercase; }
-.field-sub   { font-size:13px; color:var(--text2); margin-bottom:10px; line-height:1.5; }
+.field-label {
+  display:block; font-size:11px; font-weight:700; color:var(--gray-400);
+  margin-bottom:6px; letter-spacing:.6px; text-transform:uppercase;
+}
+.field-sub { font-size:13px; color:var(--gray-500); margin-bottom:10px; line-height:1.5; }
 
 input, textarea, select {
-  width:100%; background:var(--white);
-  border: 1px solid var(--border2);
-  border-radius: 4px; padding: 11px 13px;
-  font-size: 15px; font-family:'Roboto',sans-serif; color:var(--text);
-  outline: none; transition: border-color .15s, box-shadow .15s;
+  width:100%; background:var(--gray-50);
+  border:1.5px solid var(--gray-200); border-radius:var(--radius-sm);
+  padding:12px 14px; font-size:15px; font-family:var(--font); color:var(--black);
+  outline:none; transition:border-color .15s, box-shadow .15s, background .15s;
+  -webkit-appearance:none;
 }
 input:focus, textarea:focus, select:focus {
-  border-color: var(--teal);
-  box-shadow: 0 0 0 2px rgba(0,181,181,.15);
+  border-color:var(--teal); background:var(--white);
+  box-shadow:0 0 0 3px rgba(0,194,178,.12);
 }
-input::placeholder, textarea::placeholder { color:var(--text3); }
+input::placeholder, textarea::placeholder { color:var(--gray-300); }
 select {
   cursor:pointer; appearance:none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:right 12px center; padding-right:36px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239499B0' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 14px center; padding-right:38px;
+  background-color:var(--gray-50);
 }
-select option { background:var(--white); color:var(--text); }
+select option { background:var(--white); color:var(--black); }
 textarea { resize:vertical; line-height:1.6; min-height:88px; }
 
 /* ── BUTTONS ── */
 .btn {
-  font-family:'Roboto',sans-serif; font-weight:700; border:none; border-radius:4px;
-  cursor:pointer; transition:all .15s; display:inline-flex; align-items:center;
-  justify-content:center; gap:7px; font-size:14px; padding:11px 20px;
-  letter-spacing:.3px; text-transform:uppercase;
+  font-family:var(--font); font-weight:700; border:none;
+  border-radius:var(--radius-sm); cursor:pointer; transition:all .15s;
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  font-size:14px; padding:11px 20px; letter-spacing:-.1px;
+  -webkit-tap-highlight-color:transparent;
 }
+.btn:active { transform:scale(.97); }
 .btn:disabled { opacity:.4; cursor:not-allowed; transform:none !important; }
-.btn-blue   { background:var(--black); color:#fff; }
-.btn-blue:not(:disabled):hover   { background:var(--black2); }
-.btn-orange { background:var(--amber); color:#fff; }
-.btn-orange:not(:disabled):hover { background:#bf360c; }
+.btn-blue   { background:var(--black); color:#fff; box-shadow:var(--shadow-sm); }
+.btn-blue:not(:disabled):hover   { background:#1a1a1a; box-shadow:var(--shadow); }
+.btn-orange { background:#F97316; color:#fff; }
+.btn-orange:not(:disabled):hover { background:#EA6B0C; }
 .btn-green  { background:var(--green); color:#fff; }
-.btn-green:not(:disabled):hover  { background:#1b5e20; }
+.btn-green:not(:disabled):hover  { background:#0DA874; }
 .btn-purple { background:var(--purple); color:#fff; }
-.btn-purple:not(:disabled):hover { background:#311b92; }
-.btn-teal   { background:var(--teal); color:#fff; }
-.btn-teal:not(:disabled):hover   { background:var(--teal2); }
+.btn-purple:not(:disabled):hover { background:#7C4DEF; }
+.btn-teal   { background:var(--teal); color:#fff; box-shadow:0 2px 8px rgba(0,194,178,.3); }
+.btn-teal:not(:disabled):hover   { background:var(--teal-dark); box-shadow:0 4px 14px rgba(0,194,178,.4); }
 .btn-gold   { background:var(--amber); color:#fff; }
-.btn-gold:not(:disabled):hover   { background:#bf360c; }
+.btn-gold:not(:disabled):hover   { background:#D97706; }
 .btn-outline {
-  background:var(--white); color:var(--text);
-  border: 1px solid var(--border2);
+  background:var(--white); color:var(--gray-600);
+  border:1.5px solid var(--gray-200);
 }
-.btn-outline:hover { background:var(--bg); }
-
-/* ST-style teal action button */
-.btn-st-primary {
-  background: var(--teal); color: #fff;
-  font-family:'Roboto Condensed',sans-serif;
-  font-weight: 700; letter-spacing: .8px;
-  padding: 13px 20px; font-size: 15px;
-  text-transform: uppercase; border-radius: 4px; border: none;
-  display: inline-flex; align-items: center; justify-content: center;
-  gap: 8px; width: 100%; cursor: pointer; transition: all .15s;
-}
-.btn-st-primary:not(:disabled):hover { background:var(--teal2); }
-.btn-st-primary:disabled { opacity:.4; cursor:not-allowed; }
-
-.btn-full { width:100%; padding:13px; font-size:15px; }
-.btn-sm   { font-size:12px; padding:6px 12px; text-transform:none; letter-spacing:0; font-weight:600; }
+.btn-outline:hover { background:var(--gray-50); border-color:var(--gray-300); color:var(--black); }
+.btn-full { width:100%; padding:14px; font-size:15px; }
+.btn-sm   { font-size:12px; padding:7px 13px; border-radius:6px; }
 
 /* ── MODE TABS ── */
-.mode-tabs { display:flex; background:var(--black); border-radius:0; }
+.mode-tabs { display:flex; background:var(--black); border-radius:0; overflow:hidden; }
 .mode-tab  {
   flex:1; padding:14px 12px; background:transparent; border:none;
-  font-family:'Roboto Condensed',sans-serif; font-weight:700; font-size:13px;
+  font-family:var(--font); font-weight:700; font-size:13px; letter-spacing:-.1px;
   cursor:pointer; transition:all .15s;
   border-bottom:3px solid transparent;
-  color:rgba(255,255,255,.5);
+  color:rgba(255,255,255,.45);
   display:flex; align-items:center; justify-content:center; gap:7px;
-  letter-spacing:.5px; text-transform:uppercase;
 }
 .mode-tab.active-home { color:#fff; border-bottom-color:var(--teal); }
 .mode-tab.active-pro  { color:#fff; border-bottom-color:var(--teal); }
-.mode-tab:hover:not(.active-home):not(.active-pro) { color:rgba(255,255,255,.75); }
+.mode-tab:hover:not(.active-home):not(.active-pro) { color:rgba(255,255,255,.7); }
 .pro-badge {
-  padding:2px 6px; background:var(--teal);
-  border-radius:3px; font-size:10px; color:#fff; font-weight:700; letter-spacing:.3px;
+  padding:2px 7px; background:var(--teal);
+  border-radius:5px; font-size:10px; color:#fff; font-weight:800; letter-spacing:.3px;
 }
 
-/* ── SUB TABS ── */
+/* ── SUB TABS (3x3 grid) ── */
 .sub-tabs {
-  display:grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap:6px; padding:10px;
-  background:#1a1a1a;
-  border-radius:0 0 6px 6px;
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:6px; padding:10px; background:#1a1a1a; border-radius:0 0 var(--radius) var(--radius);
 }
 .sub-tab {
-  padding:13px 8px;
-  background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.12);
-  font-family:'Roboto Condensed',sans-serif; font-weight:700; font-size:13px;
-  cursor:pointer; transition:all .15s; border-radius:5px;
-  color:rgba(255,255,255,.55); text-align:center;
-  line-height:1.3; letter-spacing:.3px; text-transform:uppercase;
+  padding:12px 8px; background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  font-family:var(--font); font-weight:700; font-size:11px;
+  cursor:pointer; transition:all .15s; border-radius:var(--radius-sm);
+  color:rgba(255,255,255,.5); text-align:center; line-height:1.3;
+  letter-spacing:.1px; text-transform:uppercase;
   display:flex; flex-direction:column; align-items:center; gap:5px;
+  -webkit-tap-highlight-color:transparent;
 }
 .sub-tab .tab-icon { font-size:20px; display:block; }
-.sub-tab:hover { background:rgba(255,255,255,.14); color:#fff; }
-.sub-tab.st-diag    { color:#fff; background:var(--teal); border-color:var(--teal2); }
-.sub-tab.st-scan    { color:#fff; background:var(--teal); border-color:var(--teal2); }
-.sub-tab.st-refrig  { color:#fff; background:var(--teal); border-color:var(--teal2); }
-.sub-tab.st-warrant { color:#fff; background:var(--teal); border-color:var(--teal2); }
-.sub-tab.st-revenue { color:#fff; background:var(--teal); border-color:var(--teal2); }
-.sub-tab.st-maint   { color:#fff; background:var(--teal); border-color:var(--teal2); }
-.sub-tab.st-chat    { color:#fff; background:#1a1a1a; border:1px solid #444; }
+.sub-tab:active { transform:scale(.95); }
+.sub-tab:hover { background:rgba(255,255,255,.12); color:rgba(255,255,255,.8); }
+.sub-tab.st-diag    { color:var(--teal); background:rgba(0,194,178,.15); border-color:rgba(0,194,178,.25); }
+.sub-tab.st-scan    { color:var(--teal); background:rgba(0,194,178,.15); border-color:rgba(0,194,178,.25); }
+.sub-tab.st-refrig  { color:var(--teal); background:rgba(0,194,178,.15); border-color:rgba(0,194,178,.25); }
+.sub-tab.st-revenue { color:var(--teal); background:rgba(0,194,178,.15); border-color:rgba(0,194,178,.25); }
+.sub-tab.st-maint   { color:var(--teal); background:rgba(0,194,178,.15); border-color:rgba(0,194,178,.25); }
+.sub-tab.st-chat    { color:var(--teal); background:rgba(0,194,178,.15); border-color:rgba(0,194,178,.25); }
 
 /* ── CHIPS ── */
-.symptoms-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:8px; }
+.symptoms-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:8px; }
 .chip {
-  border:1px solid var(--border);
-  border-radius:6px; padding:13px 14px;
-  background:var(--white); color:var(--text2);
-  font-family:'Roboto',sans-serif; font-size:14px; font-weight:500;
+  border:1.5px solid var(--gray-200); border-radius:var(--radius-sm);
+  padding:12px 13px; background:var(--white); color:var(--gray-600);
+  font-family:var(--font); font-size:14px; font-weight:500;
   cursor:pointer; transition:all .12s;
-  display:flex; align-items:center; gap:10px; text-align:left; line-height:1.3;
+  display:flex; align-items:center; gap:9px; text-align:left; line-height:1.3;
+  box-shadow:var(--shadow-sm); -webkit-tap-highlight-color:transparent;
 }
-.chip:hover { border-color:var(--teal); background:var(--teal-lt); color:var(--text); }
-.chip.sel-blue   { border-color:var(--teal); background:var(--teal-lt); color:var(--teal2); font-weight:700; }
-.chip.sel-orange { border-color:var(--teal); background:var(--teal-lt); color:var(--teal2); font-weight:700; }
-.chip-icon { font-size:22px; flex-shrink:0; }
+.chip:active { transform:scale(.97); }
+.chip:hover { border-color:var(--teal-mid); background:var(--teal-lt); color:var(--black); }
+.chip.sel-blue   { border-color:var(--teal); background:var(--teal-lt); color:var(--teal-dark); font-weight:700; box-shadow:0 0 0 3px rgba(0,194,178,.12); }
+.chip.sel-orange { border-color:var(--teal); background:var(--teal-lt); color:var(--teal-dark); font-weight:700; }
+.chip-icon { font-size:20px; flex-shrink:0; }
 
-/* ── DROP ZONE ── */
 /* ── UPLOAD ZONE ── */
 .drop-zone {
-  border-radius:10px;
-  overflow:hidden;
-  position:relative;
-  cursor:pointer;
-  transition:all .15s;
-  background:#fff;
-  border:2px dashed #d0d0d0;
+  border-radius:var(--radius); overflow:hidden; position:relative;
+  cursor:pointer; transition:all .15s;
+  background:var(--white); border:1.5px dashed var(--gray-300);
 }
-.drop-zone-inner {
-  padding:0;
-  text-align:center;
-  transition:all .15s;
-}
-.drop-zone:hover, .drop-zone.drag {
-  border-color:#00b5b5;
-  background:#f0fafa;
-}
-.drop-zone.has-file {
-  border-style:solid;
-  border-color:#2e7d32;
-  background:#fff;
-}
+.drop-zone-inner { padding:0; text-align:center; transition:all .15s; }
+.drop-zone:hover, .drop-zone.drag { border-color:var(--teal); background:var(--teal-lt); }
+.drop-zone.has-file { border-style:solid; border-color:var(--green); }
 .drop-icon  { font-size:32px; margin-bottom:8px; display:block; }
-.drop-title { font-family:'Roboto Condensed',sans-serif; font-size:14px; font-weight:700; color:#1a1a1a; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px; }
-.drop-sub   { font-size:12px; color:#999; margin-bottom:14px; }
-
-/* Photo tips strip */
-.photo-tips {
-  display:flex; gap:0;
-  border-top:1px solid #f0f0f0;
-  margin-top:0;
-}
+.drop-title { font-size:14px; font-weight:700; color:var(--black); margin-bottom:4px; text-transform:uppercase; letter-spacing:.4px; }
+.drop-sub   { font-size:12px; color:var(--gray-400); margin-bottom:14px; }
+.photo-tips { display:flex; gap:0; border-top:1px solid var(--gray-100); }
 .photo-tip {
-  flex:1; padding:10px 8px; text-align:center;
-  border-right:1px solid #f0f0f0;
-  font-size:11px; color:#777; line-height:1.4;
+  flex:1; padding:10px 6px; text-align:center;
+  border-right:1px solid var(--gray-100);
+  font-size:11px; color:var(--gray-500); line-height:1.4;
 }
 .photo-tip:last-child { border-right:none; }
-.photo-tip-icon { font-size:18px; display:block; margin-bottom:3px; }
-.photo-tip.good .photo-tip-icon { filter:none; }
-.photo-tip.bad  { background:#fff8f8; }
-.photo-tip.bad .photo-tip-icon { opacity:.7; }
+.photo-tip-icon { font-size:17px; display:block; margin-bottom:3px; }
+.photo-tip.bad { background:#FFF8F8; }
 
 /* ── RECORDER ── */
-.recorder { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:14px; transition:all .2s; }
-.recorder.recording { background:#fff5f5; border-color:#ffcdd2; }
-.recorder.done      { background:var(--green-lt); border-color:#a5d6a7; }
+.recorder { background:var(--gray-50); border:1.5px solid var(--gray-200); border-radius:var(--radius-sm); padding:14px; transition:all .2s; }
+.recorder.recording { background:#FFF5F5; border-color:#FCA5A5; }
+.recorder.done      { background:var(--green-lt); border-color:#6EE7B7; }
 .recorder-row { display:flex; align-items:center; gap:12px; }
 .rec-btn-wrap { position:relative; flex-shrink:0; }
 .rec-ring { position:absolute; inset:-7px; border-radius:50%; border:2px solid var(--red); animation:ripple 1.2s ease infinite; pointer-events:none; }
@@ -305,158 +259,109 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
 .wave-bar  { width:3px; border-radius:2px; background:var(--red); transform-origin:bottom; animation:wave .55s ease infinite; }
 
 /* ── RESULTS ── */
-.result-body { font-size:15px; line-height:1.8; color:var(--text); white-space:pre-wrap; }
+.result-body { font-size:15px; line-height:1.8; color:var(--black); white-space:pre-wrap; }
 .result-body strong { color:var(--black); font-weight:700; }
 .sev-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
-.sev-badge { padding:4px 12px; border-radius:3px; font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
-
-/* ── DIAGNOSTIC REPORT SECTIONS ── */
+.sev-badge { padding:4px 12px; border-radius:99px; font-size:11px; font-weight:700; letter-spacing:.3px; text-transform:uppercase; }
 .diag-report { display:flex; flex-direction:column; gap:0; }
-.diag-section { border-bottom:1px solid var(--border); padding:14px 0; }
+.diag-section { border-bottom:1px solid var(--gray-100); padding:14px 0; }
 .diag-section:last-child { border-bottom:none; padding-bottom:0; }
 .diag-section:first-child { padding-top:0; }
-.diag-label {
-  display:flex; align-items:center; gap:7px;
-  font-family:'Roboto Condensed',sans-serif;
-  font-size:10px; font-weight:700; color:var(--text3);
-  text-transform:uppercase; letter-spacing:1px; margin-bottom:7px;
-}
+.diag-label { display:flex; align-items:center; gap:7px; font-size:10px; font-weight:700; color:var(--gray-400); text-transform:uppercase; letter-spacing:1px; margin-bottom:7px; }
 .diag-label-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
-.diag-body { font-size:15px; line-height:1.75; color:var(--text); }
-.diag-body strong { color:#1a1a1a; font-weight:700; }
+.diag-body { font-size:15px; line-height:1.75; color:var(--gray-600); }
+.diag-body strong { color:var(--black); font-weight:700; }
 .diag-chips { display:flex; gap:6px; flex-wrap:wrap; }
-.diag-chip {
-  flex:1; min-width:90px; padding:11px 10px;
-  border-radius:6px; text-align:center; border:1.5px solid;
-}
-.diag-chip-val { font-family:'Roboto Condensed',sans-serif; font-size:17px; font-weight:900; display:block; margin-bottom:2px; }
+.diag-chip { flex:1; min-width:90px; padding:11px 10px; border-radius:var(--radius-sm); text-align:center; border:1.5px solid; }
+.diag-chip-val { font-size:17px; font-weight:800; display:block; margin-bottom:2px; }
 .diag-chip-lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; opacity:.65; }
-.diag-step { display:flex; gap:11px; align-items:flex-start; padding:9px 0; border-bottom:1px solid var(--border); }
+.diag-step { display:flex; gap:11px; align-items:flex-start; padding:9px 0; border-bottom:1px solid var(--gray-100); }
 .diag-step:last-child { border-bottom:none; }
-.diag-step-num {
-  width:24px; height:24px; border-radius:50%;
-  background:#1a1a1a; color:#fff;
-  display:flex; align-items:center; justify-content:center;
-  font-family:'Roboto Condensed',sans-serif; font-size:12px; font-weight:700;
-  flex-shrink:0; margin-top:2px;
-}
-.diag-step-text { font-size:14px; line-height:1.65; color:var(--text); flex:1; }
-.diag-warning { background:#ffebee; border-left:3px solid #c62828; border-radius:0 4px 4px 0; padding:10px 12px; margin:4px 0; font-size:14px; color:#c62828; font-weight:600; }
-.diag-info    { background:#e6f9f9; border-left:3px solid #00b5b5; border-radius:0 4px 4px 0; padding:10px 12px; margin:4px 0; font-size:14px; color:#00838f; }
-
-/* ── CHAT BUBBLES ── */
-.msg-agent { display:flex; flex-direction:column; align-items:flex-start; max-width:94%; }
-.msg-user  { display:flex; flex-direction:column; align-items:flex-end; max-width:88%; align-self:flex-end; }
-.msg-bubble { padding:12px 15px; font-size:15px; line-height:1.72; font-family:'Roboto',sans-serif; word-break:break-word; }
-.msg-bubble-agent { background:#fff; color:#1a1a1a; border-radius:3px 14px 14px 14px; border:1px solid var(--border); box-shadow:0 1px 4px rgba(0,0,0,.06); }
-.msg-bubble-user  { background:#1a1a1a; color:#fff; border-radius:14px 3px 14px 14px; }
-.msg-bubble strong { font-weight:700; }
-.msg-bubble-agent strong { color:#1a1a1a; }
-.msg-bubble-user  strong { color:#fff; }
-.msg-section-head { font-family:'Roboto Condensed',sans-serif; font-size:11px; font-weight:700; color:var(--teal); text-transform:uppercase; letter-spacing:1px; margin:12px 0 5px; display:block; }
-.msg-section-head:first-child { margin-top:0; }
-.msg-list-item { display:flex; gap:8px; align-items:flex-start; padding:3px 0; font-size:14px; line-height:1.6; color:#1a1a1a; }
-.msg-list-item::before { content:'▸'; color:var(--teal); font-size:11px; flex-shrink:0; margin-top:3px; }
-.msg-time { font-size:11px; color:var(--text3); margin-top:4px; padding:0 4px; }
+.diag-step-num { width:24px; height:24px; border-radius:50%; background:var(--black); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; margin-top:2px; }
+.diag-step-text { font-size:14px; line-height:1.65; color:var(--gray-600); flex:1; }
 
 /* ── REC CARDS ── */
-.rec-card { background:var(--white); border:1px solid var(--border); border-radius:4px; padding:16px; margin-bottom:8px; cursor:pointer; transition:all .12s; }
-.rec-card:hover { border-color:var(--teal); box-shadow:0 2px 8px rgba(0,0,0,.1); }
+.rec-card { background:var(--white); border:1.5px solid var(--gray-200); border-radius:var(--radius); padding:16px; margin-bottom:8px; cursor:pointer; transition:all .12s; box-shadow:var(--shadow-sm); }
+.rec-card:hover { border-color:var(--teal-mid); box-shadow:var(--shadow); }
 
 /* ── INFO BOXES ── */
-.info-box   { border-radius:4px; padding:14px 14px 14px 16px; margin-bottom:10px; }
-.info-blue  { background:var(--blue-lt);   border-left:4px solid var(--blue);   border:1px solid #90caf9; border-left:4px solid var(--blue); }
-.info-green { background:var(--green-lt);  border:1px solid #a5d6a7; border-left:4px solid var(--green); }
-.info-amber { background:var(--amber-lt);  border:1px solid #ffcc80; border-left:4px solid var(--amber); }
-.info-red   { background:var(--red-lt);    border:1px solid #ef9a9a; border-left:4px solid var(--red); }
-.info-purple{ background:var(--purple-lt); border:1px solid #b39ddb; border-left:4px solid var(--purple); }
-.info-teal  { background:var(--teal-lt);   border:1px solid #80deea; border-left:4px solid var(--teal); }
+.info-box   { border-radius:var(--radius-sm); padding:13px 13px 13px 15px; margin-bottom:10px; }
+.info-blue  { background:var(--blue-lt);   border:1px solid #BFDBFE; border-left:3px solid var(--blue);   }
+.info-green { background:var(--green-lt);  border:1px solid #6EE7B7; border-left:3px solid var(--green);  }
+.info-amber { background:var(--amber-lt);  border:1px solid #FDE68A; border-left:3px solid var(--amber);  }
+.info-red   { background:var(--red-lt);    border:1px solid #FECACA; border-left:3px solid var(--red);    }
+.info-purple{ background:var(--purple-lt); border:1px solid #DDD6FE; border-left:3px solid var(--purple); }
+.info-teal  { background:var(--teal-lt);   border:1px solid var(--teal-mid); border-left:3px solid var(--teal); }
 
 /* ── MISC ── */
-.media-preview { width:100%; max-height:220px; object-fit:cover; border-radius:4px; margin-top:12px; border:1px solid var(--border); display:block; }
-.footer { text-align:center; margin-top:48px; padding-top:20px; border-top:1px solid var(--border); }
-.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
+.media-preview { width:100%; max-height:260px; object-fit:contain; border-radius:var(--radius-sm); margin-top:12px; border:1px solid var(--gray-200); display:block; background:var(--gray-50); }
+.footer { text-align:center; margin-top:48px; padding-top:24px; border-top:1px solid var(--gray-200); }
+.grid2  { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(0,0,0,.1); border-top-color:currentColor; border-radius:50%; animation:spin .7s linear infinite; }
 
 /* ── SCAN ZONE ── */
 .scan-zone {
-  border:2px dashed #d0d0d0; border-radius:10px; overflow:hidden;
+  border:1.5px dashed var(--gray-300); border-radius:var(--radius); overflow:hidden;
   position:relative; min-height:160px;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  background:#fff; transition:all .15s;
+  background:var(--white); transition:all .15s;
 }
-.scan-zone:hover { border-color:#00b5b5; background:#f0fafa; }
-.scan-zone.has-img { border-style:solid; border-color:#00b5b5; min-height:0; }
-.scan-line { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,#00b5b5,transparent); animation:scanline 2s ease-in-out infinite alternate; pointer-events:none; z-index:2; }
-.scan-preview { width:100%; max-height:260px; object-fit:contain; display:block; background:#f5f5f5; }
+.scan-zone:hover { border-color:var(--teal); background:var(--teal-lt); }
+.scan-zone.has-img { border-style:solid; border-color:var(--teal); min-height:0; }
+.scan-line { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--teal),transparent); animation:scanline 2s ease-in-out infinite alternate; pointer-events:none; z-index:2; }
+.scan-preview { width:100%; max-height:260px; object-fit:contain; display:block; background:var(--gray-50); }
 
 /* ── DECODE GRID ── */
 .decode-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
-.decode-item { background:var(--bg); border-radius:4px; padding:13px; border:1px solid var(--border); }
-.decode-label { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.6px; margin-bottom:5px; }
-.decode-value { font-size:20px; font-weight:900; color:var(--text); line-height:1.1; font-family:'Roboto Condensed',sans-serif; }
-.decode-sub   { font-size:12px; color:var(--text3); margin-top:3px; }
-.decode-item.good   { background:var(--green-lt); border-color:#a5d6a7; }
+.decode-item { background:var(--gray-50); border-radius:var(--radius-sm); padding:14px; border:1px solid var(--gray-200); }
+.decode-label { font-size:10px; font-weight:700; color:var(--gray-400); text-transform:uppercase; letter-spacing:.6px; margin-bottom:5px; }
+.decode-value { font-size:20px; font-weight:800; color:var(--black); line-height:1.1; }
+.decode-sub   { font-size:12px; color:var(--gray-400); margin-top:3px; }
+.decode-item.good   { background:var(--green-lt); border-color:#6EE7B7; }
 .decode-item.good .decode-value   { color:var(--green); }
-.decode-item.warn   { background:var(--amber-lt); border-color:#ffcc80; }
+.decode-item.warn   { background:var(--amber-lt); border-color:#FDE68A; }
 .decode-item.warn .decode-value   { color:var(--amber); }
-.decode-item.danger { background:var(--red-lt); border-color:#ef9a9a; }
+.decode-item.danger { background:var(--red-lt);   border-color:#FECACA; }
 .decode-item.danger .decode-value { color:var(--red); }
 
 /* ── PITCH ── */
-.pitch-section { background:var(--white); border-radius:4px; border:1px solid var(--border); border-left:4px solid var(--teal); padding:18px; margin-bottom:10px; }
-
-/* ── PRICE TAG (ST style teal price) ── */
-.price-tag { color:var(--teal); font-weight:700; font-size:17px; }
+.pitch-section { background:var(--white); border-radius:var(--radius-sm); border:1px solid var(--gray-200); border-left:3px solid var(--teal); padding:16px; margin-bottom:10px; }
 
 /* ── CHAT ── */
 .quick-chip {
-  background:#fff; border:1px solid #d8d8d8; border-radius:99px;
-  padding:6px 13px; font-size:12px; font-family:'Roboto',sans-serif;
-  font-weight:600; color:#555; cursor:pointer; transition:all .12s;
-  white-space:nowrap;
+  background:var(--white); border:1.5px solid var(--gray-200); border-radius:99px;
+  padding:7px 14px; font-size:12px; font-family:var(--font);
+  font-weight:600; color:var(--gray-600); cursor:pointer; transition:all .12s; white-space:nowrap;
 }
-.quick-chip:hover { border-color:#00b5b5; color:#00b5b5; background:#e6f9f9; }
-
-.msg-agent { display:flex; flex-direction:column; align-items:flex-start; max-width:88%; }
-.msg-user  { display:flex; flex-direction:column; align-items:flex-end;   max-width:88%; align-self:flex-end; }
-
-.msg-bubble {
-  padding:12px 16px; border-radius:16px; font-size:15px;
-  line-height:1.65; font-family:'Roboto',sans-serif; word-break:break-word;
-}
+.quick-chip:hover { border-color:var(--teal); color:var(--teal-dark); background:var(--teal-lt); }
+.msg-agent { display:flex; flex-direction:column; align-items:flex-start; max-width:94%; }
+.msg-user  { display:flex; flex-direction:column; align-items:flex-end; max-width:88%; align-self:flex-end; }
+.msg-bubble { padding:12px 15px; font-size:15px; line-height:1.7; font-family:var(--font); word-break:break-word; }
 .msg-bubble-agent {
-  background:#f0f0f0; color:#1a1a1a;
-  border-radius:4px 16px 16px 16px;
-  border-left:3px solid #00b5b5;
+  background:var(--white); color:var(--black);
+  border-radius:4px 14px 14px 14px;
+  border:1px solid var(--gray-200); box-shadow:var(--shadow-sm);
 }
-.msg-bubble-user {
-  background:#00b5b5; color:#fff;
-  border-radius:16px 4px 16px 16px;
-}
+.msg-bubble-user  { background:var(--black); color:#fff; border-radius:14px 4px 14px 14px; }
 .msg-bubble strong { font-weight:700; }
-.msg-bubble-agent strong { color:#1a1a1a; }
-.msg-bubble-user  strong { color:#fff; }
-.msg-time { font-size:11px; color:#999; margin-top:4px; padding:0 4px; }
-
-/* Typing animation */
-.typing-dots { display:flex; align-items:center; gap:4px; padding:10px 14px; background:#f0f0f0; border-radius:4px 16px 16px 16px; border-left:3px solid #00b5b5; }
-.typing-dots span { width:7px; height:7px; border-radius:50%; background:#00b5b5; animation:typing-bounce .8s ease infinite; }
+.msg-section-head { font-size:11px; font-weight:700; color:var(--teal); text-transform:uppercase; letter-spacing:.8px; margin:12px 0 5px; display:block; }
+.msg-list-item { display:flex; gap:8px; align-items:flex-start; padding:3px 0; font-size:14px; line-height:1.6; color:var(--black); }
+.msg-list-item::before { content:'▸'; color:var(--teal); font-size:11px; flex-shrink:0; margin-top:3px; }
+.msg-time { font-size:11px; color:var(--gray-400); margin-top:4px; padding:0 4px; }
+.typing-dots { display:flex; align-items:center; gap:4px; padding:10px 14px; background:var(--white); border-radius:4px 14px 14px 14px; border:1px solid var(--gray-200); }
+.typing-dots span { width:7px; height:7px; border-radius:50%; background:var(--teal); animation:typing-bounce .8s ease infinite; }
 .typing-dots span:nth-child(2) { animation-delay:.15s; }
 .typing-dots span:nth-child(3) { animation-delay:.3s; }
 @keyframes typing-bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+#chatInput:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(0,194,178,.1); }
+.sub-tab.st-chat { color:var(--teal); background:rgba(0,194,178,.15); border-color:rgba(0,194,178,.25); }
 
-/* Chat input focus */
-#chatInput:focus { border-color:#00b5b5; box-shadow:0 0 0 2px rgba(0,181,181,.12); }
-
-.sub-tab.st-chat { color:#fff; background:#1a1a1a; border:1px solid #333; }
-
-@media(max-width:560px) {
+@media(max-width:560px){
   .grid2 { grid-template-columns:1fr; }
   .symptoms-grid { grid-template-columns:1fr 1fr; }
-  .chip { font-size:12px; padding:9px 10px; }
+  .chip { font-size:13px; padding:11px 11px; }
   .decode-grid { grid-template-columns:1fr 1fr; }
-  .sub-tab { font-size:9px; padding:6px 3px; }
+  .sub-tab { font-size:10px; padding:10px 6px; }
 }
 ```
 
@@ -480,19 +385,31 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
   </div>
 </nav>
 
-<div class="page" id="app"><div class="hero-glow"></div>
+<div class="page" id="app">
 
-  <div class="fu" style="margin-bottom:20px;">
+  <div class="fu" style="margin-bottom:16px;">
+    <div style="background:linear-gradient(135deg,#0F0F0F 0%,#1a2232 100%);border-radius:16px;padding:28px 22px 24px;text-align:center;position:relative;overflow:hidden;">
+      <!-- Subtle teal glow -->
+      <div style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;height:120px;background:radial-gradient(ellipse,rgba(0,194,178,.2) 0%,transparent 70%);pointer-events:none;"></div>
+      <!-- Pill badge -->
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,194,178,.15);border:1px solid rgba(0,194,178,.3);border-radius:99px;padding:5px 13px;margin-bottom:14px;">
+        <span style="width:6px;height:6px;background:#00C2B2;border-radius:50%;display:inline-block;box-shadow:0 0 8px rgba(0,194,178,.6);"></span>
+        <span style="font-size:11px;font-weight:700;color:#00C2B2;letter-spacing:.5px;text-transform:uppercase;">HVAC Diagnose Pro</span>
+      </div>
+      <h1 style="font-size:clamp(26px,6vw,38px);font-weight:800;color:#FFFFFF;letter-spacing:-.5px;line-height:1.15;margin-bottom:10px;position:relative;" id="heroTitle">What's Wrong With Your HVAC?</h1>
+      <p style="font-size:15px;color:rgba(255,255,255,.55);line-height:1.65;max-width:400px;margin:0 auto;position:relative;" id="heroSub">Upload a photo or video, describe what's happening, and we'll tell you exactly what's wrong.</p>
+    </div>
+  </div>  <div class="fu" style="margin-bottom:20px;">
     <!-- Hero banner - clean black card like ST -->
     <div style="background:#1a1a1a;border-radius:8px;padding:22px 20px;text-align:center;position:relative;overflow:hidden;">
       <!-- Subtle teal accent line at top -->
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00b5b5,#009999);"></div>
       <!-- Small label -->
       <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,181,181,.15);border:1px solid rgba(0,181,181,.3);border-radius:99px;padding:4px 12px;margin-bottom:12px;">
-        <span style="width:6px;height:6px;background:#00b5b5;border-radius:50%;display:inline-block;box-shadow:0 0 6px #00b5b5;"></span>
-        <span style="font-family:'Roboto Condensed',sans-serif;font-size:11px;font-weight:700;color:#00b5b5;letter-spacing:1px;text-transform:uppercase;">HVAC Diagnose Pro</span>
+        <span style="width:6px;height:6px;background:#00C2B2;border-radius:50%;display:inline-block;box-shadow:0 0 6px #00b5b5;"></span>
+        <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;color:#00C2B2;letter-spacing:1px;text-transform:uppercase;">HVAC Diagnose Pro</span>
       </div>
-      <h1 style="font-family:'Roboto Condensed',sans-serif;font-size:clamp(26px,6vw,36px);font-weight:900;color:#ffffff;letter-spacing:.5px;text-transform:uppercase;line-height:1.1;margin-bottom:10px;" id="heroTitle">What's Wrong With Your HVAC?</h1>
+      <h1 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(26px,6vw,36px);font-weight:900;color:#ffffff;letter-spacing:.5px;text-transform:uppercase;line-height:1.1;margin-bottom:10px;" id="heroTitle">What's Wrong With Your HVAC?</h1>
       <p style="font-size:15px;color:rgba(255,255,255,.55);line-height:1.6;max-width:400px;margin:0 auto;" id="heroSub">Upload a photo or video, describe what's happening, and we'll tell you exactly what's wrong.</p>
     </div>
   </div>
@@ -504,8 +421,8 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
       <button class="mode-tab active-home" id="tabHome" onclick="setMode('home')">🏠 Homeowner</button>
       <button class="mode-tab" id="tabPro" onclick="setMode('pro')">🔧 Contractor <span class="pro-badge">PRO</span></button>
     </div>
-    <div style="padding:14px 20px;background:#f5f5f5;border-top:1px solid #d8d8d8;">
-      <p style="font-size:14px;color:#555555;line-height:1.5;font-family:'Roboto',sans-serif;" id="modeDesc">Easy-to-understand explanations, safety guidance, and connections to certified local technicians.</p>
+    <div style="padding:16px 20px;background:#F8F9FC;border-top:1px solid #E2E4ED;border-radius:0 0 2px 2px;">
+      <p style="font-size:14px;color:#6B7190;line-height:1.5;font-family:'Plus Jakarta Sans',sans-serif;" id="modeDesc">Easy-to-understand explanations, safety guidance, and connections to certified local technicians.</p>
     </div>
   </div>
 
@@ -538,16 +455,16 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
     <div class="drop-zone-inner">
       <!-- Upload prompt -->
       <div id="dropPrompt" style="padding:28px 20px 20px;">
-        <div style="width:64px;height:64px;background:#f5f5f5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:2px solid #e0e0e0;">
+        <div style="width:64px;height:64px;background:#F5F6FA;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:2px solid #e0e0e0;">
           <span id="dropIcon" style="font-size:28px;">📷</span>
         </div>
-        <div id="dropTitle" style="font-family:'Roboto Condensed',sans-serif;font-size:16px;font-weight:700;color:#1a1a1a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Take or Upload a Photo</div>
-        <div style="font-size:12px;color:#999;margin-bottom:18px;">Photo · Video · JPG · PNG · up to 50MB</div>
+        <div id="dropTitle" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:700;color:#0F0F0F;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Take or Upload a Photo</div>
+        <div style="font-size:12px;color:#9499B0;margin-bottom:18px;">Photo · Video · JPG · PNG · up to 50MB</div>
         <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;" onclick="event.stopPropagation()">
-          <button onclick="document.getElementById('fileInputCam').click()" style="display:flex;align-items:center;gap:7px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:11px 18px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">
+          <button onclick="document.getElementById('fileInputCam').click()" style="display:flex;align-items:center;gap:7px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:11px 18px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">
             📸 Camera
           </button>
-          <button onclick="document.getElementById('fileInput').click()" style="display:flex;align-items:center;gap:7px;background:#fff;color:#1a1a1a;border:1.5px solid #d0d0d0;border-radius:6px;padding:11px 18px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">
+          <button onclick="document.getElementById('fileInput').click()" style="display:flex;align-items:center;gap:7px;background:#FFFFFF;color:#0F0F0F;border:1.5px solid #E2E4ED;border-radius:6px;padding:11px 18px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">
             🖼️ Library
           </button>
         </div>
@@ -580,17 +497,17 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
 
   <!-- Preview -->
   <div id="previewWrapper" style="display:none;margin-top:10px;position:relative;">
-    <img id="imgPreview" style="width:100%;border-radius:8px;border:1px solid #e0e0e0;display:none;max-height:300px;object-fit:contain;background:#111;"/>
-    <video id="videoPreview" style="width:100%;border-radius:8px;border:1px solid #e0e0e0;display:none;" controls></video>
+    <img id="imgPreview" style="width:100%;border-radius:8px;border:1px solid #E2E4ED;display:none;max-height:300px;object-fit:contain;background:#111;"/>
+    <video id="videoPreview" style="width:100%;border-radius:8px;border:1px solid #E2E4ED;display:none;" controls></video>
     <button onclick="clearUpload()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
-    <div id="fileNameTag" style="margin-top:6px;font-size:12px;color:#999;text-align:center;font-family:'Roboto Condensed',sans-serif;letter-spacing:.3px;"></div>
+    <div id="fileNameTag" style="margin-top:6px;font-size:12px;color:#9499B0;text-align:center;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:.3px;"></div>
   </div>
 </div>
 
 <div class="card fu">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
     <label class="field-label" style="margin:0">Voice Description</label>
-    <span style="padding:4px 10px;background:#ede7f6;border:1px solid #b39ddb;border-radius:99px;font-size:12px;font-weight:600;color:#4527a0;">Smart Listening</span>
+    <span style="padding:4px 10px;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:99px;font-size:12px;font-weight:600;color:#7C3AED;">Smart Listening</span>
   </div>
   <p class="field-sub" id="voiceSub">Describe the problem or hold your phone near the system so we can hear the sounds</p>
   <div class="recorder" id="recorder">
@@ -599,12 +516,12 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
         <button class="btn btn-purple btn-sm" onclick="toggleRecording()">🎙️ Record Voice</button>
       </div>
       <div id="recStatus" style="flex:1;">
-        <p style="font-size:14px;color:#999999;">Record yourself describing the issue, or hold near the unit</p>
+        <p style="font-size:14px;color:#9499B0;">Record yourself describing the issue, or hold near the unit</p>
       </div>
     </div>
-    <div id="transcriptBox" style="display:none;margin-top:12px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
-      <p style="font-size:12px;font-weight:700;color:#4527a0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Audio Analysis</p>
-      <p style="font-size:14px;color:#555555;line-height:1.65;" id="transcriptText"></p>
+    <div id="transcriptBox" style="display:none;margin-top:12px;background:#FFFFFF;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
+      <p style="font-size:12px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Audio Analysis</p>
+      <p style="font-size:14px;color:#6B7190;line-height:1.65;" id="transcriptText"></p>
     </div>
   </div>
 </div>
@@ -622,11 +539,35 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
   </div>
 
   <!-- Optional model/serial -->
-  <div style="background:#f5f5f5;border-radius:6px;padding:14px;border:1px solid #e0e0e0;margin-top:10px;">
+  <input type="file" id="diagNameplateInput" accept="image/*" capture="environment" style="display:none" onchange="handleDiagNameplateScan(event)"/>
+  <input type="file" id="diagNameplateLib" accept="image/*" style="display:none" onchange="handleDiagNameplateScan(event)"/>
+
+  <div style="background:#F5F6FA;border-radius:6px;padding:14px;border:1px solid #E2E4ED;margin-top:10px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-      <span style="font-family:'Roboto Condensed',sans-serif;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.8px;">Model &amp; Serial Number</span>
-      <span style="font-size:11px;background:#00b5b5;color:#fff;padding:2px 8px;border-radius:99px;font-weight:700;">Adds accuracy</span>
+      <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;color:#6B7190;text-transform:uppercase;letter-spacing:.8px;">Model &amp; Serial Number</span>
+      <span style="font-size:11px;background:#00C2B2;color:#fff;padding:2px 8px;border-radius:99px;font-weight:700;">Adds accuracy</span>
     </div>
+
+    <!-- Scan or type toggle -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button onclick="document.getElementById('diagNameplateInput').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">
+        📸 Scan Nameplate
+      </button>
+      <button onclick="document.getElementById('diagNameplateLib').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:#FFFFFF;color:#6B7190;border:1.5px solid #E2E4ED;border-radius:6px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">
+        🖼️ Library
+      </button>
+    </div>
+
+    <!-- Scan status -->
+    <div id="diagScanStatus" style="display:none;padding:10px 12px;background:#E6FAF8;border:1px solid #B2F0EA;border-radius:6px;margin-bottom:10px;font-size:13px;color:#009E90;font-weight:600;align-items:center;gap:8px;">
+      <span class="spinner" style="border-color:rgba(0,181,181,.2);border-top-color:#00C2B2;"></span>
+      <span id="diagScanStatusText">Reading nameplate…</span>
+    </div>
+    <div id="diagScanSuccess" style="display:none;padding:10px 12px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:6px;margin-bottom:10px;font-size:13px;color:#059669;font-weight:600;">
+      ✅ <span id="diagScanSuccessText">Nameplate read successfully</span>
+    </div>
+
+    <!-- Manual fields -->
     <div class="grid2" style="gap:8px;margin-bottom:8px;">
       <div>
         <label class="field-label" style="font-size:10px;margin-bottom:4px;">Model Number</label>
@@ -637,7 +578,7 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
         <input type="text" id="serialNumber" placeholder="e.g. 4006E12345" style="font-size:14px;padding:9px 12px;text-transform:uppercase;" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/>
       </div>
     </div>
-    <p style="font-size:12px;color:#999;line-height:1.45;">Optional — helps decode tonnage, age, refrigerant type, and warranty automatically.</p>
+    <p style="font-size:12px;color:#9499B0;line-height:1.45;">Snap the nameplate or type manually — auto-fills brand, model, serial, and age.</p>
   </div>
 </div>
 
@@ -654,27 +595,38 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
 </div>
 
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
-  <span style="font-size:14px;color:#999999;font-weight:500;">Will analyze:</span>
-  <span id="tagFile"  style="display:none;padding:5px 12px;background:#e3f2fd;border:1px solid #90caf9;border-radius:99px;font-size:13px;color:#1565c0;font-weight:600;"></span>
-  <span id="tagVoice" style="display:none;padding:5px 12px;background:#ede7f6;border:1px solid #b39ddb;border-radius:99px;font-size:13px;color:#4527a0;font-weight:600;">🎙️ Voice Recording</span>
-  <span id="tagSymps" style="display:none;padding:5px 12px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:99px;font-size:13px;color:#2e7d32;font-weight:600;"></span>
+  <span style="font-size:14px;color:#9499B0;font-weight:500;">Will analyze:</span>
+  <span id="tagFile"  style="display:none;padding:5px 12px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:99px;font-size:13px;color:#2563EB;font-weight:600;"></span>
+  <span id="tagVoice" style="display:none;padding:5px 12px;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:99px;font-size:13px;color:#7C3AED;font-weight:600;">🎙️ Voice Recording</span>
+  <span id="tagSymps" style="display:none;padding:5px 12px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:99px;font-size:13px;color:#059669;font-weight:600;"></span>
 </div>
 
-<button id="runBtn" onclick="runDiagnostic()" class="fu" style="
-  width:100%; padding:18px; border:none; border-radius:6px; cursor:pointer;
-  background:#00b5b5; color:#fff;
-  font-family:'Roboto Condensed',sans-serif; font-size:20px; font-weight:700;
-  letter-spacing:.8px; text-transform:uppercase;
-  display:flex; align-items:center; justify-content:center; gap:10px;
-  box-shadow: 0 4px 16px rgba(0,181,181,.4), 0 2px 4px rgba(0,0,0,.15);
-  transition: all .15s;
-" onmouseover="this.style.background='#009999';this.style.boxShadow='0 6px 24px rgba(0,181,181,.5)'"
-   onmouseout="this.style.background='#00b5b5';this.style.boxShadow='0 4px 16px rgba(0,181,181,.4), 0 2px 4px rgba(0,0,0,.15)'"
->⚡ Run Diagnostic</button>
+<div style="display:flex;gap:10px;align-items:stretch;">
+  <button id="runBtn" onclick="runDiagnostic()" class="fu" style="
+    flex:1; padding:18px; border:none; border-radius:6px; cursor:pointer;
+    background:#00C2B2; color:#fff;
+    font-family:'Plus Jakarta Sans',sans-serif; font-size:20px; font-weight:700;
+    letter-spacing:.8px; text-transform:uppercase;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    box-shadow: 0 4px 16px rgba(0,181,181,.4), 0 2px 4px rgba(0,0,0,.15);
+    transition: all .15s;
+  " onmouseover="this.style.background='#009E90'" onmouseout="this.style.background='#00C2B2'"
+  >⚡ Run Diagnostic</button>
+  <button onclick="resetDiagnostic()" style="
+    padding:18px 16px; border:2px solid #d0d0d0; border-radius:6px; cursor:pointer;
+    background:#FFFFFF; color:#6B7190;
+    font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700;
+    letter-spacing:.5px; text-transform:uppercase;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    transition: all .15s; white-space:nowrap;
+  " onmouseover="this.style.borderColor='#0F0F0F';this.style.color='#0F0F0F'" 
+     onmouseout="this.style.borderColor='#E2E4ED';this.style.color='#6B7190'"
+  >🔄 New</button>
+</div>
 
 <div id="resultPanel" style="display:none;margin-top:24px;" class="fi">
   <div style="margin-bottom:14px;">
-    <span style="font-size:17px;font-weight:900;color:#1a1a1a;font-family:'Roboto Condensed',sans-serif;letter-spacing:.3px;text-transform:uppercase;">Your Diagnostic Report</span>
+    <span style="font-size:18px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;">Your Diagnostic Report</span>
     <span id="sevBadge" style="display:none;"></span>
   </div>
   <div class="card" id="resultCard" style="margin-bottom:16px;">
@@ -686,13 +638,13 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
     <div class="info-box info-blue" style="margin-bottom:0;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
         <div>
-          <p style="font-size:15px;font-weight:700;color:#1565c0;margin-bottom:3px;">📚 Homeowner Education Mode</p>
-          <p style="font-size:13px;color:#1565c0;">Generate a plain-English explanation to show your customer</p>
+          <p style="font-size:15px;font-weight:700;color:#2563EB;margin-bottom:3px;">📚 Homeowner Education Mode</p>
+          <p style="font-size:13px;color:#2563EB;">Generate a plain-English explanation to show your customer</p>
         </div>
         <button class="btn btn-blue btn-sm" onclick="runEduMode()" id="eduBtn">Generate Explanation</button>
       </div>
-      <div id="eduContent" style="display:none;margin-top:14px;background:#ffffff;border-radius:10px;padding:16px;">
-        <div id="eduText" style="font-size:15px;line-height:1.8;color:#555555;"></div>
+      <div id="eduContent" style="display:none;margin-top:14px;background:#FFFFFFfff;border-radius:10px;padding:16px;">
+        <div id="eduText" style="font-size:15px;line-height:1.8;color:#6B7190;"></div>
         <button class="btn btn-outline btn-sm" onclick="copyEdu()" style="margin-top:12px;">📋 Copy to Show Customer</button>
       </div>
     </div>
@@ -702,8 +654,8 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
     <div style="display:flex;gap:14px;align-items:flex-start;">
       <div style="width:48px;height:48px;background:#2563eb;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🛠️</div>
       <div style="flex:1;">
-        <p style="font-size:17px;font-weight:700;color:#1565c0;margin-bottom:6px;">Need a Certified HVAC Technician?</p>
-        <p style="font-size:15px;color:#1565c0;line-height:1.6;margin-bottom:14px;">Get connected with a licensed, insured HVAC pro in <strong>Manassas Park, VA</strong>. Free estimates, same-day service, financing available.</p>
+        <p style="font-size:17px;font-weight:700;color:#2563EB;margin-bottom:6px;">Need a Certified HVAC Technician?</p>
+        <p style="font-size:15px;color:#2563EB;line-height:1.6;margin-bottom:14px;">Get connected with a licensed, insured HVAC pro in <strong>Manassas Park, VA</strong>. Free estimates, same-day service, financing available.</p>
         <button class="btn btn-blue" onclick="alert('Lead captured! Connect this to your phone number or booking link.')">📞 Request a Free Estimate</button>
       </div>
     </div>
@@ -714,8 +666,8 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
         <span style="font-size:24px;">💰</span>
         <div style="flex:1;">
-          <p style="font-size:15px;font-weight:700;color:#2e7d32;margin-bottom:4px;">Turn This Visit Into More Revenue</p>
-          <p style="font-size:14px;color:#2e7d32;line-height:1.5;">Use <strong>Revenue Builder</strong> to get personalized add-on recommendations and conversation scripts.</p>
+          <p style="font-size:15px;font-weight:700;color:#059669;margin-bottom:4px;">Turn This Visit Into More Revenue</p>
+          <p style="font-size:14px;color:#059669;line-height:1.5;">Use <strong>Revenue Builder</strong> to get personalized add-on recommendations and conversation scripts.</p>
         </div>
         <button class="btn btn-green btn-sm" onclick="setProTab('revenue')">Revenue Builder →</button>
       </div>
@@ -724,7 +676,7 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
         <span style="font-size:24px;">📋</span>
         <div style="flex:1;">
-          <p style="font-size:15px;font-weight:700;color:#1565c0;margin-bottom:4px;">Pitch a Maintenance Agreement</p>
+          <p style="font-size:15px;font-weight:700;color:#2563EB;margin-bottom:4px;">Pitch a Maintenance Agreement</p>
           <p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.5;">Get a custom word-for-word script to sell a maintenance plan on this visit.</p>
         </div>
         <button class="btn btn-sm" style="background:#b45309;color:#fff;flex-shrink:0;" onclick="setProTab('maint')">Build Pitch →</button>
@@ -744,8 +696,8 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
     <div class="info-box info-teal" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
       <div style="width:52px;height:52px;background:#0d9488;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">📷</div>
       <div>
-        <p style="font-size:17px;font-weight:700;color:#00838f;margin-bottom:4px;">Nameplate Scanner</p>
-        <p style="font-size:14px;color:#00838f;line-height:1.5;">Snap a photo of any HVAC nameplate — Instantly reads the brand, model, and serial number, then decodes the age and warranty status for every major manufacturer.</p>
+        <p style="font-size:17px;font-weight:700;color:#009E90;margin-bottom:4px;">Nameplate Scanner</p>
+        <p style="font-size:14px;color:#009E90;line-height:1.5;">Snap a photo of any HVAC nameplate — Instantly reads the brand, model, and serial number, then decodes the age and warranty status for every major manufacturer.</p>
       </div>
     </div>
 
@@ -762,16 +714,16 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
     <div id="scanPrompt" style="width:100%;">
       <!-- Main tap area -->
       <div style="padding:28px 20px 18px;text-align:center;">
-        <div style="width:60px;height:60px;background:#f5f5f5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:2px solid #e0e0e0;">
+        <div style="width:60px;height:60px;background:#F5F6FA;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:2px solid #e0e0e0;">
           <span style="font-size:26px;">🏷️</span>
         </div>
-        <div style="font-family:'Roboto Condensed',sans-serif;font-size:15px;font-weight:700;color:#1a1a1a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Photograph the Nameplate</div>
-        <div style="font-size:12px;color:#999;margin-bottom:18px;line-height:1.5;">Get close · Good lighting · Text must be readable</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:#0F0F0F;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Photograph the Nameplate</div>
+        <div style="font-size:12px;color:#9499B0;margin-bottom:18px;line-height:1.5;">Get close · Good lighting · Text must be readable</div>
         <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-          <button onclick="document.getElementById('scanInput').click()" style="display:flex;align-items:center;gap:7px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:11px 20px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;min-width:130px;">
+          <button onclick="document.getElementById('scanInput').click()" style="display:flex;align-items:center;gap:7px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:11px 20px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;min-width:130px;">
             📸 Camera
           </button>
-          <button onclick="document.getElementById('scanInputLib').click()" style="display:flex;align-items:center;gap:7px;background:#fff;color:#1a1a1a;border:1.5px solid #d0d0d0;border-radius:6px;padding:11px 20px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;min-width:130px;">
+          <button onclick="document.getElementById('scanInputLib').click()" style="display:flex;align-items:center;gap:7px;background:#FFFFFF;color:#0F0F0F;border:1.5px solid #E2E4ED;border-radius:6px;padding:11px 20px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;min-width:130px;">
             🖼️ Library
           </button>
         </div>
@@ -818,17 +770,17 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
 <div id="scanResult" style="display:none;margin-top:20px;" class="fi">
 <div id="scanConfidenceWarning" style="display:none;padding:12px 14px;border-radius:6px;border:1px solid #ef9a9a;margin-bottom:12px;font-size:14px;line-height:1.6;border-left:4px solid #c62828;"></div>
   <div class="card" style="border-left:4px solid #0d9488;margin-bottom:16px;">
-    <p style="font-size:14px;font-weight:700;color:#00838f;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📋 What We Read From the Nameplate</p>
-    <p style="font-size:14px;color:#555555;" id="scanExtracted"></p>
+    <p style="font-size:14px;font-weight:700;color:#009E90;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📋 What We Read From the Nameplate</p>
+    <p style="font-size:14px;color:#6B7190;" id="scanExtracted"></p>
   </div>
   <div class="decode-grid" id="decodeGrid"></div>
   <div class="card" style="margin-top:16px;border-left:4px solid #7c3aed;">
-    <p style="font-size:14px;font-weight:700;color:#4527a0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">🛡️ Warranty & Age Analysis</p>
+    <p style="font-size:14px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">🛡️ Warranty & Age Analysis</p>
     <div class="result-body" id="scanWarrantyText" style="font-size:15px;"></div>
   </div>
   <div id="scanVerifyLink" style="display:none;" class="info-box info-purple">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <p style="font-size:14px;color:#4527a0;flex:1;">Verify warranty directly with manufacturer:</p>
+      <p style="font-size:14px;color:#7C3AED;flex:1;">Verify warranty directly with manufacturer:</p>
       <a id="scanVerifyBtn" href="#" target="_blank" style="padding:9px 20px;background:#7c3aed;border-radius:9px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">Verify Online →</a>
     </div>
   </div>
@@ -844,8 +796,8 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
     <div class="info-box info-blue" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
       <div style="width:52px;height:52px;background:#2563eb;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">❄️</div>
       <div>
-        <p style="font-size:17px;font-weight:700;color:#1565c0;margin-bottom:4px;">Refrigerant Identifier</p>
-        <p style="font-size:14px;color:#1565c0;line-height:1.5;">Identify the correct refrigerant for any system, check phase-out status, and get replacement options.</p>
+        <p style="font-size:17px;font-weight:700;color:#2563EB;margin-bottom:4px;">Refrigerant Identifier</p>
+        <p style="font-size:14px;color:#2563EB;line-height:1.5;">Identify the correct refrigerant for any system, check phase-out status, and get replacement options.</p>
       </div>
     </div>
     <div class="card">
@@ -860,7 +812,7 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
       <textarea id="rNotesRefrig" rows="2" placeholder="e.g. Old R-22 system, homeowner wants options. Nameplate says R-410A."></textarea>
     </div>
     <div class="info-box info-amber" style="margin-bottom:20px;">
-      <p style="font-size:14px;font-weight:700;color:#1565c0;margin-bottom:6px;">⚠️ Phase-Out Alert</p>
+      <p style="font-size:14px;font-weight:700;color:#2563EB;margin-bottom:6px;">⚠️ Phase-Out Alert</p>
       <p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.6;">R-22 production ended in 2020. R-410A phase-down is underway under the AIM Act. Always verify the refrigerant before ordering parts or charging a system.</p>
     </div>
     <button class="btn btn-blue btn-full" id="refrigBtn" onclick="runRefrigLookup()">❄️ Identify Refrigerant</button>
@@ -878,8 +830,8 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
     <div class="info-box info-green" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
       <div style="width:52px;height:52px;background:#16a34a;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">💰</div>
       <div>
-        <p style="font-size:17px;font-weight:700;color:#2e7d32;margin-bottom:4px;">Revenue Builder</p>
-        <p style="font-size:14px;color:#2e7d32;line-height:1.5;">Get personalized add-on recommendations with word-for-word scripts to grow your ticket on every visit.</p>
+        <p style="font-size:17px;font-weight:700;color:#059669;margin-bottom:4px;">Revenue Builder</p>
+        <p style="font-size:14px;color:#059669;line-height:1.5;">Get personalized add-on recommendations with word-for-word scripts to grow your ticket on every visit.</p>
       </div>
     </div>
     <div class="card">
@@ -905,11 +857,11 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
     <div id="revenueResult" style="display:none;margin-top:24px;" class="fi">
       <div class="info-box info-green" style="margin-bottom:20px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
-          <div style="flex:1;"><p style="font-size:13px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">💰 Revenue Opportunity</p><p style="font-size:15px;color:#555555;line-height:1.6;" id="revSummary"></p></div>
+          <div style="flex:1;"><p style="font-size:13px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">💰 Revenue Opportunity</p><p style="font-size:15px;color:#6B7190;line-height:1.6;" id="revSummary"></p></div>
           <div style="text-align:right;flex-shrink:0;">
-            <p style="font-size:28px;font-weight:800;color:#2e7d32;line-height:1;" id="revRange"></p>
-            <p style="font-size:12px;color:#999999;margin-top:3px;">potential add-on revenue</p>
-            <p style="font-size:14px;color:#1565c0;font-weight:700;margin-top:4px;" id="revProfit"></p>
+            <p style="font-size:28px;font-weight:800;color:#059669;line-height:1;" id="revRange"></p>
+            <p style="font-size:12px;color:#9499B0;margin-top:3px;">potential add-on revenue</p>
+            <p style="font-size:14px;color:#2563EB;font-weight:700;margin-top:4px;" id="revProfit"></p>
           </div>
         </div>
       </div>
@@ -929,7 +881,7 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
       <div style="width:52px;height:52px;background:#b45309;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">📋</div>
       <div>
         <p style="font-size:17px;font-weight:700;color:rgba(245,158,11,.85);margin-bottom:4px;">Maintenance Agreement Pitcher</p>
-        <p style="font-size:14px;color:#1565c0;line-height:1.5;">Get a word-for-word customized pitch script to sell a maintenance agreement — tailored to this system's age, condition, and the homeowner's situation.</p>
+        <p style="font-size:14px;color:#2563EB;line-height:1.5;">Get a word-for-word customized pitch script to sell a maintenance agreement — tailored to this system's age, condition, and the homeowner's situation.</p>
       </div>
     </div>
     <div class="card">
@@ -978,8 +930,8 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
     <button class="btn btn-full" style="background:#b45309;color:#fff;" id="maintBtn" onclick="runMaintenancePitch()">📋 Generate Pitch Script</button>
     <div id="maintResult" style="display:none;margin-top:24px;" class="fi">
       <div class="pitch-section">
-        <p style="font-size:14px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;">📋 Your Customized Pitch Script</p>
-        <div id="maintScriptText" style="font-size:15px;line-height:1.85;color:#555555;"></div>
+        <p style="font-size:14px;font-weight:700;color:#2563EB;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;">📋 Your Customized Pitch Script</p>
+        <div id="maintScriptText" style="font-size:15px;line-height:1.85;color:#6B7190;"></div>
         <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
           <button class="btn btn-sm" style="background:#b45309;color:#fff;" onclick="copyMaintScript()">📋 Copy Script</button>
           <button class="btn btn-outline btn-sm" onclick="resetMaint()">+ New Pitch</button>
@@ -993,17 +945,17 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
   <div id="panelChat" style="display:none;">
     <div style="background:#1a1a1a;border-radius:6px 6px 0 0;padding:16px 18px;display:flex;align-items:center;gap:14px;">
       <div style="position:relative;flex-shrink:0;">
-        <div style="width:46px;height:46px;background:#00b5b5;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;">🧑‍🔧</div>
+        <div style="width:46px;height:46px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;">🧑‍🔧</div>
         <div style="position:absolute;bottom:1px;right:1px;width:12px;height:12px;background:#4caf50;border-radius:50%;border:2px solid #1a1a1a;"></div>
       </div>
       <div style="flex:1;">
-        <div style="font-family:'Roboto Condensed',sans-serif;font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px;">HVAC Expert Agent</div>
-        <div style="font-size:12px;color:#00b5b5;font-weight:500;">● Online — Master Technician</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px;">HVAC Expert Agent</div>
+        <div style="font-size:12px;color:#00C2B2;font-weight:500;">● Online — Master Technician</div>
       </div>
-      <button onclick="clearChat()" style="background:rgba(255,255,255,.1);border:none;border-radius:4px;padding:6px 12px;color:rgba(255,255,255,.6);font-size:12px;font-family:'Roboto',sans-serif;cursor:pointer;font-weight:600;">Clear</button>
+      <button onclick="clearChat()" style="background:rgba(255,255,255,.1);border:none;border-radius:4px;padding:6px 12px;color:rgba(255,255,255,.6);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;font-weight:600;">Clear</button>
     </div>
-    <div style="background:#f5f5f5;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;padding:10px 12px;">
-      <p style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Quick Start</p>
+    <div style="background:#F5F6FA;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;padding:10px 12px;">
+      <p style="font-size:11px;font-weight:700;color:#9499B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Quick Start</p>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="quick-chip" onclick="sendQuick('Unit not cooling, compressor is running')">Not cooling</button>
         <button class="quick-chip" onclick="sendQuick('No heat, furnace won't ignite')">No heat</button>
@@ -1015,7 +967,7 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
         <button class="quick-chip" onclick="sendQuick('Capacitor keeps failing, what should I check')">Capacitor failing</button>
       </div>
     </div>
-    <div id="chatMessages" style="background:#fff;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:380px;max-height:520px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;">
+    <div id="chatMessages" style="background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:380px;max-height:520px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;">
       <div class="msg-agent">
         <div class="msg-bubble msg-bubble-agent">
           <p style="margin-bottom:8px;">Hey! I'm your HVAC Expert Agent — think of me as a master tech you can text anytime.</p>
@@ -1025,24 +977,24 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
         <div class="msg-time">Just now</div>
       </div>
     </div>
-    <div id="typingIndicator" style="display:none;background:#fff;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;padding:10px 16px;">
+    <div id="typingIndicator" style="display:none;background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;padding:10px 16px;">
       <div style="display:flex;align-items:center;gap:8px;">
-        <div style="width:32px;height:32px;background:#00b5b5;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🧑‍🔧</div>
+        <div style="width:32px;height:32px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🧑‍🔧</div>
         <div class="typing-dots"><span></span><span></span><span></span></div>
       </div>
     </div>
-    <div style="background:#fff;border:1px solid #d8d8d8;border-top:2px solid #00b5b5;border-radius:0 0 6px 6px;padding:12px;">
+    <div style="background:#FFFFFF;border:1px solid #E2E4ED;border-top:2px solid #00b5b5;border-radius:0 0 6px 6px;padding:12px;">
       <div style="display:flex;gap:10px;align-items:flex-end;">
         <textarea id="chatInput" placeholder="Describe what's happening…" rows="2"
-          style="flex:1;border:1px solid #d8d8d8;border-radius:6px;padding:10px 13px;font-size:15px;font-family:'Roboto',sans-serif;resize:none;min-height:44px;max-height:120px;line-height:1.5;outline:none;transition:border-color .15s;"
+          style="flex:1;border:1px solid #E2E4ED;border-radius:6px;padding:10px 13px;font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;resize:none;min-height:44px;max-height:120px;line-height:1.5;outline:none;transition:border-color .15s;"
           onkeydown="handleChatKey(event)"
           oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
         <button onclick="sendChat()" id="chatSendBtn"
-          style="background:#00b5b5;color:#fff;border:none;border-radius:6px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:20px;">
+          style="background:#00C2B2;color:#fff;border:none;border-radius:6px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:20px;">
           ➤
         </button>
       </div>
-      <p style="font-size:11px;color:#999;margin-top:8px;text-align:center;">Master Technician · EPA 608 · All brands & systems</p>
+      <p style="font-size:11px;color:#9499B0;margin-top:8px;text-align:center;">Master Technician · EPA 608 · All brands & systems</p>
     </div>
   </div>
 
@@ -1050,11 +1002,11 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
 
   <div class="footer">
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">
-      <div style="width:28px;height:28px;background:#00b5b5;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;">❄️</div>
-      <p style="font-family:'Roboto',sans-serif;font-size:16px;font-weight:700;color:#1565c0;letter-spacing:.5px;text-transform:uppercase;">HVAC Diagnose Pro</p>
+      <div style="width:28px;height:28px;background:#00C2B2;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;">❄️</div>
+      <p style="font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:700;color:#2563EB;letter-spacing:.5px;text-transform:uppercase;">HVAC Diagnose Pro</p>
     </div>
-    <p style="font-size:14px;color:#555555;margin-bottom:6px;">Homeowner $9.99/mo &nbsp;·&nbsp; Contractor Pro $29.99/mo</p>
-    <p style="font-family:'Roboto',sans-serif;font-size:11px;color:#999999;line-height:1.6;max-width:400px;margin:0 auto;">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician.</p>
+    <p style="font-size:14px;color:#6B7190;margin-bottom:6px;">Homeowner $9.99/mo &nbsp;·&nbsp; Contractor Pro $29.99/mo</p>
+    <p style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;color:#9499B0;line-height:1.6;max-width:400px;margin:0 auto;">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician.</p>
   </div>
 
 </div>
@@ -1363,7 +1315,7 @@ IMAGE QUALITY RULE: If blurry, dark, or brand text unreadable → set imageQuali
 
 Return ONLY valid JSON, no markdown:
 {"brand":"EXACT brand text from plate","model":"","serial":"","refrigerant":"","voltage":"","tonnage":"","seer":"","manufactureYear":0,"manufactureMonth":0,"ageYears":0,"warrantyStatus":"Active|Expired|Likely Expired|Unknown","warrantyExpireYear":0,"warrantyDetails":"e.g. 10yr registered expires 2029","registrationStatus":"Unknown","summary":"2 sentence plain English summary","techFlags":"anything unusual","confidence":"High|Medium|Low","imageQuality":"Clear|Partial|Unclear"}`;
-      const raw=await callAI(SYSTEM,[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:"Read this HVAC nameplate carefully. What brand text is printed on this plate? Read serial number and decode manufacture date. Return JSON only. Never guess the brand."}]}],900);
+      const raw=await callAI(SYSTEM,[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:"Read this HVAC nameplate carefully. What brand text is printed on this plate? Read serial number and decode manufacture date. Return JSON only. Never guess the brand."}]}],600);
       result=JSON.parse(raw.replace(/```json|```/g,"").trim());
     }else{
       const SYSTEM=`You are an expert HVAC serial number decoder. Current year is 2026.
@@ -1387,18 +1339,18 @@ function showScanResult(r){
   // Confidence warning banner
   let warningHtml = "";
   if(r.confidence==="Low" || (r.brand&&r.brand.includes("unclear")) || (r.brand&&r.brand.includes("Cannot"))){
-    warningHtml = `<div style="background:#ffebee;border-left:4px solid #c62828;border-radius:0 6px 6px 0;padding:12px 14px;margin-bottom:14px;font-size:14px;color:#c62828;font-weight:600;">
+    warningHtml = `<div style="background:#ffebee;border-left:4px solid #c62828;border-radius:0 6px 6px 0;padding:12px 14px;margin-bottom:14px;font-size:14px;color:#DC2626;font-weight:600;">
       ⚠️ <strong>Photo quality too low to read accurately.</strong> Retake the photo closer, in good lighting. Do not use these results until verified on the unit.
     </div>`;
   } else if(r.confidence==="Medium" || r.imageQuality==="Partial"){
-    warningHtml = `<div style="background:#fff3e0;border-left:4px solid #e65100;border-radius:0 6px 6px 0;padding:12px 14px;margin-bottom:14px;font-size:14px;color:#e65100;font-weight:600;">
+    warningHtml = `<div style="background:#FFFFFF3e0;border-left:4px solid #e65100;border-radius:0 6px 6px 0;padding:12px 14px;margin-bottom:14px;font-size:14px;color:#EA580C;font-weight:600;">
       ⚠️ <strong>Some details may be unclear.</strong> Always verify the brand, model, and serial number directly on the unit before taking action.
     </div>`;
   }
 
   // Build data rows
   const rows = [
-    {label:"Brand",        value: r.brand||"Unknown",        style: "font-weight:700;color:#1a1a1a;font-size:16px;"},
+    {label:"Brand",        value: r.brand||"Unknown",        style: "font-weight:700;color:#0F0F0F;font-size:16px;"},
     {label:"Model",        value: r.model||"—",              style: ""},
     {label:"Serial",       value: r.serial||"—",             style: "font-family:monospace;font-size:14px;"},
     {label:"Refrigerant",  value: r.refrigerant||"—",        style: ""},
@@ -1408,31 +1360,31 @@ function showScanResult(r){
     {label:"Manufactured", value: r.manufactureYear ? `${r.manufactureYear}${r.manufactureMonth?" (Month "+r.manufactureMonth+")":""}` : "—", style:""},
     {label:"System Age",   value: r.ageYears ? r.ageYears+" years old" : "—", style:`font-weight:700;color:${ageColor};`},
     {label:"Warranty",     value: r.warrantyStatus||"Unknown", style:`font-weight:700;color:${wColor};`},
-    {label:"Warranty Info",value: r.warrantyDetails||"—",     style:"font-size:13px;color:#555;"},
+    {label:"Warranty Info",value: r.warrantyDetails||"—",     style:"font-size:13px;color:#6B7190;"},
     {label:"Est. Expiry",  value: r.warrantyExpireYear ? "~"+r.warrantyExpireYear : "—", style:""},
   ].filter(r=>r.value&&r.value!=="—");
 
   let rowsHtml = rows.map(row=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:#f5f5f5;border-radius:4px;margin-bottom:6px;">
-      <span style="font-size:13px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.4px;">${row.label}</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:#F5F6FA;border-radius:4px;margin-bottom:6px;">
+      <span style="font-size:13px;font-weight:600;color:#9499B0;text-transform:uppercase;letter-spacing:.4px;">${row.label}</span>
       <span style="font-size:15px;${row.style}">${row.value}</span>
     </div>`).join("");
 
   // Summary box
   let summaryHtml = "";
   if(r.summary){
-    summaryHtml = `<div style="background:#e6f9f9;border:1px solid #80deea;border-radius:6px;padding:14px;margin-top:10px;">
-      <div style="font-family:'Roboto Condensed',sans-serif;font-size:11px;font-weight:700;color:#00838f;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Summary</div>
-      <p style="font-size:14px;line-height:1.65;color:#1a1a1a;">${r.summary}</p>
+    summaryHtml = `<div style="background:#E6FAF8;border:1px solid #B2F0EA;border-radius:6px;padding:14px;margin-top:10px;">
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;color:#009E90;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Summary</div>
+      <p style="font-size:14px;line-height:1.65;color:#0F0F0F;">${r.summary}</p>
     </div>`;
   }
 
   // Tech flags
   let flagsHtml = "";
   if(r.techFlags&&r.techFlags!=="null"&&r.techFlags.length>2){
-    flagsHtml = `<div style="background:#fff3e0;border:1px solid #ffcc80;border-radius:6px;padding:14px;margin-top:10px;">
-      <div style="font-family:'Roboto Condensed',sans-serif;font-size:11px;font-weight:700;color:#e65100;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">⚠️ Tech Note</div>
-      <p style="font-size:14px;line-height:1.65;color:#1a1a1a;">${r.techFlags}</p>
+    flagsHtml = `<div style="background:#FFFFFF3e0;border:1px solid #ffcc80;border-radius:6px;padding:14px;margin-top:10px;">
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;color:#EA580C;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">⚠️ Tech Note</div>
+      <p style="font-size:14px;line-height:1.65;color:#0F0F0F;">${r.techFlags}</p>
     </div>`;
   }
 
@@ -1457,15 +1409,15 @@ function showScanResult(r){
   let portalHtml = "";
   if(info){
     portalHtml = `<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
-      <a href="${info.url}" target="_blank" style="flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;background:#1a1a1a;color:#fff;border-radius:4px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:.3px;text-transform:uppercase;">🌐 Warranty Portal</a>
-      <a href="tel:${info.phone}" style="flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;background:#00b5b5;color:#fff;border-radius:4px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:.3px;text-transform:uppercase;">📞 ${info.phone}</a>
+      <a href="${info.url}" target="_blank" style="flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;background:#0F0F0F;color:#fff;border-radius:4px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:.3px;text-transform:uppercase;">🌐 Warranty Portal</a>
+      <a href="tel:${info.phone}" style="flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;background:#00C2B2;color:#fff;border-radius:4px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:.3px;text-transform:uppercase;">📞 ${info.phone}</a>
     </div>`;
   }
 
   container.innerHTML = `
-    <div style="border-left:4px solid #00b5b5;background:#fff;border-radius:4px;padding:18px;border:1px solid #d8d8d8;">
+    <div style="border-left:4px solid #00C2B2;background:#FFFFFF;border-radius:4px;padding:18px;border:1px solid #E2E4ED;">
       ${warningHtml}
-      <div style="font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">📋 Nameplate Data</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:#9499B0;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">📋 Nameplate Data</div>
       ${rowsHtml}
       ${summaryHtml}
       ${flagsHtml}
@@ -1503,19 +1455,19 @@ async function startRecording(){
     mediaRecorder=new MediaRecorder(stream,{mimeType:mime});audioChunks=[];
     mediaRecorder.ondataavailable=e=>{if(e.data.size>0)audioChunks.push(e.data);};
     mediaRecorder.onstop=()=>processAudio(mime);mediaRecorder.start(200);recSeconds=0;
-    recTimer=setInterval(()=>{recSeconds++;const m=String(Math.floor(recSeconds/60)).padStart(2,"0"),s=String(recSeconds%60).padStart(2,"0");document.getElementById("recStatus").innerHTML=`<div style="display:flex;align-items:center;gap:10px;"><div class="wave-bars">${[10,16,12,18,8].map((h,i)=>`<div class="wave-bar" style="height:${h}px;animation-delay:${i*.1}s"></div>`).join("")}</div><span style="color:#ef4444;font-weight:700;">${m}:${s}</span><span class="pulsing" style="color:#999999;font-size:13px;">Recording…</span></div>`;},1000);
+    recTimer=setInterval(()=>{recSeconds++;const m=String(Math.floor(recSeconds/60)).padStart(2,"0"),s=String(recSeconds%60).padStart(2,"0");document.getElementById("recStatus").innerHTML=`<div style="display:flex;align-items:center;gap:10px;"><div class="wave-bars">${[10,16,12,18,8].map((h,i)=>`<div class="wave-bar" style="height:${h}px;animation-delay:${i*.1}s"></div>`).join("")}</div><span style="color:#ef4444;font-weight:700;">${m}:${s}</span><span class="pulsing" style="color:#9499B0;font-size:13px;">Recording…</span></div>`;},1000);
     document.getElementById("recorder").className="recorder recording";
     document.getElementById("recBtnWrap").innerHTML=`<div style="position:relative;display:inline-block;"><div class="rec-ring"></div><button onclick="stopRecording()" style="position:relative;z-index:10;background:#ef4444;color:#fff;width:52px;height:52px;border-radius:50%;border:none;font-size:20px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;">⏹</button></div>`;
   }catch{alert("Please allow microphone access to use voice recording.");}
 }
-function stopRecording(){if(mediaRecorder?.state==="recording")mediaRecorder.stop();mediaRecorder?.stream?.getTracks().forEach(t=>t.stop());clearInterval(recTimer);document.getElementById("recStatus").innerHTML=`<p class="pulsing" style="font-size:14px;color:#4527a0;font-weight:600;">Analyzing your audio…</p>`;}
+function stopRecording(){if(mediaRecorder?.state==="recording")mediaRecorder.stop();mediaRecorder?.stream?.getTracks().forEach(t=>t.stop());clearInterval(recTimer);document.getElementById("recStatus").innerHTML=`<p class="pulsing" style="font-size:14px;color:#7C3AED;font-weight:600;">Analyzing your audio…</p>`;}
 async function processAudio(mime){
   const blob=new Blob(audioChunks,{type:mime}),b64=await blobToBase64(blob);
-  try{const res=await callAI("",[{role:"user",content:[{type:"text",text:`Analyze this HVAC diagnostic audio. Transcribe speech. Identify mechanical sounds.\nSPEECH: [transcription]\nSOUNDS: [sound descriptions]\nSUMMARY: [1-2 sentences about what this tells us]`},{type:"document",source:{type:"base64",media_type:mime,data:b64}}]}]);audioTranscript=res;}
+  try{const res=await callAI("",[{role:"user",content:[{type:"text",text:`Analyze this HVAC diagnostic audio. Transcribe speech. Identify mechanical sounds.\nSPEECH: [transcription]\nSOUNDS: [sound descriptions]\nSUMMARY: [1-2 sentences about what this tells us]`},{type:"document",source:{type:"base64",media_type:mime,data:b64}}]}],400);audioTranscript=res;}
   catch{audioTranscript="Audio recorded — will be referenced in diagnosis.";}
   document.getElementById("recorder").className="recorder done";
   document.getElementById("recBtnWrap").innerHTML=`<button class="btn btn-outline btn-sm" onclick="resetRecording()">🔄 Re-record</button>`;
-  document.getElementById("recStatus").innerHTML=`<p style="font-size:14px;color:#2e7d32;font-weight:600;">✓ Audio captured and analyzed</p>`;
+  document.getElementById("recStatus").innerHTML=`<p style="font-size:14px;color:#059669;font-weight:600;">✓ Audio captured and analyzed</p>`;
   document.getElementById("transcriptText").textContent=audioTranscript;
   document.getElementById("transcriptBox").style.display="block";updateInputsSummary();
 }
@@ -1523,7 +1475,7 @@ function resetRecording(){
   audioTranscript="";
   document.getElementById("recorder").className="recorder";
   document.getElementById("recBtnWrap").innerHTML=`<button class="btn btn-purple btn-sm" onclick="toggleRecording()">🎙️ Record Voice</button>`;
-  document.getElementById("recStatus").innerHTML=`<p style="font-size:14px;color:#999999;">Record yourself describing the issue, or hold near the unit</p>`;
+  document.getElementById("recStatus").innerHTML=`<p style="font-size:14px;color:#9499B0;">Record yourself describing the issue, or hold near the unit</p>`;
   document.getElementById("transcriptBox").style.display="none";updateInputsSummary();
 }
 function updateInputsSummary(){
@@ -1587,7 +1539,7 @@ async function grabVideoFrame(file){return new Promise((res,rej)=>{const v=docum
 async function runDiagnostic(){
   const sysType=document.getElementById("sysType").value,sysAge=document.getElementById("sysAge").value,brand=document.getElementById("brand").value,desc=document.getElementById("desc").value,isPro=mode==="pro";
   if(!sysType&&!selectedSymptoms.length&&!desc&&!uploadedFile&&!audioTranscript){alert("Please add at least one detail — select a system type, describe the problem, or upload a photo.");return;}
-  const btn=document.getElementById("runBtn");btn.disabled=true;btn.style.background="#009999";btn.innerHTML=`<span class="spinner"></span><span class="pulsing" style="font-family:'Roboto Condensed',sans-serif;font-size:18px;letter-spacing:.5px;">Analyzing your system…</span>`;
+  const btn=document.getElementById("runBtn");btn.disabled=true;btn.style.background="#009E90";btn.innerHTML=`<span class="spinner"></span><span class="pulsing" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;letter-spacing:.5px;">Analyzing your system…</span>`;
   try{
     const symsText=selectedSymptoms.length?selectedSymptoms.join(", "):"None selected",audText=audioTranscript?`\nAUDIO ANALYSIS:\n${audioTranscript}\n`:"";
     let messages;
@@ -1614,7 +1566,7 @@ async function runDiagnostic(){
     else if(msg.includes("API key") || msg.includes("x-api-key")) { alert("🔑 API key issue — check your ANTHROPIC_API_KEY in Railway Variables."); }
     else if(msg.includes("fetch")) { alert("📵 Network error — check your internet connection."); }
     else { alert("Request failed: " + msg); }}
-  finally{btn.disabled=false;btn.style.background="#00b5b5";btn.innerHTML="⚡ Run Diagnostic";}
+  finally{btn.disabled=false;btn.style.background="#00C2B2";btn.innerHTML="⚡ Run Diagnostic";}
 }
 
 function buildDiagPrompt(isPro,sysType,sysAge,brand,syms,desc,aud,hasVisual,isImg){
@@ -1688,7 +1640,7 @@ function showResult(sev, body, isPro){
       .replace(/[\{\}\[\]]/g,"")
       .trim();
     document.getElementById("resultText").innerHTML =
-      "<div style='font-size:15px;line-height:1.8;color:#333;'>"+txt+"</div>";
+      "<div style='font-size:15px;line-height:1.8;color:#0F0F0F;'>"+txt+"</div>";
   }
 
   document.getElementById("homeownerCTA").style.display    = isPro?"none":"block";
@@ -1702,96 +1654,86 @@ function renderDiagCards(data, c){
   var el = document.getElementById("resultText");
   var html = "";
 
-  // ── TOP SUMMARY STRIP ──
-  html += "<div style='background:"+c.bg+";border-left:4px solid "+c.border+";border-radius:6px;padding:14px 16px;margin-bottom:16px;'>";
+  // ── SUMMARY BANNER ──
+  html += "<div style='background:"+c.bg+";border-left:4px solid "+c.border+";border-radius:6px;padding:14px 16px;margin-bottom:20px;'>";
   if(data.summary){
-    html += "<p style='font-size:16px;font-weight:700;color:#1a1a1a;line-height:1.55;margin-bottom:"+(data.estimatedCost||data.urgency?"10px":"0")+"'>"+data.summary+"</p>";
+    html += "<p style='font-size:16px;font-weight:700;color:#0F0F0F;line-height:1.6;margin-bottom:"+(data.estimatedCost||data.urgency?"10px":"0")+"'>"+data.summary+"</p>";
   }
-  // inline stats
   var stats=[];
-  if(data.urgency)       stats.push(data.urgency);
-  if(data.estimatedCost) stats.push("Est. cost: "+data.estimatedCost);
-  if(data.confidence)    stats.push("Confidence: "+data.confidence);
+  if(data.urgency)       stats.push("🕐 "+data.urgency);
+  if(data.estimatedCost) stats.push("💰 "+data.estimatedCost);
+  if(data.confidence)    stats.push("🎯 "+data.confidence+" confidence");
   if(stats.length){
-    html += "<p style='font-size:13px;color:"+c.text+";font-weight:600;'>"+stats.join("  ·  ")+"</p>";
+    html += "<p style='font-size:13px;color:"+c.text+";font-weight:600;line-height:1.8;'>"+stats.join("  &nbsp;·&nbsp;  ")+"</p>";
   }
   html += "</div>";
 
-  // ── STEP-BY-STEP SECTIONS (like the screenshot) ──
+  // ── SECTIONS ──
   var sections = data.sections||[];
-  for(var s=0;s<sections.length;s++){
-    var sec=sections[s];
+  var stepNum = 0;
+  for(var s=0; s<sections.length; s++){
+    var sec = sections[s];
     if(!sec) continue;
-    var hasBody  = sec.body  && typeof sec.body==="string"  && sec.body.trim().length>2 && sec.body!=="null";
+    var hasBody  = sec.body && typeof sec.body==="string" && sec.body.trim().length>2 && sec.body!=="null";
     var hasSteps = sec.steps && Array.isArray(sec.steps) && sec.steps.length>0;
     if(!hasBody && !hasSteps) continue;
+    stepNum++;
 
-    // Section header — bold, like screenshot
-    html += "<div style='margin-bottom:16px;'>";
-    html += "<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px;'>"
-      +"<span style='font-size:20px;line-height:1;'>"+(sec.icon||"")+"</span>"
-      +"<span style='font-family:Roboto Condensed,sans-serif;font-size:16px;font-weight:700;color:#1a1a1a;letter-spacing:.2px;'>Step "+(s+1)+": "+sec.label+"</span>"
+    html += "<div style='margin-bottom:20px;'>";
+
+    // ── SECTION HEADER ──
+    html += "<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px;'>"
+      +"<div style='width:32px;height:32px;min-width:32px;background:#0F0F0F;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;'>"+stepNum+"</div>"
+      +"<span style='font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;color:#0F0F0F;'>"+(sec.icon||"")+" "+(sec.label||"")+"</span>"
       +"</div>";
 
-    // Body text with bullet formatting
+    // ── BODY TEXT ──
     if(hasBody){
-      var lines = sec.body.indexOf("\n") !== -1 ? sec.body.split("\n") : [sec.body];
-      if(lines.length > 1){
-        html += "<ul style='margin:0 0 0 16px;padding:0;list-style:disc;'>";
-        lines.forEach(function(line){
-          line = line.trim().replace(/\.$/, "");
-          if(!line) return;
-          var fmt = line.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
-            .replace(/(WARNING|DANGER|CAUTION)\s*:?/gi,"<span style='color:#c62828;font-weight:700;'>⚠️ $1:</span>");
-          html += "<li style='font-size:15px;line-height:1.75;color:#333;margin-bottom:4px;'>"+fmt+"</li>";
-        });
-        html += "</ul>";
-      } else {
-        var fmt = sec.body.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
-          .replace(/(WARNING|DANGER|CAUTION)\s*:?/gi,"<span style='color:#c62828;font-weight:700;'>⚠️ $1:</span>");
-        html += "<p style='font-size:15px;line-height:1.75;color:#333;padding-left:4px;'>"+fmt+"</p>";
-      }
+      var bodyClean = sec.body
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/(WARNING|DANGER|CAUTION)\s*:?/gi, "<span style='color:#DC2626;font-weight:700;'>⚠️ $1: </span>");
+      html += "<div style='padding-left:42px;'>"
+        +"<p style='font-size:15px;line-height:1.8;color:#0F0F0F;'>"+bodyClean+"</p>"
+        +"</div>";
     }
 
-    // Numbered steps — exactly like the screenshot
+    // ── NUMBERED STEPS ──
     if(hasSteps){
-      var steps=sec.steps;
-      for(var n=0;n<steps.length;n++){
-        if(!steps[n]||steps[n]==="null") continue;
-        var stepFmt=String(steps[n]).replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>");
-        // Check if step has sub-bullets (colon followed by list)
-        var colonIdx = stepFmt.indexOf(":");
-        if(colonIdx !== -1 && colonIdx < stepFmt.length - 2){
-          var head = stepFmt.substring(0, colonIdx);
-          var rest = stepFmt.substring(colonIdx+1).trim();
-          // If rest has commas or semicolons, make sub-bullets
-          var subs = rest.split(/,\s*(?=[A-Z])|;\s*/);
-          html += "<div style='margin-bottom:10px;'>"
-            +"<div style='display:flex;gap:10px;align-items:flex-start;'>"
-            +"<div style='width:24px;height:24px;min-width:24px;background:#1a1a1a;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:1px;'>"+(n+1)+"</div>"
-            +"<span style='font-size:15px;line-height:1.65;color:#1a1a1a;font-weight:600;'>"+head+"</span>"
-            +"</div>";
-          if(subs.length>1){
-            html += "<ul style='margin:6px 0 0 36px;padding:0;list-style:disc;'>";
-            subs.forEach(function(sub){ sub=sub.trim(); if(sub) html+="<li style='font-size:14px;color:#444;line-height:1.65;margin-bottom:3px;'>"+sub+"</li>"; });
-            html += "</ul>";
-          } else {
-            html += "<p style='font-size:15px;color:#444;line-height:1.65;margin:4px 0 0 36px;'>"+rest+"</p>";
-          }
-          html += "</div>";
+      html += "<div style='padding-left:42px;'>";
+      for(var n=0; n<sec.steps.length; n++){
+        var step = sec.steps[n];
+        if(!step || step==="null") continue;
+
+        // Clean the step — remove leading/trailing quotes and commas
+        var clean = String(step).trim()
+          .replace(/^"+|"+$/g,"")
+          .replace(/,\s*$/,"")
+          .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>");
+
+        // Split on colon to make bold label + detail
+        var colonIdx = clean.indexOf(":");
+        var stepHtml = "";
+        if(colonIdx > 0 && colonIdx < 60){
+          var label  = clean.substring(0, colonIdx).trim();
+          var detail = clean.substring(colonIdx+1).trim();
+          stepHtml = "<strong>"+label+"</strong> — "+detail;
         } else {
-          html += "<div style='display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;'>"
-            +"<div style='width:24px;height:24px;min-width:24px;background:#1a1a1a;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:1px;'>"+(n+1)+"</div>"
-            +"<div style='font-size:15px;line-height:1.7;color:#333;flex:1;'>"+stepFmt+"</div>"
-            +"</div>";
+          stepHtml = clean;
         }
+
+        html += "<div style='display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;'>"
+          +"<div style='width:22px;height:22px;min-width:22px;background:#00C2B2;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;'>"+(n+1)+"</div>"
+          +"<div style='font-size:15px;line-height:1.75;color:#0F0F0F;flex:1;'>"+stepHtml+"</div>"
+          +"</div>";
       }
+      html += "</div>";
     }
+
     html += "</div>";
 
-    // Divider between sections (except last)
+    // Divider
     if(s < sections.length-1){
-      html += "<div style='height:1px;background:#f0f0f0;margin-bottom:16px;'></div>";
+      html += "<div style='height:1px;background:#F0F1F6;margin-bottom:20px;'></div>";
     }
   }
 
@@ -1803,13 +1745,85 @@ async function runEduMode(){
   if(!lastDiagResult)return;const btn=document.getElementById("eduBtn");
   btn.disabled=true;btn.innerHTML=`<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span> Generating…`;
   try{
-    const result=await callAI(`You are an HVAC expert who explains technical problems to homeowners in simple, friendly language. No jargon. Use analogies. Be reassuring but honest.`,[{role:"user",content:`Based on this technical HVAC diagnosis, create a simple homeowner-friendly explanation:\n\n${lastDiagResult}\n\n**What's happening with your system** (1-2 sentences, simple analogy)\n**Why this matters** (impact on comfort, safety, energy bills)\n**What happens if you wait** (honest but not scary)\n**What the technician will do** (reassure them about the process)\n**Good questions to ask your technician** (2-3 questions)`}]);
-    document.getElementById("eduText").innerHTML=result.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#1565c0">$1</strong>').replace(/\n/g,"<br/>");
+    const result=await callAI(`You are an HVAC expert who explains technical problems to homeowners in simple, friendly language. No jargon. Use analogies. Be reassuring but honest.`,[{role:"user",content:`Based on this technical HVAC diagnosis, create a simple homeowner-friendly explanation:\n\n${lastDiagResult}\n\n**What's happening with your system** (1-2 sentences, simple analogy)\n**Why this matters** (impact on comfort, safety, energy bills)\n**What happens if you wait** (honest but not scary)\n**What the technician will do** (reassure them about the process)\n**Good questions to ask your technician** (2-3 questions)`}],500);
+    document.getElementById("eduText").innerHTML=result.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#2563EB">$1</strong>').replace(/\n/g,"<br/>");
     document.getElementById("eduContent").style.display="block";
   }catch(e){alert("Failed: "+e.message);}
   finally{btn.disabled=false;btn.innerHTML="Generate Explanation";}
 }
 function copyEdu(){navigator.clipboard.writeText(document.getElementById("eduText")?.textContent||"").then(()=>alert("Copied! Show this to your customer.")).catch(()=>{});}
+
+async function handleDiagNameplateScan(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  e.target.value = "";
+
+  // Show scanning status
+  const status = document.getElementById("diagScanStatus");
+  const success = document.getElementById("diagScanSuccess");
+  status.style.display = "flex";
+  success.style.display = "none";
+  document.getElementById("diagScanStatusText").textContent = "Reading nameplate…";
+
+  try {
+    const mime = file.type || "image/jpeg";
+    const b64 = await blobToBase64(file);
+
+    const SYSTEM = `You are reading an HVAC nameplate. Extract ONLY what is clearly printed.
+NEVER guess the brand — read it exactly as text.
+Return ONLY compact JSON:
+{"brand":"exact brand text","model":"model number","serial":"serial number","confidence":"High|Medium|Low"}
+If unreadable return {"brand":"","model":"","serial":"","confidence":"Low"}`;
+
+    const raw = await callAI(SYSTEM,[{role:"user",content:[
+      {type:"image",source:{type:"base64",media_type:mime,data:b64}},
+      {type:"text",text:"Read brand, model number, and serial number from this nameplate. JSON only."}
+    ]}], 200);
+
+    let data = null;
+    try {
+      const b = raw.trim().replace(/```[a-z]*/gi,"").replace(/```/g,"");
+      const a = b.indexOf("{"), z = b.lastIndexOf("}");
+      if(a !== -1 && z > a) data = JSON.parse(b.substring(a, z+1));
+    } catch(err){}
+
+    status.style.display = "none";
+
+    if(data && data.confidence !== "Low" && (data.model || data.serial)) {
+      // Auto-fill fields
+      if(data.model)  document.getElementById("modelNumber").value  = data.model.toUpperCase();
+      if(data.serial) document.getElementById("serialNumber").value = data.serial.toUpperCase();
+
+      // Auto-select brand if matched
+      if(data.brand) {
+        const brandSel = document.getElementById("brand");
+        if(brandSel) {
+          for(var i=0; i<brandSel.options.length; i++){
+            if(brandSel.options[i].text.toLowerCase().includes(data.brand.toLowerCase().split(" ")[0])){
+              brandSel.selectedIndex = i; break;
+            }
+          }
+        }
+      }
+
+      const txt = [data.brand, data.model, data.serial].filter(Boolean).join(" · ");
+      document.getElementById("diagScanSuccessText").textContent = "Filled: "+txt;
+      success.style.display = "block";
+    } else {
+      success.style.display = "block";
+      success.style.background = "#fff3e0";
+      success.style.borderColor = "#ffcc80";
+      document.getElementById("diagScanSuccessText").style.color = "#e65100";
+      document.getElementById("diagScanSuccessText").textContent = "Could not read clearly — please type manually or retake photo closer.";
+    }
+  } catch(err) {
+    status.style.display = "none";
+    success.style.display = "block";
+    success.style.background = "#ffebee";
+    document.getElementById("diagScanSuccessText").style.color = "#c62828";
+    document.getElementById("diagScanSuccessText").textContent = "Scan failed — please type manually.";
+  }
+}
 
 function resetDiagnostic(){
   const mn = document.getElementById("modelNumber");
@@ -1870,7 +1884,7 @@ SERIAL DECODING: Carrier/Bryant/Payne pos 5-8=week+year. Trane 1st=year letter,2
 WARRANTY: Carrier/Bryant/Trane/Lennox/Rheem/York=10yr reg/5yr unreg. Goodman=lifetime+10yr. Amana=lifetime. Mitsubishi=12yr/7yr. Daikin=12yr/5yr.
 If image is blurry, set brand to "Image unclear - please retake photo".
 Return ONLY valid JSON: {"brand":"EXACT text from plate","model":"","serial":"","refrigerant":"","voltage":"","tonnage":"","seer":"","manufactureYear":0,"ageYears":0,"warrantyStatus":"Active|Expired|Likely Expired|Unknown","warrantyExpireYear":0,"registrationStatus":"Unknown","summary":"","techFlags":"","confidence":"High|Medium|Low"}`;
-    const raw = await callAI(SYSTEM, [{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:"Read this HVAC nameplate. Brand must be read from plate text only, never guessed. Return JSON only."}]}], 700);
+    const raw = await callAI(SYSTEM, [{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:"Read this HVAC nameplate. Brand must be read from plate text only, never guessed. Return JSON only."}]}], 600);
     const r = JSON.parse(raw.replace(/```json|```/g,"").trim());
     // Auto-fill the manual fields
     if(r.brand) { const sel=document.getElementById("wBrand"); for(let o of sel.options){if(o.value===r.brand){sel.value=r.brand;showWarrantyLinks();break;}} }
@@ -1899,8 +1913,8 @@ function showWarrantyRows(brand, model, serial, age, mfgYear, wStatus, wExpire, 
   if(wStatus)  rows += warrantyRow("Warranty Status", wStatus, wExpire?"Expires ~"+wExpire:"Verify with manufacturer", wColor);
   if(regStatus && regStatus!=="Unknown") rows += warrantyRow("Registration", regStatus, regStatus==="Unregistered"?"⚠️ Shorter warranty coverage":regStatus==="Registered"?"✅ Full coverage applies":"");
   if(info)     rows += warrantyRow("Standard Terms", info.terms);
-  if(summary)  rows += `<div style="padding:14px;background:#f0fdfa;border-radius:10px;border:1px solid #99f6e4;"><p style="font-size:12px;font-weight:700;color:#00838f;margin-bottom:6px;">SUMMARY</p><p style="font-size:14px;color:#00838f;line-height:1.65;">${summary}</p></div>`;
-  if(techFlags) rows += `<div style="padding:14px;background:#fffbeb;border-radius:10px;border:1px solid #fde68a;"><p style="font-size:12px;font-weight:700;color:#e65100;margin-bottom:6px;">⚠️ TECH NOTE</p><p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.65;">${techFlags}</p></div>`;
+  if(summary)  rows += `<div style="padding:14px;background:#f0fdfa;border-radius:10px;border:1px solid #99f6e4;"><p style="font-size:12px;font-weight:700;color:#009E90;margin-bottom:6px;">SUMMARY</p><p style="font-size:14px;color:#009E90;line-height:1.65;">${summary}</p></div>`;
+  if(techFlags) rows += `<div style="padding:14px;background:#FFFFFFbeb;border-radius:10px;border:1px solid #fde68a;"><p style="font-size:12px;font-weight:700;color:#EA580C;margin-bottom:6px;">⚠️ TECH NOTE</p><p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.65;">${techFlags}</p></div>`;
   document.getElementById("warrantyText").innerHTML = rows;
   if(info) {
     document.getElementById("warrantyVerifyLink").style.display = "block";
@@ -1910,11 +1924,11 @@ function showWarrantyRows(brand, model, serial, age, mfgYear, wStatus, wExpire, 
 }
 
 function warrantyRow(label, value, sub="", valueColor="#111827") {
-  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;gap:12px;flex-wrap:wrap;">
-    <span style="font-size:13px;font-weight:600;color:#999999;">${label}</span>
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#F5F6FA;border-radius:4px;border:1px solid #dfe1e6;gap:12px;flex-wrap:wrap;">
+    <span style="font-size:13px;font-weight:600;color:#9499B0;">${label}</span>
     <div style="text-align:right;">
       <span style="font-size:15px;font-weight:700;color:${valueColor};">${value}</span>
-      ${sub?`<div style="font-size:12px;color:#999999;margin-top:2px;">${sub}</div>`:""}
+      ${sub?`<div style="font-size:12px;color:#9499B0;margin-top:2px;">${sub}</div>`:""}
     </div>
   </div>`;
 }
@@ -1934,13 +1948,13 @@ function showWarrantyLinks(){
   if(info){
     div.style.display="flex";div.style.flexDirection="column";div.style.gap="10px";
     div.innerHTML=`
-      <div style="padding:12px 14px;background:#ede7f6;border:1px solid #b39ddb;border-radius:10px;">
-        <p style="font-size:12px;font-weight:700;color:#4527a0;margin-bottom:3px;">STANDARD WARRANTY TERMS</p>
-        <p style="font-size:14px;color:#4527a0;font-weight:600;">${info.terms}</p>
+      <div style="padding:12px 14px;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;">
+        <p style="font-size:12px;font-weight:700;color:#7C3AED;margin-bottom:3px;">STANDARD WARRANTY TERMS</p>
+        <p style="font-size:14px;color:#7C3AED;font-weight:600;">${info.terms}</p>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a href="${info.url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#1a1a1a;border-radius:4px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">🌐 Warranty Portal</a>
-        <span style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#fff;border:1px solid #b39ddb;border-radius:4px;color:#4527a0;font-size:14px;font-weight:600;">📞 ${info.phone}</span>
+        <a href="${info.url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#0F0F0F;border-radius:4px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">🌐 Warranty Portal</a>
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#FFFFFF;border:1px solid #b39ddb;border-radius:4px;color:#7C3AED;font-size:14px;font-weight:600;">📞 ${info.phone}</span>
       </div>`;
   } else { div.style.display="none"; div.innerHTML=""; }
 }
@@ -1974,17 +1988,17 @@ async function runRefrigLookup(){
 }
 function showRefrigResult(d){
   const pc={"Active":"#16a34a","Phase-Down":"#d97706","Phased Out":"#dc2626"},color=pc[d.phaseStatus]||"#6b7280";
-  let html=`<div style="background:#fff;border:1px solid #90caf9;border-radius:6px;padding:18px;margin-bottom:12px;">
+  let html=`<div style="background:#FFFFFF;border:1px solid #90caf9;border-radius:6px;padding:18px;margin-bottom:12px;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
-      <div><p style="font-size:13px;color:#999999;font-weight:600;margin-bottom:4px;">REFRIGERANT TYPE</p><p style="font-size:32px;font-weight:800;color:#1a1a1a;">${d.refrigerant}</p></div>
+      <div><p style="font-size:13px;color:#9499B0;font-weight:600;margin-bottom:4px;">REFRIGERANT TYPE</p><p style="font-size:32px;font-weight:800;color:#0F0F0F;">${d.refrigerant}</p></div>
       <span style="padding:6px 16px;border-radius:4px;font-size:14px;font-weight:700;background:${color}20;color:${color};border:1.5px solid ${color}40;">${d.phaseStatus}</span>
     </div>`;
-  if(d.phaseStatus==="Phased Out")html+=`<div class="info-box info-red" style="margin-bottom:14px;"><p style="font-size:14px;font-weight:700;color:#c62828;margin-bottom:4px;">⚠️ R-22 Production Ended 2020</p><p style="font-size:14px;color:rgba(244,63,94,.85);line-height:1.6;">This system uses ${d.refrigerant} which is no longer produced. Supply is expensive and limited. Consider system replacement or refrigerant conversion.</p></div>`;
-  else if(d.phaseStatus==="Phase-Down")html+=`<div class="info-box info-amber" style="margin-bottom:14px;"><p style="font-size:14px;font-weight:700;color:#e65100;margin-bottom:4px;">⚠️ Phase-Down Underway (AIM Act)</p><p style="font-size:14px;color:#e65100;line-height:1.6;">${d.refrigerant} is being phased down. Inform the homeowner — this affects future service costs and replacement timelines.</p></div>`;
-  if(d.dropInReplacement)html+=`<div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:14px;margin-bottom:14px;"><p style="font-size:13px;font-weight:700;color:#2e7d32;margin-bottom:6px;">✅ Drop-In Replacement</p><p style="font-size:17px;font-weight:700;color:#2e7d32;">${d.dropInReplacement}</p><p style="font-size:14px;color:#2e7d32;margin-top:4px;line-height:1.6;">${d.dropInNotes||""}</p></div>`;
-  html+=`<div class="grid2" style="margin-bottom:14px;"><div style="background:#f5f5f5;border-radius:4px;padding:14px;border:1px solid #dfe1e6;"><p style="font-size:12px;font-weight:700;color:#999999;margin-bottom:4px;">CHARGE AMOUNT</p><p style="font-size:15px;font-weight:600;color:#1a1a1a;">${d.chargeAmount||"See nameplate"}</p></div><div style="background:#f5f5f5;border-radius:4px;padding:14px;border:1px solid #dfe1e6;"><p style="font-size:12px;font-weight:700;color:#999999;margin-bottom:4px;">URGENCY</p><p style="font-size:15px;font-weight:700;color:${d.urgency==="High"?"#dc2626":d.urgency==="Medium"?"#d97706":"#16a34a"};">${d.urgency||"Low"}</p></div></div>`;
-  if(d.techTips)html+=`<div style="background:#e3f2fd;border:1px solid #90caf9;border-radius:10px;padding:14px;margin-bottom:14px;"><p style="font-size:13px;font-weight:700;color:#1565c0;margin-bottom:6px;">💡 Tech Tips</p><p style="font-size:14px;color:#1565c0;line-height:1.65;">${d.techTips}</p></div>`;
-  if(d.safetyWarning)html+=`<div class="info-box info-red"><p style="font-size:14px;font-weight:700;color:#c62828;margin-bottom:4px;">⚠️ Safety Warning</p><p style="font-size:14px;color:rgba(244,63,94,.85);line-height:1.6;">${d.safetyWarning}</p></div>`;
+  if(d.phaseStatus==="Phased Out")html+=`<div class="info-box info-red" style="margin-bottom:14px;"><p style="font-size:14px;font-weight:700;color:#DC2626;margin-bottom:4px;">⚠️ R-22 Production Ended 2020</p><p style="font-size:14px;color:rgba(244,63,94,.85);line-height:1.6;">This system uses ${d.refrigerant} which is no longer produced. Supply is expensive and limited. Consider system replacement or refrigerant conversion.</p></div>`;
+  else if(d.phaseStatus==="Phase-Down")html+=`<div class="info-box info-amber" style="margin-bottom:14px;"><p style="font-size:14px;font-weight:700;color:#EA580C;margin-bottom:4px;">⚠️ Phase-Down Underway (AIM Act)</p><p style="font-size:14px;color:#EA580C;line-height:1.6;">${d.refrigerant} is being phased down. Inform the homeowner — this affects future service costs and replacement timelines.</p></div>`;
+  if(d.dropInReplacement)html+=`<div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:10px;padding:14px;margin-bottom:14px;"><p style="font-size:13px;font-weight:700;color:#059669;margin-bottom:6px;">✅ Drop-In Replacement</p><p style="font-size:17px;font-weight:700;color:#059669;">${d.dropInReplacement}</p><p style="font-size:14px;color:#059669;margin-top:4px;line-height:1.6;">${d.dropInNotes||""}</p></div>`;
+  html+=`<div class="grid2" style="margin-bottom:14px;"><div style="background:#F5F6FA;border-radius:4px;padding:14px;border:1px solid #dfe1e6;"><p style="font-size:12px;font-weight:700;color:#9499B0;margin-bottom:4px;">CHARGE AMOUNT</p><p style="font-size:15px;font-weight:600;color:#0F0F0F;">${d.chargeAmount||"See nameplate"}</p></div><div style="background:#F5F6FA;border-radius:4px;padding:14px;border:1px solid #dfe1e6;"><p style="font-size:12px;font-weight:700;color:#9499B0;margin-bottom:4px;">URGENCY</p><p style="font-size:15px;font-weight:700;color:${d.urgency==="High"?"#dc2626":d.urgency==="Medium"?"#d97706":"#16a34a"};">${d.urgency||"Low"}</p></div></div>`;
+  if(d.techTips)html+=`<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:14px;margin-bottom:14px;"><p style="font-size:13px;font-weight:700;color:#2563EB;margin-bottom:6px;">💡 Tech Tips</p><p style="font-size:14px;color:#2563EB;line-height:1.65;">${d.techTips}</p></div>`;
+  if(d.safetyWarning)html+=`<div class="info-box info-red"><p style="font-size:14px;font-weight:700;color:#DC2626;margin-bottom:4px;">⚠️ Safety Warning</p><p style="font-size:14px;color:rgba(244,63,94,.85);line-height:1.6;">${d.safetyWarning}</p></div>`;
   html+=`</div>`;
   document.getElementById("refrigCards").innerHTML=html;
   document.getElementById("refrigResult").style.display="block";
@@ -1999,7 +2013,7 @@ async function runRevenue(){
   const btn=document.getElementById("revenueBtn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span><span class="pulsing">Building recommendations…</span>`;
   try{
     const SYSTEM=`You are an HVAC business revenue consultant. Help contractors identify genuine upsell opportunities. Products: UV-C lights, REME HALO, iWave ionizers, MERV 13/16 filters, HEPA, dehumidifiers, ERV/HRV, smart thermostats, zoning, CO detectors, gas detectors, Aeroseal duct sealing, service agreements, filter subscriptions. RULES: Safety first. Honest ROI. Include word-for-word conversation scripts. Return ONLY valid JSON no markdown: {"summary":"string","totalOpportunityLow":0,"totalOpportunityHigh":0,"recommendations":[{"category":"Safety|IAQ|Comfort|Efficiency|Maintenance","priority":"High|Medium|Low","title":"string","why":"string","homeownerBenefit":"string","priceLow":0,"priceHigh":0,"techProfit":0,"roi":"string","script":"string"}]}`;
-    const raw=await callAI(SYSTEM,[{role:"user",content:`System: ${sysType||"Unknown"} | Brand: ${brand||"Unknown"} | Age: ${sysAge||"Unknown"} | Home: ${homeSize||"Unknown"}\nConcerns: ${selectedConcerns.length?selectedConcerns.join(", "):"None"}\nNotes: ${notes||"None"}`}]);
+    const raw=await callAI(SYSTEM,[{role:"user",content:`System: ${sysType||"Unknown"} | Brand: ${brand||"Unknown"} | Age: ${sysAge||"Unknown"} | Home: ${homeSize||"Unknown"}\nConcerns: ${selectedConcerns.length?selectedConcerns.join(", "):"None"}\nNotes: ${notes||"None"}`}],800);
     showRevenueResults(JSON.parse(raw.replace(/```json|```/g,"").trim()));
   }catch(e){alert("Revenue builder failed: "+e.message);}
   finally{btn.disabled=false;btn.innerHTML="💰 Build Revenue Recommendations";}
@@ -2014,7 +2028,7 @@ function showRevenueResults(data){
   (data.recommendations||[]).forEach((rec,i)=>{
     const cs=CAT_STYLE[rec.category]||CAT_STYLE.Maintenance,pc=rec.priority==="High"?"#dc2626":rec.priority==="Medium"?"#d97706":"#16a34a";
     const card=document.createElement("div");card.className="rec-card";card.style.borderLeft=`4px solid ${cs.border.replace("e8","b0")}`;
-    card.innerHTML=`<div style="display:flex;align-items:flex-start;gap:14px;" onclick="toggleRecCard(${i})"><div style="width:46px;height:46px;border-radius:10px;background:${cs.bg};border:1px solid ${cs.border};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${cs.icon}</div><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;"><span style="font-size:16px;font-weight:700;color:#1a1a1a;">${rec.title}</span><span style="padding:3px 9px;border-radius:4px;font-size:12px;font-weight:600;background:${cs.bg};color:${cs.text};border:1px solid ${cs.border};">${rec.category}</span><span style="font-size:12px;font-weight:600;color:${pc};">${rec.priority} Priority</span></div><p style="font-size:14px;color:#999999;line-height:1.5;margin:0;">${rec.homeownerBenefit}</p></div><div style="text-align:right;flex-shrink:0;"><p style="font-size:17px;font-weight:700;color:#2e7d32;">${f(rec.priceLow)}–${f(rec.priceHigh)}</p>${rec.techProfit?`<p style="font-size:13px;color:#1565c0;font-weight:600;">~${f(rec.techProfit)} profit</p>`:""}<p style="font-size:18px;color:#999999;margin-top:4px;" id="chevron-${i}">▼</p></div></div><div id="recDetail-${i}" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #dfe1e6;"><div style="background:#f5f5f5;border-radius:4px;padding:14px;margin-bottom:12px;"><p style="font-size:12px;font-weight:700;color:${cs.text};text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why This Home Needs It</p><p style="font-size:14px;color:#555555;line-height:1.65;">${rec.why}</p></div>${rec.roi?`<div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:12px;margin-bottom:12px;display:flex;gap:10px;align-items:center;"><span style="font-size:20px;">📈</span><p style="font-size:14px;color:#2e7d32;margin:0;line-height:1.5;"><strong>ROI:</strong> ${rec.roi}</p></div>`:""}<div style="background:#ede7f6;border:1px solid #b39ddb;border-radius:10px;padding:16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><p style="font-size:12px;font-weight:700;color:#4527a0;text-transform:uppercase;letter-spacing:.5px;">🗣️ Conversation Script</p><button class="btn btn-outline btn-sm" onclick="copyScript('script-${i}')">Copy</button></div><p id="script-${i}" style="font-size:15px;color:#555555;line-height:1.7;font-style:italic;">"${rec.script}"</p></div></div>`;
+    card.innerHTML=`<div style="display:flex;align-items:flex-start;gap:14px;" onclick="toggleRecCard(${i})"><div style="width:46px;height:46px;border-radius:10px;background:${cs.bg};border:1px solid ${cs.border};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${cs.icon}</div><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;"><span style="font-size:16px;font-weight:700;color:#0F0F0F;">${rec.title}</span><span style="padding:3px 9px;border-radius:4px;font-size:12px;font-weight:600;background:${cs.bg};color:${cs.text};border:1px solid ${cs.border};">${rec.category}</span><span style="font-size:12px;font-weight:600;color:${pc};">${rec.priority} Priority</span></div><p style="font-size:14px;color:#9499B0;line-height:1.5;margin:0;">${rec.homeownerBenefit}</p></div><div style="text-align:right;flex-shrink:0;"><p style="font-size:17px;font-weight:700;color:#059669;">${f(rec.priceLow)}–${f(rec.priceHigh)}</p>${rec.techProfit?`<p style="font-size:13px;color:#2563EB;font-weight:600;">~${f(rec.techProfit)} profit</p>`:""}<p style="font-size:18px;color:#9499B0;margin-top:4px;" id="chevron-${i}">▼</p></div></div><div id="recDetail-${i}" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #dfe1e6;"><div style="background:#F5F6FA;border-radius:4px;padding:14px;margin-bottom:12px;"><p style="font-size:12px;font-weight:700;color:${cs.text};text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why This Home Needs It</p><p style="font-size:14px;color:#6B7190;line-height:1.65;">${rec.why}</p></div>${rec.roi?`<div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:10px;padding:12px;margin-bottom:12px;display:flex;gap:10px;align-items:center;"><span style="font-size:20px;">📈</span><p style="font-size:14px;color:#059669;margin:0;line-height:1.5;"><strong>ROI:</strong> ${rec.roi}</p></div>`:""}<div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;padding:16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><p style="font-size:12px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.5px;">🗣️ Conversation Script</p><button class="btn btn-outline btn-sm" onclick="copyScript('script-${i}')">Copy</button></div><p id="script-${i}" style="font-size:15px;color:#6B7190;line-height:1.7;font-style:italic;">"${rec.script}"</p></div></div>`;
     container.appendChild(card);
   });
   document.getElementById("revenueResult").style.display="block";
@@ -2032,8 +2046,8 @@ async function runMaintenancePitch(){
   try{
     const SYSTEM=`You are a master HVAC sales trainer who helps technicians sell maintenance agreements. Write conversational, natural-sounding scripts that feel helpful — not pushy. You know what motivates residential homeowners: peace of mind, avoiding big bills, protecting family health, and convenience. Create pitches that are honest, benefit-focused, and easy to deliver on the doorstep.`;
     const prompt=`Create a customized maintenance agreement pitch script:\n\nSystem: ${sysType||"Unknown"} | Brand: ${brand||"Unknown"} | Age: ${sysAge||"Unknown"}\nLast Service: ${lastSvc||"Unknown"}\nHomeowner Situation: ${selectedMaintConcerns.length?selectedMaintConcerns.join(", "):"Not specified"}\nWhat I Found Today: ${findings||"Standard service call"}\nPlan Price: ${price||"Not specified"} | Visits: ${visits||"Not specified"}\n\nWrite a complete pitch script with these sections:\n\n**THE OPENING LINE** (natural transition after finishing the work)\n\n**THE PITCH** (2-3 minute word-for-word script, conversational, references what you found today)\n\n**IF THEY SAY "I NEED TO THINK ABOUT IT"**\n\n**IF THEY SAY "THAT SEEMS EXPENSIVE"** (break down cost per day, compare to one service call)\n\n**IF THEY SAY "I'LL CALL YOU WHEN SOMETHING BREAKS"**\n\n**THE CLOSE** (simple, low-pressure ask)\n\n**KEY BENEFITS TO EMPHASIZE** (based on their specific situation)`;
-    const result=await callAI(SYSTEM,[{role:"user",content:prompt}],1500);
-    document.getElementById("maintScriptText").innerHTML=result.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#e65100">$1</strong>').replace(/\n/g,"<br/>");
+    const result=await callAI(SYSTEM,[{role:"user",content:prompt}],900);
+    document.getElementById("maintScriptText").innerHTML=result.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#EA580C">$1</strong>').replace(/\n/g,"<br/>");
     document.getElementById("maintResult").style.display="block";
     document.getElementById("maintResult").scrollIntoView({behavior:"smooth",block:"start"});
   }catch(e){alert("Pitch generation failed: "+e.message);}
@@ -2180,7 +2194,7 @@ async function sendChat() {
   showTyping();
 
   try {
-    const response = await callAI(AGENT_SYSTEM, chatHistory, 1024);
+    const response = await callAI(AGENT_SYSTEM, chatHistory, 600);
     hideTyping();
     appendMessage('agent', response);
     chatHistory.push({role:'assistant', content:response});

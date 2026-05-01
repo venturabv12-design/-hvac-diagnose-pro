@@ -358,6 +358,20 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
 #chatInput:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(0,194,178,.1); }
 .sub-tab.st-chat { color:var(--teal); background:rgba(0,194,178,.15); border-color:rgba(0,194,178,.25); }
 
+/* ── VOICE MODE ── */
+@keyframes micPulse {
+  0%,100% { box-shadow:0 4px 20px rgba(0,194,178,.4), 0 0 0 0 rgba(0,194,178,.4); }
+  50%      { box-shadow:0 4px 20px rgba(0,194,178,.4), 0 0 0 16px rgba(0,194,178,0); }
+}
+@keyframes speakPulse {
+  0%,100% { box-shadow:0 4px 20px rgba(232,53,74,.4), 0 0 0 0 rgba(232,53,74,.4); }
+  50%      { box-shadow:0 4px 20px rgba(232,53,74,.4), 0 0 0 16px rgba(232,53,74,0); }
+}
+.mic-listening { background:#E8354A !important; animation:micPulse 1.2s ease infinite !important; }
+.mic-speaking  { background:#F59E0B !important; animation:speakPulse 1.2s ease infinite !important; }
+.voice-mode-active { border-color:#00C2B2 !important; background:rgba(0,194,178,.2) !important; }
+.voice-mode-active #voiceModeBtnLabel { color:#00C2B2 !important; }
+
 /* ── LANGUAGE TOGGLE ── */
 .lang-toggle {
   position: relative;
@@ -1010,36 +1024,74 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
   <!-- ═══ LIVE AGENT CHAT PANEL ═══ -->
 
   <div id="panelChat" style="display:none;">
-    <div style="background:#1a1a1a;border-radius:6px 6px 0 0;padding:16px 18px;display:flex;align-items:center;gap:14px;">
+    <div style="background:#1a1a1a;border-radius:6px 6px 0 0;padding:14px 16px;display:flex;align-items:center;gap:12px;">
       <div style="position:relative;flex-shrink:0;">
-        <div style="width:46px;height:46px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;">🧑‍🔧</div>
-        <div style="position:absolute;bottom:1px;right:1px;width:12px;height:12px;background:#4caf50;border-radius:50%;border:2px solid #1a1a1a;"></div>
+        <div style="width:44px;height:44px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;">🧑‍🔧</div>
+        <div id="mikeOnlineDot" style="position:absolute;bottom:1px;right:1px;width:12px;height:12px;background:#4caf50;border-radius:50%;border:2px solid #1a1a1a;"></div>
       </div>
       <div style="flex:1;">
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px;">HVAC Expert Agent</div>
-        <div style="font-size:12px;color:#00C2B2;font-weight:500;">● Online — Master Technician</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:700;color:#fff;letter-spacing:.3px;">Mike — Master Tech</div>
+        <div id="mikeStatus" style="font-size:12px;color:#00C2B2;font-weight:500;">● Online · EPA 608 · NATE Certified</div>
       </div>
-      <button onclick="clearChat()" style="background:rgba(255,255,255,.1);border:none;border-radius:4px;padding:6px 12px;color:rgba(255,255,255,.6);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;font-weight:600;">Clear</button>
+      <!-- Voice mode toggle -->
+      <button id="voiceModeBtn" onclick="toggleVoiceMode()" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 10px;cursor:pointer;transition:all .15s;" title="Toggle voice mode">
+        <span style="font-size:18px;">🎙️</span>
+        <span id="voiceModeBtnLabel" style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.3px;">Voice</span>
+      </button>
+      <button onclick="clearChat()" style="background:rgba(255,255,255,.08);border:none;border-radius:6px;padding:6px 10px;color:rgba(255,255,255,.5);font-size:11px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;font-weight:600;">Clear</button>
+    </div>
+    <!-- Voice mode bar (hidden by default) -->
+    <div id="voiceModeBar" style="display:none;background:#0F0F0F;border-left:1px solid #333;border-right:1px solid #333;padding:14px 16px;text-align:center;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:16px;">
+        <button id="micBtn" onclick="toggleMic()" style="width:70px;height:70px;border-radius:50%;background:#00C2B2;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 4px 20px rgba(0,194,178,.4);transition:all .2s;">🎙️</button>
+        <div style="text-align:left;">
+          <div id="voiceStatusText" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">Tap mic to talk to Mike</div>
+          <div id="voiceTranscript" style="font-size:12px;color:#9499B0;max-width:200px;line-height:1.4;min-height:16px;"></div>
+        </div>
+        <button id="stopSpeakBtn" onclick="stopMikeSpeaking()" style="display:none;width:44px;height:44px;border-radius:50%;background:#333;border:none;cursor:pointer;font-size:20px;" title="Stop speaking">⏹️</button>
+      </div>
+      <p style="font-size:11px;color:#555;margin-top:10px;">Put phone on speaker · Mike will talk back</p>
     </div>
     <div style="background:#F5F6FA;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;padding:10px 12px;">
-      <p style="font-size:11px;font-weight:700;color:#9499B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Quick Start</p>
+      <p style="font-size:11px;font-weight:700;color:#9499B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Tap a problem or type below</p>
+      <p style="font-size:10px;font-weight:700;color:#00C2B2;letter-spacing:.4px;margin-bottom:5px;">❄️ AC / COOLING</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+        <button class="quick-chip" onclick="sendQuick('AC not cooling, compressor is running')">Not cooling</button>
+        <button class="quick-chip" onclick="sendQuick('Unit freezing up, ice on the coil')">Freezing up</button>
+        <button class="quick-chip" onclick="sendQuick('High head pressure — walk me through diagnosis')">High head pressure</button>
+        <button class="quick-chip" onclick="sendQuick('Walk me through checking superheat and subcooling')">Check pressures</button>
+        <button class="quick-chip" onclick="sendQuick('System short cycling on cooling')">Short cycling</button>
+      </div>
+      <p style="font-size:10px;font-weight:700;color:#EA580C;letter-spacing:.4px;margin-bottom:5px;">🔥 GAS FURNACE</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+        <button class="quick-chip" onclick="sendQuick('Gas furnace not igniting, walk me through sequence of operations')">Not igniting</button>
+        <button class="quick-chip" onclick="sendQuick('Furnace blowing cold air, inducer runs but no flame')">Blowing cold</button>
+        <button class="quick-chip" onclick="sendQuick('Furnace pressure switch fault diagnosis')">Pressure switch</button>
+        <button class="quick-chip" onclick="sendQuick('Furnace short cycling on limit switch')">Limit switch</button>
+        <button class="quick-chip" onclick="sendQuick('How to test heat exchanger for cracks')">Heat exchanger</button>
+      </div>
+      <p style="font-size:10px;font-weight:700;color:#7C3AED;letter-spacing:.4px;margin-bottom:5px;">🔃 HEAT PUMP</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+        <button class="quick-chip" onclick="sendQuick('Heat pump not heating in heat mode — reversing valve issue?')">Not heating</button>
+        <button class="quick-chip" onclick="sendQuick('Heat pump stuck in one mode, reversing valve diagnosis')">Reversing valve</button>
+        <button class="quick-chip" onclick="sendQuick('Heat pump defrost cycle not working')">Defrost issue</button>
+        <button class="quick-chip" onclick="sendQuick('Auxiliary heat running constantly')">Aux heat on</button>
+      </div>
+      <p style="font-size:10px;font-weight:700;color:#2563EB;letter-spacing:.4px;margin-bottom:5px;">💨 AIR HANDLER / ELECTRICAL</p>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button class="quick-chip" onclick="sendQuick('Unit not cooling, compressor is running')">Not cooling</button>
-        <button class="quick-chip" onclick="sendQuick('No heat, furnace won't ignite')">No heat</button>
-        <button class="quick-chip" onclick="sendQuick('Strange noise from the air handler')">Strange noise</button>
-        <button class="quick-chip" onclick="sendQuick('System keeps short cycling on and off')">Short cycling</button>
-        <button class="quick-chip" onclick="sendQuick('Walk me through checking refrigerant pressures')">Check pressures</button>
-        <button class="quick-chip" onclick="sendQuick('Unit is freezing up, ice on the coil')">Freezing up</button>
-        <button class="quick-chip" onclick="sendQuick('High head pressure, possible causes')">High head pressure</button>
-        <button class="quick-chip" onclick="sendQuick('Capacitor keeps failing, what should I check')">Capacitor failing</button>
+        <button class="quick-chip" onclick="sendQuick('Blower motor not running — capacitor or motor?')">Blower motor</button>
+        <button class="quick-chip" onclick="sendQuick('Capacitor keeps failing, what to check first')">Capacitor failing</button>
+        <button class="quick-chip" onclick="sendQuick('Contactor not pulling in, how to diagnose')">Contactor</button>
+        <button class="quick-chip" onclick="sendQuick('Strange noise from air handler — grinding or squealing')">Strange noise</button>
+        <button class="quick-chip" onclick="sendQuick('Drain line clogged, float switch open')">Drain blocked</button>
       </div>
     </div>
     <div id="chatMessages" style="background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:380px;max-height:520px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;">
       <div class="msg-agent">
         <div class="msg-bubble msg-bubble-agent">
-          <p style="margin-bottom:8px;">Hey! I'm your HVAC Expert Agent — think of me as a master tech you can text anytime.</p>
-          <p style="margin-bottom:8px;">Tell me what's going on with the system. Brand, age, symptoms, any readings you have — the more detail the better.</p>
-          <p>What are you dealing with today?</p>
+          <p style="margin-bottom:8px;"><strong>Hey, I'm Mike.</strong> 25 years in the field — I've seen everything.</p>
+          <p style="margin-bottom:8px;">Tell me what's going on. System type, brand, age, what it's doing. Snap a photo of the unit or nameplate and send it — I'll tell you exactly what I'm looking at.</p>
+          <p>What are you dealing with?</p>
         </div>
         <div class="msg-time">Just now</div>
       </div>
@@ -1050,18 +1102,23 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
         <div class="typing-dots"><span></span><span></span><span></span></div>
       </div>
     </div>
-    <div style="background:#FFFFFF;border:1px solid #E2E4ED;border-top:2px solid #00b5b5;border-radius:0 0 6px 6px;padding:12px;">
-      <div style="display:flex;gap:10px;align-items:flex-end;">
+    <div style="background:#FFFFFF;border:1px solid #E2E4ED;border-top:2px solid #00C2B2;border-radius:0 0 6px 6px;padding:12px;">
+      <!-- Hidden file input -->
+      <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none" onchange="handleChatFile(event)"/>
+      <!-- Attachment preview -->
+      <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:8px 12px;background:#F5F6FA;border:1.5px solid #E2E4ED;border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:#6B7190;"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <label for="chatFileInput" style="width:42px;height:42px;min-width:42px;background:#F5F6FA;border:1.5px solid #E2E4ED;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:19px;cursor:pointer;flex-shrink:0;" title="Attach photo or video">📎</label>
         <textarea id="chatInput" placeholder="Describe what's happening…" rows="2"
           style="flex:1;border:1px solid #E2E4ED;border-radius:6px;padding:10px 13px;font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;resize:none;min-height:44px;max-height:120px;line-height:1.5;outline:none;transition:border-color .15s;"
           onkeydown="handleChatKey(event)"
           oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
         <button onclick="sendChat()" id="chatSendBtn"
-          style="background:#00C2B2;color:#fff;border:none;border-radius:6px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:20px;">
+          style="background:#00C2B2;color:#fff;border:none;border-radius:6px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:20px;">
           ➤
         </button>
       </div>
-      <p style="font-size:11px;color:#9499B0;margin-top:8px;text-align:center;">Master Technician · EPA 608 · All brands & systems</p>
+      <p style="font-size:11px;color:#9499B0;margin-top:8px;text-align:center;">Mike — Master Technician · EPA 608 · All brands & systems</p>
     </div>
   </div>
 
@@ -1121,10 +1178,20 @@ const HOME_SYMPTOMS = [
   {icon:"❌",label:"Won't turn on"},{icon:"🧊",label:"Ice forming on unit"},{icon:"👃",label:"Burning smell"},
 ];
 const PRO_SYMPTOMS = [
-  {icon:"⚡",label:"Electrical fault"},{icon:"🌡️",label:"Refrigerant issue"},{icon:"🔧",label:"Compressor failure"},
-  {icon:"💨",label:"Blower motor"},{icon:"🔌",label:"Capacitor fault"},{icon:"🌊",label:"Drain blockage"},
-  {icon:"🔥",label:"Heat exchanger"},{icon:"📡",label:"Controls / Board"},{icon:"💧",label:"Refrigerant leak"},
-  {icon:"📊",label:"Low static pressure"},{icon:"🔩",label:"Bearing / belt wear"},{icon:"🏠",label:"Ductwork issue"},
+  // AC / Cooling
+  {icon:"❄️",label:"Not cooling"},{icon:"🌡️",label:"High head pressure"},{icon:"📉",label:"Low suction pressure"},
+  {icon:"🧊",label:"Freezing up"},{icon:"🌊",label:"Refrigerant leak"},{icon:"🔄",label:"Short cycling"},
+  // Heat / Furnace
+  {icon:"🔥",label:"No heat"},{icon:"🔥",label:"Furnace not igniting"},{icon:"💨",label:"Furnace blowing cold"},
+  {icon:"🔩",label:"Heat exchanger issue"},{icon:"🟡",label:"Inducer motor fail"},{icon:"🔌",label:"Pressure switch fault"},
+  // Heat Pump
+  {icon:"🔃",label:"Reversing valve stuck"},{icon:"🌡️",label:"Heat pump not heating"},{icon:"❄️",label:"Heat pump not cooling"},
+  // Air Handler
+  {icon:"💨",label:"Weak airflow"},{icon:"🔧",label:"Blower motor fail"},{icon:"🔌",label:"Capacitor fault"},
+  {icon:"📊",label:"Low static pressure"},{icon:"🏠",label:"Ductwork issue"},{icon:"💧",label:"Drain blockage"},
+  // Electrical / Controls
+  {icon:"⚡",label:"Electrical fault"},{icon:"📡",label:"Controls / Board"},{icon:"🔌",label:"Contactor fail"},
+  {icon:"🔧",label:"Compressor failure"},{icon:"🔊",label:"Strange noise"},{icon:"👃",label:"Burning smell"},
 ];
 const CONCERNS = [
   {icon:"😷",label:"Allergies or Asthma"},{icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},
@@ -1231,10 +1298,9 @@ function setMode(m) {
   document.getElementById("desc").placeholder=isPro
     ?"e.g. Suction 58 PSI, head 285 PSI at 85°F. Compressor draws 18A then trips breaker…"
     :"e.g. My air conditioner runs all day but the house never gets below 78°. Started 3 days ago…";
-  selectedSymptoms=[]; buildSymptomGrid(m);
+  buildSymptomGrid(m);
   if(isPro) setProTab("diag");
   else { ["panelDiag","panelScan","panelRefrig","panelRevenue","panelMaint"].forEach(id=>document.getElementById(id).style.display=id==="panelDiag"?"block":"none"); }
-  resetDiagnostic();
 }
 
 function setProTab(tab) {
@@ -2217,75 +2283,48 @@ function resetMaint(){document.getElementById("maintResult").style.display="none
 
 // ── LIVE AGENT CHAT ──
 let chatHistory = [];
-const AGENT_SYSTEM = `You are an elite HVAC master technician with 25+ years of field experience. EPA 608 Universal certified. NATE certified. You've worked on every brand, every system type, every failure mode. You give real field answers — not textbook guesses.
+const AGENT_SYSTEM = `You are Mike — a master HVAC technician with 25 years in the field. EPA 608 Universal. NATE certified. You've seen everything.
 
-TECHNICAL KNOWLEDGE BASE:
+You talk like a real tech texting another tech. Direct. No corporate speak. No "I'd be happy to help." Just real answers.
 
-REFRIGERANT OPERATING PRESSURES (normal ranges at 95°F outdoor):
-- R-22: Suction 60-85 psig | Discharge 225-275 psig | Superheat (fixed orifice) 10-15°F | Subcooling (TXV) 10-15°F
-- R-410A: Suction 115-145 psig | Discharge 350-420 psig | Superheat (fixed orifice) 8-12°F | Subcooling (TXV) 10-15°F
-- R-454B (new systems 2023+): Suction 100-130 psig | Discharge 300-380 psig | Similar superheat/subcooling targets
-- R-32: Suction 130-160 psig | Discharge 380-450 psig
-Pressures vary significantly with outdoor temp — always note ambient conditions when interpreting readings.
+When someone sends you a photo or video, look at it carefully. Describe exactly what you see. Point out the problem. Tell them what to do next.
 
-PRESSURE DIAGNOSIS:
-- Low suction + low discharge + high superheat = undercharged / refrigerant leak
-- Low suction + low discharge + low superheat = metering device issue (TXV stuck open or oversized piston)
-- High suction + high discharge = overcharged or non-condensables in system
-- Normal suction + high discharge = dirty condenser coil, condenser fan failure, high ambient
-- Low suction + high discharge = restricted liquid line, filter drier plugged
-- Suction pulling into vacuum = severe undercharge or liquid line restriction
+YOUR COMMUNICATION STYLE:
+- Talk like a human, not a manual. Casual but expert.
+- Short sentences. Get to the point fast.
+- Use bold for important stuff: **check the capacitor first**
+- Use numbered steps when walking through a procedure
+- Ask ONE follow-up question at a time, not three
+- If they give you pressures/readings — interpret them immediately and specifically
+- When something is urgent or dangerous, say it clearly: "Stop. Don't run it. Here's why."
+- Celebrate wins: "That's your problem right there."
+- Be honest about costs. Don't sugarcoat.
 
-SUPERHEAT & SUBCOOLING:
-- Superheat = suction line temp - saturation temp at suction pressure
-- Subcooling = saturation temp at discharge pressure - liquid line temp
-- TXV systems: target 6-10°F superheat, 10-15°F subcooling
-- Fixed orifice (piston): use Total Superheat charging method (indoor WB + outdoor DB chart)
-- Zero subcooling = undercharged. High subcooling = overcharged or liquid line restriction
+FOR FIELD TECHS:
+- They need fast, actionable answers
+- Give them the most likely cause first, then alternatives
+- Include specific measurements to confirm (pressures, amps, voltages, temps)
+- Name the part, give a rough cost, say whether to repair or replace
+- If they send a photo — read the nameplate, look for wear, spot the problem
 
-COMMON FAILURE MODES & DIAGNOSIS:
-Capacitor failure: Fan or compressor hums but won't start. Test MFD with meter — must be within ±5-6% of rating. Replace both cap and contactor together on old units.
-Contactor failure: Silence from outdoor unit, or unit won't shut off (welded contacts). Check for pitting, burning, insects in contacts. Chattering = low voltage or loose coil connection.
-Compressor failure: Check windings C-S-C-R-S-R (formula: C+R = S reading). OL between terminals = open winding = failed. Shorts to ground = failed. Verify capacitor and contactor first before condemning compressor.
-TXV failure: Too open = flooding back, low superheat, frost on suction line. Too closed = high superheat, low suction, unit running but not cooling. Confirm: need full liquid line (good subcooling) before TXV can work. Don't misdiagnose as undercharge — add refrigerant and superheat won't change if TXV is closed.
-Refrigerant leak: Oily residue at connections, service ports, coils. Leak check with electronic detector or UV dye. Repair leak FIRST before recharging.
-Dirty condenser coil: High head pressure, high discharge temp, unit tripping on high pressure. Clean with coil cleaner + water — never pressure washer.
-Frozen evaporator coil: Low airflow (dirty filter/coil), low refrigerant, TXV underfeeding. Turn system to fan only, let ice melt, diagnose root cause before restarting.
-Drain line clogged: Float switch opens, unit stops. Vacuum drain with shop vac or blow compressed nitrogen.
-Control board/fuse: Check 3A fuse on air handler board. Check 24V transformer output. Float switch, high pressure switch, low pressure switch — all can interrupt Y signal.
-Heat pump reversing valve: Stuck in one mode. On call for heat — check if solenoid has 24V (energized in cooling on most brands, de-energized in heating). Can bypass to confirm.
+FOR HOMEOWNERS:
+- Explain it like talking to a neighbor, not reading a manual
+- Avoid jargon. Say "the part that starts the motor" not "run capacitor"
+- Tell them if it's safe to keep running
+- Give them a realistic cost range so they can't be taken advantage of
+- Tell them the 2-3 questions to ask their tech
 
-REFRIGERANT PHASE-OUT FACTS (2025):
-- R-22 phased out 2020. No new production. Use reclaim only. Price $40-80/lb.
-- R-410A phase-down started Jan 1, 2025 under EPA AIM Act. New systems now use R-454B or R-32.
-- R-410A cannot be replaced with R-454B in existing systems (different pressures, A2L flammability).
-- R-454B is mildly flammable (A2L) — requires A2L-rated equipment.
-
-SERIAL NUMBER QUICK DECODE:
-- Carrier/Bryant: digits 1-2=week, 3-4=year (e.g. 4006=week 40, 2006)
-- Trane (2002+): digits 1-2=year, 3-4=week (e.g. 1310=2013 week 10)
-- Goodman/Amana: digits 1-2=year, 3-4=month (e.g. 2108=August 2021)
-- Lennox: digits 1-2=year, 3-4=week
-- Rheem/Ruud: digits 1-2=year, 3-4=week
-- York/Heil/Coleman: letter=decade (H=2010s, J=2020s) + digit=year + 2 digit week
-
-WARRANTY PERIODS (registered/unregistered):
-- Carrier/Bryant/Trane/Lennox/Rheem/York: 10yr/5yr
-- Goodman: Lifetime compressor + 10yr parts registered / 5yr unregistered
-- Amana: Lifetime unit replacement registered
-- Daikin/Mitsubishi: 12yr registered / 5yr-7yr unregistered
-
-YOUR RESPONSE STYLE:
-- Talk like a tech texting a fellow tech — direct, confident, no fluff
-- Use **SECTION HEADERS** in bold caps for multi-part answers
-- Use numbered lists for step-by-step procedures
-- Use bullet points for multiple findings or options
-- Bold specific measurements, part numbers, and critical warnings
-- If they give you pressure/temp readings: interpret them immediately and specifically
-- Flag safety hazards with ⚠️ WARNING:
-- Give honest replace vs repair opinion based on age, cost, and failure mode
-- Ask 1-2 focused follow-up questions when you need more info (pressures, voltages, model number)
-- Never say "consult a professional" — YOU are the professional they're texting`;
+TECHNICAL KNOWLEDGE:
+R-410A normal (95F outdoor): Suction 115-145 psig, Discharge 350-420 psig
+R-22 normal: Suction 60-85 psig, Discharge 225-275 psig
+TXV target: 6-10F superheat, 10-15F subcooling
+Fixed orifice: 8-12F superheat
+Capacitor: test MFD within 6% of rating
+Compressor windings: C+R=S (OL = failed)
+R-22 phased out 2020. R-410A phase-down started Jan 2025. New systems: R-454B or R-32.
+Normal delta-T: 18-22F (low delta-T = airflow or refrigerant issue)
+Normal gas furnace sequence: thermostat calls -> inducer starts -> pressure switch closes -> ignitor glows -> gas valve opens -> burners light -> limit switch monitors -> blower starts on delay
+Heat pump reversing valve: energized in cooling on most brands (de-energized in heating)`;
 
 function getTimeStr() {
   const now = new Date();
@@ -2293,6 +2332,8 @@ function getTimeStr() {
 }
 
 function appendMessage(role, text) {
+  // Mike speaks if voice mode is on
+  if(role === 'agent' && voiceMode) setTimeout(function(){ mikeSay(text); }, 200);
   const container = document.getElementById('chatMessages');
   const isAgent = role === 'agent';
   const div = document.createElement('div');
@@ -2334,6 +2375,34 @@ function hideTyping() {
   document.getElementById('typingIndicator').style.display = 'none';
 }
 
+// Chat file attachment
+var chatAttachment = null;
+
+function handleChatFile(e){
+  var file = e.target.files[0];
+  if(!file) return;
+  e.target.value = "";
+  chatAttachment = file;
+  // Show preview chip in chat
+  var preview = document.getElementById("chatAttachPreview");
+  if(!preview){
+    preview = document.createElement("div");
+    preview.id = "chatAttachPreview";
+    preview.style.cssText = "display:flex;align-items:center;gap:8px;padding:8px 12px;background:#F5F6FA;border:1.5px solid #E2E4ED;border-radius:8px;margin-bottom:6px;font-size:13px;font-weight:600;color:#6B7190;";
+    var inputArea = document.querySelector("#panelChat .card:last-child");
+    if(inputArea) inputArea.insertBefore(preview, document.getElementById("chatFileInput").nextSibling);
+  }
+  var isImg = file.type.startsWith("image/");
+  preview.innerHTML = (isImg?"📷 ":"🎬 ") + file.name.substring(0,30) + (file.name.length>30?"...":"") + '<button onclick="clearChatAttach()" style="margin-left:auto;background:none;border:none;font-size:16px;cursor:pointer;color:#9499B0;">×</button>';
+  preview.style.display = "flex";
+}
+
+function clearChatAttach(){
+  chatAttachment = null;
+  var p = document.getElementById("chatAttachPreview");
+  if(p) p.style.display = "none";
+}
+
 let chatSending = false;
 async function sendChat() {
   if(chatSending) return;
@@ -2347,8 +2416,17 @@ async function sendChat() {
   input.style.height = 'auto';
 
   // Add to UI and history
-  appendMessage('user', text);
-  chatHistory.push({role:'user', content:text});
+  appendMessage('user', text + (chatAttachment?' ['+chatAttachment.name.substring(0,20)+']':''));
+  var chatMsg = {role:'user', content:text};
+  if(chatAttachment && chatAttachment.type.startsWith('image/')){
+    try{
+      var chatMime = chatAttachment.type||'image/jpeg';
+      var chatB64 = await blobToBase64(chatAttachment);
+      chatMsg = {role:'user',content:[{type:'image',source:{type:'base64',media_type:chatMime,data:chatB64}},{type:'text',text:text||'What do you see?'}]};
+    }catch(ae){ chatMsg={role:'user',content:text}; }
+  }
+  chatHistory.push(chatMsg);
+  clearChatAttach();
 
   showTyping();
 
@@ -2390,6 +2468,188 @@ function clearChat() {
       <div class="msg-time">${getTimeStr()}</div>
     </div>`;
 }
+
+
+// ── MIKE VOICE SYSTEM ──
+var voiceMode = false;
+var mikeVoice = null;
+var isMikeSpeaking = false;
+var isListening = false;
+var speechRecognition = null;
+var autoListenAfterSpeak = false;
+
+// Find best voice for Mike (prefer deep male US English)
+function loadMikeVoice(){
+  var voices = window.speechSynthesis.getVoices();
+  var preferred = ['Alex','Daniel','Fred','Google US English','Microsoft David','en-US-GuyNeural'];
+  for(var i=0;i<preferred.length;i++){
+    var v = voices.find(function(v){ return v.name.toLowerCase().includes(preferred[i].toLowerCase()); });
+    if(v){ mikeVoice=v; break; }
+  }
+  // Fallback: any en-US male
+  if(!mikeVoice){
+    mikeVoice = voices.find(function(v){ return v.lang==='en-US' && v.name.toLowerCase().includes('male'); })
+              || voices.find(function(v){ return v.lang.startsWith('en'); })
+              || (voices.length ? voices[0] : null);
+  }
+}
+if(window.speechSynthesis){
+  window.speechSynthesis.onvoiceschanged = loadMikeVoice;
+  loadMikeVoice();
+}
+
+function toggleVoiceMode(){
+  voiceMode = !voiceMode;
+  var bar = document.getElementById('voiceModeBar');
+  var btn = document.getElementById('voiceModeBtn');
+  var lbl = document.getElementById('voiceModeBtnLabel');
+  if(voiceMode){
+    bar.style.display = 'block';
+    btn.classList.add('voice-mode-active');
+    lbl.textContent = 'ON';
+    setVoiceStatus('Tap mic to talk to Mike', '');
+  } else {
+    bar.style.display = 'none';
+    btn.classList.remove('voice-mode-active');
+    lbl.textContent = 'Voice';
+    stopMikeSpeaking();
+    stopListening();
+  }
+}
+
+function mikeSay(text){
+  if(!voiceMode || !window.speechSynthesis) return;
+  stopMikeSpeaking();
+  stopListening();
+
+  // Strip markdown for cleaner speech
+  var clean = text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/#+ /g, '')
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/\n\n/g, '. ').replace(/\n/g, ', ')
+    .replace(/[▸▼▲]/g, '')
+    .substring(0, 600); // don't read essays
+
+  var utt = new SpeechSynthesisUtterance(clean);
+  if(mikeVoice) utt.voice = mikeVoice;
+  utt.rate  = 0.95;
+  utt.pitch = 0.9;
+  utt.volume = 1;
+
+  var micBtn = document.getElementById('micBtn');
+  var stopBtn = document.getElementById('stopSpeakBtn');
+
+  utt.onstart = function(){
+    isMikeSpeaking = true;
+    if(micBtn) micBtn.classList.add('mic-speaking');
+    if(stopBtn) stopBtn.style.display = 'flex';
+    setVoiceStatus('Mike is talking…', clean.substring(0,80)+(clean.length>80?'...':''));
+  };
+  utt.onend = function(){
+    isMikeSpeaking = false;
+    if(micBtn){ micBtn.classList.remove('mic-speaking'); micBtn.textContent = '🎙️'; }
+    if(stopBtn) stopBtn.style.display = 'none';
+    if(voiceMode && autoListenAfterSpeak){
+      setTimeout(startListening, 600);
+    } else {
+      setVoiceStatus('Done. Tap mic to reply.', '');
+    }
+  };
+  utt.onerror = function(){
+    isMikeSpeaking = false;
+    if(micBtn) micBtn.classList.remove('mic-speaking');
+    setVoiceStatus('Tap mic to talk', '');
+  };
+
+  window.speechSynthesis.speak(utt);
+}
+
+function stopMikeSpeaking(){
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  isMikeSpeaking = false;
+  var micBtn = document.getElementById('micBtn');
+  var stopBtn = document.getElementById('stopSpeakBtn');
+  if(micBtn){ micBtn.classList.remove('mic-speaking'); micBtn.textContent = '🎙️'; }
+  if(stopBtn) stopBtn.style.display = 'none';
+}
+
+function toggleMic(){
+  if(isListening){ stopListening(); return; }
+  if(isMikeSpeaking){ stopMikeSpeaking(); return; }
+  startListening();
+}
+
+function startListening(){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    alert('Voice input not supported on this browser. Try Chrome or Safari 14.5+.');
+    return;
+  }
+  stopListening();
+
+  speechRecognition = new SR();
+  speechRecognition.continuous = false;
+  speechRecognition.interimResults = true;
+  speechRecognition.lang = 'en-US';
+
+  var micBtn = document.getElementById('micBtn');
+  if(micBtn){ micBtn.classList.add('mic-listening'); micBtn.textContent = '🔴'; }
+  isListening = true;
+  setVoiceStatus('Listening…', 'Speak now');
+
+  speechRecognition.onresult = function(e){
+    var transcript = '';
+    for(var i=e.resultIndex;i<e.results.length;i++){
+      transcript += e.results[i][0].transcript;
+    }
+    setVoiceStatus('Listening…', transcript);
+    if(e.results[e.results.length-1].isFinal){
+      document.getElementById('chatInput').value = transcript;
+    }
+  };
+
+  speechRecognition.onend = function(){
+    isListening = false;
+    if(micBtn){ micBtn.classList.remove('mic-listening'); micBtn.textContent = '🎙️'; }
+    var text = document.getElementById('chatInput').value.trim();
+    if(text){
+      setVoiceStatus('Sending to Mike…', text);
+      autoListenAfterSpeak = true;
+      sendChat();
+    } else {
+      setVoiceStatus('Tap mic to talk to Mike', '');
+    }
+  };
+
+  speechRecognition.onerror = function(e){
+    isListening = false;
+    if(micBtn){ micBtn.classList.remove('mic-listening'); micBtn.textContent = '🎙️'; }
+    if(e.error === 'no-speech'){
+      setVoiceStatus('No speech detected. Tap mic again.', '');
+    } else {
+      setVoiceStatus('Mic error: '+e.error, '');
+    }
+  };
+
+  speechRecognition.start();
+}
+
+function stopListening(){
+  if(speechRecognition){ try{ speechRecognition.stop(); }catch(e){} }
+  isListening = false;
+  var micBtn = document.getElementById('micBtn');
+  if(micBtn){ micBtn.classList.remove('mic-listening'); micBtn.textContent = '🎙️'; }
+}
+
+function setVoiceStatus(status, transcript){
+  var el = document.getElementById('voiceStatusText');
+  var tr = document.getElementById('voiceTranscript');
+  if(el) el.textContent = status;
+  if(tr) tr.textContent = transcript || '';
+}
+
 
 // ── LANGUAGE SYSTEM ──
 var currentLang = 'en';

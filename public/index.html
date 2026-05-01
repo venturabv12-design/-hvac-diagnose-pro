@@ -498,9 +498,8 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
   <div class="card fu" style="padding:6px;margin-bottom:16px;display:none;" id="proTabs">
     <div class="sub-tabs">
       <button class="sub-tab st-diag"    onclick="setProTab('diag')"    id="stDiag"><span class="tab-icon">🔬</span>Diagnose</button>
-      <button class="sub-tab"            onclick="setProTab('scan')"    id="stScan"><span class="tab-icon">📷</span>Nameplate</button>
+      <button class="sub-tab"            onclick="setProTab('scan')"    id="stScan"><span class="tab-icon">📋</span>Nameplate & Warranty</button>
       <button class="sub-tab"            onclick="setProTab('refrig')"  id="stRefrig"><span class="tab-icon">❄️</span>Refrigerant</button>
-      <button class="sub-tab"            onclick="setProTab('warranty')"id="stWarranty"><span class="tab-icon">🛡️</span>Warranty</button>
       <button class="sub-tab"            onclick="setProTab('revenue')" id="stRevenue"><span class="tab-icon">💰</span>Revenue</button>
       <button class="sub-tab"            onclick="setProTab('maint')"   id="stMaint"><span class="tab-icon">📋</span>Maintenance</button>
       <button class="sub-tab"            onclick="setProTab('chat')"    id="stChat"><span class="tab-icon">💬</span>Live Agent</button>
@@ -1191,16 +1190,16 @@ function setMode(m) {
     :"e.g. My air conditioner runs all day but the house never gets below 78°. Started 3 days ago…";
   selectedSymptoms=[]; buildSymptomGrid(m);
   if(isPro) setProTab("diag");
-  else { ["panelDiag","panelScan","panelRefrig","panelWarranty","panelRevenue","panelMaint"].forEach(id=>document.getElementById(id).style.display=id==="panelDiag"?"block":"none"); }
+  else { ["panelDiag","panelScan","panelRefrig","panelRevenue","panelMaint"].forEach(id=>document.getElementById(id).style.display=id==="panelDiag"?"block":"none"); }
   resetDiagnostic();
 }
 
 function setProTab(tab) {
   proTab=tab;
-  const panels={diag:"panelDiag",scan:"panelScan",refrig:"panelRefrig",warranty:"panelWarranty",revenue:"panelRevenue",maint:"panelMaint",chat:"panelChat"};
+  const panels={diag:"panelDiag",scan:"panelScan",refrig:"panelRefrig",revenue:"panelRevenue",maint:"panelMaint",chat:"panelChat"};
   for(const[t,id] of Object.entries(panels)) document.getElementById(id).style.display=t===tab?"block":"none";
-  const tabs={diag:"stDiag",scan:"stScan",refrig:"stRefrig",warranty:"stWarranty",revenue:"stRevenue",maint:"stMaint",chat:"stChat"};
-  const styles={diag:"st-diag",scan:"st-scan",refrig:"st-refrig",warranty:"st-warrant",revenue:"st-revenue",maint:"st-maint",chat:"st-chat"};
+  const tabs={diag:"stDiag",scan:"stScan",refrig:"stRefrig",revenue:"stRevenue",maint:"stMaint",chat:"stChat"};
+  const styles={diag:"st-diag",scan:"st-scan",refrig:"st-refrig",revenue:"st-revenue",maint:"st-maint",chat:"st-chat"};
   for(const[t,id] of Object.entries(tabs)) document.getElementById(id).className="sub-tab"+(t===tab?" "+styles[t]:"");
 }
 
@@ -1277,19 +1276,43 @@ async function runNameplateScan(){
     let result;
     if(hasImg){
       const b64=await blobToBase64(scanFile),mime=scanFile.type;
-      const SYSTEM=`You are an expert HVAC nameplate reader and serial number decoder. Read any HVAC data plate and extract all information.
-SERIAL DECODING (current year is 2026):
-- Carrier/Bryant/Payne: positions 5-8 = week+year (e.g. 1216 = week 12, year 2016)
-- Trane/American Standard: 1st char=year letter (A=1980,B=1981...use letter position), 2nd-3rd=week
-- Lennox: first 2 digits=year, next 2=week (e.g. 2314 = year 2023, week 14)
-- Goodman/Amana/Daikin: 1st=decade, 2nd=year, 3rd-4th=week (e.g. 1324 = 2013, week 24)
-- Rheem/Ruud: first 2 digits=year, 3rd-4th=week
-- York/Coleman/Heil/Tempstar: letter=decade (F=1990s,G=2000s,H=2010s,J=2020s), digit=year
-- Mitsubishi: look for manufacture date on plate
-WARRANTY: Carrier/Bryant 10yr reg/5yr unreg. Trane 10yr/5yr. Lennox 10yr/5yr. Goodman lifetime+10yr. Amana lifetime. Rheem/Ruud 10yr/5yr. Mitsubishi 12yr/7yr. Daikin 12yr/5yr. York 10yr/5yr.
-Return ONLY valid JSON no markdown:
-{"brand":"","model":"","serial":"","refrigerant":"","voltage":"","tonnage":"","seer":"","manufactureYear":0,"manufactureMonth":0,"ageYears":0,"warrantyStatus":"Expired|Active|Likely Expired|Unknown","warrantyExpireYear":0,"registrationStatus":"Unknown","summary":"","techFlags":""}`;
-      const raw=await callAI(SYSTEM,[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:"Read this HVAC nameplate completely. Decode all information. Return JSON only."}]}],800);
+      const SYSTEM=`You are a certified HVAC technician reading a nameplate data plate. Current year: 2026.
+
+⚠️ CRITICAL SAFETY RULE: Read ONLY what is physically printed on this nameplate. NEVER guess the brand from colors, logo shapes, or visual style. Read the brand name exactly as text on the plate.
+
+BRAND READING: The brand is printed as text (e.g. "Carrier", "Trane", "Lennox"). Read it exactly. If you cannot read the brand text clearly, return brand: "Cannot read - verify on unit". Do NOT assume the brand.
+
+SERIAL NUMBER DECODING by brand (verified manufacturer formats):
+- Carrier/Bryant/Payne: digits 1-2 = week, digits 3-4 = year (e.g. 4006 = week 40, year 2006)
+- Trane/American Standard (post-2002): digit 1-2 = year, digit 3-4 = week (e.g. 1310 = year 2013, week 10)
+- Trane (pre-2002): 1st letter = year (A=1980,B=81,C=82,D=83,E=84,F=85,G=86,H=87,J=88,K=89,L=90,M=91,N=92,P=93,R=94,S=95,T=96,U=97,V=98,W=99,X=2000,Y=01,Z=02)
+- Lennox: first 2 = year, next 2 = week (e.g. 1912 = 2019, week 12). Some use letter prefix: ignore first letter, next 2 = year
+- Goodman/Amana (current): first 2 = year, next 2 = month (e.g. 2108 = 2021, August)
+- Goodman (pre-2009): first 2 digits = year, 3rd-4th = month
+- Daikin: first 4 = year+month, check plate for mfg date label
+- Rheem/Ruud: first 2 = year, next 2 = week (e.g. 2118 = 2021, week 18)
+- York/Coleman/Heil/Tempstar/ICP: letter=decade (F=90s,G=2000s,H=2010s,J=2020s) + digit=year + 2 digit week
+- Mitsubishi: manufacture date is printed directly on plate - read it
+- Fujitsu: call 888-888-3424 with serial - return unknown
+- American Standard: same as Trane
+
+WARRANTY (years, registered/unregistered):
+- Carrier/Bryant/Payne: 10yr parts registered / 5yr unregistered
+- Trane/American Standard: 10yr registered / 5yr unregistered  
+- Lennox: 10yr registered / 5yr unregistered
+- Goodman: Lifetime compressor + 10yr parts registered / 5yr unregistered
+- Amana: Lifetime unit replacement + 10yr parts
+- Rheem/Ruud: 10yr registered / 5yr unregistered
+- York/Coleman/Heil: 10yr registered / 5yr unregistered
+- Daikin: 12yr registered / 5yr unregistered
+- Mitsubishi: 12yr registered / 7yr unregistered
+- LG: 10yr compressor / 5yr parts
+
+IMAGE QUALITY RULE: If blurry, dark, or brand text unreadable → set imageQuality:"Unclear", confidence:"Low", brand:"Image unclear - retake photo closer in good light"
+
+Return ONLY valid JSON, no markdown:
+{"brand":"EXACT brand text from plate","model":"","serial":"","refrigerant":"","voltage":"","tonnage":"","seer":"","manufactureYear":0,"manufactureMonth":0,"ageYears":0,"warrantyStatus":"Active|Expired|Likely Expired|Unknown","warrantyExpireYear":0,"warrantyDetails":"e.g. 10yr registered expires 2029","registrationStatus":"Unknown","summary":"2 sentence plain English summary","techFlags":"anything unusual","confidence":"High|Medium|Low","imageQuality":"Clear|Partial|Unclear"}`;
+      const raw=await callAI(SYSTEM,[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:"Read this HVAC nameplate carefully. What brand text is printed on this plate? Read serial number and decode manufacture date. Return JSON only. Never guess the brand."}]}],900);
       result=JSON.parse(raw.replace(/```json|```/g,"").trim());
     }else{
       const SYSTEM=`You are an expert HVAC serial number decoder. Current year is 2026.
@@ -1306,80 +1329,103 @@ Return ONLY valid JSON no markdown:
 }
 
 function showScanResult(r){
-  const age = r.ageYears || (r.manufactureYear ? 2026 - r.manufactureYear : null);
-  const ageClass = age >= 15 ? "danger" : age >= 10 ? "warn" : "good";
-  const wClass = r.warrantyStatus==="Expired" ? "danger" : r.warrantyStatus==="Likely Expired" ? "warn" : r.warrantyStatus==="Active" ? "good" : "";
-  const info = WARRANTY_INFO[r.brand];
+  const container = document.getElementById("scanResult");
+  const ageColor = !r.ageYears ? "#999" : r.ageYears>=15?"#c62828":r.ageYears>=10?"#e65100":"#2e7d32";
+  const wColor   = r.warrantyStatus==="Active"?"#2e7d32":r.warrantyStatus==="Expired"?"#c62828":"#e65100";
 
-  // Extracted data summary line
-  const parts = [r.brand, r.model, r.serial, r.refrigerant, r.voltage, r.tonnage, r.seer ? r.seer+" SEER" : ""].filter(Boolean);
-  document.getElementById("scanExtracted").textContent = parts.join("  ·  ") || "Data extracted from nameplate";
-
-  // 4 decode cards
-  document.getElementById("decodeGrid").innerHTML = `
-    <div class="decode-item ${ageClass}">
-      <div class="decode-label">System Age</div>
-      <div class="decode-value">${age ? age + " yrs" : "Unknown"}</div>
-      <div class="decode-sub">${r.manufactureYear ? "Manufactured " + r.manufactureYear : "Estimate only"}</div>
-    </div>
-    <div class="decode-item ${wClass}">
-      <div class="decode-label">Warranty Status</div>
-      <div class="decode-value">${r.warrantyStatus || "Unknown"}</div>
-      <div class="decode-sub">${r.warrantyExpireYear ? "Expires ~" + r.warrantyExpireYear : "Verify with manufacturer"}</div>
-    </div>
-    <div class="decode-item">
-      <div class="decode-label">Refrigerant</div>
-      <div class="decode-value">${r.refrigerant || "N/A"}</div>
-      <div class="decode-sub">${r.tonnage || ""}</div>
-    </div>
-    <div class="decode-item">
-      <div class="decode-label">Registration</div>
-      <div class="decode-value" style="font-size:15px;">${r.registrationStatus || "Unknown"}</div>
-      <div class="decode-sub">${r.registrationStatus==="Unregistered" ? "⚠️ Shorter warranty" : r.registrationStatus==="Registered" ? "✅ Full coverage" : "Check with mfr"}</div>
+  // Confidence warning banner
+  let warningHtml = "";
+  if(r.confidence==="Low" || (r.brand&&r.brand.includes("unclear")) || (r.brand&&r.brand.includes("Cannot"))){
+    warningHtml = `<div style="background:#ffebee;border-left:4px solid #c62828;border-radius:0 6px 6px 0;padding:12px 14px;margin-bottom:14px;font-size:14px;color:#c62828;font-weight:600;">
+      ⚠️ <strong>Photo quality too low to read accurately.</strong> Retake the photo closer, in good lighting. Do not use these results until verified on the unit.
     </div>`;
-
-  // Clean warranty section — replace scattered paragraphs with structured rows
-  const wColor = wClass==="danger" ? "#be123c" : wClass==="warn" ? "#b45309" : "#0d9488";
-  let warrantyHtml = `
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;">
-        <span style="font-size:13px;font-weight:600;color:#999999;">Brand</span>
-        <span style="font-size:15px;font-weight:700;color:#1a1a1a;">${r.brand || "Unknown"}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;">
-        <span style="font-size:13px;font-weight:600;color:#999999;">Manufacture Date</span>
-        <span style="font-size:15px;font-weight:700;color:#1a1a1a;">${r.manufactureYear ? r.manufactureYear + (r.manufactureMonth ? " (Month " + r.manufactureMonth + ")" : "") : "Unknown"}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;">
-        <span style="font-size:13px;font-weight:600;color:#999999;">System Age</span>
-        <span style="font-size:15px;font-weight:700;color:${wColor};">${age ? age + " years old" : "Unknown"}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;">
-        <span style="font-size:13px;font-weight:600;color:#999999;">Warranty Status</span>
-        <span style="font-size:15px;font-weight:700;color:${wColor};">${r.warrantyStatus || "Unknown"}</span>
-      </div>
-      ${r.warrantyExpireYear ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;"><span style="font-size:13px;font-weight:600;color:#999999;">Est. Warranty Expiry</span><span style="font-size:15px;font-weight:700;color:#1a1a1a;">~${r.warrantyExpireYear}</span></div>` : ""}
-      ${info ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f5f5f5;border-radius:4px;border:1px solid #dfe1e6;"><span style="font-size:13px;font-weight:600;color:#999999;">Standard Terms</span><span style="font-size:14px;font-weight:600;color:#555555;text-align:right;max-width:60%;">${info.terms}</span></div>` : ""}
-      ${r.summary ? `<div style="padding:14px;background:#f0fdfa;border-radius:10px;border:1px solid #99f6e4;"><p style="font-size:13px;font-weight:700;color:#00838f;margin-bottom:6px;">Summary</p><p style="font-size:14px;color:#00838f;line-height:1.65;">${r.summary}</p></div>` : ""}
-      ${r.techFlags ? `<div style="padding:14px;background:#fffbeb;border-radius:10px;border:1px solid #fde68a;"><p style="font-size:13px;font-weight:700;color:#e65100;margin-bottom:6px;">⚠️ Tech Note</p><p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.65;">${r.techFlags}</p></div>` : ""}
+  } else if(r.confidence==="Medium" || r.imageQuality==="Partial"){
+    warningHtml = `<div style="background:#fff3e0;border-left:4px solid #e65100;border-radius:0 6px 6px 0;padding:12px 14px;margin-bottom:14px;font-size:14px;color:#e65100;font-weight:600;">
+      ⚠️ <strong>Some details may be unclear.</strong> Always verify the brand, model, and serial number directly on the unit before taking action.
     </div>`;
-  document.getElementById("scanWarrantyText").innerHTML = warrantyHtml;
-
-  // Verify link with phone number
-  if (info) {
-    document.getElementById("scanVerifyLink").style.display = "block";
-    document.getElementById("scanVerifyBtn").href = info.url;
-    document.getElementById("scanVerifyLink").innerHTML = `
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <p style="font-size:14px;color:#4527a0;flex:1;">Verify warranty directly with <strong>${r.brand}</strong>:</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <a href="${info.url}" target="_blank" style="padding:9px 18px;background:#1a1a1a;border-radius:4px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">🌐 Warranty Portal</a>
-          <span style="padding:9px 14px;background:#fff;border:1px solid #b39ddb;border-radius:4px;color:#4527a0;font-size:14px;font-weight:600;">📞 ${info.phone}</span>
-        </div>
-      </div>`;
   }
 
-  document.getElementById("scanResult").style.display = "block";
+  // Build data rows
+  const rows = [
+    {label:"Brand",        value: r.brand||"Unknown",        style: "font-weight:700;color:#1a1a1a;font-size:16px;"},
+    {label:"Model",        value: r.model||"—",              style: ""},
+    {label:"Serial",       value: r.serial||"—",             style: "font-family:monospace;font-size:14px;"},
+    {label:"Refrigerant",  value: r.refrigerant||"—",        style: ""},
+    {label:"Voltage",      value: r.voltage||"—",            style: ""},
+    {label:"Tonnage",      value: r.tonnage ? r.tonnage+" ton" : "—", style:""},
+    {label:"SEER",         value: r.seer ? r.seer+" SEER" : "—", style:""},
+    {label:"Manufactured", value: r.manufactureYear ? `${r.manufactureYear}${r.manufactureMonth?" (Month "+r.manufactureMonth+")":""}` : "—", style:""},
+    {label:"System Age",   value: r.ageYears ? r.ageYears+" years old" : "—", style:`font-weight:700;color:${ageColor};`},
+    {label:"Warranty",     value: r.warrantyStatus||"Unknown", style:`font-weight:700;color:${wColor};`},
+    {label:"Warranty Info",value: r.warrantyDetails||"—",     style:"font-size:13px;color:#555;"},
+    {label:"Est. Expiry",  value: r.warrantyExpireYear ? "~"+r.warrantyExpireYear : "—", style:""},
+  ].filter(r=>r.value&&r.value!=="—");
+
+  let rowsHtml = rows.map(row=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:#f5f5f5;border-radius:4px;margin-bottom:6px;">
+      <span style="font-size:13px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.4px;">${row.label}</span>
+      <span style="font-size:15px;${row.style}">${row.value}</span>
+    </div>`).join("");
+
+  // Summary box
+  let summaryHtml = "";
+  if(r.summary){
+    summaryHtml = `<div style="background:#e6f9f9;border:1px solid #80deea;border-radius:6px;padding:14px;margin-top:10px;">
+      <div style="font-family:'Roboto Condensed',sans-serif;font-size:11px;font-weight:700;color:#00838f;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Summary</div>
+      <p style="font-size:14px;line-height:1.65;color:#1a1a1a;">${r.summary}</p>
+    </div>`;
+  }
+
+  // Tech flags
+  let flagsHtml = "";
+  if(r.techFlags&&r.techFlags!=="null"&&r.techFlags.length>2){
+    flagsHtml = `<div style="background:#fff3e0;border:1px solid #ffcc80;border-radius:6px;padding:14px;margin-top:10px;">
+      <div style="font-family:'Roboto Condensed',sans-serif;font-size:11px;font-weight:700;color:#e65100;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">⚠️ Tech Note</div>
+      <p style="font-size:14px;line-height:1.65;color:#1a1a1a;">${r.techFlags}</p>
+    </div>`;
+  }
+
+  // Warranty portal links
+  const WARRANTY_INFO_LOCAL = {
+    "Carrier":    {phone:"1-800-227-7437",url:"https://www.carrier.com/residential/en/us/support/warranty-information/"},
+    "Bryant":     {phone:"1-800-428-4326",url:"https://www.bryant.com/en/us/support/warranty/"},
+    "Trane":      {phone:"1-800-945-5884",url:"https://www.trane.com/residential/en/resources/warranty/"},
+    "Lennox":     {phone:"1-800-953-6669",url:"https://www.lennox.com/resources/warranty"},
+    "Goodman":    {phone:"1-877-254-4729",url:"https://www.goodmanmfg.com/resources/warranty"},
+    "Rheem":      {phone:"1-800-621-5622",url:"https://www.rheem.com/warranty/"},
+    "Ruud":       {phone:"1-800-621-5622",url:"https://www.ruud.com/warranty/"},
+    "York":       {phone:"1-877-874-7378",url:"https://www.york.com/resources/warranty"},
+    "Daikin":     {phone:"1-800-432-4546",url:"https://www.daikincomfort.com/resources/warranty"},
+    "Amana":      {phone:"1-866-616-2664",url:"https://www.amana-hac.com/resources/warranty"},
+    "Mitsubishi": {phone:"1-800-433-4822",url:"https://www.mitsubishicomfort.com/support/warranty"},
+    "Heil":       {phone:"1-800-448-5872",url:"https://www.heil-hvac.com/en/us/resources/warranty/"},
+    "Tempstar":   {phone:"1-800-448-5872",url:"https://www.tempstar.com/en/us/resources/warranty/"},
+    "Coleman":    {phone:"1-877-874-7378",url:"https://www.colemanac.com/en/us/resources/warranty/"},
+  };
+  const info = WARRANTY_INFO_LOCAL[r.brand];
+  let portalHtml = "";
+  if(info){
+    portalHtml = `<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <a href="${info.url}" target="_blank" style="flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;background:#1a1a1a;color:#fff;border-radius:4px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:.3px;text-transform:uppercase;">🌐 Warranty Portal</a>
+      <a href="tel:${info.phone}" style="flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;background:#00b5b5;color:#fff;border-radius:4px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:.3px;text-transform:uppercase;">📞 ${info.phone}</a>
+    </div>`;
+  }
+
+  container.innerHTML = `
+    <div style="border-left:4px solid #00b5b5;background:#fff;border-radius:4px;padding:18px;border:1px solid #d8d8d8;">
+      ${warningHtml}
+      <div style="font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">📋 Nameplate Data</div>
+      ${rowsHtml}
+      ${summaryHtml}
+      ${flagsHtml}
+      ${portalHtml}
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;">
+      <button onclick="clearScan()" class="btn btn-outline btn-sm" style="flex:1;">🔄 Scan Another</button>
+      <button onclick="setProTab('diag')" class="btn btn-teal btn-sm" style="flex:1;">⚡ Run Diagnostic</button>
+    </div>`;
+
+  document.getElementById("scanResult").style.display="block";
   document.getElementById("scanResult").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
@@ -1516,21 +1562,49 @@ async function runDiagnostic(){
 }
 
 function buildDiagPrompt(isPro,sysType,sysAge,brand,syms,desc,aud,hasVisual,isImg){
-  const vis=hasVisual?`\nVISUAL: ${isImg?"Photo":"Video frame"} of system provided.`:"";
-  if(isPro) return `CONTRACTOR DIAGNOSTIC REQUEST
-System: ${sysType||"N/A"} | Brand: ${brand||"N/A"} | Age: ${sysAge||"N/A"}
-Fault Indicators: ${syms}
+  const vis=hasVisual?`\nVISUAL: ${isImg?"Photo":"Video frame"} provided.`:"";
+  if(isPro) return `CONTRACTOR DIAGNOSTIC
+System: ${sysType||"Unknown"} | Brand: ${brand||"Unknown"} | Age: ${sysAge||"Unknown"}
+Symptoms: ${syms}
 Notes: ${desc||"None"}${aud}${vis}
 
-Return ONLY valid JSON no markdown:
-{"severity":"CRITICAL|HIGH|MEDIUM|LOW","rootCause":"string","confidence":"85%","urgency":"Today|This week|Can wait","summary":"1 sentence plain summary","sections":[{"label":"Root Cause","icon":"🔍","body":"string"},{"label":"Differential Diagnosis","icon":"📊","body":"Alt 1 (70%): ... Alt 2 (20%): ..."},{"label":"Diagnostic Procedure","icon":"🔧","steps":["step1","step2","step3"]},{"label":"Refrigerant Data","icon":"❄️","body":"string or null"},{"label":"Parts Required","icon":"🔩","body":"string with part numbers and costs"},{"label":"Safety Hazards","icon":"⚠️","body":"string"},{"label":"Replace vs Repair","icon":"💡","body":"string"},{"label":"Est. Labor Hours","icon":"⏱️","body":"string"}]}`;
-  return `HOMEOWNER DIAGNOSTIC REQUEST
-System: ${sysType||"N/A"} | Age: ${sysAge||"N/A"}
+Return ONLY valid JSON, no markdown:
+{
+  "severity":"CRITICAL|HIGH|MEDIUM|LOW",
+  "confidence":"90%",
+  "urgency":"Today|This week|Can wait",
+  "summary":"One clear sentence: what is wrong and what needs to be done",
+  "estimatedCost":"$X–$X",
+  "sections":[
+    {"label":"Most Likely Cause","icon":"🔍","body":"Plain clear explanation of root cause. No jargon."},
+    {"label":"Other Possibilities","icon":"📊","body":"List 2-3 other possibilities with % likelihood each"},
+    {"label":"Step-by-Step Fix","icon":"🔧","steps":["Step 1 - be specific","Step 2","Step 3"]},
+    {"label":"Parts Needed","icon":"🔩","body":"Part names, part numbers if known, estimated cost"},
+    {"label":"Safety Warnings","icon":"⚠️","body":"Any safety hazards. If none, say None."},
+    {"label":"Replace or Repair?","icon":"💡","body":"Honest recommendation based on age and cost"}
+  ]
+}`;
+  return `HOMEOWNER DIAGNOSTIC
+System: ${sysType||"Unknown"} | Age: ${sysAge||"Unknown"}
 Symptoms: ${syms}
 Description: ${desc||"None"}${aud}${vis}
 
-Return ONLY valid JSON no markdown:
-{"severity":"CRITICAL|HIGH|MEDIUM|LOW","urgency":"Today|This week|Can wait","urgencyColor":"#c62828|#e65100|#1565c0|#2e7d32","summary":"1 sentence plain English summary","estimatedCost":"$X–$X","sections":[{"label":"What's Happening","icon":"💡","body":"plain English explanation"},{"label":"How Urgent","icon":"🕐","body":"string"},{"label":"Safe Checks You Can Do","icon":"✅","steps":["step1","step2"]},{"label":"Safety Warnings","icon":"⚠️","body":"string or null"},{"label":"Do You Need a Pro?","icon":"🛠️","body":"honest answer"},{"label":"Estimated Cost","icon":"💰","body":"repair vs replacement range"}]}`;
+Return ONLY valid JSON, no markdown:
+{
+  "severity":"CRITICAL|HIGH|MEDIUM|LOW",
+  "urgency":"Today|This week|Can wait",
+  "urgencyColor":"#c62828|#e65100|#1565c0|#2e7d32",
+  "summary":"One simple sentence a homeowner can understand. No jargon.",
+  "estimatedCost":"$X–$X",
+  "sections":[
+    {"label":"What Is Wrong","icon":"💡","body":"Explain in plain English like talking to a neighbor. No technical terms."},
+    {"label":"How Urgent Is This","icon":"🕐","body":"Is it safe to wait or does it need immediate attention? Why?"},
+    {"label":"What You Can Check","icon":"✅","steps":["Simple safe check 1","Simple safe check 2"]},
+    {"label":"Safety Warning","icon":"⚠️","body":"Any dangers? If none, say None."},
+    {"label":"Do You Need a Tech?","icon":"🛠️","body":"Yes or no and why. Be honest."},
+    {"label":"What It Will Cost","icon":"💰","body":"Ballpark repair cost and replacement cost so they can compare"}
+  ]
+}`;
 }
 
 function showResult(sev,body,isPro){
@@ -1563,7 +1637,7 @@ function showResult(sev,body,isPro){
 function renderDiagCards(data,s){
   const el=document.getElementById("resultText");
   let html=`<div style="background:${s.bg};border-radius:6px;padding:14px 16px;margin-bottom:4px;border:1px solid ${s.border};">`;
-  if(data.summary) html+=`<p style="font-size:16px;font-weight:600;color:#1a1a1a;line-height:1.5;margin-bottom:${data.confidence||data.estimatedCost?'10px':'0'}">${data.summary}</p>`;
+  if(data.summary) html+=`<p style="font-size:17px;font-weight:700;color:#1a1a1a;line-height:1.6;margin-bottom:${data.confidence||data.estimatedCost?'10px':'0'}">${data.summary}</p>`;
   const stats=[];
   if(data.confidence) stats.push({val:data.confidence,lbl:"Confidence",color:s.color});
   if(data.urgency)    stats.push({val:data.urgency,lbl:"Urgency",color:data.urgencyColor||s.color});
@@ -1587,7 +1661,7 @@ function renderDiagCards(data,s){
       html+=`<div style="margin-top:4px;">`;
       sec.steps.forEach((step,i)=>{
         if(!step) return;
-        html+=`<div class="diag-step"><div class="diag-step-num">${i+1}</div><div class="diag-step-text">${step.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div></div>`;
+        html+=`<div class="diag-step"><div class="diag-step-num">${i+1}</div><div class="diag-step-text" style="font-size:15px;line-height:1.7;">${step.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div></div>`;
       });
       html+=`</div>`;
     }
@@ -1650,11 +1724,14 @@ async function runWarrantyScan() {
   btn.disabled = true; btn.innerHTML = `<span class="spinner"></span><span class="pulsing"> Reading nameplate…</span>`;
   try {
     const b64 = await blobToBase64(wScanFile), mime = wScanFile.type;
-    const SYSTEM = `You are an expert HVAC nameplate reader. Read the data plate and decode all information. Current year is 2026.
+    const SYSTEM = `You are a precision HVAC nameplate reader. CRITICAL SAFETY RULE: Only report what you can READ directly on the nameplate. Never guess the brand — read it from the label text exactly as printed. Current year is 2026.
+
+BRAND: Read the brand name EXACTLY as printed. Do not infer from color or style. If unclear, return "Unknown - verify on unit".
 SERIAL DECODING: Carrier/Bryant/Payne pos 5-8=week+year. Trane 1st=year letter,2nd-3rd=week. Lennox first 2=year,next 2=week. Goodman/Amana/Daikin 1st=decade,2nd=year,3rd-4th=week. Rheem/Ruud first 2=year,3rd-4th=week. York/Coleman/Heil letter=decade(F=90s,G=00s,H=10s,J=20s),digit=year.
 WARRANTY: Carrier/Bryant/Trane/Lennox/Rheem/York=10yr reg/5yr unreg. Goodman=lifetime+10yr. Amana=lifetime. Mitsubishi=12yr/7yr. Daikin=12yr/5yr.
-Return ONLY valid JSON: {"brand":"","model":"","serial":"","refrigerant":"","voltage":"","tonnage":"","seer":"","manufactureYear":0,"ageYears":0,"warrantyStatus":"Active|Expired|Likely Expired|Unknown","warrantyExpireYear":0,"registrationStatus":"Unknown","summary":"","techFlags":""}`;
-    const raw = await callAI(SYSTEM, [{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:"Read this HVAC nameplate completely and return JSON only."}]}], 600);
+If image is blurry, set brand to "Image unclear - please retake photo".
+Return ONLY valid JSON: {"brand":"EXACT text from plate","model":"","serial":"","refrigerant":"","voltage":"","tonnage":"","seer":"","manufactureYear":0,"ageYears":0,"warrantyStatus":"Active|Expired|Likely Expired|Unknown","warrantyExpireYear":0,"registrationStatus":"Unknown","summary":"","techFlags":"","confidence":"High|Medium|Low"}`;
+    const raw = await callAI(SYSTEM, [{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:"Read this HVAC nameplate. Brand must be read from plate text only, never guessed. Return JSON only."}]}], 700);
     const r = JSON.parse(raw.replace(/```json|```/g,"").trim());
     // Auto-fill the manual fields
     if(r.brand) { const sel=document.getElementById("wBrand"); for(let o of sel.options){if(o.value===r.brand){sel.value=r.brand;showWarrantyLinks();break;}} }

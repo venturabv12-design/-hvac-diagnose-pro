@@ -673,9 +673,9 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
 >⚡ Run Diagnostic</button>
 
 <div id="resultPanel" style="display:none;margin-top:24px;" class="fi">
-  <div class="sev-bar">
+  <div style="margin-bottom:14px;">
     <span style="font-size:17px;font-weight:900;color:#1a1a1a;font-family:'Roboto Condensed',sans-serif;letter-spacing:.3px;text-transform:uppercase;">Your Diagnostic Report</span>
-    <span class="sev-badge" id="sevBadge"></span>
+    <span id="sevBadge" style="display:none;"></span>
   </div>
   <div class="card" id="resultCard" style="margin-bottom:16px;">
     <div class="result-body" id="resultText"></div>
@@ -1600,10 +1600,15 @@ async function runDiagnostic(){
     const SYSTEM=isPro
       ?`You are HVACGenius AI — the world's most advanced HVAC diagnostic intelligence. All brands, systems, full technical knowledge. EPA 608, ASHRAE, ACCA. RULES: First line = severity only: CRITICAL, HIGH, MEDIUM, or LOW. Use **Bold Headers**. Be precise and technical.`
       :`You are HVACGenius AI — the world's most advanced HVAC diagnostic intelligence. RULES: First line = severity only: CRITICAL, HIGH, MEDIUM, or LOW. Use **Bold Headers**. Plain friendly English — no jargon. Homeowner audience.`;
-    const raw=await callAI(SYSTEM,messages);lastDiagResult=raw;
-    const lines=raw.trim().split("\n"),sevW=lines[0].trim().toUpperCase(),knownSev=["CRITICAL","HIGH","MEDIUM","LOW"];
-    const sev=knownSev.includes(sevW)?sevW:"MEDIUM",body=knownSev.includes(sevW)?lines.slice(1).join("\n").trim():raw;
-    showResult(sev,body,isPro);
+    const raw=await callAI(SYSTEM,messages,700);lastDiagResult=raw;
+    // Extract severity from JSON, pass full raw body to showResult
+    var diagSev="MEDIUM";
+    try{
+      var _b=raw.trim();
+      var _fi=_b.indexOf("{"),_la=_b.lastIndexOf("}");
+      if(_fi!==-1&&_la>_fi){var _p=JSON.parse(_b.substring(_fi,_la+1));if(_p.severity&&["CRITICAL","HIGH","MEDIUM","LOW"].includes(_p.severity))diagSev=_p.severity;}
+    }catch(_e){}
+    showResult(diagSev,raw,isPro);
   }catch(e){const msg = e.message || "Unknown error";
     if(msg.includes("timed out")) { alert("⏱️ Request timed out — the server is busy. Please try again."); }
     else if(msg.includes("API key") || msg.includes("x-api-key")) { alert("🔑 API key issue — check your ANTHROPIC_API_KEY in Railway Variables."); }
@@ -1613,189 +1618,182 @@ async function runDiagnostic(){
 }
 
 function buildDiagPrompt(isPro,sysType,sysAge,brand,syms,desc,aud,hasVisual,isImg){
-  const vis = hasVisual ? `\nVISUAL: ${isImg?"Photo":"Video frame"} provided. Analyze carefully for visible damage, oil stains, ice, corrosion, burn marks, or anything abnormal.` : "";
-  const modelNum = (document.getElementById("modelNumber")?.value||"").trim();
-  const serialNum = (document.getElementById("serialNumber")?.value||"").trim();
-  const modelLine = modelNum||serialNum ? `\nModel: ${modelNum||"not provided"} | Serial: ${serialNum||"not provided"}` : "";
+  const vis=hasVisual?`\nVISUAL: ${isImg?"Photo":"Video"} provided.`:"";
+  const modelNum=(document.getElementById("modelNumber")?.value||"").trim();
+  const serialNum=(document.getElementById("serialNumber")?.value||"").trim();
+  const modelLine=modelNum||serialNum?`\nModel: ${modelNum||"?"} | Serial: ${serialNum||"?"}` :"";
 
-  const sharedKnowledge = `
-REFRIGERANT PRESSURES (R-410A normal at 95°F outdoor): Suction 115-145 psig, Discharge 350-420 psig, Superheat(fixed orifice) 8-12°F, Subcooling(TXV) 10-15°F
-R-22 normal: Suction 60-85 psig, Discharge 225-275 psig
-PRESSURE DIAGNOSIS: Low suction+low discharge+high superheat=undercharged/leak. High suction+high discharge=overcharged or non-condensables. Normal suction+high discharge=dirty condenser or fan fail. Low suction+high discharge=restriction.
-CAPACITOR: Test MFD within ±6% of rating. Hum=cap fail. CONTACTOR: Check for pitting/burning/insects. Silence=contactor fail. COMPRESSOR WINDINGS: C+R=S reading. OL=open/failed.
-TXV: Verify full liquid (good subcooling) before condemning. High superheat+low suction+good subcooling=TXV closed/failed.
-R-22 phased out 2020. R-410A phase-down started Jan 2025. New systems use R-454B or R-32.
-MODEL NUMBER TONNAGE: Find 2-digit number 18-60 divisible by 6 or 12. Divide by 12=tons. (18=1.5T,24=2T,30=2.5T,36=3T,42=3.5T,48=4T,60=5T)`;
-
-  if(isPro) return `CONTRACTOR DIAGNOSTIC REQUEST
+  if(isPro) return `HVAC CONTRACTOR DIAGNOSTIC
 System: ${sysType||"Unknown"} | Brand: ${brand||"Unknown"} | Age: ${sysAge||"Unknown"}${modelLine}
-Fault Indicators: ${syms}
-Tech Notes: ${desc||"None"}${aud}${vis}
-${sharedKnowledge}
+Symptoms: ${syms}
+Notes: ${desc||"None"}${aud}${vis}
 
-You are a master HVAC technician. Give a specific, actionable field diagnosis. Use the technical knowledge above to interpret any readings provided.
+Return ONLY compact JSON (no markdown):
+{"severity":"CRITICAL|HIGH|MEDIUM|LOW","confidence":"XX%","urgency":"Today|This week|Can wait","summary":"One sentence what is wrong","estimatedCost":"$X-$X","sections":[{"label":"Most Likely Cause","icon":"🔍","body":"specific cause with technical reasoning"},{"label":"Step-by-Step Procedure","icon":"🔧","steps":["Step 1","Step 2","Step 3","Step 4"]},{"label":"Parts Needed","icon":"🔩","body":"part names, specs, cost"},{"label":"Safety","icon":"⚠️","body":"hazards or None"},{"label":"Replace or Repair?","icon":"💡","body":"recommendation"}]}`;
 
-Return ONLY valid JSON (no markdown fences):
-{
-  "severity": "CRITICAL|HIGH|MEDIUM|LOW",
-  "confidence": "XX%",
-  "urgency": "Today|This week|Can wait",
-  "summary": "One sentence: what is wrong and what to do",
-  "estimatedCost": "$X–$X labor+parts",
-  "sections": [
-    {"label":"Most Likely Cause","icon":"🔍","body":"Specific root cause with technical reasoning"},
-    {"label":"Other Possibilities","icon":"📊","body":"2-3 alternatives with % likelihood"},
-    {"label":"Step-by-Step Procedure","icon":"🔧","steps":["Specific step 1","Step 2","Step 3","Step 4"]},
-    {"label":"Readings to Take","icon":"📏","body":"Specific measurements that would confirm or rule out the diagnosis"},
-    {"label":"Parts Needed","icon":"🔩","body":"Part names, specs, estimated cost. Include part numbers if model known."},
-    {"label":"Safety Hazards","icon":"⚠️","body":"Specific hazards for this job. If none, say None."},
-    {"label":"Replace or Repair?","icon":"💡","body":"Honest recommendation based on age, failure mode, and cost"}
-  ]
-}`;
-
-  return `HOMEOWNER DIAGNOSTIC REQUEST
+  return `HVAC HOMEOWNER DIAGNOSTIC
 System: ${sysType||"Unknown"} | Age: ${sysAge||"Unknown"}${modelLine}
 Symptoms: ${syms}
 Description: ${desc||"None"}${aud}${vis}
 
-You are a trusted HVAC expert explaining a problem to a homeowner. Use plain English — no jargon. Be honest and helpful.
-
-Return ONLY valid JSON (no markdown fences):
-{
-  "severity": "CRITICAL|HIGH|MEDIUM|LOW",
-  "urgency": "Today|This week|Can wait",
-  "urgencyColor": "#c62828|#e65100|#1565c0|#2e7d32",
-  "summary": "One simple sentence a homeowner can understand",
-  "estimatedCost": "$X–$X",
-  "sections": [
-    {"label":"What Is Wrong","icon":"💡","body":"Plain English explanation. Imagine explaining to a neighbor."},
-    {"label":"Is It Dangerous?","icon":"⚠️","body":"Is it safe to stay home? Any health risks? Be direct."},
-    {"label":"How Urgent Is This","icon":"🕐","body":"Can it wait or does it need to be fixed today? Why?"},
-    {"label":"What You Can Check","icon":"✅","steps":["Simple safe check homeowner can do","Another safe check"]},
-    {"label":"What a Tech Will Do","icon":"🛠️","body":"What the technician will diagnose and fix in plain terms"},
-    {"label":"What It Will Cost","icon":"💰","body":"Honest repair cost range and replacement cost so they can make an informed decision"}
-  ]
-}`;
+Return ONLY compact JSON (no markdown):
+{"severity":"CRITICAL|HIGH|MEDIUM|LOW","urgency":"Today|This week|Can wait","urgencyColor":"#c62828|#e65100|#1565c0|#2e7d32","summary":"One plain sentence what is wrong","estimatedCost":"$X-$X","sections":[{"label":"What Is Wrong","icon":"💡","body":"plain English, no jargon"},{"label":"Is It Dangerous?","icon":"⚠️","body":"direct safety answer"},{"label":"How Urgent","icon":"🕐","body":"can it wait or fix today"},{"label":"What You Can Check","icon":"✅","steps":["simple check 1","simple check 2"]},{"label":"What It Will Cost","icon":"💰","body":"repair range vs replacement"}]}`;
 }
 
-function showResult(sev,body,isPro){
-  const SEV={
-    CRITICAL:{color:"#c62828",bg:"#ffebee",label:"🚨 CRITICAL — Act Now",border:"#c62828"},
-    HIGH:    {color:"#e65100",bg:"#fff3e0",label:"⚠️ HIGH PRIORITY",border:"#e65100"},
-    MEDIUM:  {color:"#1565c0",bg:"#e3f2fd",label:"📋 MEDIUM PRIORITY",border:"#1565c0"},
-    LOW:     {color:"#2e7d32",bg:"#e8f5e9",label:"✅ LOW PRIORITY",border:"#2e7d32"},
+function parseJSON(raw){
+  if(!raw) return null;
+  // Remove ALL backtick code fences including ```json
+  var s = raw.replace(/```[a-z]*/gi, '').replace(/```/g, '').trim();
+  // Find outermost { }
+  var a = s.indexOf('{');
+  var b = s.lastIndexOf('}');
+  if(a === -1 || b === -1 || b <= a) return null;
+  try { return JSON.parse(s.substring(a, b+1)); }
+  catch(e) { return null; }
+}
+
+function showResult(sev, body, isPro){
+  var COLORS = {
+    CRITICAL: {bg:"#ffebee", text:"#c62828", border:"#c62828", label:"🚨 CRITICAL — Act Now"},
+    HIGH:     {bg:"#fff3e0", text:"#e65100", border:"#e65100", label:"⚠️ HIGH PRIORITY"},
+    MEDIUM:   {bg:"#e3f2fd", text:"#1565c0", border:"#1565c0", label:"📋 MEDIUM PRIORITY"},
+    LOW:      {bg:"#e8f5e9", text:"#2e7d32", border:"#2e7d32", label:"✅ LOW PRIORITY"},
   };
-  const s = SEV[sev] || SEV.MEDIUM;
+  var c = COLORS[sev] || COLORS.MEDIUM;
 
-  // Parse JSON — strip fences first, then find the object
-  let data = null;
-  try {
-    // Remove ```json ... ``` fences
-    let b = body.trim();
-    if(b.indexOf("```") !== -1) {
-      b = b.replace(/```json/gi,"").replace(/```/g,"").trim();
-    }
-    // Find first { and last }
-    const first = b.indexOf("{");
-    const last  = b.lastIndexOf("}");
-    if(first !== -1 && last !== -1 && last > first) {
-      data = JSON.parse(b.substring(first, last+1));
-    }
-  } catch(err) {
-    data = null;
-  }
+  // Badge hidden - severity shown inside summary card only
+  var badge = document.getElementById("sevBadge");
+  if(badge) { badge.style.display="none"; badge.textContent=""; }
+  document.getElementById("resultCard").style.borderLeft = "4px solid "+c.border;
 
-  // Severity badge
-  const badge = document.getElementById("sevBadge");
-  badge.style.cssText = "background:"+s.bg+";color:"+s.color+";padding:5px 14px;border-radius:3px;font-size:11px;font-weight:700;font-family:'Roboto Condensed',sans-serif;letter-spacing:.8px;border:1px solid "+s.border;
-  badge.textContent = s.label;
-  document.getElementById("resultCard").style.borderLeft = "4px solid "+s.color;
+  // Parse
+  var data = parseJSON(body);
 
-  if(data && data.sections && data.sections.length > 0) {
-    renderDiagCards(data, s);
+  if(data && data.sections && data.sections.length){
+    renderDiagCards(data, c);
   } else {
-    // Fallback: show plain clean text, strip any JSON artifacts
-    let clean = body
+    // Clean fallback - strip all JSON artifacts and show plain text
+    var txt = body
       .replace(/```json/gi,"").replace(/```/g,"")
-      .replace(/\{|\}/g,"").replace(/\"[a-z]+\":/gi,"")
-      .replace(/\\n/g,"\n").trim();
+      .replace(/"severity"\s*:\s*"[^"]*",?/g,"")
+      .replace(/"confidence"\s*:\s*"[^"]*",?/g,"")
+      .replace(/"urgency"\s*:\s*"[^"]*",?/g,"")
+      .replace(/"urgencyColor"\s*:\s*"[^"]*",?/g,"")
+      .replace(/"estimatedCost"\s*:\s*"[^"]*",?/g,"")
+      .replace(/"sections"\s*:\s*\[/g,"")
+      .replace(/"label"\s*:\s*"([^"]*)"/g,"<br/><b>$1</b>")
+      .replace(/"icon"\s*:\s*"[^"]*",?/g,"")
+      .replace(/"body"\s*:\s*"/g,"")
+      .replace(/"steps"\s*:\s*\[/g,"")
+      .replace(/[\{\}\[\]]/g,"")
+      .trim();
     document.getElementById("resultText").innerHTML =
-      "<div style='font-size:15px;line-height:1.8;color:#333;'>"+
-      clean.replace(/\n/g,"<br/>")+"</div>";
+      "<div style='font-size:15px;line-height:1.8;color:#333;'>"+txt+"</div>";
   }
 
-  document.getElementById("homeownerCTA").style.display   = isPro?"none":"block";
+  document.getElementById("homeownerCTA").style.display    = isPro?"none":"block";
   document.getElementById("contractorNudge").style.display = isPro?"block":"none";
   document.getElementById("eduPanel").style.display        = isPro?"block":"none";
   document.getElementById("resultPanel").style.display     = "block";
   document.getElementById("resultPanel").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
-function renderDiagCards(data, s) {
-  const el = document.getElementById("resultText");
-  let html = "";
+function renderDiagCards(data, c){
+  var el = document.getElementById("resultText");
+  var html = "";
 
-  // ── SUMMARY BANNER ──
-  html += "<div style='background:"+s.bg+";border-radius:8px;padding:16px;margin-bottom:10px;border:1.5px solid "+s.border+";'>";
-  if(data.summary) {
-    html += "<p style='font-size:17px;font-weight:700;color:#1a1a1a;line-height:1.55;margin-bottom:"+(data.confidence||data.estimatedCost?"12px":"0")+"'>"+data.summary+"</p>";
+  // ── TOP SUMMARY STRIP ──
+  html += "<div style='background:"+c.bg+";border-left:4px solid "+c.border+";border-radius:6px;padding:14px 16px;margin-bottom:16px;'>";
+  if(data.summary){
+    html += "<p style='font-size:16px;font-weight:700;color:#1a1a1a;line-height:1.55;margin-bottom:"+(data.estimatedCost||data.urgency?"10px":"0")+"'>"+data.summary+"</p>";
   }
-
-  // Stat chips
-  const stats = [];
-  if(data.confidence)    stats.push({val:data.confidence,    lbl:"Confidence", color:s.color});
-  if(data.urgency)       stats.push({val:data.urgency,       lbl:"Urgency",    color:data.urgencyColor||s.color});
-  if(data.estimatedCost) stats.push({val:data.estimatedCost, lbl:"Est. Cost",  color:"#2e7d32"});
-
-  if(stats.length) {
-    html += "<div style='display:flex;gap:6px;flex-wrap:wrap;'>";
-    stats.forEach(function(st){
-      html += "<div style='flex:1;min-width:90px;background:rgba(255,255,255,.8);border-radius:6px;padding:10px;text-align:center;border:1px solid rgba(0,0,0,.06);'>"
-        +"<div style='font-family:Roboto Condensed,sans-serif;font-size:16px;font-weight:900;color:"+st.color+";display:block;line-height:1.1;'>"+st.val+"</div>"
-        +"<div style='font-size:10px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;'>"+st.lbl+"</div>"
-        +"</div>";
-    });
-    html += "</div>";
+  // inline stats
+  var stats=[];
+  if(data.urgency)       stats.push(data.urgency);
+  if(data.estimatedCost) stats.push("Est. cost: "+data.estimatedCost);
+  if(data.confidence)    stats.push("Confidence: "+data.confidence);
+  if(stats.length){
+    html += "<p style='font-size:13px;color:"+c.text+";font-weight:600;'>"+stats.join("  ·  ")+"</p>";
   }
   html += "</div>";
 
-  // ── SECTIONS ──
-  (data.sections||[]).forEach(function(sec) {
-    if(!sec) return;
-    const hasBody  = sec.body  && sec.body  !== "null" && sec.body  !== "None" && sec.body.trim().length > 2;
-    const hasSteps = sec.steps && sec.steps.length > 0;
-    if(!hasBody && !hasSteps) return;
+  // ── STEP-BY-STEP SECTIONS (like the screenshot) ──
+  var sections = data.sections||[];
+  for(var s=0;s<sections.length;s++){
+    var sec=sections[s];
+    if(!sec) continue;
+    var hasBody  = sec.body  && typeof sec.body==="string"  && sec.body.trim().length>2 && sec.body!=="null";
+    var hasSteps = sec.steps && Array.isArray(sec.steps) && sec.steps.length>0;
+    if(!hasBody && !hasSteps) continue;
 
-    html += "<div style='background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:16px;margin-bottom:8px;'>";
-
-    // Section header
-    html += "<div style='display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;'>"
-      +"<span style='font-size:20px;'>"+(sec.icon||"📌")+"</span>"
-      +"<span style='font-family:Roboto Condensed,sans-serif;font-size:14px;font-weight:700;color:#1a1a1a;text-transform:uppercase;letter-spacing:.5px;'>"+(sec.label||"")+"</span>"
+    // Section header — bold, like screenshot
+    html += "<div style='margin-bottom:16px;'>";
+    html += "<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px;'>"
+      +"<span style='font-size:20px;line-height:1;'>"+(sec.icon||"")+"</span>"
+      +"<span style='font-family:Roboto Condensed,sans-serif;font-size:16px;font-weight:700;color:#1a1a1a;letter-spacing:.2px;'>Step "+(s+1)+": "+sec.label+"</span>"
       +"</div>";
 
-    // Body text
-    if(hasBody) {
-      const bodyFmt = sec.body
-        .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
-        .replace(/(WARNING|DANGER|CAUTION):?/gi,"<span style='color:#c62828;font-weight:700;'>⚠️ $1:</span>");
-      html += "<p style='font-size:15px;line-height:1.75;color:#333;'>"+bodyFmt+"</p>";
+    // Body text with bullet formatting
+    if(hasBody){
+      var lines = sec.body.indexOf("\n") !== -1 ? sec.body.split("\n") : [sec.body];
+      if(lines.length > 1){
+        html += "<ul style='margin:0 0 0 16px;padding:0;list-style:disc;'>";
+        lines.forEach(function(line){
+          line = line.trim().replace(/\.$/, "");
+          if(!line) return;
+          var fmt = line.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
+            .replace(/(WARNING|DANGER|CAUTION)\s*:?/gi,"<span style='color:#c62828;font-weight:700;'>⚠️ $1:</span>");
+          html += "<li style='font-size:15px;line-height:1.75;color:#333;margin-bottom:4px;'>"+fmt+"</li>";
+        });
+        html += "</ul>";
+      } else {
+        var fmt = sec.body.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
+          .replace(/(WARNING|DANGER|CAUTION)\s*:?/gi,"<span style='color:#c62828;font-weight:700;'>⚠️ $1:</span>");
+        html += "<p style='font-size:15px;line-height:1.75;color:#333;padding-left:4px;'>"+fmt+"</p>";
+      }
     }
 
-    // Numbered steps
-    if(hasSteps) {
-      sec.steps.forEach(function(step, i) {
-        if(!step || step === "null") return;
-        const stepFmt = step.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>");
-        html += "<div style='display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-top:1px solid #f5f5f5;'>"
-          +"<div style='width:26px;height:26px;background:#1a1a1a;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:2px;'>"+(i+1)+"</div>"
-          +"<div style='font-size:15px;line-height:1.7;color:#333;flex:1;'>"+stepFmt+"</div>"
-          +"</div>";
-      });
+    // Numbered steps — exactly like the screenshot
+    if(hasSteps){
+      var steps=sec.steps;
+      for(var n=0;n<steps.length;n++){
+        if(!steps[n]||steps[n]==="null") continue;
+        var stepFmt=String(steps[n]).replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>");
+        // Check if step has sub-bullets (colon followed by list)
+        var colonIdx = stepFmt.indexOf(":");
+        if(colonIdx !== -1 && colonIdx < stepFmt.length - 2){
+          var head = stepFmt.substring(0, colonIdx);
+          var rest = stepFmt.substring(colonIdx+1).trim();
+          // If rest has commas or semicolons, make sub-bullets
+          var subs = rest.split(/,\s*(?=[A-Z])|;\s*/);
+          html += "<div style='margin-bottom:10px;'>"
+            +"<div style='display:flex;gap:10px;align-items:flex-start;'>"
+            +"<div style='width:24px;height:24px;min-width:24px;background:#1a1a1a;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:1px;'>"+(n+1)+"</div>"
+            +"<span style='font-size:15px;line-height:1.65;color:#1a1a1a;font-weight:600;'>"+head+"</span>"
+            +"</div>";
+          if(subs.length>1){
+            html += "<ul style='margin:6px 0 0 36px;padding:0;list-style:disc;'>";
+            subs.forEach(function(sub){ sub=sub.trim(); if(sub) html+="<li style='font-size:14px;color:#444;line-height:1.65;margin-bottom:3px;'>"+sub+"</li>"; });
+            html += "</ul>";
+          } else {
+            html += "<p style='font-size:15px;color:#444;line-height:1.65;margin:4px 0 0 36px;'>"+rest+"</p>";
+          }
+          html += "</div>";
+        } else {
+          html += "<div style='display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;'>"
+            +"<div style='width:24px;height:24px;min-width:24px;background:#1a1a1a;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:1px;'>"+(n+1)+"</div>"
+            +"<div style='font-size:15px;line-height:1.7;color:#333;flex:1;'>"+stepFmt+"</div>"
+            +"</div>";
+        }
+      }
     }
-
     html += "</div>";
-  });
+
+    // Divider between sections (except last)
+    if(s < sections.length-1){
+      html += "<div style='height:1px;background:#f0f0f0;margin-bottom:16px;'></div>";
+    }
+  }
 
   el.innerHTML = html;
 }

@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 
+<!-- HVAC-DIAGNOSE-PRO v3.1 BUILD 20260501 -->
+
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -356,6 +358,38 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
 #chatInput:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(0,194,178,.1); }
 .sub-tab.st-chat { color:var(--teal); background:rgba(0,194,178,.15); border-color:rgba(0,194,178,.25); }
 
+/* ── LANGUAGE TOGGLE ── */
+.lang-toggle {
+  position: relative;
+}
+.lang-btn {
+  display:flex; align-items:center; gap:5px;
+  background:var(--gray-100); border:1.5px solid var(--gray-200);
+  border-radius:8px; padding:5px 10px; cursor:pointer;
+  font-family:var(--font); font-size:13px; font-weight:700;
+  color:var(--gray-600); transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.lang-btn:hover { background:var(--gray-200); }
+.lang-dropdown {
+  position:absolute; top:calc(100% + 6px); right:0;
+  background:var(--white); border:1.5px solid var(--gray-200);
+  border-radius:10px; box-shadow:var(--shadow-lg);
+  overflow:hidden; z-index:200; min-width:160px;
+  display:none;
+}
+.lang-dropdown.open { display:block; animation:fadeUp .2s ease; }
+.lang-option {
+  display:flex; align-items:center; gap:10px;
+  padding:12px 16px; cursor:pointer;
+  font-family:var(--font); font-size:14px; font-weight:500;
+  color:var(--gray-600); transition:background .12s; border:none;
+  background:transparent; width:100%; text-align:left;
+}
+.lang-option:hover { background:var(--gray-50); color:var(--black); }
+.lang-option.active { color:var(--teal); font-weight:700; background:var(--teal-lt); }
+.lang-flag { font-size:18px; }
+
 @media(max-width:560px){
   .grid2 { grid-template-columns:1fr; }
   .symptoms-grid { grid-template-columns:1fr 1fr; }
@@ -378,9 +412,26 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
         <div class="nav-logo-sub">Powered by AI</div>
       </div>
     </div>
-    <div class="nav-status">
-      <div class="status-dot" id="statusDot"></div>
-      <span class="status-text" id="statusText">Checking…</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="lang-toggle" id="langToggle">
+        <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn">
+          <span id="langFlag">🇺🇸</span>
+          <span id="langCode">EN</span>
+          <span style="font-size:10px;opacity:.6;">▾</span>
+        </button>
+        <div class="lang-dropdown" id="langDropdown">
+          <button class="lang-option active" onclick="setLang('en')" id="langOpt-en"><span class="lang-flag">🇺🇸</span>English</button>
+          <button class="lang-option" onclick="setLang('es')" id="langOpt-es"><span class="lang-flag">🇲🇽</span>Español</button>
+          <button class="lang-option" onclick="setLang('zh')" id="langOpt-zh"><span class="lang-flag">🇨🇳</span>中文</button>
+          <button class="lang-option" onclick="setLang('vi')" id="langOpt-vi"><span class="lang-flag">🇻🇳</span>Tiếng Việt</button>
+          <button class="lang-option" onclick="setLang('fr')" id="langOpt-fr"><span class="lang-flag">🇫🇷</span>Français</button>
+          <button class="lang-option" onclick="setLang('pt')" id="langOpt-pt"><span class="lang-flag">🇧🇷</span>Português</button>
+        </div>
+      </div>
+      <div class="nav-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">Checking…</span>
+      </div>
     </div>
   </div>
 </nav>
@@ -1106,11 +1157,11 @@ document.addEventListener("DOMContentLoaded", () => {
 function checkHealth(retry=0) {
   fetch("/api/health").then(r=>r.json()).then(d=>{
     const dot=document.getElementById("statusDot"),txt=document.getElementById("statusText");
-    if(d.aiReady){dot.className="status-dot";txt.textContent="AI Ready";}
+    if(d.aiReady){dot.className="status-dot";var t=TRANSLATIONS[currentLang];txt.textContent=t?t.aiReady:"AI Ready";}
     else{dot.className="status-dot red";txt.textContent="No API Key";}
   }).catch(()=>{
     document.getElementById("statusDot").className="status-dot red";
-    document.getElementById("statusText").textContent="Offline";
+    var t2=TRANSLATIONS[currentLang];document.getElementById("statusText").textContent=t2?t2.offline:"Offline";
     // Retry up to 3 times with backoff
     if(retry < 3) setTimeout(()=>checkHealth(retry+1), 3000*(retry+1));
   });
@@ -2218,6 +2269,257 @@ function clearChat() {
       <div class="msg-time">${getTimeStr()}</div>
     </div>`;
 }
+
+// ── LANGUAGE SYSTEM ──
+var currentLang = 'en';
+
+var TRANSLATIONS = {
+  en: {
+    heroTitle:      "What's Wrong With Your HVAC?",
+    heroTitlePro:   "Professional HVAC Diagnostics",
+    heroSub:        "Upload a photo or video, describe what's happening, and we'll tell you exactly what's wrong.",
+    heroSubPro:     "Upload a video, record your observations, and get a complete technical diagnostic report instantly.",
+    homeTab:        "Homeowner",
+    proTab:         "Contractor",
+    homeDesc:       "Easy-to-understand explanations, safety guidance, and connections to certified local technicians.",
+    proDesc:        "Full technical reports with measurements, part numbers, repair procedures, and replace-vs-repair analysis.",
+    uploadLabel:    "Show Us Your System",
+    uploadSub:      "A short video or photo helps us see exactly what's happening",
+    voiceLabel:     "Voice Description",
+    voiceSub:       "Describe the problem or hold your phone near the system so we can hear the sounds",
+    symptomsLabel:  "What is your system doing?",
+    symptomsSub:    "Select everything that applies",
+    descLabel:      "Additional Details",
+    descPlaceholder:"e.g. Suction 58 PSI, head 285 PSI at 85°F. Compressor draws 18A then trips breaker…",
+    runBtn:         "⚡ Run Diagnostic",
+    newBtn:         "🔄 New",
+    reportTitle:    "Your Diagnostic Report",
+    aiReady:        "AI Ready",
+    offline:        "Offline",
+    checking:       "Checking…",
+  },
+  es: {
+    heroTitle:      "¿Qué le pasa a tu HVAC?",
+    heroTitlePro:   "Diagnóstico Profesional de HVAC",
+    heroSub:        "Sube una foto o video, describe lo que está pasando y te diremos exactamente qué está mal.",
+    heroSubPro:     "Sube un video, registra tus observaciones y obtén un informe técnico completo al instante.",
+    homeTab:        "Propietario",
+    proTab:         "Contratista",
+    homeDesc:       "Explicaciones fáciles de entender, orientación de seguridad y conexiones con técnicos locales certificados.",
+    proDesc:        "Informes técnicos completos con medidas, números de piezas, procedimientos de reparación y análisis de reemplazar vs reparar.",
+    uploadLabel:    "Muéstranos tu Sistema",
+    uploadSub:      "Un video o foto corta nos ayuda a ver exactamente qué está pasando",
+    voiceLabel:     "Descripción de Voz",
+    voiceSub:       "Describe el problema o acerca el teléfono al sistema para que podamos escuchar los sonidos",
+    symptomsLabel:  "¿Qué está haciendo tu sistema?",
+    symptomsSub:    "Selecciona todo lo que aplica",
+    descLabel:      "Detalles Adicionales",
+    descPlaceholder:"ej. Succión 58 PSI, cabezal 285 PSI a 85°F...",
+    runBtn:         "⚡ Ejecutar Diagnóstico",
+    newBtn:         "🔄 Nuevo",
+    reportTitle:    "Tu Informe de Diagnóstico",
+    aiReady:        "Listo",
+    offline:        "Sin Conexión",
+    checking:       "Verificando…",
+  },
+  zh: {
+    heroTitle:      "您的空调出了什么问题？",
+    heroTitlePro:   "专业暖通空调诊断",
+    heroSub:        "上传照片或视频，描述问题所在，我们将告诉您确切的故障原因。",
+    heroSubPro:     "上传视频，记录您的观察，立即获取完整的技术诊断报告。",
+    homeTab:        "房主",
+    proTab:         "承包商",
+    homeDesc:       "易于理解的解释、安全指导和与认证本地技术人员的联系。",
+    proDesc:        "包含测量值、零件编号、维修程序和更换与修复分析的完整技术报告。",
+    uploadLabel:    "展示您的系统",
+    uploadSub:      "短视频或照片有助于我们了解具体情况",
+    voiceLabel:     "语音描述",
+    voiceSub:       "描述问题或将手机靠近系统以便我们听到声音",
+    symptomsLabel:  "您的系统出现了什么情况？",
+    symptomsSub:    "选择所有适用的选项",
+    descLabel:      "其他详情",
+    descPlaceholder:"例如：吸气58 PSI，排气285 PSI，85°F...",
+    runBtn:         "⚡ 运行诊断",
+    newBtn:         "🔄 新建",
+    reportTitle:    "您的诊断报告",
+    aiReady:        "就绪",
+    offline:        "离线",
+    checking:       "检查中…",
+  },
+  vi: {
+    heroTitle:      "Máy điều hòa của bạn gặp vấn đề gì?",
+    heroTitlePro:   "Chẩn Đoán HVAC Chuyên Nghiệp",
+    heroSub:        "Tải ảnh hoặc video lên, mô tả sự cố và chúng tôi sẽ cho bạn biết chính xác vấn đề.",
+    heroSubPro:     "Tải video lên, ghi lại quan sát của bạn và nhận báo cáo kỹ thuật đầy đủ ngay lập tức.",
+    homeTab:        "Chủ Nhà",
+    proTab:         "Nhà Thầu",
+    homeDesc:       "Giải thích dễ hiểu, hướng dẫn an toàn và kết nối với kỹ thuật viên địa phương được chứng nhận.",
+    proDesc:        "Báo cáo kỹ thuật đầy đủ với số liệu đo, số phụ tùng, quy trình sửa chữa và phân tích thay thế hay sửa chữa.",
+    uploadLabel:    "Cho Chúng Tôi Xem Hệ Thống",
+    uploadSub:      "Video hoặc ảnh ngắn giúp chúng tôi thấy chính xác điều gì đang xảy ra",
+    voiceLabel:     "Mô Tả Bằng Giọng Nói",
+    voiceSub:       "Mô tả vấn đề hoặc đặt điện thoại gần hệ thống để chúng tôi nghe âm thanh",
+    symptomsLabel:  "Hệ thống của bạn đang làm gì?",
+    symptomsSub:    "Chọn tất cả những gì áp dụng",
+    descLabel:      "Chi Tiết Bổ Sung",
+    descPlaceholder:"vd. Hút 58 PSI, đầu 285 PSI ở 85°F...",
+    runBtn:         "⚡ Chạy Chẩn Đoán",
+    newBtn:         "🔄 Mới",
+    reportTitle:    "Báo Cáo Chẩn Đoán",
+    aiReady:        "Sẵn Sàng",
+    offline:        "Ngoại Tuyến",
+    checking:       "Đang kiểm tra…",
+  },
+  fr: {
+    heroTitle:      "Qu'est-ce qui ne va pas avec votre climatisation ?",
+    heroTitlePro:   "Diagnostic HVAC Professionnel",
+    heroSub:        "Téléchargez une photo ou vidéo, décrivez le problème et nous vous dirons exactement ce qui ne va pas.",
+    heroSubPro:     "Téléchargez une vidéo, enregistrez vos observations et obtenez un rapport technique complet instantanément.",
+    homeTab:        "Propriétaire",
+    proTab:         "Entrepreneur",
+    homeDesc:       "Explications faciles à comprendre, conseils de sécurité et mise en relation avec des techniciens locaux certifiés.",
+    proDesc:        "Rapports techniques complets avec mesures, numéros de pièces, procédures de réparation et analyse remplacement vs réparation.",
+    uploadLabel:    "Montrez-nous votre système",
+    uploadSub:      "Une courte vidéo ou photo nous aide à voir exactement ce qui se passe",
+    voiceLabel:     "Description Vocale",
+    voiceSub:       "Décrivez le problème ou tenez votre téléphone près du système pour que nous puissions entendre les sons",
+    symptomsLabel:  "Que fait votre système ?",
+    symptomsSub:    "Sélectionnez tout ce qui s'applique",
+    descLabel:      "Détails Supplémentaires",
+    descPlaceholder:"ex. Aspiration 58 PSI, refoulement 285 PSI à 85°F...",
+    runBtn:         "⚡ Lancer le Diagnostic",
+    newBtn:         "🔄 Nouveau",
+    reportTitle:    "Votre Rapport de Diagnostic",
+    aiReady:        "Prêt",
+    offline:        "Hors Ligne",
+    checking:       "Vérification…",
+  },
+  pt: {
+    heroTitle:      "O que está errado com o seu ar-condicionado?",
+    heroTitlePro:   "Diagnóstico Profissional de HVAC",
+    heroSub:        "Envie uma foto ou vídeo, descreva o que está acontecendo e diremos exatamente o que está errado.",
+    heroSubPro:     "Envie um vídeo, registre suas observações e receba um relatório técnico completo instantaneamente.",
+    homeTab:        "Proprietário",
+    proTab:         "Técnico",
+    homeDesc:       "Explicações fáceis de entender, orientação de segurança e conexões com técnicos locais certificados.",
+    proDesc:        "Relatórios técnicos completos com medições, números de peças, procedimentos de reparo e análise substituir vs reparar.",
+    uploadLabel:    "Mostre-nos o seu Sistema",
+    uploadSub:      "Um vídeo ou foto curta nos ajuda a ver exatamente o que está acontecendo",
+    voiceLabel:     "Descrição por Voz",
+    voiceSub:       "Descreva o problema ou segure o telefone perto do sistema para que possamos ouvir os sons",
+    symptomsLabel:  "O que o seu sistema está fazendo?",
+    symptomsSub:    "Selecione tudo que se aplica",
+    descLabel:      "Detalhes Adicionais",
+    descPlaceholder:"ex. Sucção 58 PSI, pressão 285 PSI a 85°F...",
+    runBtn:         "⚡ Executar Diagnóstico",
+    newBtn:         "🔄 Novo",
+    reportTitle:    "Seu Relatório de Diagnóstico",
+    aiReady:        "Pronto",
+    offline:        "Sem Conexão",
+    checking:       "Verificando…",
+  }
+};
+
+var LANG_META = {
+  en: {flag:'🇺🇸', code:'EN'},
+  es: {flag:'🇲🇽', code:'ES'},
+  zh: {flag:'🇨🇳', code:'ZH'},
+  vi: {flag:'🇻🇳', code:'VI'},
+  fr: {flag:'🇫🇷', code:'FR'},
+  pt: {flag:'🇧🇷', code:'PT'},
+};
+
+function toggleLangMenu(){
+  var dd = document.getElementById('langDropdown');
+  dd.classList.toggle('open');
+}
+
+// Close dropdown when tapping outside
+document.addEventListener('click', function(e){
+  var toggle = document.getElementById('langToggle');
+  if(toggle && !toggle.contains(e.target)){
+    var dd = document.getElementById('langDropdown');
+    if(dd) dd.classList.remove('open');
+  }
+});
+
+function setLang(lang){
+  currentLang = lang;
+  var t = TRANSLATIONS[lang];
+  var m = LANG_META[lang];
+  if(!t) return;
+
+  // Update nav button
+  document.getElementById('langFlag').textContent = m.flag;
+  document.getElementById('langCode').textContent = m.code;
+
+  // Mark active option
+  ['en','es','zh','vi','fr','pt'].forEach(function(l){
+    var el = document.getElementById('langOpt-'+l);
+    if(el) el.className = 'lang-option' + (l===lang?' active':'');
+  });
+
+  // Close dropdown
+  document.getElementById('langDropdown').classList.remove('open');
+
+  // Update UI text
+  var isPro = document.getElementById('tabPro').classList.contains('active-pro');
+
+  var heroTitle = document.getElementById('heroTitle');
+  if(heroTitle) heroTitle.textContent = isPro ? t.heroTitlePro : t.heroTitle;
+
+  var heroSub = document.getElementById('heroSub');
+  if(heroSub) heroSub.textContent = isPro ? t.heroSubPro : t.heroSub;
+
+  var tabHome = document.getElementById('tabHome');
+  if(tabHome) tabHome.innerHTML = '🏠 ' + t.homeTab;
+
+  var tabPro = document.getElementById('tabPro');
+  if(tabPro) tabPro.innerHTML = '🔧 ' + t.proTab + ' <span class="pro-badge">PRO</span>';
+
+  var modeDesc = document.getElementById('modeDesc');
+  if(modeDesc) modeDesc.textContent = isPro ? t.proDesc : t.homeDesc;
+
+  var uploadLabel = document.getElementById('uploadLabel');
+  if(uploadLabel) uploadLabel.textContent = t.uploadLabel;
+
+  var uploadSub = document.getElementById('uploadSub');
+  if(uploadSub) uploadSub.textContent = t.uploadSub;
+
+  var voiceSub = document.getElementById('voiceSub');
+  if(voiceSub) voiceSub.textContent = t.voiceSub;
+
+  var symptomsLabel = document.getElementById('symptomsLabel');
+  if(symptomsLabel) symptomsLabel.textContent = t.symptomsLabel;
+
+  var dropTitle = document.getElementById('dropTitle');
+  if(dropTitle && dropTitle.textContent.indexOf('📷') === -1) dropTitle.textContent = t.uploadLabel;
+
+  // Run button
+  var runBtn = document.getElementById('runBtn');
+  if(runBtn && !runBtn.disabled) runBtn.textContent = t.runBtn;
+
+  // Status text
+  var statusText = document.getElementById('statusText');
+  if(statusText){
+    var cur = statusText.textContent;
+    if(cur === 'AI Ready' || cur === TRANSLATIONS[currentLang === lang ? 'en' : currentLang]?.aiReady) {
+      statusText.textContent = t.aiReady;
+    } else if(cur === 'Offline' || cur === TRANSLATIONS[currentLang === lang ? 'en' : currentLang]?.offline){
+      statusText.textContent = t.offline;
+    }
+  }
+
+  // Report title
+  var reportTitle = document.querySelector('#resultPanel .sev-bar span, #resultPanel > div > span');
+  if(reportTitle) reportTitle.textContent = t.reportTitle;
+
+  // Prompt placeholder
+  var descEl = document.querySelector('#diagDesc, textarea[id*="desc"]');
+  if(descEl) descEl.placeholder = t.descPlaceholder;
+}
+
+
 </script>
 
 </body>

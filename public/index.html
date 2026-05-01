@@ -249,34 +249,50 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
 .chip-icon { font-size:22px; flex-shrink:0; }
 
 /* ── DROP ZONE ── */
+/* ── UPLOAD ZONE ── */
 .drop-zone {
-  border:none;
-  border-radius:8px;
-  padding:0;
-  cursor:pointer;
-  transition:all .15s;
-  background:#1a1a1a;
+  border-radius:10px;
   overflow:hidden;
   position:relative;
+  cursor:pointer;
+  transition:all .15s;
+  background:#fff;
+  border:2px dashed #d0d0d0;
 }
 .drop-zone-inner {
-  padding:32px 20px;
+  padding:0;
   text-align:center;
-  border:1.5px solid rgba(255,255,255,.1);
-  border-radius:8px;
   transition:all .15s;
 }
-.drop-zone:hover .drop-zone-inner, .drop-zone.drag .drop-zone-inner {
-  border-color:var(--teal);
-  background:rgba(0,181,181,.06);
+.drop-zone:hover, .drop-zone.drag {
+  border-color:#00b5b5;
+  background:#f0fafa;
 }
-.drop-zone.has-file .drop-zone-inner {
-  border-color:var(--green);
-  background:rgba(46,125,50,.08);
+.drop-zone.has-file {
+  border-style:solid;
+  border-color:#2e7d32;
+  background:#fff;
 }
-.drop-icon  { font-size:36px; margin-bottom:10px; display:block; }
-.drop-title { font-family:'Roboto Condensed',sans-serif; font-size:15px; font-weight:700; color:#fff; margin-bottom:5px; text-transform:uppercase; letter-spacing:.8px; }
-.drop-sub   { font-size:12px; color:rgba(255,255,255,.35); margin-bottom:16px; letter-spacing:.3px; }
+.drop-icon  { font-size:32px; margin-bottom:8px; display:block; }
+.drop-title { font-family:'Roboto Condensed',sans-serif; font-size:14px; font-weight:700; color:#1a1a1a; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px; }
+.drop-sub   { font-size:12px; color:#999; margin-bottom:14px; }
+
+/* Photo tips strip */
+.photo-tips {
+  display:flex; gap:0;
+  border-top:1px solid #f0f0f0;
+  margin-top:0;
+}
+.photo-tip {
+  flex:1; padding:10px 8px; text-align:center;
+  border-right:1px solid #f0f0f0;
+  font-size:11px; color:#777; line-height:1.4;
+}
+.photo-tip:last-child { border-right:none; }
+.photo-tip-icon { font-size:18px; display:block; margin-bottom:3px; }
+.photo-tip.good .photo-tip-icon { filter:none; }
+.photo-tip.bad  { background:#fff8f8; }
+.photo-tip.bad .photo-tip-icon { opacity:.7; }
 
 /* ── RECORDER ── */
 .recorder { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:14px; transition:all .2s; }
@@ -364,15 +380,15 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
 
 /* ── SCAN ZONE ── */
 .scan-zone {
-  border:2px dashed #80deea; border-radius:4px; overflow:hidden;
-  position:relative; min-height:150px;
+  border:2px dashed #d0d0d0; border-radius:10px; overflow:hidden;
+  position:relative; min-height:160px;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  cursor:pointer; background:var(--teal-lt); transition:all .15s;
+  background:#fff; transition:all .15s;
 }
-.scan-zone:hover { border-color:var(--teal); }
-.scan-zone.has-img { border-style:solid; min-height:0; }
-.scan-line { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--teal),transparent); animation:scanline 2s ease-in-out infinite alternate; pointer-events:none; z-index:2; }
-.scan-preview { width:100%; max-height:200px; object-fit:cover; display:block; }
+.scan-zone:hover { border-color:#00b5b5; background:#f0fafa; }
+.scan-zone.has-img { border-style:solid; border-color:#00b5b5; min-height:0; }
+.scan-line { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,#00b5b5,transparent); animation:scanline 2s ease-in-out infinite alternate; pointer-events:none; z-index:2; }
+.scan-preview { width:100%; max-height:260px; object-fit:contain; display:block; background:#f5f5f5; }
 
 /* ── DECODE GRID ── */
 .decode-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
@@ -512,25 +528,65 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
     <div class="card fu">
       <label class="field-label" id="uploadLabel">Show Us Your System</label>
       <p class="field-sub" id="uploadSub">A short video or photo helps us see exactly what's happening</p>
-      <div class="drop-zone" id="dropZone"
-           ondragover="event.preventDefault();this.classList.add('drag')"
-           ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)"
-           onclick="document.getElementById('fileInput').click()">
-        <input type="file" id="fileInput" accept="video/*,image/*" style="display:none" onchange="handleFileSelect(event)"/>
-        <div class="drop-zone-inner">
-          <span class="drop-icon" id="dropIcon">📷</span>
-          <div class="drop-title" id="dropTitle">Tap to Upload a Photo or Video</div>
-          <div class="drop-sub">MP4 · MOV · JPG · PNG · up to 50MB</div>
-          <div style="display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#fff;border-radius:4px;padding:9px 20px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;">
-            📁 Browse Files
-          </div>
-        </div>
-      </div>
-      <img id="imgPreview" class="media-preview" style="display:none"/>
-      <video id="videoPreview" class="media-preview" controls style="display:none"></video>
-    </div>
+      <input type="file" id="fileInput" accept="video/*,image/*" style="display:none" onchange="handleFileSelect(event)"/>
 
 ```
+  <div class="drop-zone" id="dropZone"
+       ondragover="event.preventDefault();this.classList.add('drag')"
+       ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)"
+       onclick="document.getElementById('fileInput').click()">
+    <div class="drop-zone-inner">
+      <!-- Upload prompt -->
+      <div id="dropPrompt" style="padding:28px 20px 20px;">
+        <div style="width:64px;height:64px;background:#f5f5f5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:2px solid #e0e0e0;">
+          <span id="dropIcon" style="font-size:28px;">📷</span>
+        </div>
+        <div id="dropTitle" style="font-family:'Roboto Condensed',sans-serif;font-size:16px;font-weight:700;color:#1a1a1a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Take or Upload a Photo</div>
+        <div style="font-size:12px;color:#999;margin-bottom:18px;">Photo · Video · JPG · PNG · up to 50MB</div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;" onclick="event.stopPropagation()">
+          <button onclick="document.getElementById('fileInputCam').click()" style="display:flex;align-items:center;gap:7px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:11px 18px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">
+            📸 Camera
+          </button>
+          <button onclick="document.getElementById('fileInput').click()" style="display:flex;align-items:center;gap:7px;background:#fff;color:#1a1a1a;border:1.5px solid #d0d0d0;border-radius:6px;padding:11px 18px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">
+            🖼️ Library
+          </button>
+        </div>
+      </div>
+
+      <!-- Photo tips -->
+      <div class="photo-tips" id="dropTips">
+        <div class="photo-tip good">
+          <span class="photo-tip-icon">✅</span>
+          <strong>Close up</strong><br/>Fill the frame
+        </div>
+        <div class="photo-tip good">
+          <span class="photo-tip-icon">💡</span>
+          <strong>Good light</strong><br/>No shadows
+        </div>
+        <div class="photo-tip good">
+          <span class="photo-tip-icon">🔍</span>
+          <strong>In focus</strong><br/>Text readable
+        </div>
+        <div class="photo-tip bad">
+          <span class="photo-tip-icon">❌</span>
+          <strong>No blur</strong><br/>Retake if shaky
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- File hidden inputs -->
+  <input type="file" id="fileInputCam" accept="image/*,video/*" capture="environment" style="display:none" onchange="handleFileSelect(event)"/>
+
+  <!-- Preview -->
+  <div id="previewWrapper" style="display:none;margin-top:10px;position:relative;">
+    <img id="imgPreview" style="width:100%;border-radius:8px;border:1px solid #e0e0e0;display:none;max-height:300px;object-fit:contain;background:#111;"/>
+    <video id="videoPreview" style="width:100%;border-radius:8px;border:1px solid #e0e0e0;display:none;" controls></video>
+    <button onclick="clearUpload()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+    <div id="fileNameTag" style="margin-top:6px;font-size:12px;color:#999;text-align:center;font-family:'Roboto Condensed',sans-serif;letter-spacing:.3px;"></div>
+  </div>
+</div>
+
 <div class="card fu">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
     <label class="field-label" style="margin:0">Voice Description</label>
@@ -563,6 +619,25 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
   <div id="brandRow" style="display:none;">
     <label class="field-label">Brand / Manufacturer</label>
     <select id="brand"><option value="">Select brand…</option></select>
+  </div>
+
+  <!-- Optional model/serial -->
+  <div style="background:#f5f5f5;border-radius:6px;padding:14px;border:1px solid #e0e0e0;margin-top:10px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <span style="font-family:'Roboto Condensed',sans-serif;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.8px;">Model &amp; Serial Number</span>
+      <span style="font-size:11px;background:#00b5b5;color:#fff;padding:2px 8px;border-radius:99px;font-weight:700;">Adds accuracy</span>
+    </div>
+    <div class="grid2" style="gap:8px;margin-bottom:8px;">
+      <div>
+        <label class="field-label" style="font-size:10px;margin-bottom:4px;">Model Number</label>
+        <input type="text" id="modelNumber" placeholder="e.g. 4TTX6048J" style="font-size:14px;padding:9px 12px;text-transform:uppercase;" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/>
+      </div>
+      <div>
+        <label class="field-label" style="font-size:10px;margin-bottom:4px;">Serial Number</label>
+        <input type="text" id="serialNumber" placeholder="e.g. 4006E12345" style="font-size:14px;padding:9px 12px;text-transform:uppercase;" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/>
+      </div>
+    </div>
+    <p style="font-size:12px;color:#999;line-height:1.45;">Optional — helps decode tonnage, age, refrigerant type, and warranty automatically.</p>
   </div>
 </div>
 
@@ -680,16 +755,46 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
   <p class="field-sub">Take a clear, close-up photo of the data plate on the unit. Works on all major brands — Carrier, Trane, Lennox, Goodman, Rheem, York, Mitsubishi, and more.</p>
   <input type="file" id="scanInput" accept="image/*" capture="environment" style="display:none" onchange="handleScanSelect(event)"/>
   <input type="file" id="scanInputLib" accept="image/*" style="display:none" onchange="handleScanSelect(event)"/>
-  <div class="scan-zone" id="scanZone" style="cursor:default;">
-    <div class="scan-line"></div>
+  <div class="scan-zone" id="scanZone">
+    <div class="scan-line" id="scanLine"></div>
     <img id="scanPreview" class="scan-preview" style="display:none"/>
-    <div id="scanPrompt" style="padding:28px 20px;text-align:center;width:100%;">
-      <div style="font-size:44px;margin-bottom:10px;">📋</div>
-      <div style="font-family:'Roboto Condensed',sans-serif;font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px;">Scan the Nameplate</div>
-      <div style="font-size:13px;color:#999;margin-bottom:18px;">Take a photo or choose from your library</div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button onclick="document.getElementById('scanInput').click()" style="background:#00b5b5;color:#fff;border:none;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:700;font-family:'Roboto',sans-serif;cursor:pointer;min-width:140px;">📸 Take Photo</button>
-        <button onclick="document.getElementById('scanInputLib').click()" style="background:#fff;color:#1a1a1a;border:1px solid #d8d8d8;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:700;font-family:'Roboto',sans-serif;cursor:pointer;min-width:140px;">🖼️ Photo Library</button>
+
+    <div id="scanPrompt" style="width:100%;">
+      <!-- Main tap area -->
+      <div style="padding:28px 20px 18px;text-align:center;">
+        <div style="width:60px;height:60px;background:#f5f5f5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:2px solid #e0e0e0;">
+          <span style="font-size:26px;">🏷️</span>
+        </div>
+        <div style="font-family:'Roboto Condensed',sans-serif;font-size:15px;font-weight:700;color:#1a1a1a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Photograph the Nameplate</div>
+        <div style="font-size:12px;color:#999;margin-bottom:18px;line-height:1.5;">Get close · Good lighting · Text must be readable</div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+          <button onclick="document.getElementById('scanInput').click()" style="display:flex;align-items:center;gap:7px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:11px 20px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;min-width:130px;">
+            📸 Camera
+          </button>
+          <button onclick="document.getElementById('scanInputLib').click()" style="display:flex;align-items:center;gap:7px;background:#fff;color:#1a1a1a;border:1.5px solid #d0d0d0;border-radius:6px;padding:11px 20px;font-family:'Roboto Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;min-width:130px;">
+            🖼️ Library
+          </button>
+        </div>
+      </div>
+
+      <!-- Nameplate tips -->
+      <div class="photo-tips" style="border-top:1px solid #f0f0f0;">
+        <div class="photo-tip good">
+          <span class="photo-tip-icon">📐</span>
+          <strong>Fill frame</strong><br/>with plate
+        </div>
+        <div class="photo-tip good">
+          <span class="photo-tip-icon">💡</span>
+          <strong>No glare</strong><br/>angle light
+        </div>
+        <div class="photo-tip good">
+          <span class="photo-tip-icon">🔤</span>
+          <strong>Text clear</strong><br/>brand visible
+        </div>
+        <div class="photo-tip bad">
+          <span class="photo-tip-icon">❌</span>
+          <strong>No blur</strong><br/>retake if shaky
+        </div>
       </div>
     </div>
   </div>
@@ -711,6 +816,7 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
 <button class="btn btn-teal btn-full" id="scanBtn" onclick="runNameplateScan()" style="margin-top:4px;">🔍 Decode Nameplate</button>
 
 <div id="scanResult" style="display:none;margin-top:20px;" class="fi">
+<div id="scanConfidenceWarning" style="display:none;padding:12px 14px;border-radius:6px;border:1px solid #ef9a9a;margin-bottom:12px;font-size:14px;line-height:1.6;border-left:4px solid #c62828;"></div>
   <div class="card" style="border-left:4px solid #0d9488;margin-bottom:16px;">
     <p style="font-size:14px;font-weight:700;color:#00838f;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📋 What We Read From the Nameplate</p>
     <p style="font-size:14px;color:#555555;" id="scanExtracted"></p>
@@ -765,88 +871,6 @@ textarea { resize:vertical; line-height:1.6; min-height:88px; }
   </div>
 
   <!-- ═══ WARRANTY PANEL ═══ -->
-
-  <div id="panelWarranty" style="display:none;">
-    <div class="info-box info-purple" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
-      <div style="width:52px;height:52px;background:#7c3aed;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🛡️</div>
-      <div>
-        <p style="font-size:17px;font-weight:700;color:#4527a0;margin-bottom:4px;">Warranty Lookup</p>
-        <p style="font-size:14px;color:#4527a0;line-height:1.5;">Photograph the nameplate or enter details manually to decode age and warranty coverage for any brand.</p>
-      </div>
-    </div>
-
-```
-<!-- NAMEPLATE PHOTO SCAN -->
-<div class="card">
-  <label class="field-label">📷 Scan Nameplate (Fastest)</label>
-  <p class="field-sub">Take a photo of the data plate — Reads brand, model, serial, and decodes warranty automatically</p>
-  <input type="file" id="wScanInput" accept="image/*" capture="environment" style="display:none" onchange="handleWarrantyScan(event)"/>
-  <input type="file" id="wScanInputLib" accept="image/*" style="display:none" onchange="handleWarrantyScan(event)"/>
-  <div class="scan-zone" id="wScanZone" style="cursor:default;border-color:#b39ddb;background:#f5f3ff;">
-    <div class="scan-line" style="background:linear-gradient(90deg,transparent,#4527a0,transparent);"></div>
-    <img id="wScanPreview" class="scan-preview" style="display:none"/>
-    <div id="wScanPrompt" style="padding:28px 20px;text-align:center;width:100%;">
-      <div style="font-size:44px;margin-bottom:10px;">📋</div>
-      <div style="font-family:'Roboto Condensed',sans-serif;font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px;">Scan the Nameplate</div>
-      <div style="font-size:13px;color:#999;margin-bottom:18px;">Carrier, Trane, Lennox, Goodman, Rheem and more</div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button onclick="document.getElementById('wScanInput').click()" style="background:#4527a0;color:#fff;border:none;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:700;font-family:'Roboto',sans-serif;cursor:pointer;min-width:140px;">📸 Take Photo</button>
-        <button onclick="document.getElementById('wScanInputLib').click()" style="background:#fff;color:#1a1a1a;border:1px solid #d8d8d8;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:700;font-family:'Roboto',sans-serif;cursor:pointer;min-width:140px;">🖼️ Photo Library</button>
-      </div>
-    </div>
-  </div>
-  <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;" id="wScanActions">
-    <button class="btn btn-purple btn-sm" id="wScanBtn" onclick="runWarrantyScan()" style="display:none;">🔍 Decode This Nameplate</button>
-    <button class="btn btn-outline btn-sm" id="wClearBtn" onclick="clearWarrantyScan()" style="display:none;">✕ Clear</button>
-  </div>
-</div>
-
-<!-- DIVIDER -->
-<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-  <div style="flex:1;height:1px;background:#d8d8d8;"></div>
-  <span style="font-size:13px;font-weight:600;color:#999999;">OR ENTER MANUALLY</span>
-  <div style="flex:1;height:1px;background:#d8d8d8;"></div>
-</div>
-
-<div class="card">
-  <label class="field-label">Manufacturer</label>
-  <select id="wBrand" onchange="showWarrantyLinks()"><option value="">Choose manufacturer…</option></select>
-  <div id="warrantyLinks" style="display:none;margin-top:12px;gap:8px;flex-wrap:wrap;"></div>
-</div>
-<div class="card">
-  <label class="field-label">Unit Details</label>
-  <div class="grid2" style="margin-bottom:14px;">
-    <div><label class="field-label">Model Number</label><input type="text" id="wModel" placeholder="e.g. 24ACC636A003"/></div>
-    <div><label class="field-label">Serial Number *</label><input type="text" id="wSerial" placeholder="e.g. 4816E12345"/></div>
-  </div>
-  <label class="field-label">Additional Notes</label>
-  <textarea id="wNotes" rows="2" placeholder="e.g. Homeowner unsure if unit was registered. Compressor just failed."></textarea>
-</div>
-<div class="info-box info-amber" style="margin-bottom:20px;">
-  <p style="font-size:14px;font-weight:600;color:#1565c0;margin-bottom:6px;">📍 Where to find the serial number</p>
-  <p style="font-size:14px;color:rgba(245,158,11,.85);line-height:1.65;"><strong>Outdoor unit:</strong> metal data plate on side panel &nbsp;·&nbsp; <strong>Air handler:</strong> inside the cabinet door &nbsp;·&nbsp; <strong>Furnace:</strong> inside front cover &nbsp;·&nbsp; <strong>Mini-split:</strong> side of the unit</p>
-</div>
-<button class="btn btn-purple btn-full" id="warrantyBtn" onclick="runWarranty()">🛡️ Check Warranty Coverage</button>
-
-<div id="warrantyResult" style="display:none;margin-top:20px;" class="fi">
-  <div class="card" style="border-left:4px solid #7c3aed;margin-bottom:12px;">
-    <p style="font-size:14px;font-weight:700;color:#4527a0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">🛡️ Warranty & Age Report</p>
-    <div id="warrantyText" style="display:flex;flex-direction:column;gap:10px;font-size:15px;"></div>
-  </div>
-  <div id="warrantyVerifyLink" style="display:none;" class="info-box info-purple">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <p style="font-size:14px;color:#4527a0;flex:1;">Verify directly with the manufacturer:</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a id="warrantyVerifyBtn" href="#" target="_blank" style="padding:9px 18px;background:#7c3aed;border-radius:9px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">🌐 Warranty Portal</a>
-        <span id="warrantyPhone" style="padding:9px 14px;background:#fff;border:1.5px solid #ddd6fe;border-radius:9px;color:#4527a0;font-size:14px;font-weight:600;"></span>
-      </div>
-    </div>
-  </div>
-  <button class="btn btn-outline btn-full" onclick="resetWarranty()" style="margin-top:12px;">+ New Lookup</button>
-</div>
-```
-
-  </div>
 
   <!-- ═══ REVENUE BUILDER ═══ -->
 
@@ -1237,16 +1261,29 @@ function buildMaintConcernsGrid() {
 // File upload
 function handleDrop(e){e.preventDefault();document.getElementById("dropZone").classList.remove("drag");const f=e.dataTransfer.files[0];if(f)setFile(f);}
 function handleFileSelect(e){const f=e.target.files[0];if(f)setFile(f);}
+function clearUpload(){
+  uploadedFile=null;
+  document.getElementById("imgPreview").style.display="none";
+  document.getElementById("videoPreview").style.display="none";
+  document.getElementById("previewWrapper").style.display="none";
+  document.getElementById("dropZone").classList.remove("has-file");
+  document.getElementById("dropPrompt").style.display="block";
+  document.getElementById("dropTips").style.display="flex";
+  document.getElementById("fileNameTag").textContent="";
+  document.getElementById("fileInput").value="";
+  const ci=document.getElementById("fileInputCam"); if(ci) ci.value="";
+}
 function setFile(file){
   // Normalize HEIC/HEIF to jpeg mime type for display
   const isHeic = file.name&&(file.name.toLowerCase().endsWith('.heic')||file.name.toLowerCase().endsWith('.heif'));
   if(isHeic && !file.type) Object.defineProperty(file,'type',{value:'image/jpeg'});
   uploadedFile=file;const isImg=file.type.startsWith("image/")||isHeic;const url=URL.createObjectURL(file);
   document.getElementById("dropZone").classList.add("has-file");
-  document.getElementById("dropIcon").textContent=isImg?"🖼️":"🎬";
-  // Truncate long filenames
-  const name = file.name.length > 30 ? file.name.substring(0,27)+'...' : file.name;
-  document.getElementById("dropTitle").textContent=name;
+  document.getElementById("dropPrompt").style.display="none";
+  document.getElementById("dropTips").style.display="none";
+  document.getElementById("previewWrapper").style.display="block";
+  const name = file.name.length > 32 ? file.name.substring(0,29)+'...' : file.name;
+  document.getElementById("fileNameTag").textContent=name;
   const img=document.getElementById("imgPreview"),vid=document.getElementById("videoPreview");
   if(isImg){img.src=url;img.style.display="block";vid.style.display="none";}
   else{vid.src=url;vid.style.display="block";img.style.display="none";}
@@ -1276,7 +1313,21 @@ async function runNameplateScan(){
     let result;
     if(hasImg){
       const b64=await blobToBase64(scanFile),mime=scanFile.type;
-      const SYSTEM=`You are a certified HVAC technician reading a nameplate data plate. Current year: 2026.
+      const SYSTEM=`You are a certified HVAC master technician with 25 years experience. Current year: 2026.
+
+MODEL NUMBER NOMENCLATURE (decode tonnage, type, SEER from model number):
+TONNAGE UNIVERSAL RULE: Find a 2-digit number divisible by 6 or 12 between 18-60 in the model number. Divide by 12 = tons. (18=1.5T, 24=2T, 30=2.5T, 36=3T, 42=3.5T, 48=4T, 60=5T)
+
+CARRIER/BRYANT/PAYNE model: pos1-2=product type(24=AC,25=HP,58=furnace), pos5=series(B=base,C=comfort,A=puron/R410A,N=Infinity), BTU digits ÷12=tons. Example: 24ACC636 = AC, Comfort, R410A, 36000BTU=3ton
+TRANE/AMERICAN STANDARD model: pos1=refrigerant(4=R410A,2=R22), pos2=T(Trane), pos3=type(T=split AC,W=heat pump,U=air handler), pos5=SEER digit(3=13,4=14,5=15,6=16), pos7-8=BTU÷1000(48=48000BTU=4ton). Example: 4TTX6048=R410A,Trane,split,16SEER,4ton
+LENNOX model: first 2=series(XC=XC21 AC,XP=XP heat pump,SL=SL furnace,EL=EL80 furnace), next digits=capacity. BTU digits ÷12=tons. Example: XC21-048=XC series,4ton
+GOODMAN/AMANA model: first letters=type(GSX=AC,ASX=Amana AC,GSZC=2stage HP,AVPTC=air handler), BTU digits ÷12=tons. Example: GSX140481=AC,14SEER,4ton
+RHEEM/RUUD model: first letters=type(RA=Rheem AC,RP=Rheem HP,RH=air handler), digits=BTU. Example: RA1442AJ1=14SEER,3.5ton
+YORK/COLEMAN/HEIL model: first letters=type(YCD=York AC,YHD=heat pump), BTU digits÷12=tons
+DAIKIN model: DX=cooling, DP=heat pump, BTU in model÷12=tons
+MITSUBISHI model: MUZ=mini-split outdoor, MSZ=indoor, number=BTU/1000
+
+REFRIGERANT by age: Pre-2010 likely R-22. 2010-2022 likely R-410A. 2023+ may be R-454B (A2L). Check nameplate - it always lists refrigerant type.
 
 ⚠️ CRITICAL SAFETY RULE: Read ONLY what is physically printed on this nameplate. NEVER guess the brand from colors, logo shapes, or visual style. Read the brand name exactly as text on the plate.
 
@@ -1562,47 +1613,67 @@ async function runDiagnostic(){
 }
 
 function buildDiagPrompt(isPro,sysType,sysAge,brand,syms,desc,aud,hasVisual,isImg){
-  const vis=hasVisual?`\nVISUAL: ${isImg?"Photo":"Video frame"} provided.`:"";
-  if(isPro) return `CONTRACTOR DIAGNOSTIC
-System: ${sysType||"Unknown"} | Brand: ${brand||"Unknown"} | Age: ${sysAge||"Unknown"}
-Symptoms: ${syms}
-Notes: ${desc||"None"}${aud}${vis}
+  const vis = hasVisual ? `\nVISUAL: ${isImg?"Photo":"Video frame"} provided. Analyze carefully for visible damage, oil stains, ice, corrosion, burn marks, or anything abnormal.` : "";
+  const modelNum = (document.getElementById("modelNumber")?.value||"").trim();
+  const serialNum = (document.getElementById("serialNumber")?.value||"").trim();
+  const modelLine = modelNum||serialNum ? `\nModel: ${modelNum||"not provided"} | Serial: ${serialNum||"not provided"}` : "";
 
-Return ONLY valid JSON, no markdown:
+  const sharedKnowledge = `
+REFRIGERANT PRESSURES (R-410A normal at 95°F outdoor): Suction 115-145 psig, Discharge 350-420 psig, Superheat(fixed orifice) 8-12°F, Subcooling(TXV) 10-15°F
+R-22 normal: Suction 60-85 psig, Discharge 225-275 psig
+PRESSURE DIAGNOSIS: Low suction+low discharge+high superheat=undercharged/leak. High suction+high discharge=overcharged or non-condensables. Normal suction+high discharge=dirty condenser or fan fail. Low suction+high discharge=restriction.
+CAPACITOR: Test MFD within ±6% of rating. Hum=cap fail. CONTACTOR: Check for pitting/burning/insects. Silence=contactor fail. COMPRESSOR WINDINGS: C+R=S reading. OL=open/failed.
+TXV: Verify full liquid (good subcooling) before condemning. High superheat+low suction+good subcooling=TXV closed/failed.
+R-22 phased out 2020. R-410A phase-down started Jan 2025. New systems use R-454B or R-32.
+MODEL NUMBER TONNAGE: Find 2-digit number 18-60 divisible by 6 or 12. Divide by 12=tons. (18=1.5T,24=2T,30=2.5T,36=3T,42=3.5T,48=4T,60=5T)`;
+
+  if(isPro) return `CONTRACTOR DIAGNOSTIC REQUEST
+System: ${sysType||"Unknown"} | Brand: ${brand||"Unknown"} | Age: ${sysAge||"Unknown"}${modelLine}
+Fault Indicators: ${syms}
+Tech Notes: ${desc||"None"}${aud}${vis}
+${sharedKnowledge}
+
+You are a master HVAC technician. Give a specific, actionable field diagnosis. Use the technical knowledge above to interpret any readings provided.
+
+Return ONLY valid JSON (no markdown fences):
 {
-  "severity":"CRITICAL|HIGH|MEDIUM|LOW",
-  "confidence":"90%",
-  "urgency":"Today|This week|Can wait",
-  "summary":"One clear sentence: what is wrong and what needs to be done",
-  "estimatedCost":"$X–$X",
-  "sections":[
-    {"label":"Most Likely Cause","icon":"🔍","body":"Plain clear explanation of root cause. No jargon."},
-    {"label":"Other Possibilities","icon":"📊","body":"List 2-3 other possibilities with % likelihood each"},
-    {"label":"Step-by-Step Fix","icon":"🔧","steps":["Step 1 - be specific","Step 2","Step 3"]},
-    {"label":"Parts Needed","icon":"🔩","body":"Part names, part numbers if known, estimated cost"},
-    {"label":"Safety Warnings","icon":"⚠️","body":"Any safety hazards. If none, say None."},
-    {"label":"Replace or Repair?","icon":"💡","body":"Honest recommendation based on age and cost"}
+  "severity": "CRITICAL|HIGH|MEDIUM|LOW",
+  "confidence": "XX%",
+  "urgency": "Today|This week|Can wait",
+  "summary": "One sentence: what is wrong and what to do",
+  "estimatedCost": "$X–$X labor+parts",
+  "sections": [
+    {"label":"Most Likely Cause","icon":"🔍","body":"Specific root cause with technical reasoning"},
+    {"label":"Other Possibilities","icon":"📊","body":"2-3 alternatives with % likelihood"},
+    {"label":"Step-by-Step Procedure","icon":"🔧","steps":["Specific step 1","Step 2","Step 3","Step 4"]},
+    {"label":"Readings to Take","icon":"📏","body":"Specific measurements that would confirm or rule out the diagnosis"},
+    {"label":"Parts Needed","icon":"🔩","body":"Part names, specs, estimated cost. Include part numbers if model known."},
+    {"label":"Safety Hazards","icon":"⚠️","body":"Specific hazards for this job. If none, say None."},
+    {"label":"Replace or Repair?","icon":"💡","body":"Honest recommendation based on age, failure mode, and cost"}
   ]
 }`;
-  return `HOMEOWNER DIAGNOSTIC
-System: ${sysType||"Unknown"} | Age: ${sysAge||"Unknown"}
+
+  return `HOMEOWNER DIAGNOSTIC REQUEST
+System: ${sysType||"Unknown"} | Age: ${sysAge||"Unknown"}${modelLine}
 Symptoms: ${syms}
 Description: ${desc||"None"}${aud}${vis}
 
-Return ONLY valid JSON, no markdown:
+You are a trusted HVAC expert explaining a problem to a homeowner. Use plain English — no jargon. Be honest and helpful.
+
+Return ONLY valid JSON (no markdown fences):
 {
-  "severity":"CRITICAL|HIGH|MEDIUM|LOW",
-  "urgency":"Today|This week|Can wait",
-  "urgencyColor":"#c62828|#e65100|#1565c0|#2e7d32",
-  "summary":"One simple sentence a homeowner can understand. No jargon.",
-  "estimatedCost":"$X–$X",
-  "sections":[
-    {"label":"What Is Wrong","icon":"💡","body":"Explain in plain English like talking to a neighbor. No technical terms."},
-    {"label":"How Urgent Is This","icon":"🕐","body":"Is it safe to wait or does it need immediate attention? Why?"},
-    {"label":"What You Can Check","icon":"✅","steps":["Simple safe check 1","Simple safe check 2"]},
-    {"label":"Safety Warning","icon":"⚠️","body":"Any dangers? If none, say None."},
-    {"label":"Do You Need a Tech?","icon":"🛠️","body":"Yes or no and why. Be honest."},
-    {"label":"What It Will Cost","icon":"💰","body":"Ballpark repair cost and replacement cost so they can compare"}
+  "severity": "CRITICAL|HIGH|MEDIUM|LOW",
+  "urgency": "Today|This week|Can wait",
+  "urgencyColor": "#c62828|#e65100|#1565c0|#2e7d32",
+  "summary": "One simple sentence a homeowner can understand",
+  "estimatedCost": "$X–$X",
+  "sections": [
+    {"label":"What Is Wrong","icon":"💡","body":"Plain English explanation. Imagine explaining to a neighbor."},
+    {"label":"Is It Dangerous?","icon":"⚠️","body":"Is it safe to stay home? Any health risks? Be direct."},
+    {"label":"How Urgent Is This","icon":"🕐","body":"Can it wait or does it need to be fixed today? Why?"},
+    {"label":"What You Can Check","icon":"✅","steps":["Simple safe check homeowner can do","Another safe check"]},
+    {"label":"What a Tech Will Do","icon":"🛠️","body":"What the technician will diagnose and fix in plain terms"},
+    {"label":"What It Will Cost","icon":"💰","body":"Honest repair cost range and replacement cost so they can make an informed decision"}
   ]
 }`;
 }
@@ -1616,7 +1687,12 @@ function showResult(sev,body,isPro){
   };
   const s=SEV[sev]||SEV.MEDIUM;
   let data=null;
-  try{const clean=body.replace(/```json|```/g,"").trim();data=JSON.parse(clean);}catch(e){}
+  try{
+    let clean=body.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+    data=JSON.parse(clean);
+  }catch(e){
+    try{const m=body.match(/\{[\s\S]*\}/);if(m)data=JSON.parse(m[0]);}catch(e2){}
+  }
 
   // Severity badge
   document.getElementById("sevBadge").style.cssText=`background:${s.bg};color:${s.color};padding:5px 14px;border-radius:3px;font-size:11px;font-weight:700;font-family:'Roboto Condensed',sans-serif;letter-spacing:.8px;border:1px solid ${s.border}`;
@@ -1685,11 +1761,15 @@ async function runEduMode(){
 function copyEdu(){navigator.clipboard.writeText(document.getElementById("eduText")?.textContent||"").then(()=>alert("Copied! Show this to your customer.")).catch(()=>{});}
 
 function resetDiagnostic(){
+  const mn = document.getElementById("modelNumber");
+  const sn = document.getElementById("serialNumber");
+  if(mn) mn.value="";
+  if(sn) sn.value="";
   document.getElementById("resultPanel").style.display="none";
   document.getElementById("desc").value="";
   ["sysType","sysAge","brand"].forEach(id=>document.getElementById(id).selectedIndex=0);
   selectedSymptoms=[];buildSymptomGrid(mode);uploadedFile=null;lastDiagResult="";
-  document.getElementById("dropZone").className="drop-zone";
+  clearUpload();
   document.getElementById("dropIcon").textContent="📷";
   document.getElementById("dropTitle").textContent="Tap to Upload a Photo or Video";
   document.getElementById("imgPreview").style.display="none";
@@ -1709,6 +1789,14 @@ function handleWarrantyScan(e) {
   document.getElementById("wScanPrompt").style.display = "none";
   document.getElementById("wScanBtn").style.display = "inline-flex";
   document.getElementById("wClearBtn").style.display = "inline-flex";
+}
+function clearScan(){
+  document.getElementById("scanResult").style.display="none";
+  const preview=document.getElementById("scanPreview");
+  const prompt=document.getElementById("scanPrompt");
+  if(preview){preview.style.display="none";preview.src="";}
+  if(prompt) prompt.style.display="block";
+  document.getElementById("scanZone").classList.remove("has-img");
 }
 function clearWarrantyScan() {
   wScanFile = null;
@@ -1905,23 +1993,75 @@ function resetMaint(){document.getElementById("maintResult").style.display="none
 
 // ── LIVE AGENT CHAT ──
 let chatHistory = [];
-const AGENT_SYSTEM = `You are an elite HVAC master technician with 25+ years of field experience. You know every brand, every system, every failure mode. You have EPA 608 Universal certification, NATE certification, and deep knowledge of all refrigerants including R-22, R-410A, R-454B, and A2L refrigerants.
+const AGENT_SYSTEM = `You are an elite HVAC master technician with 25+ years of field experience. EPA 608 Universal certified. NATE certified. You've worked on every brand, every system type, every failure mode. You give real field answers — not textbook guesses.
 
-Your personality: Direct, confident, practical — like a master tech giving a second opinion. Not overly formal.
+TECHNICAL KNOWLEDGE BASE:
 
-How you format responses:
-- Use **SECTION HEADERS** in bold caps for multi-part answers (e.g. **MOST LIKELY CAUSE**, **CHECK THESE FIRST**, **PARTS NEEDED**)
-- Use numbered lists for diagnostic steps
-- Use bullet points for multiple options or findings
-- Keep each response focused — don't ramble
-- Bold key values, part numbers, and critical warnings
+REFRIGERANT OPERATING PRESSURES (normal ranges at 95°F outdoor):
+- R-22: Suction 60-85 psig | Discharge 225-275 psig | Superheat (fixed orifice) 10-15°F | Subcooling (TXV) 10-15°F
+- R-410A: Suction 115-145 psig | Discharge 350-420 psig | Superheat (fixed orifice) 8-12°F | Subcooling (TXV) 10-15°F
+- R-454B (new systems 2023+): Suction 100-130 psig | Discharge 300-380 psig | Similar superheat/subcooling targets
+- R-32: Suction 130-160 psig | Discharge 380-450 psig
+Pressures vary significantly with outdoor temp — always note ambient conditions when interpreting readings.
 
-Rules:
-- Ask 1-2 focused follow-up questions when you need readings or more info
-- Give specific measurements, part numbers, and costs when relevant
-- Flag safety hazards clearly with WARNING:
-- Give honest replace vs repair opinions based on age and cost
-- If they give you pressure/temp readings, interpret them immediately and specifically`;
+PRESSURE DIAGNOSIS:
+- Low suction + low discharge + high superheat = undercharged / refrigerant leak
+- Low suction + low discharge + low superheat = metering device issue (TXV stuck open or oversized piston)
+- High suction + high discharge = overcharged or non-condensables in system
+- Normal suction + high discharge = dirty condenser coil, condenser fan failure, high ambient
+- Low suction + high discharge = restricted liquid line, filter drier plugged
+- Suction pulling into vacuum = severe undercharge or liquid line restriction
+
+SUPERHEAT & SUBCOOLING:
+- Superheat = suction line temp - saturation temp at suction pressure
+- Subcooling = saturation temp at discharge pressure - liquid line temp
+- TXV systems: target 6-10°F superheat, 10-15°F subcooling
+- Fixed orifice (piston): use Total Superheat charging method (indoor WB + outdoor DB chart)
+- Zero subcooling = undercharged. High subcooling = overcharged or liquid line restriction
+
+COMMON FAILURE MODES & DIAGNOSIS:
+Capacitor failure: Fan or compressor hums but won't start. Test MFD with meter — must be within ±5-6% of rating. Replace both cap and contactor together on old units.
+Contactor failure: Silence from outdoor unit, or unit won't shut off (welded contacts). Check for pitting, burning, insects in contacts. Chattering = low voltage or loose coil connection.
+Compressor failure: Check windings C-S-C-R-S-R (formula: C+R = S reading). OL between terminals = open winding = failed. Shorts to ground = failed. Verify capacitor and contactor first before condemning compressor.
+TXV failure: Too open = flooding back, low superheat, frost on suction line. Too closed = high superheat, low suction, unit running but not cooling. Confirm: need full liquid line (good subcooling) before TXV can work. Don't misdiagnose as undercharge — add refrigerant and superheat won't change if TXV is closed.
+Refrigerant leak: Oily residue at connections, service ports, coils. Leak check with electronic detector or UV dye. Repair leak FIRST before recharging.
+Dirty condenser coil: High head pressure, high discharge temp, unit tripping on high pressure. Clean with coil cleaner + water — never pressure washer.
+Frozen evaporator coil: Low airflow (dirty filter/coil), low refrigerant, TXV underfeeding. Turn system to fan only, let ice melt, diagnose root cause before restarting.
+Drain line clogged: Float switch opens, unit stops. Vacuum drain with shop vac or blow compressed nitrogen.
+Control board/fuse: Check 3A fuse on air handler board. Check 24V transformer output. Float switch, high pressure switch, low pressure switch — all can interrupt Y signal.
+Heat pump reversing valve: Stuck in one mode. On call for heat — check if solenoid has 24V (energized in cooling on most brands, de-energized in heating). Can bypass to confirm.
+
+REFRIGERANT PHASE-OUT FACTS (2025):
+- R-22 phased out 2020. No new production. Use reclaim only. Price $40-80/lb.
+- R-410A phase-down started Jan 1, 2025 under EPA AIM Act. New systems now use R-454B or R-32.
+- R-410A cannot be replaced with R-454B in existing systems (different pressures, A2L flammability).
+- R-454B is mildly flammable (A2L) — requires A2L-rated equipment.
+
+SERIAL NUMBER QUICK DECODE:
+- Carrier/Bryant: digits 1-2=week, 3-4=year (e.g. 4006=week 40, 2006)
+- Trane (2002+): digits 1-2=year, 3-4=week (e.g. 1310=2013 week 10)
+- Goodman/Amana: digits 1-2=year, 3-4=month (e.g. 2108=August 2021)
+- Lennox: digits 1-2=year, 3-4=week
+- Rheem/Ruud: digits 1-2=year, 3-4=week
+- York/Heil/Coleman: letter=decade (H=2010s, J=2020s) + digit=year + 2 digit week
+
+WARRANTY PERIODS (registered/unregistered):
+- Carrier/Bryant/Trane/Lennox/Rheem/York: 10yr/5yr
+- Goodman: Lifetime compressor + 10yr parts registered / 5yr unregistered
+- Amana: Lifetime unit replacement registered
+- Daikin/Mitsubishi: 12yr registered / 5yr-7yr unregistered
+
+YOUR RESPONSE STYLE:
+- Talk like a tech texting a fellow tech — direct, confident, no fluff
+- Use **SECTION HEADERS** in bold caps for multi-part answers
+- Use numbered lists for step-by-step procedures
+- Use bullet points for multiple findings or options
+- Bold specific measurements, part numbers, and critical warnings
+- If they give you pressure/temp readings: interpret them immediately and specifically
+- Flag safety hazards with ⚠️ WARNING:
+- Give honest replace vs repair opinion based on age, cost, and failure mode
+- Ask 1-2 focused follow-up questions when you need more info (pressures, voltages, model number)
+- Never say "consult a professional" — YOU are the professional they're texting`;
 
 function getTimeStr() {
   const now = new Date();

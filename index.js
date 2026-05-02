@@ -13,6 +13,8 @@ app.post('/api/ai', async (req, res) => {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' });
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 55000);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -22,25 +24,28 @@ app.post('/api/ai', async (req, res) => {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: req.body.max_tokens || 1024,
+        max_tokens: req.body.max_tokens || 4096,
         system: req.body.system || '',
         messages: req.body.messages || []
-      })
+      }),
+      signal: controller.signal
     });
+    clearTimeout(timeout);
     const data = await response.json();
     if (data.error) return res.status(500).json({ error: data.error });
     const text = data.content?.map(b => b.text || '').join('');
     res.json({ text });
   } catch (e) {
+    if (e.name === 'AbortError') return res.status(504).json({ error: 'Request timed out' });
     res.status(500).json({ error: e.message });
   }
 });
 
 app.post('/api/tts', async (req, res) => {
   const key = process.env.ELEVENLABS_API_KEY;
-  const voiceId = process.env.ELEVENLABS_VOICE_ID || 'uKGPYP2uuyRQv8SeFre0';
+  const voiceId = process.env.ELEVENLABS_VOICE_ID || 'ErXwobaYiN019PkySvjV';
   if (!key) return res.status(500).json({ error: 'ELEVENLABS_API_KEY not set' });
-  const text = (req.body.text || '').substring(0, 500);
+  const text = (req.body.text || '').substring(0, 1200);
   if (!text) return res.status(400).json({ error: 'No text provided' });
   try {
     const response = await fetch(
@@ -53,11 +58,11 @@ app.post('/api/tts', async (req, res) => {
         },
         body: JSON.stringify({
           text,
-          model_id:'eleven_turbo_v2_5',
+          model_id: 'eleven_turbo_v2_5',
           voice_settings: {
-            stability: 0.45,
-            similarity_boost: 0.82,
-            style: 0.35,
+            stability: 0.4,
+            similarity_boost: 0.85,
+            style: 0.4,
             use_speaker_boost: true
           }
         })

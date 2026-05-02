@@ -1254,6 +1254,8 @@ function checkHealth(retry=0) {
   fetch("/api/health").then(r=>r.json()).then(d=>{
     const dot=document.getElementById("statusDot"),txt=document.getElementById("statusText");
     if(d.aiReady){dot.className="status-dot";var t=TRANSLATIONS[currentLang];txt.textContent=t?t.aiReady:"AI Ready";}
+    var vBtn=document.getElementById('voiceModeBtn');
+    if(vBtn) vBtn.title=d.ttsReady?'Voice mode ready (ElevenLabs)':'Voice mode (browser fallback)';
     else{dot.className="status-dot red";txt.textContent="No API Key";}
   }).catch(()=>{
     document.getElementById("statusDot").className="status-dot red";
@@ -2462,6 +2464,7 @@ function clearChat() {
 // ── MIKE VOICE SYSTEM ──
 var voiceMode = false;
 var mikeVoice = null;
+var mikeAudio = null;
 var isMikeSpeaking = false;
 var isListening = false;
 var speechRecognition = null;
@@ -2507,11 +2510,11 @@ function toggleVoiceMode(){
 }
 
 function mikeSay(text){
-  if(!voiceMode || !window.speechSynthesis) return;
+  if(!voiceMode) return;
   stopMikeSpeaking();
   stopListening();
 
-  // Strip markdown for cleaner speech
+  // Clean text for speech
   var clean = text
     .replace(/<[^>]+>/g, ' ')
     .replace(/\*\*(.*?)\*\*/g, '$1')
@@ -2520,46 +2523,77 @@ function mikeSay(text){
     .replace(/`([^`]*)`/g, '$1')
     .replace(/\n\n/g, '. ')
     .replace(/\n/g, ' ')
-    .replace(/[\u25b8\u25bc\u25b2\u2192]/g, '')
+    .replace(/[▸▼▲→]/g, '')
     .replace(/  +/g, ' ')
     .trim()
-    .substring(0, voiceMode ? 400 : 600);
+    .substring(0, 400);
 
-  var utt = new SpeechSynthesisUtterance(clean);
-  if(mikeVoice) utt.voice = mikeVoice;
-  utt.rate  = 0.95;
-  utt.pitch = 0.9;
-  utt.volume = 1;
+  if(!clean) return;
 
   var micBtn = document.getElementById('micBtn');
   var stopBtn = document.getElementById('stopSpeakBtn');
+  isMikeSpeaking = true;
+  if(micBtn) micBtn.classList.add('mic-speaking');
+  if(stopBtn) stopBtn.style.display = 'flex';
+  setVoiceStatus('Mike is talking…', '');
 
-  utt.onstart = function(){
-    isMikeSpeaking = true;
-    if(micBtn) micBtn.classList.add('mic-speaking');
-    if(stopBtn) stopBtn.style.display = 'flex';
-    setVoiceStatus('Mike is talking…', clean.substring(0,80)+(clean.length>80?'...':''));
-  };
+  // Try ElevenLabs first, fall back to browser TTS
+  fetch('/api/tts', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({text: clean})
+  }).then(function(res){
+    if(!res.ok) throw new Error('TTS failed: ' + res.status);
+    return res.blob();
+  }).then(function(blob){
+    var url = URL.createObjectURL(blob);
+    mikeAudio = new Audio(url);
+    mikeAudio.onended = function(){
+      URL.revokeObjectURL(url);
+      isMikeSpeaking = false;
+      if(micBtn){ micBtn.classList.remove('mic-speaking'); micBtn.textContent = '🎙️'; }
+      if(stopBtn) stopBtn.style.display = 'none';
+      if(voiceMode && autoListenAfterSpeak){
+        setTimeout(startListening, 500);
+      } else {
+        setVoiceStatus('Done. Tap mic to reply.', '');
+      }
+    };
+    mikeAudio.onerror = function(){
+      isMikeSpeaking = false;
+      if(micBtn) micBtn.classList.remove('mic-speaking');
+      setVoiceStatus('Tap mic to talk', '');
+    };
+    mikeAudio.play().catch(function(e){
+      // Autoplay blocked — fall back to browser TTS
+      mikeSayBrowser(clean);
+    });
+  }).catch(function(err){
+    console.warn('ElevenLabs TTS failed, using browser:', err);
+    mikeSayBrowser(clean);
+  });
+}
+
+// Browser TTS fallback
+function mikeSayBrowser(clean){
+  if(!window.speechSynthesis) return;
+  var utt = new SpeechSynthesisUtterance(clean);
+  if(mikeVoice) utt.voice = mikeVoice;
+  utt.rate = 0.95; utt.pitch = 0.9; utt.volume = 1;
+  var micBtn = document.getElementById('micBtn');
+  var stopBtn = document.getElementById('stopSpeakBtn');
   utt.onend = function(){
     isMikeSpeaking = false;
     if(micBtn){ micBtn.classList.remove('mic-speaking'); micBtn.textContent = '🎙️'; }
     if(stopBtn) stopBtn.style.display = 'none';
-    if(voiceMode && autoListenAfterSpeak){
-      setTimeout(startListening, 600);
-    } else {
-      setVoiceStatus('Done. Tap mic to reply.', '');
-    }
+    if(voiceMode && autoListenAfterSpeak) setTimeout(startListening, 500);
+    else setVoiceStatus('Done. Tap mic to reply.', '');
   };
-  utt.onerror = function(){
-    isMikeSpeaking = false;
-    if(micBtn) micBtn.classList.remove('mic-speaking');
-    setVoiceStatus('Tap mic to talk', '');
-  };
-
   window.speechSynthesis.speak(utt);
 }
 
 function stopMikeSpeaking(){
+  if(mikeAudio){ mikeAudio.pause(); mikeAudio.currentTime=0; mikeAudio=null; }
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   isMikeSpeaking = false;
   var micBtn = document.getElementById('micBtn');

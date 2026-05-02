@@ -343,8 +343,8 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
     <div id="chatMessages" style="background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:200px;max-height:320px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
       <div class="msg-agent">
         <div class="msg-bubble msg-bubble-agent">
-          <p style="margin-bottom:6px;"><strong>Hey, I'm Mike.</strong> 25 years in the field — I've seen everything.</p>
-          <p style="margin-bottom:6px;">Tell me what's going on. System type, brand, age, what it's doing. Snap a photo of the unit or nameplate and send it — I'll tell you exactly what I'm looking at.</p>
+          <p style="margin-bottom:6px;"><strong>Hey, I'm Mike.</strong> What's going on with your system?</p>
+          <p style="margin-bottom:6px;">Tell me what it's doing — or isn't doing. Brand, age, what you're seeing. If you've got a photo of the unit or nameplate, send it over.</p>
           <p>What are you dealing with?</p>
         </div>
         <div class="msg-time">Just now</div>
@@ -1279,7 +1279,9 @@ async function lookupWarranty(brand,model,serial,age){
 'You are Mike, a real HVAC master tech having an actual phone conversation. You\'ve been doing this 25 years. EPA 608, NATE certified. You\'ve seen everything.\n\nYOU SOUND EXACTLY LIKE THIS — study these examples:\n"yeah man that\'s your run cap, happens all the time in summer"\n"okay wait — hold on — is the outdoor unit even running right now?"\n"oh that\'s easy actually, way easier than it sounds"\n"nah nah nah don\'t do that yet, you\'ll make it worse"\n"alright so here\'s the deal..."\n"so what\'s happening is your..."\n"okay so that tells me one of two things..."\n"yeah I\'ve seen that a hundred times, it\'s almost always the..."\n"how old\'s the system? that changes everything"\n"okay so good news and bad news..."\n\nRULES:\n1. Never start with the person\'s name. Just talk.\n2. React naturally — surprise, concern, relief, confidence — like a real person would\n3. Short sentences mostly. Mix in a longer one when explaining something.\n4. Use "so", "okay", "alright", "yeah", "man", "honestly", "look" naturally\n5. Ask ONE follow-up question at a time, naturally placed in conversation\n6. When walking through steps, talk BETWEEN steps like a person would. "Okay step one... then what you\'re gonna do is... alright now here\'s the tricky part..."\n7. NEVER say: Certainly, Great question, I understand your concern, I\'d be happy to, As an HVAC expert, Of course\n8. If something is dangerous — be real about it. "Hey stop. Don\'t run that. Seriously."\n9. Keep it conversational. If they ask something simple, answer simply. Don\'t over-explain.\n10. Sound like you\'re texting or on the phone — not writing a report.\n\nFOR WIRING QUESTIONS — be specific and clear:\nR → R (power)\nC → C (common)\nY → Y (cooling)\nG → G (fan)\nW → W (heat)\nO/B → reversing valve on heat pumps\nFor humidifiers: 24V from R and C, humidistat in series with the solenoid\n\nFOR CHARGING — walk them through it like you\'re there:\n"okay hook your gauges up — blue on suction, red on liquid line... let it run and stabilize about 15-20 minutes... what are your pressures reading?"\nR-410A targets at 95°F: suction 115-145, head 350-420, superheat 8-12°F, subcooling 10-15°F\nR-22 targets at 95°F: suction 68-72, head 250-270, superheat 20-25°F\n\nFOR FURNACE: thermostat call → inducer starts → pressure switch proves → ignitor glows 15-20s → gas valve opens → flame sensor proves → blower starts 30-60s later. Lockout after 3 tries.\n\nYou care about the person. You want them to get it fixed right. That comes through in how you talk.';
 
 
-var AGENT_SYSTEM='You are Mike, a real HVAC master tech having an actual phone conversation. You\'ve been doing this 25 years. EPA 608, NATE certified. You\'ve seen everything.\n\nYOU SOUND EXACTLY LIKE THIS — study these examples:\n"yeah man that\'s your run cap, happens all the time in summer"\n"okay wait — hold on — is the outdoor unit even running right now?"\n"oh that\'s easy actually, way easier than it sounds"\n"nah nah nah don\'t do that yet, you\'ll make it worse"\n"alright so here\'s the deal..."\n"so what\'s happening is your..."\n"okay so that tells me one of two things..."\n"yeah I\'ve seen that a hundred times, it\'s almost always the..."\n"how old\'s the system? that changes everything"\n"okay so good news and bad news..."\n\nRULES:\n1. Never start with the person\'s name. Just talk.\n2. React naturally — surprise, concern, relief, confidence — like a real person would\n3. Short sentences mostly. Mix in a longer one when explaining something.\n4. Use "so", "okay", "alright", "yeah", "man", "honestly", "look" naturally\n5. Ask ONE follow-up question at a time, naturally placed in conversation\n6. When walking through steps, talk BETWEEN steps like a person would.\n7. NEVER say: Certainly, Great question, I understand your concern, I\'d be happy to, As an HVAC expert, Of course\n8. If something is dangerous — be real about it. "Hey stop. Don\'t run that. Seriously."\n9. Keep it conversational. If they ask something simple, answer simply.\n10. Sound like you\'re texting or on the phone — not writing a report.\n\nFOR WIRING: R=power, C=common, Y=cooling, G=fan, W=heat, O/B=reversing valve\nFOR CHARGING: R-410A 95F: suction 115-145, head 350-420, superheat 8-12F, subcooling 10-15F. R-22 95F: suction 68-72, head 250-270, superheat 20-25F\nFURNACE SEQUENCE: thermostat → inducer → pressure switch → ignitor 15-20s → gas valve → flame sensor → blower 30-60s. Lockout after 3 tries.\nYou care about the person. You want them to get it fixed right.';
+var AGENT_SYSTEM='You are Mike. HVAC tech, 25 years. You talk like a real person on the phone — not a chatbot, not an assistant, just a guy who knows everything about HVAC.\n\nHere is EXACTLY how you talk. Copy this style perfectly:\n\n"okay so that right there — that\'s your run capacitor. happens all the time when it gets hot out."\n\n"wait hold on — is the outside unit running or is it just sitting there doing nothing?"\n\n"oh man yeah, okay, I know exactly what that is. so here\'s the thing..."\n\n"nah don\'t touch that yet. seriously. you could make it a lot worse."\n\n"so what\'s happening is the pressure switch is either clogged or it\'s got a cracked hose — nine times out of ten that\'s what it is"\n\n"okay so good news — that\'s actually a pretty easy fix. bad news is you probably need a new capacitor"\n\n"how old is this system? because that changes everything"\n\n"yeah I\'ve seen that probably a hundred times. it\'s almost always the..."\n\n"alright so here\'s what I need you to do — and follow me on this because the order matters"\n\nSTYLE RULES — burn these into your brain:\n- Mix short punchy sentences with longer ones naturally, like real speech\n- Start responses with reactions: "okay", "yeah", "oh man", "wait", "hmm", "honestly", "look"\n- Trail off with "..." when thinking or building up to something\n- React to what they said BEFORE answering\n- Slip in follow-up questions naturally mid-sentence, not as a separate question\n- If easy fix: sound relieved, almost like "oh that\'s nothing"\n- If serious: lower energy, more careful, "okay look, I\'m not gonna sugarcoat this..."\n- Never number your thoughts in casual conversation — just talk\n- When voice mode: keep it SHORT. 2-3 sentences. Like a quick phone reply.\n- Never start with the person\'s name\n- Never say: Certainly, Great question, I understand, I\'d be happy to, Of course, Absolutely\n\nWHEN GIVING STEPS — talk between them like a person would:\n"alright step one... [step]... okay now here\'s the part most people mess up... [step]... and then you\'re gonna [step]... and that should do it"\n\nTECH KNOWLEDGE:\nR-410A 95F: suction 115-145 PSI, head 350-420 PSI, superheat 8-12F, subcooling 10-15F\nR-22 95F: suction 68-72 PSI, head 250-270 PSI, superheat 20-25F\nFurnace sequence: thermostat call, inducer starts, pressure switch proves, ignitor glows 15-20 seconds, gas valve opens, flame sensor proves flame, blower starts 30-60 seconds later. Locks out after 3 tries.\nThermostat wires: R is power, C is common, Y is cooling, G is fan, W is heat, O or B is reversing valve on heat pumps\nCapacitor: check MFD within 6 percent. Low charge: find the leak first, never just add gas.\n\nYou genuinely care about getting it fixed right. That comes through.';
+
+
 
 function getTimeStr(){var now=new Date();return now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
 
@@ -1388,15 +1390,82 @@ function clearChat(){
 
 function loadMikeVoice(){
   var voices=window.speechSynthesis.getVoices();
-  var preferred=['Alex','Daniel','Fred','Google US English','Microsoft David'];
+  if(!voices.length)return;
+  // Best natural male voices in order of preference
+  var preferred=[
+    'Aaron','Nicky','Google US English Male',
+    'Microsoft Guy Online','Microsoft David',
+    'Alex','Daniel'
+  ];
   for(var i=0;i<preferred.length;i++){
-    var v=voices.find(function(v){return v.name.toLowerCase().includes(preferred[i].toLowerCase());});
-    if(v){mikeVoice=v;break;}
+    var name=preferred[i].toLowerCase();
+    var v=voices.find(function(v){return v.name.toLowerCase().indexOf(name)!==-1&&v.lang.startsWith('en');});
+    if(v){mikeVoice=v;console.log('Mike voice: '+v.name);break;}
   }
-  if(!mikeVoice)mikeVoice=voices.find(function(v){return v.lang.startsWith('en');})||(voices.length?voices[0]:null);
+  // Fallback: any English male voice, or just first English voice
+  if(!mikeVoice){
+    mikeVoice=voices.find(function(v){return v.lang==='en-US'&&!v.name.toLowerCase().includes('female')&&!v.name.toLowerCase().includes('zira')&&!v.name.toLowerCase().includes('samantha')&&!v.name.toLowerCase().includes('victoria');});
+  }
+  if(!mikeVoice){
+    mikeVoice=voices.find(function(v){return v.lang.startsWith('en');})||voices[0];
+  }
 }
 
-function toggleVoiceMode(){
+function mikeSayBrowser(clean){
+  if(!window.speechSynthesis||!clean)return;
+  var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
+  window.speechSynthesis.cancel();
+  // iOS fix: split into natural sentence chunks to prevent cutoff
+  // but keep pauses between chunks minimal for smooth flow
+  var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+  if(isIOS){
+    // iOS cuts off long utterances — split at sentence boundaries
+    var sentences=clean.match(/[^.!?]+[.!?]+/g)||[clean];
+    // Group into chunks of ~2 sentences for natural flow
+    var chunks=[];
+    for(var i=0;i<sentences.length;i+=2){
+      var chunk=sentences.slice(i,i+2).join(' ').trim();
+      if(chunk)chunks.push(chunk);
+    }
+    if(!chunks.length)chunks=[clean];
+    var idx=0;
+    function speakChunk(){
+      if(idx>=chunks.length||!isMikeSpeaking){
+        isMikeSpeaking=false;
+        if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
+        if(stopBtn)stopBtn.style.display='none';
+        if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,300);
+        else setVoiceStatus('Done. Tap mic to reply.','');
+        return;
+      }
+      var utt=new SpeechSynthesisUtterance(chunks[idx]);
+      if(mikeVoice)utt.voice=mikeVoice;
+      utt.rate=1.05;utt.pitch=0.88;utt.volume=1;
+      utt.onend=function(){idx++;speakChunk();};
+      utt.onerror=function(){isMikeSpeaking=false;if(micBtn)micBtn.classList.remove('mic-speaking');};
+      window.speechSynthesis.speak(utt);
+    }
+    speakChunk();
+  } else {
+    // Desktop/Android: speak as one utterance
+    var utt=new SpeechSynthesisUtterance(clean);
+    if(mikeVoice)utt.voice=mikeVoice;
+    utt.rate=1.05;utt.pitch=0.88;utt.volume=1;
+    utt.onend=function(){
+      isMikeSpeaking=false;
+      if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
+      if(stopBtn)stopBtn.style.display='none';
+      if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,300);
+      else setVoiceStatus('Done. Tap mic to reply.','');
+    };
+    utt.onerror=function(){
+      isMikeSpeaking=false;
+      if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
+      if(stopBtn)stopBtn.style.display='none';
+    };
+    window.speechSynthesis.speak(utt);
+  }
+}
   voiceMode=!voiceMode;
   var bar=document.getElementById('voiceModeBar');
   var btn=document.getElementById('voiceModeBtn');
@@ -1406,7 +1475,7 @@ function toggleVoiceMode(){
     btn.classList.add('voice-mode-active');
     lbl.style.color='#00C2B2';lbl.textContent='ON';
     setVoiceStatus('Tap mic to talk to Mike','');
-    setTimeout(function(){if(voiceMode)mikeSay("Hey it's Mike. HVAC master tech. What are you working on?");},400);
+    setTimeout(function(){if(voiceMode)mikeSay("hey it's Mike. what are you working on?");},400);
   }else{
     voiceMode=false;
     bar.style.display='none';
@@ -1452,35 +1521,29 @@ function mikeSay(text){
 
 function mikeSayBrowser(clean){
   if(!window.speechSynthesis)return;
-  var chunks=[],current='';
-  for(var i=0;i<clean.length;i++){
-    current+=clean[i];
-    if((clean[i]==='.'||clean[i]==='?'||clean[i]==='!')&&(i+1>=clean.length||clean[i+1]===' ')){
-      if(current.trim().length>0&&current.length>20){chunks.push(current.trim());current='';}
-    }
-    if(current.length>180){chunks.push(current.trim());current='';}
-  }
-  if(current.trim())chunks.push(current.trim());
-  if(!chunks.length)return;
+  if(!clean)return;
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
-  var chunkIndex=0;
-  function speakNext(){
-    if(chunkIndex>=chunks.length||!isMikeSpeaking){
-      isMikeSpeaking=false;
-      if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
-      if(stopBtn)stopBtn.style.display='none';
-      if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,600);
-      else setVoiceStatus('Done. Tap mic to reply.','');
-      return;
-    }
-    var utt=new SpeechSynthesisUtterance(chunks[chunkIndex]);
-    if(mikeVoice)utt.voice=mikeVoice;
-    utt.rate=0.9;utt.pitch=0.82;utt.volume=1;
-    utt.onend=function(){chunkIndex++;speakNext();};
-    utt.onerror=function(){isMikeSpeaking=false;if(micBtn)micBtn.classList.remove('mic-speaking');};
-    window.speechSynthesis.speak(utt);
-  }
-  speakNext();
+  // Speak the whole thing as one utterance for smoothest delivery
+  var utt=new SpeechSynthesisUtterance(clean);
+  if(mikeVoice)utt.voice=mikeVoice;
+  utt.rate=1.0;
+  utt.pitch=0.85;
+  utt.volume=1;
+  utt.onend=function(){
+    isMikeSpeaking=false;
+    if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
+    if(stopBtn)stopBtn.style.display='none';
+    if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,400);
+    else setVoiceStatus('Done. Tap mic to reply.','');
+  };
+  utt.onerror=function(){
+    isMikeSpeaking=false;
+    if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
+    if(stopBtn)stopBtn.style.display='none';
+    setVoiceStatus('Tap mic to talk to Mike','');
+  };
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utt);
 }
 
 function stopMikeSpeaking(){

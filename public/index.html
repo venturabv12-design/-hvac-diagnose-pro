@@ -418,7 +418,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
     <div><label class="field-label">System Type</label><select id="sysType"><option value="">Select…</option></select></div>
     <div><label class="field-label">Age</label><select id="sysAge"><option value="">Select…</option></select></div>
   </div>
-  <div id="brandRow" style="display:none;margin-top:8px;"><label class="field-label">Brand</label><select id="brand"><option value="">Select brand…</option></select></div>
+  <div id="brandRow" style="margin-top:8px;"><label class="field-label">Brand</label><select id="brand"><option value="">Select brand…</option></select></div>
   <!-- Symptoms -->
   <div style="margin-top:10px;">
     <label class="field-label" id="symptomsLabel">What's it doing?</label>
@@ -697,10 +697,10 @@ document.getElementById(“tabHome”).className=“mode-tab”+(m===“home”?
 document.getElementById(“tabPro”).className=“mode-tab”+(m===“pro”?” active”:””);
 document.getElementById(“proTabs”).style.display=isPro?“block”:“none”;
 document.getElementById(“panelHome”).style.display=isPro?“none”:“block”;
-document.getElementById(“panelDiag”).style.display=isPro?“block”:“none”;
-document.getElementById(“panelRefrig”).style.display=“none”;
-document.getElementById(“panelRevenue”).style.display=“none”;
-document.getElementById(“panelMaint”).style.display=“none”;
+// Hide all pro panels — setProTab will show the right one
+[“panelDiag”,“panelRefrig”,“panelRevenue”,“panelMaint”].forEach(function(id){
+var el=document.getElementById(id);if(el)el.style.display=“none”;
+});
 document.getElementById(“heroTitle”).textContent=isPro?“Professional HVAC Diagnostics”:“What’s Wrong With Your HVAC?”;
 document.getElementById(“heroSub”).textContent=isPro?“Full technical diagnostics, Mike live chat, nameplate scanner, revenue tools.”:“Upload a photo or video, describe what’s happening, and we’ll tell you exactly what’s wrong.”;
 document.getElementById(“modeDesc”).textContent=isPro?“Full technical reports, Mike live chat, nameplate scanner, revenue builder, and maintenance pitcher.”:“Easy-to-understand explanations, safety guidance, and connections to certified local technicians.”;
@@ -711,8 +711,14 @@ function setProTab(tab){
 proTab=tab;
 var panels={diag:“panelDiag”,refrig:“panelRefrig”,revenue:“panelRevenue”,maint:“panelMaint”};
 var tabs={diag:“stDiag”,refrig:“stRefrig”,revenue:“stRevenue”,maint:“stMaint”};
-for(var t in panels){var el=document.getElementById(panels[t]);if(el)el.style.display=t===tab?“block”:“none”;}
-for(var t in tabs){var el=document.getElementById(tabs[t]);if(el)el.className=“sub-tab”+(t===tab?” active”:””);}
+for(var t in panels){
+var el=document.getElementById(panels[t]);
+if(el)el.style.display=(t===tab)?“block”:“none”;
+}
+for(var t in tabs){
+var el=document.getElementById(tabs[t]);
+if(el)el.className=“sub-tab”+(t===tab?” active”:””);
+}
 }
 
 function toggleVoiceDesc(){
@@ -828,27 +834,77 @@ if(ts){ts.textContent=selectedSymptoms.length?“✓ “+selectedSymptoms.length
 // ─── NAMEPLATE SCAN IN DIAG ───
 async function handleDiagNameplateScan(e){
 var file=e.target.files[0];if(!file)return;e.target.value=””;
-var status=document.getElementById(“diagScanStatus”),success=document.getElementById(“diagScanSuccess”);
-status.style.display=“flex”;success.style.display=“none”;
+var statusEl=document.getElementById(“diagScanStatus”),successEl=document.getElementById(“diagScanSuccess”);
+statusEl.style.display=“flex”;successEl.style.display=“none”;
+// Clear any previous result card
+var prev=document.getElementById(“diagNameplateResultCard”);
+if(prev)prev.remove();
 try{
 var mime=file.type||“image/jpeg”,b64=await blobToBase64(file);
-var SYSTEM=‘You are reading an HVAC nameplate. Extract ONLY what is clearly printed. NEVER guess the brand. Return ONLY compact JSON: {“brand”:“exact brand text”,“model”:“model number”,“serial”:“serial number”,“confidence”:“High|Medium|Low”} If unreadable return {“brand”:””,“model”:””,“serial”:””,“confidence”:“Low”}’;
-var raw=await callAI(SYSTEM,[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:“Read brand, model number, and serial number from this nameplate. JSON only.”}]}],200);
+var SYSTEM=‘You are a certified HVAC master technician. Current year: 2026. Read ONLY what is physically printed on the nameplate. NEVER guess the brand.\n\nSERIAL DECODING RULES:\nCarrier/Bryant: pos 1-2=week, 3-4=year (e.g. 0414 = week 04, year 2014)\nTrane post-2002: pos 1-2=year, 3-4=week\nLennox: first 2=year, next 2=week\nGoodman/Amana: first 2=year, next 2=month\nRheem/Ruud: first 2=year, next 2=week\nYork/Coleman: letter=decade (H=2010s, J=2020s), digit=year within decade\nMitsubishi: first 4 digits = year+month\n\nWARRANTY RULES (registered = 10yr, unregistered = 5yr):\nCarrier/Bryant/Payne: 10yr parts if registered within 90 days, 5yr if not\nTrane/American Standard: 10yr parts registered, 5yr unregistered\nLennox: 10yr parts+compressor registered, 5yr unregistered\nGoodman: Lifetime compressor + 10yr parts registered, 5yr unregistered\nAmana: Lifetime compressor + 10yr parts\nRheem/Ruud: 10yr registered, 5yr unregistered\nYork/Coleman/Heil: 10yr registered, 5yr unregistered\nMitsubishi Electric: 12yr compressor, 7yr parts registered\nDaikin: 12yr compressor, 5yr parts\n\nReturn ONLY valid compact JSON, no markdown:\n{“brand”:“EXACT text from nameplate”,“model”:””,“serial”:””,“refrigerant”:””,“voltage”:””,“tonnage”:””,“seer”:””,“manufactureYear”:0,“ageYears”:0,“warrantyStatus”:“Active|Likely Active|Likely Expired|Expired|Unknown”,“warrantyNote”:“e.g. 10yr if registered, expires 2026”,“warrantyExpireYear”:0,“confidence”:“High|Medium|Low”}’;
+var raw=await callAI(SYSTEM,[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:“Read this HVAC nameplate carefully. Decode the serial number to find manufacture year. Calculate age and warranty status. Return JSON only. Never guess the brand.”}]}],400);
 var data=parseJSON(raw);
-status.style.display=“none”;
-if(data&&data.confidence!==“Low”&&(data.model||data.serial)){
+statusEl.style.display=“none”;
+if(!data||data.confidence===“Low”||(!data.model&&!data.serial)){
+successEl.style.background=”#fff3e0”;successEl.style.display=“block”;
+document.getElementById(“diagScanSuccessText”).style.color=”#e65100”;
+document.getElementById(“diagScanSuccessText”).textContent=“Could not read clearly — retake closer in good lighting.”;
+return;
+}
+// Auto-fill form fields
 if(data.model)document.getElementById(“modelNumber”).value=data.model.toUpperCase();
 if(data.serial)document.getElementById(“serialNumber”).value=data.serial.toUpperCase();
-if(data.brand){var bs=document.getElementById(“brand”);if(bs)for(var i=0;i<bs.options.length;i++){if(bs.options[i].text.toLowerCase().includes(data.brand.toLowerCase().split(” “)[0])){bs.selectedIndex=i;break;}}}
-document.getElementById(“diagScanSuccessText”).textContent=“Filled: “+[data.brand,data.model,data.serial].filter(Boolean).join(” · “);
-success.style.display=“block”;
-}else{
-success.style.display=“block”;success.style.background=”#fff3e0”;
-document.getElementById(“diagScanSuccessText”).style.color=”#e65100”;
-document.getElementById(“diagScanSuccessText”).textContent=“Could not read clearly — please type manually or retake photo closer.”;
+if(data.brand){
+var bs=document.getElementById(“brand”);
+if(bs)for(var i=0;i<bs.options.length;i++){
+if(bs.options[i].text.toLowerCase().includes(data.brand.toLowerCase().split(” “)[0])){bs.selectedIndex=i;break;}
 }
+}
+// Warranty color
+var wColor=data.warrantyStatus===“Active”||data.warrantyStatus===“Likely Active”?”#059669”:data.warrantyStatus===“Expired”?”#dc2626”:”#d97706”;
+var wBg=data.warrantyStatus===“Active”||data.warrantyStatus===“Likely Active”?”#ECFDF5”:data.warrantyStatus===“Expired”?”#FFF0F2”:”#FFFBEB”;
+var wIcon=data.warrantyStatus===“Active”||data.warrantyStatus===“Likely Active”?“✅”:data.warrantyStatus===“Expired”?“❌”:“⚠️”;
+// Age color
+var ageColor=!data.ageYears?”#9499B0”:data.ageYears>=15?”#dc2626”:data.ageYears>=10?”#d97706”:”#059669”;
+// Build result card
+var rows=[
+{label:“Brand”,value:data.brand||”—”,bold:true},
+{label:“Model”,value:data.model||”—”},
+{label:“Serial”,value:data.serial||”—”,mono:true},
+{label:“Refrigerant”,value:data.refrigerant||”—”},
+{label:“Tonnage”,value:data.tonnage?data.tonnage+” ton”:”—”},
+{label:“SEER”,value:data.seer||”—”},
+{label:“Voltage”,value:data.voltage||”—”},
+{label:“Mfg Year”,value:data.manufactureYear||”—”},
+{label:“Age”,value:data.ageYears?data.ageYears+” years”:”—”,color:ageColor},
+].filter(function(r){return r.value&&r.value!==”—”;});
+var html=’<div id="diagNameplateResultCard" style="margin-top:10px;background:#fff;border:1px solid #E2E4ED;border-radius:10px;overflow:hidden;">’;
+html+=’<div style="padding:10px 14px;background:#0F0F0F;display:flex;align-items:center;gap:8px;"><span style="font-size:14px;font-weight:700;color:#fff;">🏷️ Nameplate Decoded</span><span style="margin-left:auto;font-size:11px;background:rgba(0,194,178,.2);color:#00C2B2;padding:2px 8px;border-radius:99px;font-weight:700;">Auto-filled ✓</span></div>’;
+// Warranty banner — most important
+html+=’<div style="padding:12px 14px;background:'+wBg+';border-bottom:1px solid #E2E4ED;">’;
+html+=’<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">’;
+html+=’<div><div style="font-size:10px;font-weight:700;color:'+wColor+';text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">WARRANTY STATUS</div>’;
+html+=’<div style="font-size:18px;font-weight:800;color:'+wColor+';">’+wIcon+’ ‘+data.warrantyStatus+’</div>’;
+if(data.warrantyNote)html+=’<div style="font-size:12px;color:'+wColor+';margin-top:3px;opacity:.85;">’+data.warrantyNote+’</div></div>’;
+if(data.warrantyExpireYear&&data.warrantyExpireYear>2020)html+=’<div style="text-align:right;"><div style="font-size:10px;color:'+wColor+';font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Expires</div><div style="font-size:20px;font-weight:800;color:'+wColor+';">’+data.warrantyExpireYear+’</div></div>’;
+html+=’</div></div>’;
+// Data rows
+html+=’<div style="display:grid;grid-template-columns:1fr 1fr;">’;
+rows.forEach(function(row,i){
+html+=’<div style="padding:9px 14px;border-bottom:1px solid #F0F1F6;'+(i%2===1?'border-left:1px solid #F0F1F6;':'')+'">’;
+html+=’<div style="font-size:10px;font-weight:700;color:#9499B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">’+row.label+’</div>’;
+html+=’<div style="font-size:14px;font-weight:'+(row.bold?'700':'600')+';color:'+(row.color||'#0F0F0F')+';'+(row.mono?'font-family:monospace;':'')+'">’+row.value+’</div>’;
+html+=’</div>’;
+});
+html+=’</div></div>’;
+// Insert result card after the nameplate scan section
+var scanSection=document.getElementById(“diagScanSuccess”);
+scanSection.insertAdjacentHTML(‘afterend’,html);
+successEl.style.background=”#ECFDF5”;successEl.style.display=“block”;
+document.getElementById(“diagScanSuccessText”).style.color=”#059669”;
+document.getElementById(“diagScanSuccessText”).textContent=“✅ Decoded — fields auto-filled”;
 }catch(err){
-status.style.display=“none”;success.style.display=“block”;success.style.background=”#ffebee”;
+statusEl.style.display=“none”;successEl.style.display=“block”;successEl.style.background=”#ffebee”;
 document.getElementById(“diagScanSuccessText”).style.color=”#c62828”;
 document.getElementById(“diagScanSuccessText”).textContent=“Scan failed — please type manually.”;
 }

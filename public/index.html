@@ -207,7 +207,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
     </div>
   </div>
   <!-- MODE TABS -->
-  <div class="card fu" style="padding:0;overflow:hidden;">
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px;">
     <div class="mode-tabs">
       <button class="mode-tab active" id="tabHome" onclick="setMode('home')">🏠 Homeowner</button>
       <button class="mode-tab" id="tabPro" onclick="setMode('pro')">🔧 Contractor <span class="pro-badge">PRO</span></button>
@@ -229,7 +229,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
   <!-- ═══ HOMEOWNER DIAGNOSTIC PANEL ═══ -->
 
   <div id="panelHome">
-    <div class="card fu">
+    <div class="card">
       <label class="field-label">Show Us Your System</label>
       <p class="field-sub">A short video or photo helps us see exactly what's happening</p>
       <input type="file" id="homeFileInput" accept="video/*,image/*" style="display:none" onchange="handleHomeFileSelect(event)"/>
@@ -258,17 +258,17 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
         <div id="homeFileNameTag" style="margin-top:6px;font-size:12px;color:#9499B0;text-align:center;"></div>
       </div>
     </div>
-    <div class="card fu">
+    <div class="card">
       <label class="field-label">What is your system doing?</label>
       <p class="field-sub">Select everything that applies</p>
       <div class="symptoms-grid" id="homeSymptoms"></div>
     </div>
-    <div class="card fu">
+    <div class="card">
       <label class="field-label">Describe the problem in your own words</label>
       <p class="field-sub">When did it start? Is it getting worse? Anything else you've noticed?</p>
       <textarea id="homeDesc" placeholder="e.g. My air conditioner runs all day but the house never gets below 78°…"></textarea>
     </div>
-    <div class="card fu">
+    <div class="card">
       <label class="field-label">System Age</label>
       <select id="homeSysAge"><option value="">Select age…</option></select>
     </div>
@@ -371,7 +371,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 
 ```
 <!-- FULL DIAGNOSTIC FORM -->
-<div class="card fu" style="border-top:3px solid #00C2B2;">
+<div class="card" style="border-top:3px solid #00C2B2;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
     <label class="field-label" style="margin:0;">Full Diagnostic</label>
     <span style="font-size:11px;color:#9499B0;">For deeper AI analysis</span>

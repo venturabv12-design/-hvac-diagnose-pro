@@ -1,167 +1,167 @@
 <!DOCTYPE html>
 
+<!-- HVAC-DIAGNOSE-PRO v5.0 -->
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HVAC Diagnose Pro</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { font-size: 16px; }
-    body { background: #f8f9fb; font-family: 'Inter', -apple-system, sans-serif; color: #1a1a2e; }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 6px; }
-
-```
-@keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
-@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-@keyframes spin   { to { transform:rotate(360deg); } }
-@keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:.4} }
-@keyframes wave   { 0%,100%{transform:scaleY(.3)} 50%{transform:scaleY(1)} }
-@keyframes ripple { 0%{transform:scale(1);opacity:.5} 100%{transform:scale(2.4);opacity:0} }
-
-.fu  { animation: fadeUp .45s cubic-bezier(.16,1,.3,1) both; }
-.fi  { animation: fadeIn .35s ease both; }
-.spinning { animation: spin .8s linear infinite; }
-.pulsing  { animation: pulse 1.5s ease infinite; }
-
-/* Layout */
-.nav { background:#fff; border-bottom:1px solid #e8eaf0; position:sticky; top:0; z-index:50; }
-.nav-inner { max-width:720px; margin:0 auto; padding:0 16px; display:flex; align-items:center; justify-content:space-between; height:60px; }
-.nav-logo { display:flex; align-items:center; gap:10px; }
-.nav-logo-icon { width:36px; height:36px; background:linear-gradient(135deg,#2563eb,#0ea5e9); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
-.nav-logo-text { font-size:15px; font-weight:800; color:#111827; line-height:1; }
-.nav-logo-sub  { font-size:11px; color:#6b7280; margin-top:2px; }
-.nav-status { display:flex; align-items:center; gap:6px; }
-.status-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 6px #22c55e; }
-.status-dot.red { background:#ef4444; box-shadow:0 0 6px #ef4444; }
-.status-text { font-size:12px; color:#6b7280; font-weight:500; }
-
-.page { max-width:720px; margin:0 auto; padding:28px 16px 72px; }
-
-/* Cards */
-.card { background:#fff; border-radius:16px; border:1px solid #e8eaf0; padding:24px; margin-bottom:16px; }
-
-/* Form elements */
-.field-label { display:block; font-size:14px; font-weight:600; color:#374151; margin-bottom:7px; }
-.field-sub   { font-size:13px; color:#6b7280; margin-bottom:12px; line-height:1.5; }
-input, textarea, select {
-  width:100%; background:#fff; border:1.5px solid #e2e8f0; border-radius:10px;
-  padding:13px 16px; font-size:16px; font-family:'Inter',sans-serif; color:#1a1a2e;
-  outline:none; transition:border-color .15s, box-shadow .15s;
+<meta charset="UTF-8"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HVAC Diagnose Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#F5F6FA;--white:#FFFFFF;--black:#0F0F0F;
+  --gray-50:#F8F9FC;--gray-100:#F0F1F6;--gray-200:#E2E4ED;
+  --gray-300:#C8CBD8;--gray-400:#9499B0;--gray-500:#6B7190;--gray-600:#4A5070;
+  --teal:#00C2B2;--teal-dark:#009E90;--teal-lt:#E6FAF8;--teal-mid:#B2F0EA;
+  --red:#E8354A;--red-lt:#FFF0F2;
+  --amber:#F59E0B;--amber-lt:#FFFBEB;
+  --green:#10B981;--green-lt:#ECFDF5;
+  --blue:#3B82F6;--blue-lt:#EFF6FF;
+  --purple:#8B5CF6;--purple-lt:#F5F3FF;
+  --font:'Plus Jakarta Sans',-apple-system,sans-serif;
+  --mono:'DM Mono',monospace;
+  --radius:14px;--radius-sm:8px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.05);
+  --shadow:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+  --shadow-lg:0 10px 32px rgba(0,0,0,.1),0 4px 8px rgba(0,0,0,.05);
 }
-input:focus, textarea:focus, select:focus {
-  border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1);
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;-webkit-text-size-adjust:100%;}
+body{background:var(--bg);font-family:var(--font);color:var(--black);min-height:100vh;-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:4px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes wave{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes ripple{0%{transform:scale(1);opacity:.5}100%{transform:scale(2.4);opacity:0}}
+@keyframes scanline{0%{top:0%}100%{top:96%}}
+@keyframes typing-bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+@keyframes micPulse{0%,100%{box-shadow:0 4px 20px rgba(0,194,178,.4),0 0 0 0 rgba(0,194,178,.4)}50%{box-shadow:0 4px 20px rgba(0,194,178,.4),0 0 0 16px rgba(0,194,178,0)}}
+@keyframes speakPulse{0%,100%{box-shadow:0 4px 20px rgba(232,53,74,.4),0 0 0 0 rgba(232,53,74,.4)}50%{box-shadow:0 4px 20px rgba(232,53,74,.4),0 0 0 16px rgba(232,53,74,0)}}
+#panelHome,#panelDiag,#panelRefrig,#panelRevenue,#panelMaint,#proTabs{animation:none!important;}
+.fu{animation:fadeUp .35s cubic-bezier(.16,1,.3,1) both;}
+.fi{animation:fadeIn .25s ease both;}
+.pulsing{animation:pulse 1.4s ease infinite;}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,0,0,.1);border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite;}
+.nav{background:var(--white);border-bottom:1px solid var(--gray-200);position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);}
+.nav-inner{max-width:720px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:56px;}
+.nav-logo{display:flex;align-items:center;gap:10px;}
+.nav-logo-icon{width:34px;height:34px;background:var(--teal);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(0,194,178,.35);}
+.nav-logo-text{font-size:15px;font-weight:800;color:var(--black);line-height:1;letter-spacing:-.3px;}
+.nav-logo-sub{font-size:10px;color:var(--gray-400);margin-top:1px;letter-spacing:.2px;}
+.nav-status{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:99px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px rgba(16,185,129,.2);}
+.status-dot.red{background:var(--red);box-shadow:0 0 0 2px rgba(232,53,74,.2);}
+.status-text{font-size:12px;color:var(--gray-500);font-weight:600;}
+.page{max-width:720px;margin:0 auto;padding:20px 14px 88px;}
+.card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gray-200);padding:20px;margin-bottom:10px;box-shadow:var(--shadow-sm);}
+.field-label{display:block;font-size:11px;font-weight:700;color:var(--gray-400);margin-bottom:6px;letter-spacing:.6px;text-transform:uppercase;}
+.field-sub{font-size:13px;color:var(--gray-500);margin-bottom:10px;line-height:1.5;}
+input,textarea,select{width:100%;background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:12px 14px;font-size:15px;font-family:var(--font);color:var(--black);outline:none;transition:border-color .15s,box-shadow .15s,background .15s;-webkit-appearance:none;}
+input:focus,textarea:focus,select:focus{border-color:var(--teal);background:var(--white);box-shadow:0 0 0 3px rgba(0,194,178,.12);}
+input::placeholder,textarea::placeholder{color:var(--gray-300);}
+select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239499B0' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;background-color:var(--gray-50);}
+select option{background:var(--white);color:var(--black);}
+textarea{resize:vertical;line-height:1.6;min-height:88px;}
+.btn{font-family:var(--font);font-weight:700;border:none;border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:14px;padding:11px 20px;letter-spacing:-.1px;-webkit-tap-highlight-color:transparent;}
+.btn:active{transform:scale(.97);}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;}
+.btn-blue{background:var(--black);color:#fff;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-purple{background:var(--purple);color:#fff;}
+.btn-teal{background:var(--teal);color:#fff;box-shadow:0 2px 8px rgba(0,194,178,.3);}
+.btn-outline{background:var(--white);color:var(--gray-600);border:1.5px solid var(--gray-200);}
+.btn-outline:hover{background:var(--gray-50);border-color:var(--gray-300);color:var(--black);}
+.btn-full{width:100%;padding:14px;font-size:15px;}
+.btn-sm{font-size:12px;padding:7px 13px;border-radius:6px;}
+.mode-tabs{display:flex;background:#111111;overflow:hidden;border-radius:var(--radius) var(--radius) 0 0;}
+.mode-tab{flex:1;padding:16px 12px;background:transparent;border:none;font-family:var(--font);font-weight:800;font-size:15px;cursor:pointer;transition:all .15s;border-bottom:3px solid transparent;color:#ffffff;display:flex;align-items:center;justify-content:center;gap:7px;-webkit-tap-highlight-color:transparent;opacity:0.55;}
+.mode-tab.active{color:#ffffff;border-bottom-color:var(--teal);opacity:1;}
+.mode-tab:hover:not(.active){opacity:0.8;}
+.pro-badge{padding:2px 7px;background:var(--teal);border-radius:5px;font-size:10px;color:#fff;font-weight:800;letter-spacing:.3px;}
+.sub-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px;background:#1a1a1a;border-radius:0 0 var(--radius) var(--radius);}
+.sub-tab{padding:12px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-family:var(--font);font-weight:700;font-size:11px;cursor:pointer;transition:all .15s;border-radius:var(--radius-sm);color:rgba(255,255,255,.5);text-align:center;line-height:1.3;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:5px;-webkit-tap-highlight-color:transparent;}
+.sub-tab .tab-icon{font-size:20px;display:block;}
+.sub-tab:active{transform:scale(.95);}
+.sub-tab.active{color:var(--teal);background:rgba(0,194,178,.15);border-color:rgba(0,194,178,.25);}
+.symptoms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;}
+.chip{border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:12px 13px;background:var(--white);color:var(--gray-600);font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;transition:all .12s;display:flex;align-items:center;gap:9px;text-align:left;line-height:1.3;box-shadow:var(--shadow-sm);-webkit-tap-highlight-color:transparent;}
+.chip:active{transform:scale(.97);}
+.chip:hover{border-color:var(--teal-mid);background:var(--teal-lt);color:var(--black);}
+.chip.selected{border-color:var(--teal);background:var(--teal-lt);color:var(--teal-dark);font-weight:700;box-shadow:0 0 0 3px rgba(0,194,178,.12);}
+.chip-icon{font-size:20px;flex-shrink:0;}
+.drop-zone{border-radius:var(--radius);overflow:hidden;position:relative;cursor:pointer;transition:all .15s;background:var(--white);border:1.5px dashed var(--gray-300);}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--teal);background:var(--teal-lt);}
+.drop-zone.has-file{border-style:solid;border-color:var(--green);}
+.photo-tips{display:flex;gap:0;border-top:1px solid var(--gray-100);}
+.photo-tip{flex:1;padding:10px 6px;text-align:center;border-right:1px solid var(--gray-100);font-size:11px;color:var(--gray-500);line-height:1.4;}
+.photo-tip:last-child{border-right:none;}
+.photo-tip-icon{font-size:17px;display:block;margin-bottom:3px;}
+.photo-tip.bad{background:#FFF8F8;}
+.recorder{background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:14px;transition:all .2s;}
+.recorder.recording{background:#FFF5F5;border-color:#FCA5A5;}
+.recorder.done{background:var(--green-lt);border-color:#6EE7B7;}
+.recorder-row{display:flex;align-items:center;gap:12px;}
+.rec-btn-wrap{position:relative;flex-shrink:0;}
+.rec-ring{position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--red);animation:ripple 1.2s ease infinite;pointer-events:none;}
+.wave-bars{display:flex;align-items:flex-end;gap:2px;height:18px;}
+.wave-bar{width:3px;border-radius:2px;background:var(--red);transform-origin:bottom;animation:wave .55s ease infinite;}
+.result-body{font-size:15px;line-height:1.8;color:var(--black);}
+.info-box{border-radius:var(--radius-sm);padding:13px 13px 13px 15px;margin-bottom:10px;}
+.info-blue{background:var(--blue-lt);border:1px solid #BFDBFE;border-left:3px solid var(--blue);}
+.info-green{background:var(--green-lt);border:1px solid #6EE7B7;border-left:3px solid var(--green);}
+.info-amber{background:var(--amber-lt);border:1px solid #FDE68A;border-left:3px solid var(--amber);}
+.info-red{background:var(--red-lt);border:1px solid #FECACA;border-left:3px solid var(--red);}
+.info-teal{background:var(--teal-lt);border:1px solid var(--teal-mid);border-left:3px solid var(--teal);}
+.scan-zone{border:1.5px dashed var(--gray-300);border-radius:var(--radius);overflow:hidden;position:relative;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--white);transition:all .15s;}
+.scan-zone:hover{border-color:var(--teal);background:var(--teal-lt);}
+.scan-zone.has-img{border-style:solid;border-color:var(--teal);min-height:0;}
+.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--teal),transparent);animation:scanline 2s ease-in-out infinite alternate;pointer-events:none;z-index:2;}
+.scan-preview{width:100%;max-height:200px;object-fit:contain;display:block;background:var(--gray-50);}
+.pitch-section{background:var(--white);border-radius:var(--radius-sm);border:1px solid var(--gray-200);border-left:3px solid var(--teal);padding:16px;margin-bottom:10px;}
+.quick-chip{background:var(--white);border:1.5px solid var(--gray-200);border-radius:99px;padding:7px 14px;font-size:12px;font-family:var(--font);font-weight:600;color:var(--gray-600);cursor:pointer;transition:all .12s;white-space:nowrap;}
+.quick-chip:hover{border-color:var(--teal);color:var(--teal-dark);background:var(--teal-lt);}
+.msg-agent{display:flex;flex-direction:column;align-items:flex-start;max-width:94%;}
+.msg-user{display:flex;flex-direction:column;align-items:flex-end;max-width:88%;align-self:flex-end;}
+.msg-bubble{padding:12px 15px;font-size:15px;line-height:1.7;font-family:var(--font);word-break:break-word;}
+.msg-bubble-agent{background:var(--white);color:var(--black);border-radius:4px 14px 14px 14px;border:1px solid var(--gray-200);box-shadow:var(--shadow-sm);}
+.msg-bubble-user{background:var(--black);color:#fff;border-radius:14px 4px 14px 14px;}
+.msg-bubble strong{font-weight:700;}
+.msg-time{font-size:11px;color:var(--gray-400);margin-top:4px;padding:0 4px;}
+.typing-dots{display:flex;align-items:center;gap:4px;padding:10px 14px;background:var(--white);border-radius:4px 14px 14px 14px;border:1px solid var(--gray-200);}
+.typing-dots span{width:7px;height:7px;border-radius:50%;background:var(--teal);animation:typing-bounce .8s ease infinite;}
+.typing-dots span:nth-child(2){animation-delay:.15s;}
+.typing-dots span:nth-child(3){animation-delay:.3s;}
+.mic-listening{background:#E8354A!important;animation:micPulse 1.2s ease infinite!important;}
+.mic-speaking{background:#F59E0B!important;animation:speakPulse 1.2s ease infinite!important;}
+.voice-mode-active{border-color:#00C2B2!important;background:rgba(0,194,178,.2)!important;}
+.lang-toggle{position:relative;}
+.lang-btn{display:flex;align-items:center;gap:5px;background:var(--gray-100);border:1.5px solid var(--gray-200);border-radius:8px;padding:5px 10px;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:700;color:var(--gray-600);transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.lang-dropdown{position:absolute;top:calc(100% + 6px);right:0;background:var(--white);border:1.5px solid var(--gray-200);border-radius:10px;box-shadow:var(--shadow-lg);overflow:hidden;z-index:200;min-width:160px;display:none;}
+.lang-dropdown.open{display:block;animation:fadeUp .2s ease;}
+.lang-option{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;font-family:var(--font);font-size:14px;font-weight:500;color:var(--gray-600);transition:background .12s;border:none;background:transparent;width:100%;text-align:left;}
+.lang-option:hover{background:var(--gray-50);color:var(--black);}
+.lang-option.active{color:var(--teal);font-weight:700;background:var(--teal-lt);}
+.lang-flag{font-size:18px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.footer{text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid var(--gray-200);}
+.rec-card{background:var(--white);border:1.5px solid var(--gray-200);border-radius:var(--radius);padding:16px;margin-bottom:8px;cursor:pointer;transition:all .12s;box-shadow:var(--shadow-sm);}
+.rec-card:hover{border-color:var(--teal-mid);box-shadow:var(--shadow);}
+@media(max-width:560px){
+  .grid2{grid-template-columns:1fr;}
+  .symptoms-grid{grid-template-columns:1fr 1fr;}
+  .chip{font-size:13px;padding:11px 11px;}
+  .sub-tab{font-size:10px;padding:10px 6px;}
 }
-input::placeholder, textarea::placeholder { color:#9ca3af; }
-select { cursor:pointer; appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:right 14px center; padding-right:40px;
-}
-textarea { resize:vertical; line-height:1.6; min-height:96px; }
-
-/* Buttons */
-.btn { font-family:'Inter',sans-serif; font-weight:600; border:none; border-radius:12px; cursor:pointer; transition:all .18s; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-size:15px; padding:13px 22px; }
-.btn:disabled { opacity:.45; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
-.btn-blue   { background:#2563eb; color:#fff; }
-.btn-blue:not(:disabled):hover   { background:#1d4ed8; transform:translateY(-1px); box-shadow:0 4px 16px rgba(37,99,235,.3); }
-.btn-orange { background:#ea580c; color:#fff; }
-.btn-orange:not(:disabled):hover { background:#c2410c; transform:translateY(-1px); box-shadow:0 4px 16px rgba(234,88,12,.3); }
-.btn-green  { background:#16a34a; color:#fff; }
-.btn-green:not(:disabled):hover  { background:#15803d; transform:translateY(-1px); box-shadow:0 4px 16px rgba(22,163,74,.3); }
-.btn-purple { background:#7c3aed; color:#fff; }
-.btn-purple:not(:disabled):hover { background:#6d28d9; transform:translateY(-1px); box-shadow:0 4px 16px rgba(124,58,237,.3); }
-.btn-outline { background:#fff; color:#374151; border:1.5px solid #d1d5db; }
-.btn-outline:hover { background:#f9fafb; border-color:#9ca3af; }
-.btn-full { width:100%; padding:16px; font-size:16px; }
-.btn-sm   { font-size:13px; padding:8px 14px; border-radius:8px; }
-
-/* Mode tabs */
-.mode-tabs { display:flex; border-bottom:1px solid #e8eaf0; }
-.mode-tab  { flex:1; padding:14px 16px; background:transparent; border:none; font-family:'Inter',sans-serif; font-weight:600; font-size:16px; cursor:pointer; transition:all .2s; border-bottom:2.5px solid transparent; color:#6b7280; display:flex; align-items:center; justify-content:center; gap:8px; }
-.mode-tab.active-home { color:#2563eb; border-bottom-color:#2563eb; }
-.mode-tab.active-pro  { color:#ea580c; border-bottom-color:#ea580c; }
-.mode-tab:hover:not(.active-home):not(.active-pro) { color:#374151; }
-.pro-badge { padding:2px 8px; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; font-size:12px; color:#ea580c; font-weight:700; }
-
-/* Pro sub-tabs */
-.sub-tabs { display:flex; gap:6px; padding:6px; }
-.sub-tab  { flex:1; padding:10px 8px; background:transparent; border:none; font-family:'Inter',sans-serif; font-weight:600; font-size:13px; cursor:pointer; transition:all .2s; border-radius:8px; color:#6b7280; }
-.sub-tab:hover:not(.st-active) { background:#f9fafb; color:#374151; }
-.sub-tab.st-diag    { color:#ea580c; background:#fff7ed; }
-.sub-tab.st-warrant { color:#7c3aed; background:#f5f3ff; }
-.sub-tab.st-revenue { color:#16a34a; background:#f0fdf4; }
-
-/* Symptoms grid */
-.symptoms-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:8px; }
-.chip { border:1.5px solid #e2e8f0; border-radius:10px; padding:12px 14px; background:#fff; color:#374151; font-family:'Inter',sans-serif; font-size:14px; font-weight:500; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:9px; text-align:left; line-height:1.3; }
-.chip:hover { border-color:#93c5fd; background:#eff6ff; }
-.chip.sel-blue   { border-color:#2563eb; background:#eff6ff; color:#1d4ed8; font-weight:600; }
-.chip.sel-orange { border-color:#ea580c; background:#fff7ed; color:#c2410c; font-weight:600; }
-.chip-icon { font-size:20px; flex-shrink:0; }
-
-/* Drop zone */
-.drop-zone { border:2px dashed #d1d5db; border-radius:14px; padding:36px 20px; text-align:center; cursor:pointer; transition:all .2s; background:#fafafa; }
-.drop-zone:hover, .drop-zone.drag { border-color:#2563eb; background:#eff6ff; }
-.drop-zone.has-file { border-style:solid; border-color:#16a34a; background:#f0fdf4; }
-.drop-icon { font-size:44px; margin-bottom:12px; display:block; }
-.drop-title { font-size:17px; font-weight:600; color:#374151; margin-bottom:6px; }
-.drop-sub   { font-size:14px; color:#9ca3af; margin-bottom:16px; }
-
-/* Voice recorder */
-.recorder { background:#f9fafb; border:1.5px solid #e2e8f0; border-radius:12px; padding:16px; transition:all .3s; }
-.recorder.recording { background:#fff5f5; border-color:#fca5a5; }
-.recorder.done      { background:#f0fdf4; border-color:#86efac; }
-.recorder-row { display:flex; align-items:center; gap:12px; }
-.rec-btn-wrap { position:relative; flex-shrink:0; }
-.rec-ring { position:absolute; inset:-7px; border-radius:50%; border:2px solid #ef4444; animation:ripple 1.2s ease infinite; }
-.wave-bars { display:flex; align-items:flex-end; gap:2px; height:20px; }
-.wave-bar  { width:3px; border-radius:3px; background:#ef4444; transform-origin:bottom; animation:wave .55s ease infinite; }
-
-/* Result */
-.result-body { font-size:16px; line-height:1.8; color:#1f2937; white-space:pre-wrap; }
-.result-body strong { color:#1d4ed8; font-weight:600; }
-.sev-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
-.sev-badge { padding:6px 16px; border-radius:99px; font-size:14px; font-weight:700; }
-
-/* Revenue cards */
-.rec-card { background:#fff; border:1.5px solid #e8eaf0; border-radius:14px; padding:20px; margin-bottom:12px; cursor:pointer; transition:all .2s; }
-.rec-card:hover { border-color:#d1d5db; box-shadow:0 2px 12px rgba(0,0,0,.06); }
-
-/* Info boxes */
-.info-box  { border-radius:12px; padding:16px; margin-bottom:16px; }
-.info-blue { background:#eff6ff; border:1px solid #bfdbfe; }
-.info-green{ background:#f0fdf4; border:1px solid #bbf7d0; }
-.info-amber{ background:#fffbeb; border:1px solid #fde68a; }
-.info-red  { background:#fff1f2; border:1px solid #fecdd3; }
-.info-purple{background:#f5f3ff; border:1px solid #ddd6fe; }
-
-/* Media preview */
-.media-preview { width:100%; max-height:220px; object-fit:cover; border-radius:10px; margin-top:14px; border:1px solid #e2e8f0; display:block; }
-
-/* Footer */
-.footer { text-align:center; margin-top:56px; padding-top:28px; border-top:1px solid #e8eaf0; }
-
-/* Grid */
-.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-
-/* Spinner */
-.spinner { display:inline-block; width:18px; height:18px; border:2.5px solid rgba(255,255,255,.25); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; }
-
-@media(max-width:560px) {
-  .grid2 { grid-template-columns:1fr; }
-  .symptoms-grid { grid-template-columns:1fr 1fr; }
-  .chip { font-size:13px; padding:10px 11px; }
-}
-```
-
-  </style>
+</style>
 </head>
 <body>
-
-<!-- NAV -->
-
 <nav class="nav">
   <div class="nav-inner">
     <div class="nav-logo">
@@ -171,934 +171,1393 @@ textarea { resize:vertical; line-height:1.6; min-height:96px; }
         <div class="nav-logo-sub">Powered by AI</div>
       </div>
     </div>
-    <div class="nav-status">
-      <div class="status-dot" id="statusDot"></div>
-      <span class="status-text" id="statusText">Checking…</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="lang-toggle" id="langToggle">
+        <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn">
+          <span id="langFlag">🇺🇸</span><span id="langCode">EN</span>
+          <span style="font-size:10px;opacity:.6;">▾</span>
+        </button>
+        <div class="lang-dropdown" id="langDropdown">
+          <button class="lang-option active" onclick="setLang('en')" id="langOpt-en"><span class="lang-flag">🇺🇸</span>English</button>
+          <button class="lang-option" onclick="setLang('es')" id="langOpt-es"><span class="lang-flag">🇲🇽</span>Español</button>
+          <button class="lang-option" onclick="setLang('zh')" id="langOpt-zh"><span class="lang-flag">🇨🇳</span>中文</button>
+          <button class="lang-option" onclick="setLang('vi')" id="langOpt-vi"><span class="lang-flag">🇻🇳</span>Tiếng Việt</button>
+          <button class="lang-option" onclick="setLang('fr')" id="langOpt-fr"><span class="lang-flag">🇫🇷</span>Français</button>
+          <button class="lang-option" onclick="setLang('pt')" id="langOpt-pt"><span class="lang-flag">🇧🇷</span>Português</button>
+        </div>
+      </div>
+      <div class="nav-status">
+        <div class="status-dot red" id="statusDot"></div>
+        <span class="status-text" id="statusText">Checking…</span>
+      </div>
     </div>
   </div>
 </nav>
-
 <div class="page" id="app">
-
   <!-- HERO -->
-
-  <div class="fu" style="text-align:center;margin-bottom:28px;">
-    <h1 style="font-size:clamp(24px,5vw,38px);font-weight:800;color:#111827;letter-spacing:-0.5px;line-height:1.15;margin-bottom:10px;" id="heroTitle">
-      What's Wrong With Your HVAC?
-    </h1>
-    <p style="font-size:17px;color:#6b7280;line-height:1.65;max-width:460px;margin:0 auto;" id="heroSub">
-      Upload a photo or video, describe what's happening, and our AI will tell you exactly what's wrong.
-    </p>
+  <div class="fu" style="margin-bottom:16px;">
+    <div style="background:linear-gradient(135deg,#0F0F0F 0%,#1a2232 100%);border-radius:16px;padding:28px 22px 24px;text-align:center;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;height:120px;background:radial-gradient(ellipse,rgba(0,194,178,.2) 0%,transparent 70%);pointer-events:none;"></div>
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,194,178,.15);border:1px solid rgba(0,194,178,.3);border-radius:99px;padding:5px 13px;margin-bottom:14px;">
+        <span style="width:6px;height:6px;background:#00C2B2;border-radius:50%;display:inline-block;box-shadow:0 0 8px rgba(0,194,178,.6);"></span>
+        <span style="font-size:11px;font-weight:700;color:#00C2B2;letter-spacing:.5px;text-transform:uppercase;">HVAC Diagnose Pro</span>
+      </div>
+      <h1 style="font-size:clamp(26px,6vw,38px);font-weight:800;color:#FFFFFF;letter-spacing:-.5px;line-height:1.15;margin-bottom:10px;" id="heroTitle">What's Wrong With Your HVAC?</h1>
+      <p style="font-size:15px;color:rgba(255,255,255,.55);line-height:1.65;max-width:400px;margin:0 auto;" id="heroSub">Upload a photo or video, describe what's happening, and we'll tell you exactly what's wrong.</p>
+    </div>
   </div>
-
   <!-- MODE TABS -->
-
-  <div class="card fu" style="padding:0;overflow:hidden;animationDelay:.04s">
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px;">
     <div class="mode-tabs">
-      <button class="mode-tab active-home" id="tabHome" onclick="setMode('home')">
-        🏠 Homeowner
-      </button>
-      <button class="mode-tab" id="tabPro" onclick="setMode('pro')">
-        🔧 Contractor <span class="pro-badge">PRO</span>
-      </button>
+      <button class="mode-tab active" id="tabHome" onclick="setMode('home')">🏠 Homeowner</button>
+      <button class="mode-tab" id="tabPro" onclick="setMode('pro')">🔧 Contractor <span class="pro-badge">PRO</span></button>
     </div>
-    <div style="padding:14px 20px;background:#f9fafb;">
-      <p style="font-size:14px;color:#6b7280;line-height:1.5;" id="modeDesc">
-        Easy-to-understand explanations, safety guidance, and connections to certified local technicians.
-      </p>
+    <div style="padding:16px 20px;background:#F8F9FC;border-top:1px solid #E2E4ED;">
+      <p style="font-size:14px;color:#6B7190;line-height:1.5;" id="modeDesc">Easy-to-understand explanations, safety guidance, and connections to certified local technicians.</p>
     </div>
   </div>
-
-  <!-- PRO SUB-TABS (hidden by default) -->
-
-  <div class="card fu" style="padding:6px;margin-bottom:16px;display:none;" id="proTabs">
+  <!-- PRO SUB-TABS -->
+  <div style="padding:6px;margin-bottom:16px;display:none;background:#fff;border-radius:var(--radius);border:1px solid var(--gray-200);box-shadow:var(--shadow-sm);" id="proTabs">
     <div class="sub-tabs">
-      <button class="sub-tab st-diag"    onclick="setProTab('diag')"    id="stDiag">🔬 Diagnostic</button>
-      <button class="sub-tab"            onclick="setProTab('warranty')" id="stWarranty">🛡️ Warranty</button>
-      <button class="sub-tab"            onclick="setProTab('revenue')"  id="stRevenue">💰 Revenue Builder</button>
+      <button class="sub-tab active" onclick="setProTab('diag')" id="stDiag"><span class="tab-icon">🔬</span>Diagnose</button>
+      <button class="sub-tab" onclick="setProTab('refrig')" id="stRefrig"><span class="tab-icon">❄️</span>Refrigerant</button>
+      <button class="sub-tab" onclick="setProTab('revenue')" id="stRevenue"><span class="tab-icon">💰</span>Revenue</button>
+      <button class="sub-tab" onclick="setProTab('maint')" id="stMaint"><span class="tab-icon">📋</span>Maintenance</button>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════ -->
+  <!-- ═══ HOMEOWNER DIAGNOSTIC PANEL ═══ -->
 
-  <!--  DIAGNOSTIC PANEL                           -->
-
-  <!-- ═══════════════════════════════════════════ -->
-
-  <div id="panelDiag">
-
-```
-<!-- Upload -->
-<div class="card fu">
-  <label class="field-label" id="uploadLabel">Show Us Your System</label>
-  <p class="field-sub" id="uploadSub">A short video or photo helps our AI see exactly what's happening</p>
-  <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
-       ondragover="event.preventDefault();this.classList.add('drag')"
-       ondragleave="this.classList.remove('drag')"
-       ondrop="handleDrop(event)">
-    <span class="drop-icon" id="dropIcon">📷</span>
-    <div class="drop-title" id="dropTitle">Tap to upload a photo or video</div>
-    <div class="drop-sub">MP4, MOV, JPG, PNG — up to 50MB</div>
-    <button class="btn btn-outline btn-sm" type="button">Browse Files</button>
-    <input type="file" id="fileInput" accept="video/*,image/*" style="display:none" onchange="handleFileSelect(event)"/>
-  </div>
-  <img    id="imgPreview"   class="media-preview" style="display:none"/>
-  <video  id="videoPreview" class="media-preview" controls style="display:none"></video>
-</div>
-
-<!-- Voice -->
-<div class="card fu">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-    <label class="field-label" style="margin:0">Voice Description</label>
-    <span style="padding:4px 10px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:99px;font-size:12px;font-weight:600;color:#7c3aed;">AI Listens</span>
-  </div>
-  <p class="field-sub" id="voiceSub">Describe the problem or hold your phone near the system so the AI can hear the sounds</p>
-  <div class="recorder" id="recorder">
-    <div class="recorder-row">
-      <div class="rec-btn-wrap" id="recBtnWrap">
-        <button class="btn btn-purple btn-sm" id="recBtn" onclick="toggleRecording()">🎙️ Record Voice</button>
+  <div id="panelHome">
+    <div class="card">
+      <label class="field-label">Show Us Your System</label>
+      <p class="field-sub">A short video or photo helps us see exactly what's happening</p>
+      <input type="file" id="homeFileInput" accept="video/*,image/*" style="display:none" onchange="handleHomeFileSelect(event)"/>
+      <input type="file" id="homeFileInputCam" accept="image/*,video/*" capture="environment" style="display:none" onchange="handleHomeFileSelect(event)"/>
+      <div class="drop-zone" id="homeDropZone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleHomeDrop(event)" onclick="document.getElementById('homeFileInput').click()">
+        <div id="homeDropPrompt" style="padding:28px 20px 20px;text-align:center;">
+          <div style="width:64px;height:64px;background:#F5F6FA;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:2px solid #e0e0e0;"><span style="font-size:28px;">📷</span></div>
+          <div style="font-size:16px;font-weight:700;color:#0F0F0F;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Take or Upload a Photo</div>
+          <div style="font-size:12px;color:#9499B0;margin-bottom:18px;">Photo · Video · JPG · PNG · up to 50MB</div>
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;" onclick="event.stopPropagation()">
+            <label for="homeFileInputCam" style="display:flex;align-items:center;gap:7px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">📸 Camera</label>
+            <label for="homeFileInput" style="display:flex;align-items:center;gap:7px;background:#FFFFFF;color:#0F0F0F;border:1.5px solid #E2E4ED;border-radius:6px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">🖼️ Library</label>
+          </div>
+        </div>
+        <div class="photo-tips" id="homeDropTips">
+          <div class="photo-tip"><span class="photo-tip-icon">✅</span><strong>Close up</strong><br/>Fill frame</div>
+          <div class="photo-tip"><span class="photo-tip-icon">💡</span><strong>Good light</strong><br/>No shadows</div>
+          <div class="photo-tip"><span class="photo-tip-icon">🔍</span><strong>In focus</strong><br/>Text readable</div>
+          <div class="photo-tip bad"><span class="photo-tip-icon">❌</span><strong>No blur</strong><br/>Retake if shaky</div>
+        </div>
       </div>
-      <div id="recStatus" style="flex:1;">
-        <p style="font-size:14px;color:#6b7280;">Record yourself describing the issue, or hold near the unit</p>
+      <div id="homePreviewWrapper" style="display:none;margin-top:10px;position:relative;">
+        <img id="homeImgPreview" style="width:100%;border-radius:8px;border:1px solid #E2E4ED;display:none;max-height:300px;object-fit:contain;background:#111;"/>
+        <video id="homeVideoPreview" style="width:100%;border-radius:8px;border:1px solid #E2E4ED;display:none;" controls playsinline></video>
+        <button onclick="clearHomeUpload()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+        <div id="homeFileNameTag" style="margin-top:6px;font-size:12px;color:#9499B0;text-align:center;"></div>
       </div>
     </div>
-    <div id="transcriptBox" style="display:none;margin-top:12px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
-      <p style="font-size:12px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">AI Audio Analysis</p>
-      <p style="font-size:14px;color:#4b5563;line-height:1.65;" id="transcriptText"></p>
+    <div class="card">
+      <label class="field-label">What is your system doing?</label>
+      <p class="field-sub">Select everything that applies</p>
+      <div class="symptoms-grid" id="homeSymptoms"></div>
+    </div>
+    <div class="card">
+      <label class="field-label">Describe the problem in your own words</label>
+      <p class="field-sub">When did it start? Is it getting worse? Anything else you've noticed?</p>
+      <textarea id="homeDesc" placeholder="e.g. My air conditioner runs all day but the house never gets below 78°…"></textarea>
+    </div>
+    <div class="card">
+      <label class="field-label">System Age</label>
+      <select id="homeSysAge"><option value="">Select age…</option></select>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <button id="homeRunBtn" onclick="runHomeownerDiagnostic()" style="flex:1;padding:18px;border:none;border-radius:6px;cursor:pointer;background:#00C2B2;color:#fff;font-family:var(--font);font-size:20px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(0,181,181,.4);transition:all .15s;">⚡ Run Diagnostic</button>
+      <button onclick="resetHomeownerDiagnostic()" style="padding:18px 16px;border:2px solid #d0d0d0;border-radius:6px;cursor:pointer;background:#FFFFFF;color:#6B7190;font-family:var(--font);font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;">🔄 New</button>
+    </div>
+    <div id="homeResultPanel" style="display:none;margin-top:8px;" class="fi">
+      <div style="margin-bottom:14px;"><span style="font-size:18px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;">Your Diagnostic Report</span></div>
+      <div class="card" id="homeResultCard" style="margin-bottom:16px;"><div class="result-body" id="homeResultText"></div></div>
+      <div class="info-box info-blue">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="width:48px;height:48px;background:#2563eb;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🛠️</div>
+          <div style="flex:1;">
+            <p style="font-size:17px;font-weight:700;color:#2563EB;margin-bottom:6px;">Need a Certified HVAC Technician?</p>
+            <p style="font-size:15px;color:#2563EB;line-height:1.6;margin-bottom:14px;">Get connected with a licensed, insured HVAC pro. Free estimates, same-day service available.</p>
+            <button class="btn btn-blue" onclick="alert('Connect this to your booking link or phone number.')">📞 Request a Free Estimate</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-outline btn-full" onclick="resetHomeownerDiagnostic()" style="margin-top:8px;">+ Start a New Diagnosis</button>
     </div>
   </div>
-</div>
 
-<!-- System Info -->
-<div class="card fu">
-  <label class="field-label">System Information</label>
-  <p class="field-sub">The more details you give, the more accurate the diagnosis</p>
-  <div class="grid2" style="margin-bottom:14px;">
-    <div>
-      <label class="field-label">System Type</label>
-      <select id="sysType"><option value="">Select type…</option></select>
-    </div>
-    <div>
-      <label class="field-label">Approximate Age</label>
-      <select id="sysAge"><option value="">Select age…</option></select>
-    </div>
-  </div>
-  <div id="brandRow" style="display:none;">
-    <label class="field-label">Brand / Manufacturer</label>
-    <select id="brand"><option value="">Select brand…</option></select>
-  </div>
-</div>
+  <!-- ═══ PRO DIAGNOSE PANEL ═══ -->
 
-<!-- Symptoms -->
-<div class="card fu">
-  <label class="field-label" id="symptomsLabel">What is your system doing?</label>
-  <p class="field-sub">Select everything that applies</p>
-  <div class="symptoms-grid" id="symptomsGrid"></div>
-</div>
-
-<!-- Description -->
-<div class="card fu">
-  <label class="field-label" id="descLabel">Describe the problem in your own words</label>
-  <p class="field-sub" id="descSub">When did it start? Is it getting worse? Anything else you've noticed?</p>
-  <textarea id="desc" placeholder="e.g. My air conditioner runs all day but the house never gets below 78°. Started 3 days ago. I can hear a loud humming from the outside unit…"></textarea>
-</div>
-
-<!-- AI Inputs Summary -->
-<div id="inputsSummary" style="display:none;margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-  <span style="font-size:14px;color:#6b7280;font-weight:500;">AI will analyze:</span>
-  <span id="tagFile"  style="display:none;padding:5px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:99px;font-size:13px;color:#1d4ed8;font-weight:600;"></span>
-  <span id="tagVoice" style="display:none;padding:5px 12px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:99px;font-size:13px;color:#7c3aed;font-weight:600;">🎙️ Voice Recording</span>
-  <span id="tagSymps" style="display:none;padding:5px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:99px;font-size:13px;color:#16a34a;font-weight:600;"></span>
-</div>
-
-<!-- Run Button -->
-<button class="btn btn-blue btn-full fu" id="runBtn" onclick="runDiagnostic()">
-  ⚡ Run AI Diagnostic
-</button>
-
-<!-- Result -->
-<div id="resultPanel" style="display:none;margin-top:24px;" class="fi">
-  <div class="sev-bar">
-    <span style="font-size:18px;font-weight:800;color:#111827;">Your Diagnostic Report</span>
-    <span class="sev-badge" id="sevBadge"></span>
-  </div>
-  <div class="card" id="resultCard" style="margin-bottom:16px;">
-    <div class="result-body" id="resultText"></div>
-  </div>
-
-  <!-- Homeowner CTA -->
-  <div id="homeownerCTA" class="info-box info-blue" style="display:none;">
-    <div style="display:flex;gap:14px;align-items:flex-start;">
-      <div style="width:48px;height:48px;background:#2563eb;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🛠️</div>
+  <div id="panelDiag" style="display:none;">
+    <!-- MIKE BAR -->
+    <div style="background:#1a1a1a;border-radius:12px 12px 0 0;padding:12px 16px;display:flex;align-items:center;gap:12px;">
+      <div style="position:relative;flex-shrink:0;">
+        <div style="width:42px;height:42px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;">🧑‍🔧</div>
+        <div style="position:absolute;bottom:1px;right:1px;width:11px;height:11px;background:#4caf50;border-radius:50%;border:2px solid #1a1a1a;"></div>
+      </div>
       <div style="flex:1;">
-        <p style="font-size:17px;font-weight:700;color:#1e40af;margin-bottom:6px;">Need a Certified HVAC Technician?</p>
-        <p style="font-size:15px;color:#3b5998;line-height:1.6;margin-bottom:14px;">
-          Get connected with a licensed, insured HVAC pro in <strong>Manassas Park, VA</strong>. Free estimates, same-day service, financing available.
-        </p>
-        <button class="btn btn-blue" onclick="alert('Lead captured! Connect this to your phone number or booking link.')">
-          📞 Request a Free Estimate
-        </button>
+        <div style="font-size:15px;font-weight:700;color:#fff;">Mike — Master Tech</div>
+        <div style="font-size:11px;color:#00C2B2;font-weight:500;">● Online · EPA 608 · NATE Certified</div>
+      </div>
+      <button id="voiceModeBtn" onclick="toggleVoiceMode()" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 10px;cursor:pointer;transition:all .15s;">
+        <span style="font-size:16px;">🎙️</span>
+        <span id="voiceModeBtnLabel" style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.3px;">Voice</span>
+      </button>
+      <button onclick="clearChat()" style="background:rgba(255,255,255,.08);border:none;border-radius:6px;padding:6px 10px;color:rgba(255,255,255,.5);font-size:11px;font-family:var(--font);cursor:pointer;font-weight:600;">Clear</button>
+    </div>
+    <!-- VOICE BAR -->
+    <div id="voiceModeBar" style="display:none;background:#0F0F0F;border-left:1px solid #333;border-right:1px solid #333;padding:12px 16px;text-align:center;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:16px;">
+        <button id="micBtn" onclick="toggleMic()" style="width:64px;height:64px;border-radius:50%;background:#00C2B2;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 20px rgba(0,194,178,.4);transition:all .2s;">🎙️</button>
+        <div style="text-align:left;">
+          <div id="voiceStatusText" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">Tap mic to talk to Mike</div>
+          <div id="voiceTranscript" style="font-size:12px;color:#9499B0;max-width:200px;line-height:1.4;min-height:16px;"></div>
+        </div>
+        <button id="stopSpeakBtn" onclick="stopMikeSpeaking()" style="display:none;width:40px;height:40px;border-radius:50%;background:#333;border:none;cursor:pointer;font-size:18px;">⏹️</button>
+      </div>
+      <p style="font-size:11px;color:#555;margin-top:8px;">Put phone on speaker · Mike will talk back</p>
+    </div>
+    <!-- QUICK CHIPS -->
+    <div style="background:#F5F6FA;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;border-top:1px solid #E2E4ED;padding:8px 12px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="quick-chip" onclick="sendQuick('AC not cooling, compressor is running')">Not cooling</button>
+        <button class="quick-chip" onclick="sendQuick('Unit freezing up, ice on the coil')">Freezing up</button>
+        <button class="quick-chip" onclick="sendQuick('High head pressure — walk me through diagnosis')">High head pressure</button>
+        <button class="quick-chip" onclick="sendQuick('Walk me through checking superheat and subcooling')">Check pressures</button>
+        <button class="quick-chip" onclick="sendQuick('Gas furnace not igniting, walk me through sequence')">Not igniting</button>
+        <button class="quick-chip" onclick="sendQuick('Furnace blowing cold air, inducer runs but no flame')">Blowing cold</button>
+        <button class="quick-chip" onclick="sendQuick('Heat pump not heating in heat mode — reversing valve?')">Heat pump</button>
+        <button class="quick-chip" onclick="sendQuick('Blower motor not running — capacitor or motor?')">Blower motor</button>
+        <button class="quick-chip" onclick="sendQuick('System short cycling on cooling')">Short cycling</button>
+        <button class="quick-chip" onclick="sendQuick('Drain line clogged, float switch open')">Drain blocked</button>
+        <button class="quick-chip" onclick="sendQuick('Capacitor keeps failing, what to check')">Capacitor</button>
+        <button class="quick-chip" onclick="sendQuick('Contactor not pulling in, how to diagnose')">Contactor</button>
+      </div>
+    </div>
+    <!-- CHAT MESSAGES -->
+    <div id="chatMessages" style="background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:200px;max-height:320px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
+      <div class="msg-agent">
+        <div class="msg-bubble msg-bubble-agent">
+          <p style="margin-bottom:6px;"><strong>Hey, I'm Mike.</strong> 25 years in the field.</p>
+          <p style="margin-bottom:6px;">Tap a problem above, send me a photo, or run the full diagnostic below. I'll talk you through it.</p>
+          <p>What are you dealing with?</p>
+        </div>
+        <div class="msg-time">Just now</div>
+      </div>
+    </div>
+    <div id="typingIndicator" style="display:none;background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;padding:8px 14px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:28px;height:28px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🧑‍🔧</div>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+    <!-- CHAT INPUT -->
+    <div style="background:#FFFFFF;border:1px solid #E2E4ED;border-top:2px solid #00C2B2;padding:10px 12px;border-radius:0 0 0 0;margin-bottom:12px;">
+      <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none" onchange="handleChatFile(event)"/>
+      <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:#F5F6FA;border:1.5px solid #E2E4ED;border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:#6B7190;"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <label for="chatFileInput" style="width:38px;height:38px;min-width:38px;background:#F5F6FA;border:1.5px solid #E2E4ED;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;flex-shrink:0;">📎</label>
+        <textarea id="chatInput" placeholder="Describe what's happening…" rows="1" style="flex:1;border:1px solid #E2E4ED;border-radius:6px;padding:9px 12px;font-size:15px;font-family:var(--font);resize:none;min-height:38px;max-height:100px;line-height:1.5;outline:none;" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+        <button onclick="sendChat()" id="chatSendBtn" style="background:#00C2B2;color:#fff;border:none;border-radius:6px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:18px;">➤</button>
+      </div>
+    </div>
+
+```
+<!-- FULL DIAGNOSTIC FORM -->
+<div class="card" style="border-top:3px solid #00C2B2;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <label class="field-label" style="margin:0;">Full Diagnostic</label>
+    <span style="font-size:11px;color:#9499B0;">For deeper AI analysis</span>
+  </div>
+  <!-- Photo upload -->
+  <input type="file" id="fileInput" accept="video/*,image/*" style="display:none" onchange="handleFileSelect(event)"/>
+  <input type="file" id="fileInputCam" accept="image/*,video/*" capture="environment" style="display:none" onchange="handleFileSelect(event)"/>
+  <div id="dropZone" class="drop-zone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()" style="min-height:0;">
+    <div id="dropPrompt" style="padding:12px 16px;display:flex;align-items:center;gap:12px;" onclick="event.stopPropagation()">
+      <div style="width:42px;height:42px;background:#F5F6FA;border-radius:10px;display:flex;align-items:center;justify-content:center;border:1.5px solid #E2E4ED;flex-shrink:0;"><span style="font-size:20px;">📷</span></div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#0F0F0F;">Upload Photo or Video</div><div style="font-size:11px;color:#9499B0;margin-top:1px;">Photo · Video · up to 50MB</div></div>
+      <div style="display:flex;gap:6px;">
+        <label for="fileInputCam" style="padding:7px 12px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;">📸</label>
+        <label for="fileInput" style="padding:7px 12px;background:#fff;color:#0F0F0F;border:1.5px solid #E2E4ED;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;">🖼️</label>
       </div>
     </div>
   </div>
-
-  <!-- Contractor Revenue Nudge -->
-  <div id="contractorNudge" class="info-box info-green" style="display:none;">
-    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
-      <span style="font-size:24px;flex-shrink:0;">💰</span>
-      <div style="flex:1;">
-        <p style="font-size:15px;font-weight:700;color:#14532d;margin-bottom:4px;">Turn This Visit Into More Revenue</p>
-        <p style="font-size:14px;color:#166534;line-height:1.5;">Use <strong>Revenue Builder</strong> to get personalized add-on recommendations and conversation scripts for this home.</p>
-      </div>
-      <button class="btn btn-green btn-sm" onclick="setProTab('revenue')" style="flex-shrink:0;">Revenue Builder →</button>
+  <div id="previewWrapper" style="display:none;margin-top:8px;position:relative;">
+    <img id="imgPreview" style="width:100%;border-radius:8px;border:1px solid #E2E4ED;display:none;max-height:200px;object-fit:contain;background:#111;"/>
+    <video id="videoPreview" style="width:100%;border-radius:8px;border:1px solid #E2E4ED;display:none;" controls playsinline></video>
+    <button onclick="clearUpload()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+    <div id="fileNameTag" style="margin-top:4px;font-size:11px;color:#9499B0;text-align:center;"></div>
+  </div>
+  <!-- Nameplate compact -->
+  <input type="file" id="diagNameplateInput" accept="image/*" capture="environment" style="display:none" onchange="handleDiagNameplateScan(event)"/>
+  <input type="file" id="diagNameplateLib" accept="image/*" style="display:none" onchange="handleDiagNameplateScan(event)"/>
+  <div style="background:#F5F6FA;border-radius:8px;border:1px solid #E2E4ED;padding:12px;margin-top:10px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span style="font-size:11px;font-weight:700;color:#6B7190;text-transform:uppercase;letter-spacing:.6px;">🏷️ Nameplate Scan</span>
+      <span style="font-size:10px;background:#00C2B2;color:#fff;padding:2px 7px;border-radius:99px;font-weight:700;">Auto-fills fields</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <label for="diagNameplateInput" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">📸 Camera</label>
+      <label for="diagNameplateLib" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#fff;color:#6B7190;border:1.5px solid #E2E4ED;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">🖼️ Library</label>
+    </div>
+    <div id="diagScanStatus" style="display:none;padding:8px 10px;background:#E6FAF8;border:1px solid #B2F0EA;border-radius:6px;margin-bottom:8px;font-size:12px;color:#009E90;font-weight:600;align-items:center;gap:6px;"><span class="spinner" style="border-color:rgba(0,181,181,.2);border-top-color:#00C2B2;"></span><span id="diagScanStatusText">Reading nameplate…</span></div>
+    <div id="diagScanSuccess" style="display:none;padding:8px 10px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:6px;margin-bottom:8px;font-size:12px;color:#059669;font-weight:600;">✅ <span id="diagScanSuccessText">Nameplate read successfully</span></div>
+    <div class="grid2" style="gap:6px;">
+      <div><label class="field-label" style="font-size:10px;margin-bottom:3px;">Model Number</label><input type="text" id="modelNumber" placeholder="e.g. 4TTX6048J" style="font-size:13px;padding:8px 10px;text-transform:uppercase;" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/></div>
+      <div><label class="field-label" style="font-size:10px;margin-bottom:3px;">Serial Number</label><input type="text" id="serialNumber" placeholder="e.g. 4006E12345" style="font-size:13px;padding:8px 10px;text-transform:uppercase;" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/></div>
     </div>
   </div>
+  <!-- System info -->
+  <div class="grid2" style="margin-top:10px;gap:8px;">
+    <div><label class="field-label">System Type</label><select id="sysType"><option value="">Select…</option></select></div>
+    <div><label class="field-label">Age</label><select id="sysAge"><option value="">Select…</option></select></div>
+  </div>
+  <div id="brandRow" style="margin-top:8px;"><label class="field-label">Brand</label><select id="brand"><option value="">Select brand…</option></select></div>
+  <!-- Symptoms -->
+  <div style="margin-top:10px;">
+    <label class="field-label" id="symptomsLabel">What's it doing?</label>
+    <div class="symptoms-grid" id="symptomsGrid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;"></div>
+  </div>
+  <!-- Description -->
+  <div style="margin-top:10px;">
+    <label class="field-label" id="descLabel">Technical Notes</label>
+    <textarea id="desc" placeholder="e.g. Suction 58 PSI, head 285 PSI at 85°F. Compressor draws 18A then trips breaker…" style="min-height:64px;"></textarea>
+  </div>
+  <!-- Voice collapsed -->
+  <div style="margin-top:10px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 12px;background:#F5F6FA;border-radius:8px;border:1px solid #E2E4ED;" onclick="toggleVoiceDesc()">
+      <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">🎙️</span><span style="font-size:13px;font-weight:700;color:#0F0F0F;">Voice Description</span></div>
+      <span id="voiceDescIcon" style="font-size:16px;color:#9499B0;">▼</span>
+    </div>
+    <div id="voiceDescBody" style="display:none;margin-top:8px;">
+      <p class="field-sub" id="voiceSub">Record yourself describing the issue or hold near the unit</p>
+      <div class="recorder" id="recorder">
+        <div class="recorder-row">
+          <div class="rec-btn-wrap" id="recBtnWrap"><button class="btn btn-purple btn-sm" onclick="toggleRecording()">🎙️ Record Voice</button></div>
+          <div id="recStatus" style="flex:1;"><p style="font-size:14px;color:#9499B0;">Record yourself describing the issue</p></div>
+        </div>
+        <div id="transcriptBox" style="display:none;margin-top:10px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
+          <p style="font-size:12px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Audio Analysis</p>
+          <p style="font-size:13px;color:#6B7190;line-height:1.6;" id="transcriptText"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Tags -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
+    <span id="tagFile" style="display:none;padding:4px 10px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:99px;font-size:12px;color:#2563EB;font-weight:600;"></span>
+    <span id="tagVoice" style="display:none;padding:4px 10px;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:99px;font-size:12px;color:#7C3AED;font-weight:600;">🎙️ Voice</span>
+    <span id="tagSymps" style="display:none;padding:4px 10px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:99px;font-size:12px;color:#059669;font-weight:600;"></span>
+  </div>
+  <!-- Run button -->
+  <div style="display:flex;gap:8px;margin-top:12px;">
+    <button id="runBtn" onclick="runDiagnostic()" style="flex:1;padding:16px;border:none;border-radius:6px;cursor:pointer;background:#00C2B2;color:#fff;font-family:var(--font);font-size:18px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(0,181,181,.4);transition:all .15s;">⚡ Run Diagnostic</button>
+    <button onclick="resetDiagnostic()" style="padding:16px 14px;border:2px solid #d0d0d0;border-radius:6px;cursor:pointer;background:#fff;color:#6B7190;font-family:var(--font);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;">🔄 New</button>
+  </div>
+</div>
 
-  <button class="btn btn-outline btn-full" onclick="resetDiagnostic()" style="margin-top:8px;">
-    + Start a New Diagnosis
-  </button>
+<!-- RESULT PANEL -->
+<div id="resultPanel" style="display:none;margin-top:16px;" class="fi">
+  <div style="margin-bottom:14px;"><span style="font-size:18px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;">Diagnostic Report</span></div>
+  <div class="card" id="resultCard" style="margin-bottom:16px;"><div class="result-body" id="resultText"></div></div>
+  <div id="eduPanel" style="display:none;margin-bottom:16px;">
+    <div class="info-box info-blue" style="margin-bottom:0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div><p style="font-size:15px;font-weight:700;color:#2563EB;margin-bottom:3px;">📚 Homeowner Education Mode</p><p style="font-size:13px;color:#2563EB;">Generate a plain-English explanation to show your customer</p></div>
+        <button class="btn btn-blue btn-sm" onclick="runEduMode()" id="eduBtn">Generate Explanation</button>
+      </div>
+      <div id="eduContent" style="display:none;margin-top:14px;background:#fff;border-radius:10px;padding:16px;">
+        <div id="eduText" style="font-size:15px;line-height:1.8;color:#6B7190;"></div>
+        <button class="btn btn-outline btn-sm" onclick="copyEdu()" style="margin-top:12px;">📋 Copy to Show Customer</button>
+      </div>
+    </div>
+  </div>
+  <div id="contractorNudge" style="display:none;">
+    <div class="info-box info-green">
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:24px;">💰</span>
+        <div style="flex:1;"><p style="font-size:15px;font-weight:700;color:#059669;margin-bottom:4px;">Turn This Visit Into More Revenue</p><p style="font-size:14px;color:#059669;line-height:1.5;">Use Revenue Builder to get personalized add-on recommendations.</p></div>
+        <button class="btn btn-green btn-sm" onclick="setProTab('revenue')">Revenue Builder →</button>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-outline btn-full" onclick="resetDiagnostic()" style="margin-top:8px;">+ Start a New Diagnosis</button>
 </div>
 ```
 
   </div>
 
-  <!-- ═══════════════════════════════════════════ -->
+  <!-- ═══ REFRIGERANT ═══ -->
 
-  <!--  WARRANTY PANEL                             -->
-
-  <!-- ═══════════════════════════════════════════ -->
-
-  <div id="panelWarranty" style="display:none;">
-    <div class="info-box info-purple" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
-      <div style="width:52px;height:52px;background:#7c3aed;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🛡️</div>
-      <div>
-        <p style="font-size:17px;font-weight:700;color:#4c1d95;margin-bottom:4px;">Warranty Lookup</p>
-        <p style="font-size:14px;color:#5b21b6;line-height:1.5;">Enter model and serial number to decode the manufacture date and check warranty coverage for any brand.</p>
+  <div id="panelRefrig" style="display:none;">
+    <div class="info-box info-blue" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
+      <div style="width:52px;height:52px;background:#2563eb;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">❄️</div>
+      <div><p style="font-size:17px;font-weight:700;color:#2563EB;margin-bottom:4px;">Refrigerant Identifier</p><p style="font-size:14px;color:#2563EB;line-height:1.5;">Identify the correct refrigerant, check phase-out status, and get replacement options.</p></div>
+    </div>
+    <div class="card">
+      <label class="field-label">Unit Details</label>
+      <div class="grid2" style="margin-bottom:14px;">
+        <div><label class="field-label">Brand</label><select id="rBrandRefrig"><option value="">Select brand…</option></select></div>
+        <div><label class="field-label">System Type</label><select id="rTypeRefrig"><option value="">Select type…</option></select></div>
+        <div><label class="field-label">Approximate Age</label><select id="rAgeRefrig"><option value="">Select age…</option></select></div>
+        <div><label class="field-label">Model (optional)</label><input type="text" id="rModelRefrig" placeholder="e.g. 24ACC636A003"/></div>
       </div>
+      <label class="field-label">Notes</label>
+      <textarea id="rNotesRefrig" rows="2" placeholder="e.g. Old R-22 system, homeowner wants options."></textarea>
     </div>
-
-```
-<div class="card">
-  <label class="field-label">Manufacturer</label>
-  <select id="wBrand" onchange="showWarrantyLinks()" style="margin-bottom:0;">
-    <option value="">Choose manufacturer…</option>
-  </select>
-  <div id="warrantyLinks" style="display:none;margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;"></div>
-</div>
-
-<div class="card">
-  <label class="field-label">Unit Details</label>
-  <div class="grid2" style="margin-bottom:14px;">
-    <div>
-      <label class="field-label">Model Number</label>
-      <input type="text" id="wModel" placeholder="e.g. 24ACC636A003"/>
+    <div class="info-box info-amber" style="margin-bottom:20px;">
+      <p style="font-size:14px;font-weight:700;color:#b45309;margin-bottom:6px;">⚠️ Phase-Out Alert</p>
+      <p style="font-size:14px;color:#92400e;line-height:1.6;">R-22 production ended in 2020. R-410A phase-down is underway under the AIM Act.</p>
     </div>
-    <div>
-      <label class="field-label">Serial Number *</label>
-      <input type="text" id="wSerial" placeholder="e.g. 4816E12345"/>
+    <button class="btn btn-blue btn-full" id="refrigBtn" onclick="runRefrigLookup()">❄️ Identify Refrigerant</button>
+    <div id="refrigResult" style="display:none;margin-top:20px;" class="fi">
+      <div id="refrigCards"></div>
+      <button class="btn btn-outline btn-full" onclick="resetRefrig()" style="margin-top:8px;">+ New Lookup</button>
     </div>
   </div>
-  <label class="field-label">Additional Notes</label>
-  <textarea id="wNotes" rows="2" placeholder="e.g. Homeowner unsure if unit was registered. Compressor just failed."></textarea>
-</div>
 
-<div class="info-box info-amber" style="margin-bottom:20px;">
-  <p style="font-size:14px;font-weight:600;color:#92400e;margin-bottom:6px;">📍 Where to find the serial number</p>
-  <p style="font-size:14px;color:#78350f;line-height:1.65;">
-    <strong>Outdoor unit:</strong> metal data plate on side panel &nbsp;·&nbsp;
-    <strong>Air handler:</strong> inside the cabinet door &nbsp;·&nbsp;
-    <strong>Furnace:</strong> inside front cover &nbsp;·&nbsp;
-    <strong>Mini-split:</strong> side of the unit
-  </p>
-</div>
-
-<button class="btn btn-purple btn-full" id="warrantyBtn" onclick="runWarranty()">
-  🛡️ Check Warranty Coverage
-</button>
-
-<div id="warrantyResult" style="display:none;margin-top:20px;" class="fi">
-  <div class="card" style="border-left:4px solid #7c3aed;">
-    <p style="font-size:14px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">🛡️ Warranty Analysis Report</p>
-    <div class="result-body" id="warrantyText" style="font-size:15px;"></div>
-  </div>
-  <div id="warrantyVerifyLink" style="display:none;margin-top:12px;" class="info-box info-purple">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <p style="font-size:14px;color:#5b21b6;flex:1;">Always verify directly with the manufacturer:</p>
-      <a id="warrantyVerifyBtn" href="#" target="_blank" style="padding:9px 20px;background:#7c3aed;border-radius:9px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">Verify Online →</a>
-    </div>
-  </div>
-</div>
-```
-
-  </div>
-
-  <!-- ═══════════════════════════════════════════ -->
-
-  <!--  REVENUE BUILDER PANEL                      -->
-
-  <!-- ═══════════════════════════════════════════ -->
+  <!-- ═══ REVENUE BUILDER ═══ -->
 
   <div id="panelRevenue" style="display:none;">
     <div class="info-box info-green" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
       <div style="width:52px;height:52px;background:#16a34a;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">💰</div>
-      <div>
-        <p style="font-size:17px;font-weight:700;color:#14532d;margin-bottom:4px;">Revenue Builder</p>
-        <p style="font-size:14px;color:#166534;line-height:1.5;">Tell us about the home and system. Get personalized recommendations with word-for-word scripts to grow your ticket on every visit.</p>
+      <div><p style="font-size:17px;font-weight:700;color:#059669;margin-bottom:4px;">Revenue Builder</p><p style="font-size:14px;color:#059669;line-height:1.5;">Get personalized add-on recommendations with word-for-word scripts.</p></div>
+    </div>
+    <div class="card">
+      <label class="field-label">System & Home Details</label>
+      <div class="grid2">
+        <div><label class="field-label">System Type</label><select id="rSysType"><option value="">Select…</option></select></div>
+        <div><label class="field-label">System Age</label><select id="rSysAge"><option value="">Select…</option></select></div>
+        <div><label class="field-label">Brand</label><select id="rBrand"><option value="">Select…</option></select></div>
+        <div><label class="field-label">Home Size</label><select id="rHomeSize"><option value="">Select…</option></select></div>
       </div>
     </div>
-
-```
-<div class="card">
-  <label class="field-label">System & Home Details</label>
-  <div class="grid2">
-    <div>
-      <label class="field-label">System Type</label>
-      <select id="rSysType"><option value="">Select…</option></select>
+    <div class="card">
+      <label class="field-label">Home & Family Situation</label>
+      <p class="field-sub">Select everything that applies</p>
+      <div class="symptoms-grid" id="concernsGrid"></div>
     </div>
-    <div>
-      <label class="field-label">System Age</label>
-      <select id="rSysAge"><option value="">Select…</option></select>
+    <div class="card">
+      <label class="field-label">What You Observed On-Site</label>
+      <input type="file" id="revenueMediaInput" accept="image/*,video/*" capture="environment" style="display:none" onchange="handleRevenueScan(event)"/>
+      <input type="file" id="revenueMediaLib" accept="image/*,video/*" style="display:none" onchange="handleRevenueScan(event)"/>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <label for="revenueMediaInput" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;background:#0F0F0F;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">📸 Scan System</label>
+        <label for="revenueMediaLib" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;background:#fff;color:#6B7190;border:1.5px solid #E2E4ED;border-radius:8px;font-size:13px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">🖼️ Library</label>
+      </div>
+      <div id="revScanStatus" style="display:none;padding:10px 12px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:6px;margin-bottom:10px;font-size:13px;color:#059669;font-weight:600;align-items:center;gap:8px;"><span class="spinner" style="border-color:rgba(16,185,129,.2);border-top-color:#10B981;"></span><span>Analyzing system…</span></div>
+      <div id="revMediaPreview" style="display:none;margin-bottom:10px;position:relative;">
+        <img id="revImgPreview" style="display:none;width:100%;max-height:200px;object-fit:contain;border-radius:8px;border:1px solid #E2E4ED;"/>
+        <video id="revVidPreview" style="display:none;width:100%;border-radius:8px;border:1px solid #E2E4ED;" controls playsinline></video>
+        <button onclick="clearRevenueScan()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+      </div>
+      <textarea id="rNotes" placeholder="e.g. Dirty evaporator coil, no UV light, basic 1-inch filter, homeowner has bad allergies…"></textarea>
     </div>
-    <div>
-      <label class="field-label">Brand</label>
-      <select id="rBrand"><option value="">Select…</option></select>
-    </div>
-    <div>
-      <label class="field-label">Home Size</label>
-      <select id="rHomeSize"><option value="">Select…</option></select>
+    <button class="btn btn-green btn-full" id="revenueBtn" onclick="runRevenue()">💰 Build Revenue Recommendations</button>
+    <div id="revenueResult" style="display:none;margin-top:24px;" class="fi">
+      <div class="info-box info-green" style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+          <div style="flex:1;"><p style="font-size:13px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">💰 Revenue Opportunity</p><p style="font-size:15px;color:#6B7190;line-height:1.6;" id="revSummary"></p></div>
+          <div style="text-align:right;flex-shrink:0;"><p style="font-size:28px;font-weight:800;color:#059669;line-height:1;" id="revRange"></p><p style="font-size:12px;color:#9499B0;margin-top:3px;">potential add-on revenue</p></div>
+        </div>
+      </div>
+      <div id="revenueCards"></div>
+      <button class="btn btn-outline btn-full" onclick="resetRevenue()" style="margin-top:14px;">+ New Analysis</button>
     </div>
   </div>
-</div>
 
-<div class="card">
-  <label class="field-label">Home & Family Situation</label>
-  <p class="field-sub">Select everything that applies — helps target the right recommendations</p>
-  <div class="symptoms-grid" id="concernsGrid"></div>
-</div>
+  <!-- ═══ MAINTENANCE PITCHER ═══ -->
 
-<div class="card">
-  <label class="field-label">What You Observed On-Site</label>
-  <p class="field-sub">Any details help the AI tailor the recommendations</p>
-  <textarea id="rNotes" placeholder="e.g. Dirty evaporator coil, no UV light, basic 1-inch filter, homeowner has bad allergies, 14-year-old system with no service agreement, no CO detector visible…"></textarea>
-</div>
-
-<button class="btn btn-green btn-full" id="revenueBtn" onclick="runRevenue()">
-  💰 Build Revenue Recommendations
-</button>
-
-<div id="revenueResult" style="display:none;margin-top:24px;" class="fi">
-  <div class="info-box info-green" style="margin-bottom:20px;">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
-      <div style="flex:1;">
-        <p style="font-size:13px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">💰 Revenue Opportunity</p>
-        <p style="font-size:15px;color:#1f2937;line-height:1.6;" id="revSummary"></p>
-      </div>
-      <div style="text-align:right;flex-shrink:0;">
-        <p style="font-size:28px;font-weight:800;color:#16a34a;line-height:1;" id="revRange"></p>
-        <p style="font-size:12px;color:#6b7280;margin-top:3px;">potential add-on revenue</p>
-        <p style="font-size:14px;color:#d97706;font-weight:700;margin-top:4px;" id="revProfit"></p>
+  <div id="panelMaint" style="display:none;">
+    <div class="info-box info-amber" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
+      <div style="width:52px;height:52px;background:#b45309;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">📋</div>
+      <div><p style="font-size:17px;font-weight:700;color:#b45309;margin-bottom:4px;">Maintenance Agreement Pitcher</p><p style="font-size:14px;color:#92400e;line-height:1.5;">Get a word-for-word customized pitch script to sell a maintenance agreement.</p></div>
+    </div>
+    <div class="card">
+      <label class="field-label">System Details</label>
+      <div class="grid2" style="margin-bottom:0;">
+        <div><label class="field-label">System Type</label><select id="mSysType"><option value="">Select…</option></select></div>
+        <div><label class="field-label">System Age</label><select id="mSysAge"><option value="">Select…</option></select></div>
+        <div style="margin-top:14px;"><label class="field-label">Brand</label><select id="mBrand"><option value="">Select…</option></select></div>
+        <div style="margin-top:14px;"><label class="field-label">Last Serviced</label><select id="mLastService"><option value="">Select…</option><option>Never serviced</option><option>1+ years ago</option><option>6–12 months ago</option><option>Within 6 months</option></select></div>
       </div>
     </div>
-  </div>
-  <div id="revenueCards"></div>
-  <div class="info-box info-amber" style="margin-top:16px;display:flex;gap:12px;">
-    <span style="font-size:22px;flex-shrink:0;">💡</span>
-    <p style="font-size:14px;color:#78350f;line-height:1.65;margin:0;">
-      <strong>Pro tip:</strong> Present 2–3 recommendations max per visit. Always lead with the Safety item first — homeowners almost always say yes. Then offer one Comfort or IAQ upgrade.
-    </p>
-  </div>
-  <button class="btn btn-outline btn-full" onclick="resetRevenue()" style="margin-top:14px;">+ New Analysis</button>
-</div>
-```
-
+    <div class="card">
+      <label class="field-label">Homeowner Situation</label>
+      <p class="field-sub">Select everything that applies</p>
+      <div class="symptoms-grid" id="maintConcernsGrid"></div>
+    </div>
+    <div class="card">
+      <label class="field-label">What Did You Find On This Visit?</label>
+      <textarea id="mFindings" placeholder="e.g. Dirty coil, worn belts, no surge protection, homeowner mentioned high bills…"></textarea>
+    </div>
+    <div class="card">
+      <label class="field-label">Your Maintenance Plan Details</label>
+      <div class="grid2">
+        <div><label class="field-label">Plan Price / Year</label><input type="text" id="mPrice" placeholder="e.g. $179"/></div>
+        <div><label class="field-label">Visits Included</label><select id="mVisits"><option value="">Select…</option><option>1 visit per year</option><option>2 visits per year</option><option>Quarterly (4 visits)</option></select></div>
+      </div>
+    </div>
+    <button class="btn btn-full" style="background:#b45309;color:#fff;" id="maintBtn" onclick="runMaintenancePitch()">📋 Generate Pitch Script</button>
+    <div id="maintResult" style="display:none;margin-top:24px;" class="fi">
+      <div class="pitch-section">
+        <p style="font-size:14px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;">📋 Your Customized Pitch Script</p>
+        <div id="maintScriptText" style="font-size:15px;line-height:1.85;color:#6B7190;"></div>
+        <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+          <button class="btn btn-sm" style="background:#b45309;color:#fff;" onclick="copyMaintScript()">📋 Copy Script</button>
+          <button class="btn btn-outline btn-sm" onclick="resetMaint()">+ New Pitch</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- FOOTER -->
 
   <div class="footer">
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">
-      <div style="width:28px;height:28px;background:linear-gradient(135deg,#2563eb,#0ea5e9);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;">❄️</div>
-      <p style="font-size:15px;font-weight:700;color:#374151;">HVAC Diagnose Pro</p>
+      <div style="width:28px;height:28px;background:#00C2B2;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;">❄️</div>
+      <p style="font-size:16px;font-weight:700;color:#2563EB;letter-spacing:.5px;text-transform:uppercase;">HVAC Diagnose Pro</p>
     </div>
-    <p style="font-size:14px;color:#9ca3af;margin-bottom:6px;">Homeowner $9.99/mo &nbsp;·&nbsp; Contractor Pro $29.99/mo</p>
-    <p style="font-size:12px;color:#d1d5db;line-height:1.6;max-width:400px;margin:0 auto;">
-      AI diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician.
-    </p>
+    <p style="font-size:14px;color:#6B7190;margin-bottom:6px;">Homeowner $9.99/mo · Contractor Pro $29.99/mo</p>
+    <p style="font-size:11px;color:#9499B0;line-height:1.6;max-width:400px;margin:0 auto;">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician.</p>
   </div>
-
-</div><!-- end .page -->
-
+</div>
 <script>
-// ── Data ───────────────────────────────────────────────────────
-const SYS_TYPES  = ["Central AC (Split System)","Heat Pump","Gas Furnace","Electric Furnace","Mini-Split / Ductless","Package Unit","Boiler / Radiant Heat","Window Unit","PTAC Unit","Geothermal","VRF / VRV System"];
-const SYS_AGES   = ["0–5 years","5–10 years","10–15 years","15–20 years","20+ years","Not sure"];
-const BRANDS     = ["Carrier","Bryant","Payne","Trane","American Standard","Lennox","Goodman","Amana","Daikin","Rheem","Ruud","York","Coleman","Heil","Tempstar","Mitsubishi Electric","Fujitsu","LG","Bosch","Weil-McLain","Other / Unknown"];
-const HOME_SIZES = ["Under 1,000 sq ft","1,000–1,500 sq ft","1,500–2,000 sq ft","2,000–2,500 sq ft","2,500–3,000 sq ft","3,000–4,000 sq ft","4,000+ sq ft"];
-const HOME_SYMPTOMS = [
-  {icon:"❄️",label:"Not cooling"},{icon:"🔥",label:"Not heating"},{icon:"💨",label:"Weak airflow"},
-  {icon:"💧",label:"Water leaking"},{icon:"🔊",label:"Strange noises"},{icon:"💸",label:"High energy bills"},
-  {icon:"🌡️",label:"Uneven temperatures"},{icon:"🤧",label:"Poor air quality"},{icon:"🔄",label:"Keeps cycling on/off"},
-  {icon:"❌",label:"Won't turn on"},{icon:"🧊",label:"Ice forming on unit"},{icon:"👃",label:"Burning smell"},
-];
-const PRO_SYMPTOMS = [
-  {icon:"⚡",label:"Electrical fault"},{icon:"🌡️",label:"Refrigerant issue"},{icon:"🔧",label:"Compressor failure"},
-  {icon:"💨",label:"Blower motor"},{icon:"🔌",label:"Capacitor fault"},{icon:"🌊",label:"Drain blockage"},
-  {icon:"🔥",label:"Heat exchanger"},{icon:"📡",label:"Controls / Board"},{icon:"💧",label:"Refrigerant leak"},
-  {icon:"📊",label:"Low static pressure"},{icon:"🔩",label:"Bearing / belt wear"},{icon:"🏠",label:"Ductwork issue"},
-];
-const CONCERNS = [
-  {icon:"😷",label:"Allergies or Asthma"},{icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},
-  {icon:"🐾",label:"Pets in home"},{icon:"💧",label:"Humidity problems"},{icon:"🌡️",label:"Hot or cold rooms"},
-  {icon:"💰",label:"High energy bills"},{icon:"🔒",label:"No service plan yet"},{icon:"🛢️",label:"Old R-22 system"},
-  {icon:"🏚️",label:"Older home"},{icon:"🔥",label:"Gas appliances"},{icon:"💨",label:"Poor ventilation"},
-];
-const WARRANTY_INFO = {
-  "Carrier":{url:"https://www.carrier.com/residential/en/us/support/warranty-lookup/",phone:"1-800-227-7437"},
-  "Bryant":{url:"https://www.bryant.com/en/us/support/warranty/",phone:"1-800-428-4326"},
-  "Trane":{url:"https://www.trane.com/residential/en/resources/warranty/",phone:"1-800-872-6381"},
-  "American Standard":{url:"https://www.americanstandardair.com/support/warranty/",phone:"1-800-821-7143"},
-  "Lennox":{url:"https://www.lennox.com/resources/warranty-info",phone:"1-800-953-6669"},
-  "Goodman":{url:"https://www.goodmanmfg.com/resources/warranty",phone:"1-877-254-4729"},
-  "Amana":{url:"https://www.amana-hac.com/resources/warranty",phone:"1-877-254-4729"},
-  "Daikin":{url:"https://www.daikincomfort.com/resources/warranty",phone:"1-855-770-2905"},
-  "Rheem":{url:"https://www.rheem.com/warranty/",phone:"1-800-621-5622"},
-  "Ruud":{url:"https://www.ruud.com/warranty/",phone:"1-800-848-7883"},
-  "York":{url:"https://www.york.com/resources/warranty",phone:"1-800-967-5465"},
-  "Mitsubishi Electric":{url:"https://www.mitsubishicomfort.com/support/warranty",phone:"1-800-433-4822"},
-};
-const CAT_STYLE = {
-  Safety:     {bg:"#fff1f2",border:"#fecdd3",text:"#be123c",icon:"🛡️"},
-  IAQ:        {bg:"#eff6ff",border:"#bfdbfe",text:"#1d4ed8",icon:"🌬️"},
-  Comfort:    {bg:"#f5f3ff",border:"#ddd6fe",text:"#7c3aed",icon:"🌡️"},
-  Efficiency: {bg:"#f0fdf4",border:"#bbf7d0",text:"#15803d",icon:"⚡"},
-  Maintenance:{bg:"#fffbeb",border:"#fde68a",text:"#b45309",icon:"🔧"},
-};
+// ─── DATA ───
+const SYS_TYPES=["Air Conditioner – Split System","Air Conditioner – Package Unit","AC Condenser (Outdoor Unit Only)","Heat Pump Condenser (Outdoor Unit Only)","Heat Pump – Split System","Heat Pump – Package Unit","Heat Pump – Dual Fuel","Air Handler – Electric","Air Handler – with Electric Heat Strip","Gas Furnace","Electric Furnace","Oil Furnace","Mini-Split – Single Zone","Mini-Split – Multi Zone","Package Unit – Gas/Electric","Package Unit – Electric","Boiler – Hot Water","Boiler – Steam","Geothermal Heat Pump","VRF / VRV System","PTAC / PTHP","Window AC","Radiant / In-Floor Heat"];
+const SYS_AGES=["0–5 years","5–10 years","10–15 years","15–20 years","20+ years","Not sure"];
+const BRANDS=["Carrier","Bryant","Payne","Trane","American Standard","Lennox","Goodman","Amana","Daikin","Rheem","Ruud","York","Coleman","Heil","Tempstar","Mitsubishi Electric","Fujitsu","LG","Bosch","Weil-McLain","Other / Unknown"];
+const HOME_SIZES=["Under 1,000 sq ft","1,000–1,500 sq ft","1,500–2,000 sq ft","2,000–2,500 sq ft","2,500–3,000 sq ft","3,000–4,000 sq ft","4,000+ sq ft"];
+const HOME_SYMPTOMS=[{icon:"❄️",label:"Not cooling"},{icon:"🔥",label:"Not heating"},{icon:"💨",label:"Weak airflow"},{icon:"💧",label:"Water leaking"},{icon:"🔊",label:"Strange noises"},{icon:"💸",label:"High energy bills"},{icon:"🌡️",label:"Uneven temperatures"},{icon:"🤧",label:"Poor air quality"},{icon:"🔄",label:"Keeps cycling on/off"},{icon:"❌",label:"Won't turn on"},{icon:"🧊",label:"Ice forming on unit"},{icon:"👃",label:"Burning smell"}];
+const PRO_SYMPTOMS=[{icon:"❄️",label:"Not cooling"},{icon:"🌡️",label:"High head pressure"},{icon:"📉",label:"Low suction pressure"},{icon:"🧊",label:"Freezing up"},{icon:"🌊",label:"Refrigerant leak"},{icon:"🔄",label:"Short cycling"},{icon:"🔥",label:"No heat"},{icon:"🔥",label:"Furnace not igniting"},{icon:"💨",label:"Furnace blowing cold"},{icon:"🔩",label:"Heat exchanger issue"},{icon:"🟡",label:"Inducer motor fail"},{icon:"🔌",label:"Pressure switch fault"},{icon:"🔃",label:"Reversing valve stuck"},{icon:"🌡️",label:"Heat pump not heating"},{icon:"❄️",label:"Heat pump not cooling"},{icon:"💨",label:"Weak airflow"},{icon:"🔧",label:"Blower motor fail"},{icon:"🔌",label:"Capacitor fault"},{icon:"💧",label:"Drain blockage"},{icon:"⚡",label:"Electrical fault"},{icon:"🔌",label:"Contactor fail"},{icon:"🔧",label:"Compressor failure"},{icon:"🔊",label:"Strange noise"},{icon:"👃",label:"Burning smell"}];
+const CONCERNS=[{icon:"😷",label:"Allergies or Asthma"},{icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},{icon:"🐾",label:"Pets in home"},{icon:"💧",label:"Humidity problems"},{icon:"🌡️",label:"Hot or cold rooms"},{icon:"💰",label:"High energy bills"},{icon:"🔒",label:"No service plan yet"},{icon:"🛢️",label:"Old R-22 system"},{icon:"🏚️",label:"Older home"},{icon:"🔥",label:"Gas appliances"},{icon:"💨",label:"Poor ventilation"}];
+const MAINT_CONCERNS=[{icon:"💸",label:"Worried about bills"},{icon:"🔒",label:"Wants peace of mind"},{icon:"😷",label:"Health / air quality"},{icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},{icon:"🏠",label:"Older home"},{icon:"💔",label:"Had a breakdown before"},{icon:"🔥",label:"Gas system"},{icon:"📅",label:"Snowbird / seasonal"}];
+const CAT_STYLE={Safety:{bg:"#ffebee",border:"#ef9a9a",text:"#be123c",icon:"🛡️"},IAQ:{bg:"#e3f2fd",border:"#90caf9",text:"#1565c0",icon:"🌬️"},Comfort:{bg:"#ede7f6",border:"#b39ddb",text:"#4527a0",icon:"🌡️"},Efficiency:{bg:"#e8f5e9",border:"#a5d6a7",text:"#15803d",icon:"⚡"},Maintenance:{bg:"#fffbeb",border:"#fde68a",text:"#b45309",icon:"🔧"}};
 
-// ── State ──────────────────────────────────────────────────────
-let mode = "home";
-let proTab = "diag";
-let selectedSymptoms = [];
-let selectedConcerns = [];
-let uploadedFile = null;
-let audioTranscript = "";
-let mediaRecorder = null;
-let audioChunks = [];
-let recTimer = null;
-let recSeconds = 0;
+// ─── STATE ───
+var mode=“home”,proTab=“diag”;
+var selectedSymptoms=[],selectedConcerns=[],selectedMaintConcerns=[],selectedHomeSymptoms=[];
+var uploadedFile=null,revenueMediaFile=null,chatAttachment=null;
+var homeUploadedFile=null;
+var audioTranscript=””,lastDiagResult=””;
+var mediaRecorder=null,audioChunks=[],recTimer=null,recSeconds=0;
+var chatHistory=[],chatSending=false;
+var currentLang=‘en’;
+var voiceMode=false,mikeVoice=null,mikeAudio=null,isMikeSpeaking=false,isListening=false,speechRecognition=null,autoListenAfterSpeak=false;
 
-// ── Init ───────────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
-  populateSelects();
-  buildSymptomGrid("home");
-  buildConcernsGrid();
-  checkHealth();
+// ─── INIT ───
+document.addEventListener(“DOMContentLoaded”,function(){
+populateSelects();
+buildSymptomGrid(“pro”);
+buildHomeSymptomGrid();
+buildConcernsGrid();
+buildMaintConcernsGrid();
+checkHealth();
+if(window.speechSynthesis){window.speechSynthesis.onvoiceschanged=loadMikeVoice;loadMikeVoice();}
+});
+document.addEventListener(‘click’,function(e){
+var t=document.getElementById(‘langToggle’);
+if(t&&!t.contains(e.target)){var d=document.getElementById(‘langDropdown’);if(d)d.classList.remove(‘open’);}
 });
 
-function checkHealth() {
-  fetch("/api/health")
-    .then(r => r.json())
-    .then(d => {
-      const dot  = document.getElementById("statusDot");
-      const text = document.getElementById("statusText");
-      if (d.aiReady) {
-        dot.className = "status-dot";
-        text.textContent = "AI Ready";
-      } else {
-        dot.className = "status-dot red";
-        text.textContent = "No API Key";
-      }
-    })
-    .catch(() => {
-      document.getElementById("statusDot").className = "status-dot red";
-      document.getElementById("statusText").textContent = "Offline";
-    });
+// ─── HEALTH ───
+function checkHealth(retry){
+retry=retry||0;
+fetch(”/api/health”).then(function(r){return r.json();}).then(function(d){
+var dot=document.getElementById(“statusDot”),txt=document.getElementById(“statusText”);
+if(d.aiReady){dot.className=“status-dot”;txt.textContent=“AI Ready”;}
+else{dot.className=“status-dot red”;txt.textContent=“No API Key”;}
+}).catch(function(){
+document.getElementById(“statusDot”).className=“status-dot red”;
+document.getElementById(“statusText”).textContent=“Offline”;
+if(retry<3)setTimeout(function(){checkHealth(retry+1);},3000*(retry+1));
+});
 }
 
-function populateSelects() {
-  const selects = {
-    sysType:   SYS_TYPES,
-    sysAge:    SYS_AGES,
-    brand:     BRANDS,
-    wBrand:    BRANDS,
-    rSysType:  SYS_TYPES,
-    rSysAge:   SYS_AGES,
-    rBrand:    BRANDS,
-    rHomeSize: HOME_SIZES,
-  };
-  for (const [id, opts] of Object.entries(selects)) {
-    const el = document.getElementById(id);
-    if (!el) continue;
-    opts.forEach(o => {
-      const opt = document.createElement("option");
-      opt.value = opt.textContent = o;
-      el.appendChild(opt);
-    });
-  }
+// ─── SELECTS ───
+function populateSelects(){
+var map={sysType:SYS_TYPES,sysAge:SYS_AGES,brand:BRANDS,homeSysAge:SYS_AGES,
+rSysType:SYS_TYPES,rSysAge:SYS_AGES,rBrand:BRANDS,rHomeSize:HOME_SIZES,
+rBrandRefrig:BRANDS,rTypeRefrig:SYS_TYPES,rAgeRefrig:SYS_AGES,
+mSysType:SYS_TYPES,mSysAge:SYS_AGES,mBrand:BRANDS};
+for(var id in map){var el=document.getElementById(id);if(!el)continue;map[id].forEach(function(o){var opt=document.createElement(“option”);opt.value=opt.textContent=o;el.appendChild(opt);});}
 }
 
-// ── Mode switching ─────────────────────────────────────────────
-function setMode(m) {
-  mode = m;
-  const isPro = m === "pro";
-  document.getElementById("tabHome").className = "mode-tab" + (m==="home" ? " active-home" : "");
-  document.getElementById("tabPro").className  = "mode-tab" + (m==="pro"  ? " active-pro"  : "");
-  document.getElementById("proTabs").style.display   = isPro ? "block" : "none";
-  document.getElementById("heroTitle").textContent   = isPro ? "Professional HVAC Diagnostics" : "What's Wrong With Your HVAC?";
-  document.getElementById("heroSub").textContent     = isPro
-    ? "Upload a video, record your observations, and get a complete technical diagnostic report instantly."
-    : "Upload a photo or video of your system, describe what's happening, and our AI will tell you exactly what's wrong.";
-  document.getElementById("modeDesc").textContent    = isPro
-    ? "Full technical reports with measurements, part numbers, repair procedures, and replace-vs-repair analysis."
-    : "Easy-to-understand explanations, safety guidance, and connections to certified local technicians.";
-  document.getElementById("uploadLabel").textContent = isPro ? "Upload a Photo or Video" : "Show Us Your System";
-  document.getElementById("uploadSub").textContent   = isPro
-    ? "Upload a photo or video of the unit for visual AI analysis"
-    : "A short video or photo helps our AI see exactly what's happening";
-  document.getElementById("voiceSub").textContent    = isPro
-    ? "Record your verbal observations — readings, sounds you hear, anything you notice on-site"
-    : "Describe the problem or hold your phone near the system so the AI can hear the sounds";
-  document.getElementById("symptomsLabel").textContent = isPro ? "Select All Fault Indicators" : "What is your system doing?";
-  document.getElementById("descLabel").textContent     = isPro ? "Technical Notes" : "Describe the problem in your own words";
-  document.getElementById("descSub").textContent       = isPro
-    ? "Include any measurements, readings, or observations"
-    : "When did it start? Is it getting worse? Anything else you've noticed?";
-  document.getElementById("brandRow").style.display    = isPro ? "block" : "none";
-  document.getElementById("desc").placeholder          = isPro
-    ? "e.g. Suction 58 PSI, head 285 PSI at 85°F. Compressor draws 18A then trips breaker. Capacitor tested good 45µF…"
-    : "e.g. My air conditioner runs all day but the house never gets below 78°. Started 3 days ago. I can hear a loud humming from the outside unit…";
-  selectedSymptoms = [];
-  buildSymptomGrid(m);
-  if (isPro) setProTab("diag");
-  else {
-    document.getElementById("panelDiag").style.display = "block";
-    document.getElementById("panelWarranty").style.display = "none";
-    document.getElementById("panelRevenue").style.display  = "none";
-  }
-  resetDiagnostic();
+// ─── MODE ───
+function setMode(m){
+mode=m;
+var isPro=m===“pro”;
+document.getElementById(“tabHome”).className=“mode-tab”+(m===“home”?” active”:””);
+document.getElementById(“tabPro”).className=“mode-tab”+(m===“pro”?” active”:””);
+document.getElementById(“proTabs”).style.display=isPro?“block”:“none”;
+document.getElementById(“panelHome”).style.display=isPro?“none”:“block”;
+// Hide all pro panels — setProTab will show the right one
+[“panelDiag”,“panelRefrig”,“panelRevenue”,“panelMaint”].forEach(function(id){
+var el=document.getElementById(id);if(el)el.style.display=“none”;
+});
+document.getElementById(“heroTitle”).textContent=isPro?“Professional HVAC Diagnostics”:“What’s Wrong With Your HVAC?”;
+document.getElementById(“heroSub”).textContent=isPro?“Full technical diagnostics, Mike live chat, nameplate scanner, revenue tools.”:“Upload a photo or video, describe what’s happening, and we’ll tell you exactly what’s wrong.”;
+document.getElementById(“modeDesc”).textContent=isPro?“Full technical reports, Mike live chat, nameplate scanner, revenue builder, and maintenance pitcher.”:“Easy-to-understand explanations, safety guidance, and connections to certified local technicians.”;
+if(isPro)setProTab(“diag”);
 }
 
-function setProTab(tab) {
-  proTab = tab;
-  document.getElementById("panelDiag").style.display    = tab==="diag"    ? "block" : "none";
-  document.getElementById("panelWarranty").style.display= tab==="warranty" ? "block" : "none";
-  document.getElementById("panelRevenue").style.display = tab==="revenue"  ? "block" : "none";
-  document.getElementById("stDiag").className    = "sub-tab" + (tab==="diag"    ? " st-diag"    : "");
-  document.getElementById("stWarranty").className= "sub-tab" + (tab==="warranty"? " st-warrant" : "");
-  document.getElementById("stRevenue").className = "sub-tab" + (tab==="revenue" ? " st-revenue" : "");
+function setProTab(tab){
+proTab=tab;
+var panels={diag:“panelDiag”,refrig:“panelRefrig”,revenue:“panelRevenue”,maint:“panelMaint”};
+var tabs={diag:“stDiag”,refrig:“stRefrig”,revenue:“stRevenue”,maint:“stMaint”};
+for(var t in panels){
+var el=document.getElementById(panels[t]);
+if(el)el.style.display=(t===tab)?“block”:“none”;
+}
+for(var t in tabs){
+var el=document.getElementById(tabs[t]);
+if(el)el.className=“sub-tab”+(t===tab?” active”:””);
+}
 }
 
-// ── Symptom grid ───────────────────────────────────────────────
-function buildSymptomGrid(m) {
-  const syms = m==="pro" ? PRO_SYMPTOMS : HOME_SYMPTOMS;
-  const grid = document.getElementById("symptomsGrid");
-  grid.innerHTML = "";
-  syms.forEach(({icon, label}) => {
-    const btn = document.createElement("button");
-    btn.className = "chip";
-    btn.innerHTML = `<span class="chip-icon">${icon}</span><span>${label}</span>`;
-    btn.onclick = () => {
-      const idx = selectedSymptoms.indexOf(label);
-      if (idx > -1) { selectedSymptoms.splice(idx,1); btn.className = "chip"; }
-      else { selectedSymptoms.push(label); btn.className = "chip " + (m==="pro" ? "sel-orange" : "sel-blue"); }
-      updateInputsSummary();
-    };
-    grid.appendChild(btn);
-  });
+function toggleVoiceDesc(){
+var body=document.getElementById(‘voiceDescBody’),icon=document.getElementById(‘voiceDescIcon’);
+var open=body.style.display!==‘none’;
+body.style.display=open?‘none’:‘block’;
+icon.textContent=open?‘▼’:‘▲’;
 }
 
-function buildConcernsGrid() {
-  const grid = document.getElementById("concernsGrid");
-  CONCERNS.forEach(({icon, label}) => {
-    const btn = document.createElement("button");
-    btn.className = "chip";
-    btn.innerHTML = `<span class="chip-icon">${icon}</span><span>${label}</span>`;
-    btn.onclick = () => {
-      const idx = selectedConcerns.indexOf(label);
-      if (idx > -1) { selectedConcerns.splice(idx,1); btn.className = "chip"; }
-      else { selectedConcerns.push(label); btn.className = "chip sel-blue"; }
-    };
-    grid.appendChild(btn);
-  });
+// ─── SYMPTOM GRIDS ───
+function buildSymptomGrid(m){
+var grid=document.getElementById(“symptomsGrid”);if(!grid)return;
+grid.innerHTML=””;
+PRO_SYMPTOMS.forEach(function(s){
+var btn=document.createElement(“button”);btn.className=“chip”;
+btn.innerHTML=’<span class="chip-icon">’+s.icon+’</span><span>’+s.label+’</span>’;
+btn.onclick=function(){var idx=selectedSymptoms.indexOf(s.label);if(idx>-1){selectedSymptoms.splice(idx,1);btn.className=“chip”;}else{selectedSymptoms.push(s.label);btn.className=“chip selected”;}updateInputsSummary();};
+grid.appendChild(btn);
+});
 }
 
-// ── File upload ────────────────────────────────────────────────
-function handleDrop(e) {
-  e.preventDefault();
-  document.getElementById("dropZone").classList.remove("drag");
-  const file = e.dataTransfer.files[0];
-  if (file) setFile(file);
-}
-function handleFileSelect(e) {
-  const file = e.target.files[0];
-  if (file) setFile(file);
-}
-function setFile(file) {
-  uploadedFile = file;
-  const isImg = file.type.startsWith("image/");
-  const url = URL.createObjectURL(file);
-  document.getElementById("dropZone").classList.add("has-file");
-  document.getElementById("dropIcon").textContent  = isImg ? "🖼️" : "🎬";
-  document.getElementById("dropTitle").textContent = file.name;
-  const img = document.getElementById("imgPreview");
-  const vid = document.getElementById("videoPreview");
-  if (isImg) { img.src=url; img.style.display="block"; vid.style.display="none"; }
-  else       { vid.src=url; vid.style.display="block"; img.style.display="none"; }
-  updateInputsSummary();
+function buildHomeSymptomGrid(){
+var grid=document.getElementById(“homeSymptoms”);if(!grid)return;
+grid.innerHTML=””;
+HOME_SYMPTOMS.forEach(function(s){
+var btn=document.createElement(“button”);btn.className=“chip”;
+btn.innerHTML=’<span class="chip-icon">’+s.icon+’</span><span>’+s.label+’</span>’;
+btn.onclick=function(){var idx=selectedHomeSymptoms.indexOf(s.label);if(idx>-1){selectedHomeSymptoms.splice(idx,1);btn.className=“chip”;}else{selectedHomeSymptoms.push(s.label);btn.className=“chip selected”;}};
+grid.appendChild(btn);
+});
 }
 
-// ── Voice recording ────────────────────────────────────────────
-async function toggleRecording() {
-  if (!mediaRecorder || mediaRecorder.state==="inactive") {
-    await startRecording();
-  } else {
-    stopRecording();
-  }
-}
-async function startRecording() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-    const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg";
-    mediaRecorder = new MediaRecorder(stream, {mimeType:mime});
-    audioChunks = [];
-    mediaRecorder.ondataavailable = e => { if(e.data.size>0) audioChunks.push(e.data); };
-    mediaRecorder.onstop = () => processAudio(mime);
-    mediaRecorder.start(200);
-    recSeconds = 0;
-    recTimer = setInterval(() => {
-      recSeconds++;
-      const m = String(Math.floor(recSeconds/60)).padStart(2,"0");
-      const s = String(recSeconds%60).padStart(2,"0");
-      document.getElementById("recStatus").innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div class="wave-bars">
-            ${[10,16,12,18,8].map((h,i)=>`<div class="wave-bar" style="height:${h}px;animation-delay:${i*.1}s"></div>`).join("")}
-          </div>
-          <span style="color:#ef4444;font-weight:700;font-size:15px;">${m}:${s}</span>
-          <span class="pulsing" style="color:#6b7280;font-size:13px;">Recording…</span>
-        </div>`;
-    }, 1000);
-    document.getElementById("recorder").className = "recorder recording";
-    document.getElementById("recBtnWrap").innerHTML = `<div class="rec-ring"></div><button class="btn btn-sm" onclick="toggleRecording()" style="background:#ef4444;color:#fff;width:44px;height:44px;border-radius:50%;border:none;font-size:18px;cursor:pointer;padding:0;">⏹</button>`;
-  } catch { alert("Please allow microphone access to use voice recording."); }
-}
-function stopRecording() {
-  if (mediaRecorder?.state==="recording") mediaRecorder.stop();
-  mediaRecorder?.stream?.getTracks().forEach(t=>t.stop());
-  clearInterval(recTimer);
-  document.getElementById("recStatus").innerHTML = `<p class="pulsing" style="font-size:14px;color:#7c3aed;font-weight:600;">AI is analyzing your audio…</p>`;
-}
-async function processAudio(mime) {
-  const blob = new Blob(audioChunks, {type:mime});
-  const b64  = await blobToBase64(blob);
-  try {
-    const res = await callAI("", [{role:"user",content:[
-      {type:"text",text:`Analyze this HVAC diagnostic audio. Transcribe any speech. Identify mechanical sounds (banging, clicking, hissing, humming, squealing, rattling, grinding).\nRespond with:\nSPEECH: [transcription or "No speech detected"]\nSOUNDS: [sound descriptions or "No distinct sounds"]\nSUMMARY: [1-2 sentences about what this tells us about the HVAC system]`},
-      {type:"document",source:{type:"base64",media_type:mime,data:b64}}
-    ]}]);
-    audioTranscript = res;
-  } catch { audioTranscript = "Audio recorded — will be referenced in diagnosis."; }
-  document.getElementById("recorder").className = "recorder done";
-  document.getElementById("recBtnWrap").innerHTML = `<button class="btn btn-outline btn-sm" onclick="resetRecording()">🔄 Re-record</button>`;
-  document.getElementById("recStatus").innerHTML = `<p style="font-size:14px;color:#16a34a;font-weight:600;">✓ Audio captured and analyzed</p>`;
-  document.getElementById("transcriptText").textContent = audioTranscript;
-  document.getElementById("transcriptBox").style.display = "block";
-  updateInputsSummary();
-}
-function resetRecording() {
-  audioTranscript = "";
-  document.getElementById("recorder").className = "recorder";
-  document.getElementById("recBtnWrap").innerHTML = `<button class="btn btn-purple btn-sm" onclick="toggleRecording()">🎙️ Record Voice</button>`;
-  document.getElementById("recStatus").innerHTML = `<p style="font-size:14px;color:#6b7280;">Record yourself describing the issue, or hold near the unit</p>`;
-  document.getElementById("transcriptBox").style.display = "none";
-  updateInputsSummary();
+function buildConcernsGrid(){
+var grid=document.getElementById(“concernsGrid”);if(!grid)return;
+CONCERNS.forEach(function(s){
+var btn=document.createElement(“button”);btn.className=“chip”;
+btn.innerHTML=’<span class="chip-icon">’+s.icon+’</span><span>’+s.label+’</span>’;
+btn.onclick=function(){var idx=selectedConcerns.indexOf(s.label);if(idx>-1){selectedConcerns.splice(idx,1);btn.className=“chip”;}else{selectedConcerns.push(s.label);btn.className=“chip selected”;}};
+grid.appendChild(btn);
+});
 }
 
-// ── Inputs summary tags ────────────────────────────────────────
-function updateInputsSummary() {
-  const tagFile  = document.getElementById("tagFile");
-  const tagVoice = document.getElementById("tagVoice");
-  const tagSymps = document.getElementById("tagSymps");
-  const isImg = uploadedFile?.type.startsWith("image/");
-  tagFile.textContent  = uploadedFile ? `📹 ${isImg?"Photo":"Video"}` : "";
-  tagFile.style.display  = uploadedFile ? "inline-block" : "none";
-  tagVoice.style.display = audioTranscript ? "inline-block" : "none";
-  tagSymps.textContent   = selectedSymptoms.length ? `✓ ${selectedSymptoms.length} symptom${selectedSymptoms.length>1?"s":""}` : "";
-  tagSymps.style.display = selectedSymptoms.length ? "inline-block" : "none";
+function buildMaintConcernsGrid(){
+var grid=document.getElementById(“maintConcernsGrid”);if(!grid)return;
+MAINT_CONCERNS.forEach(function(s){
+var btn=document.createElement(“button”);btn.className=“chip”;
+btn.innerHTML=’<span class="chip-icon">’+s.icon+’</span><span>’+s.label+’</span>’;
+btn.onclick=function(){var idx=selectedMaintConcerns.indexOf(s.label);if(idx>-1){selectedMaintConcerns.splice(idx,1);btn.className=“chip”;}else{selectedMaintConcerns.push(s.label);btn.className=“chip selected”;}};
+grid.appendChild(btn);
+});
 }
 
-// ── AI call ────────────────────────────────────────────────────
-async function callAI(system, messages, max_tokens=1024) {
-  const res = await fetch("/api/ai", {
-    method:  "POST",
-    headers: {"Content-Type":"application/json"},
-    body:    JSON.stringify({system, messages, max_tokens}),
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return data.text;
+// ─── HOME FILE UPLOAD ───
+function handleHomeDrop(e){e.preventDefault();document.getElementById(“homeDropZone”).classList.remove(“drag”);var f=e.dataTransfer.files[0];if(f)setHomeFile(f);}
+function handleHomeFileSelect(e){var f=e.target.files[0];if(f)setHomeFile(f);}
+function setHomeFile(file){
+homeUploadedFile=file;
+var isImg=file.type.startsWith(“image/”),url=URL.createObjectURL(file);
+document.getElementById(“homeDropZone”).classList.add(“has-file”);
+document.getElementById(“homeDropPrompt”).style.display=“none”;
+document.getElementById(“homeDropTips”).style.display=“none”;
+document.getElementById(“homePreviewWrapper”).style.display=“block”;
+document.getElementById(“homeFileNameTag”).textContent=file.name.length>32?file.name.substring(0,29)+’…’:file.name;
+var img=document.getElementById(“homeImgPreview”),vid=document.getElementById(“homeVideoPreview”);
+if(isImg){img.src=url;img.style.display=“block”;vid.style.display=“none”;}
+else{vid.src=url;vid.style.display=“block”;img.style.display=“none”;}
+}
+function clearHomeUpload(){
+homeUploadedFile=null;
+document.getElementById(“homeImgPreview”).style.display=“none”;
+document.getElementById(“homeVideoPreview”).style.display=“none”;
+document.getElementById(“homePreviewWrapper”).style.display=“none”;
+document.getElementById(“homeDropZone”).classList.remove(“has-file”);
+document.getElementById(“homeDropPrompt”).style.display=“block”;
+document.getElementById(“homeDropTips”).style.display=“flex”;
+document.getElementById(“homeFileInput”).value=””;
 }
 
-async function blobToBase64(blob) {
-  return new Promise((res,rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result.split(",")[1]);
-    r.onerror = rej;
-    r.readAsDataURL(blob);
-  });
+// ─── PRO FILE UPLOAD ───
+function handleDrop(e){e.preventDefault();document.getElementById(“dropZone”).classList.remove(“drag”);var f=e.dataTransfer.files[0];if(f)setUploadFile(f);}
+function handleFileSelect(e){var f=e.target.files[0];if(f)setUploadFile(f);}
+function setUploadFile(file){
+uploadedFile=file;
+var isImg=file.type.startsWith(“image/”),url=URL.createObjectURL(file);
+document.getElementById(“dropZone”).classList.add(“has-file”);
+document.getElementById(“dropPrompt”).style.display=“none”;
+document.getElementById(“previewWrapper”).style.display=“block”;
+document.getElementById(“fileNameTag”).textContent=file.name.length>32?file.name.substring(0,29)+’…’:file.name;
+var img=document.getElementById(“imgPreview”),vid=document.getElementById(“videoPreview”);
+if(isImg){img.src=url;img.style.display=“block”;vid.style.display=“none”;}
+else{vid.src=url;vid.style.display=“block”;img.style.display=“none”;}
+updateInputsSummary();
+}
+function clearUpload(){
+uploadedFile=null;
+document.getElementById(“imgPreview”).style.display=“none”;
+document.getElementById(“videoPreview”).style.display=“none”;
+document.getElementById(“previewWrapper”).style.display=“none”;
+document.getElementById(“dropZone”).classList.remove(“has-file”);
+document.getElementById(“dropPrompt”).style.display=“flex”;
+document.getElementById(“fileInput”).value=””;
+updateInputsSummary();
+}
+function updateInputsSummary(){
+var isImg=uploadedFile&&uploadedFile.type.startsWith(“image/”);
+var tf=document.getElementById(“tagFile”);
+if(tf){tf.textContent=uploadedFile?(isImg?“📷 Photo”:“📹 Video”):””;tf.style.display=uploadedFile?“inline-block”:“none”;}
+var tv=document.getElementById(“tagVoice”);if(tv)tv.style.display=audioTranscript?“inline-block”:“none”;
+var ts=document.getElementById(“tagSymps”);
+if(ts){ts.textContent=selectedSymptoms.length?“✓ “+selectedSymptoms.length+” symptom”+(selectedSymptoms.length>1?“s”:””):””;ts.style.display=selectedSymptoms.length?“inline-block”:“none”;}
 }
 
-async function grabVideoFrame(file) {
-  return new Promise((res,rej) => {
-    const v=document.createElement("video"),c=document.createElement("canvas");
-    v.muted=true; v.src=URL.createObjectURL(file);
-    v.onloadeddata=()=>{v.currentTime=Math.min(2,v.duration*.1);};
-    v.onseeked=()=>{c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0);URL.revokeObjectURL(v.src);res(c.toDataURL("image/jpeg",.85).split(",")[1]);};
-    v.onerror=rej;
-  });
+// ─── NAMEPLATE SCAN IN DIAG ───
+async function handleDiagNameplateScan(e){
+var file=e.target.files[0];if(!file)return;e.target.value=””;
+var statusEl=document.getElementById(“diagScanStatus”),successEl=document.getElementById(“diagScanSuccess”);
+statusEl.style.display=“flex”;successEl.style.display=“none”;
+// Clear any previous result card
+var prev=document.getElementById(“diagNameplateResultCard”);
+if(prev)prev.remove();
+try{
+var mime=file.type||“image/jpeg”,b64=await blobToBase64(file);
+var SYSTEM=‘You are a certified HVAC master technician. Current year: 2026. Read ONLY what is physically printed on the nameplate. NEVER guess the brand.\n\nSERIAL DECODING RULES:\nCarrier/Bryant: pos 1-2=week, 3-4=year (e.g. 0414 = week 04, year 2014)\nTrane post-2002: pos 1-2=year, 3-4=week\nLennox: first 2=year, next 2=week\nGoodman/Amana: first 2=year, next 2=month\nRheem/Ruud: first 2=year, next 2=week\nYork/Coleman: letter=decade (H=2010s, J=2020s), digit=year within decade\nMitsubishi: first 4 digits = year+month\n\nWARRANTY RULES (registered = 10yr, unregistered = 5yr):\nCarrier/Bryant/Payne: 10yr parts if registered within 90 days, 5yr if not\nTrane/American Standard: 10yr parts registered, 5yr unregistered\nLennox: 10yr parts+compressor registered, 5yr unregistered\nGoodman: Lifetime compressor + 10yr parts registered, 5yr unregistered\nAmana: Lifetime compressor + 10yr parts\nRheem/Ruud: 10yr registered, 5yr unregistered\nYork/Coleman/Heil: 10yr registered, 5yr unregistered\nMitsubishi Electric: 12yr compressor, 7yr parts registered\nDaikin: 12yr compressor, 5yr parts\n\nReturn ONLY valid compact JSON, no markdown:\n{“brand”:“EXACT text from nameplate”,“model”:””,“serial”:””,“refrigerant”:””,“voltage”:””,“tonnage”:””,“seer”:””,“manufactureYear”:0,“ageYears”:0,“warrantyStatus”:“Active|Likely Active|Likely Expired|Expired|Unknown”,“warrantyNote”:“e.g. 10yr if registered, expires 2026”,“warrantyExpireYear”:0,“confidence”:“High|Medium|Low”}’;
+var raw=await callAI(SYSTEM,[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:“Read this HVAC nameplate carefully. Decode the serial number to find manufacture year. Calculate age and warranty status. Return JSON only. Never guess the brand.”}]}],400);
+var data=parseJSON(raw);
+statusEl.style.display=“none”;
+if(!data||data.confidence===“Low”||(!data.model&&!data.serial)){
+successEl.style.background=”#fff3e0”;successEl.style.display=“block”;
+document.getElementById(“diagScanSuccessText”).style.color=”#e65100”;
+document.getElementById(“diagScanSuccessText”).textContent=“Could not read clearly — retake closer in good lighting.”;
+return;
+}
+// Auto-fill form fields
+if(data.model)document.getElementById(“modelNumber”).value=data.model.toUpperCase();
+if(data.serial)document.getElementById(“serialNumber”).value=data.serial.toUpperCase();
+if(data.brand){
+var bs=document.getElementById(“brand”);
+if(bs)for(var i=0;i<bs.options.length;i++){
+if(bs.options[i].text.toLowerCase().includes(data.brand.toLowerCase().split(” “)[0])){bs.selectedIndex=i;break;}
+}
+}
+// Warranty color
+var wColor=data.warrantyStatus===“Active”||data.warrantyStatus===“Likely Active”?”#059669”:data.warrantyStatus===“Expired”?”#dc2626”:”#d97706”;
+var wBg=data.warrantyStatus===“Active”||data.warrantyStatus===“Likely Active”?”#ECFDF5”:data.warrantyStatus===“Expired”?”#FFF0F2”:”#FFFBEB”;
+var wIcon=data.warrantyStatus===“Active”||data.warrantyStatus===“Likely Active”?“✅”:data.warrantyStatus===“Expired”?“❌”:“⚠️”;
+// Age color
+var ageColor=!data.ageYears?”#9499B0”:data.ageYears>=15?”#dc2626”:data.ageYears>=10?”#d97706”:”#059669”;
+// Build result card
+var rows=[
+{label:“Brand”,value:data.brand||”—”,bold:true},
+{label:“Model”,value:data.model||”—”},
+{label:“Serial”,value:data.serial||”—”,mono:true},
+{label:“Refrigerant”,value:data.refrigerant||”—”},
+{label:“Tonnage”,value:data.tonnage?data.tonnage+” ton”:”—”},
+{label:“SEER”,value:data.seer||”—”},
+{label:“Voltage”,value:data.voltage||”—”},
+{label:“Mfg Year”,value:data.manufactureYear||”—”},
+{label:“Age”,value:data.ageYears?data.ageYears+” years”:”—”,color:ageColor},
+].filter(function(r){return r.value&&r.value!==”—”;});
+var html=’<div id="diagNameplateResultCard" style="margin-top:10px;background:#fff;border:1px solid #E2E4ED;border-radius:10px;overflow:hidden;">’;
+html+=’<div style="padding:10px 14px;background:#0F0F0F;display:flex;align-items:center;gap:8px;"><span style="font-size:14px;font-weight:700;color:#fff;">🏷️ Nameplate Decoded</span><span style="margin-left:auto;font-size:11px;background:rgba(0,194,178,.2);color:#00C2B2;padding:2px 8px;border-radius:99px;font-weight:700;">Auto-filled ✓</span></div>’;
+// Warranty banner — most important
+html+=’<div style="padding:12px 14px;background:'+wBg+';border-bottom:1px solid #E2E4ED;">’;
+html+=’<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">’;
+html+=’<div><div style="font-size:10px;font-weight:700;color:'+wColor+';text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">WARRANTY STATUS</div>’;
+html+=’<div style="font-size:18px;font-weight:800;color:'+wColor+';">’+wIcon+’ ‘+data.warrantyStatus+’</div>’;
+if(data.warrantyNote)html+=’<div style="font-size:12px;color:'+wColor+';margin-top:3px;opacity:.85;">’+data.warrantyNote+’</div></div>’;
+if(data.warrantyExpireYear&&data.warrantyExpireYear>2020)html+=’<div style="text-align:right;"><div style="font-size:10px;color:'+wColor+';font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Expires</div><div style="font-size:20px;font-weight:800;color:'+wColor+';">’+data.warrantyExpireYear+’</div></div>’;
+html+=’</div></div>’;
+// Data rows
+html+=’<div style="display:grid;grid-template-columns:1fr 1fr;">’;
+rows.forEach(function(row,i){
+html+=’<div style="padding:9px 14px;border-bottom:1px solid #F0F1F6;'+(i%2===1?'border-left:1px solid #F0F1F6;':'')+'">’;
+html+=’<div style="font-size:10px;font-weight:700;color:#9499B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">’+row.label+’</div>’;
+html+=’<div style="font-size:14px;font-weight:'+(row.bold?'700':'600')+';color:'+(row.color||'#0F0F0F')+';'+(row.mono?'font-family:monospace;':'')+'">’+row.value+’</div>’;
+html+=’</div>’;
+});
+html+=’</div></div>’;
+// Insert result card after the nameplate scan section
+var scanSection=document.getElementById(“diagScanSuccess”);
+scanSection.insertAdjacentHTML(‘afterend’,html);
+successEl.style.background=”#ECFDF5”;successEl.style.display=“block”;
+document.getElementById(“diagScanSuccessText”).style.color=”#059669”;
+document.getElementById(“diagScanSuccessText”).textContent=“✅ Decoded — fields auto-filled”;
+}catch(err){
+statusEl.style.display=“none”;successEl.style.display=“block”;successEl.style.background=”#ffebee”;
+document.getElementById(“diagScanSuccessText”).style.color=”#c62828”;
+document.getElementById(“diagScanSuccessText”).textContent=“Scan failed — please type manually.”;
+}
 }
 
-// ── Diagnostic ─────────────────────────────────────────────────
-async function runDiagnostic() {
-  const sysType = document.getElementById("sysType").value;
-  const sysAge  = document.getElementById("sysAge").value;
-  const brand   = document.getElementById("brand").value;
-  const desc    = document.getElementById("desc").value;
-  const isPro   = mode === "pro";
-
-  if (!sysType && !selectedSymptoms.length && !desc && !uploadedFile && !audioTranscript) {
-    alert("Please add at least one detail — select a system type, describe the problem, or upload a photo.");
-    return;
-  }
-
-  const btn = document.getElementById("runBtn");
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Analyzing your system…</span>`;
-
-  try {
-    const symsText = selectedSymptoms.length ? selectedSymptoms.join(", ") : "None selected";
-    const audText  = audioTranscript ? `\nAUDIO ANALYSIS:\n${audioTranscript}\n` : "";
-
-    let messages;
-    if (uploadedFile) {
-      btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Reading file…</span>`;
-      const isImg = uploadedFile.type.startsWith("image/");
-      const b64   = isImg ? await blobToBase64(uploadedFile) : await grabVideoFrame(uploadedFile);
-      const mime  = isImg ? uploadedFile.type : "image/jpeg";
-      const prompt = buildDiagPrompt(isPro, sysType, sysAge, brand, symsText, desc, audText, true, isImg);
-      messages = [{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:prompt}]}];
-    } else {
-      messages = [{role:"user",content:buildDiagPrompt(isPro, sysType, sysAge, brand, symsText, desc, audText, false, false)}];
-    }
-
-    btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Analyzing your system…</span>`;
-    const SYSTEM = isPro
-      ? `You are HVACGenius AI — the world's most advanced HVAC diagnostic intelligence. All brands, all systems, full technical knowledge. EPA 608, ASHRAE, ACCA. All refrigerants. RULES: First line = severity only: CRITICAL, HIGH, MEDIUM, or LOW. Use **Bold Headers**. Be precise and technical with measurements, part numbers, specs.`
-      : `You are HVACGenius AI — the world's most advanced HVAC diagnostic intelligence. All brands, all systems, full technical knowledge. RULES: First line = severity only: CRITICAL, HIGH, MEDIUM, or LOW. Use **Bold Headers**. Use plain friendly English — no jargon. This is a homeowner who is not an HVAC expert.`;
-
-    const raw    = await callAI(SYSTEM, messages);
-    const lines  = raw.trim().split("\n");
-    const sevW   = lines[0].trim().toUpperCase();
-    const knownSev = ["CRITICAL","HIGH","MEDIUM","LOW"];
-    const sev    = knownSev.includes(sevW) ? sevW : "MEDIUM";
-    const body   = knownSev.includes(sevW) ? lines.slice(1).join("\n").trim() : raw;
-
-    showResult(sev, body, isPro);
-  } catch(e) {
-    alert("AI request failed: " + e.message + "\n\nMake sure your ANTHROPIC_API_KEY is set in Replit Secrets.");
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = `⚡ Run AI Diagnostic`;
-  }
+// ─── VOICE RECORDING ───
+async function toggleRecording(){if(!mediaRecorder||mediaRecorder.state===“inactive”)await startRecording();else stopRecording();}
+async function startRecording(){
+try{
+var stream=await navigator.mediaDevices.getUserMedia({audio:true});
+var mimeTypes=[“audio/webm;codecs=opus”,“audio/webm”,“audio/mp4”,“audio/ogg”];
+var mime=mimeTypes.find(function(t){return MediaRecorder.isTypeSupported(t);})||“audio/mp4”;
+mediaRecorder=new MediaRecorder(stream,{mimeType:mime});audioChunks=[];
+mediaRecorder.ondataavailable=function(e){if(e.data.size>0)audioChunks.push(e.data);};
+mediaRecorder.onstop=function(){processAudio(mime);};
+mediaRecorder.start(200);recSeconds=0;
+recTimer=setInterval(function(){
+recSeconds++;
+var m=String(Math.floor(recSeconds/60)).padStart(2,“0”),s=String(recSeconds%60).padStart(2,“0”);
+document.getElementById(“recStatus”).innerHTML=’<div style="display:flex;align-items:center;gap:10px;"><div class="wave-bars">’+[10,16,12,18,8].map(function(h,i){return’<div class="wave-bar" style="height:'+h+'px;animation-delay:'+i*.1+'s"></div>’;}).join(””)+’</div><span style="color:#ef4444;font-weight:700;">’+m+’:’+s+’</span><span class="pulsing" style="color:#9499B0;font-size:13px;">Recording…</span></div>’;
+},1000);
+document.getElementById(“recorder”).className=“recorder recording”;
+document.getElementById(“recBtnWrap”).innerHTML=’<div style="position:relative;display:inline-block;"><div class="rec-ring"></div><button onclick="stopRecording()" style="position:relative;z-index:10;background:#ef4444;color:#fff;width:52px;height:52px;border-radius:50%;border:none;font-size:20px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;">⏹</button></div>’;
+}catch(err){alert(“Please allow microphone access to use voice recording.”);}
+}
+function stopRecording(){
+if(mediaRecorder&&mediaRecorder.state===“recording”)mediaRecorder.stop();
+if(mediaRecorder&&mediaRecorder.stream)mediaRecorder.stream.getTracks().forEach(function(t){t.stop();});
+clearInterval(recTimer);
+document.getElementById(“recStatus”).innerHTML=’<p class="pulsing" style="font-size:14px;color:#7C3AED;font-weight:600;">Analyzing your audio…</p>’;
+}
+async function processAudio(mime){
+var blob=new Blob(audioChunks,{type:mime}),b64=await blobToBase64(blob);
+try{var res=await callAI(””,[{role:“user”,content:[{type:“text”,text:“Analyze this HVAC diagnostic audio. Transcribe speech. Identify mechanical sounds.\nSPEECH: [transcription]\nSOUNDS: [sound descriptions]\nSUMMARY: [1-2 sentences]”},{type:“document”,source:{type:“base64”,media_type:mime,data:b64}}]}],400);audioTranscript=res;}
+catch(e){audioTranscript=“Audio recorded — will be referenced in diagnosis.”;}
+document.getElementById(“recorder”).className=“recorder done”;
+document.getElementById(“recBtnWrap”).innerHTML=’<button class="btn btn-outline btn-sm" onclick="resetRecording()">🔄 Re-record</button>’;
+document.getElementById(“recStatus”).innerHTML=’<p style="font-size:14px;color:#059669;font-weight:600;">✓ Audio captured and analyzed</p>’;
+document.getElementById(“transcriptText”).textContent=audioTranscript;
+document.getElementById(“transcriptBox”).style.display=“block”;
+updateInputsSummary();
+}
+function resetRecording(){
+audioTranscript=””;
+document.getElementById(“recorder”).className=“recorder”;
+document.getElementById(“recBtnWrap”).innerHTML=’<button class="btn btn-purple btn-sm" onclick="toggleRecording()">🎙️ Record Voice</button>’;
+document.getElementById(“recStatus”).innerHTML=’<p style="font-size:14px;color:#9499B0;">Record yourself describing the issue</p>’;
+document.getElementById(“transcriptBox”).style.display=“none”;
+updateInputsSummary();
 }
 
-function buildDiagPrompt(isPro, sysType, sysAge, brand, syms, desc, aud, hasVisual, isImg) {
-  const vis = hasVisual ? `\nVISUAL: ${isImg?"Photo":"Video frame"} of system provided for visual analysis.` : "";
-  if (isPro) return `CONTRACTOR DIAGNOSTIC REQUEST\nSystem: ${sysType||"N/A"} | Brand: ${brand||"N/A"} | Age: ${sysAge||"N/A"}\nFault Indicators: ${syms}\nNotes: ${desc||"None"}${aud}${vis}\n\nProvide FULL TECHNICAL REPORT:\n**ROOT CAUSE ANALYSIS**\n**AUDIO/VISUAL EVIDENCE** (if provided)\n**DIFFERENTIAL DIAGNOSIS** (2-3 alternatives with probability %)\n**DIAGNOSTIC PROCEDURE** (specific tests, measurements, pressures, voltages)\n**REFRIGERANT DATA** (superheat/subcooling targets if applicable)\n**PARTS REQUIRED** (part numbers, specs, estimated cost)\n**REPAIR PROCEDURE** (step-by-step)\n**SAFETY HAZARDS**\n**REPLACE vs REPAIR** (cost-benefit analysis)\n**ESTIMATED LABOR HOURS**`;
-  return `HOMEOWNER DIAGNOSTIC REQUEST\nSystem: ${sysType||"N/A"} | Age: ${sysAge||"N/A"}\nSymptoms: ${syms}\nDescription: ${desc||"None"}${aud}${vis}\n\nProvide FRIENDLY REPORT:\n**WHAT'S HAPPENING** (plain English, no jargon)\n**WHAT THOSE SOUNDS MEAN** (if audio provided, explain in simple terms)\n**HOW URGENT IS THIS?** (Today / This week / Can wait)\n**SAFE CHECKS YOU CAN DO** (1-2 simple safe steps)\n**SAFETY WARNINGS** (plain language)\n**DO YOU NEED A PRO?** (honest answer)\n**ESTIMATED COST** (repair vs replacement range)\n**ENERGY SAVING TIP** (one relevant tip)\n\nEnd with a warm recommendation to contact a certified local HVAC technician.`;
+// ─── AI CALL ───
+async function callAI(system,messages,max_tokens){
+max_tokens=max_tokens||1024;
+var controller=new AbortController(),timeout=setTimeout(function(){controller.abort();},30000);
+try{
+var res=await fetch(”/api/ai”,{method:“POST”,headers:{“Content-Type”:“application/json”},body:JSON.stringify({system:system,messages:messages,max_tokens:max_tokens}),signal:controller.signal});
+clearTimeout(timeout);var data=await res.json();
+if(data.error)throw new Error(data.error);return data.text;
+}catch(e){clearTimeout(timeout);if(e.name===‘AbortError’)throw new Error(‘Request timed out.’);throw e;}
+}
+async function blobToBase64(blob){
+var maxSizeKB=1500;
+if(blob.type&&blob.type.startsWith(‘image/’)&&blob.size>maxSizeKB*1024){
+return new Promise(function(res,rej){
+var img=new Image(),url=URL.createObjectURL(blob);
+img.onload=function(){
+URL.revokeObjectURL(url);var canvas=document.createElement(‘canvas’);
+var w=img.width,h=img.height,maxDim=1600;
+if(w>maxDim||h>maxDim){if(w>h){h=Math.round(h*maxDim/w);w=maxDim;}else{w=Math.round(w*maxDim/h);h=maxDim;}}
+canvas.width=w;canvas.height=h;canvas.getContext(‘2d’).drawImage(img,0,0,w,h);
+res(canvas.toDataURL(‘image/jpeg’,0.85).split(’,’)[1]);
+};
+img.onerror=rej;img.src=url;
+});
+}
+return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result.split(”,”)[1]);};r.onerror=rej;r.readAsDataURL(blob);});
+}
+async function grabVideoFrame(file){
+return new Promise(function(res,rej){
+var v=document.createElement(“video”),c=document.createElement(“canvas”);
+v.muted=true;v.src=URL.createObjectURL(file);
+v.onloadeddata=function(){v.currentTime=Math.min(2,v.duration*.1);};
+v.onseeked=function(){c.width=v.videoWidth;c.height=v.videoHeight;c.getContext(“2d”).drawImage(v,0,0);URL.revokeObjectURL(v.src);res(c.toDataURL(“image/jpeg”,.85).split(”,”)[1]);};
+v.onerror=rej;
+});
+}
+function parseJSON(raw){
+if(!raw)return null;
+var s=raw.replace(/`[a-z]*/gi,'').replace(/`/g,’’).trim();
+var a=s.indexOf(’{’),b=s.lastIndexOf(’}’);
+if(a===-1||b===-1||b<=a)return null;
+try{return JSON.parse(s.substring(a,b+1));}catch(e){return null;}
 }
 
-function showResult(sev, body, isPro) {
-  const SEV_STYLES = {
-    CRITICAL:{badge:"background:#fee2e2;color:#b91c1c",left:"#dc2626",label:"🚨 Critical — Act Now"},
-    HIGH:    {badge:"background:#fef9c3;color:#92400e",left:"#d97706",label:"⚠️ High Priority"},
-    MEDIUM:  {badge:"background:#dbeafe;color:#1e40af",left:"#2563eb",label:"🔵 Medium Priority"},
-    LOW:     {badge:"background:#dcfce7;color:#166534",left:"#16a34a",label:"✅ Low Priority"},
-  };
-  const s = SEV_STYLES[sev] || SEV_STYLES.MEDIUM;
-  document.getElementById("sevBadge").style.cssText = s.badge + ";padding:6px 16px;border-radius:99px;font-size:14px;font-weight:700;";
-  document.getElementById("sevBadge").textContent = s.label;
-  document.getElementById("resultCard").style.borderLeft = `4px solid ${s.left}`;
-  document.getElementById("resultText").innerHTML = body
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, "<br/>");
-  document.getElementById("homeownerCTA").style.display  = isPro ? "none" : "block";
-  document.getElementById("contractorNudge").style.display = isPro ? "block" : "none";
-  document.getElementById("resultPanel").style.display = "block";
-  document.getElementById("resultPanel").scrollIntoView({behavior:"smooth",block:"start"});
+// ─── HOMEOWNER DIAGNOSTIC ───
+async function runHomeownerDiagnostic(){
+var sysAge=document.getElementById(“homeSysAge”).value;
+var desc=document.getElementById(“homeDesc”).value;
+if(!selectedHomeSymptoms.length&&!desc&&!homeUploadedFile){alert(“Please describe the problem, select symptoms, or upload a photo.”);return;}
+var btn=document.getElementById(“homeRunBtn”);
+btn.disabled=true;btn.style.background=”#009E90”;
+btn.innerHTML=’<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing" style="font-size:18px;">Analyzing…</span>’;
+try{
+var syms=selectedHomeSymptoms.length?selectedHomeSymptoms.join(”, “):“None selected”;
+var SYSTEM=“You are HVACGenius AI. Diagnose this homeowner’s HVAC problem in plain, friendly English. No jargon. Be clear and helpful.”;
+var messages;
+if(homeUploadedFile){
+var isImg=homeUploadedFile.type.startsWith(“image/”);
+var b64=isImg?await blobToBase64(homeUploadedFile):await grabVideoFrame(homeUploadedFile);
+var mime=isImg?homeUploadedFile.type:“image/jpeg”;
+messages=[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:“HVAC HOMEOWNER DIAGNOSTIC\nAge: “+(sysAge||“Unknown”)+”\nSymptoms: “+syms+”\nDescription: “+(desc||“None”)+’\n\nReturn ONLY compact JSON:\n{“severity”:“CRITICAL|HIGH|MEDIUM|LOW”,“urgency”:“Today|This week|Can wait”,“summary”:“One plain sentence what is wrong”,“estimatedCost”:”$X-$X”,“sections”:[{“label”:“What Is Wrong”,“icon”:“💡”,“body”:“plain English”},{“label”:“Is It Dangerous?”,“icon”:“⚠️”,“body”:“direct answer”},{“label”:“How Urgent”,“icon”:“🕐”,“body”:“can it wait”},{“label”:“What It Will Cost”,“icon”:“💰”,“body”:“repair range”}]}’}]}];
+}else{
+messages=[{role:“user”,content:“HVAC HOMEOWNER DIAGNOSTIC\nAge: “+(sysAge||“Unknown”)+”\nSymptoms: “+syms+”\nDescription: “+(desc||“None”)+’\n\nReturn ONLY compact JSON:\n{“severity”:“CRITICAL|HIGH|MEDIUM|LOW”,“urgency”:“Today|This week|Can wait”,“summary”:“One plain sentence what is wrong”,“estimatedCost”:”$X-$X”,“sections”:[{“label”:“What Is Wrong”,“icon”:“💡”,“body”:“plain English”},{“label”:“Is It Dangerous?”,“icon”:“⚠️”,“body”:“direct answer”},{“label”:“How Urgent”,“icon”:“🕐”,“body”:“can it wait”},{“label”:“What It Will Cost”,“icon”:“💰”,“body”:“repair range”}]}’}];
+}
+var raw=await callAI(SYSTEM,messages,600);
+var data=parseJSON(raw),sev=(data&&data.severity)||“MEDIUM”;
+var COLORS={CRITICAL:{bg:”#ffebee”,border:”#c62828”},HIGH:{bg:”#fff3e0”,border:”#e65100”},MEDIUM:{bg:”#e3f2fd”,border:”#1565c0”},LOW:{bg:”#e8f5e9”,border:”#2e7d32”}};
+var c=COLORS[sev]||COLORS.MEDIUM;
+document.getElementById(“homeResultCard”).style.borderLeft=“4px solid “+c.border;
+if(data&&data.sections){
+var html=”<div style='background:"+c.bg+";border-left:4px solid "+c.border+";border-radius:6px;padding:14px 16px;margin-bottom:20px;'>”;
+if(data.summary)html+=”<p style='font-size:16px;font-weight:700;color:#0F0F0F;line-height:1.6;margin-bottom:10px;'>”+data.summary+”</p>”;
+var stats=[];
+if(data.urgency)stats.push(“🕐 “+data.urgency);
+if(data.estimatedCost)stats.push(“💰 “+data.estimatedCost);
+if(stats.length)html+=”<p style='font-size:13px;color:"+c.border+";font-weight:600;'>”+stats.join(”  ·  “)+”</p>”;
+html+=”</div>”;
+data.sections.forEach(function(sec,i){
+if(!sec)return;
+var hasBody=sec.body&&sec.body.trim().length>2;
+if(!hasBody)return;
+html+=”<div style='margin-bottom:18px;'><div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'><div style='width:30px;height:30px;min-width:30px;background:#0F0F0F;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;'>”+(i+1)+”</div><span style='font-size:16px;font-weight:700;color:#0F0F0F;'>”+(sec.icon||””)+” “+(sec.label||””)+”</span></div>”;
+html+=”<div style='padding-left:40px;'><p style='font-size:15px;line-height:1.8;color:#0F0F0F;'>”+sec.body.replace(/**(.*?)**/g,”<strong>$1</strong>”)+”</p></div></div>”;
+});
+document.getElementById(“homeResultText”).innerHTML=html;
+}else{
+document.getElementById(“homeResultText”).innerHTML=”<p style='font-size:15px;line-height:1.8;'>”+raw+”</p>”;
+}
+document.getElementById(“homeResultPanel”).style.display=“block”;
+document.getElementById(“homeResultPanel”).scrollIntoView({behavior:“smooth”,block:“start”});
+}catch(e){
+alert(“Request failed: “+e.message);
+}finally{
+btn.disabled=false;btn.style.background=”#00C2B2”;btn.innerHTML=“⚡ Run Diagnostic”;
+}
+}
+function resetHomeownerDiagnostic(){
+document.getElementById(“homeResultPanel”).style.display=“none”;
+document.getElementById(“homeDesc”).value=””;
+document.getElementById(“homeSysAge”).selectedIndex=0;
+selectedHomeSymptoms=[];buildHomeSymptomGrid();
+clearHomeUpload();
+window.scrollTo({top:0,behavior:“smooth”});
 }
 
-function resetDiagnostic() {
-  document.getElementById("resultPanel").style.display = "none";
-  document.getElementById("desc").value = "";
-  document.getElementById("sysType").selectedIndex = 0;
-  document.getElementById("sysAge").selectedIndex  = 0;
-  document.getElementById("brand").selectedIndex   = 0;
-  selectedSymptoms = [];
-  buildSymptomGrid(mode);
-  uploadedFile = null;
-  document.getElementById("dropZone").className = "drop-zone";
-  document.getElementById("dropIcon").textContent  = "📷";
-  document.getElementById("dropTitle").textContent = "Tap to upload a photo or video";
-  document.getElementById("imgPreview").style.display   = "none";
-  document.getElementById("videoPreview").style.display = "none";
-  resetRecording();
-  updateInputsSummary();
-  window.scrollTo({top:0,behavior:"smooth"});
+// ─── PRO DIAGNOSTIC ───
+async function runDiagnostic(){
+var sysType=document.getElementById(“sysType”).value;
+var sysAge=document.getElementById(“sysAge”).value;
+var brand=document.getElementById(“brand”).value;
+var desc=document.getElementById(“desc”).value;
+if(!sysType&&!selectedSymptoms.length&&!desc&&!uploadedFile&&!audioTranscript){alert(“Please add at least one detail — select a system type, describe the problem, or upload a photo.”);return;}
+var btn=document.getElementById(“runBtn”);
+btn.disabled=true;btn.style.background=”#009E90”;
+btn.innerHTML=’<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing" style="font-size:18px;">Analyzing…</span>’;
+try{
+var symsText=selectedSymptoms.length?selectedSymptoms.join(”, “):“None selected”;
+var audText=audioTranscript?”\nAUDIO ANALYSIS:\n”+audioTranscript+”\n”:””;
+var modelNum=(document.getElementById(“modelNumber”).value||””).trim();
+var serialNum=(document.getElementById(“serialNumber”).value||””).trim();
+var modelLine=(modelNum||serialNum)?”\nModel: “+(modelNum||”?”)+” | Serial: “+(serialNum||”?”):””;
+var SYSTEM=“You are HVACGenius AI — the world’s most advanced HVAC diagnostic intelligence. All brands, systems, full technical knowledge. EPA 608, ASHRAE, ACCA. Be precise and technical.”;
+var prompt=“HVAC CONTRACTOR DIAGNOSTIC\nSystem: “+(sysType||“Unknown”)+” | Brand: “+(brand||“Unknown”)+” | Age: “+(sysAge||“Unknown”)+(modelLine||””)+”\nSymptoms: “+symsText+”\nNotes: “+(desc||“None”)+audText+’\n\nReturn ONLY compact JSON:\n{“severity”:“CRITICAL|HIGH|MEDIUM|LOW”,“confidence”:“XX%”,“urgency”:“Today|This week|Can wait”,“summary”:“One sentence what is wrong”,“estimatedCost”:”$X-$X”,“sections”:[{“label”:“Most Likely Cause”,“icon”:“🔍”,“body”:“specific cause”},{“label”:“Step-by-Step Procedure”,“icon”:“🔧”,“steps”:[“Step 1”,“Step 2”,“Step 3”,“Step 4”]},{“label”:“Parts Needed”,“icon”:“🔩”,“body”:“part names and cost”},{“label”:“Safety”,“icon”:“⚠️”,“body”:“hazards or None”},{“label”:“Replace or Repair?”,“icon”:“💡”,“body”:“recommendation”}]}’;
+var messages;
+if(uploadedFile){
+btn.innerHTML=’<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing">Reading file…</span>’;
+var isImg=uploadedFile.type.startsWith(“image/”);
+var b64=isImg?await blobToBase64(uploadedFile):await grabVideoFrame(uploadedFile);
+var mime=isImg?uploadedFile.type:“image/jpeg”;
+messages=[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:prompt}]}];
+}else{messages=[{role:“user”,content:prompt}];}
+btn.innerHTML=’<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing">Analyzing your system…</span>’;
+var raw=await callAI(SYSTEM,messages,700);
+lastDiagResult=raw;
+var data=parseJSON(raw),sev=(data&&data.severity)||“MEDIUM”;
+showResult(sev,raw,data);
+}catch(e){
+var msg=e.message||“Unknown error”;
+if(msg.includes(“timed out”))alert(“⏱️ Request timed out — please try again.”);
+else if(msg.includes(“API key”))alert(“🔑 API key issue — check your ANTHROPIC_API_KEY.”);
+else alert(“Request failed: “+msg);
+}finally{
+btn.disabled=false;btn.style.background=”#00C2B2”;btn.innerHTML=“⚡ Run Diagnostic”;
+}
 }
 
-// ── Warranty ───────────────────────────────────────────────────
-function showWarrantyLinks() {
-  const brand = document.getElementById("wBrand").value;
-  const info  = WARRANTY_INFO[brand];
-  const div   = document.getElementById("warrantyLinks");
-  if (info) {
-    div.style.display = "flex";
-    div.innerHTML = `
-      <a href="${info.url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#7c3aed;border-radius:9px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">🌐 Warranty Portal</a>
-      <span style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#fff;border:1.5px solid #e2e8f0;border-radius:9px;color:#374151;font-size:14px;font-weight:600;">📞 ${info.phone}</span>`;
-  } else {
-    div.style.display = "none";
-    div.innerHTML = "";
-  }
+function showResult(sev,body,data){
+var COLORS={CRITICAL:{bg:”#ffebee”,text:”#c62828”,border:”#c62828”},HIGH:{bg:”#fff3e0”,text:”#e65100”,border:”#e65100”},MEDIUM:{bg:”#e3f2fd”,text:”#1565c0”,border:”#1565c0”},LOW:{bg:”#e8f5e9”,text:”#2e7d32”,border:”#2e7d32”}};
+var c=COLORS[sev]||COLORS.MEDIUM;
+document.getElementById(“resultCard”).style.borderLeft=“4px solid “+c.border;
+if(data&&data.sections&&data.sections.length){renderDiagCards(data,c);}
+else{document.getElementById(“resultText”).innerHTML=”<div style='font-size:15px;line-height:1.8;white-space:pre-wrap;'>”+body.replace(/`json|`/g,””).trim()+”</div>”;}
+document.getElementById(“contractorNudge”).style.display=“block”;
+document.getElementById(“eduPanel”).style.display=“block”;
+document.getElementById(“resultPanel”).style.display=“block”;
+document.getElementById(“resultPanel”).scrollIntoView({behavior:“smooth”,block:“start”});
 }
 
-async function runWarranty() {
-  const brand  = document.getElementById("wBrand").value;
-  const model  = document.getElementById("wModel").value;
-  const serial = document.getElementById("wSerial").value;
-  const notes  = document.getElementById("wNotes").value;
-  if (!brand || !serial) { alert("Please select a manufacturer and enter the serial number."); return; }
-  const btn = document.getElementById("warrantyBtn");
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Looking up warranty…</span>`;
-  const info = WARRANTY_INFO[brand];
-  const prompt = `WARRANTY LOOKUP\nBrand: ${brand}\nModel: ${model||"N/A"}\nSerial: ${serial}\nNotes: ${notes||"None"}\n${info?`Portal: ${info.url}\nPhone: ${info.phone}`:""}`;
-  try {
-    const SYSTEM = `You are an HVAC warranty expert AI. SERIAL DECODING: Carrier/Bryant pos 5-8=week+year. Trane 1st=year 2nd-3rd=week. Lennox first 2=year. Goodman/Amana 1st=decade 2nd=year 3rd-4th=week. Rheem/Ruud 1st 2=year 3rd-4th=week. York letter=decade digit=year. TERMS: Carrier/Bryant 10yr reg/5yr unreg. Trane 10yr/5yr. Lennox 10yr/5yr. Goodman lifetime compressor+10yr reg. Amana lifetime unit replacement. Rheem/Ruud 10yr/5yr. Mitsubishi 12yr/7yr. Daikin 12yr/5yr. Sections: **UNIT IDENTIFICATION** **WARRANTY STATUS** **REGISTERED vs UNREGISTERED** **WHAT'S COVERED** **WHAT'S NOT COVERED** **VERIFY WARRANTY** **TECHNICIAN FLAGS**`;
-    const txt = await callAI(SYSTEM, [{role:"user",content:prompt}]);
-    document.getElementById("warrantyText").innerHTML = txt.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#7c3aed">$1</strong>').replace(/\n/g,"<br/>");
-    document.getElementById("warrantyResult").style.display = "block";
-    if (info) {
-      document.getElementById("warrantyVerifyLink").style.display = "block";
-      document.getElementById("warrantyVerifyBtn").href = info.url;
-    }
-    document.getElementById("warrantyResult").scrollIntoView({behavior:"smooth",block:"start"});
-  } catch(e) { alert("Warranty lookup failed: " + e.message); }
-  finally { btn.disabled=false; btn.innerHTML="🛡️ Check Warranty Coverage"; }
+function renderDiagCards(data,c){
+var el=document.getElementById(“resultText”),html=””;
+html+=”<div style='background:"+c.bg+";border-left:4px solid "+c.border+";border-radius:6px;padding:14px 16px;margin-bottom:20px;'>”;
+if(data.summary)html+=”<p style='font-size:16px;font-weight:700;color:#0F0F0F;line-height:1.6;margin-bottom:10px;'>”+data.summary+”</p>”;
+var stats=[];
+if(data.urgency)stats.push(“🕐 “+data.urgency);
+if(data.estimatedCost)stats.push(“💰 “+data.estimatedCost);
+if(data.confidence)stats.push(“🎯 “+data.confidence+” confidence”);
+if(stats.length)html+=”<p style='font-size:13px;color:"+c.text+";font-weight:600;line-height:1.8;'>”+stats.join(”  ·  “)+”</p>”;
+html+=”</div>”;
+var sections=data.sections||[],stepNum=0;
+for(var s=0;s<sections.length;s++){
+var sec=sections[s];if(!sec)continue;
+var hasBody=sec.body&&typeof sec.body===“string”&&sec.body.trim().length>2&&sec.body!==“null”;
+var hasSteps=sec.steps&&Array.isArray(sec.steps)&&sec.steps.length>0;
+if(!hasBody&&!hasSteps)continue;stepNum++;
+html+=”<div style='margin-bottom:20px;'>”;
+html+=”<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px;'><div style='width:32px;height:32px;min-width:32px;background:#0F0F0F;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;'>”+stepNum+”</div><span style='font-size:17px;font-weight:700;color:#0F0F0F;'>”+(sec.icon||””)+” “+(sec.label||””)+”</span></div>”;
+if(hasBody){
+var bodyClean=sec.body.replace(/**(.*?)**/g,”<strong>$1</strong>”).replace(/(WARNING|DANGER|CAUTION)\s*:?/gi,”<span style='color:#DC2626;font-weight:700;'>⚠️ $1: </span>”);
+html+=”<div style='padding-left:42px;'><p style='font-size:15px;line-height:1.8;color:#0F0F0F;'>”+bodyClean+”</p></div>”;
+}
+if(hasSteps){
+html+=”<div style='padding-left:42px;'>”;
+for(var n=0;n<sec.steps.length;n++){
+var step=sec.steps[n];if(!step||step===“null”)continue;
+var clean=String(step).trim().replace(/^”+|”+$/g,””).replace(/,\s*$/,””).replace(/**(.*?)**/g,”<strong>$1</strong>”);
+var colonIdx=clean.indexOf(”:”);
+var stepHtml=(colonIdx>0&&colonIdx<60)?”<strong>”+clean.substring(0,colonIdx).trim()+”</strong> — “+clean.substring(colonIdx+1).trim():clean;
+html+=”<div style='display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;'><div style='width:22px;height:22px;min-width:22px;background:#00C2B2;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;'>”+(n+1)+”</div><div style='font-size:15px;line-height:1.75;color:#0F0F0F;flex:1;'>”+stepHtml+”</div></div>”;
+}
+html+=”</div>”;
+}
+html+=”</div>”;
+if(s<sections.length-1)html+=”<div style='height:1px;background:#F0F1F6;margin-bottom:20px;'></div>”;
+}
+el.innerHTML=html;
 }
 
-// ── Revenue Builder ────────────────────────────────────────────
-async function runRevenue() {
-  const sysType  = document.getElementById("rSysType").value;
-  const sysAge   = document.getElementById("rSysAge").value;
-  const brand    = document.getElementById("rBrand").value;
-  const homeSize = document.getElementById("rHomeSize").value;
-  const notes    = document.getElementById("rNotes").value;
-  if (!sysType && !selectedConcerns.length && !notes) {
-    alert("Please fill in at least the system type or select some home/family details.");
-    return;
-  }
-  const btn = document.getElementById("revenueBtn");
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner"></span><span class="pulsing">Building recommendations…</span>`;
-  const SYSTEM = `You are an HVAC business revenue consultant. Help contractors identify genuine upsell opportunities. Products: UV-C lights, REME HALO, iWave ionizers, MERV 13/16 filters, HEPA, dehumidifiers, ERV/HRV, smart thermostats, zoning, CO detectors, gas detectors, Aeroseal duct sealing, service agreements, filter subscriptions. RULES: Safety first. Honest ROI. Include word-for-word conversation scripts. Return ONLY valid JSON no markdown: {"summary":"string","totalOpportunityLow":0,"totalOpportunityHigh":0,"recommendations":[{"category":"Safety|IAQ|Comfort|Efficiency|Maintenance","priority":"High|Medium|Low","title":"string","why":"string","homeownerBenefit":"string","priceLow":0,"priceHigh":0,"techProfit":0,"roi":"string","script":"string"}]}`;
-  const prompt = `System: ${sysType||"Unknown"} | Brand: ${brand||"Unknown"} | Age: ${sysAge||"Unknown"} | Home: ${homeSize||"Unknown"}\nConcerns: ${selectedConcerns.length ? selectedConcerns.join(", ") : "None"}\nNotes: ${notes||"None"}\nGenerate personalized recommendations.`;
-  try {
-    const raw   = await callAI(SYSTEM, [{role:"user",content:prompt}]);
-    const clean = raw.replace(/```json|```/g,"").trim();
-    const data  = JSON.parse(clean);
-    showRevenueResults(data);
-  } catch(e) { alert("Revenue builder failed: " + e.message + "\n\nTry adding more details about the system and home."); }
-  finally { btn.disabled=false; btn.innerHTML="💰 Build Revenue Recommendations"; }
+async function runEduMode(){
+if(!lastDiagResult)return;
+var btn=document.getElementById(“eduBtn”);btn.disabled=true;btn.innerHTML=’<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span> Generating…’;
+try{
+var result=await callAI(“You are an HVAC expert who explains technical problems to homeowners in simple, friendly language. No jargon. Use analogies.”,[{role:“user”,content:“Based on this technical HVAC diagnosis, create a simple homeowner-friendly explanation:\n\n”+lastDiagResult+”\n\n**What’s happening** (1-2 sentences, simple analogy)\n**Why this matters**\n**What happens if you wait**\n**What the technician will do**\n**Good questions to ask** (2-3 questions)”}],500);
+document.getElementById(“eduText”).innerHTML=result.replace(/**(.*?)**/g,’<strong style="color:#2563EB">$1</strong>’).replace(/\n/g,”<br/>”);
+document.getElementById(“eduContent”).style.display=“block”;
+}catch(e){alert(“Failed: “+e.message);}
+finally{btn.disabled=false;btn.innerHTML=“Generate Explanation”;}
+}
+function copyEdu(){navigator.clipboard.writeText(document.getElementById(“eduText”).textContent||””).then(function(){alert(“Copied! Show this to your customer.”);}).catch(function(){});}
+
+function resetDiagnostic(){
+document.getElementById(“modelNumber”).value=””;document.getElementById(“serialNumber”).value=””;
+document.getElementById(“resultPanel”).style.display=“none”;
+document.getElementById(“desc”).value=””;
+[“sysType”,“sysAge”,“brand”].forEach(function(id){document.getElementById(id).selectedIndex=0;});
+selectedSymptoms=[];buildSymptomGrid(“pro”);uploadedFile=null;lastDiagResult=””;
+clearUpload();resetRecording();updateInputsSummary();
+document.getElementById(“eduContent”).style.display=“none”;
+window.scrollTo({top:0,behavior:“smooth”});
 }
 
-function showRevenueResults(data) {
-  const fmt$ = n => `$${Number(n||0).toLocaleString()}`;
-  document.getElementById("revSummary").textContent = data.summary || "";
-  document.getElementById("revRange").textContent   = `${fmt$(data.totalOpportunityLow)}–${fmt$(data.totalOpportunityHigh)}`;
-  const totalProfit = data.recommendations?.reduce((s,r)=>s+(r.techProfit||0),0)||0;
-  const profitEl = document.getElementById("revProfit");
-  profitEl.textContent = totalProfit > 0 ? `~${fmt$(totalProfit)} est. your profit` : "";
+// ─── CHAT ───
+var AGENT_SYSTEM=‘You are Mike — sharpest HVAC tech in the game. Mid-30s, 12 years field experience, EPA 608 Universal, NATE certified. You have seen everything across every brand. You diagnose fast, talk straight, never waste a tech's time.\n\nPERSONALITY: Young, sharp, confident. Talk like a fast-thinking tech on a job site. Use real field language: “that tells me”, “nine times outta ten”, “first thing I check is”, “that's your problem right there”. Contractions always. Short punchy sentences. Energy.\n\nRESPONSE RULES:\n- First sentence = the answer or your best read. No preamble ever.\n- Under 80 words unless walking a full procedure.\n- ONE smart follow-up question if you need more info.\n- When you know it, commit. Don't hedge.\n- Steps only for procedures — number them, keep each tight.\n- Dangerous situation: “Stop. Do not run that system.”\n\nDIAGNOSTIC LOGIC — most common to least common:\nCapacitor fail: hum won't start, fan won't spin. Replace, check amps.\nLow charge: not cooling, icing, high superheat. Find leak first, never just add gas.\nDirty coil: high head, high amps, low delta-T.\nPressure switch: furnace lights then shuts. Check cracked hose, dirty trap, blocked flue, weak inducer.\nFlame sensor dirty: lights then goes out after 5 sec. Pull it, clean with emery cloth.\nTXV stuck: wild pressure swings, hunting superheat. Check bulb contact.\nReverting valve stuck: heat pump won't switch modes.\n\nPRESSURES:\nR-410A 95F: suction 115-145, head 350-420. TXV SH 8-12F, SC 10-15F.\nR-22 95F: suction 68-72, head 250-270. Fixed orifice SH 20-25F.\nLow suction + high SH = undercharged or restriction.\nLow suction + low SH = metering device or flooded evap.\nHigh suction + high head = overcharged or condenser airflow.\nLow head + low suction = weak compressor or low charge.\n\nFURNACE SEQUENCE: Thermostat → inducer → pressure switch → ignitor glows 15-20s → gas valve → flame sensor proves → blower 30-60s delay. Lockout after 3 tries.\n\nELECTRICAL: Cap within 6% MFD. Contactor: check pitting, 24V coil pull-in. Static pressure target 0.1-0.5” WC residential. Evap freeze = low charge, low airflow, or low ambient.\n\nVOICE MODE: 2-3 sentences max. No lists. Just talk.’;
 
-  const container = document.getElementById("revenueCards");
-  container.innerHTML = "";
-  (data.recommendations||[]).forEach((rec, i) => {
-    const cs = CAT_STYLE[rec.category] || CAT_STYLE.Maintenance;
-    const priColor = rec.priority==="High" ? "#dc2626" : rec.priority==="Medium" ? "#d97706" : "#16a34a";
-    const card = document.createElement("div");
-    card.className = "rec-card";
-    card.style.borderLeft = `4px solid ${cs.border.replace("e8","b0")}`;
-    card.innerHTML = `
-      <div style="display:flex;align-items:flex-start;gap:14px;" onclick="toggleRecCard(${i})">
-        <div style="width:46px;height:46px;border-radius:10px;background:${cs.bg};border:1px solid ${cs.border};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${cs.icon}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;">
-            <span style="font-size:16px;font-weight:700;color:#111827;">${rec.title}</span>
-            <span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:600;background:${cs.bg};color:${cs.text};border:1px solid ${cs.border};">${rec.category}</span>
-            <span style="font-size:12px;font-weight:600;color:${priColor};">${rec.priority} Priority</span>
-          </div>
-          <p style="font-size:14px;color:#6b7280;line-height:1.5;margin:0;">${rec.homeownerBenefit}</p>
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <p style="font-size:17px;font-weight:700;color:#16a34a;">${fmt$(rec.priceLow)}–${fmt$(rec.priceHigh)}</p>
-          ${rec.techProfit ? `<p style="font-size:13px;color:#d97706;font-weight:600;">~${fmt$(rec.techProfit)} profit</p>` : ""}
-          <p style="font-size:18px;color:#9ca3af;margin-top:4px;" id="chevron-${i}">▼</p>
-        </div>
-      </div>
-      <div id="recDetail-${i}" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #f3f4f6;">
-        <div style="background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:12px;">
-          <p style="font-size:12px;font-weight:700;color:${cs.text};text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why This Home Needs It</p>
-          <p style="font-size:14px;color:#4b5563;line-height:1.65;">${rec.why}</p>
-        </div>
-        ${rec.roi ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;margin-bottom:12px;display:flex;gap:10px;align-items:center;"><span style="font-size:20px;">📈</span><p style="font-size:14px;color:#166534;margin:0;line-height:1.5;"><strong>ROI:</strong> ${rec.roi}</p></div>` : ""}
-        <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:16px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <p style="font-size:12px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px;">🗣️ Conversation Script</p>
-            <button class="btn btn-outline btn-sm" onclick="copyScript('script-${i}')">Copy</button>
-          </div>
-          <p id="script-${i}" style="font-size:15px;color:#1f2937;line-height:1.7;font-style:italic;">"${rec.script}"</p>
-        </div>
-      </div>`;
-    container.appendChild(card);
-  });
+function getTimeStr(){var now=new Date();return now.toLocaleTimeString([],{hour:‘2-digit’,minute:‘2-digit’});}
 
-  document.getElementById("revenueResult").style.display = "block";
-  document.getElementById("revenueResult").scrollIntoView({behavior:"smooth",block:"start"});
+function appendMessage(role,text){
+if(role===‘agent’&&voiceMode)setTimeout(function(){mikeSay(text);},200);
+var container=document.getElementById(‘chatMessages’);
+var isAgent=role===‘agent’;
+var div=document.createElement(‘div’);div.className=isAgent?‘msg-agent’:‘msg-user’;
+var formatted;
+if(isAgent){
+formatted=text
+.replace(/^**([A-Z][^*]{2,40})**\s*$/gm,’<span style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.8px;margin:12px 0 5px;display:block;">$1</span>’)
+.replace(/**(.*?)**/g,’<strong>$1</strong>’)
+.replace(/^(\d+).\s+(.+)$/gm,’<div style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;"><div style="width:20px;height:20px;min-width:20px;background:#00C2B2;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;">$1</div><div style="font-size:14px;line-height:1.65;">$2</div></div>’)
+.replace(/^[-•]\s+(.+)$/gm,’<div style="display:flex;gap:8px;align-items:flex-start;padding:3px 0;"><span style="color:var(--teal);font-size:11px;flex-shrink:0;margin-top:3px;">▸</span><div style="font-size:14px;line-height:1.6;">$1</div></div>’)
+.replace(/\n{2,}/g,’<br/>’)
+.replace(/\n/g,’<br/>’);
+}else{
+formatted=text.replace(/**(.*?)**/g,’<strong>$1</strong>’).replace(/\n/g,’<br/>’);
+}
+div.innerHTML=’<div class="msg-bubble '+(isAgent?'msg-bubble-agent':'msg-bubble-user')+'">’+formatted+’</div><div class="msg-time">’+getTimeStr()+’</div>’;
+container.appendChild(div);
+container.scrollTop=container.scrollHeight;
 }
 
-function toggleRecCard(i) {
-  const detail  = document.getElementById(`recDetail-${i}`);
-  const chevron = document.getElementById(`chevron-${i}`);
-  const isOpen  = detail.style.display !== "none";
-  detail.style.display  = isOpen ? "none" : "block";
-  chevron.textContent   = isOpen ? "▼" : "▲";
+function showTyping(){document.getElementById(‘typingIndicator’).style.display=‘block’;document.getElementById(‘chatMessages’).scrollTop=document.getElementById(‘chatMessages’).scrollHeight;if(voiceMode)setVoiceStatus(‘Mike is thinking…’,’’);}
+function hideTyping(){document.getElementById(‘typingIndicator’).style.display=‘none’;if(voiceMode)setVoiceStatus(‘Mike is talking…’,’’);}
+
+function handleChatFile(e){
+var file=e.target.files[0];if(!file)return;e.target.value=””;
+chatAttachment=file;
+var preview=document.getElementById(“chatAttachPreview”);
+var isImg=file.type.startsWith(“image/”);
+preview.innerHTML=(isImg?“📷 “:“🎬 “)+file.name.substring(0,30)+(file.name.length>30?”…”:””)+’<button onclick="clearChatAttach()" style="margin-left:auto;background:none;border:none;font-size:16px;cursor:pointer;color:#9499B0;">×</button>’;
+preview.style.display=“flex”;
+}
+function clearChatAttach(){chatAttachment=null;document.getElementById(“chatAttachPreview”).style.display=“none”;}
+
+async function sendChat(){
+if(chatSending)return;
+var input=document.getElementById(‘chatInput’),text=input.value.trim();
+if(!text&&!chatAttachment)return;
+chatSending=true;
+var btn=document.getElementById(‘chatSendBtn’);btn.disabled=true;
+input.value=’’;input.style.height=‘auto’;
+appendMessage(‘user’,text||‘📷 Photo attached’);
+var chatMsg={role:‘user’,content:text||‘What do you see?’};
+if(chatAttachment&&chatAttachment.type.startsWith(‘image/’)){
+try{
+var chatMime=chatAttachment.type||‘image/jpeg’,chatB64=await blobToBase64(chatAttachment);
+chatMsg={role:‘user’,content:[{type:‘image’,source:{type:‘base64’,media_type:chatMime,data:chatB64}},{type:‘text’,text:text||‘What do you see?’}]};
+}catch(ae){chatMsg={role:‘user’,content:text};}
+}
+chatHistory.push(chatMsg);
+clearChatAttach();
+if(chatHistory.length>8)chatHistory=chatHistory.slice(-8);
+showTyping();
+try{
+var response=await callAI(AGENT_SYSTEM,chatHistory,voiceMode?180:500);
+hideTyping();appendMessage(‘agent’,response);
+chatHistory.push({role:‘assistant’,content:response});
+}catch(e){hideTyping();appendMessage(‘agent’,‘Connection issue — try again in a moment.’);}
+finally{chatSending=false;btn.disabled=false;if(!voiceMode)input.focus();}
 }
 
-function copyScript(id) {
-  const txt = document.getElementById(id)?.textContent || "";
-  navigator.clipboard.writeText(txt).then(() => alert("Script copied to clipboard!")).catch(()=>{});
+function sendQuick(text){document.getElementById(‘chatInput’).value=text;sendChat();}
+function handleChatKey(e){if(e.key===‘Enter’&&!e.shiftKey){e.preventDefault();sendChat();}}
+function clearChat(){
+chatHistory=[];
+document.getElementById(‘chatMessages’).innerHTML=’<div class="msg-agent"><div class="msg-bubble msg-bubble-agent"><p>Chat cleared. What are you working on?</p></div><div class="msg-time">’+getTimeStr()+’</div></div>’;
 }
 
-function resetRevenue() {
-  document.getElementById("revenueResult").style.display = "none";
-  document.getElementById("rSysType").selectedIndex  = 0;
-  document.getElementById("rSysAge").selectedIndex   = 0;
-  document.getElementById("rBrand").selectedIndex    = 0;
-  document.getElementById("rHomeSize").selectedIndex = 0;
-  document.getElementById("rNotes").value = "";
-  selectedConcerns = [];
-  buildConcernsGrid();
-  window.scrollTo({top:0,behavior:"smooth"});
+// ─── VOICE SYSTEM ───
+function loadMikeVoice(){
+var voices=window.speechSynthesis.getVoices();
+var preferred=[‘Alex’,‘Daniel’,‘Fred’,‘Google US English’,‘Microsoft David’];
+for(var i=0;i<preferred.length;i++){
+var v=voices.find(function(v){return v.name.toLowerCase().includes(preferred[i].toLowerCase());});
+if(v){mikeVoice=v;break;}
+}
+if(!mikeVoice)mikeVoice=voices.find(function(v){return v.lang.startsWith(‘en’);})||(voices.length?voices[0]:null);
+}
+
+function toggleVoiceMode(){
+voiceMode=!voiceMode;
+var bar=document.getElementById(‘voiceModeBar’);
+var btn=document.getElementById(‘voiceModeBtn’);
+var lbl=document.getElementById(‘voiceModeBtnLabel’);
+if(voiceMode){
+bar.style.display=‘block’;
+btn.classList.add(‘voice-mode-active’);
+lbl.style.color=’#00C2B2’;lbl.textContent=‘ON’;
+setVoiceStatus(‘Tap mic to talk to Mike’,’’);
+try{var AC=window.AudioContext||window.webkitAudioContext;if(AC){var ctx=new AC(),buf=ctx.createBuffer(1,1,22050),src=ctx.createBufferSource();src.buffer=buf;src.connect(ctx.destination);src.start(0);setTimeout(function(){ctx.close();},100);}}catch(e){}
+var silence=new Audio(“data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=”);
+silence.play().catch(function(){});
+setTimeout(function(){if(voiceMode)mikeSay(“Hey it’s Mike. HVAC master tech. What are you working on?”);},400);
+}else{
+voiceMode=false;
+bar.style.display=‘none’;
+btn.classList.remove(‘voice-mode-active’);
+lbl.style.color=‘rgba(255,255,255,.5)’;lbl.textContent=‘Voice’;
+stopMikeSpeaking();stopListening();autoListenAfterSpeak=false;
+var micBtn=document.getElementById(‘micBtn’);
+if(micBtn){micBtn.classList.remove(‘mic-listening’,‘mic-speaking’);micBtn.textContent=‘🎙️’;micBtn.style.background=’#00C2B2’;}
+var stopBtn=document.getElementById(‘stopSpeakBtn’);if(stopBtn)stopBtn.style.display=‘none’;
+setVoiceStatus(‘Tap mic to talk to Mike’,’’);
+}
+}
+
+function mikeSay(text){
+if(!voiceMode)return;
+stopMikeSpeaking();stopListening();
+var clean=text.replace(/<[^>]+>/g,’ ‘).replace(/**(.*?)**/g,’$1’).replace(/*(.*?)*/g,’$1’).replace(/#+ /g,’’).replace(/`([^`]*)`/g,’$1’).replace(/\n\n/g,’. ‘).replace(/\n/g,’ ‘).replace(/[▸▼▲→]/g,’’).replace(/  +/g,’ ‘).trim().substring(0,400);
+if(!clean)return;
+var micBtn=document.getElementById(‘micBtn’),stopBtn=document.getElementById(‘stopSpeakBtn’);
+isMikeSpeaking=true;
+if(micBtn){micBtn.classList.add(‘mic-speaking’);micBtn.textContent=‘🔊’;}
+if(stopBtn)stopBtn.style.display=‘flex’;
+setVoiceStatus(‘Mike is talking…’,’’);
+var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+if(isIOS){mikeSayBrowser(clean);return;}
+fetch(’/api/tts’,{method:‘POST’,headers:{‘Content-Type’:‘application/json’},body:JSON.stringify({text:clean})})
+.then(function(res){if(!res.ok)throw new Error(‘TTS ‘+res.status);return res.blob();})
+.then(function(blob){
+var url=URL.createObjectURL(blob);
+mikeAudio=new Audio(url);
+mikeAudio.onended=function(){
+URL.revokeObjectURL(url);isMikeSpeaking=false;
+if(micBtn){micBtn.classList.remove(‘mic-speaking’);micBtn.textContent=‘🎙️’;}
+if(stopBtn)stopBtn.style.display=‘none’;
+if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,600);
+else setVoiceStatus(‘Done. Tap mic to reply.’,’’);
+};
+mikeAudio.onerror=function(){isMikeSpeaking=false;if(micBtn)micBtn.classList.remove(‘mic-speaking’);mikeSayBrowser(clean);};
+mikeAudio.play().catch(function(){mikeSayBrowser(clean);});
+})
+.catch(function(){mikeSayBrowser(clean);});
+}
+
+function mikeSayBrowser(clean){
+if(!window.speechSynthesis)return;
+// Pre-process for natural speech rhythm
+var natural=clean
+.replace(/**(.*?)**/g,’$1’)
+.replace(/*(.*?)*/g,’$1’)
+.replace(/`([^`]*)`/g,’$1’)
+// Numbers and units spoken naturally
+.replace(/(\d+)\s*°F/g,’$1 degrees’)
+.replace(/(\d+)\s*psig/g,’$1 PSI’)
+.replace(/(\d+)\s*MFD/g,’$1 microfarad’)
+.replace(/(\d+)\s*”/g,’$1 inches’)
+.replace(/R-410A/g,‘R four ten A’)
+.replace(/R-22/g,‘R twenty two’)
+.replace(/R-454B/g,‘R four fifty four B’)
+.replace(/TXV/g,‘T X V’)
+.replace(/EPA/g,‘E P A’)
+.replace(/NATE/g,‘Nate’)
+.replace(/ECM/g,‘E C M’)
+// Natural pauses
+.replace(/.\s+/g,’.  ‘)
+.replace(/?\s+/g,’?  ‘)
+.replace(/!\s+/g,’!  ‘)
+.replace(/,\s+/g,’, ‘)
+.replace(/—/g,’,  ‘)
+.replace(/.../g,’,  ‘)
+.replace(/:\s+/g,’,  ‘)
+// Clean up
+.replace(/\n+/g,’.  ‘)
+.replace(/\s{3,}/g,’  ‘)
+.trim();
+// Split into chunks — iOS Safari doesn’t support lookbehind regex
+var chunks=[];
+var current=’’;
+for(var i=0;i<natural.length;i++){
+current+=natural[i];
+if((natural[i]===’.’||natural[i]===’?’||natural[i]===’!’)&&(i+1>=natural.length||natural[i+1]===’ ‘)){
+if(current.trim().length>0&&current.length>20){chunks.push(current.trim());current=’’;}
+}
+if(current.length>180){chunks.push(current.trim());current=’’;}
+}
+if(current.trim())chunks.push(current.trim());
+if(!chunks.length)return;
+var micBtn=document.getElementById(‘micBtn’),stopBtn=document.getElementById(‘stopSpeakBtn’);
+var chunkIndex=0;
+function speakNext(){
+if(chunkIndex>=chunks.length||!isMikeSpeaking){
+isMikeSpeaking=false;
+if(micBtn){micBtn.classList.remove(‘mic-speaking’);micBtn.textContent=‘🎙️’;}
+if(stopBtn)stopBtn.style.display=‘none’;
+if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,600);
+else setVoiceStatus(‘Done. Tap mic to reply.’,’’);
+return;
+}
+var utt=new SpeechSynthesisUtterance(chunks[chunkIndex]);
+if(mikeVoice)utt.voice=mikeVoice;
+utt.rate=0.9;   // slightly faster than before — young sharp tech energy
+utt.pitch=0.82; // low confident voice
+utt.volume=1;
+utt.onend=function(){chunkIndex++;speakNext();};
+utt.onerror=function(){isMikeSpeaking=false;if(micBtn)micBtn.classList.remove(‘mic-speaking’);};
+window.speechSynthesis.speak(utt);
+}
+speakNext();
+}
+
+function stopMikeSpeaking(){
+isMikeSpeaking=false; // set first so chunk loop stops
+if(mikeAudio){mikeAudio.pause();mikeAudio.currentTime=0;mikeAudio=null;}
+if(window.speechSynthesis)window.speechSynthesis.cancel();
+var micBtn=document.getElementById(‘micBtn’),stopBtn=document.getElementById(‘stopSpeakBtn’);
+if(micBtn){micBtn.classList.remove(‘mic-speaking’);micBtn.textContent=‘🎙️’;micBtn.style.background=’#00C2B2’;}
+if(stopBtn)stopBtn.style.display=‘none’;
+}
+
+function toggleMic(){if(isListening){stopListening();return;}if(isMikeSpeaking){stopMikeSpeaking();return;}startListening();}
+
+function startListening(){
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR){alert(‘Voice input not supported. Try Chrome or Safari 14.5+.’);return;}
+stopListening();
+speechRecognition=new SR();speechRecognition.continuous=false;speechRecognition.interimResults=true;
+speechRecognition.lang=currentLang===‘es’?‘es-MX’:currentLang===‘zh’?‘zh-CN’:currentLang===‘vi’?‘vi-VN’:currentLang===‘fr’?‘fr-FR’:currentLang===‘pt’?‘pt-BR’:‘en-US’;
+var micBtn=document.getElementById(‘micBtn’);
+if(micBtn){micBtn.classList.add(‘mic-listening’);micBtn.textContent=‘🔴’;}
+isListening=true;setVoiceStatus(‘Listening…’,‘Speak now’);
+speechRecognition.onresult=function(e){
+var transcript=’’;for(var i=e.resultIndex;i<e.results.length;i++)transcript+=e.results[i][0].transcript;
+setVoiceStatus(‘Listening…’,transcript);
+if(e.results[e.results.length-1].isFinal)document.getElementById(‘chatInput’).value=transcript;
+};
+speechRecognition.onend=function(){
+isListening=false;if(micBtn){micBtn.classList.remove(‘mic-listening’);micBtn.textContent=‘🎙️’;}
+var text=document.getElementById(‘chatInput’).value.trim();
+if(text){setVoiceStatus(‘Sending to Mike…’,text);autoListenAfterSpeak=voiceMode;sendChat();}
+else setVoiceStatus(‘Tap mic to talk to Mike’,’’);
+};
+speechRecognition.onerror=function(e){
+isListening=false;if(micBtn){micBtn.classList.remove(‘mic-listening’);micBtn.textContent=‘🎙️’;}
+setVoiceStatus(e.error===‘no-speech’?‘No speech detected. Tap mic again.’:‘Mic error: ‘+e.error,’’);
+};
+speechRecognition.start();
+}
+
+function stopListening(){
+if(speechRecognition){try{speechRecognition.stop();}catch(e){}}
+isListening=false;var micBtn=document.getElementById(‘micBtn’);
+if(micBtn){micBtn.classList.remove(‘mic-listening’);micBtn.textContent=‘🎙️’;}
+}
+
+function setVoiceStatus(status,transcript){
+var el=document.getElementById(‘voiceStatusText’),tr=document.getElementById(‘voiceTranscript’);
+if(el)el.textContent=status;if(tr)tr.textContent=transcript||’’;
+}
+
+// ─── REFRIGERANT ───
+async function runRefrigLookup(){
+var brand=document.getElementById(“rBrandRefrig”).value,type=document.getElementById(“rTypeRefrig”).value,age=document.getElementById(“rAgeRefrig”).value,model=document.getElementById(“rModelRefrig”).value,notes=document.getElementById(“rNotesRefrig”).value;
+if(!brand&&!type&&!model){alert(“Please select at least the brand and system type.”);return;}
+var btn=document.getElementById(“refrigBtn”);btn.disabled=true;btn.innerHTML=’<span class="spinner"></span><span class="pulsing"> Identifying refrigerant…</span>’;
+try{
+var SYSTEM=‘You are an HVAC refrigerant expert. Know AIM Act R-410A phase-down, R-22 ban (2020), R-454B/R-32 transitions. Return ONLY valid JSON no markdown: {“refrigerant”:“R-410A”,“phaseStatus”:“Active|Phase-Down|Phased Out”,“phaseYear”:2025,“dropInReplacement”:“R-454B”,“dropInNotes”:“string”,“chargeAmount”:“string”,“techTips”:“string”,“safetyWarning”:null,“urgency”:“Low|Medium|High”}’;
+var raw=await callAI(SYSTEM,[{role:“user”,content:“Brand: “+(brand||“Unknown”)+”\nType: “+(type||“Unknown”)+”\nAge: “+(age||“Unknown”)+”\nModel: “+(model||“N/A”)+”\nNotes: “+(notes||“None”)+”\nIdentify the refrigerant. JSON only.”}],600);
+var d=parseJSON(raw);if(!d)throw new Error(“Could not parse response”);
+var pc={“Active”:”#16a34a”,“Phase-Down”:”#d97706”,“Phased Out”:”#dc2626”},color=pc[d.phaseStatus]||”#6b7280”;
+var html=’<div style="background:#FFFFFF;border:1px solid #90caf9;border-radius:6px;padding:18px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;"><div><p style="font-size:13px;color:#9499B0;font-weight:600;margin-bottom:4px;">REFRIGERANT TYPE</p><p style="font-size:32px;font-weight:800;color:#0F0F0F;">’+d.refrigerant+’</p></div><span style="padding:6px 16px;border-radius:4px;font-size:14px;font-weight:700;background:'+color+'20;color:'+color+';border:1.5px solid '+color+'40;">’+d.phaseStatus+’</span></div>’;
+if(d.dropInReplacement)html+=’<div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:10px;padding:14px;margin-bottom:14px;"><p style="font-size:13px;font-weight:700;color:#059669;margin-bottom:6px;">✅ Drop-In Replacement</p><p style="font-size:17px;font-weight:700;color:#059669;">’+d.dropInReplacement+’</p><p style="font-size:14px;color:#059669;margin-top:4px;line-height:1.6;">’+(d.dropInNotes||””)+’</p></div>’;
+if(d.techTips)html+=’<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:14px;"><p style="font-size:13px;font-weight:700;color:#2563EB;margin-bottom:6px;">💡 Tech Tips</p><p style="font-size:14px;color:#2563EB;line-height:1.65;">’+d.techTips+’</p></div>’;
+html+=’</div>’;
+document.getElementById(“refrigCards”).innerHTML=html;
+document.getElementById(“refrigResult”).style.display=“block”;
+document.getElementById(“refrigResult”).scrollIntoView({behavior:“smooth”,block:“start”});
+}catch(e){alert(“Refrigerant lookup failed: “+e.message);}
+finally{btn.disabled=false;btn.innerHTML=“❄️ Identify Refrigerant”;}
+}
+function resetRefrig(){document.getElementById(“refrigResult”).style.display=“none”;[“rBrandRefrig”,“rTypeRefrig”,“rAgeRefrig”].forEach(function(id){document.getElementById(id).selectedIndex=0;});document.getElementById(“rModelRefrig”).value=””;document.getElementById(“rNotesRefrig”).value=””;}
+
+// ─── REVENUE BUILDER ───
+function clearRevenueScan(){
+revenueMediaFile=null;
+document.getElementById(“revMediaPreview”).style.display=“none”;
+document.getElementById(“revImgPreview”).style.display=“none”;
+document.getElementById(“revVidPreview”).style.display=“none”;
+document.getElementById(“revenueMediaInput”).value=””;document.getElementById(“revenueMediaLib”).value=””;
+}
+async function handleRevenueScan(e){
+var file=e.target.files[0];if(!file)return;e.target.value=””;
+revenueMediaFile=file;
+var url=URL.createObjectURL(file),isImg=file.type.startsWith(“image/”);
+document.getElementById(“revMediaPreview”).style.display=“block”;
+if(isImg){document.getElementById(“revImgPreview”).src=url;document.getElementById(“revImgPreview”).style.display=“block”;document.getElementById(“revVidPreview”).style.display=“none”;}
+else{document.getElementById(“revVidPreview”).src=url;document.getElementById(“revVidPreview”).style.display=“block”;document.getElementById(“revImgPreview”).style.display=“none”;}
+if(isImg){
+document.getElementById(“revScanStatus”).style.display=“flex”;
+try{
+var mime=file.type||“image/jpeg”,b64=await blobToBase64(file);
+var SYSTEM=“You are an expert HVAC technician reviewing a photo. Identify everything visible that could lead to a service recommendation or add-on sale. Return a concise bullet list of observations. Max 8 bullets.”;
+var raw=await callAI(SYSTEM,[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:“What do you observe that could lead to service recommendations?”}]}],400);
+var notes=document.getElementById(“rNotes”),existing=notes.value.trim();
+notes.value=existing?existing+”\n\n📸 From scan:\n”+raw:“📸 From scan:\n”+raw;
+}catch(err){}
+finally{document.getElementById(“revScanStatus”).style.display=“none”;}
+}
+}
+async function runRevenue(){
+var sysType=document.getElementById(“rSysType”).value,sysAge=document.getElementById(“rSysAge”).value,brand=document.getElementById(“rBrand”).value,homeSize=document.getElementById(“rHomeSize”).value,notes=document.getElementById(“rNotes”).value;
+if(!sysType&&!selectedConcerns.length&&!notes&&!revenueMediaFile){alert(“Upload a photo or fill in system details.”);return;}
+var btn=document.getElementById(“revenueBtn”);btn.disabled=true;
+btn.innerHTML=’<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing"> ‘+(revenueMediaFile?“Analyzing your system…”:“Building recommendations…”)+’</span>’;
+var SYSTEM=‘You are an expert HVAC technician AND revenue consultant. Identify every genuine upsell opportunity. Return ONLY valid JSON: {“summary”:“observations”,“totalOpportunityLow”:0,“totalOpportunityHigh”:0,“recommendations”:[{“category”:“Safety|IAQ|Comfort|Efficiency|Maintenance”,“priority”:“High|Medium|Low”,“title”:“string”,“why”:“string”,“homeownerBenefit”:“string”,“priceLow”:0,“priceHigh”:0,“techProfit”:0,“roi”:“string”,“script”:“exact words to say”}]}’;
+var ctx=“System: “+(sysType||“Unknown”)+” | Brand: “+(brand||“Unknown”)+” | Age: “+(sysAge||“Unknown”)+” | Home: “+(homeSize||“Unknown”)+”\nConcerns: “+(selectedConcerns.length?selectedConcerns.join(”, “):“None”)+”\nNotes: “+(notes||“None”);
+try{
+var messages;
+if(revenueMediaFile&&revenueMediaFile.type.startsWith(“image/”)){
+var mime=revenueMediaFile.type||“image/jpeg”,b64=await blobToBase64(revenueMediaFile);
+messages=[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:ctx+”\n\nAnalyze this HVAC system photo. Identify every upsell opportunity. Return JSON only.”}]}];
+}else{messages=[{role:“user”,content:ctx}];}
+var raw=await callAI(SYSTEM,messages,900),parsed=parseJSON(raw);
+if(parsed)showRevenueResults(parsed);else throw new Error(“Could not parse response”);
+}catch(e){alert(“Revenue builder failed: “+e.message);}
+finally{btn.disabled=false;btn.innerHTML=“💰 Build Revenue Recommendations”;}
+}
+function showRevenueResults(data){
+var f=function(n){return”$”+Number(n||0).toLocaleString();};
+document.getElementById(“revSummary”).textContent=data.summary||””;
+document.getElementById(“revRange”).textContent=f(data.totalOpportunityLow)+”–”+f(data.totalOpportunityHigh);
+var container=document.getElementById(“revenueCards”);container.innerHTML=””;
+(data.recommendations||[]).forEach(function(rec,i){
+var cs=CAT_STYLE[rec.category]||CAT_STYLE.Maintenance,pc=rec.priority===“High”?”#dc2626”:rec.priority===“Medium”?”#d97706”:”#16a34a”;
+var card=document.createElement(“div”);card.className=“rec-card”;card.style.borderLeft=“4px solid “+cs.border;
+card.innerHTML=’<div style="display:flex;align-items:flex-start;gap:14px;" onclick="toggleRecCard('+i+')"><div style="width:46px;height:46px;border-radius:10px;background:'+cs.bg+';border:1px solid '+cs.border+';display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">’+cs.icon+’</div><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;"><span style="font-size:16px;font-weight:700;color:#0F0F0F;">’+rec.title+’</span><span style="padding:3px 9px;border-radius:4px;font-size:12px;font-weight:600;background:'+cs.bg+';color:'+cs.text+';border:1px solid '+cs.border+';">’+rec.category+’</span><span style="font-size:12px;font-weight:600;color:'+pc+';">’+rec.priority+’ Priority</span></div><p style="font-size:14px;color:#9499B0;line-height:1.5;margin:0;">’+rec.homeownerBenefit+’</p></div><div style="text-align:right;flex-shrink:0;"><p style="font-size:17px;font-weight:700;color:#059669;">’+f(rec.priceLow)+’–’+f(rec.priceHigh)+’</p><p style="font-size:18px;color:#9499B0;margin-top:4px;" id="chev-'+i+'">▼</p></div></div><div id="recDetail-'+i+'" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #dfe1e6;"><div style="background:#F5F6FA;border-radius:4px;padding:14px;margin-bottom:12px;"><p style="font-size:12px;font-weight:700;color:'+cs.text+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why This Home Needs It</p><p style="font-size:14px;color:#6B7190;line-height:1.65;">’+rec.why+’</p></div><div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;padding:16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><p style="font-size:12px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.5px;">🗣️ Script</p><button class="btn btn-outline btn-sm" onclick="copyScript(\'rscript-'+i+'\')">Copy</button></div><p id="rscript-'+i+'" style="font-size:15px;color:#6B7190;line-height:1.7;font-style:italic;">”’+rec.script+’”</p></div></div>’;
+container.appendChild(card);
+});
+document.getElementById(“revenueResult”).style.display=“block”;
+document.getElementById(“revenueResult”).scrollIntoView({behavior:“smooth”,block:“start”});
+}
+function toggleRecCard(i){var d=document.getElementById(“recDetail-”+i),c=document.getElementById(“chev-”+i),o=d.style.display!==“none”;d.style.display=o?“none”:“block”;c.textContent=o?“▼”:“▲”;}
+function copyScript(id){navigator.clipboard.writeText(document.getElementById(id).textContent||””).then(function(){alert(“Script copied!”);}).catch(function(){});}
+function resetRevenue(){clearRevenueScan();document.getElementById(“revenueResult”).style.display=“none”;[“rSysType”,“rSysAge”,“rBrand”,“rHomeSize”].forEach(function(id){document.getElementById(id).selectedIndex=0;});document.getElementById(“rNotes”).value=””;selectedConcerns=[];buildConcernsGrid();window.scrollTo({top:0,behavior:“smooth”});}
+
+// ─── MAINTENANCE PITCHER ───
+async function runMaintenancePitch(){
+var sysType=document.getElementById(“mSysType”).value,sysAge=document.getElementById(“mSysAge”).value,brand=document.getElementById(“mBrand”).value,lastSvc=document.getElementById(“mLastService”).value,findings=document.getElementById(“mFindings”).value,price=document.getElementById(“mPrice”).value,visits=document.getElementById(“mVisits”).value;
+if(!sysType&&!findings&&!selectedMaintConcerns.length){alert(“Please fill in the system details or describe what you found on this visit.”);return;}
+var btn=document.getElementById(“maintBtn”);btn.disabled=true;btn.innerHTML=’<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing"> Crafting your pitch…</span>’;
+try{
+var SYSTEM=“You are a master HVAC sales trainer. Write conversational, natural-sounding scripts that feel helpful — not pushy. Honest, benefit-focused, easy to deliver on the doorstep.”;
+var prompt=“Create a customized maintenance agreement pitch script:\n\nSystem: “+(sysType||“Unknown”)+” | Brand: “+(brand||“Unknown”)+” | Age: “+(sysAge||“Unknown”)+”\nLast Service: “+(lastSvc||“Unknown”)+”\nHomeowner Situation: “+(selectedMaintConcerns.length?selectedMaintConcerns.join(”, “):“Not specified”)+”\nWhat I Found Today: “+(findings||“Standard service call”)+”\nPlan Price: “+(price||“Not specified”)+” | Visits: “+(visits||“Not specified”)+”\n\nWrite a complete pitch script:\n\n**THE OPENING LINE**\n\n**THE PITCH** (2-3 minute word-for-word script)\n\n**IF THEY SAY ‘I NEED TO THINK ABOUT IT’**\n\n**IF THEY SAY ‘THAT SEEMS EXPENSIVE’**\n\n**THE CLOSE**\n\n**KEY BENEFITS TO EMPHASIZE**”;
+var result=await callAI(SYSTEM,[{role:“user”,content:prompt}],900);
+document.getElementById(“maintScriptText”).innerHTML=result.replace(/**(.*?)**/g,’<strong style="color:#EA580C">$1</strong>’).replace(/\n/g,”<br/>”);
+document.getElementById(“maintResult”).style.display=“block”;
+document.getElementById(“maintResult”).scrollIntoView({behavior:“smooth”,block:“start”});
+}catch(e){alert(“Pitch generation failed: “+e.message);}
+finally{btn.disabled=false;btn.innerHTML=“📋 Generate Pitch Script”;}
+}
+function copyMaintScript(){navigator.clipboard.writeText(document.getElementById(“maintScriptText”).textContent||””).then(function(){alert(“Script copied! Go close the deal 💪”);}).catch(function(){});}
+function resetMaint(){document.getElementById(“maintResult”).style.display=“none”;[“mSysType”,“mSysAge”,“mBrand”,“mLastService”,“mVisits”].forEach(function(id){document.getElementById(id).selectedIndex=0;});document.getElementById(“mFindings”).value=””;document.getElementById(“mPrice”).value=””;selectedMaintConcerns=[];buildMaintConcernsGrid();window.scrollTo({top:0,behavior:“smooth”});}
+
+// ─── LANGUAGE ───
+var TRANSLATIONS={
+en:{heroTitle:“What’s Wrong With Your HVAC?”,heroTitlePro:“Professional HVAC Diagnostics”,heroSub:“Upload a photo or video, describe what’s happening, and we’ll tell you exactly what’s wrong.”,aiReady:“AI Ready”,offline:“Offline”},
+es:{heroTitle:”¿Qué le pasa a tu HVAC?”,heroTitlePro:“Diagnóstico Profesional de HVAC”,heroSub:“Sube una foto o video, describe lo que está pasando y te diremos exactamente qué está mal.”,aiReady:“Listo”,offline:“Sin Conexión”},
+zh:{heroTitle:“您的空调出了什么问题？”,heroTitlePro:“专业暖通空调诊断”,heroSub:“上传照片或视频，描述问题所在，我们将告诉您确切的故障原因。”,aiReady:“就绪”,offline:“离线”},
+vi:{heroTitle:“Máy điều hòa của bạn gặp vấn đề gì?”,heroTitlePro:“Chẩn Đoán HVAC Chuyên Nghiệp”,heroSub:“Tải ảnh hoặc video lên, mô tả sự cố và chúng tôi sẽ cho bạn biết chính xác vấn đề.”,aiReady:“Sẵn Sàng”,offline:“Ngoại Tuyến”},
+fr:{heroTitle:“Qu’est-ce qui ne va pas avec votre climatisation ?”,heroTitlePro:“Diagnostic HVAC Professionnel”,heroSub:“Téléchargez une photo ou vidéo, décrivez le problème et nous vous dirons exactement ce qui ne va pas.”,aiReady:“Prêt”,offline:“Hors Ligne”},
+pt:{heroTitle:“O que está errado com o seu ar-condicionado?”,heroTitlePro:“Diagnóstico Profissional de HVAC”,heroSub:“Envie uma foto ou vídeo, descreva o que está acontecendo e diremos exatamente o que está errado.”,aiReady:“Pronto”,offline:“Sem Conexão”}
+};
+var LANG_META={en:{flag:‘🇺🇸’,code:‘EN’},es:{flag:‘🇲🇽’,code:‘ES’},zh:{flag:‘🇨🇳’,code:‘ZH’},vi:{flag:‘🇻🇳’,code:‘VI’},fr:{flag:‘🇫🇷’,code:‘FR’},pt:{flag:‘🇧🇷’,code:‘PT’}};
+function toggleLangMenu(){document.getElementById(‘langDropdown’).classList.toggle(‘open’);}
+function setLang(lang){
+currentLang=lang;var t=TRANSLATIONS[lang],m=LANG_META[lang];if(!t)return;
+document.getElementById(‘langFlag’).textContent=m.flag;document.getElementById(‘langCode’).textContent=m.code;
+[‘en’,‘es’,‘zh’,‘vi’,‘fr’,‘pt’].forEach(function(l){var el=document.getElementById(‘langOpt-’+l);if(el)el.className=‘lang-option’+(l===lang?’ active’:’’);});
+document.getElementById(‘langDropdown’).classList.remove(‘open’);
+var isPro=mode===‘pro’;
+document.getElementById(‘heroTitle’).textContent=isPro?t.heroTitlePro:t.heroTitle;
+document.getElementById(‘heroSub’).textContent=isPro?(t.heroSubPro||t.heroSub):t.heroSub;
+var statusText=document.getElementById(‘statusText’);
+if(statusText){var cur=statusText.textContent;if(cur===‘AI Ready’||cur===‘Listo’||cur===‘就绪’||cur===‘Sẵn Sàng’||cur===‘Prêt’||cur===‘Pronto’)statusText.textContent=t.aiReady;else if(cur===‘Offline’||cur===‘Sin Conexión’||cur===‘离线’||cur===‘Ngoại Tuyến’||cur===‘Hors Ligne’||cur===‘Sem Conexão’)statusText.textContent=t.offline;}
 }
 </script>
 

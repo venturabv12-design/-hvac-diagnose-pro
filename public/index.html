@@ -226,7 +226,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
     </div>
   </div>
 
-  <!-- ═══ HOMEOWNER DIAGNOSTIC PANEL ═══ -->
+  <!-- HOMEOWNER PANEL -->
 
   <div id="panelHome">
     <div class="card">
@@ -293,7 +293,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
     </div>
   </div>
 
-  <!-- ═══ PRO DIAGNOSE PANEL ═══ -->
+  <!-- PRO DIAGNOSE PANEL -->
 
   <div id="panelDiag" style="display:none;">
     <!-- MIKE BAR -->
@@ -369,13 +369,13 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
       </div>
     </div>
 
+```
 <!-- FULL DIAGNOSTIC FORM -->
 <div class="card" style="border-top:3px solid #00C2B2;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
     <label class="field-label" style="margin:0;">Full Diagnostic</label>
     <span style="font-size:11px;color:#9499B0;">For deeper AI analysis</span>
   </div>
-  <!-- Photo upload -->
   <input type="file" id="fileInput" accept="video/*,image/*" style="display:none" onchange="handleFileSelect(event)"/>
   <input type="file" id="fileInputCam" accept="image/*,video/*" capture="environment" style="display:none" onchange="handleFileSelect(event)"/>
   <div id="dropZone" class="drop-zone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()" style="min-height:0;">
@@ -394,7 +394,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
     <button onclick="clearUpload()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
     <div id="fileNameTag" style="margin-top:4px;font-size:11px;color:#9499B0;text-align:center;"></div>
   </div>
-  <!-- Nameplate compact -->
+  <!-- Nameplate -->
   <input type="file" id="diagNameplateInput" accept="image/*" capture="environment" style="display:none" onchange="handleDiagNameplateScan(event)"/>
   <input type="file" id="diagNameplateLib" accept="image/*" style="display:none" onchange="handleDiagNameplateScan(event)"/>
   <div style="background:#F5F6FA;border-radius:8px;border:1px solid #E2E4ED;padding:12px;margin-top:10px;">
@@ -413,23 +413,19 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
       <div><label class="field-label" style="font-size:10px;margin-bottom:3px;">Serial Number</label><input type="text" id="serialNumber" placeholder="e.g. 4006E12345" style="font-size:13px;padding:8px 10px;text-transform:uppercase;" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/></div>
     </div>
   </div>
-  <!-- System info -->
   <div class="grid2" style="margin-top:10px;gap:8px;">
     <div><label class="field-label">System Type</label><select id="sysType"><option value="">Select…</option></select></div>
     <div><label class="field-label">Age</label><select id="sysAge"><option value="">Select…</option></select></div>
   </div>
   <div id="brandRow" style="margin-top:8px;"><label class="field-label">Brand</label><select id="brand"><option value="">Select brand…</option></select></div>
-  <!-- Symptoms -->
   <div style="margin-top:10px;">
     <label class="field-label" id="symptomsLabel">What's it doing?</label>
     <div class="symptoms-grid" id="symptomsGrid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;"></div>
   </div>
-  <!-- Description -->
   <div style="margin-top:10px;">
     <label class="field-label" id="descLabel">Technical Notes</label>
     <textarea id="desc" placeholder="e.g. Suction 58 PSI, head 285 PSI at 85°F. Compressor draws 18A then trips breaker…" style="min-height:64px;"></textarea>
   </div>
-  <!-- Voice collapsed -->
   <div style="margin-top:10px;">
     <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 12px;background:#F5F6FA;border-radius:8px;border:1px solid #E2E4ED;" onclick="toggleVoiceDesc()">
       <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">🎙️</span><span style="font-size:13px;font-weight:700;color:#0F0F0F;">Voice Description</span></div>
@@ -449,13 +445,11 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
       </div>
     </div>
   </div>
-  <!-- Tags -->
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
     <span id="tagFile" style="display:none;padding:4px 10px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:99px;font-size:12px;color:#2563EB;font-weight:600;"></span>
     <span id="tagVoice" style="display:none;padding:4px 10px;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:99px;font-size:12px;color:#7C3AED;font-weight:600;">🎙️ Voice</span>
     <span id="tagSymps" style="display:none;padding:4px 10px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:99px;font-size:12px;color:#059669;font-weight:600;"></span>
   </div>
-  <!-- Run button -->
   <div style="display:flex;gap:8px;margin-top:12px;">
     <button id="runBtn" onclick="runDiagnostic()" style="flex:1;padding:16px;border:none;border-radius:6px;cursor:pointer;background:#00C2B2;color:#fff;font-family:var(--font);font-size:18px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(0,181,181,.4);transition:all .15s;">⚡ Run Diagnostic</button>
     <button onclick="resetDiagnostic()" style="padding:16px 14px;border:2px solid #d0d0d0;border-radius:6px;cursor:pointer;background:#fff;color:#6B7190;font-family:var(--font);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;">🔄 New</button>
@@ -489,10 +483,11 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
   </div>
   <button class="btn btn-outline btn-full" onclick="resetDiagnostic()" style="margin-top:8px;">+ Start a New Diagnosis</button>
 </div>
+```
 
   </div>
 
-  <!-- ═══ REFRIGERANT ═══ -->
+  <!-- REFRIGERANT PANEL -->
 
   <div id="panelRefrig" style="display:none;">
     <div class="info-box info-blue" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
@@ -521,7 +516,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
     </div>
   </div>
 
-  <!-- ═══ REVENUE BUILDER ═══ -->
+  <!-- REVENUE PANEL -->
 
   <div id="panelRevenue" style="display:none;">
     <div class="info-box info-green" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
@@ -571,7 +566,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
     </div>
   </div>
 
-  <!-- ═══ MAINTENANCE PITCHER ═══ -->
+  <!-- MAINTENANCE PANEL -->
 
   <div id="panelMaint" style="display:none;">
     <div class="info-box info-amber" style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
@@ -628,32 +623,28 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
   </div>
 </div>
 <script>
-// ─── DATA ───
-const SYS_TYPES=["Air Conditioner – Split System","Air Conditioner – Package Unit","AC Condenser (Outdoor Unit Only)","Heat Pump Condenser (Outdoor Unit Only)","Heat Pump – Split System","Heat Pump – Package Unit","Heat Pump – Dual Fuel","Air Handler – Electric","Air Handler – with Electric Heat Strip","Gas Furnace","Electric Furnace","Oil Furnace","Mini-Split – Single Zone","Mini-Split – Multi Zone","Package Unit – Gas/Electric","Package Unit – Electric","Boiler – Hot Water","Boiler – Steam","Geothermal Heat Pump","VRF / VRV System","PTAC / PTHP","Window AC","Radiant / In-Floor Heat"];
-const SYS_AGES=["0–5 years","5–10 years","10–15 years","15–20 years","20+ years","Not sure"];
-const BRANDS=["Carrier","Bryant","Payne","Trane","American Standard","Lennox","Goodman","Amana","Daikin","Rheem","Ruud","York","Coleman","Heil","Tempstar","Mitsubishi Electric","Fujitsu","LG","Bosch","Weil-McLain","Other / Unknown"];
-const HOME_SIZES=["Under 1,000 sq ft","1,000–1,500 sq ft","1,500–2,000 sq ft","2,000–2,500 sq ft","2,500–3,000 sq ft","3,000–4,000 sq ft","4,000+ sq ft"];
-const HOME_SYMPTOMS=[{icon:"❄️",label:"Not cooling"},{icon:"🔥",label:"Not heating"},{icon:"💨",label:"Weak airflow"},{icon:"💧",label:"Water leaking"},{icon:"🔊",label:"Strange noises"},{icon:"💸",label:"High energy bills"},{icon:"🌡️",label:"Uneven temperatures"},{icon:"🤧",label:"Poor air quality"},{icon:"🔄",label:"Keeps cycling on/off"},{icon:"❌",label:"Won't turn on"},{icon:"🧊",label:"Ice forming on unit"},{icon:"👃",label:"Burning smell"}];
-const PRO_SYMPTOMS=[{icon:"❄️",label:"Not cooling"},{icon:"🌡️",label:"High head pressure"},{icon:"📉",label:"Low suction pressure"},{icon:"🧊",label:"Freezing up"},{icon:"🌊",label:"Refrigerant leak"},{icon:"🔄",label:"Short cycling"},{icon:"🔥",label:"No heat"},{icon:"🔥",label:"Furnace not igniting"},{icon:"💨",label:"Furnace blowing cold"},{icon:"🔩",label:"Heat exchanger issue"},{icon:"🟡",label:"Inducer motor fail"},{icon:"🔌",label:"Pressure switch fault"},{icon:"🔃",label:"Reversing valve stuck"},{icon:"🌡️",label:"Heat pump not heating"},{icon:"❄️",label:"Heat pump not cooling"},{icon:"💨",label:"Weak airflow"},{icon:"🔧",label:"Blower motor fail"},{icon:"🔌",label:"Capacitor fault"},{icon:"💧",label:"Drain blockage"},{icon:"⚡",label:"Electrical fault"},{icon:"🔌",label:"Contactor fail"},{icon:"🔧",label:"Compressor failure"},{icon:"🔊",label:"Strange noise"},{icon:"👃",label:"Burning smell"}];
-const CONCERNS=[{icon:"😷",label:"Allergies or Asthma"},{icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},{icon:"🐾",label:"Pets in home"},{icon:"💧",label:"Humidity problems"},{icon:"🌡️",label:"Hot or cold rooms"},{icon:"💰",label:"High energy bills"},{icon:"🔒",label:"No service plan yet"},{icon:"🛢️",label:"Old R-22 system"},{icon:"🏚️",label:"Older home"},{icon:"🔥",label:"Gas appliances"},{icon:"💨",label:"Poor ventilation"}];
-const MAINT_CONCERNS=[{icon:"💸",label:"Worried about bills"},{icon:"🔒",label:"Wants peace of mind"},{icon:"😷",label:"Health / air quality"},{icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},{icon:"🏠",label:"Older home"},{icon:"💔",label:"Had a breakdown before"},{icon:"🔥",label:"Gas system"},{icon:"📅",label:"Snowbird / seasonal"}];
-const CAT_STYLE={Safety:{bg:"#ffebee",border:"#ef9a9a",text:"#be123c",icon:"🛡️"},IAQ:{bg:"#e3f2fd",border:"#90caf9",text:"#1565c0",icon:"🌬️"},Comfort:{bg:"#ede7f6",border:"#b39ddb",text:"#4527a0",icon:"🌡️"},Efficiency:{bg:"#e8f5e9",border:"#a5d6a7",text:"#15803d",icon:"⚡"},Maintenance:{bg:"#fffbeb",border:"#fde68a",text:"#b45309",icon:"🔧"}};
+var SYS_TYPES=["Air Conditioner – Split System","Air Conditioner – Package Unit","AC Condenser (Outdoor Unit Only)","Heat Pump Condenser (Outdoor Unit Only)","Heat Pump – Split System","Heat Pump – Package Unit","Heat Pump – Dual Fuel","Air Handler – Electric","Air Handler – with Electric Heat Strip","Gas Furnace","Electric Furnace","Oil Furnace","Mini-Split – Single Zone","Mini-Split – Multi Zone","Package Unit – Gas/Electric","Package Unit – Electric","Boiler – Hot Water","Boiler – Steam","Geothermal Heat Pump","VRF / VRV System","PTAC / PTHP","Window AC","Radiant / In-Floor Heat"];
+var SYS_AGES=["0–5 years","5–10 years","10–15 years","15–20 years","20+ years","Not sure"];
+var BRANDS=["Carrier","Bryant","Payne","Trane","American Standard","Lennox","Goodman","Amana","Daikin","Rheem","Ruud","York","Coleman","Heil","Tempstar","Mitsubishi Electric","Fujitsu","LG","Bosch","Weil-McLain","Other / Unknown"];
+var HOME_SIZES=["Under 1,000 sq ft","1,000–1,500 sq ft","1,500–2,000 sq ft","2,000–2,500 sq ft","2,500–3,000 sq ft","3,000–4,000 sq ft","4,000+ sq ft"];
+var HOME_SYMPTOMS=[{icon:"❄️",label:"Not cooling"},{icon:"🔥",label:"Not heating"},{icon:"💨",label:"Weak airflow"},{icon:"💧",label:"Water leaking"},{icon:"🔊",label:"Strange noises"},{icon:"💸",label:"High energy bills"},{icon:"🌡️",label:"Uneven temperatures"},{icon:"🤧",label:"Poor air quality"},{icon:"🔄",label:"Keeps cycling on/off"},{icon:"❌",label:"Won't turn on"},{icon:"🧊",label:"Ice forming on unit"},{icon:"👃",label:"Burning smell"}];
+var PRO_SYMPTOMS=[{icon:"❄️",label:"Not cooling"},{icon:"🌡️",label:"High head pressure"},{icon:"📉",label:"Low suction pressure"},{icon:"🧊",label:"Freezing up"},{icon:"🌊",label:"Refrigerant leak"},{icon:"🔄",label:"Short cycling"},{icon:"🔥",label:"No heat"},{icon:"🔥",label:"Furnace not igniting"},{icon:"💨",label:"Furnace blowing cold"},{icon:"🔩",label:"Heat exchanger issue"},{icon:"🟡",label:"Inducer motor fail"},{icon:"🔌",label:"Pressure switch fault"},{icon:"🔃",label:"Reversing valve stuck"},{icon:"🌡️",label:"Heat pump not heating"},{icon:"❄️",label:"Heat pump not cooling"},{icon:"💨",label:"Weak airflow"},{icon:"🔧",label:"Blower motor fail"},{icon:"🔌",label:"Capacitor fault"},{icon:"💧",label:"Drain blockage"},{icon:"⚡",label:"Electrical fault"},{icon:"🔌",label:"Contactor fail"},{icon:"🔧",label:"Compressor failure"},{icon:"🔊",label:"Strange noise"},{icon:"👃",label:"Burning smell"}];
+var CONCERNS=[{icon:"😷",label:"Allergies or Asthma"},{icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},{icon:"🐾",label:"Pets in home"},{icon:"💧",label:"Humidity problems"},{icon:"🌡️",label:"Hot or cold rooms"},{icon:"💰",label:"High energy bills"},{icon:"🔒",label:"No service plan yet"},{icon:"🛢️",label:"Old R-22 system"},{icon:"🏚️",label:"Older home"},{icon:"🔥",label:"Gas appliances"},{icon:"💨",label:"Poor ventilation"}];
+var MAINT_CONCERNS=[{icon:"💸",label:"Worried about bills"},{icon:"🔒",label:"Wants peace of mind"},{icon:"😷",label:"Health / air quality"},{icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},{icon:"🏠",label:"Older home"},{icon:"💔",label:"Had a breakdown before"},{icon:"🔥",label:"Gas system"},{icon:"📅",label:"Snowbird / seasonal"}];
+var CAT_STYLE={Safety:{bg:"#ffebee",border:"#ef9a9a",text:"#be123c",icon:"🛡️"},IAQ:{bg:"#e3f2fd",border:"#90caf9",text:"#1565c0",icon:"🌬️"},Comfort:{bg:"#ede7f6",border:"#b39ddb",text:"#4527a0",icon:"🌡️"},Efficiency:{bg:"#e8f5e9",border:"#a5d6a7",text:"#15803d",icon:"⚡"},Maintenance:{bg:"#fffbeb",border:"#fde68a",text:"#b45309",icon:"🔧"}};
 
-// ─── STATE ───
 var mode=“home”,proTab=“diag”;
 var selectedSymptoms=[],selectedConcerns=[],selectedMaintConcerns=[],selectedHomeSymptoms=[];
-var uploadedFile=null,revenueMediaFile=null,chatAttachment=null;
-var homeUploadedFile=null;
+var uploadedFile=null,revenueMediaFile=null,chatAttachment=null,homeUploadedFile=null;
 var audioTranscript=””,lastDiagResult=””;
 var mediaRecorder=null,audioChunks=[],recTimer=null,recSeconds=0;
 var chatHistory=[],chatSending=false;
 var currentLang=‘en’;
 var voiceMode=false,mikeVoice=null,mikeAudio=null,isMikeSpeaking=false,isListening=false,speechRecognition=null,autoListenAfterSpeak=false;
 
-// ─── INIT ───
 document.addEventListener(“DOMContentLoaded”,function(){
 populateSelects();
-buildSymptomGrid(“pro”);
+buildSymptomGrid();
 buildHomeSymptomGrid();
 buildConcernsGrid();
 buildMaintConcernsGrid();
@@ -665,7 +656,6 @@ var t=document.getElementById(‘langToggle’);
 if(t&&!t.contains(e.target)){var d=document.getElementById(‘langDropdown’);if(d)d.classList.remove(‘open’);}
 });
 
-// ─── HEALTH ───
 function checkHealth(retry){
 retry=retry||0;
 fetch(”/api/health”).then(function(r){return r.json();}).then(function(d){
@@ -679,7 +669,6 @@ if(retry<3)setTimeout(function(){checkHealth(retry+1);},3000*(retry+1));
 });
 }
 
-// ─── SELECTS ───
 function populateSelects(){
 var map={sysType:SYS_TYPES,sysAge:SYS_AGES,brand:BRANDS,homeSysAge:SYS_AGES,
 rSysType:SYS_TYPES,rSysAge:SYS_AGES,rBrand:BRANDS,rHomeSize:HOME_SIZES,
@@ -688,7 +677,6 @@ mSysType:SYS_TYPES,mSysAge:SYS_AGES,mBrand:BRANDS};
 for(var id in map){var el=document.getElementById(id);if(!el)continue;map[id].forEach(function(o){var opt=document.createElement(“option”);opt.value=opt.textContent=o;el.appendChild(opt);});}
 }
 
-// ─── MODE ───
 function setMode(m){
 mode=m;
 var isPro=m===“pro”;
@@ -696,7 +684,6 @@ document.getElementById(“tabHome”).className=“mode-tab”+(m===“home”?
 document.getElementById(“tabPro”).className=“mode-tab”+(m===“pro”?” active”:””);
 document.getElementById(“proTabs”).style.display=isPro?“block”:“none”;
 document.getElementById(“panelHome”).style.display=isPro?“none”:“block”;
-// Hide all pro panels — setProTab will show the right one
 [“panelDiag”,“panelRefrig”,“panelRevenue”,“panelMaint”].forEach(function(id){
 var el=document.getElementById(id);if(el)el.style.display=“none”;
 });
@@ -710,14 +697,8 @@ function setProTab(tab){
 proTab=tab;
 var panels={diag:“panelDiag”,refrig:“panelRefrig”,revenue:“panelRevenue”,maint:“panelMaint”};
 var tabs={diag:“stDiag”,refrig:“stRefrig”,revenue:“stRevenue”,maint:“stMaint”};
-for(var t in panels){
-var el=document.getElementById(panels[t]);
-if(el)el.style.display=(t===tab)?“block”:“none”;
-}
-for(var t in tabs){
-var el=document.getElementById(tabs[t]);
-if(el)el.className=“sub-tab”+(t===tab?” active”:””);
-}
+for(var t in panels){var el=document.getElementById(panels[t]);if(el)el.style.display=(t===tab)?“block”:“none”;}
+for(var t in tabs){var el=document.getElementById(tabs[t]);if(el)el.className=“sub-tab”+(t===tab?” active”:””);}
 }
 
 function toggleVoiceDesc(){
@@ -727,8 +708,7 @@ body.style.display=open?‘none’:‘block’;
 icon.textContent=open?‘▼’:‘▲’;
 }
 
-// ─── SYMPTOM GRIDS ───
-function buildSymptomGrid(m){
+function buildSymptomGrid(){
 var grid=document.getElementById(“symptomsGrid”);if(!grid)return;
 grid.innerHTML=””;
 PRO_SYMPTOMS.forEach(function(s){
@@ -770,7 +750,6 @@ grid.appendChild(btn);
 });
 }
 
-// ─── HOME FILE UPLOAD ───
 function handleHomeDrop(e){e.preventDefault();document.getElementById(“homeDropZone”).classList.remove(“drag”);var f=e.dataTransfer.files[0];if(f)setHomeFile(f);}
 function handleHomeFileSelect(e){var f=e.target.files[0];if(f)setHomeFile(f);}
 function setHomeFile(file){
@@ -796,7 +775,6 @@ document.getElementById(“homeDropTips”).style.display=“flex”;
 document.getElementById(“homeFileInput”).value=””;
 }
 
-// ─── PRO FILE UPLOAD ───
 function handleDrop(e){e.preventDefault();document.getElementById(“dropZone”).classList.remove(“drag”);var f=e.dataTransfer.files[0];if(f)setUploadFile(f);}
 function handleFileSelect(e){var f=e.target.files[0];if(f)setUploadFile(f);}
 function setUploadFile(file){
@@ -830,18 +808,15 @@ var ts=document.getElementById(“tagSymps”);
 if(ts){ts.textContent=selectedSymptoms.length?“✓ “+selectedSymptoms.length+” symptom”+(selectedSymptoms.length>1?“s”:””):””;ts.style.display=selectedSymptoms.length?“inline-block”:“none”;}
 }
 
-// ─── NAMEPLATE SCAN IN DIAG ───
 async function handleDiagNameplateScan(e){
 var file=e.target.files[0];if(!file)return;e.target.value=””;
 var statusEl=document.getElementById(“diagScanStatus”),successEl=document.getElementById(“diagScanSuccess”);
 statusEl.style.display=“flex”;successEl.style.display=“none”;
-// Clear any previous result card
-var prev=document.getElementById(“diagNameplateResultCard”);
-if(prev)prev.remove();
+var prev=document.getElementById(“diagNameplateResultCard”);if(prev)prev.remove();
 try{
 var mime=file.type||“image/jpeg”,b64=await blobToBase64(file);
-var SYSTEM=‘You are a certified HVAC master technician. Current year: 2026. Read ONLY what is physically printed on the nameplate. NEVER guess the brand.\n\nSERIAL DECODING RULES:\nCarrier/Bryant: pos 1-2=week, 3-4=year (e.g. 0414 = week 04, year 2014)\nTrane post-2002: pos 1-2=year, 3-4=week\nLennox: first 2=year, next 2=week\nGoodman/Amana: first 2=year, next 2=month\nRheem/Ruud: first 2=year, next 2=week\nYork/Coleman: letter=decade (H=2010s, J=2020s), digit=year within decade\nMitsubishi: first 4 digits = year+month\n\nWARRANTY RULES (registered = 10yr, unregistered = 5yr):\nCarrier/Bryant/Payne: 10yr parts if registered within 90 days, 5yr if not\nTrane/American Standard: 10yr parts registered, 5yr unregistered\nLennox: 10yr parts+compressor registered, 5yr unregistered\nGoodman: Lifetime compressor + 10yr parts registered, 5yr unregistered\nAmana: Lifetime compressor + 10yr parts\nRheem/Ruud: 10yr registered, 5yr unregistered\nYork/Coleman/Heil: 10yr registered, 5yr unregistered\nMitsubishi Electric: 12yr compressor, 7yr parts registered\nDaikin: 12yr compressor, 5yr parts\n\nReturn ONLY valid compact JSON, no markdown:\n{“brand”:“EXACT text from nameplate”,“model”:””,“serial”:””,“refrigerant”:””,“voltage”:””,“tonnage”:””,“seer”:””,“manufactureYear”:0,“ageYears”:0,“warrantyStatus”:“Active|Likely Active|Likely Expired|Expired|Unknown”,“warrantyNote”:“e.g. 10yr if registered, expires 2026”,“warrantyExpireYear”:0,“confidence”:“High|Medium|Low”}’;
-var raw=await callAI(SYSTEM,[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:“Read this HVAC nameplate carefully. Decode the serial number to find manufacture year. Calculate age and warranty status. Return JSON only. Never guess the brand.”}]}],400);
+var SYSTEM=‘You are a certified HVAC master technician. Current year: 2026. Read ONLY what is physically printed on the nameplate. NEVER guess the brand.\n\nSERIAL DECODING RULES:\nCarrier/Bryant: pos 1-2=week, 3-4=year\nTrane post-2002: pos 1-2=year, 3-4=week\nLennox: first 2=year, next 2=week\nGoodman/Amana: first 2=year, next 2=month\nRheem/Ruud: first 2=year, next 2=week\nYork/Coleman: letter=decade (H=2010s, J=2020s), digit=year within decade\nMitsubishi: first 4 digits = year+month\n\nReturn ONLY valid compact JSON, no markdown:\n{“brand”:””,“model”:””,“serial”:””,“refrigerant”:””,“voltage”:””,“tonnage”:””,“seer”:””,“manufactureYear”:0,“ageYears”:0,“warrantyStatus”:“Active|Likely Active|Likely Expired|Expired|Unknown”,“warrantyNote”:””,“warrantyExpireYear”:0,“confidence”:“High|Medium|Low”}’;
+var raw=await callAI(SYSTEM,[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:“Read this HVAC nameplate. Decode the serial number to find manufacture year. Return JSON only.”}]}],400);
 var data=parseJSON(raw);
 statusEl.style.display=“none”;
 if(!data||data.confidence===“Low”||(!data.model&&!data.serial)){
@@ -850,55 +825,39 @@ document.getElementById(“diagScanSuccessText”).style.color=”#e65100”;
 document.getElementById(“diagScanSuccessText”).textContent=“Could not read clearly — retake closer in good lighting.”;
 return;
 }
-// Auto-fill form fields
 if(data.model)document.getElementById(“modelNumber”).value=data.model.toUpperCase();
 if(data.serial)document.getElementById(“serialNumber”).value=data.serial.toUpperCase();
 if(data.brand){
 var bs=document.getElementById(“brand”);
-if(bs)for(var i=0;i<bs.options.length;i++){
-if(bs.options[i].text.toLowerCase().includes(data.brand.toLowerCase().split(” “)[0])){bs.selectedIndex=i;break;}
+if(bs)for(var i=0;i<bs.options.length;i++){if(bs.options[i].text.toLowerCase().includes(data.brand.toLowerCase().split(” “)[0])){bs.selectedIndex=i;break;}}
 }
-}
-// Warranty color
 var wColor=data.warrantyStatus===“Active”||data.warrantyStatus===“Likely Active”?”#059669”:data.warrantyStatus===“Expired”?”#dc2626”:”#d97706”;
 var wBg=data.warrantyStatus===“Active”||data.warrantyStatus===“Likely Active”?”#ECFDF5”:data.warrantyStatus===“Expired”?”#FFF0F2”:”#FFFBEB”;
 var wIcon=data.warrantyStatus===“Active”||data.warrantyStatus===“Likely Active”?“✅”:data.warrantyStatus===“Expired”?“❌”:“⚠️”;
-// Age color
 var ageColor=!data.ageYears?”#9499B0”:data.ageYears>=15?”#dc2626”:data.ageYears>=10?”#d97706”:”#059669”;
-// Build result card
 var rows=[
-{label:“Brand”,value:data.brand||”—”,bold:true},
-{label:“Model”,value:data.model||”—”},
-{label:“Serial”,value:data.serial||”—”,mono:true},
-{label:“Refrigerant”,value:data.refrigerant||”—”},
-{label:“Tonnage”,value:data.tonnage?data.tonnage+” ton”:”—”},
-{label:“SEER”,value:data.seer||”—”},
-{label:“Voltage”,value:data.voltage||”—”},
-{label:“Mfg Year”,value:data.manufactureYear||”—”},
-{label:“Age”,value:data.ageYears?data.ageYears+” years”:”—”,color:ageColor},
+{label:“Brand”,value:data.brand||”—”,bold:true},{label:“Model”,value:data.model||”—”},
+{label:“Serial”,value:data.serial||”—”,mono:true},{label:“Refrigerant”,value:data.refrigerant||”—”},
+{label:“Tonnage”,value:data.tonnage?data.tonnage+” ton”:”—”},{label:“SEER”,value:data.seer||”—”},
+{label:“Voltage”,value:data.voltage||”—”},{label:“Mfg Year”,value:data.manufactureYear||”—”},
+{label:“Age”,value:data.ageYears?data.ageYears+” years”:”—”,color:ageColor}
 ].filter(function(r){return r.value&&r.value!==”—”;});
 var html=’<div id="diagNameplateResultCard" style="margin-top:10px;background:#fff;border:1px solid #E2E4ED;border-radius:10px;overflow:hidden;">’;
 html+=’<div style="padding:10px 14px;background:#0F0F0F;display:flex;align-items:center;gap:8px;"><span style="font-size:14px;font-weight:700;color:#fff;">🏷️ Nameplate Decoded</span><span style="margin-left:auto;font-size:11px;background:rgba(0,194,178,.2);color:#00C2B2;padding:2px 8px;border-radius:99px;font-weight:700;">Auto-filled ✓</span></div>’;
-// Warranty banner — most important
 html+=’<div style="padding:12px 14px;background:'+wBg+';border-bottom:1px solid #E2E4ED;">’;
 html+=’<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">’;
 html+=’<div><div style="font-size:10px;font-weight:700;color:'+wColor+';text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">WARRANTY STATUS</div>’;
 html+=’<div style="font-size:18px;font-weight:800;color:'+wColor+';">’+wIcon+’ ‘+data.warrantyStatus+’</div>’;
 if(data.warrantyNote)html+=’<div style="font-size:12px;color:'+wColor+';margin-top:3px;opacity:.85;">’+data.warrantyNote+’</div></div>’;
 if(data.warrantyExpireYear&&data.warrantyExpireYear>2020)html+=’<div style="text-align:right;"><div style="font-size:10px;color:'+wColor+';font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Expires</div><div style="font-size:20px;font-weight:800;color:'+wColor+';">’+data.warrantyExpireYear+’</div></div>’;
-html+=’</div></div>’;
-// Data rows
-html+=’<div style="display:grid;grid-template-columns:1fr 1fr;">’;
+html+=’</div></div><div style="display:grid;grid-template-columns:1fr 1fr;">’;
 rows.forEach(function(row,i){
 html+=’<div style="padding:9px 14px;border-bottom:1px solid #F0F1F6;'+(i%2===1?'border-left:1px solid #F0F1F6;':'')+'">’;
 html+=’<div style="font-size:10px;font-weight:700;color:#9499B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">’+row.label+’</div>’;
-html+=’<div style="font-size:14px;font-weight:'+(row.bold?'700':'600')+';color:'+(row.color||'#0F0F0F')+';'+(row.mono?'font-family:monospace;':'')+'">’+row.value+’</div>’;
-html+=’</div>’;
+html+=’<div style="font-size:14px;font-weight:'+(row.bold?'700':'600')+';color:'+(row.color||'#0F0F0F')+';'+(row.mono?'font-family:monospace;':'')+'">’+row.value+’</div></div>’;
 });
 html+=’</div></div>’;
-// Insert result card after the nameplate scan section
-var scanSection=document.getElementById(“diagScanSuccess”);
-scanSection.insertAdjacentHTML(‘afterend’,html);
+successEl.insertAdjacentHTML(‘afterend’,html);
 successEl.style.background=”#ECFDF5”;successEl.style.display=“block”;
 document.getElementById(“diagScanSuccessText”).style.color=”#059669”;
 document.getElementById(“diagScanSuccessText”).textContent=“✅ Decoded — fields auto-filled”;
@@ -909,7 +868,6 @@ document.getElementById(“diagScanSuccessText”).textContent=“Scan failed �
 }
 }
 
-// ─── VOICE RECORDING ───
 async function toggleRecording(){if(!mediaRecorder||mediaRecorder.state===“inactive”)await startRecording();else stopRecording();}
 async function startRecording(){
 try{
@@ -955,7 +913,6 @@ document.getElementById(“transcriptBox”).style.display=“none”;
 updateInputsSummary();
 }
 
-// ─── AI CALL ───
 async function callAI(system,messages,max_tokens){
 max_tokens=max_tokens||1024;
 var controller=new AbortController(),timeout=setTimeout(function(){controller.abort();},30000);
@@ -999,7 +956,6 @@ if(a===-1||b===-1||b<=a)return null;
 try{return JSON.parse(s.substring(a,b+1));}catch(e){return null;}
 }
 
-// ─── HOMEOWNER DIAGNOSTIC ───
 async function runHomeownerDiagnostic(){
 var sysAge=document.getElementById(“homeSysAge”).value;
 var desc=document.getElementById(“homeDesc”).value;
@@ -1015,9 +971,9 @@ if(homeUploadedFile){
 var isImg=homeUploadedFile.type.startsWith(“image/”);
 var b64=isImg?await blobToBase64(homeUploadedFile):await grabVideoFrame(homeUploadedFile);
 var mime=isImg?homeUploadedFile.type:“image/jpeg”;
-messages=[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:“HVAC HOMEOWNER DIAGNOSTIC\nAge: “+(sysAge||“Unknown”)+”\nSymptoms: “+syms+”\nDescription: “+(desc||“None”)+’\n\nReturn ONLY compact JSON:\n{“severity”:“CRITICAL|HIGH|MEDIUM|LOW”,“urgency”:“Today|This week|Can wait”,“summary”:“One plain sentence what is wrong”,“estimatedCost”:”$X-$X”,“sections”:[{“label”:“What Is Wrong”,“icon”:“💡”,“body”:“plain English”},{“label”:“Is It Dangerous?”,“icon”:“⚠️”,“body”:“direct answer”},{“label”:“How Urgent”,“icon”:“🕐”,“body”:“can it wait”},{“label”:“What It Will Cost”,“icon”:“💰”,“body”:“repair range”}]}’}]}];
+messages=[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:“HVAC HOMEOWNER DIAGNOSTIC\nAge: “+(sysAge||“Unknown”)+”\nSymptoms: “+syms+”\nDescription: “+(desc||“None”)+’\n\nReturn ONLY compact JSON:\n{“severity”:“CRITICAL|HIGH|MEDIUM|LOW”,“urgency”:“Today|This week|Can wait”,“summary”:“One plain sentence”,“estimatedCost”:”$X-$X”,“sections”:[{“label”:“What Is Wrong”,“icon”:“💡”,“body”:“plain English”},{“label”:“Is It Dangerous?”,“icon”:“⚠️”,“body”:“direct answer”},{“label”:“How Urgent”,“icon”:“🕐”,“body”:“can it wait”},{“label”:“What It Will Cost”,“icon”:“💰”,“body”:“repair range”}]}’}]}];
 }else{
-messages=[{role:“user”,content:“HVAC HOMEOWNER DIAGNOSTIC\nAge: “+(sysAge||“Unknown”)+”\nSymptoms: “+syms+”\nDescription: “+(desc||“None”)+’\n\nReturn ONLY compact JSON:\n{“severity”:“CRITICAL|HIGH|MEDIUM|LOW”,“urgency”:“Today|This week|Can wait”,“summary”:“One plain sentence what is wrong”,“estimatedCost”:”$X-$X”,“sections”:[{“label”:“What Is Wrong”,“icon”:“💡”,“body”:“plain English”},{“label”:“Is It Dangerous?”,“icon”:“⚠️”,“body”:“direct answer”},{“label”:“How Urgent”,“icon”:“🕐”,“body”:“can it wait”},{“label”:“What It Will Cost”,“icon”:“💰”,“body”:“repair range”}]}’}];
+messages=[{role:“user”,content:“HVAC HOMEOWNER DIAGNOSTIC\nAge: “+(sysAge||“Unknown”)+”\nSymptoms: “+syms+”\nDescription: “+(desc||“None”)+’\n\nReturn ONLY compact JSON:\n{“severity”:“CRITICAL|HIGH|MEDIUM|LOW”,“urgency”:“Today|This week|Can wait”,“summary”:“One plain sentence”,“estimatedCost”:”$X-$X”,“sections”:[{“label”:“What Is Wrong”,“icon”:“💡”,“body”:“plain English”},{“label”:“Is It Dangerous?”,“icon”:“⚠️”,“body”:“direct answer”},{“label”:“How Urgent”,“icon”:“🕐”,“body”:“can it wait”},{“label”:“What It Will Cost”,“icon”:“💰”,“body”:“repair range”}]}’}];
 }
 var raw=await callAI(SYSTEM,messages,600);
 var data=parseJSON(raw),sev=(data&&data.severity)||“MEDIUM”;
@@ -1037,7 +993,7 @@ if(!sec)return;
 var hasBody=sec.body&&sec.body.trim().length>2;
 if(!hasBody)return;
 html+=”<div style='margin-bottom:18px;'><div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'><div style='width:30px;height:30px;min-width:30px;background:#0F0F0F;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;'>”+(i+1)+”</div><span style='font-size:16px;font-weight:700;color:#0F0F0F;'>”+(sec.icon||””)+” “+(sec.label||””)+”</span></div>”;
-html+=”<div style='padding-left:40px;'><p style='font-size:15px;line-height:1.8;color:#0F0F0F;'>”+sec.body.replace(/**(.*?)**/g,”<strong>$1</strong>”)+”</p></div></div>”;
+html+=”<div style='padding-left:40px;'><p style='font-size:15px;line-height:1.8;color:#0F0F0F;'>”+sec.body+”</p></div></div>”;
 });
 document.getElementById(“homeResultText”).innerHTML=html;
 }else{
@@ -1060,7 +1016,6 @@ clearHomeUpload();
 window.scrollTo({top:0,behavior:“smooth”});
 }
 
-// ─── PRO DIAGNOSTIC ───
 async function runDiagnostic(){
 var sysType=document.getElementById(“sysType”).value;
 var sysAge=document.getElementById(“sysAge”).value;
@@ -1077,7 +1032,7 @@ var modelNum=(document.getElementById(“modelNumber”).value||””).trim();
 var serialNum=(document.getElementById(“serialNumber”).value||””).trim();
 var modelLine=(modelNum||serialNum)?”\nModel: “+(modelNum||”?”)+” | Serial: “+(serialNum||”?”):””;
 var SYSTEM=“You are HVACGenius AI — the world’s most advanced HVAC diagnostic intelligence. All brands, systems, full technical knowledge. EPA 608, ASHRAE, ACCA. Be precise and technical.”;
-var prompt=“HVAC CONTRACTOR DIAGNOSTIC\nSystem: “+(sysType||“Unknown”)+” | Brand: “+(brand||“Unknown”)+” | Age: “+(sysAge||“Unknown”)+(modelLine||””)+”\nSymptoms: “+symsText+”\nNotes: “+(desc||“None”)+audText+’\n\nReturn ONLY compact JSON:\n{“severity”:“CRITICAL|HIGH|MEDIUM|LOW”,“confidence”:“XX%”,“urgency”:“Today|This week|Can wait”,“summary”:“One sentence what is wrong”,“estimatedCost”:”$X-$X”,“sections”:[{“label”:“Most Likely Cause”,“icon”:“🔍”,“body”:“specific cause”},{“label”:“Step-by-Step Procedure”,“icon”:“🔧”,“steps”:[“Step 1”,“Step 2”,“Step 3”,“Step 4”]},{“label”:“Parts Needed”,“icon”:“🔩”,“body”:“part names and cost”},{“label”:“Safety”,“icon”:“⚠️”,“body”:“hazards or None”},{“label”:“Replace or Repair?”,“icon”:“💡”,“body”:“recommendation”}]}’;
+var prompt=“HVAC CONTRACTOR DIAGNOSTIC\nSystem: “+(sysType||“Unknown”)+” | Brand: “+(brand||“Unknown”)+” | Age: “+(sysAge||“Unknown”)+(modelLine||””)+”\nSymptoms: “+symsText+”\nNotes: “+(desc||“None”)+audText+’\n\nReturn ONLY compact JSON:\n{“severity”:“CRITICAL|HIGH|MEDIUM|LOW”,“confidence”:“XX%”,“urgency”:“Today|This week|Can wait”,“summary”:“One sentence”,“estimatedCost”:”$X-$X”,“sections”:[{“label”:“Most Likely Cause”,“icon”:“🔍”,“body”:“specific cause”},{“label”:“Step-by-Step Procedure”,“icon”:“🔧”,“steps”:[“Step 1”,“Step 2”,“Step 3”,“Step 4”]},{“label”:“Parts Needed”,“icon”:“🔩”,“body”:“part names and cost”},{“label”:“Safety”,“icon”:“⚠️”,“body”:“hazards or None”},{“label”:“Replace or Repair?”,“icon”:“💡”,“body”:“recommendation”}]}’;
 var messages;
 if(uploadedFile){
 btn.innerHTML=’<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing">Reading file…</span>’;
@@ -1093,8 +1048,8 @@ var data=parseJSON(raw),sev=(data&&data.severity)||“MEDIUM”;
 showResult(sev,raw,data);
 }catch(e){
 var msg=e.message||“Unknown error”;
-if(msg.includes(“timed out”))alert(“⏱️ Request timed out — please try again.”);
-else if(msg.includes(“API key”))alert(“🔑 API key issue — check your ANTHROPIC_API_KEY.”);
+if(msg.includes(“timed out”))alert(“Request timed out — please try again.”);
+else if(msg.includes(“API key”))alert(“API key issue — check your ANTHROPIC_API_KEY.”);
 else alert(“Request failed: “+msg);
 }finally{
 btn.disabled=false;btn.style.background=”#00C2B2”;btn.innerHTML=“⚡ Run Diagnostic”;
@@ -1106,7 +1061,7 @@ var COLORS={CRITICAL:{bg:”#ffebee”,text:”#c62828”,border:”#c62828”},
 var c=COLORS[sev]||COLORS.MEDIUM;
 document.getElementById(“resultCard”).style.borderLeft=“4px solid “+c.border;
 if(data&&data.sections&&data.sections.length){renderDiagCards(data,c);}
-else{document.getElementById(“resultText”).innerHTML=”<div style='font-size:15px;line-height:1.8;white-space:pre-wrap;'>”+body.replace(/`json|`/g,””).trim()+”</div>”;}
+else{document.getElementById(“resultText”).innerHTML=”<div style='font-size:15px;line-height:1.8;white-space:pre-wrap;'>”+body+”</div>”;}
 document.getElementById(“contractorNudge”).style.display=“block”;
 document.getElementById(“eduPanel”).style.display=“block”;
 document.getElementById(“resultPanel”).style.display=“block”;
@@ -1132,14 +1087,13 @@ if(!hasBody&&!hasSteps)continue;stepNum++;
 html+=”<div style='margin-bottom:20px;'>”;
 html+=”<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px;'><div style='width:32px;height:32px;min-width:32px;background:#0F0F0F;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;'>”+stepNum+”</div><span style='font-size:17px;font-weight:700;color:#0F0F0F;'>”+(sec.icon||””)+” “+(sec.label||””)+”</span></div>”;
 if(hasBody){
-var bodyClean=sec.body.replace(/**(.*?)**/g,”<strong>$1</strong>”).replace(/(WARNING|DANGER|CAUTION)\s*:?/gi,”<span style='color:#DC2626;font-weight:700;'>⚠️ $1: </span>”);
-html+=”<div style='padding-left:42px;'><p style='font-size:15px;line-height:1.8;color:#0F0F0F;'>”+bodyClean+”</p></div>”;
+html+=”<div style='padding-left:42px;'><p style='font-size:15px;line-height:1.8;color:#0F0F0F;'>”+sec.body+”</p></div>”;
 }
 if(hasSteps){
 html+=”<div style='padding-left:42px;'>”;
 for(var n=0;n<sec.steps.length;n++){
 var step=sec.steps[n];if(!step||step===“null”)continue;
-var clean=String(step).trim().replace(/^”+|”+$/g,””).replace(/,\s*$/,””).replace(/**(.*?)**/g,”<strong>$1</strong>”);
+var clean=String(step).trim().replace(/^”+|”+$/g,””).replace(/,\s*$/,””);
 var colonIdx=clean.indexOf(”:”);
 var stepHtml=(colonIdx>0&&colonIdx<60)?”<strong>”+clean.substring(0,colonIdx).trim()+”</strong> — “+clean.substring(colonIdx+1).trim():clean;
 html+=”<div style='display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;'><div style='width:22px;height:22px;min-width:22px;background:#00C2B2;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;'>”+(n+1)+”</div><div style='font-size:15px;line-height:1.75;color:#0F0F0F;flex:1;'>”+stepHtml+”</div></div>”;
@@ -1157,7 +1111,7 @@ if(!lastDiagResult)return;
 var btn=document.getElementById(“eduBtn”);btn.disabled=true;btn.innerHTML=’<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span> Generating…’;
 try{
 var result=await callAI(“You are an HVAC expert who explains technical problems to homeowners in simple, friendly language. No jargon. Use analogies.”,[{role:“user”,content:“Based on this technical HVAC diagnosis, create a simple homeowner-friendly explanation:\n\n”+lastDiagResult+”\n\n**What’s happening** (1-2 sentences, simple analogy)\n**Why this matters**\n**What happens if you wait**\n**What the technician will do**\n**Good questions to ask** (2-3 questions)”}],500);
-document.getElementById(“eduText”).innerHTML=result.replace(/**(.*?)**/g,’<strong style="color:#2563EB">$1</strong>’).replace(/\n/g,”<br/>”);
+document.getElementById(“eduText”).innerHTML=result.replace(/\n/g,”<br/>”);
 document.getElementById(“eduContent”).style.display=“block”;
 }catch(e){alert(“Failed: “+e.message);}
 finally{btn.disabled=false;btn.innerHTML=“Generate Explanation”;}
@@ -1169,14 +1123,13 @@ document.getElementById(“modelNumber”).value=””;document.getElementById(
 document.getElementById(“resultPanel”).style.display=“none”;
 document.getElementById(“desc”).value=””;
 [“sysType”,“sysAge”,“brand”].forEach(function(id){document.getElementById(id).selectedIndex=0;});
-selectedSymptoms=[];buildSymptomGrid(“pro”);uploadedFile=null;lastDiagResult=””;
+selectedSymptoms=[];buildSymptomGrid();uploadedFile=null;lastDiagResult=””;
 clearUpload();resetRecording();updateInputsSummary();
 document.getElementById(“eduContent”).style.display=“none”;
 window.scrollTo({top:0,behavior:“smooth”});
 }
 
-// ─── CHAT ───
-var AGENT_SYSTEM=‘You are Mike — sharpest HVAC tech in the game. Mid-30s, 12 years field experience, EPA 608 Universal, NATE certified. You have seen everything across every brand. You diagnose fast, talk straight, never waste a tech's time.\n\nPERSONALITY: Young, sharp, confident. Talk like a fast-thinking tech on a job site. Use real field language: “that tells me”, “nine times outta ten”, “first thing I check is”, “that's your problem right there”. Contractions always. Short punchy sentences. Energy.\n\nRESPONSE RULES:\n- First sentence = the answer or your best read. No preamble ever.\n- Under 80 words unless walking a full procedure.\n- ONE smart follow-up question if you need more info.\n- When you know it, commit. Don't hedge.\n- Steps only for procedures — number them, keep each tight.\n- Dangerous situation: “Stop. Do not run that system.”\n\nDIAGNOSTIC LOGIC — most common to least common:\nCapacitor fail: hum won't start, fan won't spin. Replace, check amps.\nLow charge: not cooling, icing, high superheat. Find leak first, never just add gas.\nDirty coil: high head, high amps, low delta-T.\nPressure switch: furnace lights then shuts. Check cracked hose, dirty trap, blocked flue, weak inducer.\nFlame sensor dirty: lights then goes out after 5 sec. Pull it, clean with emery cloth.\nTXV stuck: wild pressure swings, hunting superheat. Check bulb contact.\nReverting valve stuck: heat pump won't switch modes.\n\nPRESSURES:\nR-410A 95F: suction 115-145, head 350-420. TXV SH 8-12F, SC 10-15F.\nR-22 95F: suction 68-72, head 250-270. Fixed orifice SH 20-25F.\nLow suction + high SH = undercharged or restriction.\nLow suction + low SH = metering device or flooded evap.\nHigh suction + high head = overcharged or condenser airflow.\nLow head + low suction = weak compressor or low charge.\n\nFURNACE SEQUENCE: Thermostat → inducer → pressure switch → ignitor glows 15-20s → gas valve → flame sensor proves → blower 30-60s delay. Lockout after 3 tries.\n\nELECTRICAL: Cap within 6% MFD. Contactor: check pitting, 24V coil pull-in. Static pressure target 0.1-0.5” WC residential. Evap freeze = low charge, low airflow, or low ambient.\n\nVOICE MODE: 2-3 sentences max. No lists. Just talk.’;
+var AGENT_SYSTEM=‘You are Mike — sharpest HVAC tech in the game. Mid-30s, 12 years field experience, EPA 608 Universal, NATE certified. You have seen everything across every brand. You diagnose fast, talk straight, never waste a tech time.\n\nPERSONALITY: Young, sharp, confident. Talk like a fast-thinking tech on a job site. Use real field language: “that tells me”, “nine times outta ten”, “first thing I check is”, “that your problem right there”. Contractions always. Short punchy sentences.\n\nRESPONSE RULES:\n- First sentence = the answer or your best read. No preamble.\n- Under 80 words unless walking a full procedure.\n- ONE smart follow-up question if you need more info.\n- When you know it, commit.\n- Steps only for procedures — number them.\n- Dangerous situation: “Stop. Do not run that system.”\n\nR-410A 95F: suction 115-145, head 350-420. TXV SH 8-12F, SC 10-15F.\nR-22 95F: suction 68-72, head 250-270.\nFURNACE SEQUENCE: Thermostat inducer pressure-switch ignitor gas-valve flame-sensor blower. Lockout after 3 tries.’;
 
 function getTimeStr(){var now=new Date();return now.toLocaleTimeString([],{hour:‘2-digit’,minute:‘2-digit’});}
 
@@ -1188,22 +1141,18 @@ var div=document.createElement(‘div’);div.className=isAgent?‘msg-agent’:
 var formatted;
 if(isAgent){
 formatted=text
-.replace(/^**([A-Z][^*]{2,40})**\s*$/gm,’<span style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.8px;margin:12px 0 5px;display:block;">$1</span>’)
-.replace(/**(.*?)**/g,’<strong>$1</strong>’)
-.replace(/^(\d+).\s+(.+)$/gm,’<div style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;"><div style="width:20px;height:20px;min-width:20px;background:#00C2B2;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;">$1</div><div style="font-size:14px;line-height:1.65;">$2</div></div>’)
-.replace(/^[-•]\s+(.+)$/gm,’<div style="display:flex;gap:8px;align-items:flex-start;padding:3px 0;"><span style="color:var(--teal);font-size:11px;flex-shrink:0;margin-top:3px;">▸</span><div style="font-size:14px;line-height:1.6;">$1</div></div>’)
 .replace(/\n{2,}/g,’<br/>’)
 .replace(/\n/g,’<br/>’);
 }else{
-formatted=text.replace(/**(.*?)**/g,’<strong>$1</strong>’).replace(/\n/g,’<br/>’);
+formatted=text.replace(/\n/g,’<br/>’);
 }
 div.innerHTML=’<div class="msg-bubble '+(isAgent?'msg-bubble-agent':'msg-bubble-user')+'">’+formatted+’</div><div class="msg-time">’+getTimeStr()+’</div>’;
 container.appendChild(div);
 container.scrollTop=container.scrollHeight;
 }
 
-function showTyping(){document.getElementById(‘typingIndicator’).style.display=‘block’;document.getElementById(‘chatMessages’).scrollTop=document.getElementById(‘chatMessages’).scrollHeight;if(voiceMode)setVoiceStatus(‘Mike is thinking…’,’’);}
-function hideTyping(){document.getElementById(‘typingIndicator’).style.display=‘none’;if(voiceMode)setVoiceStatus(‘Mike is talking…’,’’);}
+function showTyping(){document.getElementById(‘typingIndicator’).style.display=‘block’;document.getElementById(‘chatMessages’).scrollTop=document.getElementById(‘chatMessages’).scrollHeight;}
+function hideTyping(){document.getElementById(‘typingIndicator’).style.display=‘none’;}
 
 function handleChatFile(e){
 var file=e.target.files[0];if(!file)return;e.target.value=””;
@@ -1249,7 +1198,6 @@ chatHistory=[];
 document.getElementById(‘chatMessages’).innerHTML=’<div class="msg-agent"><div class="msg-bubble msg-bubble-agent"><p>Chat cleared. What are you working on?</p></div><div class="msg-time">’+getTimeStr()+’</div></div>’;
 }
 
-// ─── VOICE SYSTEM ───
 function loadMikeVoice(){
 var voices=window.speechSynthesis.getVoices();
 var preferred=[‘Alex’,‘Daniel’,‘Fred’,‘Google US English’,‘Microsoft David’];
@@ -1270,9 +1218,6 @@ bar.style.display=‘block’;
 btn.classList.add(‘voice-mode-active’);
 lbl.style.color=’#00C2B2’;lbl.textContent=‘ON’;
 setVoiceStatus(‘Tap mic to talk to Mike’,’’);
-try{var AC=window.AudioContext||window.webkitAudioContext;if(AC){var ctx=new AC(),buf=ctx.createBuffer(1,1,22050),src=ctx.createBufferSource();src.buffer=buf;src.connect(ctx.destination);src.start(0);setTimeout(function(){ctx.close();},100);}}catch(e){}
-var silence=new Audio(“data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=”);
-silence.play().catch(function(){});
 setTimeout(function(){if(voiceMode)mikeSay(“Hey it’s Mike. HVAC master tech. What are you working on?”);},400);
 }else{
 voiceMode=false;
@@ -1290,7 +1235,7 @@ setVoiceStatus(‘Tap mic to talk to Mike’,’’);
 function mikeSay(text){
 if(!voiceMode)return;
 stopMikeSpeaking();stopListening();
-var clean=text.replace(/<[^>]+>/g,’ ‘).replace(/**(.*?)**/g,’$1’).replace(/*(.*?)*/g,’$1’).replace(/#+ /g,’’).replace(/`([^`]*)`/g,’$1’).replace(/\n\n/g,’. ‘).replace(/\n/g,’ ‘).replace(/[▸▼▲→]/g,’’).replace(/  +/g,’ ‘).trim().substring(0,400);
+var clean=text.replace(/<[^>]+>/g,’ ‘).replace(/\n\n/g,’. ‘).replace(/\n/g,’ ‘).replace(/[▸▼▲→]/g,’’).replace(/  +/g,’ ‘).trim().substring(0,400);
 if(!clean)return;
 var micBtn=document.getElementById(‘micBtn’),stopBtn=document.getElementById(‘stopSpeakBtn’);
 isMikeSpeaking=true;
@@ -1319,41 +1264,10 @@ mikeAudio.play().catch(function(){mikeSayBrowser(clean);});
 
 function mikeSayBrowser(clean){
 if(!window.speechSynthesis)return;
-// Pre-process for natural speech rhythm
-var natural=clean
-.replace(/**(.*?)**/g,’$1’)
-.replace(/*(.*?)*/g,’$1’)
-.replace(/`([^`]*)`/g,’$1’)
-// Numbers and units spoken naturally
-.replace(/(\d+)\s*°F/g,’$1 degrees’)
-.replace(/(\d+)\s*psig/g,’$1 PSI’)
-.replace(/(\d+)\s*MFD/g,’$1 microfarad’)
-.replace(/(\d+)\s*”/g,’$1 inches’)
-.replace(/R-410A/g,‘R four ten A’)
-.replace(/R-22/g,‘R twenty two’)
-.replace(/R-454B/g,‘R four fifty four B’)
-.replace(/TXV/g,‘T X V’)
-.replace(/EPA/g,‘E P A’)
-.replace(/NATE/g,‘Nate’)
-.replace(/ECM/g,‘E C M’)
-// Natural pauses
-.replace(/.\s+/g,’.  ‘)
-.replace(/?\s+/g,’?  ‘)
-.replace(/!\s+/g,’!  ‘)
-.replace(/,\s+/g,’, ‘)
-.replace(/—/g,’,  ‘)
-.replace(/.../g,’,  ‘)
-.replace(/:\s+/g,’,  ‘)
-// Clean up
-.replace(/\n+/g,’.  ‘)
-.replace(/\s{3,}/g,’  ‘)
-.trim();
-// Split into chunks — iOS Safari doesn’t support lookbehind regex
-var chunks=[];
-var current=’’;
-for(var i=0;i<natural.length;i++){
-current+=natural[i];
-if((natural[i]===’.’||natural[i]===’?’||natural[i]===’!’)&&(i+1>=natural.length||natural[i+1]===’ ‘)){
+var chunks=[],current=’’;
+for(var i=0;i<clean.length;i++){
+current+=clean[i];
+if((clean[i]===’.’||clean[i]===’?’||clean[i]===’!’)&&(i+1>=clean.length||clean[i+1]===’ ‘)){
 if(current.trim().length>0&&current.length>20){chunks.push(current.trim());current=’’;}
 }
 if(current.length>180){chunks.push(current.trim());current=’’;}
@@ -1373,9 +1287,7 @@ return;
 }
 var utt=new SpeechSynthesisUtterance(chunks[chunkIndex]);
 if(mikeVoice)utt.voice=mikeVoice;
-utt.rate=0.9;   // slightly faster than before — young sharp tech energy
-utt.pitch=0.82; // low confident voice
-utt.volume=1;
+utt.rate=0.9;utt.pitch=0.82;utt.volume=1;
 utt.onend=function(){chunkIndex++;speakNext();};
 utt.onerror=function(){isMikeSpeaking=false;if(micBtn)micBtn.classList.remove(‘mic-speaking’);};
 window.speechSynthesis.speak(utt);
@@ -1384,7 +1296,7 @@ speakNext();
 }
 
 function stopMikeSpeaking(){
-isMikeSpeaking=false; // set first so chunk loop stops
+isMikeSpeaking=false;
 if(mikeAudio){mikeAudio.pause();mikeAudio.currentTime=0;mikeAudio=null;}
 if(window.speechSynthesis)window.speechSynthesis.cancel();
 var micBtn=document.getElementById(‘micBtn’),stopBtn=document.getElementById(‘stopSpeakBtn’);
@@ -1432,13 +1344,12 @@ var el=document.getElementById(‘voiceStatusText’),tr=document.getElementById
 if(el)el.textContent=status;if(tr)tr.textContent=transcript||’’;
 }
 
-// ─── REFRIGERANT ───
 async function runRefrigLookup(){
 var brand=document.getElementById(“rBrandRefrig”).value,type=document.getElementById(“rTypeRefrig”).value,age=document.getElementById(“rAgeRefrig”).value,model=document.getElementById(“rModelRefrig”).value,notes=document.getElementById(“rNotesRefrig”).value;
 if(!brand&&!type&&!model){alert(“Please select at least the brand and system type.”);return;}
 var btn=document.getElementById(“refrigBtn”);btn.disabled=true;btn.innerHTML=’<span class="spinner"></span><span class="pulsing"> Identifying refrigerant…</span>’;
 try{
-var SYSTEM=‘You are an HVAC refrigerant expert. Know AIM Act R-410A phase-down, R-22 ban (2020), R-454B/R-32 transitions. Return ONLY valid JSON no markdown: {“refrigerant”:“R-410A”,“phaseStatus”:“Active|Phase-Down|Phased Out”,“phaseYear”:2025,“dropInReplacement”:“R-454B”,“dropInNotes”:“string”,“chargeAmount”:“string”,“techTips”:“string”,“safetyWarning”:null,“urgency”:“Low|Medium|High”}’;
+var SYSTEM=‘You are an HVAC refrigerant expert. Return ONLY valid JSON no markdown: {“refrigerant”:“R-410A”,“phaseStatus”:“Active|Phase-Down|Phased Out”,“phaseYear”:2025,“dropInReplacement”:“R-454B”,“dropInNotes”:“string”,“chargeAmount”:“string”,“techTips”:“string”,“safetyWarning”:null,“urgency”:“Low|Medium|High”}’;
 var raw=await callAI(SYSTEM,[{role:“user”,content:“Brand: “+(brand||“Unknown”)+”\nType: “+(type||“Unknown”)+”\nAge: “+(age||“Unknown”)+”\nModel: “+(model||“N/A”)+”\nNotes: “+(notes||“None”)+”\nIdentify the refrigerant. JSON only.”}],600);
 var d=parseJSON(raw);if(!d)throw new Error(“Could not parse response”);
 var pc={“Active”:”#16a34a”,“Phase-Down”:”#d97706”,“Phased Out”:”#dc2626”},color=pc[d.phaseStatus]||”#6b7280”;
@@ -1454,7 +1365,6 @@ finally{btn.disabled=false;btn.innerHTML=“❄️ Identify Refrigerant”;}
 }
 function resetRefrig(){document.getElementById(“refrigResult”).style.display=“none”;[“rBrandRefrig”,“rTypeRefrig”,“rAgeRefrig”].forEach(function(id){document.getElementById(id).selectedIndex=0;});document.getElementById(“rModelRefrig”).value=””;document.getElementById(“rNotesRefrig”).value=””;}
 
-// ─── REVENUE BUILDER ───
 function clearRevenueScan(){
 revenueMediaFile=null;
 document.getElementById(“revMediaPreview”).style.display=“none”;
@@ -1476,7 +1386,7 @@ var mime=file.type||“image/jpeg”,b64=await blobToBase64(file);
 var SYSTEM=“You are an expert HVAC technician reviewing a photo. Identify everything visible that could lead to a service recommendation or add-on sale. Return a concise bullet list of observations. Max 8 bullets.”;
 var raw=await callAI(SYSTEM,[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:“What do you observe that could lead to service recommendations?”}]}],400);
 var notes=document.getElementById(“rNotes”),existing=notes.value.trim();
-notes.value=existing?existing+”\n\n📸 From scan:\n”+raw:“📸 From scan:\n”+raw;
+notes.value=existing?existing+”\n\nFrom scan:\n”+raw:“From scan:\n”+raw;
 }catch(err){}
 finally{document.getElementById(“revScanStatus”).style.display=“none”;}
 }
@@ -1485,14 +1395,14 @@ async function runRevenue(){
 var sysType=document.getElementById(“rSysType”).value,sysAge=document.getElementById(“rSysAge”).value,brand=document.getElementById(“rBrand”).value,homeSize=document.getElementById(“rHomeSize”).value,notes=document.getElementById(“rNotes”).value;
 if(!sysType&&!selectedConcerns.length&&!notes&&!revenueMediaFile){alert(“Upload a photo or fill in system details.”);return;}
 var btn=document.getElementById(“revenueBtn”);btn.disabled=true;
-btn.innerHTML=’<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing"> ‘+(revenueMediaFile?“Analyzing your system…”:“Building recommendations…”)+’</span>’;
-var SYSTEM=‘You are an expert HVAC technician AND revenue consultant. Identify every genuine upsell opportunity. Return ONLY valid JSON: {“summary”:“observations”,“totalOpportunityLow”:0,“totalOpportunityHigh”:0,“recommendations”:[{“category”:“Safety|IAQ|Comfort|Efficiency|Maintenance”,“priority”:“High|Medium|Low”,“title”:“string”,“why”:“string”,“homeownerBenefit”:“string”,“priceLow”:0,“priceHigh”:0,“techProfit”:0,“roi”:“string”,“script”:“exact words to say”}]}’;
+btn.innerHTML=’<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing"> Building recommendations…</span>’;
+var SYSTEM=‘You are an expert HVAC technician AND revenue consultant. Return ONLY valid JSON: {“summary”:“observations”,“totalOpportunityLow”:0,“totalOpportunityHigh”:0,“recommendations”:[{“category”:“Safety|IAQ|Comfort|Efficiency|Maintenance”,“priority”:“High|Medium|Low”,“title”:“string”,“why”:“string”,“homeownerBenefit”:“string”,“priceLow”:0,“priceHigh”:0,“techProfit”:0,“roi”:“string”,“script”:“exact words to say”}]}’;
 var ctx=“System: “+(sysType||“Unknown”)+” | Brand: “+(brand||“Unknown”)+” | Age: “+(sysAge||“Unknown”)+” | Home: “+(homeSize||“Unknown”)+”\nConcerns: “+(selectedConcerns.length?selectedConcerns.join(”, “):“None”)+”\nNotes: “+(notes||“None”);
 try{
 var messages;
 if(revenueMediaFile&&revenueMediaFile.type.startsWith(“image/”)){
 var mime=revenueMediaFile.type||“image/jpeg”,b64=await blobToBase64(revenueMediaFile);
-messages=[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:ctx+”\n\nAnalyze this HVAC system photo. Identify every upsell opportunity. Return JSON only.”}]}];
+messages=[{role:“user”,content:[{type:“image”,source:{type:“base64”,media_type:mime,data:b64}},{type:“text”,text:ctx+”\n\nAnalyze this HVAC system photo. Return JSON only.”}]}];
 }else{messages=[{role:“user”,content:ctx}];}
 var raw=await callAI(SYSTEM,messages,900),parsed=parseJSON(raw);
 if(parsed)showRevenueResults(parsed);else throw new Error(“Could not parse response”);
@@ -1507,7 +1417,7 @@ var container=document.getElementById(“revenueCards”);container.innerHTML=�
 (data.recommendations||[]).forEach(function(rec,i){
 var cs=CAT_STYLE[rec.category]||CAT_STYLE.Maintenance,pc=rec.priority===“High”?”#dc2626”:rec.priority===“Medium”?”#d97706”:”#16a34a”;
 var card=document.createElement(“div”);card.className=“rec-card”;card.style.borderLeft=“4px solid “+cs.border;
-card.innerHTML=’<div style="display:flex;align-items:flex-start;gap:14px;" onclick="toggleRecCard('+i+')"><div style="width:46px;height:46px;border-radius:10px;background:'+cs.bg+';border:1px solid '+cs.border+';display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">’+cs.icon+’</div><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;"><span style="font-size:16px;font-weight:700;color:#0F0F0F;">’+rec.title+’</span><span style="padding:3px 9px;border-radius:4px;font-size:12px;font-weight:600;background:'+cs.bg+';color:'+cs.text+';border:1px solid '+cs.border+';">’+rec.category+’</span><span style="font-size:12px;font-weight:600;color:'+pc+';">’+rec.priority+’ Priority</span></div><p style="font-size:14px;color:#9499B0;line-height:1.5;margin:0;">’+rec.homeownerBenefit+’</p></div><div style="text-align:right;flex-shrink:0;"><p style="font-size:17px;font-weight:700;color:#059669;">’+f(rec.priceLow)+’–’+f(rec.priceHigh)+’</p><p style="font-size:18px;color:#9499B0;margin-top:4px;" id="chev-'+i+'">▼</p></div></div><div id="recDetail-'+i+'" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #dfe1e6;"><div style="background:#F5F6FA;border-radius:4px;padding:14px;margin-bottom:12px;"><p style="font-size:12px;font-weight:700;color:'+cs.text+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why This Home Needs It</p><p style="font-size:14px;color:#6B7190;line-height:1.65;">’+rec.why+’</p></div><div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;padding:16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><p style="font-size:12px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.5px;">🗣️ Script</p><button class="btn btn-outline btn-sm" onclick="copyScript(\'rscript-'+i+'\')">Copy</button></div><p id="rscript-'+i+'" style="font-size:15px;color:#6B7190;line-height:1.7;font-style:italic;">”’+rec.script+’”</p></div></div>’;
+card.innerHTML=’<div style="display:flex;align-items:flex-start;gap:14px;" onclick="toggleRecCard('+i+')"><div style="width:46px;height:46px;border-radius:10px;background:'+cs.bg+';border:1px solid '+cs.border+';display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">’+cs.icon+’</div><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;"><span style="font-size:16px;font-weight:700;color:#0F0F0F;">’+rec.title+’</span><span style="padding:3px 9px;border-radius:4px;font-size:12px;font-weight:600;background:'+cs.bg+';color:'+cs.text+';border:1px solid '+cs.border+';">’+rec.category+’</span><span style="font-size:12px;font-weight:600;color:'+pc+';">’+rec.priority+’ Priority</span></div><p style="font-size:14px;color:#9499B0;line-height:1.5;margin:0;">’+rec.homeownerBenefit+’</p></div><div style="text-align:right;flex-shrink:0;"><p style="font-size:17px;font-weight:700;color:#059669;">’+f(rec.priceLow)+’–’+f(rec.priceHigh)+’</p><p style="font-size:18px;color:#9499B0;margin-top:4px;" id="chev-'+i+'">▼</p></div></div><div id="recDetail-'+i+'" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #dfe1e6;"><div style="background:#F5F6FA;border-radius:4px;padding:14px;margin-bottom:12px;"><p style="font-size:12px;font-weight:700;color:'+cs.text+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why This Home Needs It</p><p style="font-size:14px;color:#6B7190;line-height:1.65;">’+rec.why+’</p></div><div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;padding:16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><p style="font-size:12px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.5px;">Script</p><button class="btn btn-outline btn-sm" onclick="copyScript(\'rscript-'+i+'\')">Copy</button></div><p id="rscript-'+i+'" style="font-size:15px;color:#6B7190;line-height:1.7;font-style:italic;">”’+rec.script+’”</p></div></div>’;
 container.appendChild(card);
 });
 document.getElementById(“revenueResult”).style.display=“block”;
@@ -1517,25 +1427,23 @@ function toggleRecCard(i){var d=document.getElementById(“recDetail-”+i),c=do
 function copyScript(id){navigator.clipboard.writeText(document.getElementById(id).textContent||””).then(function(){alert(“Script copied!”);}).catch(function(){});}
 function resetRevenue(){clearRevenueScan();document.getElementById(“revenueResult”).style.display=“none”;[“rSysType”,“rSysAge”,“rBrand”,“rHomeSize”].forEach(function(id){document.getElementById(id).selectedIndex=0;});document.getElementById(“rNotes”).value=””;selectedConcerns=[];buildConcernsGrid();window.scrollTo({top:0,behavior:“smooth”});}
 
-// ─── MAINTENANCE PITCHER ───
 async function runMaintenancePitch(){
 var sysType=document.getElementById(“mSysType”).value,sysAge=document.getElementById(“mSysAge”).value,brand=document.getElementById(“mBrand”).value,lastSvc=document.getElementById(“mLastService”).value,findings=document.getElementById(“mFindings”).value,price=document.getElementById(“mPrice”).value,visits=document.getElementById(“mVisits”).value;
 if(!sysType&&!findings&&!selectedMaintConcerns.length){alert(“Please fill in the system details or describe what you found on this visit.”);return;}
 var btn=document.getElementById(“maintBtn”);btn.disabled=true;btn.innerHTML=’<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing"> Crafting your pitch…</span>’;
 try{
 var SYSTEM=“You are a master HVAC sales trainer. Write conversational, natural-sounding scripts that feel helpful — not pushy. Honest, benefit-focused, easy to deliver on the doorstep.”;
-var prompt=“Create a customized maintenance agreement pitch script:\n\nSystem: “+(sysType||“Unknown”)+” | Brand: “+(brand||“Unknown”)+” | Age: “+(sysAge||“Unknown”)+”\nLast Service: “+(lastSvc||“Unknown”)+”\nHomeowner Situation: “+(selectedMaintConcerns.length?selectedMaintConcerns.join(”, “):“Not specified”)+”\nWhat I Found Today: “+(findings||“Standard service call”)+”\nPlan Price: “+(price||“Not specified”)+” | Visits: “+(visits||“Not specified”)+”\n\nWrite a complete pitch script:\n\n**THE OPENING LINE**\n\n**THE PITCH** (2-3 minute word-for-word script)\n\n**IF THEY SAY ‘I NEED TO THINK ABOUT IT’**\n\n**IF THEY SAY ‘THAT SEEMS EXPENSIVE’**\n\n**THE CLOSE**\n\n**KEY BENEFITS TO EMPHASIZE**”;
+var prompt=“Create a customized maintenance agreement pitch script:\n\nSystem: “+(sysType||“Unknown”)+” | Brand: “+(brand||“Unknown”)+” | Age: “+(sysAge||“Unknown”)+”\nLast Service: “+(lastSvc||“Unknown”)+”\nHomeowner Situation: “+(selectedMaintConcerns.length?selectedMaintConcerns.join(”, “):“Not specified”)+”\nWhat I Found Today: “+(findings||“Standard service call”)+”\nPlan Price: “+(price||“Not specified”)+” | Visits: “+(visits||“Not specified”)+”\n\nWrite a complete pitch script with sections: THE OPENING LINE, THE PITCH, IF THEY SAY I NEED TO THINK ABOUT IT, IF THEY SAY THAT SEEMS EXPENSIVE, THE CLOSE, KEY BENEFITS TO EMPHASIZE”;
 var result=await callAI(SYSTEM,[{role:“user”,content:prompt}],900);
-document.getElementById(“maintScriptText”).innerHTML=result.replace(/**(.*?)**/g,’<strong style="color:#EA580C">$1</strong>’).replace(/\n/g,”<br/>”);
+document.getElementById(“maintScriptText”).innerHTML=result.replace(/\n/g,”<br/>”);
 document.getElementById(“maintResult”).style.display=“block”;
 document.getElementById(“maintResult”).scrollIntoView({behavior:“smooth”,block:“start”});
 }catch(e){alert(“Pitch generation failed: “+e.message);}
 finally{btn.disabled=false;btn.innerHTML=“📋 Generate Pitch Script”;}
 }
-function copyMaintScript(){navigator.clipboard.writeText(document.getElementById(“maintScriptText”).textContent||””).then(function(){alert(“Script copied! Go close the deal 💪”);}).catch(function(){});}
+function copyMaintScript(){navigator.clipboard.writeText(document.getElementById(“maintScriptText”).textContent||””).then(function(){alert(“Script copied! Go close the deal!”);}).catch(function(){});}
 function resetMaint(){document.getElementById(“maintResult”).style.display=“none”;[“mSysType”,“mSysAge”,“mBrand”,“mLastService”,“mVisits”].forEach(function(id){document.getElementById(id).selectedIndex=0;});document.getElementById(“mFindings”).value=””;document.getElementById(“mPrice”).value=””;selectedMaintConcerns=[];buildMaintConcernsGrid();window.scrollTo({top:0,behavior:“smooth”});}
 
-// ─── LANGUAGE ───
 var TRANSLATIONS={
 en:{heroTitle:“What’s Wrong With Your HVAC?”,heroTitlePro:“Professional HVAC Diagnostics”,heroSub:“Upload a photo or video, describe what’s happening, and we’ll tell you exactly what’s wrong.”,aiReady:“AI Ready”,offline:“Offline”},
 es:{heroTitle:”¿Qué le pasa a tu HVAC?”,heroTitlePro:“Diagnóstico Profesional de HVAC”,heroSub:“Sube una foto o video, describe lo que está pasando y te diremos exactamente qué está mal.”,aiReady:“Listo”,offline:“Sin Conexión”},
@@ -1553,9 +1461,9 @@ document.getElementById(‘langFlag’).textContent=m.flag;document.getElementBy
 document.getElementById(‘langDropdown’).classList.remove(‘open’);
 var isPro=mode===‘pro’;
 document.getElementById(‘heroTitle’).textContent=isPro?t.heroTitlePro:t.heroTitle;
-document.getElementById(‘heroSub’).textContent=isPro?(t.heroSubPro||t.heroSub):t.heroSub;
+document.getElementById(‘heroSub’).textContent=t.heroSub;
 var statusText=document.getElementById(‘statusText’);
-if(statusText){var cur=statusText.textContent;if(cur===‘AI Ready’||cur===‘Listo’||cur===‘就绪’||cur===‘Sẵn Sàng’||cur===‘Prêt’||cur===‘Pronto’)statusText.textContent=t.aiReady;else if(cur===‘Offline’||cur===‘Sin Conexión’||cur===‘离线’||cur===‘Ngoại Tuyến’||cur===‘Hors Ligne’||cur===‘Sem Conexão’)statusText.textContent=t.offline;}
+if(statusText){var cur=statusText.textContent;if(cur===‘AI Ready’||cur===‘Listo’||cur===‘就绪’||cur===‘Sẵn Sàng’||cur===‘Prêt’||cur===‘Pronto’)statusText.textContent=t.aiReady;else statusText.textContent=t.offline;}
 }
 </script>
 

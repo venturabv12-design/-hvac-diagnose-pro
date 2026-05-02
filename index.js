@@ -53,7 +53,7 @@ app.post('/api/tts', async (req, res) => {
         },
         body: JSON.stringify({
           text,
-          model_id:model_id: 'eleven_turbo_v2_5',
+          model_id:'eleven_turbo_v2_5',
           voice_settings: {
             stability: 0.45,
             similarity_boost: 0.82,

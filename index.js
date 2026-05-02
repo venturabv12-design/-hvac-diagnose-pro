@@ -5,6 +5,10 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get('/api/health', (req, res) => {
+  res.json({ aiReady: !!process.env.ANTHROPIC_API_KEY, ttsReady: !!process.env.ELEVENLABS_API_KEY });
+});
+
 app.post('/api/ai', async (req, res) => {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' });

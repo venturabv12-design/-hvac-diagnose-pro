@@ -923,12 +923,12 @@ function resetRecording(){
 
 async function callAI(system,messages,max_tokens){
   max_tokens=max_tokens||4096;
-  var controller=new AbortController(),timeout=setTimeout(function(){controller.abort();},30000);
+  var controller=new AbortController(),timeout=setTimeout(function(){controller.abort();},60000);
   try{
     var res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:system,messages:messages,max_tokens:max_tokens}),signal:controller.signal});
     clearTimeout(timeout);var data=await res.json();
     if(data.error)throw new Error(data.error);return data.text;
-  }catch(e){clearTimeout(timeout);if(e.name==='AbortError')throw new Error('Request timed out.');throw e;}
+  }catch(e){clearTimeout(timeout);if(e.name==='AbortError')throw new Error('Request timed out — try again.');throw e;}
 }
 async function blobToBase64(blob){
   var maxSizeKB=1500;
@@ -1366,7 +1366,7 @@ async function sendChat(){
   showTyping();
   try{
     var langNote=LANG_MIKE[currentLang]||LANG_MIKE.en;
-    var response=await callAI(AGENT_SYSTEM+'\n\nLANGUAGE INSTRUCTION: '+langNote+buildKnowledgeContext(),chatHistory,voiceMode?600:4096);
+    var response=await callAI(AGENT_SYSTEM+'\n\nLANGUAGE INSTRUCTION: '+langNote+buildKnowledgeContext(),chatHistory,voiceMode?300:4096);
     hideTyping();
     appendMessage('agent',response);
     chatHistory.push({role:'assistant',content:response});
@@ -1489,7 +1489,7 @@ function toggleVoiceMode(){
     btn.classList.add('voice-mode-active');
     lbl.style.color='#00C2B2';lbl.textContent='ON';
     setVoiceStatus('Tap mic to talk to Mike','');
-    var greetings={en:"hey it's Mike. what are you working on?",es:"hey soy Mike. ¿qué problema tienes con tu sistema?",zh:"嗨，我是Mike。你的系统出什么问题了？",vi:"hey tôi là Mike. hệ thống của bạn có vấn đề gì vậy?",fr:"hey c'est Mike. qu'est-ce qui se passe avec ton système?",pt:"hey eu sou o Mike. qual é o problema com seu sistema?"};
+    var greetings={en:"hey, Mike here. what's going on?",es:"hey, soy Mike. ¿qué pasa?",zh:"嗨，我是Mike，什么问题？",vi:"hey, Mike đây. vấn đề gì vậy?",fr:"hey, c'est Mike. c'est quoi le problème?",pt:"hey, aqui é o Mike. qual é o problema?"};
     setTimeout(function(){if(voiceMode)mikeSay(greetings[currentLang]||greetings.en);},400);
   }else{
     voiceMode=false;
@@ -1507,15 +1507,14 @@ function toggleVoiceMode(){
 function mikeSay(text){
   if(!voiceMode)return;
   stopMikeSpeaking();stopListening();
-  var clean=text.replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→]/g,'').replace(/  +/g,' ').trim().substring(0,1200);
+  var clean=text.replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→–—]/g,' ').replace(/  +/g,' ').trim().substring(0,1000);
   if(!clean)return;
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
   isMikeSpeaking=true;
   if(micBtn){micBtn.classList.add('mic-speaking');micBtn.textContent='🔊';}
   if(stopBtn)stopBtn.style.display='flex';
   setVoiceStatus('Mike is talking…','');
-  var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
-  if(isIOS){mikeSayBrowser(clean);return;}
+  // Try ElevenLabs first on ALL devices including iOS
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})})
     .then(function(res){if(!res.ok)throw new Error('TTS '+res.status);return res.blob();})
     .then(function(blob){
@@ -1525,7 +1524,7 @@ function mikeSay(text){
         URL.revokeObjectURL(url);isMikeSpeaking=false;
         if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
         if(stopBtn)stopBtn.style.display='none';
-        if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,600);
+        if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,400);
         else setVoiceStatus('Done. Tap mic to reply.','');
       };
       mikeAudio.onerror=function(){isMikeSpeaking=false;if(micBtn)micBtn.classList.remove('mic-speaking');mikeSayBrowser(clean);};
@@ -1533,7 +1532,6 @@ function mikeSay(text){
     })
     .catch(function(){mikeSayBrowser(clean);});
 }
-
 
 function stopMikeSpeaking(){
   isMikeSpeaking=false;

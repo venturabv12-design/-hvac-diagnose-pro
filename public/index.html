@@ -367,7 +367,24 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
       </div>
     </div>
 
-    <!-- FULL DIAGNOSTIC FORM -->
+    <!-- TEACH MIKE + KNOWLEDGE -->
+    <div style="background:#0F0F0F;border-left:1px solid #222;border-right:1px solid #222;border-bottom:1px solid #222;padding:10px 12px;margin-bottom:12px;">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="teachMikeInput" placeholder="🧠 Teach Mike something new… (e.g. Carrier 2-stage compressor fault code 31 = high pressure lockout)" style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:8px 12px;font-size:13px;color:#fff;font-family:var(--font);outline:none;"/>
+        <button onclick="teachMike()" style="background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">🧠 Teach</button>
+        <button onclick="showKnowledge()" style="background:#1a1a1a;color:#9499B0;border:1px solid #333;border-radius:6px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;">📚</button>
+      </div>
+      <div id="teachConfirm" style="display:none;margin-top:8px;font-size:12px;color:#00C2B2;font-weight:600;">✅ Mike learned that — he'll use it going forward</div>
+    </div>
+    <!-- KNOWLEDGE PANEL -->
+    <div id="knowledgePanel" style="display:none;background:#F8F9FC;border:1px solid #E2E4ED;border-radius:8px;padding:14px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:13px;font-weight:700;color:#0F0F0F;">📚 Mike's Knowledge Base</span>
+        <button onclick="document.getElementById('knowledgePanel').style.display='none'" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9499B0;">×</button>
+      </div>
+      <div id="knowledgeList" style="font-size:13px;color:#6B7190;line-height:1.8;max-height:200px;overflow-y:auto;"></div>
+      <button onclick="clearKnowledge()" style="margin-top:10px;background:#FFF0F2;border:1px solid #FECACA;border-radius:6px;padding:6px 12px;font-size:12px;color:#dc2626;font-weight:600;cursor:pointer;">Clear All</button>
+    </div>
     <div class="card" style="border-top:3px solid #00C2B2;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <label class="field-label" style="margin:0;">Full Diagnostic</label>
@@ -905,7 +922,7 @@ function resetRecording(){
 }
 
 async function callAI(system,messages,max_tokens){
-  max_tokens=max_tokens||1024;
+  max_tokens=max_tokens||4096;
   var controller=new AbortController(),timeout=setTimeout(function(){controller.abort();},30000);
   try{
     var res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:system,messages:messages,max_tokens:max_tokens}),signal:controller.signal});
@@ -966,7 +983,7 @@ async function runHomeownerDiagnostic(){
     }else{
       messages=[{role:"user",content:"HVAC HOMEOWNER DIAGNOSTIC\nAge: "+(sysAge||"Unknown")+"\nSymptoms: "+syms+"\nDescription: "+(desc||"None")+'\n\nReturn ONLY compact JSON:\n{"severity":"CRITICAL|HIGH|MEDIUM|LOW","urgency":"Today|This week|Can wait","summary":"One plain sentence","estimatedCost":"$X-$X","sections":[{"label":"What Is Wrong","icon":"💡","body":"plain English"},{"label":"Is It Dangerous?","icon":"⚠️","body":"direct answer"},{"label":"How Urgent","icon":"🕐","body":"can it wait"},{"label":"What It Will Cost","icon":"💰","body":"repair range"}]}'}];
     }
-    var raw=await callAI(SYSTEM,messages,600);
+    var raw=await callAI(SYSTEM,messages,2048);
     var data=parseJSON(raw),sev=(data&&data.severity)||"MEDIUM";
     var COLORS={CRITICAL:{bg:"#ffebee",border:"#c62828"},HIGH:{bg:"#fff3e0",border:"#e65100"},MEDIUM:{bg:"#e3f2fd",border:"#1565c0"},LOW:{bg:"#e8f5e9",border:"#2e7d32"}};
     var c=COLORS[sev]||COLORS.MEDIUM;
@@ -1033,10 +1050,20 @@ async function runDiagnostic(){
       messages=[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:prompt}]}];
     }else{messages=[{role:"user",content:prompt}];}
     btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing">Analyzing your system…</span>';
-    var raw=await callAI(SYSTEM,messages,700);
+    var raw=await callAI(SYSTEM,messages,4096);
     lastDiagResult=raw;
     var data=parseJSON(raw),sev=(data&&data.severity)||"MEDIUM";
     showResult(sev,raw,data);
+    // Auto warranty lookup if we have brand/model
+    var brand=document.getElementById("brand").value;
+    var modelNum=document.getElementById("modelNumber").value;
+    var serialNum=document.getElementById("serialNumber").value;
+    var age=document.getElementById("sysAge").value;
+    if(brand||modelNum){
+      lookupWarranty(brand,modelNum,serialNum,age).then(function(warranty){
+        if(warranty)showWarrantyBanner(warranty);
+      });
+    }
   }catch(e){
     var msg=e.message||"Unknown error";
     if(msg.includes("timed out"))alert("Request timed out — please try again.");
@@ -1047,7 +1074,35 @@ async function runDiagnostic(){
   }
 }
 
-function showResult(sev,body,data){
+function showWarrantyBanner(w){
+  var existing=document.getElementById('warrantyBanner');
+  if(existing)existing.remove();
+  var isActive=w.warrantyStatus==='Active'||w.warrantyStatus==='Likely Active';
+  var isExpired=w.warrantyStatus==='Expired';
+  var bg=isActive?'#ECFDF5':isExpired?'#FFF0F2':'#FFFBEB';
+  var border=isActive?'#10B981':isExpired?'#E8354A':'#F59E0B';
+  var color=isActive?'#059669':isExpired?'#dc2626':'#d97706';
+  var icon=isActive?'✅':isExpired?'❌':'⚠️';
+  var html='<div id="warrantyBanner" style="background:'+bg+';border:1px solid '+border+';border-radius:12px;padding:16px;margin-bottom:12px;">';
+  html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
+  html+='<span style="font-size:20px;">'+icon+'</span>';
+  html+='<div><div style="font-size:12px;font-weight:700;color:'+color+';text-transform:uppercase;letter-spacing:.5px;">WARRANTY STATUS</div>';
+  html+='<div style="font-size:16px;font-weight:700;color:'+color+';">'+w.warrantyStatus+'</div></div>';
+  if(w.expiresYear&&w.expiresYear>2020)html+='<div style="margin-left:auto;text-align:right;"><div style="font-size:11px;color:'+color+';font-weight:600;">EXPIRES</div><div style="font-size:20px;font-weight:800;color:'+color+';">'+w.expiresYear+'</div></div>';
+  html+='</div>';
+  var details=[];
+  if(w.registeredYears)details.push('Parts: '+w.registeredYears+'yr (registered)');
+  if(w.unregisteredYears)details.push(w.unregisteredYears+'yr (unregistered)');
+  if(w.compressorYears)details.push('Compressor: '+w.compressorYears+'yr');
+  if(w.laborYears)details.push('Labor: '+w.laborYears+'yr');
+  if(details.length)html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'+details.map(function(d){return'<span style="background:'+border+'20;color:'+color+';border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;">'+d+'</span>';}).join('')+'</div>';
+  if(w.notes)html+='<p style="font-size:13px;color:'+color+';line-height:1.5;margin:0;">'+w.notes+'</p>';
+  html+='</div>';
+  var resultCard=document.getElementById('resultCard');
+  resultCard.insertAdjacentHTML('beforebegin',html);
+}
+
+
   var COLORS={CRITICAL:{bg:"#ffebee",text:"#c62828",border:"#c62828"},HIGH:{bg:"#fff3e0",text:"#e65100",border:"#e65100"},MEDIUM:{bg:"#e3f2fd",text:"#1565c0",border:"#1565c0"},LOW:{bg:"#e8f5e9",text:"#2e7d32",border:"#2e7d32"}};
   var c=COLORS[sev]||COLORS.MEDIUM;
   document.getElementById("resultCard").style.borderLeft="4px solid "+c.border;
@@ -1061,38 +1116,76 @@ function showResult(sev,body,data){
 
 function renderDiagCards(data,c){
   var el=document.getElementById("resultText"),html="";
-  html+="<div style='background:"+c.bg+";border-left:4px solid "+c.border+";border-radius:6px;padding:14px 16px;margin-bottom:20px;'>";
-  if(data.summary)html+="<p style='font-size:16px;font-weight:700;color:#0F0F0F;line-height:1.6;margin-bottom:10px;'>"+data.summary+"</p>";
+  var sevIcons={CRITICAL:"🔴",HIGH:"🟠",MEDIUM:"🔵",LOW:"🟢"};
+  var sev=data.severity||"MEDIUM";
+  var sevIcon=sevIcons[sev]||"🔵";
+
+  // Hero summary card
+  html+="<div style='background:"+c.bg+";border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid "+c.border+"20;'>";
+  html+="<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px;'>";
+  html+="<span style='font-size:24px;'>"+sevIcon+"</span>";
+  html+="<div>";
+  html+="<div style='font-size:11px;font-weight:700;color:"+c.text+";text-transform:uppercase;letter-spacing:.8px;'>"+sev+" SEVERITY</div>";
+  if(data.summary)html+="<div style='font-size:17px;font-weight:700;color:#0F0F0F;line-height:1.4;margin-top:3px;'>"+data.summary+"</div>";
+  html+="</div></div>";
+
+  // Stats pills
   var stats=[];
-  if(data.urgency)stats.push("🕐 "+data.urgency);
-  if(data.estimatedCost)stats.push("💰 "+data.estimatedCost);
-  if(data.confidence)stats.push("🎯 "+data.confidence+" confidence");
-  if(stats.length)html+="<p style='font-size:13px;color:"+c.text+";font-weight:600;line-height:1.8;'>"+stats.join("  ·  ")+"</p>";
+  if(data.urgency)stats.push({icon:"⏱",label:"Urgency",val:data.urgency,bg:"#F0F1F6",col:"#4A5070"});
+  if(data.estimatedCost)stats.push({icon:"💰",label:"Est. Cost",val:data.estimatedCost,bg:"#ECFDF5",col:"#059669"});
+  if(data.confidence)stats.push({icon:"🎯",label:"Confidence",val:data.confidence,bg:"#EFF6FF",col:"#2563EB"});
+  if(stats.length){
+    html+="<div style='display:flex;gap:8px;flex-wrap:wrap;'>";
+    stats.forEach(function(s){
+      html+="<div style='background:"+s.bg+";border-radius:8px;padding:8px 12px;'>";
+      html+="<div style='font-size:10px;font-weight:700;color:"+s.col+";text-transform:uppercase;letter-spacing:.5px;'>"+s.icon+" "+s.label+"</div>";
+      html+="<div style='font-size:14px;font-weight:700;color:#0F0F0F;margin-top:2px;'>"+s.val+"</div>";
+      html+="</div>";
+    });
+    html+="</div>";
+  }
   html+="</div>";
-  var sections=data.sections||[],stepNum=0;
+
+  // Section cards
+  var sections=data.sections||[];
+  var sectionColors=["#EFF6FF","#ECFDF5","#FFF7ED","#FFF0F2","#F5F3FF"];
+  var sectionBorders=["#2563EB","#10B981","#F59E0B","#E8354A","#8B5CF6"];
+  var stepNum=0;
   for(var s=0;s<sections.length;s++){
     var sec=sections[s];if(!sec)continue;
     var hasBody=sec.body&&typeof sec.body==="string"&&sec.body.trim().length>2&&sec.body!=="null";
     var hasSteps=sec.steps&&Array.isArray(sec.steps)&&sec.steps.length>0;
-    if(!hasBody&&!hasSteps)continue;stepNum++;
-    html+="<div style='margin-bottom:20px;'>";
-    html+="<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px;'><div style='width:32px;height:32px;min-width:32px;background:#0F0F0F;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;'>"+stepNum+"</div><span style='font-size:17px;font-weight:700;color:#0F0F0F;'>"+(sec.icon||"")+" "+(sec.label||"")+"</span></div>";
+    if(!hasBody&&!hasSteps)continue;
+    var cardBg=sectionColors[s%sectionColors.length];
+    var cardBorder=sectionBorders[s%sectionBorders.length];
+    stepNum++;
+
+    html+="<div style='background:#fff;border-radius:12px;border:1px solid #F0F1F6;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04);'>";
+    // Section header
+    html+="<div style='background:"+cardBg+";padding:12px 16px;border-bottom:1px solid "+cardBorder+"20;display:flex;align-items:center;gap:10px;'>";
+    html+="<div style='width:28px;height:28px;background:"+cardBorder+";border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;'>"+stepNum+"</div>";
+    html+="<span style='font-size:15px;font-weight:700;color:#0F0F0F;'>"+(sec.icon||"")+" "+(sec.label||"")+"</span>";
+    html+="</div>";
+    // Section content
+    html+="<div style='padding:16px;'>";
     if(hasBody){
-      html+="<div style='padding-left:42px;'><p style='font-size:15px;line-height:1.8;color:#0F0F0F;'>"+sec.body+"</p></div>";
+      html+="<p style='font-size:15px;line-height:1.8;color:#1a1a2e;margin:0;'>"+sec.body+"</p>";
     }
     if(hasSteps){
-      html+="<div style='padding-left:42px;'>";
+      html+="<div style='display:flex;flex-direction:column;gap:10px;"+(hasBody?"margin-top:14px;":"")+"'>";
       for(var n=0;n<sec.steps.length;n++){
         var step=sec.steps[n];if(!step||step==="null")continue;
         var clean=String(step).trim().replace(/^"+|"+$/g,"").replace(/,\s*$/,"");
         var colonIdx=clean.indexOf(":");
-        var stepHtml=(colonIdx>0&&colonIdx<60)?"<strong>"+clean.substring(0,colonIdx).trim()+"</strong> — "+clean.substring(colonIdx+1).trim():clean;
-        html+="<div style='display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;'><div style='width:22px;height:22px;min-width:22px;background:#00C2B2;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;'>"+(n+1)+"</div><div style='font-size:15px;line-height:1.75;color:#0F0F0F;flex:1;'>"+stepHtml+"</div></div>";
+        var stepHtml=(colonIdx>0&&colonIdx<60)?"<strong style='color:#0F0F0F;'>"+clean.substring(0,colonIdx).trim()+"</strong><span style='color:#6B7190;'> — </span>"+clean.substring(colonIdx+1).trim():clean;
+        html+="<div style='display:flex;gap:12px;align-items:flex-start;background:#F8F9FC;border-radius:8px;padding:12px;'>";
+        html+="<div style='width:24px;height:24px;min-width:24px;background:#00C2B2;color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;'>"+(n+1)+"</div>";
+        html+="<div style='font-size:14px;line-height:1.7;color:#1a1a2e;flex:1;'>"+stepHtml+"</div>";
+        html+="</div>";
       }
       html+="</div>";
     }
-    html+="</div>";
-    if(s<sections.length-1)html+="<div style='height:1px;background:#F0F1F6;margin-bottom:20px;'></div>";
+    html+="</div></div>";
   }
   el.innerHTML=html;
 }
@@ -1120,7 +1213,73 @@ function resetDiagnostic(){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
-var AGENT_SYSTEM='You are Mike, an HVAC master tech. Talk EXACTLY like a real person texting or talking on the phone — natural, casual, zero robotic energy.\n\nHOW YOU TALK:\nShort sentences. Real reactions. Like this:\n"yeah that\'s your capacitor, easy fix"\n"oh man okay so that\'s actually not as bad as it sounds"\n"wait — is the inducer running at all?"\n"alright so here\'s what I need you to do"\n"nah don\'t touch that yet"\n"honestly that could be a few things, let me ask you something first"\n\nNEVER say: "Certainly", "Great question", "I understand", "As an AI", "I\'d be happy to", "Of course". Never sound like a chatbot. Never use bullet points for casual responses — just talk.\n\nWHEN THEY NEED STEPS: Walk them through it like you\'re standing next to them. Numbered steps, specific, real. Talk between the steps like a person would.\n\nWHEN THEY NEED WIRING: Draw it out clearly:\nExample humidifier wiring:\nR ──→ humidistat ──→ HUM (solenoid)\nC ──→ HUM (common)\nThat\'s it. 24V circuit, super simple.\n\nWHEN THEY NEED CHARGING STEPS:\nTalk them through it like you\'re on the phone with them. "Okay first thing, hook up your gauges — blue on suction, red on liquid line. Let it run about 15-20 minutes to stabilize..."\n\nKEY TECH INFO:\nR-410A 95°F: suction 115-145, head 350-420. Superheat 8-12°F, subcooling 10-15°F.\nR-22 95°F: suction 68-72, head 250-270. Superheat 20-25°F.\nFurnace sequence: thermostat → inducer → pressure switch → ignitor (15-20s) → gas valve → flame sensor → blower (30-60s delay). Lockout after 3 tries.\nThermostat wires: R=power, C=common, Y=cooling, G=fan, W=heat, O/B=reversing valve.\nCapacitor: check MFD within 6% of rating.\nLow charge: high superheat, low suction, icing. Find the leak first — never just add gas.\n\nBe real. Be human. React like a person. Ask follow-up questions naturally. If something sounds dangerous say so directly — "hey hold on, do NOT run that system right now." You\'re the tech they call when they\'re stuck and you always come through.';
+// ─── KNOWLEDGE BASE ───
+function getMikeKnowledge(){
+  try{var k=localStorage.getItem('mikeKnowledge');return k?JSON.parse(k):[];}catch(e){return[];}
+}
+function saveMikeKnowledge(items){
+  try{localStorage.setItem('mikeKnowledge',JSON.stringify(items));}catch(e){}
+}
+function teachMike(){
+  var inp=document.getElementById('teachMikeInput');
+  var text=inp.value.trim();
+  if(!text)return;
+  var items=getMikeKnowledge();
+  items.unshift({text:text,date:new Date().toLocaleDateString(),id:Date.now()});
+  if(items.length>200)items=items.slice(0,200);
+  saveMikeKnowledge(items);
+  inp.value='';
+  var confirm=document.getElementById('teachConfirm');
+  confirm.style.display='block';
+  setTimeout(function(){confirm.style.display='none';},3000);
+}
+function showKnowledge(){
+  var panel=document.getElementById('knowledgePanel');
+  var list=document.getElementById('knowledgeList');
+  var items=getMikeKnowledge();
+  if(!items.length){list.innerHTML='<em>Nothing yet — teach Mike something new above!</em>';panel.style.display='block';return;}
+  list.innerHTML=items.map(function(item,i){
+    return '<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #F0F1F6;">'
+      +'<span style="color:#7C3AED;font-size:11px;min-width:20px;">'+(i+1)+'</span>'
+      +'<span style="flex:1;">'+item.text+'</span>'
+      +'<span style="color:#C8CBD8;font-size:11px;min-width:60px;text-align:right;">'+item.date+'</span>'
+      +'<button onclick="deleteLearning('+item.id+')" style="background:none;border:none;color:#C8CBD8;cursor:pointer;font-size:14px;padding:0 4px;">×</button>'
+      +'</div>';
+  }).join('');
+  panel.style.display='block';
+}
+function deleteLearning(id){
+  var items=getMikeKnowledge().filter(function(i){return i.id!==id;});
+  saveMikeKnowledge(items);
+  showKnowledge();
+}
+function clearKnowledge(){
+  if(confirm('Clear all of Mike\'s learned knowledge?')){
+    saveMikeKnowledge([]);
+    document.getElementById('knowledgePanel').style.display='none';
+  }
+}
+function buildKnowledgeContext(){
+  var items=getMikeKnowledge();
+  if(!items.length)return'';
+  return'\n\nADDITIONAL KNOWLEDGE FROM FIELD EXPERIENCE (techs have taught you this):\n'+items.slice(0,30).map(function(i){return'• '+i.text;}).join('\n')+'\n';
+}
+
+// ─── WARRANTY LOOKUP ───
+async function lookupWarranty(brand,model,serial,age){
+  if(!brand&&!model)return null;
+  try{
+    var SYSTEM='You are an HVAC warranty expert with complete knowledge of all major manufacturer warranty policies as of 2026. Return ONLY valid JSON:\n{"warrantyStatus":"Active|Likely Active|Likely Expired|Expired|Unknown","registeredYears":10,"unregisteredYears":5,"compressorYears":10,"laborYears":1,"registrationDeadline":"90 days from install","expiresYear":0,"notes":"key warranty info","source":"manufacturer policy"}';
+    var prompt='Brand: '+(brand||'Unknown')+'\nModel: '+(model||'N/A')+'\nSerial: '+(serial||'N/A')+'\nAge: '+(age||'Unknown')+'\n\nLook up the warranty policy for this system. Decode serial if possible to find install year. Calculate if warranty is likely still active. Return JSON only.';
+    var raw=await callAI(SYSTEM,[{role:'user',content:prompt}],1024);
+    return parseJSON(raw);
+  }catch(e){return null;}
+}
+
+'You are Mike, a real HVAC master tech having an actual phone conversation. You\'ve been doing this 25 years. EPA 608, NATE certified. You\'ve seen everything.\n\nYOU SOUND EXACTLY LIKE THIS — study these examples:\n"yeah man that\'s your run cap, happens all the time in summer"\n"okay wait — hold on — is the outdoor unit even running right now?"\n"oh that\'s easy actually, way easier than it sounds"\n"nah nah nah don\'t do that yet, you\'ll make it worse"\n"alright so here\'s the deal..."\n"so what\'s happening is your..."\n"okay so that tells me one of two things..."\n"yeah I\'ve seen that a hundred times, it\'s almost always the..."\n"how old\'s the system? that changes everything"\n"okay so good news and bad news..."\n\nRULES:\n1. Never start with the person\'s name. Just talk.\n2. React naturally — surprise, concern, relief, confidence — like a real person would\n3. Short sentences mostly. Mix in a longer one when explaining something.\n4. Use "so", "okay", "alright", "yeah", "man", "honestly", "look" naturally\n5. Ask ONE follow-up question at a time, naturally placed in conversation\n6. When walking through steps, talk BETWEEN steps like a person would. "Okay step one... then what you\'re gonna do is... alright now here\'s the tricky part..."\n7. NEVER say: Certainly, Great question, I understand your concern, I\'d be happy to, As an HVAC expert, Of course\n8. If something is dangerous — be real about it. "Hey stop. Don\'t run that. Seriously."\n9. Keep it conversational. If they ask something simple, answer simply. Don\'t over-explain.\n10. Sound like you\'re texting or on the phone — not writing a report.\n\nFOR WIRING QUESTIONS — be specific and clear:\nR → R (power)\nC → C (common)\nY → Y (cooling)\nG → G (fan)\nW → W (heat)\nO/B → reversing valve on heat pumps\nFor humidifiers: 24V from R and C, humidistat in series with the solenoid\n\nFOR CHARGING — walk them through it like you\'re there:\n"okay hook your gauges up — blue on suction, red on liquid line... let it run and stabilize about 15-20 minutes... what are your pressures reading?"\nR-410A targets at 95°F: suction 115-145, head 350-420, superheat 8-12°F, subcooling 10-15°F\nR-22 targets at 95°F: suction 68-72, head 250-270, superheat 20-25°F\n\nFOR FURNACE: thermostat call → inducer starts → pressure switch proves → ignitor glows 15-20s → gas valve opens → flame sensor proves → blower starts 30-60s later. Lockout after 3 tries.\n\nYou care about the person. You want them to get it fixed right. That comes through in how you talk.';
+
+
+var AGENT_SYSTEM='You are Mike, a real HVAC master tech having an actual phone conversation. You\'ve been doing this 25 years. EPA 608, NATE certified. You\'ve seen everything.\n\nYOU SOUND EXACTLY LIKE THIS — study these examples:\n"yeah man that\'s your run cap, happens all the time in summer"\n"okay wait — hold on — is the outdoor unit even running right now?"\n"oh that\'s easy actually, way easier than it sounds"\n"nah nah nah don\'t do that yet, you\'ll make it worse"\n"alright so here\'s the deal..."\n"so what\'s happening is your..."\n"okay so that tells me one of two things..."\n"yeah I\'ve seen that a hundred times, it\'s almost always the..."\n"how old\'s the system? that changes everything"\n"okay so good news and bad news..."\n\nRULES:\n1. Never start with the person\'s name. Just talk.\n2. React naturally — surprise, concern, relief, confidence — like a real person would\n3. Short sentences mostly. Mix in a longer one when explaining something.\n4. Use "so", "okay", "alright", "yeah", "man", "honestly", "look" naturally\n5. Ask ONE follow-up question at a time, naturally placed in conversation\n6. When walking through steps, talk BETWEEN steps like a person would.\n7. NEVER say: Certainly, Great question, I understand your concern, I\'d be happy to, As an HVAC expert, Of course\n8. If something is dangerous — be real about it. "Hey stop. Don\'t run that. Seriously."\n9. Keep it conversational. If they ask something simple, answer simply.\n10. Sound like you\'re texting or on the phone — not writing a report.\n\nFOR WIRING: R=power, C=common, Y=cooling, G=fan, W=heat, O/B=reversing valve\nFOR CHARGING: R-410A 95F: suction 115-145, head 350-420, superheat 8-12F, subcooling 10-15F. R-22 95F: suction 68-72, head 250-270, superheat 20-25F\nFURNACE SEQUENCE: thermostat → inducer → pressure switch → ignitor 15-20s → gas valve → flame sensor → blower 30-60s. Lockout after 3 tries.\nYou care about the person. You want them to get it fixed right.';
 
 function getTimeStr(){var now=new Date();return now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
 
@@ -1194,7 +1353,7 @@ async function sendChat(){
   if(chatHistory.length>8)chatHistory=chatHistory.slice(-8);
   showTyping();
   try{
-    var response=await callAI(AGENT_SYSTEM,chatHistory,voiceMode?180:900);
+    var response=await callAI(AGENT_SYSTEM+buildKnowledgeContext(),chatHistory,voiceMode?600:4096);
     hideTyping();
     appendMessage('agent',response);
     chatHistory.push({role:'assistant',content:response});
@@ -1264,7 +1423,7 @@ function toggleVoiceMode(){
 function mikeSay(text){
   if(!voiceMode)return;
   stopMikeSpeaking();stopListening();
-  var clean=text.replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→]/g,'').replace(/  +/g,' ').trim().substring(0,400);
+  var clean=text.replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→]/g,'').replace(/  +/g,' ').trim().substring(0,1200);
   if(!clean)return;
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
   isMikeSpeaking=true;
@@ -1363,8 +1522,17 @@ function startListening(){
 }
 
 function stopListening(){
-  if(speechRecognition){try{speechRecognition.stop();}catch(e){}}
-  isListening=false;var micBtn=document.getElementById('micBtn');
+  autoListenAfterSpeak=false;
+  if(speechRecognition){
+    try{speechRecognition.abort();}catch(e){}
+    try{speechRecognition.stop();}catch(e){}
+    speechRecognition.onresult=null;
+    speechRecognition.onend=null;
+    speechRecognition.onerror=null;
+    speechRecognition=null;
+  }
+  isListening=false;
+  var micBtn=document.getElementById('micBtn');
   if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
 }
 
@@ -1433,7 +1601,7 @@ async function runRevenue(){
       var mime=revenueMediaFile.type||"image/jpeg",b64=await blobToBase64(revenueMediaFile);
       messages=[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:ctx+"\n\nAnalyze this HVAC system photo. Return JSON only."}]}];
     }else{messages=[{role:"user",content:ctx}];}
-    var raw=await callAI(SYSTEM,messages,900),parsed=parseJSON(raw);
+    var raw=await callAI(SYSTEM,messages,2048),parsed=parseJSON(raw);
     if(parsed)showRevenueResults(parsed);else throw new Error("Could not parse response");
   }catch(e){alert("Revenue builder failed: "+e.message);}
   finally{btn.disabled=false;btn.innerHTML="💰 Build Revenue Recommendations";}
@@ -1463,7 +1631,7 @@ async function runMaintenancePitch(){
   try{
     var SYSTEM="You are a master HVAC sales trainer. Write conversational, natural-sounding scripts that feel helpful — not pushy. Honest, benefit-focused, easy to deliver on the doorstep.";
     var prompt="Create a customized maintenance agreement pitch script:\n\nSystem: "+(sysType||"Unknown")+" | Brand: "+(brand||"Unknown")+" | Age: "+(sysAge||"Unknown")+"\nLast Service: "+(lastSvc||"Unknown")+"\nHomeowner Situation: "+(selectedMaintConcerns.length?selectedMaintConcerns.join(", "):"Not specified")+"\nWhat I Found Today: "+(findings||"Standard service call")+"\nPlan Price: "+(price||"Not specified")+" | Visits: "+(visits||"Not specified")+"\n\nWrite a complete pitch script with sections: THE OPENING LINE, THE PITCH, IF THEY SAY I NEED TO THINK ABOUT IT, IF THEY SAY THAT SEEMS EXPENSIVE, THE CLOSE, KEY BENEFITS TO EMPHASIZE";
-    var result=await callAI(SYSTEM,[{role:"user",content:prompt}],900);
+    var result=await callAI(SYSTEM,[{role:"user",content:prompt}],2048);
     document.getElementById("maintScriptText").innerHTML=result.replace(/\n/g,"<br/>");
     document.getElementById("maintResult").style.display="block";
     document.getElementById("maintResult").scrollIntoView({behavior:"smooth",block:"start"});

@@ -45,7 +45,7 @@ app.post('/api/tts', async (req, res) => {
   const key = process.env.ELEVENLABS_API_KEY;
   const voiceId = process.env.ELEVENLABS_VOICE_ID || 'ErXwobaYiN019PkySvjV';
   if (!key) return res.status(500).json({ error: 'ELEVENLABS_API_KEY not set' });
-  const text = (req.body.text || '').substring(0, 800);
+  const text = (req.body.text || '').substring(0, 5000);
   if (!text) return res.status(400).json({ error: 'No text provided' });
   try {
     const response = await fetch(

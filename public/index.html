@@ -1279,50 +1279,36 @@ function sendQuick(text){document.getElementById('chatInput').value=text;sendCha
 
 async function buildImageQuery(userText,mikeResponse){
   try{
-    var prompt='Based on this HVAC conversation, generate a short 3-5 word Google image search query to find a helpful technical image. Return ONLY the search query, nothing else.\nUser asked: "'+userText+'"\nMike said: "'+mikeResponse.substring(0,200)+'"\nExamples: "run capacitor HVAC", "thermostat wiring diagram", "Carrier condenser unit", "pressure switch furnace"';
-    var query=await callAI('You generate concise image search queries for HVAC technical topics. Return only the search query, 3-5 words max.',[{role:'user',content:prompt}],50);
-    return query?query.trim().replace(/['"]/g,''):null;
+    var prompt='Based on this HVAC conversation, generate a short 3-5 word image search query. Return ONLY the search query, nothing else.\nUser: "'+userText+'"\nMike: "'+mikeResponse.substring(0,200)+'"\nExamples: "run capacitor HVAC", "thermostat wiring diagram", "Aprilaire 720 humidifier wiring", "furnace pressure switch"';
+    var query=await callAI('Return only a 3-5 word image search query for an HVAC technical image. No explanation, just the query.',[{role:'user',content:prompt}],30);
+    return query?query.trim().replace(/['".\n]/g,''):null;
   }catch(e){return null;}
 }
 
 async function fetchAndShowImage(query){
   try{
-    // Use Wikimedia Commons API - free, reliable, no API key needed
-    var searchUrl='https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch='+encodeURIComponent(query+' HVAC')+'&gsrnamespace=6&prop=imageinfo&iiprop=url|mime&format=json&origin=*&gsrlimit=1';
-    var res=await fetch(searchUrl);
-    var data=await res.json();
-    var pages=data.query&&data.query.pages;
-    var url=null;
-    if(pages){
-      var keys=Object.keys(pages);
-      for(var k=0;k<keys.length;k++){
-        var p=pages[keys[k]];
-        if(p.imageinfo&&p.imageinfo[0]&&p.imageinfo[0].mime&&p.imageinfo[0].mime.startsWith('image/')){
-          url=p.imageinfo[0].url;break;
-        }
-      }
-    }
-    if(!url)return; // No image found — just skip silently
+    // Search for real image via web search API
+    var searchResult=await callAI(
+      'You are an image finder. Search for a real direct image URL (jpg, png, gif) for the given HVAC topic. Return ONLY a valid direct image URL that ends in .jpg, .jpeg, .png, or .gif — nothing else. Use manufacturer sites, HVAC training sites, or Wikipedia. If you cannot find a real direct image URL, return the word NONE.',
+      [{role:'user',content:'Find a real direct image URL for: '+query+'\nReturn only the URL or NONE.'}],
+      200,
+      true // use web search
+    );
+    if(!searchResult||searchResult.trim()==='NONE'||!searchResult.match(/https?:\/\/.*\.(jpg|jpeg|png|gif)/i))return;
+    var url=searchResult.trim().match(/https?:\/\/[^\s]+\.(jpg|jpeg|png|gif)[^\s]*/i);
+    if(!url)return;
+    url=url[0];
     var container=document.getElementById('chatMessages');
     var div=document.createElement('div');
     div.className='msg-agent';
     div.innerHTML='<div class="msg-bubble msg-bubble-agent" style="padding:8px;">'
       +'<div style="font-size:11px;color:#9499B0;margin-bottom:6px;">📷 '+query+'</div>'
-      +'<img src="'+url+'" style="width:100%;max-height:250px;object-fit:contain;border-radius:8px;background:#f5f5f5;" onerror="this.parentElement.parentElement.remove()" />'
-      +'<div style="font-size:10px;color:#C8CBD8;margin-top:4px;">Tap to zoom · Source: Wikimedia</div>'
+      +'<img src="'+url+'" style="width:100%;max-height:280px;object-fit:contain;border-radius:8px;background:#f5f5f5;cursor:pointer;" onclick="openImgOverlay(\''+url+'\')" onerror="this.parentElement.parentElement.style.display=\'none\'"/>'
+      +'<div style="font-size:10px;color:#C8CBD8;margin-top:4px;">Tap to zoom</div>'
       +'</div><div class="msg-time">'+getTimeStr()+'</div>';
-    div.querySelector('img').addEventListener('click',function(){
-      var overlay=document.createElement('div');
-      overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-      overlay.innerHTML='<img src="'+url+'" style="max-width:100%;max-height:90vh;object-fit:contain;border-radius:8px;"/>';
-      overlay.onclick=function(){document.body.removeChild(overlay);};
-      document.body.appendChild(overlay);
-    });
     container.appendChild(div);
     container.scrollTop=container.scrollHeight;
-  }catch(e){
-    // Fail silently — image is a nice-to-have, not critical
-  }
+  }catch(e){}
 }
 
 
@@ -1383,7 +1369,7 @@ function mikeSay(text){
   var micBtn2=document.getElementById('micBtn');
   if(micBtn2)micBtn2.classList.remove('mic-listening');
   // autoListenAfterSpeak stays TRUE so it auto-listens after Mike speaks
-  var clean=text.replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim().substring(0,5000);
+  var clean=text.replace(/https?:\/\/[^\s)>\]]+/g,'').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim().substring(0,5000);
   if(!clean)return;
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
   isMikeSpeaking=true;

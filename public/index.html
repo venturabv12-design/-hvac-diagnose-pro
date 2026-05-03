@@ -1189,17 +1189,34 @@ function appendMessage(role,text){
   var container=document.getElementById('chatMessages');
   var isAgent=role==='agent';
   var div=document.createElement('div');div.className=isAgent?'msg-agent':'msg-user';
-  var formatted;
-  if(isAgent){
-    formatted=text
-      .replace(/\n{2,}/g,'<br/>')
-      .replace(/\n/g,'<br/>');
-  }else{
-    formatted=text.replace(/\n/g,'<br/>');
-  }
+
+  // Process markdown images ![alt](url) — show inline
+  var formatted=text
+    .replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:[^)]*)?)\)/gi,function(m,alt,url){
+      return '<div style="margin:8px 0;"><img src="'+url+'" alt="'+alt+'" style="width:100%;max-height:280px;object-fit:contain;border-radius:8px;background:#f5f5f5;cursor:pointer;" onclick="openImgOverlay(\''+url+'\')" onerror="this.remove()"/><div style="font-size:10px;color:#9499B0;margin-top:3px;">'+alt+'</div></div>';
+    })
+    // Convert markdown PDF/links into tappable buttons
+    .replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+\.pdf(?:[^)]*)?)\)/gi,function(m,alt,url){
+      return '<a href="'+url+'" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;color:#2563EB;text-decoration:none;margin:6px 0;">📄 '+alt+' — Tap to open PDF</a>';
+    })
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,'<a href="$2" target="_blank" style="color:#00C2B2;text-decoration:underline;">$1</a>')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g,'<em>$1</em>')
+    .replace(/^- (.+)$/gm,'<div style="display:flex;gap:6px;margin:3px 0;"><span>•</span><span>$1</span></div>')
+    .replace(/\n{2,}/g,'<br/><br/>')
+    .replace(/\n/g,'<br/>');
+
   div.innerHTML='<div class="msg-bubble '+(isAgent?'msg-bubble-agent':'msg-bubble-user')+'">'+formatted+'</div><div class="msg-time">'+getTimeStr()+'</div>';
   container.appendChild(div);
   container.scrollTop=container.scrollHeight;
+}
+
+function openImgOverlay(url){
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML='<img src="'+url+'" style="max-width:100%;max-height:90vh;object-fit:contain;border-radius:8px;"/>';
+  overlay.onclick=function(){document.body.removeChild(overlay);};
+  document.body.appendChild(overlay);
 }
 
 function showTyping(){document.getElementById('typingIndicator').style.display='block';document.getElementById('chatMessages').scrollTop=document.getElementById('chatMessages').scrollHeight;}

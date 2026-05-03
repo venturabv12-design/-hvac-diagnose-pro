@@ -1295,7 +1295,16 @@ function toggleVoiceMode(){
 
 function mikeSay(text){
   if(!voiceMode)return;
-  stopMikeSpeaking();stopListening();
+  stopMikeSpeaking();
+  // Stop listening but KEEP autoListenAfterSpeak — don't call stopListening() which resets it
+  if(speechRecognition){
+    try{speechRecognition.abort();}catch(e){}
+    speechRecognition.onresult=null;speechRecognition.onend=null;speechRecognition.onerror=null;speechRecognition=null;
+  }
+  isListening=false;
+  var micBtn2=document.getElementById('micBtn');
+  if(micBtn2)micBtn2.classList.remove('mic-listening');
+  // autoListenAfterSpeak stays TRUE so it auto-listens after Mike speaks
   var clean=text.replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim().substring(0,700);
   if(!clean)return;
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');

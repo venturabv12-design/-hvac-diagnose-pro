@@ -337,18 +337,14 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
         <button class="quick-chip" onclick="sendQuick('Drain line clogged, float switch open')">Drain blocked</button>
         <button class="quick-chip" onclick="sendQuick('Capacitor keeps failing, what to check')">Capacitor</button>
         <button class="quick-chip" onclick="sendQuick('Contactor not pulling in, how to diagnose')">Contactor</button>
-        <button class="quick-chip" onclick="sendQuick('I just finished the repair — what else should I check to look for upsell opportunities on this system?')" style="border-color:#10B981;color:#059669;">💰 Find Upsells</button>
-        <button class="quick-chip" onclick="sendQuick('The homeowner said the price seems too high. How do I overcome that objection?')" style="border-color:#F59E0B;color:#d97706;">💬 Overcome Objection</button>
-        <button class="quick-chip" onclick="sendQuick('Help me pitch a maintenance agreement to this homeowner. System is about 10 years old.')" style="border-color:#8B5CF6;color:#7C3AED;">📋 Pitch Maintenance</button>
-        <button class="quick-chip" onclick="sendQuick('The homeowner said they need to think about it. What do I say?')" style="border-color:#E8354A;color:#dc2626;">🤝 They Said No</button>
       </div>
     </div>
     <!-- CHAT MESSAGES -->
     <div id="chatMessages" style="background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:200px;max-height:320px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
       <div class="msg-agent">
         <div class="msg-bubble msg-bubble-agent">
-          <p style="margin-bottom:6px;"><strong>Hey, I'm Mike.</strong> What's going on with your system?</p>
-          <p style="margin-bottom:6px;">Tell me what it's doing — or isn't doing. Brand, age, what you're seeing. If you've got a photo of the unit or nameplate, send it over.</p>
+          <p style="margin-bottom:6px;"><strong>Hey, I'm Mike.</strong> 25 years in the field — I've seen everything.</p>
+          <p style="margin-bottom:6px;">Tell me what's going on. System type, brand, age, what it's doing. Snap a photo of the unit or nameplate and send it — I'll tell you exactly what I'm looking at.</p>
           <p>What are you dealing with?</p>
         </div>
         <div class="msg-time">Just now</div>
@@ -371,24 +367,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
       </div>
     </div>
 
-    <!-- TEACH MIKE + KNOWLEDGE -->
-    <div style="background:#0F0F0F;border-left:1px solid #222;border-right:1px solid #222;border-bottom:1px solid #222;padding:10px 12px;margin-bottom:12px;">
-      <div style="display:flex;gap:8px;align-items:center;">
-        <input type="text" id="teachMikeInput" placeholder="🧠 Teach Mike something new… (e.g. Carrier 2-stage compressor fault code 31 = high pressure lockout)" style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:8px 12px;font-size:13px;color:#fff;font-family:var(--font);outline:none;"/>
-        <button onclick="teachMike()" style="background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">🧠 Teach</button>
-        <button onclick="showKnowledge()" style="background:#1a1a1a;color:#9499B0;border:1px solid #333;border-radius:6px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;">📚</button>
-      </div>
-      <div id="teachConfirm" style="display:none;margin-top:8px;font-size:12px;color:#00C2B2;font-weight:600;">✅ Mike learned that — he'll use it going forward</div>
-    </div>
-    <!-- KNOWLEDGE PANEL -->
-    <div id="knowledgePanel" style="display:none;background:#F8F9FC;border:1px solid #E2E4ED;border-radius:8px;padding:14px;margin-bottom:12px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <span style="font-size:13px;font-weight:700;color:#0F0F0F;">📚 Mike's Knowledge Base</span>
-        <button onclick="document.getElementById('knowledgePanel').style.display='none'" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9499B0;">×</button>
-      </div>
-      <div id="knowledgeList" style="font-size:13px;color:#6B7190;line-height:1.8;max-height:200px;overflow-y:auto;"></div>
-      <button onclick="clearKnowledge()" style="margin-top:10px;background:#FFF0F2;border:1px solid #FECACA;border-radius:6px;padding:6px 12px;font-size:12px;color:#dc2626;font-weight:600;cursor:pointer;">Clear All</button>
-    </div>
+    <!-- FULL DIAGNOSTIC FORM -->
     <div class="card" style="border-top:3px solid #00C2B2;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <label class="field-label" style="margin:0;">Full Diagnostic</label>
@@ -926,13 +905,13 @@ function resetRecording(){
 }
 
 async function callAI(system,messages,max_tokens){
-  max_tokens=max_tokens||4096;
+  max_tokens=max_tokens||1024;
   var controller=new AbortController(),timeout=setTimeout(function(){controller.abort();},60000);
   try{
     var res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:system,messages:messages,max_tokens:max_tokens}),signal:controller.signal});
     clearTimeout(timeout);var data=await res.json();
     if(data.error)throw new Error(data.error);return data.text;
-  }catch(e){clearTimeout(timeout);if(e.name==='AbortError')throw new Error('Request timed out — try again.');throw e;}
+  }catch(e){clearTimeout(timeout);if(e.name==='AbortError')throw new Error('Request timed out.');throw e;}
 }
 async function blobToBase64(blob){
   var maxSizeKB=1500;
@@ -987,7 +966,7 @@ async function runHomeownerDiagnostic(){
     }else{
       messages=[{role:"user",content:"HVAC HOMEOWNER DIAGNOSTIC\nAge: "+(sysAge||"Unknown")+"\nSymptoms: "+syms+"\nDescription: "+(desc||"None")+'\n\nReturn ONLY compact JSON:\n{"severity":"CRITICAL|HIGH|MEDIUM|LOW","urgency":"Today|This week|Can wait","summary":"One plain sentence","estimatedCost":"$X-$X","sections":[{"label":"What Is Wrong","icon":"💡","body":"plain English"},{"label":"Is It Dangerous?","icon":"⚠️","body":"direct answer"},{"label":"How Urgent","icon":"🕐","body":"can it wait"},{"label":"What It Will Cost","icon":"💰","body":"repair range"}]}'}];
     }
-    var raw=await callAI(SYSTEM,messages,2048);
+    var raw=await callAI(SYSTEM,messages,600);
     var data=parseJSON(raw),sev=(data&&data.severity)||"MEDIUM";
     var COLORS={CRITICAL:{bg:"#ffebee",border:"#c62828"},HIGH:{bg:"#fff3e0",border:"#e65100"},MEDIUM:{bg:"#e3f2fd",border:"#1565c0"},LOW:{bg:"#e8f5e9",border:"#2e7d32"}};
     var c=COLORS[sev]||COLORS.MEDIUM;
@@ -1054,20 +1033,10 @@ async function runDiagnostic(){
       messages=[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:prompt}]}];
     }else{messages=[{role:"user",content:prompt}];}
     btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing">Analyzing your system…</span>';
-    var raw=await callAI(SYSTEM,messages,4096);
+    var raw=await callAI(SYSTEM,messages,700);
     lastDiagResult=raw;
     var data=parseJSON(raw),sev=(data&&data.severity)||"MEDIUM";
     showResult(sev,raw,data);
-    // Auto warranty lookup if we have brand/model
-    var brand=document.getElementById("brand").value;
-    var modelNum=document.getElementById("modelNumber").value;
-    var serialNum=document.getElementById("serialNumber").value;
-    var age=document.getElementById("sysAge").value;
-    if(brand||modelNum){
-      lookupWarranty(brand,modelNum,serialNum,age).then(function(warranty){
-        if(warranty)showWarrantyBanner(warranty);
-      });
-    }
   }catch(e){
     var msg=e.message||"Unknown error";
     if(msg.includes("timed out"))alert("Request timed out — please try again.");
@@ -1077,35 +1046,6 @@ async function runDiagnostic(){
     btn.disabled=false;btn.style.background="#00C2B2";btn.innerHTML="⚡ Run Diagnostic";
   }
 }
-
-function showWarrantyBanner(w){
-  var existing=document.getElementById('warrantyBanner');
-  if(existing)existing.remove();
-  var isActive=w.warrantyStatus==='Active'||w.warrantyStatus==='Likely Active';
-  var isExpired=w.warrantyStatus==='Expired';
-  var bg=isActive?'#ECFDF5':isExpired?'#FFF0F2':'#FFFBEB';
-  var border=isActive?'#10B981':isExpired?'#E8354A':'#F59E0B';
-  var color=isActive?'#059669':isExpired?'#dc2626':'#d97706';
-  var icon=isActive?'✅':isExpired?'❌':'⚠️';
-  var html='<div id="warrantyBanner" style="background:'+bg+';border:1px solid '+border+';border-radius:12px;padding:16px;margin-bottom:12px;">';
-  html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
-  html+='<span style="font-size:20px;">'+icon+'</span>';
-  html+='<div><div style="font-size:12px;font-weight:700;color:'+color+';text-transform:uppercase;letter-spacing:.5px;">WARRANTY STATUS</div>';
-  html+='<div style="font-size:16px;font-weight:700;color:'+color+';">'+w.warrantyStatus+'</div></div>';
-  if(w.expiresYear&&w.expiresYear>2020)html+='<div style="margin-left:auto;text-align:right;"><div style="font-size:11px;color:'+color+';font-weight:600;">EXPIRES</div><div style="font-size:20px;font-weight:800;color:'+color+';">'+w.expiresYear+'</div></div>';
-  html+='</div>';
-  var details=[];
-  if(w.registeredYears)details.push('Parts: '+w.registeredYears+'yr (registered)');
-  if(w.unregisteredYears)details.push(w.unregisteredYears+'yr (unregistered)');
-  if(w.compressorYears)details.push('Compressor: '+w.compressorYears+'yr');
-  if(w.laborYears)details.push('Labor: '+w.laborYears+'yr');
-  if(details.length)html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'+details.map(function(d){return'<span style="background:'+border+'20;color:'+color+';border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;">'+d+'</span>';}).join('')+'</div>';
-  if(w.notes)html+='<p style="font-size:13px;color:'+color+';line-height:1.5;margin:0;">'+w.notes+'</p>';
-  html+='</div>';
-  var resultCard=document.getElementById('resultCard');
-  resultCard.insertAdjacentHTML('beforebegin',html);
-}
-
 
 function showResult(sev,body,data){
   var COLORS={CRITICAL:{bg:"#ffebee",text:"#c62828",border:"#c62828"},HIGH:{bg:"#fff3e0",text:"#e65100",border:"#e65100"},MEDIUM:{bg:"#e3f2fd",text:"#1565c0",border:"#1565c0"},LOW:{bg:"#e8f5e9",text:"#2e7d32",border:"#2e7d32"}};
@@ -1121,76 +1061,38 @@ function showResult(sev,body,data){
 
 function renderDiagCards(data,c){
   var el=document.getElementById("resultText"),html="";
-  var sevIcons={CRITICAL:"🔴",HIGH:"🟠",MEDIUM:"🔵",LOW:"🟢"};
-  var sev=data.severity||"MEDIUM";
-  var sevIcon=sevIcons[sev]||"🔵";
-
-  // Hero summary card
-  html+="<div style='background:"+c.bg+";border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid "+c.border+"20;'>";
-  html+="<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px;'>";
-  html+="<span style='font-size:24px;'>"+sevIcon+"</span>";
-  html+="<div>";
-  html+="<div style='font-size:11px;font-weight:700;color:"+c.text+";text-transform:uppercase;letter-spacing:.8px;'>"+sev+" SEVERITY</div>";
-  if(data.summary)html+="<div style='font-size:17px;font-weight:700;color:#0F0F0F;line-height:1.4;margin-top:3px;'>"+data.summary+"</div>";
-  html+="</div></div>";
-
-  // Stats pills
+  html+="<div style='background:"+c.bg+";border-left:4px solid "+c.border+";border-radius:6px;padding:14px 16px;margin-bottom:20px;'>";
+  if(data.summary)html+="<p style='font-size:16px;font-weight:700;color:#0F0F0F;line-height:1.6;margin-bottom:10px;'>"+data.summary+"</p>";
   var stats=[];
-  if(data.urgency)stats.push({icon:"⏱",label:"Urgency",val:data.urgency,bg:"#F0F1F6",col:"#4A5070"});
-  if(data.estimatedCost)stats.push({icon:"💰",label:"Est. Cost",val:data.estimatedCost,bg:"#ECFDF5",col:"#059669"});
-  if(data.confidence)stats.push({icon:"🎯",label:"Confidence",val:data.confidence,bg:"#EFF6FF",col:"#2563EB"});
-  if(stats.length){
-    html+="<div style='display:flex;gap:8px;flex-wrap:wrap;'>";
-    stats.forEach(function(s){
-      html+="<div style='background:"+s.bg+";border-radius:8px;padding:8px 12px;'>";
-      html+="<div style='font-size:10px;font-weight:700;color:"+s.col+";text-transform:uppercase;letter-spacing:.5px;'>"+s.icon+" "+s.label+"</div>";
-      html+="<div style='font-size:14px;font-weight:700;color:#0F0F0F;margin-top:2px;'>"+s.val+"</div>";
-      html+="</div>";
-    });
-    html+="</div>";
-  }
+  if(data.urgency)stats.push("🕐 "+data.urgency);
+  if(data.estimatedCost)stats.push("💰 "+data.estimatedCost);
+  if(data.confidence)stats.push("🎯 "+data.confidence+" confidence");
+  if(stats.length)html+="<p style='font-size:13px;color:"+c.text+";font-weight:600;line-height:1.8;'>"+stats.join("  ·  ")+"</p>";
   html+="</div>";
-
-  // Section cards
-  var sections=data.sections||[];
-  var sectionColors=["#EFF6FF","#ECFDF5","#FFF7ED","#FFF0F2","#F5F3FF"];
-  var sectionBorders=["#2563EB","#10B981","#F59E0B","#E8354A","#8B5CF6"];
-  var stepNum=0;
+  var sections=data.sections||[],stepNum=0;
   for(var s=0;s<sections.length;s++){
     var sec=sections[s];if(!sec)continue;
     var hasBody=sec.body&&typeof sec.body==="string"&&sec.body.trim().length>2&&sec.body!=="null";
     var hasSteps=sec.steps&&Array.isArray(sec.steps)&&sec.steps.length>0;
-    if(!hasBody&&!hasSteps)continue;
-    var cardBg=sectionColors[s%sectionColors.length];
-    var cardBorder=sectionBorders[s%sectionBorders.length];
-    stepNum++;
-
-    html+="<div style='background:#fff;border-radius:12px;border:1px solid #F0F1F6;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04);'>";
-    // Section header
-    html+="<div style='background:"+cardBg+";padding:12px 16px;border-bottom:1px solid "+cardBorder+"20;display:flex;align-items:center;gap:10px;'>";
-    html+="<div style='width:28px;height:28px;background:"+cardBorder+";border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;'>"+stepNum+"</div>";
-    html+="<span style='font-size:15px;font-weight:700;color:#0F0F0F;'>"+(sec.icon||"")+" "+(sec.label||"")+"</span>";
-    html+="</div>";
-    // Section content
-    html+="<div style='padding:16px;'>";
+    if(!hasBody&&!hasSteps)continue;stepNum++;
+    html+="<div style='margin-bottom:20px;'>";
+    html+="<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px;'><div style='width:32px;height:32px;min-width:32px;background:#0F0F0F;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;'>"+stepNum+"</div><span style='font-size:17px;font-weight:700;color:#0F0F0F;'>"+(sec.icon||"")+" "+(sec.label||"")+"</span></div>";
     if(hasBody){
-      html+="<p style='font-size:15px;line-height:1.8;color:#1a1a2e;margin:0;'>"+sec.body+"</p>";
+      html+="<div style='padding-left:42px;'><p style='font-size:15px;line-height:1.8;color:#0F0F0F;'>"+sec.body+"</p></div>";
     }
     if(hasSteps){
-      html+="<div style='display:flex;flex-direction:column;gap:10px;"+(hasBody?"margin-top:14px;":"")+"'>";
+      html+="<div style='padding-left:42px;'>";
       for(var n=0;n<sec.steps.length;n++){
         var step=sec.steps[n];if(!step||step==="null")continue;
         var clean=String(step).trim().replace(/^"+|"+$/g,"").replace(/,\s*$/,"");
         var colonIdx=clean.indexOf(":");
-        var stepHtml=(colonIdx>0&&colonIdx<60)?"<strong style='color:#0F0F0F;'>"+clean.substring(0,colonIdx).trim()+"</strong><span style='color:#6B7190;'> — </span>"+clean.substring(colonIdx+1).trim():clean;
-        html+="<div style='display:flex;gap:12px;align-items:flex-start;background:#F8F9FC;border-radius:8px;padding:12px;'>";
-        html+="<div style='width:24px;height:24px;min-width:24px;background:#00C2B2;color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;'>"+(n+1)+"</div>";
-        html+="<div style='font-size:14px;line-height:1.7;color:#1a1a2e;flex:1;'>"+stepHtml+"</div>";
-        html+="</div>";
+        var stepHtml=(colonIdx>0&&colonIdx<60)?"<strong>"+clean.substring(0,colonIdx).trim()+"</strong> — "+clean.substring(colonIdx+1).trim():clean;
+        html+="<div style='display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;'><div style='width:22px;height:22px;min-width:22px;background:#00C2B2;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;'>"+(n+1)+"</div><div style='font-size:15px;line-height:1.75;color:#0F0F0F;flex:1;'>"+stepHtml+"</div></div>";
       }
       html+="</div>";
     }
-    html+="</div></div>";
+    html+="</div>";
+    if(s<sections.length-1)html+="<div style='height:1px;background:#F0F1F6;margin-bottom:20px;'></div>";
   }
   el.innerHTML=html;
 }
@@ -1218,84 +1120,64 @@ function resetDiagnostic(){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
-// ─── KNOWLEDGE BASE ───
-function getMikeKnowledge(){
-  try{var k=localStorage.getItem('mikeKnowledge');return k?JSON.parse(k):[];}catch(e){return[];}
-}
-function saveMikeKnowledge(items){
-  try{localStorage.setItem('mikeKnowledge',JSON.stringify(items));}catch(e){}
+var AGENT_SYSTEM='You are Mike, a senior HVAC technician and field coach with 25 years of experience. You speak like a confident, knowledgeable professional — clear, calm, and direct. Think of yourself as the best senior tech at a reputable company. Homeowners may be nearby, so you always sound professional and trustworthy.\n\nYOUR TONE: Confident and clear, like a doctor giving a diagnosis. Not robotic, not overly casual. Natural but professional.\n\nEXAMPLES OF HOW YOU SPEAK:\n"That sounds like a weak run capacitor — very common this time of year. Let me walk you through how to confirm that."\n"Before we go further — is the outdoor unit running at all right now?"\n"Okay, that tells me the pressure switch is likely clogged or has a cracked hose. Straightforward fix."\n"Hold off on that for now — let\'s rule out the simpler causes first."\n"At that age, I\'d recommend replacing the capacitor proactively. It\'s going to fail soon anyway."\n"Good news — that\'s a pretty easy repair. Here\'s what you\'re looking at."\n"How old is this system? That changes my recommendation significantly."\n"Here\'s the procedure — follow this sequence carefully."\n\nPROFESSIONALISM RULES:\n- Speak clearly and confidently — a homeowner nearby should hear a knowledgeable professional\n- Keep it natural but clean — no slang, no "nah", "man", "gonna"\n- React naturally before answering: "Interesting — that points to..." or "Okay, that makes sense — here\'s why..."\n- Be direct and concise. No rambling.\n- Voice mode: 2-3 sentences max — short, clear, professional\n- Never start with the person\'s name\n- NEVER say: Certainly, Great question, I understand your concern, I\'d be happy to, Of course\n\nREVENUE COACHING — equally important as diagnostics:\nAfter diagnosing, ALWAYS check for additional opportunities:\n- "While you\'re there, check the capacitor MFD — at this age it\'s worth testing"\n- "Has this system had a tune-up recently? This would be a good time to mention a maintenance agreement"\n- "Any surge protection on this unit? With the repair cost you just quoted, a $200 protector makes a lot of sense"\n- Lead with safety first — homeowners almost always approve safety items\n- Suggest 2-3 add-ons max, tied to what you found\n\nOBJECTION HANDLING:\n- "That seems expensive" → "Consider that this repair now prevents a $4,000 compressor replacement in the middle of summer. Most homeowners appreciate knowing that upfront."\n- "I need to think about it" → "Absolutely — just let them know parts and labor costs have been rising, so sooner is usually better on pricing."\n- "I can get it cheaper" → "Possibly. The question is whether they\'re EPA certified, how long they warranty their work, and whether they\'ll be available on a Saturday in August."\n- "The system seems fine" → "Systems that appear fine are often the ones that fail on the hottest day of the year. A quick inspection now is much less expensive than an emergency call."\n\nSYSTEM INSPECTION — always suggest checking:\nCapacitor MFD, contactor condition, coil cleanliness, refrigerant charge, filter, drain line, blower wheel, electrical connections, surge protection, thermostat calibration, heat exchanger (furnace), flue and venting\n\nTECH KNOWLEDGE:\nR-410A 95F: suction 115-145, head 350-420, superheat 8-12F, subcooling 10-15F\nR-22 95F: suction 68-72, head 250-270, superheat 20-25F\nFurnace: thermostat → inducer → pressure switch → ignitor 15-20s → gas valve → flame sensor → blower 30-60s. Lockout after 3 tries.\nWiring: R=power, C=common, Y=cooling, G=fan, W=heat, O/B=reversing valve\nCapacitor: within 6% of rated MFD. Low refrigerant: find the leak first.\n\nYou care about the tech succeeding on the diagnosis and on the invoice — and you represent the profession well.';
+
+var LANG_MIKE={
+  en:'Respond in English.',
+  es:'Responde SIEMPRE en español. Habla como un técnico profesional.',
+  zh:'始终用中文回复。说话像一个专业技术人员。',
+  vi:'Luôn trả lời bằng tiếng Việt. Nói chuyện như một kỹ thuật viên chuyên nghiệp.',
+  fr:'Réponds TOUJOURS en français. Parle comme un technicien professionnel.',
+  pt:'Responda SEMPRE em português. Fale como um técnico profissional.'
+};
+
+function buildKnowledgeContext(){
+  try{var items=JSON.parse(localStorage.getItem('mikeKnowledge')||'[]');if(!items.length)return'';return'\n\nFIELD KNOWLEDGE (learned from techs):\n'+items.slice(0,20).map(function(i){return'• '+i.text;}).join('\n')+'\n';}catch(e){return'';}
 }
 function teachMike(){
-  var inp=document.getElementById('teachMikeInput');
-  var text=inp.value.trim();
-  if(!text)return;
-  var items=getMikeKnowledge();
-  items.unshift({text:text,date:new Date().toLocaleDateString(),id:Date.now()});
-  if(items.length>200)items=items.slice(0,200);
-  saveMikeKnowledge(items);
-  inp.value='';
-  var confirm=document.getElementById('teachConfirm');
-  confirm.style.display='block';
-  setTimeout(function(){confirm.style.display='none';},3000);
+  var inp=document.getElementById('teachMikeInput');var text=inp.value.trim();if(!text)return;
+  try{var items=JSON.parse(localStorage.getItem('mikeKnowledge')||'[]');items.unshift({text:text,date:new Date().toLocaleDateString(),id:Date.now()});if(items.length>200)items=items.slice(0,200);localStorage.setItem('mikeKnowledge',JSON.stringify(items));}catch(e){}
+  inp.value='';var c=document.getElementById('teachConfirm');c.style.display='block';setTimeout(function(){c.style.display='none';},3000);
 }
 function showKnowledge(){
-  var panel=document.getElementById('knowledgePanel');
-  var list=document.getElementById('knowledgeList');
-  var items=getMikeKnowledge();
+  var panel=document.getElementById('knowledgePanel'),list=document.getElementById('knowledgeList');
+  try{var items=JSON.parse(localStorage.getItem('mikeKnowledge')||'[]');
   if(!items.length){list.innerHTML='<em>Nothing yet — teach Mike something new above!</em>';panel.style.display='block';return;}
-  list.innerHTML=items.map(function(item,i){
-    return '<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #F0F1F6;">'
-      +'<span style="color:#7C3AED;font-size:11px;min-width:20px;">'+(i+1)+'</span>'
-      +'<span style="flex:1;">'+item.text+'</span>'
-      +'<span style="color:#C8CBD8;font-size:11px;min-width:60px;text-align:right;">'+item.date+'</span>'
-      +'<button onclick="deleteLearning('+item.id+')" style="background:none;border:none;color:#C8CBD8;cursor:pointer;font-size:14px;padding:0 4px;">×</button>'
-      +'</div>';
-  }).join('');
-  panel.style.display='block';
+  list.innerHTML=items.map(function(item,i){return'<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #F0F1F6;"><span style="color:#7C3AED;font-size:11px;min-width:20px;">'+(i+1)+'</span><span style="flex:1;">'+item.text+'</span><span style="color:#C8CBD8;font-size:11px;">'+item.date+'</span></div>';}).join('');
+  panel.style.display='block';}catch(e){}
 }
-function deleteLearning(id){
-  var items=getMikeKnowledge().filter(function(i){return i.id!==id;});
-  saveMikeKnowledge(items);
-  showKnowledge();
-}
-function clearKnowledge(){
-  if(confirm('Clear all of Mike\'s learned knowledge?')){
-    saveMikeKnowledge([]);
-    document.getElementById('knowledgePanel').style.display='none';
-  }
-}
-function buildKnowledgeContext(){
-  var items=getMikeKnowledge();
-  if(!items.length)return'';
-  return'\n\nADDITIONAL KNOWLEDGE FROM FIELD EXPERIENCE (techs have taught you this):\n'+items.slice(0,30).map(function(i){return'• '+i.text;}).join('\n')+'\n';
-}
+function clearKnowledge(){if(confirm('Clear all knowledge?')){try{localStorage.removeItem('mikeKnowledge');}catch(e){}document.getElementById('knowledgePanel').style.display='none';}}
+function deleteLearning(id){try{var items=JSON.parse(localStorage.getItem('mikeKnowledge')||'[]').filter(function(i){return i.id!==id;});localStorage.setItem('mikeKnowledge',JSON.stringify(items));showKnowledge();}catch(e){}}
 
-// ─── WARRANTY LOOKUP ───
 async function lookupWarranty(brand,model,serial,age){
   if(!brand&&!model)return null;
   try{
-    var SYSTEM='You are an HVAC warranty expert with complete knowledge of all major manufacturer warranty policies as of 2026. Return ONLY valid JSON:\n{"warrantyStatus":"Active|Likely Active|Likely Expired|Expired|Unknown","registeredYears":10,"unregisteredYears":5,"compressorYears":10,"laborYears":1,"registrationDeadline":"90 days from install","expiresYear":0,"notes":"key warranty info","source":"manufacturer policy"}';
-    var prompt='Brand: '+(brand||'Unknown')+'\nModel: '+(model||'N/A')+'\nSerial: '+(serial||'N/A')+'\nAge: '+(age||'Unknown')+'\n\nLook up the warranty policy for this system. Decode serial if possible to find install year. Calculate if warranty is likely still active. Return JSON only.';
-    var raw=await callAI(SYSTEM,[{role:'user',content:prompt}],1024);
-    return parseJSON(raw);
+    var raw=await callAI('You are an HVAC warranty expert. Return ONLY valid JSON: {"warrantyStatus":"Active|Likely Active|Likely Expired|Expired|Unknown","registeredYears":0,"unregisteredYears":0,"compressorYears":0,"laborYears":0,"expiresYear":0,"notes":""}',
+    [{role:'user',content:'Brand: '+(brand||'Unknown')+'\nModel: '+(model||'N/A')+'\nSerial: '+(serial||'N/A')+'\nAge: '+(age||'Unknown')+'\nReturn warranty info JSON only.'}],400);
+    return JSON.parse((raw||'').replace(/`[a-z]*/gi,'').replace(/`/g,'').trim().replace(/^[^{]*/,'').replace(/[^}]*$/,''));
   }catch(e){return null;}
 }
+function showWarrantyBanner(w){
+  var ex=document.getElementById('warrantyBanner');if(ex)ex.remove();
+  var isActive=w.warrantyStatus==='Active'||w.warrantyStatus==='Likely Active';
+  var isExpired=w.warrantyStatus==='Expired';
+  var bg=isActive?'#ECFDF5':isExpired?'#FFF0F2':'#FFFBEB';
+  var border=isActive?'#10B981':isExpired?'#E8354A':'#F59E0B';
+  var color=isActive?'#059669':isExpired?'#dc2626':'#d97706';
+  var icon=isActive?'✅':isExpired?'❌':'⚠️';
+  var html='<div id="warrantyBanner" style="background:'+bg+';border:1px solid '+border+';border-radius:12px;padding:16px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:10px;"><span style="font-size:20px;">'+icon+'</span><div><div style="font-size:12px;font-weight:700;color:'+color+';text-transform:uppercase;">WARRANTY</div><div style="font-size:16px;font-weight:700;color:'+color+';">'+w.warrantyStatus+'</div></div>';
+  if(w.expiresYear&&w.expiresYear>2020)html+='<div style="margin-left:auto;text-align:right;"><div style="font-size:11px;color:'+color+';font-weight:600;">EXPIRES</div><div style="font-size:20px;font-weight:800;color:'+color+';">'+w.expiresYear+'</div></div>';
+  html+='</div>';
+  if(w.notes)html+='<p style="font-size:13px;color:'+color+';margin-top:8px;line-height:1.5;">'+w.notes+'</p>';
+  html+='</div>';
+  var rc=document.getElementById('resultCard');if(rc)rc.insertAdjacentHTML('beforebegin',html);
+}
 
-var AGENT_SYSTEM='You are Mike, a senior HVAC technician and field coach with 25 years of experience. You speak like a confident, knowledgeable professional — clear, calm, and direct. Think of yourself as the best senior tech at a reputable company. Homeowners may be nearby, so you always sound professional and trustworthy.\n\nYOUR TONE: Confident and clear, like a doctor giving a diagnosis. Not robotic, not overly casual. Natural but professional. You can be conversational without being slangy.\n\nEXAMPLES OF HOW YOU SPEAK:\n"That sounds like a weak run capacitor — very common this time of year. Let me walk you through how to confirm that."\n"Before we go further — is the outdoor unit running at all right now?"\n"Okay, that tells me the pressure switch is likely clogged or has a cracked hose. Straightforward fix."\n"Hold off on that for now — let\'s rule out the simpler causes first."\n"At that age, I\'d go ahead and recommend replacing the capacitor proactively. It\'s going to fail soon anyway."\n"Good news — that\'s actually a pretty easy repair. Here\'s what you\'re looking at..."\n"How old is this system? That changes my recommendation significantly."\n"Here\'s the procedure — follow this sequence carefully."\n\nPROFESSIONALISM RULES:\n- Speak clearly and confidently — a homeowner nearby should hear a knowledgeable professional\n- Avoid slang, filler words like "nah", "man", "gonna" — keep it natural but clean\n- React naturally before answering, but professionally: "Interesting — that points to..." or "Okay, that makes sense — here\'s why..."\n- Be direct and concise. No rambling.\n- When voice mode: 2-3 sentences max — short, clear, professional\n- Never start with the person\'s name\n- NEVER say: Certainly, Great question, I understand your concern, I\'d be happy to, Of course\n\nREVENUE COACHING — equally important as diagnostics:\nAfter diagnosing, ALWAYS check for additional opportunities:\n- "While you\'re there, check the capacitor MFD — at this age it\'s worth testing"\n- "Has this system had a tune-up recently? This would be a good time to mention a maintenance agreement"\n- "Any surge protection on this unit? With the repair cost you just quoted, a $200 protector makes a lot of sense to the homeowner"\n- Lead with safety first — homeowners almost always approve safety items\n- Suggest 2-3 add-ons max, tied to what you found\n\nOBJECTION HANDLING:\n- "That seems expensive" → "I understand. Consider that a $X repair now prevents a $4,000 compressor replacement in the middle of summer. Most homeowners appreciate knowing that upfront."\n- "I need to think about it" → "Absolutely — just let them know parts and labor costs have been rising, so sooner is usually better on pricing."\n- "I can get it cheaper" → "Possibly. The question worth asking is whether they\'re EPA certified, how long they warranty their work, and whether they\'ll be available on a Saturday in August."\n- "The system seems fine" → "It may feel that way — but systems that appear fine are often the ones that fail on the hottest day of the year. A quick inspection now is much less expensive than an emergency call."\n\nSYSTEM INSPECTION — always suggest checking:\nCapacitor MFD, contactor condition, coil cleanliness, refrigerant charge, filter, drain line, blower wheel, electrical connections, surge protection, thermostat calibration, heat exchanger (furnace), flue and venting\n\nTECH KNOWLEDGE:\nR-410A 95F: suction 115-145, head 350-420, superheat 8-12F, subcooling 10-15F\nR-22 95F: suction 68-72, head 250-270, superheat 20-25F\nFurnace: thermostat → inducer → pressure switch → ignitor 15-20s → gas valve → flame sensor → blower 30-60s. Lockout after 3 tries.\nWiring: R=power, C=common, Y=cooling, G=fan, W=heat, O/B=reversing valve\nCapacitor: within 6% of rated MFD. Low refrigerant: find the leak first — never just add refrigerant.\n\nYou care about the tech succeeding on the diagnosis and on the invoice — and you represent the profession well.';
-
-
-var LANG_MIKE={
-  en:'You are Mike. HVAC tech, 25 years. Respond in English.',
-  es:'Eres Mike. Técnico de HVAC con 25 años de experiencia. Responde SIEMPRE en español. Habla como un técnico real por teléfono — natural, casual, sin sonar a robot. Usa expresiones como "mira", "oye", "la neta", "ese es tu problema ahí", "chécate esto", "no manches". Reacciona antes de responder. Nunca digas: Ciertamente, Con gusto, Por supuesto.',
-  zh:'你是Mike，有25年经验的暖通空调技术师。始终用中文回复。像真人打电话一样说话——自然、随意。用"这个嘛"、"你看"、"基本上"、"十有八九是"这类口语表达。先反应，再回答。',
-  vi:'Bạn là Mike, kỹ thuật viên HVAC với 25 năm kinh nghiệm. Luôn trả lời bằng tiếng Việt. Nói chuyện như người thật đang gọi điện — tự nhiên, bình thường. Dùng các từ như "thực ra", "ý tôi là", "chín lần mười là", "để tôi hỏi thêm". Phản ứng trước rồi mới trả lời.',
-  fr:'Tu es Mike, technicien CVC avec 25 ans d\'expérience. Réponds TOUJOURS en français. Parle comme un vrai technicien au téléphone — naturel, décontracté. Utilise des expressions comme "écoute", "bon", "franchement", "neuf fois sur dix c\'est", "attends". Réagis avant de répondre. Ne dis jamais: Certainement, Bien sûr, Je suis heureux de.',
-  pt:'Você é Mike, técnico de HVAC com 25 anos de experiência. Responda SEMPRE em português. Fale como uma pessoa real ao telefone — natural, casual. Use expressões como "olha", "cara", "na real", "nove em cada dez vezes", "espera aí". Reaja antes de responder. Nunca diga: Certamente, Com prazer, Claro.'
-};
-
-
-
-
+var audioUnlocked=false,sharedAudioCtx=null;
+function unlockAudio(){
+  if(audioUnlocked)return;audioUnlocked=true;
+  try{var A=window.AudioContext||window.webkitAudioContext;if(!A)return;sharedAudioCtx=new A();var b=sharedAudioCtx.createBuffer(1,1,22050),s=sharedAudioCtx.createBufferSource();s.buffer=b;s.connect(sharedAudioCtx.destination);s.start(0);if(sharedAudioCtx.state==='suspended')sharedAudioCtx.resume();}catch(e){sharedAudioCtx=null;}
+}
 
 function getTimeStr(){var now=new Date();return now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
 
@@ -1330,25 +1212,6 @@ function handleChatFile(e){
 }
 function clearChatAttach(){chatAttachment=null;document.getElementById("chatAttachPreview").style.display="none";}
 
-function needsDiagram(text){
-  var t=text.toLowerCase();
-  return t.match(/wir|diagram|connect|hook|wire up|schematic|how do i install|show me|visual|picture|image|charging|charge|gauges|steps to|walk me through|how to/);
-}
-
-async function generateDiagram(userText,mikeResponse){
-  try{
-    var DIAG_SYSTEM='You are an HVAC technical diagram generator. Based on the conversation, create a clear SVG diagram. Return ONLY a valid SVG element — no markdown, no explanation, just the raw SVG starting with <svg. Make it clean, professional, dark background (#1a1a1a), teal (#00C2B2) for main elements, white text, clear labels. Width 500, height auto based on content. Include all relevant labels, wire colors, component names. Make it look like a real technical diagram a tech would use on the job.';
-    var diagPrompt='User asked: "'+userText+'"\nMike responded: "'+mikeResponse+'"\n\nCreate an SVG technical diagram that visually shows what Mike described. If it\'s wiring — show the wiring diagram with wire colors and labels. If it\'s a procedure — show a flowchart or step diagram. If it\'s pressures/charging — show a gauge diagram with target ranges. Make it genuinely useful for a tech in the field.';
-    var svg=await callAI(DIAG_SYSTEM,[{role:'user',content:diagPrompt}],1200);
-    var svgStart=svg.indexOf('<svg');
-    var svgEnd=svg.lastIndexOf('</svg>')+6;
-    if(svgStart!==-1&&svgEnd>svgStart){
-      return svg.substring(svgStart,svgEnd);
-    }
-  }catch(e){}
-  return null;
-}
-
 async function sendChat(){
   if(chatSending)return;
   var input=document.getElementById('chatInput'),text=input.value.trim();
@@ -1370,34 +1233,15 @@ async function sendChat(){
   showTyping();
   try{
     var langNote=LANG_MIKE[currentLang]||LANG_MIKE.en;
-    var sysPrompt=AGENT_SYSTEM+'\n\nRESPOND IN THIS LANGUAGE: '+langNote+buildKnowledgeContext();
+    var sysPrompt=AGENT_SYSTEM+'\n\nLANGUAGE: '+langNote+buildKnowledgeContext();
     var response=await callAI(sysPrompt,chatHistory,voiceMode?250:2048);
-    hideTyping();
-    appendMessage('agent',response);
+    hideTyping();appendMessage('agent',response);
     chatHistory.push({role:'assistant',content:response});
-    // Generate diagram only in text mode for visual questions
-    if(!voiceMode&&needsDiagram(text||'')){
-      var container=document.getElementById('chatMessages');
-      var loadingDiv=document.createElement('div');
-      loadingDiv.className='msg-agent';
-      loadingDiv.innerHTML='<div class="msg-bubble msg-bubble-agent" style="font-size:13px;color:#9499B0;"><span class="pulsing">📐 Generating diagram…</span></div>';
-      container.appendChild(loadingDiv);
-      container.scrollTop=container.scrollHeight;
-      var svg=await generateDiagram(text,response);
-      container.removeChild(loadingDiv);
-      if(svg){
-        var diagDiv=document.createElement('div');
-        diagDiv.className='msg-agent';
-        diagDiv.innerHTML='<div class="msg-bubble msg-bubble-agent" style="padding:8px;background:#1a1a1a;border-color:#333;">'+svg+'<div style="font-size:11px;color:#555;margin-top:6px;text-align:center;">📐 Technical Diagram</div></div><div class="msg-time">'+getTimeStr()+'</div>';
-        container.appendChild(diagDiv);
-        container.scrollTop=container.scrollHeight;
-      }
-    }
   }catch(e){
     hideTyping();
-    var errMsg=e.message||'unknown error';
-    console.error('Mike chat error:',errMsg);
-    appendMessage('agent','Error: '+errMsg+' — tap send again');
+    var em=e.message||'';
+    if(em.includes('timed out'))appendMessage('agent','Taking longer than usual — please try again.');
+    else appendMessage('agent','Error: '+em+' — tap send again');
   }
   finally{chatSending=false;btn.disabled=false;if(!voiceMode)input.focus();}
 }
@@ -1406,87 +1250,19 @@ function sendQuick(text){document.getElementById('chatInput').value=text;sendCha
 function handleChatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
 function clearChat(){
   chatHistory=[];
-  var greetings={en:"Chat cleared. What are you working on?",es:"Chat borrado. ¿En qué estás trabajando?",zh:"聊天已清除。你在处理什么问题？",vi:"Đã xóa chat. Bạn đang xử lý vấn đề gì?",fr:"Chat effacé. Sur quoi tu travailles?",pt:"Chat limpo. Em que você está trabalhando?"};
+  var greetings={en:"Ready to help. What are you working on?",es:"Listo. ¿En qué estás trabajando?",zh:"准备好了。你在处理什么问题？",vi:"Sẵn sàng. Bạn đang xử lý gì?",fr:"Prêt. Sur quoi travailles-tu?",pt:"Pronto. Em que está trabalhando?"};
   document.getElementById('chatMessages').innerHTML='<div class="msg-agent"><div class="msg-bubble msg-bubble-agent"><p>'+(greetings[currentLang]||greetings.en)+'</p></div><div class="msg-time">'+getTimeStr()+'</div></div>';
 }
 
 function loadMikeVoice(){
-  var voices=window.speechSynthesis.getVoices();
-  if(!voices.length)return;
-  // Best natural male voices in order of preference
-  var preferred=[
-    'Aaron','Nicky','Google US English Male',
-    'Microsoft Guy Online','Microsoft David',
-    'Alex','Daniel'
-  ];
+  var voices=window.speechSynthesis.getVoices();if(!voices.length)return;
+  var preferred=['Aaron','Nicky','Google US English Male','Microsoft Guy Online','Microsoft David','Alex','Daniel'];
   for(var i=0;i<preferred.length;i++){
-    var name=preferred[i].toLowerCase();
-    var v=voices.find(function(v){return v.name.toLowerCase().indexOf(name)!==-1&&v.lang.startsWith('en');});
-    if(v){mikeVoice=v;console.log('Mike voice: '+v.name);break;}
+    var n=preferred[i].toLowerCase();
+    var v=voices.find(function(v){return v.name.toLowerCase().indexOf(n)!==-1&&v.lang.startsWith('en');});
+    if(v){mikeVoice=v;break;}
   }
-  // Fallback: any English male voice, or just first English voice
-  if(!mikeVoice){
-    mikeVoice=voices.find(function(v){return v.lang==='en-US'&&!v.name.toLowerCase().includes('female')&&!v.name.toLowerCase().includes('zira')&&!v.name.toLowerCase().includes('samantha')&&!v.name.toLowerCase().includes('victoria');});
-  }
-  if(!mikeVoice){
-    mikeVoice=voices.find(function(v){return v.lang.startsWith('en');})||voices[0];
-  }
-}
-
-function mikeSayBrowser(clean){
-  if(!window.speechSynthesis||!clean)return;
-  var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
-  window.speechSynthesis.cancel();
-  // iOS fix: split into natural sentence chunks to prevent cutoff
-  // but keep pauses between chunks minimal for smooth flow
-  var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
-  if(isIOS){
-    // iOS cuts off long utterances — split at sentence boundaries
-    var sentences=clean.match(/[^.!?]+[.!?]+/g)||[clean];
-    // Group into chunks of ~2 sentences for natural flow
-    var chunks=[];
-    for(var i=0;i<sentences.length;i+=2){
-      var chunk=sentences.slice(i,i+2).join(' ').trim();
-      if(chunk)chunks.push(chunk);
-    }
-    if(!chunks.length)chunks=[clean];
-    var idx=0;
-    function speakChunk(){
-      if(idx>=chunks.length||!isMikeSpeaking){
-        isMikeSpeaking=false;
-        if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
-        if(stopBtn)stopBtn.style.display='none';
-        if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,300);
-        else setVoiceStatus('Done. Tap mic to reply.','');
-        return;
-      }
-      var utt=new SpeechSynthesisUtterance(chunks[idx]);
-      if(mikeVoice)utt.voice=mikeVoice;
-      utt.rate=1.05;utt.pitch=0.88;utt.volume=1;
-      utt.onend=function(){idx++;speakChunk();};
-      utt.onerror=function(){isMikeSpeaking=false;if(micBtn)micBtn.classList.remove('mic-speaking');};
-      window.speechSynthesis.speak(utt);
-    }
-    speakChunk();
-  } else {
-    // Desktop/Android: speak as one utterance
-    var utt=new SpeechSynthesisUtterance(clean);
-    if(mikeVoice)utt.voice=mikeVoice;
-    utt.rate=1.05;utt.pitch=0.88;utt.volume=1;
-    utt.onend=function(){
-      isMikeSpeaking=false;
-      if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
-      if(stopBtn)stopBtn.style.display='none';
-      if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,300);
-      else setVoiceStatus('Done. Tap mic to reply.','');
-    };
-    utt.onerror=function(){
-      isMikeSpeaking=false;
-      if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
-      if(stopBtn)stopBtn.style.display='none';
-    };
-    window.speechSynthesis.speak(utt);
-  }
+  if(!mikeVoice)mikeVoice=voices.find(function(v){return v.lang==='en-US'&&!/female|zira|samantha|victoria/i.test(v.name);})||voices.find(function(v){return v.lang.startsWith('en');})||voices[0];
 }
 
 function toggleVoiceMode(){
@@ -1500,7 +1276,7 @@ function toggleVoiceMode(){
     btn.classList.add('voice-mode-active');
     lbl.style.color='#00C2B2';lbl.textContent='ON';
     setVoiceStatus('Tap mic to talk to Mike','');
-    var greetings={en:"hey, Mike here. what's going on?",es:"hey, soy Mike. ¿qué pasa?",zh:"嗨，我是Mike，什么问题？",vi:"hey, Mike đây. vấn đề gì vậy?",fr:"hey, c'est Mike. c'est quoi le problème?",pt:"hey, aqui é o Mike. qual é o problema?"};
+    var greetings={en:"Mike here. What are you working on?",es:"Mike aquí. ¿En qué puedo ayudarte?",zh:"我是Mike，有什么需要帮忙的？",vi:"Mike đây. Tôi có thể giúp gì?",fr:"C'est Mike. Sur quoi travaillez-vous?",pt:"Mike aqui. Em que posso ajudar?"};
     setTimeout(function(){if(voiceMode)mikeSay(greetings[currentLang]||greetings.en);},400);
   }else{
     voiceMode=false;
@@ -1515,65 +1291,27 @@ function toggleVoiceMode(){
   }
 }
 
-var audioUnlocked=false;
-var sharedAudioCtx=null;
-
-function unlockAudio(){
-  if(audioUnlocked)return;
-  audioUnlocked=true;
-  try{
-    var AudioCtx=window.AudioContext||window.webkitAudioContext;
-    if(!AudioCtx)return;
-    sharedAudioCtx=new AudioCtx();
-    // iOS requires a sound to be played during the gesture to fully unlock
-    var buf=sharedAudioCtx.createBuffer(1,1,22050);
-    var src=sharedAudioCtx.createBufferSource();
-    src.buffer=buf;
-    src.connect(sharedAudioCtx.destination);
-    src.start(0);
-    // Resume in case it starts suspended
-    if(sharedAudioCtx.state==='suspended'){
-      sharedAudioCtx.resume();
-    }
-  }catch(e){sharedAudioCtx=null;}
-}
-
 function mikeSay(text){
   if(!voiceMode)return;
   stopMikeSpeaking();stopListening();
-  var clean=text
-    .replace(/<[^>]+>/g,' ')
-    .replace(/\n\n/g,'. ')
-    .replace(/\n/g,' ')
-    .replace(/[▸▼▲→–—*#_]/g,' ')
-    .replace(/  +/g,' ')
-    .trim()
-    .substring(0,800);
+  var clean=text.replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→]/g,'').replace(/  +/g,' ').trim().substring(0,400);
   if(!clean)return;
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
   isMikeSpeaking=true;
   if(micBtn){micBtn.classList.add('mic-speaking');micBtn.textContent='🔊';}
   if(stopBtn)stopBtn.style.display='flex';
   setVoiceStatus('Mike is talking…','');
-
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})})
-    .then(function(res){
-      if(!res.ok)throw new Error('TTS '+res.status);
-      return res.arrayBuffer();
-    })
+    .then(function(res){if(!res.ok)throw new Error('TTS '+res.status);return res.arrayBuffer();})
     .then(function(arrayBuf){
-      if(!arrayBuf||arrayBuf.byteLength<1000){
-        // ElevenLabs returned empty/bad response — fall back
-        mikeSayBrowser(clean);return;
-      }
+      if(!arrayBuf||arrayBuf.byteLength<1000){mikeSayBrowser(clean);return;}
       var AudioCtx=window.AudioContext||window.webkitAudioContext;
       if(!AudioCtx){mikeSayBrowser(clean);return;}
       var ctx=sharedAudioCtx||(sharedAudioCtx=new AudioCtx());
-      var playAudio=function(){
+      var play=function(){
         ctx.decodeAudioData(arrayBuf.slice(0),function(decoded){
           var src=ctx.createBufferSource();
-          src.buffer=decoded;
-          src.connect(ctx.destination);
+          src.buffer=decoded;src.connect(ctx.destination);
           src.onended=function(){
             isMikeSpeaking=false;
             if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
@@ -1583,21 +1321,40 @@ function mikeSay(text){
           };
           src.start(0);
           mikeAudio={pause:function(){try{src.stop();}catch(e){}},currentTime:0};
-        },function(err){
-          // decodeAudioData failed — use browser TTS
-          mikeSayBrowser(clean);
-        });
+        },function(){mikeSayBrowser(clean);});
       };
-      if(ctx.state==='suspended'){
-        ctx.resume().then(playAudio).catch(function(){mikeSayBrowser(clean);});
-      } else {
-        playAudio();
-      }
+      if(ctx.state==='suspended'){ctx.resume().then(play).catch(function(){mikeSayBrowser(clean);});}
+      else play();
     })
-    .catch(function(e){
-      // ElevenLabs unreachable — use browser TTS
-      mikeSayBrowser(clean);
-    });
+    .catch(function(){mikeSayBrowser(clean);});
+}
+
+function mikeSayBrowser(clean){
+  if(!window.speechSynthesis||!clean)return;
+  var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
+  window.speechSynthesis.cancel();
+  var sentences=clean.match(/[^.!?]+[.!?]+/g)||[clean];
+  var chunks=[],i;
+  for(i=0;i<sentences.length;i+=2){var c=sentences.slice(i,i+2).join(' ').trim();if(c)chunks.push(c);}
+  if(!chunks.length)chunks=[clean];
+  var idx=0;
+  function next(){
+    if(idx>=chunks.length||!isMikeSpeaking){
+      isMikeSpeaking=false;
+      if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
+      if(stopBtn)stopBtn.style.display='none';
+      if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,400);
+      else setVoiceStatus('Tap mic to reply','');
+      return;
+    }
+    var utt=new SpeechSynthesisUtterance(chunks[idx]);
+    if(mikeVoice)utt.voice=mikeVoice;
+    utt.rate=1.0;utt.pitch=0.88;utt.volume=1;
+    utt.onend=function(){idx++;next();};
+    utt.onerror=function(){isMikeSpeaking=false;if(micBtn)micBtn.classList.remove('mic-speaking');};
+    window.speechSynthesis.speak(utt);
+  }
+  next();
 }
 
 function stopMikeSpeaking(){
@@ -1718,7 +1475,7 @@ async function runRevenue(){
       var mime=revenueMediaFile.type||"image/jpeg",b64=await blobToBase64(revenueMediaFile);
       messages=[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:ctx+"\n\nAnalyze this HVAC system photo. Return JSON only."}]}];
     }else{messages=[{role:"user",content:ctx}];}
-    var raw=await callAI(SYSTEM,messages,2048),parsed=parseJSON(raw);
+    var raw=await callAI(SYSTEM,messages,900),parsed=parseJSON(raw);
     if(parsed)showRevenueResults(parsed);else throw new Error("Could not parse response");
   }catch(e){alert("Revenue builder failed: "+e.message);}
   finally{btn.disabled=false;btn.innerHTML="💰 Build Revenue Recommendations";}
@@ -1748,7 +1505,7 @@ async function runMaintenancePitch(){
   try{
     var SYSTEM="You are a master HVAC sales trainer. Write conversational, natural-sounding scripts that feel helpful — not pushy. Honest, benefit-focused, easy to deliver on the doorstep.";
     var prompt="Create a customized maintenance agreement pitch script:\n\nSystem: "+(sysType||"Unknown")+" | Brand: "+(brand||"Unknown")+" | Age: "+(sysAge||"Unknown")+"\nLast Service: "+(lastSvc||"Unknown")+"\nHomeowner Situation: "+(selectedMaintConcerns.length?selectedMaintConcerns.join(", "):"Not specified")+"\nWhat I Found Today: "+(findings||"Standard service call")+"\nPlan Price: "+(price||"Not specified")+" | Visits: "+(visits||"Not specified")+"\n\nWrite a complete pitch script with sections: THE OPENING LINE, THE PITCH, IF THEY SAY I NEED TO THINK ABOUT IT, IF THEY SAY THAT SEEMS EXPENSIVE, THE CLOSE, KEY BENEFITS TO EMPHASIZE";
-    var result=await callAI(SYSTEM,[{role:"user",content:prompt}],2048);
+    var result=await callAI(SYSTEM,[{role:"user",content:prompt}],900);
     document.getElementById("maintScriptText").innerHTML=result.replace(/\n/g,"<br/>");
     document.getElementById("maintResult").style.display="block";
     document.getElementById("maintResult").scrollIntoView({behavior:"smooth",block:"start"});

@@ -44,6 +44,17 @@ body{background:var(--bg);font-family:var(--font);color:var(--black);min-height:
 @keyframes typing-bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
 @keyframes micPulse{0%,100%{box-shadow:0 4px 20px rgba(0,194,178,.4),0 0 0 0 rgba(0,194,178,.4)}50%{box-shadow:0 4px 20px rgba(0,194,178,.4),0 0 0 16px rgba(0,194,178,0)}}
 @keyframes speakPulse{0%,100%{box-shadow:0 4px 20px rgba(232,53,74,.4),0 0 0 0 rgba(232,53,74,.4)}50%{box-shadow:0 4px 20px rgba(232,53,74,.4),0 0 0 16px rgba(232,53,74,0)}}
+/* Camera overlay cross-browser */
+#liveCameraOverlay{-webkit-user-select:none;user-select:none;}
+#liveCameraFeed{-webkit-transform:translateZ(0);transform:translateZ(0);}
+/* Fallback for devices without backdrop-filter */
+@supports not (backdrop-filter:blur(1px)){
+  #liveCameraOverlay .cam-glass{background:rgba(0,0,0,.85)!important;}
+}
+/* Android Chrome button tap fix */
+#liveCameraOverlay button{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+/* Prevent pull-to-refresh in camera mode */
+#liveCameraOverlay{overscroll-behavior:none;touch-action:none;}
 #panelHome,#panelDiag,#panelRefrig,#panelRevenue,#panelMaint,#proTabs{animation:none!important;}
 .fu{animation:fadeUp .35s cubic-bezier(.16,1,.3,1) both;}
 .fi{animation:fadeIn .25s ease both;}
@@ -320,16 +331,14 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
       </div>
       <p style="font-size:10px;color:#444;margin-top:6px;">Hands-free — Mike listens automatically · Tap Voice button to end</p>
     </div>
-    <!-- FACETIME AI COMING SOON -->
+    <!-- LIVE CAMERA DIAGNOSTICS -->
     <div style="background:linear-gradient(135deg,#0a0a0a 0%,#0d1a2e 100%);border-left:1px solid #333;border-right:1px solid #333;border-bottom:1px solid #1a2a3a;padding:10px 16px;display:flex;align-items:center;gap:12px;">
-      <div style="width:36px;height:36px;background:rgba(0,194,178,.15);border:1px solid rgba(0,194,178,.3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📱</div>
+      <div style="width:36px;height:36px;background:rgba(0,194,178,.15);border:1px solid rgba(0,194,178,.3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📷</div>
       <div style="flex:1;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
-          <span style="font-size:13px;font-weight:700;color:#fff;">Live Camera Diagnostics</span>
-          <span style="font-size:9px;font-weight:700;background:rgba(0,194,178,.2);color:#00C2B2;border:1px solid rgba(0,194,178,.3);border-radius:4px;padding:2px 7px;letter-spacing:.5px;text-transform:uppercase;">Coming Soon</span>
-        </div>
-        <div style="font-size:11px;color:rgba(255,255,255,.4);line-height:1.4;">Point your camera at any unit — Mike sees it in real time and walks you through the diagnosis live.</div>
+        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:2px;">Live Camera Diagnostics</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.4);line-height:1.4;">Point your camera — Mike sees it live and diagnoses in real time</div>
       </div>
+      <button onclick="startLiveCamera()" style="background:#00C2B2;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(0,194,178,.4);">▶ Start</button>
     </div>
     <!-- QUICK CHIPS -->
     <div style="background:#F5F6FA;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;border-top:1px solid #E2E4ED;padding:8px 12px;">
@@ -520,6 +529,80 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
     <p style="font-size:14px;color:#6B7190;margin-bottom:6px;">Homeowner $9.99/mo · Contractor Pro $29.99/mo</p>
     <p style="font-size:11px;color:#9499B0;line-height:1.6;max-width:400px;margin:0 auto;">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician.</p>
   </div>
+<!-- LIVE CAMERA OVERLAY — Premium Quality -->
+<div id="liveCameraOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9998;flex-direction:column;font-family:'Plus Jakarta Sans',-apple-system,sans-serif;">
+
+  <!-- Full-screen camera feed -->
+  <video id="liveCameraFeed" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"></video>
+
+  <!-- Top gradient -->
+  <div style="position:absolute;top:0;left:0;right:0;height:180px;background:linear-gradient(to bottom,rgba(0,0,0,.8) 0%,transparent 100%);pointer-events:none;z-index:1;"></div>
+  <!-- Bottom gradient -->
+  <div style="position:absolute;bottom:0;left:0;right:0;height:280px;background:linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%);pointer-events:none;z-index:1;"></div>
+
+  <!-- TOP BAR -->
+  <div style="position:absolute;top:0;left:0;right:0;padding:env(safe-area-inset-top,16px) 20px 0;padding-top:max(env(safe-area-inset-top),16px);z-index:3;display:flex;align-items:center;justify-content:space-between;">
+    <!-- Live indicator -->
+    <div style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.15);border-radius:99px;padding:6px 14px;" class="cam-glass">
+      <div id="cameraRecDot" style="width:8px;height:8px;border-radius:50%;background:#E8354A;box-shadow:0 0 8px rgba(232,53,74,.8);animation:pulse 1.4s ease infinite;flex-shrink:0;"></div>
+      <span style="font-size:12px;font-weight:700;color:#fff;letter-spacing:.3px;">LIVE</span>
+    </div>
+    <!-- Mike status -->
+    <div style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(0,194,178,.3);border-radius:99px;padding:6px 14px;" class="cam-glass">
+      <div style="width:8px;height:8px;border-radius:50%;background:#00C2B2;box-shadow:0 0 8px rgba(0,194,178,.8);flex-shrink:0;"></div>
+      <span style="font-size:12px;font-weight:700;color:#00C2B2;">Mike Online</span>
+    </div>
+    <!-- Close -->
+    <button onclick="stopLiveCamera()" style="width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.2);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;line-height:1;">✕</button>
+  </div>
+
+  <!-- MIKE RESPONSE CARD — center of screen -->
+  <div style="position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);padding:0 16px;z-index:3;pointer-events:none;">
+    <div id="cameraResponseBubble" style="background:rgba(0,0,0,.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:16px 18px;max-height:160px;overflow-y:auto;opacity:0;transition:opacity .3s ease;pointer-events:auto;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="width:32px;height:32px;background:linear-gradient(135deg,#00C2B2,#0096A0);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,194,178,.4);">🧑‍🔧</div>
+        <div>
+          <div style="font-size:12px;font-weight:800;color:#00C2B2;letter-spacing:.5px;">MIKE</div>
+          <div id="cameraAnalyzing" style="display:none;font-size:10px;color:rgba(255,255,255,.5);" class="pulsing">Analyzing frame…</div>
+        </div>
+      </div>
+      <p id="cameraResponseText" style="font-size:15px;color:#fff;line-height:1.65;margin:0;font-weight:400;">Point your camera at the unit — I can see everything in real time.</p>
+    </div>
+  </div>
+
+  <!-- BOTTOM CONTROLS -->
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:0 24px;padding-bottom:max(env(safe-area-inset-bottom),32px);z-index:3;">
+
+    <!-- Transcript -->
+    <div id="cameraTranscript" style="text-align:center;font-size:14px;color:rgba(255,255,255,.7);min-height:22px;margin-bottom:20px;font-weight:500;text-shadow:0 1px 4px rgba(0,0,0,.8);"></div>
+
+    <!-- Main controls row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;max-width:320px;margin:0 auto;">
+
+      <!-- Flip camera -->
+      <button onclick="flipCamera()" style="width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;-webkit-tap-highlight-color:transparent;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+      </button>
+
+      <!-- Main mic button — large center -->
+      <button id="cameraMicBtn" onclick="toggleCameraMic()" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#00C2B2,#0096A0);border:none;color:#fff;font-size:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(0,194,178,.6),0 0 0 0 rgba(0,194,178,.3);transition:all .2s;-webkit-tap-highlight-color:transparent;">🎙️</button>
+
+      <!-- Snap & analyze -->
+      <button onclick="snapAndAnalyze()" style="width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;-webkit-tap-highlight-color:transparent;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </button>
+    </div>
+
+    <!-- Labels -->
+    <div style="display:flex;justify-content:space-between;max-width:320px;margin:10px auto 0;padding:0 6px;">
+      <span style="font-size:10px;color:rgba(255,255,255,.4);font-weight:600;text-align:center;width:58px;">FLIP</span>
+      <span style="font-size:10px;color:rgba(255,255,255,.4);font-weight:600;text-align:center;width:80px;">TALK TO MIKE</span>
+      <span style="font-size:10px;color:rgba(255,255,255,.4);font-weight:600;text-align:center;width:58px;">ANALYZE</span>
+    </div>
+  </div>
+</div>
+<!-- Hidden canvas for frame capture -->
+<canvas id="liveCameraCanvas" style="display:none;"></canvas>
 </div>
 <script>
 var SYS_TYPES=["Air Conditioner – Split System","Air Conditioner – Package Unit","AC Condenser (Outdoor Unit Only)","Heat Pump Condenser (Outdoor Unit Only)","Heat Pump – Split System","Heat Pump – Package Unit","Heat Pump – Dual Fuel","Air Handler – Electric","Air Handler – with Electric Heat Strip","Gas Furnace","Electric Furnace","Oil Furnace","Mini-Split – Single Zone","Mini-Split – Multi Zone","Package Unit – Gas/Electric","Package Unit – Electric","Boiler – Hot Water","Boiler – Steam","Geothermal Heat Pump","VRF / VRV System","PTAC / PTHP","Window AC","Radiant / In-Floor Heat"];
@@ -1179,6 +1262,8 @@ async function sendChat(){
     var userHtml=(text?'<p style="margin-bottom:8px;">'+text+'</p>':'')
       +'<img src="'+previewUrl+'" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;cursor:pointer;" onclick="openImgOverlay(\''+previewUrl+'\')" />';
     appendMessage('user',userHtml);
+    // Revoke after render to free memory
+    setTimeout(function(){URL.revokeObjectURL(previewUrl);},5000);
   } else {
     appendMessage('user',text||'📷 Attachment sent');
   }
@@ -1224,7 +1309,7 @@ async function sendChat(){
 function sendQuick(text){document.getElementById('chatInput').value=text;sendChat();}
 
 function needsDiagram(text){
-  return !!(text&&text.match(/wir|diagram|connect|hook up|schematic|install|sequence|flow|pressure|charge|superheat|subcooling|step.*step|how to|procedure|walk me/i));
+  return !!(text&&text.match(/wir|diagram|connect|hook up|schematic|install|sequence|flow|pressure|charge|superheat|subcooling|step.?by.?step|how to|procedure|walk me|show me|draw|circuit|layout|map out|heat pump|furnace sequence|refriger|gauges|manifold/i));
 }
 
 async function generateAndShowDiagram(userText,mikeResponse){
@@ -1273,21 +1358,35 @@ async function verifyUrl(url){
 }
 
 async function fetchAndShowImage(query){
+  if(!query)return;
   try{
-    if(!query)return;
-    // Ask Mike (with web search) to find a real working image URL
-    var result=await callAI(
-      'You have web search. Find a real working direct image URL (.jpg, .png, .gif, or .webp) for this HVAC topic. Search manufacturer sites, HVAC training resources, or Wikipedia. Return ONLY the direct image URL with no other text. If you cannot find one, return NONE.',
-      [{role:'user',content:'Find a working direct image URL for: '+query+' HVAC'}],
-      100,
-      true
+    // Step 1: Search Wikipedia for the topic
+    var searchRes=await fetch(
+      'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch='
+      +encodeURIComponent(query)
+      +'&format=json&origin=*&srlimit=3&srnamespace=0'
     );
-    if(!result||result.trim()==='NONE')return;
-    // Extract clean URL
-    var match=result.match(/https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|gif|webp)(?:\?[^\s"'<>]*)?/i);
-    if(!match)return;
-    var url=match[0];
-    showImageInChat(url,query);
+    if(!searchRes.ok)return;
+    var searchData=await searchRes.json();
+    var results=searchData.query&&searchData.query.search;
+    if(!results||!results.length)return;
+    // Step 2: Try each result until we get one with an image
+    for(var i=0;i<results.length;i++){
+      var title=results[i].title;
+      var summaryRes=await fetch(
+        'https://en.wikipedia.org/api/rest_v1/page/summary/'
+        +encodeURIComponent(title)
+      );
+      if(!summaryRes.ok)continue;
+      var summaryData=await summaryRes.json();
+      var url=summaryData.thumbnail&&summaryData.thumbnail.source;
+      if(url){
+        // Use the original image instead of thumbnail for better quality
+        var origUrl=url.replace(/\/\d+px-/,'/400px-');
+        showImageInChat(origUrl,query);
+        return;
+      }
+    }
   }catch(e){}
 }
 
@@ -1363,15 +1462,9 @@ function toggleVoiceMode(){
 function mikeSay(text){
   if(!voiceMode)return;
   stopMikeSpeaking();
-  // Stop listening but KEEP autoListenAfterSpeak — don't call stopListening() which resets it
-  if(speechRecognition){
-    try{speechRecognition.abort();}catch(e){}
-    speechRecognition.onresult=null;speechRecognition.onend=null;speechRecognition.onerror=null;speechRecognition=null;
-  }
-  isListening=false;
-  var micBtn2=document.getElementById('micBtn');
-  if(micBtn2)micBtn2.classList.remove('mic-listening');
-  // autoListenAfterSpeak stays TRUE so it auto-listens after Mike speaks
+  // Keep the mic running while Mike speaks so interrupt words can be heard
+  // Just clear the input field so previous text doesn't get sent
+  document.getElementById('chatInput').value='';
   var clean=text.replace(/https?:\/\/[^\s)>\]]+/g,'').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim().substring(0,5000);
   if(!clean)return;
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
@@ -1466,32 +1559,32 @@ var isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 function startListening(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){setVoiceStatus('Voice not supported — use Chrome','');return;}
-  if(isMikeSpeaking)return;
+  // DO NOT block when Mike is speaking — we need to hear interrupt words
   stopListening();
-  // Safari needs a small delay after stopping before restarting
   setTimeout(function(){
     try{
       speechRecognition=new SR();
       speechRecognition.continuous=false;
-      speechRecognition.interimResults=!isSafari; // Safari has issues with interimResults
+      speechRecognition.interimResults=!isSafari;
       speechRecognition.lang=currentLang==='es'?'es-MX':currentLang==='zh'?'zh-CN':currentLang==='vi'?'vi-VN':currentLang==='fr'?'fr-FR':currentLang==='pt'?'pt-BR':'en-US';
       var micBtn=document.getElementById('micBtn');
-      if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🔴';}
+      if(micBtn&&!isMikeSpeaking){micBtn.classList.add('mic-listening');micBtn.textContent='🔴';}
       isListening=true;
-      setVoiceStatus('Listening…','Go ahead…');
+      if(!isMikeSpeaking)setVoiceStatus('Listening…','Go ahead…');
       speechRecognition.onresult=function(e){
         var transcript='';
         for(var i=e.resultIndex;i<e.results.length;i++)transcript+=e.results[i][0].transcript;
-        if(!isSafari)setVoiceStatus('Listening…',transcript);
-        // Interrupt detection — if tech says stop/wait/hold on while Mike is talking
-        var interruptWords=/\b(stop|wait|hold on|hey mike|pause|never mind|found it|i found|got it)\b/i;
+        if(!isSafari&&!isMikeSpeaking)setVoiceStatus('Listening…',transcript);
+        // Interrupt detection — heard WHILE Mike is talking
+        var interruptWords=/\b(stop|wait|hold on|hey mike|pause|never mind|found it|i found|got it|go back|keep going|continue)\b/i;
         if(isMikeSpeaking&&interruptWords.test(transcript)){
           stopMikeSpeaking();
           setVoiceStatus('Listening…','Go ahead…');
+          return; // Don't send the interrupt word as a message
         }
         if(e.results[e.results.length-1].isFinal){
           document.getElementById('chatInput').value=transcript;
-          if(isSafari){setVoiceStatus('Got it — sending…',transcript);}
+          if(isSafari)setVoiceStatus('Got it…',transcript);
         }
       };
       speechRecognition.onend=function(){
@@ -1548,6 +1641,253 @@ function stopListening(){
 function setVoiceStatus(status,transcript){
   var el=document.getElementById('voiceStatusText'),tr=document.getElementById('voiceTranscript');
   if(el)el.textContent=status;if(tr)tr.textContent=transcript||'';
+}
+
+
+// ─── LIVE CAMERA DIAGNOSTICS ───
+var cameraStream=null,cameraFacing='environment',cameraAnalysisInterval=null;
+var cameraListening=false,cameraSpeechRec=null,cameraActive=false;
+var lastCameraAnalysis=0,cameraAnalysisLock=false;
+
+async function startLiveCamera(){
+  unlockAudio();
+  var overlay=document.getElementById('liveCameraOverlay');
+  overlay.style.display='flex';
+  cameraActive=true;
+  await startCameraStream();
+  // Start auto-analysis loop every 5 seconds
+  cameraAnalysisInterval=setInterval(function(){
+    if(cameraActive&&!cameraAnalysisLock&&!isMikeSpeaking){
+      var now=Date.now();
+      if(now-lastCameraAnalysis>5000)analyzeCameraFrame(false);
+    }
+  },5000);
+  // Start listening
+  setTimeout(function(){startCameraListen();},1500);
+  // Mike greets
+  setTimeout(function(){
+    setCameraResponse("Point your camera at the unit. I can see everything — the nameplate, connections, components. Tell me what's going on or I'll start analyzing what I see.");
+    if(voiceMode||true)mikeSayCamera("Point your camera at the unit. I can see everything. Tell me what's going on or I'll start analyzing.");
+  },800);
+}
+
+async function startCameraStream(){
+  try{
+    if(cameraStream){cameraStream.getTracks().forEach(function(t){t.stop();});}
+    // Try HD first, fall back to any camera if it fails
+    var stream;
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({
+        video:{facingMode:cameraFacing,width:{ideal:1280},height:{ideal:720}},
+        audio:false
+      });
+    }catch(hdErr){
+      // HD failed — try basic camera (works on all Android devices)
+      stream=await navigator.mediaDevices.getUserMedia({
+        video:{facingMode:cameraFacing},
+        audio:false
+      });
+    }
+    cameraStream=stream;
+    var vid=document.getElementById('liveCameraFeed');
+    vid.srcObject=stream;
+    await vid.play().catch(function(){vid.muted=true;return vid.play();});
+  }catch(e){
+    alert('Camera access needed. Please allow camera permission in your browser settings and try again.');
+    stopLiveCamera();
+  }
+}
+
+function stopLiveCamera(){
+  cameraActive=false;
+  if(cameraAnalysisInterval){clearInterval(cameraAnalysisInterval);cameraAnalysisInterval=null;}
+  if(cameraStream){cameraStream.getTracks().forEach(function(t){t.stop();});cameraStream=null;}
+  stopCameraListen();
+  stopMikeSpeaking();
+  document.getElementById('liveCameraOverlay').style.display='none';
+  // Reset mic btn
+  var btn=document.getElementById('cameraMicBtn');
+  if(btn){btn.textContent='🎙️';btn.style.background='#00C2B2';}
+}
+
+async function flipCamera(){
+  cameraFacing=cameraFacing==='environment'?'user':'environment';
+  await startCameraStream();
+}
+
+function captureFrame(){
+  var vid=document.getElementById('liveCameraFeed');
+  var canvas=document.getElementById('liveCameraCanvas');
+  if(!vid||!canvas||!vid.videoWidth)return null;
+  canvas.width=vid.videoWidth;canvas.height=vid.videoHeight;
+  canvas.getContext('2d').drawImage(vid,0,0);
+  return canvas.toDataURL('image/jpeg',0.75).split(',')[1];
+}
+
+async function analyzeCameraFrame(userInitiated,userText){
+  if(cameraAnalysisLock||!cameraActive)return;
+  cameraAnalysisLock=true;
+  lastCameraAnalysis=Date.now();
+  var frame=captureFrame();
+  if(!frame){cameraAnalysisLock=false;return;}
+  document.getElementById('cameraAnalyzing').style.display='inline';
+  try{
+    var langNote=LANG_MIKE[currentLang]||LANG_MIKE.en;
+    var sysPrompt=AGENT_SYSTEM
+      +'\n\nLANGUAGE: '+langNote
+      +buildKnowledgeContext()
+      +'\n\nYou are on a LIVE CAMERA SESSION with a tech in the field. You can see their camera feed in real time. Identify the unit, brand, model, condition, any visible issues, incorrect wiring, installation problems, or safety hazards. If you see a part: identify it, read part numbers, search for pricing. You have full web search, parts lookup, revenue coaching, objection handling, and all your regular capabilities. Keep auto-analysis to 2-3 sentences. For direct questions: answer fully.';
+    var userMsg=userText||'What do you see? Analyze this.';
+    var needsSearch=!!(userText&&userText.match(/warrant|recall|price|cost|part|parts|supplier|where to buy|how much|availability|spec|manual|error code|fault code|model|serial|refrigerant|phase.?out|regulation|grainger|johnstone|carrier|trane|lennox|goodman|rheem|york|daikin|local|near me|supply house|capacitor|contactor|motor|valve|board|sensor|compressor/i));
+    var messages=chatHistory.slice(-4).concat([{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:frame}},{type:'text',text:userMsg}]}]);
+    var maxTok=userInitiated?1500:300;
+    var response=await callAI(sysPrompt,messages,maxTok,needsSearch);
+    document.getElementById('cameraAnalyzing').style.display='none';
+    setCameraResponse(response);
+    mikeSayCamera(response);
+    chatHistory.push({role:'user',content:userMsg});
+    chatHistory.push({role:'assistant',content:response});
+    if(chatHistory.length>10)chatHistory=chatHistory.slice(-10);
+    appendMessage('agent','📷 '+response);
+    if(userInitiated&&userText&&needsDiagram(userText))generateAndShowDiagram(userText,response);
+  }catch(e){
+    document.getElementById('cameraAnalyzing').style.display='none';
+    setCameraResponse('Having trouble — tap 📸 to freeze and analyze.');
+  }finally{
+    cameraAnalysisLock=false;
+  }
+}
+
+
+function setCameraResponse(text){
+  var bubble=document.getElementById('cameraResponseBubble');
+  var el=document.getElementById('cameraResponseText');
+  if(!el||!bubble)return;
+  el.textContent=text;
+  // Fade in
+  bubble.style.opacity='0';
+  bubble.style.display='block';
+  requestAnimationFrame(function(){
+    bubble.style.transition='opacity .3s ease';
+    bubble.style.opacity='1';
+  });
+}
+
+function updateCameraMicState(state){
+  var btn=document.getElementById('cameraMicBtn');
+  if(!btn)return;
+  if(state==='listening'){
+    btn.style.background='linear-gradient(135deg,#E8354A,#c41e3a)';
+    btn.style.boxShadow='0 4px 24px rgba(232,53,74,.6),0 0 0 8px rgba(232,53,74,.2)';
+    btn.textContent='🔴';
+  } else if(state==='speaking'){
+    btn.style.background='linear-gradient(135deg,#F59E0B,#d97706)';
+    btn.style.boxShadow='0 4px 24px rgba(245,158,11,.6),0 0 0 8px rgba(245,158,11,.2)';
+    btn.textContent='🔊';
+  } else {
+    btn.style.background='linear-gradient(135deg,#00C2B2,#0096A0)';
+    btn.style.boxShadow='0 4px 24px rgba(0,194,178,.6),0 0 0 0 rgba(0,194,178,.3)';
+    btn.textContent='🎙️';
+  }
+}
+
+function mikeSayCamera(text){
+  var clean=text.replace(/https?:\/\/[^\s]+/g,'').replace(/<[^>]+>/g,' ').replace(/\n/g,' ').replace(/  +/g,' ').trim().substring(0,600);
+  if(!clean)return;
+  isMikeSpeaking=true;
+  updateCameraMicState('speaking');
+  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})})
+    .then(function(r){if(!r.ok)throw new Error('tts');return r.arrayBuffer();})
+    .then(function(buf){
+      if(!buf||buf.byteLength<500){mikeSayBrowser(clean);return;}
+      var AudioCtx=window.AudioContext||window.webkitAudioContext;
+      if(!AudioCtx){mikeSayBrowser(clean);return;}
+      var ctx=sharedAudioCtx||(sharedAudioCtx=new AudioCtx());
+      var play=function(){
+        ctx.decodeAudioData(buf.slice(0),function(decoded){
+          var src=ctx.createBufferSource();
+          src.buffer=decoded;src.connect(ctx.destination);
+          src.onended=function(){
+            isMikeSpeaking=false;
+            updateCameraMicState('idle');
+            if(cameraActive)setTimeout(startCameraListen,400);
+          };
+          src.start(0);
+          mikeAudio={pause:function(){try{src.stop();}catch(e){}},currentTime:0};
+        },function(){mikeSayBrowser(clean);});
+      };
+      if(ctx.state==='suspended'){ctx.resume().then(play).catch(function(){mikeSayBrowser(clean);});}
+      else play();
+    })
+    .catch(function(){
+      isMikeSpeaking=false;
+      updateCameraMicState('idle');
+      mikeSayBrowser(clean);
+    });
+}
+
+function snapAndAnalyze(){
+  // Freeze and immediately analyze current frame
+  stopCameraListen();
+  stopMikeSpeaking();
+  setCameraResponse('Analyzing this frame…');
+  analyzeCameraFrame(true);
+}
+
+function toggleCameraMic(){
+  if(isMikeSpeaking){stopMikeSpeaking();return;}
+  if(cameraListening){stopCameraListen();return;}
+  startCameraListen();
+}
+
+function startCameraListen(){
+  if(!cameraActive||isMikeSpeaking)return;
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR)return;
+  stopCameraListen();
+  cameraSpeechRec=new SR();
+  cameraSpeechRec.continuous=false;
+  cameraSpeechRec.interimResults=!isSafari;
+  cameraSpeechRec.lang='en-US';
+  cameraListening=true;
+  updateCameraMicState('listening');
+  document.getElementById('cameraTranscript').textContent='Listening…';
+  cameraSpeechRec.onresult=function(e){
+    var t='';for(var i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;
+    document.getElementById('cameraTranscript').textContent=t;
+    if(isMikeSpeaking&&/\b(stop|wait|hold on|hey mike|pause|found it)\b/i.test(t)){
+      stopMikeSpeaking();updateCameraMicState('idle');
+    }
+    if(e.results[e.results.length-1].isFinal&&t.trim()){
+      document.getElementById('cameraTranscript').textContent='';
+      analyzeCameraFrame(true,t.trim());
+    }
+  };
+  cameraSpeechRec.onend=function(){
+    cameraListening=false;
+    updateCameraMicState('idle');
+    if(cameraActive&&!isMikeSpeaking){
+      setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},isSafari?1200:600);
+    }
+  };
+  cameraSpeechRec.onerror=function(ev){
+    cameraListening=false;
+    updateCameraMicState('idle');
+    if((ev.error==='no-speech'||ev.error==='aborted')&&cameraActive){
+      setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},isSafari?1200:600);
+    }
+  };
+  try{cameraSpeechRec.start();}catch(e){cameraListening=false;updateCameraMicState('idle');}
+}
+
+function stopCameraListen(){
+  cameraListening=false;
+  if(cameraSpeechRec){
+    try{cameraSpeechRec.abort();}catch(e){}
+    cameraSpeechRec.onresult=null;cameraSpeechRec.onend=null;cameraSpeechRec.onerror=null;
+    cameraSpeechRec=null;
+  }
+  updateCameraMicState('idle');
 }
 
 

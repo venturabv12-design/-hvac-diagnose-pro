@@ -1305,7 +1305,7 @@ function mikeSay(text){
   var micBtn2=document.getElementById('micBtn');
   if(micBtn2)micBtn2.classList.remove('mic-listening');
   // autoListenAfterSpeak stays TRUE so it auto-listens after Mike speaks
-  var clean=text.replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim().substring(0,700);
+  var clean=text.replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim().substring(0,5000);
   if(!clean)return;
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
   isMikeSpeaking=true;

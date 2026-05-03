@@ -327,7 +327,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
           <div id="voiceTranscript" style="font-size:12px;color:#9499B0;min-height:14px;line-height:1.4;"></div>
         </div>
         <button id="micBtn" onclick="toggleMic()" style="width:40px;height:40px;border-radius:50%;background:#00C2B2;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;transition:all .2s;">🎙️</button>
-        <button id="stopSpeakBtn" onclick="stopMikeSpeaking()" style="display:none;width:36px;height:36px;border-radius:50%;background:#333;border:none;cursor:pointer;font-size:16px;flex-shrink:0;">⏹️</button>
+        <button id="stopSpeakBtn" onclick="stopMikeSpeaking()" style="display:none;width:36px;height:36px;border-radius:50%;background:#E8354A;border:none;cursor:pointer;font-size:16px;flex-shrink:0;box-shadow:0 2px 8px rgba(232,53,74,.4);">⏹️</button>
       </div>
       <p style="font-size:10px;color:#444;margin-top:6px;">Hands-free — Mike listens automatically · Tap Voice button to end</p>
     </div>
@@ -1462,8 +1462,8 @@ function toggleVoiceMode(){
 function mikeSay(text){
   if(!voiceMode)return;
   stopMikeSpeaking();
-  // Keep the mic running while Mike speaks so interrupt words can be heard
-  // Just clear the input field so previous text doesn't get sent
+  // STOP mic while Mike speaks — prevents echo/feedback loop
+  stopListening();
   document.getElementById('chatInput').value='';
   var clean=text.replace(/https?:\/\/[^\s)>\]]+/g,'').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim().substring(0,5000);
   if(!clean)return;
@@ -1474,17 +1474,11 @@ function mikeSay(text){
   setVoiceStatus('Mike is talking…','');
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})})
     .then(function(res){
-      if(!res.ok){
-        setVoiceStatus('Mike is talking… (browser)','');
-        throw new Error('TTS '+res.status);
-      }
+      if(!res.ok){setVoiceStatus('Mike is talking… (browser)','');throw new Error('TTS '+res.status);}
       return res.arrayBuffer();
     })
     .then(function(arrayBuf){
-      if(!arrayBuf||arrayBuf.byteLength<500){
-        setVoiceStatus('Mike is talking… (browser)','');
-        mikeSayBrowser(clean);return;
-      }
+      if(!arrayBuf||arrayBuf.byteLength<500){setVoiceStatus('Mike is talking… (browser)','');mikeSayBrowser(clean);return;}
       setVoiceStatus('Mike is talking…','');
       var AudioCtx=window.AudioContext||window.webkitAudioContext;
       if(!AudioCtx){mikeSayBrowser(clean);return;}
@@ -1497,8 +1491,13 @@ function mikeSay(text){
             isMikeSpeaking=false;
             if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
             if(stopBtn)stopBtn.style.display='none';
-            if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,400);
-            else setVoiceStatus('Tap mic to reply','');
+            if(voiceMode&&autoListenAfterSpeak){
+              // Natural pause after Mike finishes — like a real conversation
+              setVoiceStatus('Go ahead…','');
+              setTimeout(function(){if(voiceMode)startListening();},1200);
+            } else {
+              setVoiceStatus('Tap mic to reply','');
+            }
           };
           src.start(0);
           mikeAudio={pause:function(){try{src.stop();}catch(e){}},currentTime:0};
@@ -1509,6 +1508,7 @@ function mikeSay(text){
     })
     .catch(function(){mikeSayBrowser(clean);});
 }
+
 
 function mikeSayBrowser(clean){
   if(!window.speechSynthesis||!clean)return;
@@ -1524,8 +1524,7 @@ function mikeSayBrowser(clean){
       isMikeSpeaking=false;
       if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
       if(stopBtn)stopBtn.style.display='none';
-      if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,400);
-      else setVoiceStatus('Tap mic to reply','');
+      if(voiceMode&&autoListenAfterSpeak){setVoiceStatus('Go ahead…','');setTimeout(function(){if(voiceMode)startListening();},1200);}else setVoiceStatus('Tap mic to reply','');
       return;
     }
     var utt=new SpeechSynthesisUtterance(chunks[idx]);
@@ -1545,10 +1544,11 @@ function stopMikeSpeaking(){
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
   if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';micBtn.style.background='#00C2B2';}
   if(stopBtn)stopBtn.style.display='none';
-  // If in voice mode and was interrupted — start listening right away
+  // Wait 800ms after interrupting before listening — lets audio tail fade out
+  // so mic doesn't pick up the last echo of Mike's voice
   if(voiceMode&&!isListening){
-    setVoiceStatus('Listening…','Go ahead…');
-    setTimeout(function(){if(voiceMode&&!isListening)startListening();},isSafari?600:200);
+    setVoiceStatus('Go ahead…','');
+    setTimeout(function(){if(voiceMode&&!isListening)startListening();},800);
   }
 }
 
@@ -1559,29 +1559,24 @@ var isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 function startListening(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){setVoiceStatus('Voice not supported — use Chrome','');return;}
-  // DO NOT block when Mike is speaking — we need to hear interrupt words
+  // Never start mic while Mike is speaking - prevents echo
+  if(isMikeSpeaking)return;
   stopListening();
   setTimeout(function(){
+    if(isMikeSpeaking)return; // Check again after delay
     try{
       speechRecognition=new SR();
       speechRecognition.continuous=false;
       speechRecognition.interimResults=!isSafari;
       speechRecognition.lang=currentLang==='es'?'es-MX':currentLang==='zh'?'zh-CN':currentLang==='vi'?'vi-VN':currentLang==='fr'?'fr-FR':currentLang==='pt'?'pt-BR':'en-US';
       var micBtn=document.getElementById('micBtn');
-      if(micBtn&&!isMikeSpeaking){micBtn.classList.add('mic-listening');micBtn.textContent='🔴';}
+      if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🔴';}
       isListening=true;
-      if(!isMikeSpeaking)setVoiceStatus('Listening…','Go ahead…');
+      setVoiceStatus('Listening…','Go ahead…');
       speechRecognition.onresult=function(e){
         var transcript='';
         for(var i=e.resultIndex;i<e.results.length;i++)transcript+=e.results[i][0].transcript;
-        if(!isSafari&&!isMikeSpeaking)setVoiceStatus('Listening…',transcript);
-        // Interrupt detection — heard WHILE Mike is talking
-        var interruptWords=/\b(stop|wait|hold on|hey mike|pause|never mind|found it|i found|got it|go back|keep going|continue)\b/i;
-        if(isMikeSpeaking&&interruptWords.test(transcript)){
-          stopMikeSpeaking();
-          setVoiceStatus('Listening…','Go ahead…');
-          return; // Don't send the interrupt word as a message
-        }
+        if(!isSafari)setVoiceStatus('Listening…',transcript);
         if(e.results[e.results.length-1].isFinal){
           document.getElementById('chatInput').value=transcript;
           if(isSafari)setVoiceStatus('Got it…',transcript);
@@ -1596,7 +1591,7 @@ function startListening(){
           autoListenAfterSpeak=true;
           sendChat();
         } else if(voiceMode&&!isMikeSpeaking){
-          setVoiceStatus('Listening…','Go ahead…');
+          // No speech heard — wait then try again
           setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1200:800);
         }
       };
@@ -1607,7 +1602,6 @@ function startListening(){
           setVoiceStatus('Mic permission needed — check browser settings','');
           autoListenAfterSpeak=false;
         } else if(ev.error==='no-speech'||ev.error==='aborted'){
-          // Normal — auto-restart
           if(voiceMode&&!isMikeSpeaking){
             setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1000:500);
           }

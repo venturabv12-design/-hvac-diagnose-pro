@@ -305,22 +305,45 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
         <div style="font-size:11px;color:#00C2B2;font-weight:500;">● Online · EPA 608 · NATE Certified</div>
       </div>
       <button id="voiceModeBtn" onclick="toggleVoiceMode()" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 10px;cursor:pointer;transition:all .15s;">
-        <span style="font-size:16px;">🎙️</span>
-        <span id="voiceModeBtnLabel" style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.3px;">Voice</span>
+        <span style="font-size:16px;">📞</span>
+        <span id="voiceModeBtnLabel" style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.3px;">Call Mike</span>
       </button>
       <button onclick="clearChat()" style="background:rgba(255,255,255,.08);border:none;border-radius:6px;padding:6px 10px;color:rgba(255,255,255,.5);font-size:11px;font-family:var(--font);cursor:pointer;font-weight:600;">Clear</button>
     </div>
-    <!-- VOICE BAR -->
-    <div id="voiceModeBar" style="display:none;background:#0F0F0F;border-left:1px solid #333;border-right:1px solid #333;padding:12px 16px;text-align:center;">
-      <div style="display:flex;align-items:center;justify-content:center;gap:16px;">
-        <button id="micBtn" onclick="toggleMic()" style="width:64px;height:64px;border-radius:50%;background:#00C2B2;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 20px rgba(0,194,178,.4);transition:all .2s;">🎙️</button>
-        <div style="text-align:left;">
-          <div id="voiceStatusText" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">Tap mic to talk to Mike</div>
-          <div id="voiceTranscript" style="font-size:12px;color:#9499B0;max-width:200px;line-height:1.4;min-height:16px;"></div>
-        </div>
-        <button id="stopSpeakBtn" onclick="stopMikeSpeaking()" style="display:none;width:40px;height:40px;border-radius:50%;background:#333;border:none;cursor:pointer;font-size:18px;">⏹️</button>
+    <!-- PHONE CALL UI - Full screen overlay -->
+    <div id="voiceModeBar" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#0a0a0a;z-index:9999;flex-direction:column;align-items:center;justify-content:space-between;padding:60px 24px 50px;">
+      <!-- Top: Mike info -->
+      <div style="text-align:center;">
+        <div style="width:90px;height:90px;background:#1a1a1a;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto 16px;border:3px solid #00C2B2;box-shadow:0 0 30px rgba(0,194,178,.3);">🧑‍🔧</div>
+        <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;">Mike</div>
+        <div style="font-size:14px;color:#00C2B2;font-weight:600;">HVAC Master Tech · EPA 608</div>
+        <div id="callTimer" style="font-size:13px;color:#555;margin-top:8px;">00:00</div>
       </div>
-      <p style="font-size:11px;color:#555;margin-top:8px;">Put phone on speaker · Mike will talk back</p>
+      <!-- Middle: status and transcript -->
+      <div style="text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+        <div id="voiceStatusText" style="font-size:17px;font-weight:700;color:#fff;">Connecting to Mike…</div>
+        <div id="voiceTranscript" style="font-size:14px;color:#9499B0;max-width:280px;line-height:1.6;min-height:20px;text-align:center;"></div>
+        <!-- Voice wave animation when speaking -->
+        <div id="voiceWave" style="display:none;align-items:flex-end;gap:4px;height:40px;">
+          <div style="width:4px;background:#00C2B2;border-radius:2px;animation:wave .6s ease infinite;"></div>
+          <div style="width:4px;background:#00C2B2;border-radius:2px;animation:wave .6s .1s ease infinite;"></div>
+          <div style="width:4px;background:#00C2B2;border-radius:2px;animation:wave .6s .2s ease infinite;"></div>
+          <div style="width:4px;background:#00C2B2;border-radius:2px;animation:wave .6s .3s ease infinite;"></div>
+          <div style="width:4px;background:#00C2B2;border-radius:2px;animation:wave .6s .4s ease infinite;"></div>
+        </div>
+      </div>
+      <!-- Bottom: call controls -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:40px;">
+        <!-- Mute button -->
+        <button id="muteBtn" onclick="toggleMute()" style="width:56px;height:56px;border-radius:50%;background:#1a1a1a;border:2px solid #333;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;">🎙️</button>
+        <!-- Hang up -->
+        <button onclick="toggleVoiceMode()" style="width:72px;height:72px;border-radius:50%;background:#E8354A;border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(232,53,74,.5);transform:rotate(135deg);">📞</button>
+        <!-- Speaker toggle -->
+        <button id="speakerBtn" onclick="toggleSpeaker()" style="width:56px;height:56px;border-radius:50%;background:#1a1a1a;border:2px solid #333;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;">🔊</button>
+      </div>
+      <!-- Hidden mic button still needed for logic -->
+      <button id="micBtn" onclick="toggleMic()" style="display:none;">🎙️</button>
+      <button id="stopSpeakBtn" onclick="stopMikeSpeaking()" style="display:none;">⏹️</button>
     </div>
     <!-- QUICK CHIPS -->
     <div style="background:#F5F6FA;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;border-top:1px solid #E2E4ED;padding:8px 12px;">
@@ -1275,7 +1298,8 @@ function toggleVoiceMode(){
     bar.style.display='block';
     btn.classList.add('voice-mode-active');
     lbl.style.color='#00C2B2';lbl.textContent='ON';
-    setVoiceStatus('Tap mic to talk to Mike','');
+    setVoiceStatus('Mike is joining…','');
+    autoListenAfterSpeak=true;
     var greetings={en:"Mike here. What are you working on?",es:"Mike aquí. ¿En qué puedo ayudarte?",zh:"我是Mike，有什么需要帮忙的？",vi:"Mike đây. Tôi có thể giúp gì?",fr:"C'est Mike. Sur quoi travaillez-vous?",pt:"Mike aqui. Em que posso ajudar?"};
     setTimeout(function(){if(voiceMode)mikeSay(greetings[currentLang]||greetings.en);},400);
   }else{
@@ -1304,7 +1328,7 @@ function mikeSay(text){
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})})
     .then(function(res){if(!res.ok)throw new Error('TTS '+res.status);return res.arrayBuffer();})
     .then(function(arrayBuf){
-      if(!arrayBuf||arrayBuf.byteLength<1000){mikeSayBrowser(clean);return;}
+      if(!arrayBuf||arrayBuf.byteLength<500){mikeSayBrowser(clean);return;}
       var AudioCtx=window.AudioContext||window.webkitAudioContext;
       if(!AudioCtx){mikeSayBrowser(clean);return;}
       var ctx=sharedAudioCtx||(sharedAudioCtx=new AudioCtx());
@@ -1370,29 +1394,48 @@ function toggleMic(){unlockAudio();if(isListening){stopListening();return;}if(is
 
 function startListening(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){alert('Voice input not supported. Try Chrome or Safari 14.5+.');return;}
+  if(!SR){alert('Voice input not supported on this device.');return;}
+  if(isMikeSpeaking)return; // Don't listen while Mike is talking
   stopListening();
-  speechRecognition=new SR();speechRecognition.continuous=false;speechRecognition.interimResults=true;
+  speechRecognition=new SR();
+  speechRecognition.continuous=false;
+  speechRecognition.interimResults=true;
   speechRecognition.lang=currentLang==='es'?'es-MX':currentLang==='zh'?'zh-CN':currentLang==='vi'?'vi-VN':currentLang==='fr'?'fr-FR':currentLang==='pt'?'pt-BR':'en-US';
   var micBtn=document.getElementById('micBtn');
   if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🔴';}
-  isListening=true;setVoiceStatus('Listening…','Speak now');
+  isListening=true;
+  setVoiceStatus('Listening…','Go ahead…');
   speechRecognition.onresult=function(e){
-    var transcript='';for(var i=e.resultIndex;i<e.results.length;i++)transcript+=e.results[i][0].transcript;
+    var transcript='';
+    for(var i=e.resultIndex;i<e.results.length;i++)transcript+=e.results[i][0].transcript;
     setVoiceStatus('Listening…',transcript);
     if(e.results[e.results.length-1].isFinal)document.getElementById('chatInput').value=transcript;
   };
   speechRecognition.onend=function(){
-    isListening=false;if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
+    isListening=false;
+    if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
     var text=document.getElementById('chatInput').value.trim();
-    if(text){setVoiceStatus('Sending to Mike…',text);autoListenAfterSpeak=voiceMode;sendChat();}
-    else setVoiceStatus('Tap mic to talk to Mike','');
+    if(text){
+      setVoiceStatus('Sending to Mike…',text);
+      autoListenAfterSpeak=true; // Always auto-listen after Mike replies in voice mode
+      sendChat();
+    } else if(voiceMode){
+      // No speech heard — wait a moment then listen again
+      setVoiceStatus('Listening…','Go ahead…');
+      setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},800);
+    }
   };
   speechRecognition.onerror=function(e){
-    isListening=false;if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
-    setVoiceStatus(e.error==='no-speech'?'No speech detected. Tap mic again.':'Mic error: '+e.error,'');
+    isListening=false;
+    if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
+    if(e.error==='no-speech'&&voiceMode){
+      // Auto-restart on silence
+      setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},500);
+    } else {
+      setVoiceStatus('Mic error — tap Voice to retry','');
+    }
   };
-  speechRecognition.start();
+  try{speechRecognition.start();}catch(e){isListening=false;}
 }
 
 function stopListening(){

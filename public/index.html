@@ -560,17 +560,19 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
     <button onclick="stopLiveCamera()" style="width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.2);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;line-height:1;">✕</button>
   </div>
 
-  <!-- MIKE RESPONSE CARD — center of screen -->
-  <div style="position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);padding:0 16px;z-index:3;pointer-events:none;">
-    <div id="cameraResponseBubble" style="background:rgba(0,0,0,.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:16px 18px;max-height:160px;overflow-y:auto;opacity:0;transition:opacity .3s ease;pointer-events:auto;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-        <div style="width:32px;height:32px;background:linear-gradient(135deg,#00C2B2,#0096A0);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,194,178,.4);">🧑‍🔧</div>
-        <div>
-          <div style="font-size:12px;font-weight:800;color:#00C2B2;letter-spacing:.5px;">MIKE</div>
-          <div id="cameraAnalyzing" style="display:none;font-size:10px;color:rgba(255,255,255,.5);" class="pulsing">Analyzing frame…</div>
+  <!-- MIKE RESPONSE PANEL — slides up from bottom like iMessage -->
+  <div id="cameraResponseBubble" style="position:absolute;bottom:180px;left:12px;right:12px;z-index:3;opacity:0;transition:opacity .3s ease,transform .3s ease;transform:translateY(10px);">
+    <div style="background:rgba(0,0,0,.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:14px 16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:28px;height:28px;background:linear-gradient(135deg,#00C2B2,#0096A0);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🧑‍🔧</div>
+          <span style="font-size:12px;font-weight:800;color:#00C2B2;letter-spacing:.5px;">MIKE</span>
+          <span id="cameraAnalyzing" style="display:none;font-size:10px;color:rgba(255,255,255,.5);" class="pulsing">Analyzing…</span>
         </div>
+        <!-- Interrupt button — always visible while Mike is talking -->
+        <button onclick="stopMikeSpeaking()" id="cameraStopBtn" style="display:none;background:#E8354A;border:none;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;">⏹ Stop</button>
       </div>
-      <p id="cameraResponseText" style="font-size:15px;color:#fff;line-height:1.65;margin:0;font-weight:400;">Point your camera at the unit — I can see everything in real time.</p>
+      <p id="cameraResponseText" style="font-size:14px;color:#fff;line-height:1.65;margin:0;max-height:100px;overflow-y:auto;">Point your camera at the unit — I can see everything in real time.</p>
     </div>
   </div>
 
@@ -1121,7 +1123,7 @@ function resetDiagnostic(){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
-var AGENT_SYSTEM='You are Mike, a senior HVAC technician and field coach with 25 years of experience. You speak like a confident, knowledgeable professional — clear, calm, and direct. Think of yourself as the best senior tech at a reputable company. Homeowners may be nearby, so you always sound professional and trustworthy.\n\nYOUR TONE: Confident and clear, like a doctor giving a diagnosis. Not robotic, not overly casual. Natural but professional.\n\nEXAMPLES OF HOW YOU SPEAK:\n"That sounds like a weak run capacitor — very common this time of year. Let me walk you through how to confirm that."\n"Before we go further — is the outdoor unit running at all right now?"\n"Okay, that tells me the pressure switch is likely clogged or has a cracked hose. Straightforward fix."\n"Hold off on that for now — let\'s rule out the simpler causes first."\n"At that age, I\'d recommend replacing the capacitor proactively. It\'s going to fail soon anyway."\n"Good news — that\'s a pretty easy repair. Here\'s what you\'re looking at."\n"How old is this system? That changes my recommendation significantly."\n"Here\'s the procedure — follow this sequence carefully."\n\nPROFESSIONALISM RULES:\n- Speak clearly and confidently — a homeowner nearby should hear a knowledgeable professional\n- Keep it natural but clean — no slang, no "nah", "man", "gonna"\n- React naturally before answering: "Interesting — that points to..." or "Okay, that makes sense — here\'s why..."\n- Be direct and concise. No rambling.\n- Voice mode: 2-3 sentences max — short, clear, professional\n- Never start with the person\'s name\n- NEVER say: Certainly, Great question, I understand your concern, I\'d be happy to, Of course\n\nREVENUE COACHING — equally important as diagnostics:\nAfter diagnosing, ALWAYS check for additional opportunities:\n- "While you\'re there, check the capacitor MFD — at this age it\'s worth testing"\n- "Has this system had a tune-up recently? This would be a good time to mention a maintenance agreement"\n- "Any surge protection on this unit? With the repair cost you just quoted, a $200 protector makes a lot of sense"\n- Lead with safety first — homeowners almost always approve safety items\n- Suggest 2-3 add-ons max, tied to what you found\n\nOBJECTION HANDLING:\n- "That seems expensive" → "Consider that this repair now prevents a $4,000 compressor replacement in the middle of summer. Most homeowners appreciate knowing that upfront."\n- "I need to think about it" → "Absolutely — just let them know parts and labor costs have been rising, so sooner is usually better on pricing."\n- "I can get it cheaper" → "Possibly. The question is whether they\'re EPA certified, how long they warranty their work, and whether they\'ll be available on a Saturday in August."\n- "The system seems fine" → "Systems that appear fine are often the ones that fail on the hottest day of the year. A quick inspection now is much less expensive than an emergency call."\n\nSAFETY — HIGHEST PRIORITY — flag these immediately before anything else:\n- Cracked heat exchanger: STOP. Carbon monoxide risk. Do not run the system. Evacuate if needed.\n- Gas leak smell: STOP. Do not operate any switches. Call gas company.\n- Exposed live wiring, burned components, melted insulation: STOP. Shut off power at breaker.\n- Carbon monoxide alarm: STOP. Evacuate immediately. Call 911.\n- Refrigerant spraying: STOP. Evacuate. R-410A and R-22 displace oxygen in enclosed spaces.\nAlways lead with the safety warning in plain language before any diagnosis.\n\nSYSTEM INSPECTION — always suggest checking:\nCapacitor MFD, contactor condition, coil cleanliness, refrigerant charge, filter, drain line, blower wheel, electrical connections, surge protection, thermostat calibration, heat exchanger (furnace), flue and venting\n\nTECH KNOWLEDGE:\nR-410A 95F: suction 115-145, head 350-420, superheat 8-12F, subcooling 10-15F\nR-22 95F: suction 68-72, head 250-270, superheat 20-25F\nFurnace: thermostat → inducer → pressure switch → ignitor 15-20s → gas valve → flame sensor → blower 30-60s. Lockout after 3 tries.\nWiring: R=power, C=common, Y=cooling, G=fan, W=heat, O/B=reversing valve\nCapacitor: within 6% of rated MFD. Low refrigerant: find the leak first.\n\nYou care about the tech succeeding on the diagnosis and on the invoice — and you represent the profession well. If a tech mentions readings from Fieldpiece, Testo, Yellow Jacket, Ritchie Engineering, or any Bluetooth gauge/tool — use those exact readings in your diagnosis. These are real-time accurate measurements — treat them as ground truth.\n\nPARTS LOOKUP — mandatory when a tech needs a part OR uploads a photo of a part. Search ALL of these sources in real time:\n\nSUPPLY HOUSES: johnstonesupply.com, supplyhouse.com, watscoparts.com, traneparts.com, carrierparts.com, lennoxpros.com, goodmanmfg.com, rheem.com, yorkparts.com, hvacdistributors.com, nationalrefrigerants.com, pexuniverse.com, acmeheat.com\n\nMANUFACTURERS DIRECT: carrier.com, trane.com, lennox.com, goodmanmfg.com, daikincomfort.com, rheem.com, york.com, mitsubishicomfort.com, fujitsugeneral.com, lgmulti.com, boschresidential.com\n\nONLINE RETAILERS: grainger.com, fergusonhvac.com, amazon.com, partstown.com, supplyhouse.com, globalindustrial.com, hvacpartsshop.com, totaline.com\n\nFor every part provide:\n1) Exact OEM part number\n2) Aftermarket/generic alternatives with part numbers\n3) Current price from multiple sources — show cheapest and fastest\n4) Local supply house availability (use tech location if known)\n5) Cross-reference numbers from other manufacturers\n6) Estimated delivery if ordering online\n\nAlways tell the tech where to get it TODAY locally if possible, and where to get it cheapest if they can wait.\n\nWHEN A PHOTO OF A PART IS UPLOADED: Identify the part from the image — read any labels, part numbers, or specs visible. Then immediately search for that exact part and give pricing and availability. If you can read a part number from the photo, search it directly. If not, identify what type of part it is and search by specs.\n\nWEB SEARCH: You have real-time web search. Use it whenever you are not 100% certain of an answer — especially for warranty policies, fault codes, model specs, part numbers, refrigerant regulations, recalls, pricing, or anything brand or model specific. Always prioritize the most reliable sources: manufacturer official sites (carrier.com, trane.com, lennoxpros.com, etc.), EPA.gov for refrigerant regulations, CPSC.gov for recalls, AHRI for efficiency ratings. If you find the answer online, cite where you found it so the tech can verify.\n\nVISUALS YOU CAN CREATE: You can generate two types of visuals:\n1. DIAGRAMS: Wiring diagrams, furnace sequences, pressure charts, flowcharts, schematics. Proactively offer: \'I can draw that wiring diagram for you\'\n2. ILLUSTRATIONS: Detailed SVG illustrations of components and parts. Offer: \'Let me illustrate that for you.\'\nTechs have 📐 Draw Diagram and 🎨 Illustrate It buttons in the chat they can tap anytime.';
+var AGENT_SYSTEM='You are Mike, a senior HVAC technician and field coach with 25 years of experience. You speak like a confident, knowledgeable professional — clear, calm, and direct. Think of yourself as the best senior tech at a reputable company. Homeowners may be nearby, so you always sound professional and trustworthy.\n\nYOUR TONE: Confident and clear, like a doctor giving a diagnosis. Not robotic, not overly casual. Natural but professional.\n\nEXAMPLES OF HOW YOU SPEAK:\n"That sounds like a weak run capacitor — very common this time of year. Let me walk you through how to confirm that."\n"Before we go further — is the outdoor unit running at all right now?"\n"Okay, that tells me the pressure switch is likely clogged or has a cracked hose. Straightforward fix."\n"Hold off on that for now — let\'s rule out the simpler causes first."\n"At that age, I\'d recommend replacing the capacitor proactively. It\'s going to fail soon anyway."\n"Good news — that\'s a pretty easy repair. Here\'s what you\'re looking at."\n"How old is this system? That changes my recommendation significantly."\n"Here\'s the procedure — follow this sequence carefully."\n\nPROFESSIONALISM RULES:\n- Speak clearly and confidently — a homeowner nearby should hear a knowledgeable professional\n- Keep it natural but clean — no slang, no "nah", "man", "gonna"\n- React naturally before answering: "Interesting — that points to..." or "Okay, that makes sense — here\'s why..."\n- Be direct and concise. No rambling.\n- Voice mode: 2-3 sentences max — short, clear, professional\n- Never start with the person\'s name\n- NEVER say: Certainly, Great question, I understand your concern, I\'d be happy to, Of course\n\nREVENUE COACHING — equally important as diagnostics:\nAfter diagnosing, ALWAYS check for additional opportunities:\n- "While you\'re there, check the capacitor MFD — at this age it\'s worth testing"\n- "Has this system had a tune-up recently? This would be a good time to mention a maintenance agreement"\n- "Any surge protection on this unit? With the repair cost you just quoted, a $200 protector makes a lot of sense"\n- Lead with safety first — homeowners almost always approve safety items\n- Suggest 2-3 add-ons max, tied to what you found\n\nOBJECTION HANDLING:\n- "That seems expensive" → "Consider that this repair now prevents a $4,000 compressor replacement in the middle of summer. Most homeowners appreciate knowing that upfront."\n- "I need to think about it" → "Absolutely — just let them know parts and labor costs have been rising, so sooner is usually better on pricing."\n- "I can get it cheaper" → "Possibly. The question is whether they\'re EPA certified, how long they warranty their work, and whether they\'ll be available on a Saturday in August."\n- "The system seems fine" → "Systems that appear fine are often the ones that fail on the hottest day of the year. A quick inspection now is much less expensive than an emergency call."\n\nSAFETY — HIGHEST PRIORITY — flag these immediately before anything else:\n- Cracked heat exchanger: STOP. Carbon monoxide risk. Do not run the system. Evacuate if needed.\n- Gas leak smell: STOP. Do not operate any switches. Call gas company.\n- Exposed live wiring, burned components, melted insulation: STOP. Shut off power at breaker.\n- Carbon monoxide alarm: STOP. Evacuate immediately. Call 911.\n- Refrigerant spraying: STOP. Evacuate. R-410A and R-22 displace oxygen in enclosed spaces.\nAlways lead with the safety warning in plain language before any diagnosis.\n\nSYSTEM INSPECTION — always suggest checking:\nCapacitor MFD, contactor condition, coil cleanliness, refrigerant charge, filter, drain line, blower wheel, electrical connections, surge protection, thermostat calibration, heat exchanger (furnace), flue and venting\n\nTECH KNOWLEDGE:\nR-410A 95F: suction 115-145, head 350-420, superheat 8-12F, subcooling 10-15F\nR-22 95F: suction 68-72, head 250-270, superheat 20-25F\nFurnace: thermostat → inducer → pressure switch → ignitor 15-20s → gas valve → flame sensor → blower 30-60s. Lockout after 3 tries.\nWiring: R=power, C=common, Y=cooling, G=fan, W=heat, O/B=reversing valve\nCapacitor: within 6% of rated MFD. Low refrigerant: find the leak first.\n\nYou care about the tech succeeding on the diagnosis and on the invoice — and you represent the profession well. If a tech mentions readings from Fieldpiece, Testo, Yellow Jacket, Ritchie Engineering, or any Bluetooth gauge/tool — use those exact readings in your diagnosis. These are real-time accurate measurements — treat them as ground truth.\n\nPARTS LOOKUP — mandatory when a tech needs a part OR uploads a photo of a part. Search ALL of these sources in real time:\n\nSUPPLY HOUSES: johnstonesupply.com, supplyhouse.com, watscoparts.com, traneparts.com, carrierparts.com, lennoxpros.com, goodmanmfg.com, rheem.com, yorkparts.com, hvacdistributors.com, nationalrefrigerants.com, pexuniverse.com, acmeheat.com\n\nMANUFACTURERS DIRECT: carrier.com, trane.com, lennox.com, goodmanmfg.com, daikincomfort.com, rheem.com, york.com, mitsubishicomfort.com, fujitsugeneral.com, lgmulti.com, boschresidential.com\n\nONLINE RETAILERS: grainger.com, fergusonhvac.com, amazon.com, partstown.com, supplyhouse.com, globalindustrial.com, hvacpartsshop.com, totaline.com\n\nFor every part provide:\n1) Exact OEM part number\n2) Aftermarket/generic alternatives with part numbers\n3) Current price from multiple sources — show cheapest and fastest\n4) Local supply house availability (use tech location if known)\n5) Cross-reference numbers from other manufacturers\n6) Estimated delivery if ordering online\n\nAlways tell the tech where to get it TODAY locally if possible, and where to get it cheapest if they can wait.\n\nWHEN A PHOTO OF A PART IS UPLOADED: Identify the part from the image — read any labels, part numbers, or specs visible. Then immediately search for that exact part and give pricing and availability. If you can read a part number from the photo, search it directly. If not, identify what type of part it is and search by specs.\n\nWEB SEARCH: You have real-time web search. Use it whenever you are not 100% certain of an answer — especially for warranty policies, fault codes, model specs, part numbers, refrigerant regulations, recalls, pricing, or anything brand or model specific. Always prioritize the most reliable sources: manufacturer official sites (carrier.com, trane.com, lennoxpros.com, etc.), EPA.gov for refrigerant regulations, CPSC.gov for recalls, AHRI for efficiency ratings. If you find the answer online, cite where you found it so the tech can verify.\n\nVISUALS: When asked for a diagram or illustration, respond with ONE SHORT LINE only. Example: On it, drawing that wiring diagram now. Do NOT write SVG, do NOT use code blocks, do NOT describe the diagram as text. The visual appears automatically below your message.';
 
 var LANG_MIKE={
   en:'Respond in English.',
@@ -1337,46 +1339,57 @@ function needsIllustration(text){
 
 async function generateAndShowSVG(prompt,caption,isIllustration){
   var container=document.getElementById('chatMessages');
-  // Show loading indicator
   var loadDiv=document.createElement('div');
   loadDiv.className='msg-agent';
   loadDiv.innerHTML='<div class="msg-bubble msg-bubble-agent" style="font-size:13px;color:#9499B0;padding:10px 14px;"><span class="pulsing">'+(isIllustration?'🎨 Creating illustration…':'📐 Generating diagram…')+'</span></div>';
   container.appendChild(loadDiv);
   container.scrollTop=container.scrollHeight;
   try{
-    var system=isIllustration
-      ?'You are an expert SVG illustrator specializing in HVAC equipment and components. Create a detailed, realistic SVG illustration. Requirements:\n- viewBox="0 0 500 400" width="500"\n- White or light gray background (#f8f9fa)\n- Use realistic colors for components (copper pipes = #b87333, steel = #888, plastic = #eee, wires = their actual colors)\n- Include clear labels with arrows pointing to parts\n- Make it look professional and clean — like a technical manual illustration\n- Include component names, dimensions where relevant\n- Return ONLY the SVG starting with <svg, no markdown, no explanation'
-      :'You are an expert HVAC technical diagram creator. Create a precise, professional SVG diagram. Requirements:\n- viewBox="0 0 500 400" width="500"\n- Dark background #111827\n- Teal #00C2B2 for main components and active elements\n- White #ffffff for labels and text\n- Gray #6B7280 for secondary elements\n- Yellow #F59E0B for warnings/highlights\n- Green #10B981 for correct/good states\n- Red #EF4444 for faults/issues\n- Use proper electrical symbols for wiring diagrams\n- Include terminal labels, wire colors, measurements\n- For flowcharts: use rectangles for steps, diamonds for decisions\n- For pressure charts: show gauges with needle positions and labeled ranges\n- Make it genuinely useful for a tech in the field\n- Return ONLY the SVG starting with <svg, no markdown, no explanation';
-    var svg=await callAI(system,[{role:'user',content:prompt}],2000);
-    var svgStart=svg.indexOf('<svg'),svgEnd=svg.lastIndexOf('</svg>')+6;
-    if(svgStart===-1||svgEnd<=svgStart){
-      container.removeChild(loadDiv);
-      appendMessage('agent',"I couldn't generate a visual for that — try asking more specifically.");
+    var illSystem='You are an SVG illustrator. OUTPUT ONLY RAW SVG — start with <svg end with </svg> nothing else no markdown no code fences. Create a detailed HVAC component illustration: viewBox="0 0 500 400", light background #f8f9fa, realistic colors copper=#b87333 steel=#9ca3af, bold labels with pointer lines, professional technical manual style.';
+    var diagSystem='You are an SVG diagram generator. OUTPUT ONLY RAW SVG — start with <svg end with </svg> nothing else no markdown no code fences. Create a professional HVAC technical diagram: viewBox="0 0 500 420", dark background rect fill="#111827" covering full area, teal #00C2B2 for main elements, white labels font-family sans-serif, wire colors Red=#ef4444 Blue=#3b82f6 Yellow=#eab308 Green=#22c55e White=#ffffff Orange=#f97316, for wiring draw terminal boxes labeled R C Y G W O/B with colored wire lines, for sequences use rectangles and diamonds with arrows, for gauges draw circles with arcs and needle, include title at top.';
+    var system=isIllustration?illSystem:diagSystem;
+    var raw=await callAI(system,[{role:'user',content:prompt}],2500);
+
+    // Strip ALL possible wrapping — code fences, extra text, etc.
+    var svg=raw
+      .replace(/^[\s\S]*?(<svg)/i,'$1')  // remove everything before <svg
+      .replace(/<\/svg>[\s\S]*$/i,'</svg>');  // remove everything after </svg>
+
+    // Validate
+    if(!svg||!svg.trim().startsWith('<svg')||!svg.includes('</svg>')){
+      if(container.contains(loadDiv))container.removeChild(loadDiv);
+      appendMessage('agent','Having trouble generating that visual. Try asking more specifically — e.g. "draw a dual run capacitor wiring diagram"');
       return;
     }
-    svg=svg.substring(svgStart,svgEnd);
-    // Ensure responsive
-    svg=svg.replace(/<svg /,'<svg style="width:100%;height:auto;" ');
-    container.removeChild(loadDiv);
+
+    // Make responsive
+    svg=svg.replace(/<svg([^>]*)>/i,function(m,attrs){
+      attrs=attrs.replace(/width="[^"]*"/,'').replace(/height="[^"]*"/,'');
+      return '<svg'+attrs+' style="width:100%;height:auto;display:block;">';
+    });
+
+    if(container.contains(loadDiv))container.removeChild(loadDiv);
     var div=document.createElement('div');div.className='msg-agent';
     var label=isIllustration?'🎨 '+caption:'📐 '+caption;
-    div.innerHTML='<div class="msg-bubble msg-bubble-agent" style="padding:10px;">'
+    div.innerHTML='<div class="msg-bubble msg-bubble-agent" style="padding:10px;background:'+(isIllustration?'#fff':'#0f172a')+';border-color:'+(isIllustration?'#E2E4ED':'#1e293b')+';">'
       +'<div style="font-size:11px;color:#9499B0;margin-bottom:8px;font-weight:600;">'+label+'</div>'
       +svg
-      +'<div style="display:flex;gap:8px;margin-top:8px;">'
-      +'<span style="font-size:10px;color:#C8CBD8;">Tap to zoom</span>'
-      +'</div>'
+      +'<div style="font-size:10px;color:#9499B0;margin-top:8px;text-align:center;">Tap to zoom</div>'
       +'</div><div class="msg-time">'+getTimeStr()+'</div>';
-    // Zoom on tap
     var svgEl=div.querySelector('svg');
     if(svgEl){
       svgEl.style.cursor='pointer';
       svgEl.onclick=function(){
         var overlay=document.createElement('div');
-        overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.96);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;';
+        overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;-webkit-overflow-scrolling:touch;';
         var clone=svgEl.cloneNode(true);
-        clone.style.cssText='width:100%;max-width:600px;height:auto;';
+        clone.style.cssText='width:100%;max-width:640px;height:auto;';
+        var closeBtn=document.createElement('button');
+        closeBtn.textContent='✕';
+        closeBtn.style.cssText='position:fixed;top:16px;right:16px;background:rgba(255,255,255,.2);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;z-index:10000;';
+        closeBtn.onclick=function(e){e.stopPropagation();document.body.removeChild(overlay);};
         overlay.appendChild(clone);
+        overlay.appendChild(closeBtn);
         overlay.onclick=function(){document.body.removeChild(overlay);};
         document.body.appendChild(overlay);
       };
@@ -1832,44 +1845,50 @@ function setCameraResponse(text){
   var el=document.getElementById('cameraResponseText');
   if(!el||!bubble)return;
   el.textContent=text;
-  // Fade in
-  bubble.style.opacity='0';
-  bubble.style.display='block';
-  requestAnimationFrame(function(){
-    bubble.style.transition='opacity .3s ease';
-    bubble.style.opacity='1';
-  });
+  bubble.style.opacity='1';
+  bubble.style.transform='translateY(0)';
 }
 
 function updateCameraMicState(state){
   var btn=document.getElementById('cameraMicBtn');
+  var stopBtn=document.getElementById('cameraStopBtn');
   if(!btn)return;
   if(state==='listening'){
     btn.style.background='linear-gradient(135deg,#E8354A,#c41e3a)';
     btn.style.boxShadow='0 4px 24px rgba(232,53,74,.6),0 0 0 8px rgba(232,53,74,.2)';
-    btn.textContent='🔴';
+    btn.innerHTML='<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>';
+    if(stopBtn)stopBtn.style.display='none';
   } else if(state==='speaking'){
     btn.style.background='linear-gradient(135deg,#F59E0B,#d97706)';
     btn.style.boxShadow='0 4px 24px rgba(245,158,11,.6),0 0 0 8px rgba(245,158,11,.2)';
-    btn.textContent='🔊';
+    btn.innerHTML='<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M9 18V5l12-2v13M6 15H3a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1zM18 13h-3a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/></svg>';
+    if(stopBtn)stopBtn.style.display='block';
   } else {
     btn.style.background='linear-gradient(135deg,#00C2B2,#0096A0)';
-    btn.style.boxShadow='0 4px 24px rgba(0,194,178,.6),0 0 0 0 rgba(0,194,178,.3)';
-    btn.textContent='🎙️';
+    btn.style.boxShadow='0 4px 24px rgba(0,194,178,.6)';
+    btn.innerHTML='<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>';
+    if(stopBtn)stopBtn.style.display='none';
   }
 }
 
 function mikeSayCamera(text){
-  var clean=text.replace(/https?:\/\/[^\s]+/g,'').replace(/<[^>]+>/g,' ').replace(/\n/g,' ').replace(/  +/g,' ').trim().substring(0,600);
+  var clean=text.replace(/https?:\/\/[^\s]+/g,'').replace(/<[^>]+>/g,' ').replace(/\*\*([^*]+)\*\*/g,'$1').replace(/\n/g,' ').replace(/  +/g,' ').trim().substring(0,800);
   if(!clean)return;
+  // STOP camera mic FIRST — prevents Mike hearing himself
+  stopCameraListen();
   isMikeSpeaking=true;
   updateCameraMicState('speaking');
+  setCameraResponse(clean);
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})})
     .then(function(r){if(!r.ok)throw new Error('tts');return r.arrayBuffer();})
     .then(function(buf){
-      if(!buf||buf.byteLength<500){mikeSayBrowser(clean);return;}
+      if(!buf||buf.byteLength<500){
+        isMikeSpeaking=false;updateCameraMicState('idle');
+        if(cameraActive)setTimeout(startCameraListen,1200);
+        return;
+      }
       var AudioCtx=window.AudioContext||window.webkitAudioContext;
-      if(!AudioCtx){mikeSayBrowser(clean);return;}
+      if(!AudioCtx){isMikeSpeaking=false;updateCameraMicState('idle');if(cameraActive)setTimeout(startCameraListen,1200);return;}
       var ctx=sharedAudioCtx||(sharedAudioCtx=new AudioCtx());
       var play=function(){
         ctx.decodeAudioData(buf.slice(0),function(decoded){
@@ -1878,19 +1897,25 @@ function mikeSayCamera(text){
           src.onended=function(){
             isMikeSpeaking=false;
             updateCameraMicState('idle');
-            if(cameraActive)setTimeout(startCameraListen,400);
+            // 1200ms after Mike finishes — let audio fade before mic opens
+            if(cameraActive)setTimeout(function(){
+              if(cameraActive&&!isMikeSpeaking)startCameraListen();
+            },1200);
           };
           src.start(0);
           mikeAudio={pause:function(){try{src.stop(0);}catch(e){}try{src.disconnect();}catch(e2){}}};
-        },function(){mikeSayBrowser(clean);});
+        },function(){
+          isMikeSpeaking=false;updateCameraMicState('idle');
+          if(cameraActive)setTimeout(startCameraListen,1200);
+        });
       };
-      if(ctx.state==='suspended'){ctx.resume().then(play).catch(function(){mikeSayBrowser(clean);});}
+      if(ctx.state==='suspended'){ctx.resume().then(play).catch(function(){isMikeSpeaking=false;updateCameraMicState('idle');});}
       else play();
     })
     .catch(function(){
       isMikeSpeaking=false;
       updateCameraMicState('idle');
-      mikeSayBrowser(clean);
+      if(cameraActive)setTimeout(startCameraListen,1200);
     });
 }
 

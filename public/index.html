@@ -1223,11 +1223,11 @@ async function sendChat(){
   var btn=document.getElementById('chatSendBtn');btn.disabled=true;
   input.value='';input.style.height='auto';
   appendMessage('user',text||'📷 Photo attached');
-  var chatMsg={role:'user',content:text||'What do you see?'};
+  var chatMsg={role:'user',content:text||'What do you see in this photo? Is the installation correct? Any issues or concerns?'};
   if(chatAttachment&&chatAttachment.type.startsWith('image/')){
     try{
       var chatMime=chatAttachment.type||'image/jpeg',chatB64=await blobToBase64(chatAttachment);
-      chatMsg={role:'user',content:[{type:'image',source:{type:'base64',media_type:chatMime,data:chatB64}},{type:'text',text:text||'What do you see?'}]};
+      chatMsg={role:'user',content:[{type:'image',source:{type:'base64',media_type:chatMime,data:chatB64}},{type:'text',text:text||'Look at this photo of my HVAC system or installation. What do you see? Is it installed correctly? Any issues, safety concerns, or things I should address?'}]};
     }catch(ae){chatMsg={role:'user',content:text};}
   }
   chatHistory.push(chatMsg);
@@ -1242,10 +1242,11 @@ async function sendChat(){
     var response=await callAI(sysPrompt,chatHistory,voiceMode?250:2048,needsSearch);
     hideTyping();appendMessage('agent',response);
     chatHistory.push({role:'assistant',content:response});
-    // Show image for any visual request
-    var needsImage=!!(text&&text.match(/show|image|photo|picture|diagram|wiring|what does|look like|identify|nameplate|part|component|unit|model|upload|visual|see|display/i));
+    // Show reference image when photo uploaded OR visual question asked
+    var hadAttachment=!!chatAttachment;
+    var needsImage=hadAttachment||!!(text&&text.match(/show|image|photo|picture|diagram|wiring|what does|look like|identify|nameplate|part|component|unit|model|visual|display|install|correct|good|right way|hook up|connect|wire|check|inspect|where is|which part|what kind/i));
     if(needsImage&&!voiceMode){
-      var imgQuery=await buildImageQuery(text,response);
+      var imgQuery=await buildImageQuery(text||'HVAC system',response);
       if(imgQuery)fetchAndShowImage(imgQuery);
     }
   }catch(e){

@@ -1242,6 +1242,12 @@ async function sendChat(){
     var response=await callAI(sysPrompt,chatHistory,voiceMode?250:2048,needsSearch);
     hideTyping();appendMessage('agent',response);
     chatHistory.push({role:'assistant',content:response});
+    // Show image if question is visual
+    var needsImage=!!(text&&text.match(/show|image|photo|picture|diagram|wiring|what does|look like|identify|nameplate|part|component|unit|model/i));
+    if(needsImage&&!voiceMode){
+      var imgQuery=await buildImageQuery(text,response);
+      if(imgQuery)fetchAndShowImage(imgQuery);
+    }
   }catch(e){
     hideTyping();
     var em=e.message||'';
@@ -1252,6 +1258,41 @@ async function sendChat(){
 }
 
 function sendQuick(text){document.getElementById('chatInput').value=text;sendChat();}
+
+async function buildImageQuery(userText,mikeResponse){
+  try{
+    var prompt='Based on this HVAC conversation, generate a short 3-5 word Google image search query to find a helpful technical image. Return ONLY the search query, nothing else.\nUser asked: "'+userText+'"\nMike said: "'+mikeResponse.substring(0,200)+'"\nExamples: "run capacitor HVAC", "thermostat wiring diagram", "Carrier condenser unit", "pressure switch furnace"';
+    var query=await callAI('You generate concise image search queries for HVAC technical topics. Return only the search query, 3-5 words max.',[{role:'user',content:prompt}],50);
+    return query?query.trim().replace(/['"]/g,''):null;
+  }catch(e){return null;}
+}
+
+async function fetchAndShowImage(query){
+  try{
+    // Use Unsplash source for free images - no API key needed
+    var searchTerm=encodeURIComponent(query);
+    var url='https://source.unsplash.com/400x300/?'+searchTerm;
+    var container=document.getElementById('chatMessages');
+    var div=document.createElement('div');
+    div.className='msg-agent';
+    div.innerHTML='<div class="msg-bubble msg-bubble-agent" style="padding:8px;">'
+      +'<div style="font-size:11px;color:#9499B0;margin-bottom:6px;">📷 '+query+'</div>'
+      +'<img src="'+url+'" style="width:100%;max-height:250px;object-fit:cover;border-radius:8px;background:#f5f5f5;" onerror="this.parentElement.parentElement.remove()" />'
+      +'<div style="font-size:10px;color:#C8CBD8;margin-top:4px;">Tap to zoom</div>'
+      +'</div><div class="msg-time">'+getTimeStr()+'</div>';
+    div.querySelector('img').addEventListener('click',function(){
+      var overlay=document.createElement('div');
+      overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      overlay.innerHTML='<img src="'+url+'" style="max-width:95%;max-height:90%;object-fit:contain;border-radius:8px;"/>';
+      overlay.onclick=function(){document.body.removeChild(overlay);};
+      document.body.appendChild(overlay);
+    });
+    container.appendChild(div);
+    container.scrollTop=container.scrollHeight;
+  }catch(e){}
+}
+
+
 function handleChatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
 function clearChat(){
   chatHistory=[];
@@ -1393,50 +1434,67 @@ function stopMikeSpeaking(){
 
 function toggleMic(){unlockAudio();if(isListening){stopListening();return;}if(isMikeSpeaking){stopMikeSpeaking();return;}startListening();}
 
+var isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
 function startListening(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){alert('Voice input not supported on this device.');return;}
-  if(isMikeSpeaking)return; // Don't listen while Mike is talking
+  if(!SR){setVoiceStatus('Voice not supported — use Chrome','');return;}
+  if(isMikeSpeaking)return;
   stopListening();
-  speechRecognition=new SR();
-  speechRecognition.continuous=false;
-  speechRecognition.interimResults=true;
-  speechRecognition.lang=currentLang==='es'?'es-MX':currentLang==='zh'?'zh-CN':currentLang==='vi'?'vi-VN':currentLang==='fr'?'fr-FR':currentLang==='pt'?'pt-BR':'en-US';
-  var micBtn=document.getElementById('micBtn');
-  if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🔴';}
-  isListening=true;
-  setVoiceStatus('Listening…','Go ahead…');
-  speechRecognition.onresult=function(e){
-    var transcript='';
-    for(var i=e.resultIndex;i<e.results.length;i++)transcript+=e.results[i][0].transcript;
-    setVoiceStatus('Listening…',transcript);
-    if(e.results[e.results.length-1].isFinal)document.getElementById('chatInput').value=transcript;
-  };
-  speechRecognition.onend=function(){
-    isListening=false;
-    if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
-    var text=document.getElementById('chatInput').value.trim();
-    if(text){
-      setVoiceStatus('Sending to Mike…',text);
-      autoListenAfterSpeak=true; // Always auto-listen after Mike replies in voice mode
-      sendChat();
-    } else if(voiceMode){
-      // No speech heard — wait a moment then listen again
+  // Safari needs a small delay after stopping before restarting
+  setTimeout(function(){
+    try{
+      speechRecognition=new SR();
+      speechRecognition.continuous=false;
+      speechRecognition.interimResults=!isSafari; // Safari has issues with interimResults
+      speechRecognition.lang=currentLang==='es'?'es-MX':currentLang==='zh'?'zh-CN':currentLang==='vi'?'vi-VN':currentLang==='fr'?'fr-FR':currentLang==='pt'?'pt-BR':'en-US';
+      var micBtn=document.getElementById('micBtn');
+      if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🔴';}
+      isListening=true;
       setVoiceStatus('Listening…','Go ahead…');
-      setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},800);
+      speechRecognition.onresult=function(e){
+        var transcript='';
+        for(var i=e.resultIndex;i<e.results.length;i++)transcript+=e.results[i][0].transcript;
+        if(!isSafari)setVoiceStatus('Listening…',transcript);
+        if(e.results[e.results.length-1].isFinal){
+          document.getElementById('chatInput').value=transcript;
+          if(isSafari){setVoiceStatus('Got it — sending to Mike…',transcript);}
+        }
+      };
+      speechRecognition.onend=function(){
+        isListening=false;
+        if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
+        var text=document.getElementById('chatInput').value.trim();
+        if(text){
+          setVoiceStatus('Sending to Mike…',text);
+          autoListenAfterSpeak=true;
+          sendChat();
+        } else if(voiceMode&&!isMikeSpeaking){
+          setVoiceStatus('Listening…','Go ahead…');
+          setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1200:800);
+        }
+      };
+      speechRecognition.onerror=function(ev){
+        isListening=false;
+        if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
+        if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){
+          setVoiceStatus('Mic permission needed — check browser settings','');
+          autoListenAfterSpeak=false;
+        } else if(ev.error==='no-speech'||ev.error==='aborted'){
+          // Normal — auto-restart
+          if(voiceMode&&!isMikeSpeaking){
+            setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1000:500);
+          }
+        } else {
+          setVoiceStatus('Mic error: '+ev.error,'');
+        }
+      };
+      speechRecognition.start();
+    }catch(err){
+      isListening=false;
+      setVoiceStatus('Tap mic to try again','');
     }
-  };
-  speechRecognition.onerror=function(e){
-    isListening=false;
-    if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
-    if(e.error==='no-speech'&&voiceMode){
-      // Auto-restart on silence
-      setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},500);
-    } else {
-      setVoiceStatus('Mic error — tap Voice to retry','');
-    }
-  };
-  try{speechRecognition.start();}catch(e){isListening=false;}
+  },isSafari?300:50);
 }
 
 function stopListening(){

@@ -70,6 +70,7 @@ app.post('/api/tts', async (req, res) => {
     );
     if (!response.ok) {
       const err = await response.text();
+      console.error('ElevenLabs error:', response.status, err);
       return res.status(response.status).json({ error: err });
     }
     // Collect the full audio buffer before sending — prevents choppy decoding
@@ -84,4 +85,8 @@ app.post('/api/tts', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`ElevenLabs key set: ${!!process.env.ELEVENLABS_API_KEY}`);
+  console.log(`Voice ID: ${process.env.ELEVENLABS_VOICE_ID || 'ErXwobaYiN019PkySvjV (default)'}`);
+});

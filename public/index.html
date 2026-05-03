@@ -1366,11 +1366,12 @@ async function sendChat(){
   showTyping();
   try{
     var langNote=LANG_MIKE[currentLang]||LANG_MIKE.en;
-    var response=await callAI(AGENT_SYSTEM+'\n\nLANGUAGE INSTRUCTION: '+langNote+buildKnowledgeContext(),chatHistory,voiceMode?300:4096);
+    var sysPrompt=AGENT_SYSTEM+'\n\nRESPOND IN THIS LANGUAGE: '+langNote+buildKnowledgeContext();
+    var response=await callAI(sysPrompt,chatHistory,voiceMode?250:2048);
     hideTyping();
     appendMessage('agent',response);
     chatHistory.push({role:'assistant',content:response});
-    // Generate diagram if the question is visual/technical
+    // Generate diagram only in text mode for visual questions
     if(!voiceMode&&needsDiagram(text||'')){
       var container=document.getElementById('chatMessages');
       var loadingDiv=document.createElement('div');
@@ -1388,7 +1389,13 @@ async function sendChat(){
         container.scrollTop=container.scrollHeight;
       }
     }
-  }catch(e){hideTyping();appendMessage('agent','Connection issue — try again in a moment.');}
+  }catch(e){
+    hideTyping();
+    var errMsg=e.message||'';
+    if(errMsg.includes('timed out'))appendMessage('agent','taking a bit longer than usual — tap send again');
+    else if(errMsg.includes('API'))appendMessage('agent','having trouble connecting right now — try again in a sec');
+    else appendMessage('agent','something went wrong — tap send again');
+  }
   finally{chatSending=false;btn.disabled=false;if(!voiceMode)input.focus();}
 }
 
@@ -1480,6 +1487,7 @@ function mikeSayBrowser(clean){
 }
 
 function toggleVoiceMode(){
+  unlockAudio();
   voiceMode=!voiceMode;
   var bar=document.getElementById('voiceModeBar');
   var btn=document.getElementById('voiceModeBtn');
@@ -1504,33 +1512,87 @@ function toggleVoiceMode(){
   }
 }
 
+var audioUnlocked=false;
+var sharedAudioCtx=null;
+
+function unlockAudio(){
+  if(audioUnlocked)return;
+  audioUnlocked=true;
+  try{
+    var AudioCtx=window.AudioContext||window.webkitAudioContext;
+    if(!AudioCtx)return;
+    sharedAudioCtx=new AudioCtx();
+    // iOS requires a sound to be played during the gesture to fully unlock
+    var buf=sharedAudioCtx.createBuffer(1,1,22050);
+    var src=sharedAudioCtx.createBufferSource();
+    src.buffer=buf;
+    src.connect(sharedAudioCtx.destination);
+    src.start(0);
+    // Resume in case it starts suspended
+    if(sharedAudioCtx.state==='suspended'){
+      sharedAudioCtx.resume();
+    }
+  }catch(e){sharedAudioCtx=null;}
+}
+
 function mikeSay(text){
   if(!voiceMode)return;
   stopMikeSpeaking();stopListening();
-  var clean=text.replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→–—]/g,' ').replace(/  +/g,' ').trim().substring(0,1000);
+  var clean=text
+    .replace(/<[^>]+>/g,' ')
+    .replace(/\n\n/g,'. ')
+    .replace(/\n/g,' ')
+    .replace(/[▸▼▲→–—*#_]/g,' ')
+    .replace(/  +/g,' ')
+    .trim()
+    .substring(0,800);
   if(!clean)return;
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
   isMikeSpeaking=true;
   if(micBtn){micBtn.classList.add('mic-speaking');micBtn.textContent='🔊';}
   if(stopBtn)stopBtn.style.display='flex';
   setVoiceStatus('Mike is talking…','');
-  // Try ElevenLabs first on ALL devices including iOS
+
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})})
-    .then(function(res){if(!res.ok)throw new Error('TTS '+res.status);return res.blob();})
-    .then(function(blob){
-      var url=URL.createObjectURL(blob);
-      mikeAudio=new Audio(url);
-      mikeAudio.onended=function(){
-        URL.revokeObjectURL(url);isMikeSpeaking=false;
-        if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
-        if(stopBtn)stopBtn.style.display='none';
-        if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,400);
-        else setVoiceStatus('Done. Tap mic to reply.','');
-      };
-      mikeAudio.onerror=function(){isMikeSpeaking=false;if(micBtn)micBtn.classList.remove('mic-speaking');mikeSayBrowser(clean);};
-      mikeAudio.play().catch(function(){mikeSayBrowser(clean);});
+    .then(function(res){
+      if(!res.ok)throw new Error('TTS '+res.status);
+      return res.arrayBuffer();
     })
-    .catch(function(){mikeSayBrowser(clean);});
+    .then(function(arrayBuf){
+      var AudioCtx=window.AudioContext||window.webkitAudioContext;
+      if(!AudioCtx){mikeSayBrowser(clean);return;}
+      // Reuse the shared context that was unlocked during user gesture
+      var ctx=sharedAudioCtx||(sharedAudioCtx=new AudioCtx());
+      // Resume if suspended
+      var playAudio=function(){
+        ctx.decodeAudioData(arrayBuf.slice(0),function(decoded){
+          var src=ctx.createBufferSource();
+          src.buffer=decoded;
+          src.connect(ctx.destination);
+          src.onended=function(){
+            isMikeSpeaking=false;
+            if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
+            if(stopBtn)stopBtn.style.display='none';
+            if(voiceMode&&autoListenAfterSpeak)setTimeout(startListening,400);
+            else setVoiceStatus('Done. Tap mic to reply.','');
+          };
+          src.start(0);
+          mikeAudio={pause:function(){try{src.stop();}catch(e){}},currentTime:0};
+        },function(e){
+          console.error('decodeAudioData failed',e);
+          mikeSayBrowser(clean);
+        });
+      };
+      if(ctx.state==='suspended'){
+        ctx.resume().then(playAudio).catch(function(){mikeSayBrowser(clean);});
+      } else {
+        playAudio();
+      }
+    })
+    .catch(function(e){
+      console.error('TTS fetch failed',e);
+      mikeSayBrowser(clean);
+    });
 }
 
 function stopMikeSpeaking(){
@@ -1542,7 +1604,7 @@ function stopMikeSpeaking(){
   if(stopBtn)stopBtn.style.display='none';
 }
 
-function toggleMic(){if(isListening){stopListening();return;}if(isMikeSpeaking){stopMikeSpeaking();return;}startListening();}
+function toggleMic(){unlockAudio();if(isListening){stopListening();return;}if(isMikeSpeaking){stopMikeSpeaking();return;}startListening();}
 
 function startListening(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;

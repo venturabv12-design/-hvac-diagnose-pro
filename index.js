@@ -62,7 +62,7 @@ app.post('/api/tts', async (req, res) => {
           voice_settings: {
             stability: 0.5,
             similarity_boost: 0.80,
-            style: 0.25,
+            style: 0.20,
             use_speaker_boost: true
           }
         })
@@ -72,16 +72,12 @@ app.post('/api/tts', async (req, res) => {
       const err = await response.text();
       return res.status(response.status).json({ error: err });
     }
+    // Collect the full audio buffer before sending — prevents choppy decoding
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
     res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Transfer-Encoding', 'chunked');
-    const reader = response.body.getReader();
-    const pump = async () => {
-      const { done, value } = await reader.read();
-      if (done) { res.end(); return; }
-      res.write(Buffer.from(value));
-      pump();
-    };
-    pump();
+    res.setHeader('Content-Length', buffer.length);
+    res.end(buffer);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

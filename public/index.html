@@ -1337,75 +1337,87 @@ function needsIllustration(text){
   return !!(text&&text.match(/illustrat|show me what|what does.*look like|draw me|create.*image|make.*image|generate.*image|picture of|visual of/i));
 }
 
-async function generateAndShowSVG(prompt,caption,isIllustration){
-  var container=document.getElementById('chatMessages');
-  var loadDiv=document.createElement('div');
-  loadDiv.className='msg-agent';
-  loadDiv.innerHTML='<div class="msg-bubble msg-bubble-agent" style="font-size:13px;color:#9499B0;padding:12px 14px;display:flex;align-items:center;gap:8px;"><span class="pulsing" style="font-size:18px;">'+(isIllustration?'🎨':'📐')+'</span><span class="pulsing">'+(isIllustration?'Creating illustration…':'Generating diagram…')+'</span></div>';
+async function generateAndShowSVG(prompt, caption, isIllustration){
+  var container = document.getElementById('chatMessages');
+  var loadDiv = document.createElement('div');
+  loadDiv.className = 'msg-agent';
+  loadDiv.innerHTML = '<div class="msg-bubble msg-bubble-agent" style="padding:12px 14px;display:flex;align-items:center;gap:10px;"><span style="font-size:20px;">'+(isIllustration?'🎨':'📐')+'</span><span style="font-size:13px;color:#9499B0;" class="pulsing">'+(isIllustration?'Creating illustration…':'Generating diagram…')+'</span></div>';
   container.appendChild(loadDiv);
-  container.scrollTop=container.scrollHeight;
-
-  var illSystem='You are an SVG illustrator for HVAC technical manuals. OUTPUT ONLY RAW SVG — your entire response must start with <svg and end with </svg>. No text before, no text after, no markdown, no code fences. viewBox="0 0 500 400". Light background rect fill="#f8f9fa". Realistic colors: copper pipes #b87333, steel #9ca3af, plastic #e5e7eb. Add labeled arrows to all key parts. Make it look like a professional technical manual page.';
-  var diagSystem='You are an HVAC technical diagram generator. OUTPUT ONLY RAW SVG — your entire response must start with <svg and end with </svg>. No text before, no text after, no markdown, no code fences. viewBox="0 0 500 440". First element must be: <rect width="500" height="440" fill="#111827"/>. Use teal #00C2B2 for live components. White #ffffff for all text labels, font-family="Arial,sans-serif". Wire colors: R=red, C=blue, Y=yellow, G=green, W=white, O/B=orange. Draw terminal blocks as labeled rectangles. Connect with colored lines. Add title text at top. For sequences: rectangles with text, diamond decisions, arrows. For gauges: circles with colored arcs and value labels.';
-
-  var system=isIllustration?illSystem:diagSystem;
-  var svg=null;
-
-  // Try up to 2 times — SVG generation can occasionally produce malformed output
-  for(var attempt=0;attempt<2;attempt++){
+  container.scrollTop = container.scrollHeight;
+  var svg = null;
+  for(var attempt=0;attempt<3&&!svg;attempt++){
     try{
-      var raw=await callAI(system,[{role:'user',content:prompt+(attempt>0?' Make sure your response starts with <svg and ends with </svg> with no other text.':'')}],2500);
-      // Aggressively strip everything outside <svg>...</svg>
-      var stripped=raw.replace(/^[\s\S]*?(<svg[\s>])/i,'$1').replace(/<\/svg>[\s\S]*$/i,'</svg>');
-      // Validate — must start with <svg, end with </svg>, and have actual content
-      if(stripped.trim().toLowerCase().startsWith('<svg')&&stripped.includes('</svg>')&&stripped.length>200){
-        svg=stripped;
-        break;
-      }
+      var sysPrompt=isIllustration
+        ?'You generate SVG illustrations for HVAC technicians. Your ENTIRE response must be valid SVG XML starting with <svg and ending with </svg>. No other text. No markdown. No code blocks. Just the raw SVG code.'
+        :'You generate SVG wiring diagrams for HVAC technicians. Your ENTIRE response must be valid SVG XML starting with <svg and ending with </svg>. No other text. No markdown. No code blocks. Just the raw SVG code.';
+      var userPrompt=(isIllustration?buildIllustrationPrompt(prompt):buildDiagramPrompt(prompt))+(attempt>0?'\n\nIMPORTANT: Start your response with <svg and end with </svg>. Nothing else. No explanation.':'');
+      var raw=await callAI(sysPrompt,[{role:'user',content:userPrompt}],4096);
+      if(!raw||raw.length<100)continue;
+      var extracted=raw.replace(/^```[\w]*\s*/i,'').replace(/\s*```\s*$/i,'').trim();
+      var svgIdx=extracted.toLowerCase().indexOf('<svg');
+      if(svgIdx>0)extracted=extracted.substring(svgIdx);
+      var endIdx=extracted.toLowerCase().lastIndexOf('</svg>');
+      if(endIdx>0)extracted=extracted.substring(0,endIdx+6);
+      if(extracted.toLowerCase().startsWith('<svg')&&extracted.includes('</svg>')&&extracted.length>300){svg=extracted;}
     }catch(e){}
   }
-
   if(container.contains(loadDiv))container.removeChild(loadDiv);
-
-  if(!svg){
-    appendMessage('agent','I had trouble generating that visual. Try being more specific — for example: "draw a dual run capacitor wiring diagram for a Carrier condenser" or tap 📐 Draw Diagram below.');
-    return;
-  }
-
-  // Make fully responsive and remove fixed dimensions
-  svg=svg.replace(/\s+width="[^"]*"/g,'').replace(/\s+height="[^"]*"/g,'');
-  svg=svg.replace(/<svg/,'<svg style="width:100%;height:auto;display:block;" ');
-
+  if(!svg){svg=isIllustration?buildFallbackIllustration(caption):buildFallbackDiagram(caption);}
+  svg=svg.replace(/\s+width=["']\d+[^"']*["']/g,'').replace(/\s+height=["']\d+[^"']*["']/g,'');
+  if(!svg.includes('style="width:100%'))svg=svg.replace('<svg','<svg style="width:100%;height:auto;display:block;" ');
   var div=document.createElement('div');div.className='msg-agent';
-  var bg=isIllustration?'#ffffff':'#0f172a';
-  var border=isIllustration?'#E2E4ED':'#1e293b';
-  div.innerHTML='<div class="msg-bubble msg-bubble-agent" style="padding:10px;background:'+bg+';border-color:'+border+';border-radius:12px;">'
-    +'<div style="font-size:11px;color:#9499B0;margin-bottom:8px;font-weight:700;letter-spacing:.3px;">'+(isIllustration?'🎨':'📐')+' '+caption+'</div>'
-    +svg
-    +'<div style="font-size:10px;color:#9499B0;margin-top:8px;text-align:center;">Tap to zoom</div>'
-    +'</div><div class="msg-time">'+getTimeStr()+'</div>';
-
-  var svgEl=div.querySelector('svg');
+  var wrapper=document.createElement('div');
+  wrapper.className='msg-bubble msg-bubble-agent';
+  wrapper.style.cssText='padding:10px;background:'+(isIllustration?'#ffffff':'#0f172a')+';border-color:'+(isIllustration?'#E2E4ED':'#1e293b')+';border-radius:12px;';
+  var label=document.createElement('div');
+  label.style.cssText='font-size:11px;color:#9499B0;margin-bottom:8px;font-weight:700;';
+  label.textContent=(isIllustration?'🎨 ':'📐 ')+(caption||'Technical Visual');
+  var svgContainer=document.createElement('div');
+  svgContainer.innerHTML=svg;
+  var hint=document.createElement('div');
+  hint.style.cssText='font-size:10px;color:#9499B0;margin-top:8px;text-align:center;';
+  hint.textContent='Tap to zoom';
+  wrapper.appendChild(label);wrapper.appendChild(svgContainer);wrapper.appendChild(hint);
+  var time=document.createElement('div');time.className='msg-time';time.textContent=getTimeStr();
+  div.appendChild(wrapper);div.appendChild(time);
+  var svgEl=svgContainer.querySelector('svg');
   if(svgEl){
     svgEl.style.cursor='pointer';
-    svgEl.onclick=function(){
+    svgEl.addEventListener('click',function(){
       var overlay=document.createElement('div');
-      overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;-webkit-overflow-scrolling:touch;overflow:auto;';
-      var clone=svgEl.cloneNode(true);
-      clone.removeAttribute('style');
-      clone.style.cssText='width:100%;max-width:640px;height:auto;';
+      overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;-webkit-overflow-scrolling:touch;';
+      var clone=svgEl.cloneNode(true);clone.style.cssText='width:100%;max-width:640px;height:auto;';
       var closeBtn=document.createElement('button');
       closeBtn.textContent='✕';
-      closeBtn.style.cssText='position:fixed;top:max(env(safe-area-inset-top,0px),16px);right:16px;background:rgba(255,255,255,.25);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;z-index:10000;-webkit-tap-highlight-color:transparent;';
-      closeBtn.onclick=function(e){e.stopPropagation();if(document.body.contains(overlay))document.body.removeChild(overlay);};
+      closeBtn.style.cssText='position:fixed;top:max(env(safe-area-inset-top,0px),16px);right:16px;background:rgba(255,255,255,.25);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;z-index:10000;-webkit-tap-highlight-color:transparent;';
+      closeBtn.addEventListener('click',function(e){e.stopPropagation();if(document.body.contains(overlay))document.body.removeChild(overlay);});
       overlay.appendChild(clone);overlay.appendChild(closeBtn);
-      overlay.onclick=function(e){if(e.target===overlay&&document.body.contains(overlay))document.body.removeChild(overlay);};
+      overlay.addEventListener('click',function(e){if(e.target===overlay&&document.body.contains(overlay))document.body.removeChild(overlay);});
       document.body.appendChild(overlay);
-    };
+    });
   }
   container.appendChild(div);
   container.scrollTop=container.scrollHeight;
 }
+
+function buildDiagramPrompt(prompt){
+  return prompt+'\n\nSVG diagram requirements: viewBox="0 0 500 440", first child element must be <rect width="500" height="440" fill="#111827"/>, title in white at top, components as teal #00C2B2 filled rectangles with white labels, colored wire lines (R=red #ef4444, C=blue #3b82f6, Y=yellow #eab308, G=green #22c55e, W=white stroke, O=orange #f97316), all text font-family="Arial,sans-serif". Include all relevant components, terminals, and labels.';
+}
+
+function buildIllustrationPrompt(prompt){
+  return prompt+'\n\nSVG illustration requirements: viewBox="0 0 500 400", background <rect width="500" height="400" fill="#f8f9fa"/>, realistic colors (copper #b87333, steel #9ca3af, plastic #e5e7eb), title in dark text at top, labeled arrows pointing to key parts, font-family="Arial,sans-serif". Make it look like a professional technical manual.';
+}
+
+function buildFallbackDiagram(caption){
+  var t=(caption||'HVAC Diagram').replace(/</g,'&lt;').replace(/>/g,'&gt;').substring(0,40);
+  return '<svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg"><rect width="500" height="300" fill="#111827"/><text x="250" y="35" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="15" font-weight="bold">'+t+'</text><rect x="150" y="60" width="200" height="50" fill="#00C2B2" rx="6"/><text x="250" y="90" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="12">THERMOSTAT</text><line x1="250" y1="110" x2="250" y2="150" stroke="#6B7280" stroke-width="2"/><rect x="50" y="150" width="150" height="50" fill="#1e3a5f" stroke="#00C2B2" stroke-width="1.5" rx="4"/><text x="125" y="180" text-anchor="middle" fill="#00C2B2" font-family="Arial,sans-serif" font-size="11">AIR HANDLER</text><rect x="300" y="150" width="150" height="50" fill="#1e3a5f" stroke="#00C2B2" stroke-width="1.5" rx="4"/><text x="375" y="180" text-anchor="middle" fill="#00C2B2" font-family="Arial,sans-serif" font-size="11">CONDENSER</text><line x1="200" y1="175" x2="300" y2="175" stroke="#ef4444" stroke-width="2"/><text x="250" y="170" text-anchor="middle" fill="#ef4444" font-family="Arial,sans-serif" font-size="10">R</text><text x="250" y="255" text-anchor="middle" fill="#6B7280" font-family="Arial,sans-serif" font-size="12">Be more specific for a detailed diagram</text><text x="250" y="278" text-anchor="middle" fill="#9499B0" font-family="Arial,sans-serif" font-size="11">e.g. "dual run capacitor wiring" or "furnace sequence"</text></svg>';
+}
+
+function buildFallbackIllustration(caption){
+  var t=(caption||'HVAC Component').replace(/</g,'&lt;').replace(/>/g,'&gt;').substring(0,40);
+  return '<svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg"><rect width="500" height="300" fill="#f8f9fa"/><text x="250" y="35" text-anchor="middle" fill="#1f2937" font-family="Arial,sans-serif" font-size="15" font-weight="bold">'+t+'</text><rect x="175" y="60" width="150" height="100" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2" rx="8"/><circle cx="250" cy="110" r="35" fill="#b87333" stroke="#92400e" stroke-width="2"/><text x="250" y="115" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="11" font-weight="bold">COMPONENT</text><line x1="320" y1="75" x2="390" y2="55" stroke="#9ca3af" stroke-width="1"/><text x="392" y="53" fill="#374151" font-family="Arial,sans-serif" font-size="11">Housing</text><line x1="285" y1="110" x2="390" y2="110" stroke="#9ca3af" stroke-width="1"/><text x="392" y="114" fill="#374151" font-family="Arial,sans-serif" font-size="11">Body</text><text x="250" y="220" text-anchor="middle" fill="#6B7280" font-family="Arial,sans-serif" font-size="12">Be more specific for a detailed illustration</text><text x="250" y="242" text-anchor="middle" fill="#9499B0" font-family="Arial,sans-serif" font-size="11">e.g. "illustrate a dual run capacitor"</text></svg>';
+}
+
 
 async function generateAndShowDiagram(userText,mikeResponse){
   var prompt='Tech asked: "'+userText+'"\nMike explained: "'+mikeResponse.substring(0,500)+'"\n\nCreate the most helpful SVG diagram for this situation:\n- If wiring: show every wire with color-coded lines, terminal labels (R,C,Y,G,W,O,B), component boxes\n- If furnace sequence: flowchart with each step, decision points, lockout conditions\n- If refrigerant/pressures: dual gauge manifold showing suction and discharge with target ranges labeled\n- If installation steps: numbered step diagram\n- If circuit: full electrical schematic with proper symbols\nMake it genuinely useful for a field technician diagnosing right now.';

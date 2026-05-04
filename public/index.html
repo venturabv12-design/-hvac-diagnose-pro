@@ -2120,6 +2120,44 @@ function stopCameraListen(){
   }
   updateCameraMicState('idle');
 }
+
+// ── LANGUAGE SYSTEM ──────────────────────────────────────────
+var TRANSLATIONS={
+  en:{aiReady:'AI Ready',offline:'Offline',listening:'Listening…',sending:'Sending to Mike…'},
+  es:{aiReady:'IA Lista',offline:'Sin conexión',listening:'Escuchando…',sending:'Enviando a Mike…'},
+  zh:{aiReady:'AI就绪',offline:'离线',listening:'正在聆听…',sending:'发送给Mike…'},
+  vi:{aiReady:'AI Sẵn sàng',offline:'Ngoại tuyến',listening:'Đang nghe…',sending:'Gửi cho Mike…'},
+  fr:{aiReady:'IA Prête',offline:'Hors ligne',listening:'Écoute…',sending:'Envoi à Mike…'},
+  pt:{aiReady:'IA Pronta',offline:'Offline',listening:'Ouvindo…',sending:'Enviando para Mike…'}
+};
+
+function toggleLangMenu(){
+  var dd=document.getElementById('langDropdown');
+  if(dd)dd.style.display=dd.style.display==='block'?'none':'block';
+}
+
+function setLang(lang){
+  currentLang=lang;
+  var flags={en:'🇺🇸',es:'🇲🇽',zh:'🇨🇳',vi:'🇻🇳',fr:'🇫🇷',pt:'🇧🇷'};
+  var codes={en:'EN',es:'ES',zh:'ZH',vi:'VI',fr:'FR',pt:'PT'};
+  var flagEl=document.getElementById('langFlag');
+  var codeEl=document.getElementById('langCode');
+  if(flagEl)flagEl.textContent=flags[lang]||'🇺🇸';
+  if(codeEl)codeEl.textContent=codes[lang]||'EN';
+  var dd=document.getElementById('langDropdown');
+  if(dd)dd.style.display='none';
+  // Update speech recognition language if currently listening
+  if(isListening){stopListening();setTimeout(startListening,200);}
+}
+
+// Close lang dropdown when clicking outside
+document.addEventListener('click',function(e){
+  var toggle=document.getElementById('langToggle');
+  if(toggle&&!toggle.contains(e.target)){
+    var dd=document.getElementById('langDropdown');
+    if(dd)dd.style.display='none';
+  }
+});
 </script>
 </body>
 </html>

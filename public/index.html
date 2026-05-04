@@ -1649,6 +1649,40 @@ function startListening(){
   if(!SR){setVoiceStatus('Voice not supported on this browser','');return;}
   if(isMikeSpeaking)return;
   stopListening();
+
+  // Safari iOS fix: warm up the audio session with getUserMedia FIRST
+  // This prevents the WKWebView crash when SpeechRecognition requests mic
+  if(isSafari&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+    navigator.mediaDevices.getUserMedia({audio:true})
+      .then(function(stream){
+        // Got permission and warm audio session - stop the stream immediately
+        stream.getTracks().forEach(function(t){t.stop();});
+        // Now safe to start SpeechRecognition
+        _doStartListening(SR);
+      })
+      .catch(function(err){
+        // Permission denied or error
+        if(err.name==='NotAllowedError'||err.name==='PermissionDeniedError'){
+          setVoiceStatus('Mic permission needed','');
+          voiceMode=false;
+          var bar=document.getElementById('voiceModeBar');
+          var btn=document.getElementById('voiceModeBtn');
+          var lbl=document.getElementById('voiceModeBtnLabel');
+          if(bar)bar.style.display='none';
+          if(btn)btn.classList.remove('voice-mode-active');
+          if(lbl){lbl.style.color='rgba(255,255,255,.5)';lbl.textContent='Voice';}
+        } else {
+          // Try anyway
+          _doStartListening(SR);
+        }
+      });
+  } else {
+    // Android Chrome and others - go straight to SpeechRecognition
+    _doStartListening(SR);
+  }
+}
+
+function _doStartListening(SR){
   try{
     speechRecognition=new SR();
     speechRecognition.continuous=false;
@@ -1716,9 +1750,7 @@ function startListening(){
     }catch(err){
       isListening=false;
       setVoiceStatus('Tap mic to try again','');
-      if(voiceMode){
-        setTimeout(function(){if(voiceMode&&!isListening&&!isMikeSpeaking)startListening();},1500);
-      }
+      if(voiceMode){setTimeout(function(){if(voiceMode&&!isListening&&!isMikeSpeaking)startListening();},1500);}
     }
   }catch(outerErr){
     isListening=false;

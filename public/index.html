@@ -1614,19 +1614,25 @@ function toggleVoiceMode(){
     bar.style.display='block';
     btn.classList.add('voice-mode-active');
     lbl.style.color='#00C2B2';lbl.textContent='ON';
-    setVoiceStatus('Tap the mic button to talk','');
+    setVoiceStatus('Starting…','');
     autoListenAfterSpeak=true;
     if(navigator.wakeLock){
       navigator.wakeLock.request('screen').then(function(wl){wakeLock=wl;}).catch(function(){});
     }
-    // Do NOT auto-start mic here — tech must tap mic button
-    // This avoids iOS Safari crash from calling start() outside direct user gesture
+    // Set greeting for fresh chat
+    if(chatHistory.length===0){
+      var g={en:"Hey, I'm Mike. 25 years in the field — I've seen everything. What are you dealing with?",es:"Hola, soy Mike. ¿En qué puedo ayudarte?",zh:"我是Mike，有什么需要帮忙的？",vi:"Mike đây. Tôi có thể giúp gì?",fr:"C'est Mike. Sur quoi travaillez-vous?",pt:"Mike aqui. Em que posso ajudar?"};
+      micGreetingPending=g[currentLang]||g.en;
+    }
+    // Start immediately — tech just tapped the button, that IS the user gesture
+    startListening();
   }else{
     voiceMode=false;
     bar.style.display='none';
     btn.classList.remove('voice-mode-active');
     lbl.style.color='rgba(255,255,255,.5)';lbl.textContent='Voice';
     stopMikeSpeaking();stopListening();autoListenAfterSpeak=false;
+    micGreetingPending=null;
     if(wakeLock){try{wakeLock.release();}catch(e){}wakeLock=null;}
     var micBtn=document.getElementById('micBtn');
     if(micBtn){micBtn.classList.remove('mic-listening','mic-speaking');micBtn.textContent='🎙️';micBtn.style.background='#00C2B2';}

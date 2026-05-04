@@ -286,7 +286,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
           <div style="flex:1;">
             <p style="font-size:17px;font-weight:700;color:#2563EB;margin-bottom:6px;">Need a Certified HVAC Technician?</p>
             <p style="font-size:15px;color:#2563EB;line-height:1.6;margin-bottom:14px;">Get connected with a licensed, insured HVAC pro. Free estimates, same-day service available.</p>
-            <button class="btn btn-blue" onclick="alert('Connect this to your booking link or phone number.')">📞 Request a Free Estimate</button>
+            <button class="btn btn-blue" onclick="console.info('Booking link placeholder')">📞 Request a Free Estimate</button>
           </div>
         </div>
       </div>
@@ -877,7 +877,7 @@ async function startRecording(){
     },1000);
     document.getElementById("recorder").className="recorder recording";
     document.getElementById("recBtnWrap").innerHTML='<div style="position:relative;display:inline-block;"><div class="rec-ring"></div><button onclick="stopRecording()" style="position:relative;z-index:10;background:#ef4444;color:#fff;width:52px;height:52px;border-radius:50%;border:none;font-size:20px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;">⏹</button></div>';
-  }catch(err){alert("Please allow microphone access to use voice recording.");}
+  }catch(err){setVoiceStatus('Mic permission needed — check browser settings','');}
 }
 function stopRecording(){
   if(mediaRecorder&&mediaRecorder.state==="recording")mediaRecorder.stop();
@@ -953,7 +953,7 @@ function parseJSON(raw){
 async function runHomeownerDiagnostic(){
   var sysAge=document.getElementById("homeSysAge").value;
   var desc=document.getElementById("homeDesc").value;
-  if(!selectedHomeSymptoms.length&&!desc&&!homeUploadedFile){alert("Please describe the problem, select symptoms, or upload a photo.");return;}
+  if(!selectedHomeSymptoms.length&&!desc&&!homeUploadedFile){appendMessage('agent','Please describe the problem, select symptoms, or upload a photo.');return;}
   var btn=document.getElementById("homeRunBtn");
   btn.disabled=true;btn.style.background="#009E90";
   btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing" style="font-size:18px;">Analyzing…</span>';
@@ -996,7 +996,7 @@ async function runHomeownerDiagnostic(){
     document.getElementById("homeResultPanel").style.display="block";
     document.getElementById("homeResultPanel").scrollIntoView({behavior:"smooth",block:"start"});
   }catch(e){
-    alert("Request failed: "+e.message);
+    appendMessage('agent','Request failed — please try again.');
   }finally{
     btn.disabled=false;btn.style.background="#00C2B2";btn.innerHTML="⚡ Run Diagnostic";
   }
@@ -1015,7 +1015,7 @@ async function runDiagnostic(){
   var sysAge=document.getElementById("sysAge").value;
   var brand=document.getElementById("brand").value;
   var desc=document.getElementById("desc").value;
-  if(!sysType&&!selectedSymptoms.length&&!desc&&!uploadedFile&&!audioTranscript){alert("Please add at least one detail — select a system type, describe the problem, or upload a photo.");return;}
+  if(!sysType&&!selectedSymptoms.length&&!desc&&!uploadedFile&&!audioTranscript){appendMessage('agent','Please add at least one detail — select a system type or describe the problem.');return;}
   var btn=document.getElementById("runBtn");
   btn.disabled=true;btn.style.background="#009E90";
   btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing" style="font-size:18px;">Analyzing…</span>';
@@ -1042,9 +1042,9 @@ async function runDiagnostic(){
     showResult(sev,raw,data);
   }catch(e){
     var msg=e.message||"Unknown error";
-    if(msg.includes("timed out"))alert("Request timed out — please try again.");
-    else if(msg.includes("API key"))alert("API key issue — check your ANTHROPIC_API_KEY.");
-    else alert("Request failed: "+msg);
+    if(msg.includes("timed out"))appendMessage('agent','Taking longer than usual — please try again.');
+    else if(msg.includes("API key"))appendMessage('agent','Connection issue — please try again.');
+    else appendMessage('agent','Request failed — please try again.');
   }finally{
     btn.disabled=false;btn.style.background="#00C2B2";btn.innerHTML="⚡ Run Diagnostic";
   }
@@ -1107,10 +1107,10 @@ async function runEduMode(){
     var result=await callAI("You are an HVAC expert who explains technical problems to homeowners in simple, friendly language. No jargon. Use analogies.",[{role:"user",content:"Based on this technical HVAC diagnosis, create a simple homeowner-friendly explanation:\n\n"+lastDiagResult+"\n\n**What's happening** (1-2 sentences, simple analogy)\n**Why this matters**\n**What happens if you wait**\n**What the technician will do**\n**Good questions to ask** (2-3 questions)"}],500);
     document.getElementById("eduText").innerHTML=result.replace(/\n/g,"<br/>");
     document.getElementById("eduContent").style.display="block";
-  }catch(e){alert("Failed: "+e.message);}
+  }catch(e){appendMessage('agent','Something went wrong — please try again.');}
   finally{btn.disabled=false;btn.innerHTML="Generate Explanation";}
 }
-function copyEdu(){navigator.clipboard.writeText(document.getElementById("eduText").textContent||"").then(function(){alert("Copied! Show this to your customer.");}).catch(function(){});}
+function copyEdu(){navigator.clipboard.writeText(document.getElementById("eduText").textContent||"").then(function(){setVoiceStatus('Copied!','');setTimeout(function(){setVoiceStatus('','');},2000);}).catch(function(){});}
 
 function resetDiagnostic(){
   document.getElementById("modelNumber").value="";document.getElementById("serialNumber").value="";
@@ -1182,7 +1182,16 @@ function showWarrantyBanner(w){
 var audioUnlocked=false,sharedAudioCtx=null;
 function unlockAudio(){
   if(audioUnlocked)return;audioUnlocked=true;
-  try{var A=window.AudioContext||window.webkitAudioContext;if(!A)return;sharedAudioCtx=new A();var b=sharedAudioCtx.createBuffer(1,1,22050),s=sharedAudioCtx.createBufferSource();s.buffer=b;s.connect(sharedAudioCtx.destination);s.start(0);if(sharedAudioCtx.state==='suspended')sharedAudioCtx.resume();}catch(e){sharedAudioCtx=null;}
+  try{
+    var A=window.AudioContext||window.webkitAudioContext;if(!A)return;
+    if(!sharedAudioCtx)sharedAudioCtx=new A();
+    // Handle Safari interrupted state (happens after mic permission dialog)
+    if(sharedAudioCtx.state==='suspended'||sharedAudioCtx.state==='interrupted'){
+      sharedAudioCtx.resume().catch(function(){});
+    }
+    var b=sharedAudioCtx.createBuffer(1,1,22050),s=sharedAudioCtx.createBufferSource();
+    s.buffer=b;s.connect(sharedAudioCtx.destination);s.start(0);
+  }catch(e){sharedAudioCtx=null;audioUnlocked=false;}
 }
 
 function getTimeStr(){var now=new Date();return now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
@@ -1732,12 +1741,26 @@ var isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
 function startListening(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){setVoiceStatus('Voice not supported — use Chrome','');return;}
-  // Never start mic while Mike is speaking - prevents echo
+  if(!SR){setVoiceStatus('Voice not supported — use Chrome or Safari 14.5+','');return;}
   if(isMikeSpeaking)return;
   stopListening();
+
+  // Safari needs extra time after mic permission dialog closes
+  var delay = isSafari ? 600 : 50;
+
   setTimeout(function(){
-    if(isMikeSpeaking)return; // Check again after delay
+    if(isMikeSpeaking)return;
+
+    // Safari: always resume AudioContext before starting speech rec
+    // Permission dialog can suspend or break the audio session
+    if(isSafari && sharedAudioCtx){
+      try{
+        if(sharedAudioCtx.state==='suspended'||sharedAudioCtx.state==='interrupted'){
+          sharedAudioCtx.resume().catch(function(){});
+        }
+      }catch(e){}
+    }
+
     try{
       speechRecognition=new SR();
       speechRecognition.continuous=false;
@@ -1747,6 +1770,7 @@ function startListening(){
       if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🔴';}
       isListening=true;
       setVoiceStatus('Listening…','Go ahead…');
+
       speechRecognition.onresult=function(e){
         var transcript='';
         for(var i=e.resultIndex;i<e.results.length;i++)transcript+=e.results[i][0].transcript;
@@ -1756,6 +1780,7 @@ function startListening(){
           if(isSafari)setVoiceStatus('Got it…',transcript);
         }
       };
+
       speechRecognition.onend=function(){
         isListening=false;
         if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
@@ -1765,30 +1790,73 @@ function startListening(){
           autoListenAfterSpeak=true;
           sendChat();
         } else if(voiceMode&&!isMikeSpeaking){
-          // No speech heard — wait then try again
           setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1200:800);
         }
       };
+
       speechRecognition.onerror=function(ev){
         isListening=false;
         if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
         if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){
-          setVoiceStatus('Mic permission needed — check browser settings','');
+          // Safari sometimes fires not-allowed even after user grants permission
+          // Wait and retry once before giving up
+          if(isSafari){
+            setTimeout(function(){
+              if(voiceMode&&!isListening){
+                setVoiceStatus('Tap mic to speak','');
+                // Don't auto-retry on permission error — require manual tap
+              }
+            },500);
+          }
+          setVoiceStatus('Mic permission needed — tap mic to try again','');
           autoListenAfterSpeak=false;
+          voiceMode=false;
+          var bar=document.getElementById('voiceModeBar');
+          var btn=document.getElementById('voiceModeBtn');
+          var lbl=document.getElementById('voiceModeBtnLabel');
+          if(bar)bar.style.display='none';
+          if(btn)btn.classList.remove('voice-mode-active');
+          if(lbl){lbl.style.color='rgba(255,255,255,.5)';lbl.textContent='Voice';}
         } else if(ev.error==='no-speech'||ev.error==='aborted'){
           if(voiceMode&&!isMikeSpeaking){
             setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1000:500);
           }
+        } else if(ev.error==='audio-capture'){isListening=false;
+          // Safari: mic in use by another app or hardware issue
+          setVoiceStatus('Mic unavailable — check another app isn\'t using it','');
+          setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},2000);
         } else {
-          setVoiceStatus('Mic error: '+ev.error,'');
+          // Unknown error — try to recover silently
+          if(voiceMode&&!isMikeSpeaking){
+            setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1500:800);
+          }
         }
       };
-      speechRecognition.start();
+
+      // Safari: use a try/catch on start() itself — it can throw synchronously
+      try{
+        speechRecognition.start();
+      }catch(startErr){
+        isListening=false;
+        if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
+        // On Safari, start() throws if permission not yet granted or audio session broken
+        // Wait longer and retry
+        if(isSafari&&voiceMode){
+          setTimeout(function(){if(voiceMode&&!isListening&&!isMikeSpeaking)startListening();},1500);
+        }
+      }
+
     }catch(err){
       isListening=false;
+      var mb=document.getElementById('micBtn');
+      if(mb){mb.classList.remove('mic-listening');mb.textContent='🎙️';}
       setVoiceStatus('Tap mic to try again','');
+      // Recover: try again after a pause
+      if(isSafari&&voiceMode){
+        setTimeout(function(){if(voiceMode&&!isListening&&!isMikeSpeaking)startListening();},1500);
+      }
     }
-  },isSafari?300:50);
+  }, delay);
 }
 
 function stopListening(){

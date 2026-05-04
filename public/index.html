@@ -1232,15 +1232,10 @@ function appendMessage(role,text){
     .replace(/\*([^*]+)\*/g,'$1')
     .replace(/  +/g,' ').trim();
   if(role==='agent'&&voiceMode)setTimeout(function(){mikeSay(voiceText);},200);
-  // Strip any SVG or code blocks Mike accidentally includes in text
-  if(isAgent){
-    text = text
-      .replace(/```[\s\S]*?```/g, '')           // remove all code blocks
-      .replace(/<svg[\s\S]*?<\/svg>/gi, '')      // remove any SVG content
-      .replace(/^\s*[\r\n]/gm, '')               // clean up blank lines left behind
-      .trim();
-  }
-  var div=document.createElement('div');div.className=isAgent?'msg-agent':'msg-user';
+  var container=document.getElementById('chatMessages');
+  var isAgent=role==='agent';
+  var div=document.createElement('div');
+  div.className=isAgent?'msg-agent':'msg-user';
 
   // Process markdown images ![alt](url) — verify and show inline
   var formatted=text

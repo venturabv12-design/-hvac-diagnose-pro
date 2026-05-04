@@ -913,7 +913,7 @@ async function callAI(system,messages,max_tokens,useSearch){
     if(useSearch)body.use_search=true;
     var res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:controller.signal});
     clearTimeout(timeout);var data=await res.json();
-    if(data.error)throw new Error(data.error);return data.text;
+    if(data.error)throw new Error(data.error);return data.response||data.text||'';
   }catch(e){clearTimeout(timeout);if(e.name==='AbortError')throw new Error('Request timed out — try again.');throw e;}
 }
 async function blobToBase64(blob){
@@ -1330,75 +1330,81 @@ async function sendChat(){
 function sendQuick(text){document.getElementById('chatInput').value=text;sendChat();}
 
 function needsDiagram(text){
-  return !!(text&&text.match(/diagram|wir|schematic|connect|hook up|install|sequence|flow|pressure|charge|superheat|subcooling|step.?by.?step|how to|procedure|walk me|draw|circuit|layout|heat pump|furnace|gauges|manifold|refriger|illustrat|visual|show me|picture|what does.*look|draw me/i));
+  return !!(text&&text.match(/diagram|wir|schematic|connect|hook up|install|sequence|flow|pressure|charge|superheat|subcooling|step.?by.?step|how to|procedure|walk me|draw|circuit|layout|heat pump|furnace|gauges|manifold|refriger|illustrat|visual|show me|picture|what does.*look|draw me|explain.*visual|can you show/i));
 }
 
 function needsIllustration(text){
-  return !!(text&&text.match(/illustrat|visual|show me|picture|what does.*look|draw me|create.*image|make.*image|generate.*image/i));
+  return !!(text&&text.match(/illustrat|show me what|what does.*look like|draw me|create.*image|make.*image|generate.*image|picture of|visual of/i));
 }
 
 async function generateAndShowSVG(prompt,caption,isIllustration){
   var container=document.getElementById('chatMessages');
   var loadDiv=document.createElement('div');
   loadDiv.className='msg-agent';
-  loadDiv.innerHTML='<div class="msg-bubble msg-bubble-agent" style="font-size:13px;color:#9499B0;padding:10px 14px;"><span class="pulsing">'+(isIllustration?'🎨 Creating illustration…':'📐 Generating diagram…')+'</span></div>';
+  loadDiv.innerHTML='<div class="msg-bubble msg-bubble-agent" style="font-size:13px;color:#9499B0;padding:12px 14px;display:flex;align-items:center;gap:8px;"><span class="pulsing" style="font-size:18px;">'+(isIllustration?'🎨':'📐')+'</span><span class="pulsing">'+(isIllustration?'Creating illustration…':'Generating diagram…')+'</span></div>';
   container.appendChild(loadDiv);
   container.scrollTop=container.scrollHeight;
-  try{
-    var illSystem='You are an SVG illustrator. OUTPUT ONLY RAW SVG — start with <svg end with </svg> nothing else no markdown no code fences. Create a detailed HVAC component illustration: viewBox="0 0 500 400", light background #f8f9fa, realistic colors copper=#b87333 steel=#9ca3af, bold labels with pointer lines, professional technical manual style.';
-    var diagSystem='You are an SVG diagram generator. OUTPUT ONLY RAW SVG — start with <svg end with </svg> nothing else no markdown no code fences. Create a professional HVAC technical diagram: viewBox="0 0 500 420", dark background rect fill="#111827" covering full area, teal #00C2B2 for main elements, white labels font-family sans-serif, wire colors Red=#ef4444 Blue=#3b82f6 Yellow=#eab308 Green=#22c55e White=#ffffff Orange=#f97316, for wiring draw terminal boxes labeled R C Y G W O/B with colored wire lines, for sequences use rectangles and diamonds with arrows, for gauges draw circles with arcs and needle, include title at top.';
-    var system=isIllustration?illSystem:diagSystem;
-    var raw=await callAI(system,[{role:'user',content:prompt}],2500);
 
-    // Strip ALL possible wrapping — code fences, extra text, etc.
-    var svg=raw
-      .replace(/^[\s\S]*?(<svg)/i,'$1')  // remove everything before <svg
-      .replace(/<\/svg>[\s\S]*$/i,'</svg>');  // remove everything after </svg>
+  var illSystem='You are an SVG illustrator for HVAC technical manuals. OUTPUT ONLY RAW SVG — your entire response must start with <svg and end with </svg>. No text before, no text after, no markdown, no code fences. viewBox="0 0 500 400". Light background rect fill="#f8f9fa". Realistic colors: copper pipes #b87333, steel #9ca3af, plastic #e5e7eb. Add labeled arrows to all key parts. Make it look like a professional technical manual page.';
+  var diagSystem='You are an HVAC technical diagram generator. OUTPUT ONLY RAW SVG — your entire response must start with <svg and end with </svg>. No text before, no text after, no markdown, no code fences. viewBox="0 0 500 440". First element must be: <rect width="500" height="440" fill="#111827"/>. Use teal #00C2B2 for live components. White #ffffff for all text labels, font-family="Arial,sans-serif". Wire colors: R=red, C=blue, Y=yellow, G=green, W=white, O/B=orange. Draw terminal blocks as labeled rectangles. Connect with colored lines. Add title text at top. For sequences: rectangles with text, diamond decisions, arrows. For gauges: circles with colored arcs and value labels.';
 
-    // Validate
-    if(!svg||!svg.trim().startsWith('<svg')||!svg.includes('</svg>')){
-      if(container.contains(loadDiv))container.removeChild(loadDiv);
-      appendMessage('agent','Having trouble generating that visual. Try asking more specifically — e.g. "draw a dual run capacitor wiring diagram"');
-      return;
-    }
+  var system=isIllustration?illSystem:diagSystem;
+  var svg=null;
 
-    // Make responsive
-    svg=svg.replace(/<svg([^>]*)>/i,function(m,attrs){
-      attrs=attrs.replace(/width="[^"]*"/,'').replace(/height="[^"]*"/,'');
-      return '<svg'+attrs+' style="width:100%;height:auto;display:block;">';
-    });
-
-    if(container.contains(loadDiv))container.removeChild(loadDiv);
-    var div=document.createElement('div');div.className='msg-agent';
-    var label=isIllustration?'🎨 '+caption:'📐 '+caption;
-    div.innerHTML='<div class="msg-bubble msg-bubble-agent" style="padding:10px;background:'+(isIllustration?'#fff':'#0f172a')+';border-color:'+(isIllustration?'#E2E4ED':'#1e293b')+';">'
-      +'<div style="font-size:11px;color:#9499B0;margin-bottom:8px;font-weight:600;">'+label+'</div>'
-      +svg
-      +'<div style="font-size:10px;color:#9499B0;margin-top:8px;text-align:center;">Tap to zoom</div>'
-      +'</div><div class="msg-time">'+getTimeStr()+'</div>';
-    var svgEl=div.querySelector('svg');
-    if(svgEl){
-      svgEl.style.cursor='pointer';
-      svgEl.onclick=function(){
-        var overlay=document.createElement('div');
-        overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;-webkit-overflow-scrolling:touch;';
-        var clone=svgEl.cloneNode(true);
-        clone.style.cssText='width:100%;max-width:640px;height:auto;';
-        var closeBtn=document.createElement('button');
-        closeBtn.textContent='✕';
-        closeBtn.style.cssText='position:fixed;top:16px;right:16px;background:rgba(255,255,255,.2);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;z-index:10000;';
-        closeBtn.onclick=function(e){e.stopPropagation();document.body.removeChild(overlay);};
-        overlay.appendChild(clone);
-        overlay.appendChild(closeBtn);
-        overlay.onclick=function(){document.body.removeChild(overlay);};
-        document.body.appendChild(overlay);
-      };
-    }
-    container.appendChild(div);
-    container.scrollTop=container.scrollHeight;
-  }catch(e){
-    if(container.contains(loadDiv))container.removeChild(loadDiv);
+  // Try up to 2 times — SVG generation can occasionally produce malformed output
+  for(var attempt=0;attempt<2;attempt++){
+    try{
+      var raw=await callAI(system,[{role:'user',content:prompt+(attempt>0?' Make sure your response starts with <svg and ends with </svg> with no other text.':'')}],2500);
+      // Aggressively strip everything outside <svg>...</svg>
+      var stripped=raw.replace(/^[\s\S]*?(<svg[\s>])/i,'$1').replace(/<\/svg>[\s\S]*$/i,'</svg>');
+      // Validate — must start with <svg, end with </svg>, and have actual content
+      if(stripped.trim().toLowerCase().startsWith('<svg')&&stripped.includes('</svg>')&&stripped.length>200){
+        svg=stripped;
+        break;
+      }
+    }catch(e){}
   }
+
+  if(container.contains(loadDiv))container.removeChild(loadDiv);
+
+  if(!svg){
+    appendMessage('agent','I had trouble generating that visual. Try being more specific — for example: "draw a dual run capacitor wiring diagram for a Carrier condenser" or tap 📐 Draw Diagram below.');
+    return;
+  }
+
+  // Make fully responsive and remove fixed dimensions
+  svg=svg.replace(/\s+width="[^"]*"/g,'').replace(/\s+height="[^"]*"/g,'');
+  svg=svg.replace(/<svg/,'<svg style="width:100%;height:auto;display:block;" ');
+
+  var div=document.createElement('div');div.className='msg-agent';
+  var bg=isIllustration?'#ffffff':'#0f172a';
+  var border=isIllustration?'#E2E4ED':'#1e293b';
+  div.innerHTML='<div class="msg-bubble msg-bubble-agent" style="padding:10px;background:'+bg+';border-color:'+border+';border-radius:12px;">'
+    +'<div style="font-size:11px;color:#9499B0;margin-bottom:8px;font-weight:700;letter-spacing:.3px;">'+(isIllustration?'🎨':'📐')+' '+caption+'</div>'
+    +svg
+    +'<div style="font-size:10px;color:#9499B0;margin-top:8px;text-align:center;">Tap to zoom</div>'
+    +'</div><div class="msg-time">'+getTimeStr()+'</div>';
+
+  var svgEl=div.querySelector('svg');
+  if(svgEl){
+    svgEl.style.cursor='pointer';
+    svgEl.onclick=function(){
+      var overlay=document.createElement('div');
+      overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;-webkit-overflow-scrolling:touch;overflow:auto;';
+      var clone=svgEl.cloneNode(true);
+      clone.removeAttribute('style');
+      clone.style.cssText='width:100%;max-width:640px;height:auto;';
+      var closeBtn=document.createElement('button');
+      closeBtn.textContent='✕';
+      closeBtn.style.cssText='position:fixed;top:max(env(safe-area-inset-top,0px),16px);right:16px;background:rgba(255,255,255,.25);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;z-index:10000;-webkit-tap-highlight-color:transparent;';
+      closeBtn.onclick=function(e){e.stopPropagation();if(document.body.contains(overlay))document.body.removeChild(overlay);};
+      overlay.appendChild(clone);overlay.appendChild(closeBtn);
+      overlay.onclick=function(e){if(e.target===overlay&&document.body.contains(overlay))document.body.removeChild(overlay);};
+      document.body.appendChild(overlay);
+    };
+  }
+  container.appendChild(div);
+  container.scrollTop=container.scrollHeight;
 }
 
 async function generateAndShowDiagram(userText,mikeResponse){
@@ -1413,51 +1419,110 @@ async function generateAndShowIllustration(userText,mikeResponse){
 
 async function buildImageQuery(userText,mikeResponse){
   try{
-    var prompt='HVAC image search query for: "'+userText+'". Mike said: "'+mikeResponse.substring(0,150)+'". Return ONLY 3-5 words, no punctuation.';
-    var query=await callAI('Return only a 3-5 word search query for an HVAC technical image.',[{role:'user',content:prompt}],20);
+    // Build HVAC-specific query — don't call AI for this, derive it directly
+    var combined=(userText+' '+mikeResponse.substring(0,200)).toLowerCase();
+    // Extract key HVAC terms directly for more reliable results
+    var hvacTerms={
+      'run capacitor':'run capacitor HVAC',
+      'dual run capacitor':'dual run capacitor HVAC',
+      'contactor':'HVAC contactor relay',
+      'heat exchanger':'furnace heat exchanger',
+      'evaporator coil':'evaporator coil air handler',
+      'condenser coil':'condenser coil unit',
+      'blower motor':'HVAC blower motor',
+      'inducer motor':'furnace inducer motor',
+      'pressure switch':'furnace pressure switch',
+      'flame sensor':'furnace flame sensor',
+      'ignitor':'furnace ignitor',
+      'thermostat':'thermostat wiring',
+      'refrigerant':'refrigerant gauge manifold',
+      'gauge':'refrigerant pressure gauge',
+      'compressor':'HVAC compressor',
+      'aprilaire':'Aprilaire humidifier',
+      'humidifier':'whole house humidifier',
+      'filter':'HVAC air filter',
+      'ductwork':'HVAC ductwork',
+      'mini split':'mini split ductless system',
+      'heat pump':'heat pump diagram',
+      'furnace':'gas furnace components',
+      'air handler':'air handler unit',
+    };
+    for(var term in hvacTerms){
+      if(combined.includes(term))return hvacTerms[term];
+    }
+    // Fallback: ask AI for a short query
+    var prompt='3-4 word Wikipedia image search for HVAC topic: "'+userText+'". Return ONLY the search terms.';
+    var query=await callAI('Return only 3-4 word search terms for Wikipedia image search.',[{role:'user',content:prompt}],15);
     return query?query.trim().replace(/[^a-zA-Z0-9 ]/g,'').trim():null;
   }catch(e){return null;}
-}
-
-async function verifyUrl(url){
-  // Check if URL actually loads by doing a HEAD request
-  try{
-    var res=await fetch(url,{method:'HEAD',mode:'no-cors'});
-    return true; // no-cors always succeeds if reachable
-  }catch(e){return false;}
 }
 
 async function fetchAndShowImage(query){
   if(!query)return;
   try{
-    // Step 1: Search Wikipedia for the topic
+    // Try Wikipedia first — most reliable for HVAC technical images
+    var url=await searchWikipediaImage(query);
+    // Fallback: try with "HVAC" appended
+    if(!url&&!query.toLowerCase().includes('hvac')){
+      url=await searchWikipediaImage(query+' HVAC');
+    }
+    // Fallback: try Wikimedia Commons directly
+    if(!url){
+      url=await searchCommonsImage(query);
+    }
+    if(url)showImageInChat(url,query);
+  }catch(e){}
+}
+
+async function searchWikipediaImage(query){
+  try{
     var searchRes=await fetch(
       'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch='
-      +encodeURIComponent(query)
-      +'&format=json&origin=*&srlimit=3&srnamespace=0'
+      +encodeURIComponent(query)+'&format=json&origin=*&srlimit=5&srnamespace=0'
     );
-    if(!searchRes.ok)return;
+    if(!searchRes.ok)return null;
     var searchData=await searchRes.json();
-    var results=searchData.query&&searchData.query.search;
-    if(!results||!results.length)return;
-    // Step 2: Try each result until we get one with an image
+    var results=(searchData.query&&searchData.query.search)||[];
     for(var i=0;i<results.length;i++){
-      var title=results[i].title;
-      var summaryRes=await fetch(
-        'https://en.wikipedia.org/api/rest_v1/page/summary/'
-        +encodeURIComponent(title)
-      );
-      if(!summaryRes.ok)continue;
-      var summaryData=await summaryRes.json();
-      var url=summaryData.thumbnail&&summaryData.thumbnail.source;
-      if(url){
-        // Use the original image instead of thumbnail for better quality
-        var origUrl=url.replace(/\/\d+px-/,'/400px-');
-        showImageInChat(origUrl,query);
-        return;
+      try{
+        var summaryRes=await fetch(
+          'https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(results[i].title)
+        );
+        if(!summaryRes.ok)continue;
+        var data=await summaryRes.json();
+        var thumb=data.thumbnail&&data.thumbnail.source;
+        if(thumb){
+          // Get higher resolution version
+          return thumb.replace(/\/\d+px-/,'/500px-');
+        }
+      }catch(e){}
+    }
+    return null;
+  }catch(e){return null;}
+}
+
+async function searchCommonsImage(query){
+  try{
+    var res=await fetch(
+      'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch='
+      +encodeURIComponent(query)+'&gsrnamespace=6&prop=imageinfo&iiprop=url|mime'
+      +'&format=json&origin=*&gsrlimit=3'
+    );
+    if(!res.ok)return null;
+    var data=await res.json();
+    var pages=data.query&&data.query.pages;
+    if(!pages)return null;
+    for(var key in pages){
+      var p=pages[key];
+      if(p.imageinfo&&p.imageinfo[0]){
+        var info=p.imageinfo[0];
+        if(info.mime&&info.mime.startsWith('image/')&&!info.mime.includes('svg')){
+          return info.url;
+        }
       }
     }
-  }catch(e){}
+    return null;
+  }catch(e){return null;}
 }
 
 function showImageInChat(url,caption){
@@ -1465,12 +1530,12 @@ function showImageInChat(url,caption){
   var div=document.createElement('div');
   div.className='msg-agent';
   var safeUrl=url.replace(/'/g,'%27');
-  div.innerHTML='<div class="msg-bubble msg-bubble-agent" style="padding:8px;">'
-    +'<div style="font-size:11px;color:#9499B0;margin-bottom:6px;">📷 '+(caption||'Reference image')+'</div>'
-    +'<img src="'+url+'" style="width:100%;max-height:280px;object-fit:contain;border-radius:8px;background:#f5f5f5;cursor:pointer;" '
+  div.innerHTML='<div class="msg-bubble msg-bubble-agent" style="padding:10px;">'
+    +'<div style="font-size:11px;color:#9499B0;margin-bottom:8px;font-weight:600;">📷 '+(caption||'Reference image')+'</div>'
+    +'<img src="'+url+'" crossorigin="anonymous" style="width:100%;max-height:280px;object-fit:contain;border-radius:8px;background:#f5f5f5;cursor:pointer;" '
     +'onclick="openImgOverlay(\''+safeUrl+'\')" '
-    +'onerror="this.parentElement.innerHTML=\'<div style=&quot;padding:10px;font-size:12px;color:#9499B0;&quot;>Image unavailable — try asking Mike to search again</div>\'"/>'
-    +'<div style="font-size:10px;color:#C8CBD8;margin-top:4px;">Tap to zoom</div>'
+    +'onerror="this.parentElement.style.display=\'none\'"/>'
+    +'<div style="font-size:10px;color:#C8CBD8;margin-top:6px;">Tap to zoom · Source: Wikipedia</div>'
     +'</div><div class="msg-time">'+getTimeStr()+'</div>';
   container.appendChild(div);
   container.scrollTop=container.scrollHeight;
@@ -1609,33 +1674,22 @@ function stopMikeSpeaking(){
   isMikeSpeaking=false;
   // Hard stop audio immediately
   if(mikeAudio){
-    try{mikeAudio.pause();mikeAudio.currentTime=0;}catch(e){}
+    try{mikeAudio.pause();}catch(e){}
     mikeAudio=null;
-  }
-  // Hard stop Web Audio
-  if(sharedAudioCtx){
-    try{
-      // Disconnect everything to cut audio instantly
-      var dest=sharedAudioCtx.destination;
-    }catch(e){}
   }
   if(window.speechSynthesis)window.speechSynthesis.cancel();
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
   if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';micBtn.style.background='#00C2B2';}
   if(stopBtn)stopBtn.style.display='none';
-  // Auto-listen immediately in voice mode — no tap required
+  // Device-aware delay — gives speaker audio time to physically fade
+  // iOS needs longer because of audio session handling
+  var delay=isSafari?600:300;
   if(voiceMode&&!isListening){
     setVoiceStatus('Go ahead…','');
-    // Small delay to let speaker audio physically fade from the mic
-    setTimeout(function(){
-      if(voiceMode&&!isListening)startListening();
-    },300);
+    setTimeout(function(){if(voiceMode&&!isListening)startListening();},delay);
   }
-  // Camera mode auto-listen
   if(cameraActive&&!cameraListening){
-    setTimeout(function(){
-      if(cameraActive&&!cameraListening)startCameraListen();
-    },300);
+    setTimeout(function(){if(cameraActive&&!cameraListening)startCameraListen();},delay);
   }
 }
 
@@ -1755,29 +1809,23 @@ async function startLiveCamera(){
 async function startCameraStream(){
   try{
     if(cameraStream){cameraStream.getTracks().forEach(function(t){t.stop();});}
-    // Try HD first, fall back to any camera if it fails
-    var stream;
-    try{
-      stream=await navigator.mediaDevices.getUserMedia({
-        video:{facingMode:cameraFacing,width:{ideal:1280},height:{ideal:720}},
-        audio:false
-      });
-    }catch(hdErr){
-      // HD failed — try basic camera (works on all Android devices)
-      stream=await navigator.mediaDevices.getUserMedia({
-        video:{facingMode:cameraFacing},
-        audio:false
-      });
-    }
+    var stream=null;
+    // Tier 1: HD (modern phones)
+    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:cameraFacing,width:{ideal:1280},height:{ideal:720}},audio:false});}catch(e1){
+    // Tier 2: Any resolution with facing mode (mid-range Android)
+    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:cameraFacing},audio:false});}catch(e2){
+    // Tier 3: Any camera (very old Android)
+    stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}}
     cameraStream=stream;
     var vid=document.getElementById('liveCameraFeed');
     vid.srcObject=stream;
-    await vid.play().catch(function(){vid.muted=true;return vid.play();});
+    try{await vid.play();}catch(pe){vid.muted=true;try{await vid.play();}catch(pe2){console.warn('Camera play failed');}}
   }catch(e){
-    alert('Camera access needed. Please allow camera permission in your browser settings and try again.');
     stopLiveCamera();
+    appendMessage('agent','Camera access needed for live diagnostics. Allow camera permission in your browser settings, then tap Start again.');
   }
 }
+
 
 function stopLiveCamera(){
   cameraActive=false;

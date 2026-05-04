@@ -1182,17 +1182,33 @@ function showWarrantyBanner(w){
 var audioUnlocked=false,sharedAudioCtx=null;
 function unlockAudio(){
   if(audioUnlocked)return;audioUnlocked=true;
+  // On Safari we delay AudioContext creation until AFTER mic is working
+  // This prevents the iOS audio session conflict
+  if(isSafari)return;
   try{
     var A=window.AudioContext||window.webkitAudioContext;if(!A)return;
     if(!sharedAudioCtx)sharedAudioCtx=new A();
-    // Handle Safari interrupted state (happens after mic permission dialog)
-    if(sharedAudioCtx.state==='suspended'||sharedAudioCtx.state==='interrupted'){
-      sharedAudioCtx.resume().catch(function(){});
-    }
+    if(sharedAudioCtx.state==='suspended')sharedAudioCtx.resume().catch(function(){});
     var b=sharedAudioCtx.createBuffer(1,1,22050),s=sharedAudioCtx.createBufferSource();
     s.buffer=b;s.connect(sharedAudioCtx.destination);s.start(0);
   }catch(e){sharedAudioCtx=null;audioUnlocked=false;}
 }
+
+function unlockAudioForPlayback(){
+  // Called AFTER mic is confirmed working - safe to create AudioContext on Safari
+  try{
+    var A=window.AudioContext||window.webkitAudioContext;if(!A)return;
+    if(!sharedAudioCtx){sharedAudioCtx=new A();}
+    if(sharedAudioCtx.state==='suspended'||sharedAudioCtx.state==='interrupted'){
+      sharedAudioCtx.resume().catch(function(){});
+    }
+    // Play silent buffer to fully unlock
+    var b=sharedAudioCtx.createBuffer(1,1,22050),s=sharedAudioCtx.createBufferSource();
+    s.buffer=b;s.connect(sharedAudioCtx.destination);s.start(0);
+    audioUnlocked=true;
+  }catch(e){sharedAudioCtx=null;}
+}
+
 
 function getTimeStr(){var now=new Date();return now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
 
@@ -1596,7 +1612,6 @@ function loadMikeVoice(){
 }
 
 function toggleVoiceMode(){
-  unlockAudio();
   voiceMode=!voiceMode;
   var bar=document.getElementById('voiceModeBar');
   var btn=document.getElementById('voiceModeBtn');
@@ -1605,21 +1620,21 @@ function toggleVoiceMode(){
     bar.style.display='block';
     btn.classList.add('voice-mode-active');
     lbl.style.color='#00C2B2';lbl.textContent='ON';
-    setVoiceStatus('Mike is joining…','');
+    setVoiceStatus('Tap mic to start','');
     autoListenAfterSpeak=true;
-    // Audio wake lock — keeps app running even with screen off (for AirPods use)
     if(navigator.wakeLock){
       navigator.wakeLock.request('screen').then(function(wl){wakeLock=wl;}).catch(function(){});
     }
-    // Also request audio focus to keep running in background on iOS
-    try{if(sharedAudioCtx&&sharedAudioCtx.state==='suspended')sharedAudioCtx.resume();}catch(e){}
+    // On Safari: DON'T unlock audio yet — wait until mic is confirmed
+    // On Android/Chrome: unlock audio immediately
+    if(!isSafari){unlockAudio();}
+    // Start listening — on first successful result, unlock audio for TTS
     var greetings={en:"Hey, I'm Mike. 25 years in the field — I've seen everything. What are you dealing with?",es:"Hola, soy Mike. ¿En qué puedo ayudarte?",zh:"我是Mike，有什么需要帮忙的？",vi:"Mike đây. Tôi có thể giúp gì?",fr:"C'est Mike. Sur quoi travaillez-vous?",pt:"Mike aqui. Em que posso ajudar?"};
-    // Only greet if chat is empty / fresh — not every time voice is toggled
     if(chatHistory.length===0){
-      setTimeout(function(){if(voiceMode)mikeSay(greetings[currentLang]||greetings.en);},isSafari?600:300);
+      // Fresh chat: start mic, greet after first successful mic start
+      startListeningWithGreeting(greetings[currentLang]||greetings.en);
     } else {
-      // Just open the mic silently
-      setTimeout(function(){if(voiceMode&&!isListening)startListening();},isSafari?600:300);
+      startListening();
     }
   }else{
     voiceMode=false;
@@ -1627,7 +1642,6 @@ function toggleVoiceMode(){
     btn.classList.remove('voice-mode-active');
     lbl.style.color='rgba(255,255,255,.5)';lbl.textContent='Voice';
     stopMikeSpeaking();stopListening();autoListenAfterSpeak=false;
-    // Release wake lock
     if(wakeLock){try{wakeLock.release();}catch(e){}wakeLock=null;}
     var micBtn=document.getElementById('micBtn');
     if(micBtn){micBtn.classList.remove('mic-listening','mic-speaking');micBtn.textContent='🎙️';micBtn.style.background='#00C2B2';}
@@ -1635,6 +1649,30 @@ function toggleVoiceMode(){
     setVoiceStatus('Tap Voice to start','');
   }
 }
+
+function startListeningWithGreeting(greeting){
+  // Start mic — on first successful start, unlock audio then greet
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){setVoiceStatus('Voice not supported — use Chrome or Safari 14.5+','');return;}
+  setVoiceStatus('Tap the mic to talk to Mike','');
+  // We just show the mic button — tech taps it, then we greet
+  // This avoids the permission conflict on iOS
+  if(isSafari){
+    // On Safari: let the tech tap mic manually first
+    // The permission dialog will appear, and AFTER they allow,
+    // the onstart event fires and we greet
+    micGreetingPending=greeting;
+  } else {
+    // On Android/Chrome: start immediately and greet
+    setTimeout(function(){
+      if(voiceMode){
+        unlockAudioForPlayback();
+        mikeSay(greeting);
+      }
+    },300);
+  }
+}
+
 
 function mikeSay(text){
   if(!voiceMode)return;
@@ -1739,38 +1777,40 @@ function toggleMic(){unlockAudio();if(isListening){stopListening();return;}if(is
 
 var isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
+var micGreetingPending=null;
+
 function startListening(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){setVoiceStatus('Voice not supported — use Chrome or Safari 14.5+','');return;}
   if(isMikeSpeaking)return;
   stopListening();
-
-  // Safari needs extra time after mic permission dialog closes
-  var delay = isSafari ? 600 : 50;
-
+  var delay=isSafari?800:50;
   setTimeout(function(){
     if(isMikeSpeaking)return;
-
-    // Safari: always resume AudioContext before starting speech rec
-    // Permission dialog can suspend or break the audio session
-    if(isSafari && sharedAudioCtx){
-      try{
-        if(sharedAudioCtx.state==='suspended'||sharedAudioCtx.state==='interrupted'){
-          sharedAudioCtx.resume().catch(function(){});
-        }
-      }catch(e){}
-    }
-
     try{
       speechRecognition=new SR();
       speechRecognition.continuous=false;
       speechRecognition.interimResults=!isSafari;
       speechRecognition.lang=currentLang==='es'?'es-MX':currentLang==='zh'?'zh-CN':currentLang==='vi'?'vi-VN':currentLang==='fr'?'fr-FR':currentLang==='pt'?'pt-BR':'en-US';
       var micBtn=document.getElementById('micBtn');
-      if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🔴';}
       isListening=true;
+      if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🔴';}
       setVoiceStatus('Listening…','Go ahead…');
-
+      speechRecognition.onstart=function(){
+        // Mic is confirmed working — NOW safe to unlock audio on Safari
+        if(isSafari){
+          setTimeout(function(){
+            unlockAudioForPlayback();
+            // If there's a pending greeting, say it now
+            if(micGreetingPending&&voiceMode){
+              var g=micGreetingPending;micGreetingPending=null;
+              // Stop mic while greeting plays
+              stopListening();
+              setTimeout(function(){if(voiceMode)mikeSay(g);},200);
+            }
+          },300);
+        }
+      };
       speechRecognition.onresult=function(e){
         var transcript='';
         for(var i=e.resultIndex;i<e.results.length;i++)transcript+=e.results[i][0].transcript;
@@ -1780,7 +1820,6 @@ function startListening(){
           if(isSafari)setVoiceStatus('Got it…',transcript);
         }
       };
-
       speechRecognition.onend=function(){
         isListening=false;
         if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
@@ -1793,71 +1832,56 @@ function startListening(){
           setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1200:800);
         }
       };
-
       speechRecognition.onerror=function(ev){
         isListening=false;
         if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
         if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){
-          // Safari sometimes fires not-allowed even after user grants permission
-          // Wait and retry once before giving up
-          if(isSafari){
-            setTimeout(function(){
-              if(voiceMode&&!isListening){
-                setVoiceStatus('Tap mic to speak','');
-                // Don't auto-retry on permission error — require manual tap
-              }
-            },500);
-          }
           setVoiceStatus('Mic permission needed — tap mic to try again','');
           autoListenAfterSpeak=false;
+          // Turn voice mode off cleanly
           voiceMode=false;
           var bar=document.getElementById('voiceModeBar');
-          var btn=document.getElementById('voiceModeBtn');
+          var vbtn=document.getElementById('voiceModeBtn');
           var lbl=document.getElementById('voiceModeBtnLabel');
           if(bar)bar.style.display='none';
-          if(btn)btn.classList.remove('voice-mode-active');
+          if(vbtn)vbtn.classList.remove('voice-mode-active');
           if(lbl){lbl.style.color='rgba(255,255,255,.5)';lbl.textContent='Voice';}
         } else if(ev.error==='no-speech'||ev.error==='aborted'){
           if(voiceMode&&!isMikeSpeaking){
             setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1000:500);
           }
-        } else if(ev.error==='audio-capture'){isListening=false;
-          // Safari: mic in use by another app or hardware issue
-          setVoiceStatus('Mic unavailable — check another app isn\'t using it','');
+        } else if(ev.error==='audio-capture'){
+          isListening=false;
+          setVoiceStatus('Mic unavailable — close other apps using mic','');
           setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},2000);
         } else {
-          // Unknown error — try to recover silently
+          isListening=false;
           if(voiceMode&&!isMikeSpeaking){
             setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1500:800);
           }
         }
       };
-
-      // Safari: use a try/catch on start() itself — it can throw synchronously
       try{
         speechRecognition.start();
       }catch(startErr){
         isListening=false;
         if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
-        // On Safari, start() throws if permission not yet granted or audio session broken
-        // Wait longer and retry
         if(isSafari&&voiceMode){
           setTimeout(function(){if(voiceMode&&!isListening&&!isMikeSpeaking)startListening();},1500);
         }
       }
-
     }catch(err){
       isListening=false;
       var mb=document.getElementById('micBtn');
       if(mb){mb.classList.remove('mic-listening');mb.textContent='🎙️';}
       setVoiceStatus('Tap mic to try again','');
-      // Recover: try again after a pause
       if(isSafari&&voiceMode){
         setTimeout(function(){if(voiceMode&&!isListening&&!isMikeSpeaking)startListening();},1500);
       }
     }
-  }, delay);
+  },delay);
 }
+
 
 function stopListening(){
   autoListenAfterSpeak=false;

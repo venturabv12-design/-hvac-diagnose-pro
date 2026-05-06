@@ -9,9 +9,10 @@
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>HVAC Diagnose Pro</title>
+<title>Trazer Intelligence — Field Diagnostics</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
+
 :root{
   --bg:#F5F6FA;--white:#FFFFFF;--black:#0F0F0F;
   --gray-50:#F8F9FC;--gray-100:#F0F1F6;--gray-200:#E2E4ED;
@@ -170,24 +171,255 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
   .chip{font-size:13px;padding:11px 11px;}
   .sub-tab{font-size:10px;padding:10px 6px;}
 }
+
+
+/* ══ TRAZER INTELLIGENCE AUTH + ONBOARDING + ADMIN ══════════ */
+
+/* Auth overlay */
+#authOverlay{position:fixed;inset:0;z-index:9999;background:#0A0A0A;display:flex;align-items:center;justify-content:center;padding:20px;}
+#authOverlay.hidden{display:none;}
+.auth-wrap{width:100%;max-width:400px;animation:tzFadeUp .4s cubic-bezier(.16,1,.3,1);}
+@keyframes tzFadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.auth-logo-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:28px;}
+.auth-logo-icon{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#00C2B2,#009E91);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 8px 24px rgba(0,194,178,.35);}
+.auth-logo-name{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.4px;}
+.auth-card{background:#161616;border:1px solid #2a2a2a;border-radius:20px;padding:28px 24px;box-shadow:0 24px 60px rgba(0,0,0,.7);}
+.auth-trial-pill{display:flex;align-items:center;gap:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;color:#F59E0B;margin-bottom:20px;}
+.auth-tabs{display:flex;gap:2px;background:#0d0d0d;border-radius:10px;padding:3px;margin-bottom:20px;}
+.auth-tab{flex:1;padding:9px;border:none;border-radius:8px;background:transparent;color:#555;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;}
+.auth-tab.active{background:#252525;color:#fff;}
+.auth-err{background:rgba(232,53,74,.1);border:1px solid rgba(232,53,74,.3);border-radius:8px;padding:10px 12px;font-size:13px;color:#E8354A;margin-bottom:12px;display:none;}
+.auth-err.show{display:block;}
+.auth-field{margin-bottom:14px;}
+.auth-lbl{display:block;font-size:11px;font-weight:700;color:#666;letter-spacing:.4px;text-transform:uppercase;margin-bottom:5px;}
+.auth-inp{display:block;width:100%;padding:12px 14px;background:#0a0a0a !important;border:1.5px solid #2a2a2a;border-radius:10px;color:#ffffff !important;-webkit-text-fill-color:#ffffff !important;font-size:15px;font-family:inherit;outline:none;transition:border-color .2s;box-sizing:border-box;}
+.auth-inp:focus{border-color:#00C2B2 !important;}
+.auth-inp::placeholder{color:#444 !important;-webkit-text-fill-color:#444 !important;}
+.auth-inp:-webkit-autofill,.auth-inp:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px #0a0a0a inset !important;-webkit-text-fill-color:#ffffff !important;caret-color:#ffffff;}
+.auth-forgot{display:block;text-align:right;font-size:12px;color:#00C2B2;cursor:pointer;margin-top:-8px;margin-bottom:14px;}
+.auth-btn{width:100%;padding:13px;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 4px 16px rgba(0,194,178,.25);}
+.auth-btn:hover{filter:brightness(1.08);}
+.auth-btn:disabled{opacity:.6;cursor:not-allowed;}
+.auth-terms{font-size:11px;color:#444;text-align:center;margin-top:14px;line-height:1.7;}
+.auth-terms a{color:#00C2B2;text-decoration:none;}
+
+/* Trial banner */
+#trialBanner{display:none;background:rgba(245,158,11,.09);border-bottom:1px solid rgba(245,158,11,.2);padding:7px 16px;align-items:center;justify-content:center;gap:12px;font-size:13px;color:#F59E0B;}
+#trialBanner.show{display:flex;}
+.trial-up-btn{background:#F59E0B;color:#000;border:none;border-radius:6px;padding:4px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;}
+
+/* Nav profile */
+.nav-profile-btn{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 8px rgba(0,194,178,.3);}
+
+/* Profile dropdown */
+.profile-dd{position:fixed;top:58px;right:12px;width:272px;background:#161616;border:1px solid #2a2a2a;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.8);z-index:500;display:none;overflow:hidden;}
+.profile-dd.open{display:block;animation:tzFadeUp .2s cubic-bezier(.16,1,.3,1);}
+.pdd-head{padding:16px;border-bottom:1px solid #222;}
+.pdd-name{font-size:15px;font-weight:700;color:#fff;}
+.pdd-email{font-size:12px;color:#555;margin-top:2px;}
+.pdd-plan{display:inline-flex;align-items:center;gap:5px;background:rgba(0,194,178,.1);border:1px solid rgba(0,194,178,.2);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:#00C2B2;margin-top:8px;}
+.pdd-trial{padding:10px 16px;background:rgba(245,158,11,.07);border-bottom:1px solid rgba(245,158,11,.12);font-size:12px;color:#F59E0B;display:flex;align-items:center;gap:8px;}
+.pdd-usage{padding:12px 16px;border-bottom:1px solid #1a1a1a;}
+.pdd-usage-lbl{font-size:10px;color:#555;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
+.pdd-bar{background:#1a1a1a;border-radius:3px;height:4px;overflow:hidden;}
+.pdd-bar-fill{height:100%;background:linear-gradient(90deg,#00C2B2,#009E91);border-radius:3px;transition:width .5s;}
+.pdd-usage-count{font-size:11px;color:#555;margin-top:3px;}
+.pdd-menu{padding:7px;}
+.pdd-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:13px;color:#999;transition:background .15s;}
+.pdd-item:hover{background:#222;color:#fff;}
+.pdd-ic{font-size:15px;width:20px;text-align:center;}
+.pdd-sep{height:1px;background:#1a1a1a;margin:3px 8px;}
+.pdd-danger{color:#E8354A !important;}
+.pdd-danger:hover{background:rgba(232,53,74,.1) !important;}
+
+/* Onboarding video overlay */
+#onboardingOverlay{position:fixed;inset:0;z-index:9996;background:#000;display:none;align-items:center;justify-content:center;}
+#onboardingOverlay.show{display:flex;}
+.ob-video-wrap{width:100%;height:100%;position:relative;display:flex;align-items:center;justify-content:center;}
+.ob-skip-btn{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;color:#fff;font-size:13px;font-weight:600;padding:7px 16px;cursor:pointer;z-index:10;backdrop-filter:blur(4px);}
+.ob-canvas{width:100%;max-width:600px;max-height:100vh;aspect-ratio:9/16;position:relative;overflow:hidden;border-radius:0;}
+@media(min-width:600px){.ob-canvas{border-radius:20px;max-height:90vh;}}
+.ob-slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;text-align:center;opacity:0;transition:opacity .6s;}
+.ob-slide.active{opacity:1;}
+.ob-slide-0{background:linear-gradient(160deg,#060d1a 0%,#0a1628 50%,#0d2040 100%);}
+.ob-slide-1{background:linear-gradient(160deg,#060d1a 0%,#0a1a0f 50%,#0d2a15 100%);}
+.ob-slide-2{background:linear-gradient(160deg,#0a0a0a 0%,#1a0a08 50%,#2a100a 100%);}
+.ob-slide-3{background:linear-gradient(160deg,#060d1a 0%,#0a1628 50%,#0d1a35 100%);}
+.ob-slide-4{background:linear-gradient(160deg,#050505 0%,#0a0d0a 50%,#0f1a0f 100%);}
+.ob-emoji-big{font-size:72px;margin-bottom:20px;filter:drop-shadow(0 0 20px rgba(0,194,178,.5));}
+.ob-slide-title{font-size:28px;font-weight:900;color:#fff;margin-bottom:12px;letter-spacing:-.5px;line-height:1.2;}
+.ob-slide-title span{color:#00C2B2;}
+.ob-slide-body{font-size:15px;color:rgba(255,255,255,.7);line-height:1.7;max-width:320px;}
+.ob-slide-body strong{color:#fff;}
+.ob-dots{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);display:flex;gap:8px;}
+.ob-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.25);transition:all .3s;}
+.ob-dot.on{background:#00C2B2;width:24px;border-radius:4px;}
+.ob-next-btn{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);width:calc(100% - 64px);max-width:320px;padding:16px;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 6px 24px rgba(0,194,178,.4);letter-spacing:.2px;}
+.ob-wave{position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#00C2B2,transparent);animation:obWave 2s ease-in-out infinite;}
+@keyframes obWave{0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
+
+/* Paywall */
+#paywallOverlay{position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,.97);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px;}
+#paywallOverlay.show{display:flex;}
+.pw-card{width:100%;max-width:480px;background:#161616;border:1px solid #2a2a2a;border-radius:20px;padding:32px 28px;text-align:center;}
+.pw-icon{font-size:40px;margin-bottom:12px;}
+.pw-title{font-size:24px;font-weight:800;color:#fff;margin-bottom:8px;}
+.pw-sub{font-size:14px;color:#888;margin-bottom:24px;line-height:1.6;}
+.pw-plans{display:flex;gap:10px;margin-bottom:22px;}
+.pw-plan{flex:1;background:#0d0d0d;border:1.5px solid #2a2a2a;border-radius:12px;padding:16px 10px;cursor:pointer;position:relative;transition:all .2s;}
+.pw-plan:hover{border-color:#444;}
+.pw-plan.sel{border-color:#00C2B2;background:rgba(0,194,178,.05);}
+.pw-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#00C2B2;color:#000;font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.pw-name{font-size:12px;font-weight:700;color:#888;margin-bottom:3px;}
+.pw-price{font-size:26px;font-weight:900;color:#fff;}
+.pw-period{font-size:11px;color:#555;}
+.pw-save{font-size:11px;color:#10B981;margin-top:2px;font-weight:600;}
+.pw-btn{width:100%;padding:14px;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;box-shadow:0 4px 20px rgba(0,194,178,.3);}
+.pw-note{font-size:12px;color:#444;}
+
+/* Admin dashboard */
+#adminOverlay{position:fixed;inset:0;z-index:9990;background:#060a0f;display:none;overflow-y:auto;}
+#adminOverlay.show{display:block;}
+.admin-wrap{max-width:1000px;margin:0 auto;padding:24px 16px;}
+.admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid #1a1a2a;}
+.admin-title{font-size:24px;font-weight:800;color:#fff;}
+.admin-title span{color:#00C2B2;}
+.admin-close{background:rgba(255,255,255,.08);border:1px solid #2a2a3a;border-radius:10px;color:#aaa;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+.admin-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px;}
+.admin-stat{background:#0d1117;border:1px solid #1a1a2a;border-radius:14px;padding:20px 18px;}
+.admin-stat-val{font-size:32px;font-weight:900;color:#00C2B2;margin-bottom:4px;}
+.admin-stat-lbl{font-size:12px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+.admin-section{background:#0d1117;border:1px solid #1a1a2a;border-radius:14px;padding:20px;margin-bottom:16px;}
+.admin-section-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:16px;}
+.admin-table{width:100%;border-collapse:collapse;}
+.admin-table th{text-align:left;font-size:11px;font-weight:700;color:#444;text-transform:uppercase;letter-spacing:.4px;padding:8px 12px;border-bottom:1px solid #1a1a2a;}
+.admin-table td{padding:10px 12px;border-bottom:1px solid #111;font-size:13px;color:#ccc;}
+.admin-table tr:last-child td{border-bottom:none;}
+.admin-table tr:hover td{background:rgba(255,255,255,.02);}
+.admin-feat-bar{height:6px;background:#1a1a2a;border-radius:3px;margin-top:4px;overflow:hidden;}
+.admin-feat-fill{height:100%;background:linear-gradient(90deg,#00C2B2,#009E91);border-radius:3px;}
+
 </style>
 </head>
 <body>
+<div id="authOverlay">
+<div class="auth-wrap">
+  <div class="auth-logo-row"><div class="auth-logo-icon">⚡</div><div class="auth-logo-name">Trazer Intelligence</div></div>
+  <div class="auth-card">
+    <div class="auth-trial-pill">🎯 7-day free trial — no credit card required</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="authTab('in')">Sign In</button>
+      <button class="auth-tab" onclick="authTab('up')">Create Account</button>
+    </div>
+    <div class="auth-err" id="authErr"></div>
+    <div id="authInForm">
+      <div class="auth-field"><label class="auth-lbl">Email or Username</label><input class="auth-inp" type="text" id="siEmail" placeholder="you@company.com" autocomplete="username"/></div>
+      <div class="auth-field"><label class="auth-lbl">Password</label><input class="auth-inp" type="password" id="siPass" placeholder="••••••••" autocomplete="current-password"/></div>
+      <span class="auth-forgot" onclick="authForgot()">Forgot password?</span>
+      <button class="auth-btn" id="siBtn" onclick="authSignIn()">Sign In</button>
+    </div>
+    <div id="authUpForm" style="display:none">
+      <div class="auth-field"><label class="auth-lbl">Full Name</label><input class="auth-inp" type="text" id="suName" placeholder="Your name" autocomplete="name"/></div>
+      <div class="auth-field"><label class="auth-lbl">Email</label><input class="auth-inp" type="email" id="suEmail" placeholder="you@company.com" autocomplete="email"/></div>
+      <div class="auth-field"><label class="auth-lbl">Password</label><input class="auth-inp" type="password" id="suPass" placeholder="Min 8 characters" autocomplete="new-password"/></div>
+      <div class="auth-field"><label class="auth-lbl">Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label><input class="auth-inp" type="text" id="suCompany" placeholder="Your HVAC company"/></div>
+      <button class="auth-btn" id="suBtn" onclick="authSignUp()">Start Free Trial →</button>
+    </div>
+    <p class="auth-terms">By continuing you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a></p>
+  </div>
+</div>
+</div>
+<div id="onboardingOverlay">
+<div class="ob-video-wrap">
+  <button class="ob-skip-btn" onclick="obFinish()">Skip</button>
+  <div class="ob-canvas" id="obCanvas">
+    <div class="ob-wave"></div>
+    <div class="ob-slide active ob-slide-0" id="obSlideEl">
+      <div class="ob-emoji-big" id="obEmoji">⚡</div>
+      <div class="ob-slide-title" id="obTitle">Meet <span>Trazer Intelligence</span></div>
+      <div class="ob-slide-body" id="obBody">The most advanced HVAC field platform ever built. <strong>Your senior tech is in your pocket — 24 hours a day.</strong></div>
+    </div>
+    <div class="ob-dots">
+      <div class="ob-dot on"></div>
+      <div class="ob-dot"></div>
+      <div class="ob-dot"></div>
+      <div class="ob-dot"></div>
+      <div class="ob-dot"></div>
+    </div>
+    <button class="ob-next-btn" id="obNextBtn" onclick="obNextSlide()">Next →</button>
+  </div>
+</div>
+</div>
+<div id="paywallOverlay">
+<div class="pw-card">
+  <div class="pw-icon">🔐</div>
+  <div class="pw-title">Trial Ended</div>
+  <div class="pw-sub">You've seen what Trazer Intelligence can do. Keep Mike on every job.</div>
+  <div class="pw-plans">
+    <div class="pw-plan" onclick="selectPlan('starter',this)"><div class="pw-name">Starter</div><div class="pw-price">$79</div><div class="pw-period">/tech/mo</div></div>
+    <div class="pw-plan sel" onclick="selectPlan('pro',this)"><div class="pw-badge">BEST VALUE</div><div class="pw-name">Pro</div><div class="pw-price">$129</div><div class="pw-period">/tech/mo</div><div class="pw-save">All features</div></div>
+    <div class="pw-plan" onclick="selectPlan('enterprise',this)"><div class="pw-name">Enterprise</div><div class="pw-price">$99</div><div class="pw-period">/tech/mo 11+</div></div>
+  </div>
+  <button class="pw-btn" onclick="goCheckout()">Subscribe Now — Cancel Anytime</button>
+  <div class="pw-note">Annual billing saves 20%</div>
+</div>
+</div>
+<div id="adminOverlay">
+<div class="admin-wrap">
+  <div class="admin-header">
+    <div class="admin-title">Trazer <span>Intelligence</span> — Admin</div>
+    <button class="admin-close" onclick="closeAdmin()">✕ Close</button>
+  </div>
+  <div class="admin-stats">
+    <div class="admin-stat"><div class="admin-stat-val" id="adminTotalUsers">0</div><div class="admin-stat-lbl">Total Users</div></div>
+    <div class="admin-stat"><div class="admin-stat-val" id="adminTrialUsers">0</div><div class="admin-stat-lbl">Trial Users</div></div>
+    <div class="admin-stat"><div class="admin-stat-val" id="adminPaidUsers">0</div><div class="admin-stat-lbl">Paid Users</div></div>
+    <div class="admin-stat"><div class="admin-stat-val" id="adminTotalCalls">0</div><div class="admin-stat-lbl">Total AI Calls</div></div>
+  </div>
+  <div class="admin-section">
+    <div class="admin-section-title">Users</div>
+    <table class="admin-table">
+      <thead><tr><th>Name</th><th>Email</th><th>Plan</th><th>Company</th><th>AI Calls</th><th>Joined</th></tr></thead>
+      <tbody id="adminUsersTable"></tbody>
+    </table>
+  </div>
+  <div class="admin-section">
+    <div class="admin-section-title">Feature Usage</div>
+    <table class="admin-table">
+      <thead><tr><th>Feature</th><th>Uses</th><th>Popularity</th></tr></thead>
+      <tbody id="adminFeatTable"></tbody>
+    </table>
+  </div>
+</div>
+</div>
+<div class="profile-dd" id="profileDD">
+<div class="pdd-head"><div class="pdd-name" id="pddName">—</div><div class="pdd-email" id="pddEmail"></div><div class="pdd-plan" id="pddPlan">⚡ Pro Trial</div></div>
+<div class="pdd-trial" id="pddTrial" style="display:none">🎯 <strong><span id="pddTrialDays">7</span> days</strong> left in free trial</div>
+<div class="pdd-usage"><div class="pdd-usage-lbl">Usage this month</div><div class="pdd-bar"><div class="pdd-bar-fill" id="pddBarFill" style="width:0%"></div></div><div class="pdd-usage-count" id="pddUsageCount">0 AI calls</div></div>
+<div class="pdd-menu">
+  <div class="pdd-item" onclick="pddProfile()"><span class="pdd-ic">👤</span>Profile Settings</div>
+  <div class="pdd-item" onclick="pddBilling()"><span class="pdd-ic">💳</span>Billing & Plan</div>
+  <div class="pdd-item" onclick="pddAdmin()" id="adminMenuItem" style="display:none"><span class="pdd-ic">👑</span>Admin Dashboard</div>
+  <div class="pdd-item" onclick="pddWhatsNew()"><span class="pdd-ic">🔔</span>What's New</div>
+  <div class="pdd-item" onclick="pddHelp()"><span class="pdd-ic">❓</span>Help & Support</div>
+  <div class="pdd-sep"></div>
+  <div class="pdd-item pdd-danger" onclick="authSignOut()"><span class="pdd-ic">🚪</span>Sign Out</div>
+</div>
+</div>
+<div id="trialBanner"><span>🎯 <strong><span id="trialDaysLeft">7</span> days</strong> left in your free trial</span><button class="trial-up-btn" onclick="showPaywall()">Upgrade Now</button></div>
 <nav class="nav">
   <div class="nav-inner">
     <div class="nav-logo">
-      <div class="nav-logo-icon">❄️</div>
+      <div class="nav-logo-icon" style="background:linear-gradient(135deg,#00C2B2,#009E90);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">⚡</div>
       <div>
-        <div class="nav-logo-text">HVAC Diagnose Pro</div>
-        <div class="nav-logo-sub">Powered by AI</div>
+        <div class="nav-logo-text">Trazer Intelligence</div>
+        <div class="nav-logo-sub">Field Intelligence Platform</div>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <div class="lang-toggle" id="langToggle">
-        <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn">
-          <span id="langFlag">🇺🇸</span><span id="langCode">EN</span>
-          <span style="font-size:10px;opacity:.6;">▾</span>
-        </button>
+      <div class="nav-status"><div class="status-dot red" id="statusDot"></div><span id="statusText" style="font-size:12px;color:var(--gray-500);">Connecting</span></div>
+      <div style="position:relative;">
+        <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn"><span id="langFlag">🇺🇸</span><span id="langCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span></button>
         <div class="lang-dropdown" id="langDropdown">
           <button class="lang-option active" onclick="setLang('en')" id="langOpt-en"><span class="lang-flag">🇺🇸</span>English</button>
           <button class="lang-option" onclick="setLang('es')" id="langOpt-es"><span class="lang-flag">🇲🇽</span>Español</button>
@@ -197,10 +429,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
           <button class="lang-option" onclick="setLang('pt')" id="langOpt-pt"><span class="lang-flag">🇧🇷</span>Português</button>
         </div>
       </div>
-      <div class="nav-status">
-        <div class="status-dot red" id="statusDot"></div>
-        <span class="status-text" id="statusText">Checking…</span>
-      </div>
+      <button class="nav-profile-btn" id="navProfileBtn" onclick="toggleProfileDD()">?</button>
     </div>
   </div>
 </nav>
@@ -211,7 +440,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
       <div style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;height:120px;background:radial-gradient(ellipse,rgba(0,194,178,.2) 0%,transparent 70%);pointer-events:none;"></div>
       <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,194,178,.15);border:1px solid rgba(0,194,178,.3);border-radius:99px;padding:5px 13px;margin-bottom:14px;">
         <span style="width:6px;height:6px;background:#00C2B2;border-radius:50%;display:inline-block;box-shadow:0 0 8px rgba(0,194,178,.6);"></span>
-        <span style="font-size:11px;font-weight:700;color:#00C2B2;letter-spacing:.5px;text-transform:uppercase;">HVAC Diagnose Pro</span>
+        <span style="font-size:11px;font-weight:700;color:#00C2B2;letter-spacing:.5px;text-transform:uppercase;">Trazer Intelligence</span>
       </div>
       <h1 style="font-size:clamp(16px,3.5vw,22px);font-weight:700;color:#FFFFFF;letter-spacing:-.3px;line-height:1.2;margin-bottom:6px;" id="heroTitle">What's Wrong With Your HVAC?</h1>
       <p style="font-size:15px;color:rgba(255,255,255,.55);line-height:1.65;max-width:400px;margin:0 auto;" id="heroSub">Upload a photo or video, describe what's happening, and we'll tell you exactly what's wrong.</p>
@@ -351,7 +580,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
       </div>
     </div>
 <!-- CHAT MESSAGES -->
-    <div id="chatMessages" style="background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:300px;max-height:750px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
+    <div id="chatMessages" style="background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:300px;max-height:600px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
       <div class="msg-agent">
         <div class="msg-bubble msg-bubble-agent">
           <p style="margin-bottom:6px;"><strong>Hey, it's Mike.</strong> 25 years in the field — I can help you with diagnostics, sales, and everything else you'd ever need on the job.</p>
@@ -519,7 +748,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
   <div class="footer">
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">
       <div style="width:28px;height:28px;background:#00C2B2;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;">❄️</div>
-      <p style="font-size:16px;font-weight:700;color:#2563EB;letter-spacing:.5px;text-transform:uppercase;">HVAC Diagnose Pro</p>
+      <p style="font-size:16px;font-weight:700;color:#2563EB;letter-spacing:.5px;text-transform:uppercase;">Trazer Intelligence</p>
     </div>
     <p style="font-size:14px;color:#6B7190;margin-bottom:6px;">Homeowner $9.99/mo · Contractor Pro $29.99/mo</p>
     <p style="font-size:11px;color:#9499B0;line-height:1.6;max-width:400px;margin:0 auto;">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician.</p>
@@ -602,6 +831,291 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 <canvas id="liveCameraCanvas" style="display:none;"></canvas>
 </div>
 <script>
+
+// ════════════════════════════════════════════════════════════
+// TRAZER INTELLIGENCE — AUTH + TRIAL + PROFILE + ADMIN
+// ════════════════════════════════════════════════════════════
+var currentUser = null;
+var TZ_ADMIN_USER = 'TrazerIntelligencegeinus';
+var TZ_ADMIN_PASS = '173028';
+
+function tracerInit() {
+  var s = localStorage.getItem('trazer_user');
+  if (s) {
+    try {
+      currentUser = JSON.parse(s);
+      document.getElementById('authOverlay').classList.add('hidden');
+      updateProfileUI();
+      checkTrial();
+      if (!localStorage.getItem('trazer_onboarded')) {
+        setTimeout(showOnboarding, 800);
+      }
+    } catch(e) { localStorage.removeItem('trazer_user'); }
+  }
+}
+
+function authTab(t) {
+  document.querySelectorAll('.auth-tab').forEach(function(b,i){b.classList.toggle('active',(i===0&&t==='in')||(i===1&&t==='up'));});
+  document.getElementById('authInForm').style.display = t==='in'?'block':'none';
+  document.getElementById('authUpForm').style.display = t==='up'?'block':'none';
+  var err = document.getElementById('authErr'); if(err) err.classList.remove('show');
+}
+
+function showAuthErr(m) {
+  var e = document.getElementById('authErr');
+  if(e){e.textContent=m;e.classList.add('show');}
+}
+
+function authSignIn() {
+  var email = (document.getElementById('siEmail').value||'').trim().toLowerCase();
+  var pass = document.getElementById('siPass').value||'';
+  var btn = document.getElementById('siBtn');
+  if(!email||!pass){showAuthErr('Enter your email and password.');return;}
+  btn.disabled=true;btn.textContent='Signing in…';
+  setTimeout(function(){
+    // Check admin
+    if(email===TZ_ADMIN_USER.toLowerCase()&&pass===TZ_ADMIN_PASS){
+      currentUser={name:'Brandon Ventura',email:TZ_ADMIN_USER,plan:'admin',initials:'BV',usageCount:0,isAdmin:true};
+      localStorage.setItem('trazer_user',JSON.stringify(currentUser));
+      document.getElementById('authOverlay').classList.add('hidden');
+      updateProfileUI();
+      showAdminDashboard();
+      return;
+    }
+    var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
+    if(users[email]&&users[email].password===btoa(unescape(encodeURIComponent(pass)))){
+      currentUser=users[email];
+      localStorage.setItem('trazer_user',JSON.stringify(currentUser));
+      document.getElementById('authOverlay').classList.add('hidden');
+      updateProfileUI();checkTrial();
+    } else {
+      showAuthErr('Wrong email or password. New? Create an account above.');
+      btn.disabled=false;btn.textContent='Sign In';
+    }
+  },500);
+}
+
+function authSignUp() {
+  var name=(document.getElementById('suName').value||'').trim();
+  var email=(document.getElementById('suEmail').value||'').trim().toLowerCase();
+  var pass=document.getElementById('suPass').value||'';
+  var company=(document.getElementById('suCompany').value||'').trim();
+  var btn=document.getElementById('suBtn');
+  if(!name){showAuthErr('Enter your name.');return;}
+  if(!email||!email.includes('@')){showAuthErr('Enter a valid email.');return;}
+  if(pass.length<8){showAuthErr('Password needs at least 8 characters.');return;}
+  btn.disabled=true;btn.textContent='Creating account…';
+  setTimeout(function(){
+    var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
+    if(users[email]){showAuthErr('Account exists. Sign in above.');btn.disabled=false;btn.textContent='Start Free Trial →';return;}
+    var ini=name.split(' ').map(function(n){return n[0]||'';}).join('').toUpperCase().slice(0,2)||'U';
+    currentUser={name:name,email:email,password:btoa(unescape(encodeURIComponent(pass))),company:company,plan:'trial',trialStart:Date.now(),createdAt:Date.now(),initials:ini,usageCount:0,features:{}};
+    users[email]=currentUser;
+    localStorage.setItem('trazer_users',JSON.stringify(users));
+    localStorage.setItem('trazer_user',JSON.stringify(currentUser));
+    document.getElementById('authOverlay').classList.add('hidden');
+    updateProfileUI();checkTrial();showOnboarding();
+  },600);
+}
+
+function authSignOut() {
+  currentUser=null;localStorage.removeItem('trazer_user');
+  closeProfileDD();
+  document.getElementById('authOverlay').classList.remove('hidden');
+  authTab('in');
+  if(typeof clearChat==='function')clearChat();
+}
+
+function authForgot(){var e=(document.getElementById('siEmail').value||'').trim();if(!e){showAuthErr('Enter your email above first.');return;}alert('Reset link would be sent to: '+e+'\n\nConnect SendGrid to activate this feature.');}
+
+function updateProfileUI(){
+  if(!currentUser)return;
+  var b=document.getElementById('navProfileBtn');if(b)b.textContent=currentUser.initials||'?';
+  var pn=document.getElementById('pddName');if(pn)pn.textContent=currentUser.name||'';
+  var pe=document.getElementById('pddEmail');if(pe)pe.textContent=currentUser.email||'';
+  var pp=document.getElementById('pddPlan');
+  var planMap={trial:'⚡ Pro Trial',starter:'🔵 Starter',pro:'⚡ Pro',enterprise:'🏢 Enterprise',admin:'👑 Admin'};
+  if(pp)pp.textContent=planMap[currentUser.plan]||'⚡ Pro';
+  var u=currentUser.usageCount||0;
+  var bf=document.getElementById('pddBarFill');if(bf)bf.style.width=Math.min(u/500*100,100)+'%';
+  var uc=document.getElementById('pddUsageCount');if(uc)uc.textContent=u+' AI calls this month';
+}
+
+function toggleProfileDD(){var d=document.getElementById('profileDD');if(d)d.classList.toggle('open');updateProfileUI();}
+function closeProfileDD(){var d=document.getElementById('profileDD');if(d)d.classList.remove('open');}
+
+document.addEventListener('click',function(e){
+  var d=document.getElementById('profileDD'),b=document.getElementById('navProfileBtn');
+  if(d&&b&&!d.contains(e.target)&&!b.contains(e.target))closeProfileDD();
+  var ld=document.getElementById('langDropdown'),lb=document.getElementById('langBtn');
+  if(ld&&lb&&!ld.contains(e.target)&&!lb.contains(e.target))ld.classList.remove('open');
+});
+
+function checkTrial(){
+  if(!currentUser)return;
+  var banner=document.getElementById('trialBanner'),pt=document.getElementById('pddTrial');
+  if(currentUser.plan!=='trial'){if(banner)banner.classList.remove('show');if(pt)pt.style.display='none';return;}
+  var left=Math.max(0,7-Math.floor((Date.now()-currentUser.trialStart)/86400000));
+  if(left<=0){showPaywall();return;}
+  if(banner){banner.classList.add('show');var s=document.getElementById('trialDaysLeft');if(s)s.textContent=left+' day'+(left===1?'':'s');}
+  if(pt){pt.style.display='flex';var pd=document.getElementById('pddTrialDays');if(pd)pd.textContent=left;}
+}
+
+function trackUsage(feature){
+  if(!currentUser)return;
+  currentUser.usageCount=(currentUser.usageCount||0)+1;
+  if(feature){currentUser.features=currentUser.features||{};currentUser.features[feature]=(currentUser.features[feature]||0)+1;}
+  var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
+  if(users[currentUser.email]){users[currentUser.email]=currentUser;localStorage.setItem('trazer_users',JSON.stringify(users));}
+  localStorage.setItem('trazer_user',JSON.stringify(currentUser));
+  updateProfileUI();
+}
+
+function isAccessAllowed(){
+  if(!currentUser)return false;
+  if(currentUser.plan==='admin')return true;
+  if(currentUser.plan!=='trial')return true;
+  if(Math.floor((Date.now()-currentUser.trialStart)/86400000)>=7){showPaywall();return false;}
+  return true;
+}
+
+function pddProfile(){closeProfileDD();var n=prompt('Update name:',currentUser?currentUser.name:'');if(n&&n.trim()&&currentUser){currentUser.name=n.trim();currentUser.initials=n.trim().split(' ').map(function(x){return x[0]||'';}).join('').toUpperCase().slice(0,2)||'U';var u=JSON.parse(localStorage.getItem('trazer_users')||'{}');if(u[currentUser.email]){u[currentUser.email]=currentUser;localStorage.setItem('trazer_users',JSON.stringify(u));localStorage.setItem('trazer_user',JSON.stringify(currentUser));}updateProfileUI();}}
+function pddBilling(){closeProfileDD();showPaywall();}
+function pddAdmin(){closeProfileDD();showAdminDashboard();}
+function pddWhatsNew(){closeProfileDD();alert("What's New in Trazer Intelligence:\n\n✅ 2026 HVAC knowledge — full technical library\n✅ Pressure tables by outdoor ambient temp\n✅ SPIN + Sandler sales methodology\n✅ Complete objection handling scripts\n✅ Clickable warranty links\n✅ Auto-learn from corrections\n✅ Camera stops Mike when opened\n✅ Chat remembers across jobs");}
+function pddHelp(){closeProfileDD();alert("Help: support@trazerintelligence.ai\n\nOr ask Mike — he knows every feature.");}
+
+var selPlan='pro';
+function showPaywall(){closeProfileDD();var e=document.getElementById('paywallOverlay');if(e)e.classList.add('show');}
+function selectPlan(p,el){selPlan=p;document.querySelectorAll('.pw-plan').forEach(function(x){x.classList.remove('sel');});el.classList.add('sel');}
+function goCheckout(){alert('Stripe checkout ready to connect!\nPlan: '+selPlan+'\n\nAdd STRIPE_SECRET_KEY to Railway env vars, create price IDs, connect /api/create-checkout-session');}
+
+// ── ONBOARDING VIDEO EXPERIENCE ────────────────────────────────
+var obStep=0;
+var obSlides=[
+  {bg:'ob-slide-0',emoji:'⚡',title:'Meet <span>Trazer Intelligence</span>',body:'The most advanced HVAC field platform ever built. <strong>Your senior tech is in your pocket — 24 hours a day.</strong>'},
+  {bg:'ob-slide-1',emoji:'🎙️',title:'<span>Talk</span> Hands-Free',body:'Just tap Voice and speak. Mike listens like a senior tech and diagnoses in real time. <strong>No typing. No searching. Just answers.</strong>'},
+  {bg:'ob-slide-2',emoji:'📷',title:'<span>Camera</span> Sees Everything',body:'Point at any unit, nameplate, or part. Ask Mike what he sees. <strong>Live diagnosis from your camera — like having a master tech on the job.</strong>'},
+  {bg:'ob-slide-3',emoji:'💰',title:'<span>Revenue</span> on Every Job',body:'Mike spots add-on opportunities after every diagnosis and gives you the exact words to say. <strong>Average ticket up 20-40%.</strong>'},
+  {bg:'ob-slide-4',emoji:'🚀',title:'<span>You\'re Ready</span> to Dominate',body:'Warranty lookup. Live parts pricing. Real-time inventory. Sales coaching. All in one tool. <strong>Go take over the HVAC world.</strong>'},
+];
+
+function showOnboarding(){
+  obStep=0;
+  var el=document.getElementById('onboardingOverlay');
+  if(!el)return;
+  el.classList.add('show');
+  renderObSlide();
+  // Mike's voice intro using browser TTS
+  setTimeout(function(){
+    if(window.speechSynthesis){
+      window.speechSynthesis.cancel();
+      var intros=[
+        "Hey, I'm Mike. 25 years in the field, and now I'm in your pocket. Trazer Intelligence is the most powerful HVAC tool ever built. Let me show you what I can do.",
+        "Tap the mic and just talk to me — I'll listen and diagnose like the most experienced tech you've ever worked with.",
+        "Point your camera at any unit or part and ask me what I see. I'll identify it, find parts and pricing, and tell you exactly what's wrong.",
+        "After every job, I'll find upsells and give you the exact words to say to the homeowner. Your ticket averages are about to go up.",
+        "Warranty lookup, live inventory, real-time pricing, sales coaching — it's all here. Now let's go take over the HVAC world."
+      ];
+      function speakSlide(idx){
+        if(idx>=intros.length)return;
+        var u=new SpeechSynthesisUtterance(intros[idx]);
+        u.rate=0.92;u.pitch=0.95;u.volume=1;
+        var voices=window.speechSynthesis.getVoices();
+        var pref=voices.find(function(v){return v.name.toLowerCase().includes('daniel')||v.name.toLowerCase().includes('alex')||v.name.toLowerCase().includes('ryan')||v.name.toLowerCase().includes('male');});
+        if(pref)u.voice=pref;
+        u.onend=function(){
+          if(obStep===idx&&obStep<obSlides.length-1){
+            setTimeout(function(){obNextSlide();speakSlide(idx+1);},400);
+          }
+        };
+        window.speechSynthesis.speak(u);
+      }
+      speakSlide(0);
+    }
+  },600);
+}
+
+function renderObSlide(){
+  var wrap=document.getElementById('obCanvas');
+  if(!wrap)return;
+  var slide=obSlides[obStep];
+  // Update slide content
+  var titleEl=document.getElementById('obTitle');
+  var bodyEl=document.getElementById('obBody');
+  var emojiEl=document.getElementById('obEmoji');
+  var nextBtn=document.getElementById('obNextBtn');
+  if(titleEl)titleEl.innerHTML=slide.title;
+  if(bodyEl)bodyEl.innerHTML=slide.body;
+  if(emojiEl)emojiEl.textContent=slide.emoji;
+  if(nextBtn)nextBtn.textContent=obStep<obSlides.length-1?'Next →':'Get Started →';
+  // Update dots
+  var dots=document.querySelectorAll('.ob-dot');
+  dots.forEach(function(d,i){d.classList.toggle('on',i<=obStep);});
+  // Update background
+  var slideEl=document.getElementById('obSlideEl');
+  if(slideEl)slideEl.className='ob-slide active '+slide.bg;
+}
+
+function obNextSlide(){
+  if(obStep<obSlides.length-1){obStep++;renderObSlide();}
+  else{obFinish();}
+}
+
+function obFinish(){
+  window.speechSynthesis&&window.speechSynthesis.cancel();
+  localStorage.setItem('trazer_onboarded','1');
+  var el=document.getElementById('onboardingOverlay');
+  if(el)el.classList.remove('show');
+}
+
+// ── ADMIN DASHBOARD ────────────────────────────────────────────
+function showAdminDashboard(){
+  closeProfileDD();
+  var el=document.getElementById('adminOverlay');
+  if(!el)return;
+  // Aggregate stats from all users
+  var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
+  var userList=Object.values(users);
+  var totalUsers=userList.length;
+  var trialUsers=userList.filter(function(u){return u.plan==='trial';}).length;
+  var paidUsers=userList.filter(function(u){return u.plan==='pro'||u.plan==='starter'||u.plan==='enterprise';}).length;
+  var totalCalls=userList.reduce(function(s,u){return s+(u.usageCount||0);},0);
+  // Feature usage aggregation
+  var featTotals={};
+  userList.forEach(function(u){
+    if(u.features){Object.keys(u.features).forEach(function(k){featTotals[k]=(featTotals[k]||0)+u.features[k];});}
+  });
+  var featList=Object.entries(featTotals).sort(function(a,b){return b[1]-a[1];});
+  var maxFeat=featList.length>0?featList[0][1]:1;
+  // Build HTML
+  document.getElementById('adminTotalUsers').textContent=totalUsers;
+  document.getElementById('adminTrialUsers').textContent=trialUsers;
+  document.getElementById('adminPaidUsers').textContent=paidUsers;
+  document.getElementById('adminTotalCalls').textContent=totalCalls;
+  // Users table
+  var tbody=document.getElementById('adminUsersTable');
+  if(tbody){
+    tbody.innerHTML=userList.map(function(u){
+      var daysLeft=u.plan==='trial'?Math.max(0,7-Math.floor((Date.now()-u.trialStart)/86400000)):null;
+      return '<tr><td>'+u.name+'</td><td style="color:#555">'+u.email+'</td><td><span style="color:#00C2B2;font-weight:700">'+u.plan+(daysLeft!==null?' ('+daysLeft+'d left)':'')+'</span></td><td>'+u.company+'</td><td style="color:#00C2B2;font-weight:700">'+(u.usageCount||0)+'</td><td style="color:#555">'+new Date(u.createdAt||Date.now()).toLocaleDateString()+'</td></tr>';
+    }).join('');
+  }
+  // Features table
+  var fbody=document.getElementById('adminFeatTable');
+  if(fbody){
+    fbody.innerHTML=featList.map(function(f){
+      var pct=Math.round(f[1]/maxFeat*100);
+      return '<tr><td style="font-weight:600">'+f[0]+'</td><td style="color:#00C2B2;font-weight:700">'+f[1]+'</td><td style="width:150px"><div class="admin-feat-bar"><div class="admin-feat-fill" style="width:'+pct+'%"></div></div></td></tr>';
+    }).join('')||'<tr><td colspan="3" style="color:#555;text-align:center">No feature data yet</td></tr>';
+  }
+  el.classList.add('show');
+}
+
+function closeAdmin(){document.getElementById('adminOverlay').classList.remove('show');}
+
+
+
 var SYS_TYPES=["Air Conditioner – Split System","Air Conditioner – Package Unit","AC Condenser (Outdoor Unit Only)","Heat Pump Condenser (Outdoor Unit Only)","Heat Pump – Split System","Heat Pump – Package Unit","Heat Pump – Dual Fuel","Air Handler – Electric","Air Handler – with Electric Heat Strip","Gas Furnace","Electric Furnace","Oil Furnace","Mini-Split – Single Zone","Mini-Split – Multi Zone","Package Unit – Gas/Electric","Package Unit – Electric","Boiler – Hot Water","Boiler – Steam","Geothermal Heat Pump","VRF / VRV System","PTAC / PTHP","Window AC","Radiant / In-Floor Heat"];
 var SYS_AGES=["0–5 years","5–10 years","10–15 years","15–20 years","20+ years","Not sure"];
 var BRANDS=["Carrier","Bryant","Payne","Trane","American Standard","Lennox","Goodman","Amana","Daikin","Rheem","Ruud","York","Coleman","Heil","Tempstar","Mitsubishi Electric","Fujitsu","LG","Bosch","Weil-McLain","Other / Unknown"];
@@ -622,29 +1136,7 @@ var currentLang='en';
 var voiceMode=false,mikeVoice=null,mikeAudio=null,isMikeSpeaking=false,isListening=false,speechRecognition=null,autoListenAfterSpeak=false;
 var techLocation=null,wakeLock=null;
 
-document.addEventListener("DOMContentLoaded",function(){
-  populateSelects();
-  buildSymptomGrid();
-  buildHomeSymptomGrid();
-  buildConcernsGrid();
-  buildMaintConcernsGrid();
-  checkHealth();
-  if(window.speechSynthesis){window.speechSynthesis.onvoiceschanged=loadMikeVoice;loadMikeVoice();}
-  // Get tech location for local supplier search
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(function(pos){
-      techLocation={lat:pos.coords.latitude,lng:pos.coords.longitude};
-      // Reverse geocode to get city/state
-      fetch('https://nominatim.openstreetmap.org/reverse?lat='+techLocation.lat+'&lon='+techLocation.lng+'&format=json')
-        .then(function(r){return r.json();})
-        .then(function(d){
-          techLocation.city=(d.address&&(d.address.city||d.address.town||d.address.county))||'';
-          techLocation.state=(d.address&&d.address.state)||'';
-          techLocation.display=techLocation.city+(techLocation.state?', '+techLocation.state:'');
-        }).catch(function(){});
-    },function(){},{ enableHighAccuracy:false,timeout:5000 });
-  }
-});
+
 document.addEventListener('click',function(e){
   var t=document.getElementById('langToggle');
   if(t&&!t.contains(e.target)){var d=document.getElementById('langDropdown');if(d)d.classList.remove('open');}
@@ -1316,6 +1808,8 @@ function checkAndLearn(resp){
   return resp;
 }
 async function sendChat(){
+  if(!isAccessAllowed())return;
+  trackUsage("chat");
   if(chatSending)return;
   var input=document.getElementById('chatInput'),text=input.value.trim();
   if(!text&&!chatAttachment)return;
@@ -1475,14 +1969,40 @@ function buildFallbackIllustration(caption){
 
 
 async function generateAndShowDiagram(userText,mikeResponse){
-  var prompt='Tech asked: "'+userText+'"\nMike explained: "'+mikeResponse.substring(0,500)+'"\n\nCreate the most helpful SVG diagram for this situation:\n- If wiring: show every wire with color-coded lines, terminal labels (R,C,Y,G,W,O,B), component boxes\n- If furnace sequence: flowchart with each step, decision points, lockout conditions\n- If refrigerant/pressures: dual gauge manifold showing suction and discharge with target ranges labeled\n- If installation steps: numbered step diagram\n- If circuit: full electrical schematic with proper symbols\nMake it genuinely useful for a field technician diagnosing right now.';
-  await generateAndShowSVG(prompt, userText.substring(0,40)+'…', false);
+  trackUsage("diagram");
+  var prompt='Tech asked: "'+userText+'"\nMike said: "'+mikeResponse.substring(0,400)+'"\n\nCreate an SVG wiring diagram or technical diagram for this situation. Show wire colors, component labels, terminal labels. Make it clear and professional.';
+  try{
+    await generateAndShowSVG(prompt, userText||'Technical Diagram', false);
+  }catch(e){
+    // Show fallback diagram directly
+    var container=document.getElementById('chatMessages');
+    var div=document.createElement('div');div.className='msg-agent';
+    var fallbackSvg=buildFallbackDiagram(userText||'Technical Diagram');
+    div.innerHTML='<div class="msg-bubble msg-bubble-agent" style="padding:12px;"><div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px;">📐 '+(userText||'Technical Diagram')+'</div>'+fallbackSvg+'</div><div class="msg-time">'+getTimeStr()+'</div>';
+    container.appendChild(div);container.scrollTop=container.scrollHeight;
+  }
 }
 
 async function generateAndShowIllustration(userText,mikeResponse){
-  var prompt='Create a detailed SVG illustration for a field HVAC technician.\nTech wants to see: "'+userText+'"\nContext: "'+mikeResponse.substring(0,300)+'"\n\nIllustrate the component, part, or system described. Show:\n- Realistic proportions and colors\n- All visible parts labeled with arrows\n- Any relevant connections or interfaces\n- Include any part numbers or specifications if mentioned\nMake it look like a professional technical manual illustration.';
-  await generateAndShowSVG(prompt, userText.substring(0,40)+'…', true);
+  var prompt='Tech requested: "'+userText+'"\nContext: "'+mikeResponse.substring(0,400)+'"\n\nCreate a detailed SVG illustration showing this HVAC component or concept clearly. Use colors and labels.';
+  try{
+    await generateAndShowSVG(prompt, userText||'Illustration', true);
+  }catch(e){
+    var container=document.getElementById('chatMessages');
+    var div=document.createElement('div');div.className='msg-agent';
+    var fallbackSvg=buildFallbackIllustration(userText||'Illustration');
+    div.innerHTML='<div class="msg-bubble msg-bubble-agent" style="padding:12px;"><div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px;">🎨 '+(userText||'Illustration')+'</div>'+fallbackSvg+'</div><div class="msg-time">'+getTimeStr()+'</div>';
+    container.appendChild(div);container.scrollTop=container.scrollHeight;
+  }
 }
+
+
+
+
+
+
+
+
 
 async function buildImageQuery(userText,mikeResponse){
   try{
@@ -1501,9 +2021,9 @@ async function buildImageQuery(userText,mikeResponse){
       ['furnace wiring','gas furnace wiring diagram schematic 80 percent'],
       ['furnace sequence','gas furnace sequence of operation diagram'],
       ['flame sensor','furnace flame sensor assembly location diagram'],
-      ['pressure switch','furnace draft pressure switch hose diagram'],
+      ['pressure switch','furnace pressure switch hose diagram'],
       ['blower motor wiring','HVAC blower motor wiring diagram PSC ECM'],
-      ['blower motor','HVAC blower motor wheel assembly diagram'],
+      ['blower motor','HVAC blower motor assembly diagram'],
       ['thermostat wiring','HVAC thermostat wiring diagram R C Y G W O B terminals'],
       ['thermostat','HVAC thermostat wiring color code diagram'],
       ['refrigeration cycle','HVAC refrigeration cycle diagram components'],
@@ -1514,7 +2034,7 @@ async function buildImageQuery(userText,mikeResponse){
       ['air handler','air handler unit components diagram'],
       ['mini split','mini split system installation diagram indoor outdoor'],
       ['wiring diagram','HVAC electrical wiring schematic diagram'],
-      ['electrical','HVAC unit electrical schematic diagram'],
+      ['electrical','HVAC unit electrical schematic diagram']
     ];
     for(var i=0;i<terms.length;i++){if(text.includes(terms[i][0]))return terms[i][1];}
     var words=text.replace(/[^a-z0-9 ]/g,'').split(' ')
@@ -1542,8 +2062,9 @@ function showImageInChat(url,caption){
 
 function handleChatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
 function clearChat(){
-  chatHistory=[];
-  var greetings={en:"Ready to help. What are you working on?",es:"Listo. ¿En qué estás trabajando?",zh:"准备好了。你在处理什么问题？",vi:"Sẵn sàng. Bạn đang xử lý gì?",fr:"Prêt. Sur quoi travailles-tu?",pt:"Pronto. Em que está trabalhando?"};
+  // Keep chatHistory — Mike remembers everything from previous calls
+  // Only clear the visual display so tech has clean screen for next job
+  var greetings={en:"New job — I still remember everything from your last call. What are you working on?",es:"Nuevo trabajo — recuerdo todo de tu última llamada. ¿En qué estás trabajando?",zh:"新任务——我记得上次通话的所有内容。你在处理什么？",vi:"Công việc mới — tôi vẫn nhớ mọi thứ từ cuộc gọi trước. Bạn đang xử lý gì?",fr:"Nouveau job — je me souviens de tout votre dernier appel. Sur quoi travaillez-vous?",pt:"Novo trabalho — lembro de tudo da sua última chamada. Em que está trabalhando?"};
   document.getElementById('chatMessages').innerHTML='<div class="msg-agent"><div class="msg-bubble msg-bubble-agent"><p>'+(greetings[currentLang]||greetings.en)+'</p></div><div class="msg-time">'+getTimeStr()+'</div></div>';
 }
 
@@ -1559,6 +2080,7 @@ function loadMikeVoice(){
 }
 
 function toggleVoiceMode(){
+  if(voiceMode===false)trackUsage("voice");
   voiceMode=!voiceMode;
   var bar=document.getElementById('voiceModeBar');
   var btn=document.getElementById('voiceModeBtn');
@@ -1858,7 +2380,11 @@ var cameraListening=false,cameraSpeechRec=null,cameraActive=false;
 var lastCameraAnalysis=0,cameraAnalysisLock=false;
 
 async function startLiveCamera(){
+  trackUsage("camera");
   unlockAudio();
+  // Stop Mike speaking immediately when camera opens
+  stopMikeSpeaking();
+  stopListening();
   var overlay=document.getElementById('liveCameraOverlay');
   overlay.style.display='flex';
   cameraActive=true;
@@ -2098,6 +2624,17 @@ document.addEventListener('click',function(e){
     if(dd)dd.style.display='none';
   }
 });
+
+
+document.addEventListener('DOMContentLoaded',function(){
+  tracerInit();
+  populateSelects();
+  buildSymptomGrid();
+  buildHomeSymptomGrid();
+  if(typeof buildConcernsGrid==='function')buildConcernsGrid();
+  if(typeof buildMaintConcernsGrid==='function')buildMaintConcernsGrid();
+  checkHealth();
+  if(window.speechSynthesis){window.speechSynthesis.onvoiceschanged=loadMikeVoice;loadMikeVoice();}
+});
 </script>
-</body>
 </html>

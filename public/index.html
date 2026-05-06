@@ -2379,7 +2379,7 @@ var cameraStream=null,cameraFacing='environment',cameraAnalysisInterval=null;
 var cameraListening=false,cameraSpeechRec=null,cameraActive=false;
 var lastCameraAnalysis=0,cameraAnalysisLock=false;
 
-async async function startLiveCamera(){
+async function startLiveCamera(){
   trackUsage("camera");
   unlockAudio();
   try{stopMikeSpeaking();}catch(e){}

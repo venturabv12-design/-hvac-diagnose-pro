@@ -989,11 +989,11 @@ function goCheckout(){alert('Stripe checkout ready.\nPlan: '+selPlan+'\n\nAdd ST
 
 // ── ONBOARDING ─────────────────────────────────────────────────
 var OB_SLIDES=[
-  {bg:'linear-gradient(160deg,#010a14 0%,#031828 60%,#061f38 100%)',emoji:'⚡',title:'<span>Trazer Intelligence</span>',body:'The most advanced HVAC field platform ever built. Your senior tech is in your pocket — 24 hours a day, 7 days a week.',voice:"Hey. I'm Mike. 25 years in the field. And now I'm in your pocket. Trazer Intelligence is the most powerful HVAC tool ever built. Let me show you what I can do."},
-  {bg:'linear-gradient(160deg,#010a14 0%,#03180f 60%,#062016 100%)',emoji:'🎙️',title:'Talk to Me <span>Hands-Free</span>',body:'Tap Voice and just speak. I listen like a senior tech, diagnose in real time, and respond with my voice. <strong>No typing under a unit.</strong>',voice:"Tap the mic and just talk to me. Tell me what you are working on. I will listen, diagnose, and give you answers like the most experienced tech you have ever worked with. All hands free."},
-  {bg:'linear-gradient(160deg,#010a14 0%,#180303 60%,#200607 100%)',emoji:'📷',title:'My <span>Camera Sees</span> Everything',body:'Point at any unit, nameplate, or part. Ask me what I see. <strong>Live visual diagnosis — like having a master tech on every job.</strong>',voice:"Point your camera at any unit or part and ask me what I see. I will identify it, read the nameplate, find parts and pricing, and tell you exactly what is wrong. All in real time."},
-  {bg:'linear-gradient(160deg,#010a14 0%,#0d0d03 60%,#1a1803 100%)',emoji:'💰',title:'<span>Revenue</span> on Every Job',body:'After every diagnosis I spot add-on opportunities and give you the exact words to say to the homeowner. <strong>Average ticket up 20-40%.</strong>',voice:"After every diagnosis I find upsell opportunities and give you the exact words to say. Weak capacitor, dirty coils, no surge protection — I tell you what to pitch and how to pitch it. Your ticket averages are about to go up."},
-  {bg:'linear-gradient(160deg,#010a14 0%,#030318 60%,#060a25 100%)',emoji:'🚀',title:'<span>Go Dominate</span> the HVAC World',body:'Warranty lookup. Live parts pricing. Real-time inventory. Sales coaching. Safety alerts. All in one tool. <strong>This is your unfair advantage.</strong>',voice:"Warranty lookup, live parts pricing, real time inventory, sales coaching, safety alerts — all in one tool. This is your unfair advantage. Now go out there and take over the HVAC world. I will be right here every time you need me."},
+  {bg:'linear-gradient(160deg,#010a14 0%,#031828 60%,#061f38 100%)',emoji:'⚡',title:'<span>Trazer Intelligence</span>',body:'The most advanced HVAC field platform ever built. Your senior tech is in your pocket — 24 hours a day, 7 days a week.',voice:"Hey! I am Mike — and I am about to change the way you work forever. 25 years in the field, every system I have ever seen, every repair I have ever made — all of it is right here in your pocket. This is Trazer Intelligence. Let me show you what we can do together."},
+  {bg:'linear-gradient(160deg,#010a14 0%,#03180f 60%,#062016 100%)',emoji:'🎙️',title:'Talk to Me <span>Hands-Free</span>',body:'Tap Voice and just speak. I listen like a senior tech and diagnose in real time. <strong>No typing. No searching. Just answers.</strong>',voice:"You are crawling under a unit, your hands are full, and you need answers right now. Just tap the mic and talk to me. Tell me what you are seeing, what the pressures are, what the customer said — and I will walk you through it step by step. Hands free. Real time. Like your most experienced tech is right there with you on every single job."},
+  {bg:'linear-gradient(160deg,#010a14 0%,#180303 60%,#200607 100%)',emoji:'📷',title:'My <span>Camera Sees</span> Everything',body:'Point at any unit, nameplate, or part. Ask me what I see. <strong>Live diagnosis — like a master tech on every job.</strong>',voice:"Point your camera at anything — a nameplate, a capacitor, a wiring diagram, a unit you have never seen before — and ask me what I see. I will identify it instantly, find the parts you need with live pricing, check the warranty, and tell you exactly what is wrong. It is like having x-ray vision on every job."},
+  {bg:'linear-gradient(160deg,#010a14 0%,#0d0d03 60%,#1a1803 100%)',emoji:'💰',title:'<span>Revenue</span> on Every Job',body:'After every diagnosis I spot add-on opportunities and give you the exact words to say. <strong>Average ticket up 20 to 40 percent.</strong>',voice:"Here is where it gets really exciting. After every diagnosis, I find every dollar you might be leaving on the table — weak capacitor, dirty coils, no surge protection, a drain line waiting to flood a ceiling — and I give you the exact words to say to the homeowner. Not pushy. Just honest. Your average ticket is about to go up on every single job starting today."},
+  {bg:'linear-gradient(160deg,#010a14 0%,#030318 60%,#060a25 100%)',emoji:'🚀',title:'<span>Let us Go Dominate</span>',body:'Warranty lookup. Live parts pricing. Real-time inventory. Sales coaching. Safety alerts. <strong>This is your unfair advantage.</strong>',voice:"Warranty lookup, live parts pricing, real time inventory, sales scripts, safety alerts — everything a master tech needs, right in your hand. The other guys are still guessing. You have me. Now let us go out there, take care of every customer, grow your business, and absolutely dominate the HVAC world. I will be right here every single time you need me. Let us go!"},
 ];
 var obStep=0;
 
@@ -1017,12 +1017,38 @@ function renderOb(){
 }
 
 function speakOb(){
-  if(!window.speechSynthesis)return;
-  window.speechSynthesis.cancel();
   var s=OB_SLIDES[obStep];
   if(!s||!s.voice)return;
-  var u=new SpeechSynthesisUtterance(s.voice);
-  u.rate=0.91;u.pitch=0.94;u.volume=1;
+  var text=s.voice;
+  // Try ElevenLabs (same engine as Mike in chat) — fall back to browser TTS
+  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text})})
+    .then(function(res){
+      if(!res.ok)throw new Error('tts '+res.status);
+      return res.arrayBuffer();
+    })
+    .then(function(buf){
+      if(!buf||buf.byteLength<500){speakObBrowser(text);return;}
+      var AudioCtx=window.AudioContext||window.webkitAudioContext;
+      if(!AudioCtx){speakObBrowser(text);return;}
+      var ctx=window._obAudioCtx||(window._obAudioCtx=new AudioCtx());
+      if(ctx.state==='suspended')ctx.resume();
+      ctx.decodeAudioData(buf.slice(0),function(decoded){
+        if(window._obSource){try{window._obSource.stop();}catch(e){}}
+        var src=ctx.createBufferSource();
+        src.buffer=decoded;
+        src.connect(ctx.destination);
+        window._obSource=src;
+        src.start(0);
+      },function(){speakObBrowser(text);});
+    })
+    .catch(function(){speakObBrowser(text);});
+}
+
+function speakObBrowser(text){
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  var u=new SpeechSynthesisUtterance(text);
+  u.rate=0.92;u.pitch=0.95;u.volume=1;
   var voices=window.speechSynthesis.getVoices();
   var pref=voices.find(function(v){
     var n=v.name.toLowerCase();
@@ -1032,14 +1058,19 @@ function speakOb(){
   window.speechSynthesis.speak(u);
 }
 
-function obNext(){
+function stopObSpeaking(){
+  try{if(window._obSource){window._obSource.stop();window._obSource=null;}}catch(e){}
   if(window.speechSynthesis)window.speechSynthesis.cancel();
-  if(obStep<OB_SLIDES.length-1){obStep++;renderOb();setTimeout(speakOb,300);}
+}
+
+function obNext(){
+  stopObSpeaking();
+  if(obStep<OB_SLIDES.length-1){obStep++;renderOb();setTimeout(speakOb,400);}
   else{obFinish();}
 }
 
 function obFinish(){
-  if(window.speechSynthesis)window.speechSynthesis.cancel();
+  stopObSpeaking();
   localStorage.setItem('trazer_onboarded','1');
   var el=document.getElementById('onboardingOverlay');if(el)el.classList.remove('show');
 }

@@ -390,6 +390,10 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
         </div>
       </div>
       <button class="role-continue-btn" id="roleContinueBtn" onclick="roleConfirm()" style="opacity:.4;cursor:not-allowed;" disabled>Continue →</button>
+      <div style="text-align:center;margin-top:14px;">
+        <span style="font-size:13px;color:#555;">Already have an account? </span>
+        <span style="font-size:13px;color:#00C2B2;cursor:pointer;font-weight:600;" onclick="goBackToSignIn()">Sign In</span>
+      </div>
     </div>
 
     <div id="authMainArea">
@@ -953,6 +957,16 @@ function hideRoleSelector() {
   document.getElementById('authMainArea').style.display = 'block';
 }
 
+function goBackToSignIn() {
+  pendingRole = null;
+  // Reset role cards
+  document.querySelectorAll('.role-card').forEach(function(c){c.classList.remove('selected');});
+  var btn = document.getElementById('roleContinueBtn');
+  if(btn){btn.disabled=true;btn.style.opacity='0.4';btn.style.cursor='not-allowed';}
+  hideRoleSelector();
+  authTab('in');
+}
+
 function selectRole(role, el) {
   pendingRole = role;
   document.querySelectorAll('.role-card').forEach(function(c){c.classList.remove('selected');});
@@ -1035,6 +1049,13 @@ function tracerInit(){
 }
 
 function authTab(t){
+  // If role selector is showing, hide it first
+  var rs=document.getElementById('roleSelector');
+  var ma=document.getElementById('authMainArea');
+  if(rs&&rs.classList.contains('show')){
+    rs.classList.remove('show');
+    if(ma)ma.style.display='block';
+  }
   document.querySelectorAll('.auth-tab').forEach(function(b,i){b.classList.toggle('active',(i===0&&t==='in')||(i===1&&t==='up'));});
   document.getElementById('authInForm').style.display=t==='in'?'block':'none';
   document.getElementById('authUpForm').style.display=t==='up'?'block':'none';

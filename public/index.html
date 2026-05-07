@@ -290,6 +290,67 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .adm-tbl td{padding:9px 10px;border-bottom:1px solid #0d0d0d;font-size:13px;color:#ccc;}
 .adm-tbl tr:last-child td{border-bottom:none;}
 
+
+/* ══ MODALS — PROFILE / BILLING / WHATS NEW / HELP ═════════ */
+.tz-modal-overlay{position:fixed;inset:0;z-index:9980;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px;}
+.tz-modal-overlay.show{display:flex;}
+.tz-modal{background:#161616;border:1px solid #2a2a2a;border-radius:18px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.7);}
+.tz-modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 16px;border-bottom:1px solid #222;}
+.tz-modal-title{font-size:17px;font-weight:700;color:#fff;}
+.tz-modal-close{width:30px;height:30px;border-radius:50%;background:#222;border:none;color:#aaa;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tz-modal-close:hover{background:#333;color:#fff;}
+.tz-modal-body{padding:20px;}
+.tz-modal-field{margin-bottom:18px;}
+.tz-modal-label{display:block;font-size:11px;font-weight:700;color:#666;letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px;}
+.tz-modal-input{display:block;width:100%;padding:12px 14px;background:#0a0a0a;border:1.5px solid #2a2a2a;border-radius:9px;color:#fff;font-size:15px;font-family:inherit;outline:none;transition:border-color .2s;box-sizing:border-box;}
+.tz-modal-input:focus{border-color:#00C2B2;}
+.tz-modal-input::placeholder{color:#444;}
+.tz-modal-btn{width:100%;padding:13px;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;}
+.tz-modal-btn:hover{filter:brightness(1.08);}
+.tz-modal-btn-outline{width:100%;padding:12px;background:transparent;border:1.5px solid #2a2a2a;border-radius:9px;color:#aaa;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;}
+.tz-modal-btn-outline:hover{border-color:#444;color:#fff;}
+.tz-modal-back{display:flex;align-items:center;gap:6px;font-size:13px;color:#00C2B2;cursor:pointer;margin-bottom:16px;}
+.tz-modal-back:hover{color:#fff;}
+.tz-fact{background:#0d0d0d;border:1px solid #1a1a1a;border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;}
+.tz-fact-num{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#00C2B2,#009E91);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#000;flex-shrink:0;margin-top:1px;}
+.tz-fact-text{font-size:14px;color:#ccc;line-height:1.6;}
+.tz-fact-text strong{color:#fff;}
+.tz-help-option{background:#0d0d0d;border:1.5px solid #1a1a1a;border-radius:12px;padding:16px;margin-bottom:10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:14px;}
+.tz-help-option:hover{border-color:#00C2B2;background:rgba(0,194,178,.05);}
+.tz-help-icon{font-size:28px;flex-shrink:0;}
+.tz-help-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:3px;}
+.tz-help-sub{font-size:12px;color:#666;}
+.tz-feedback-box{width:100%;min-height:100px;padding:12px 14px;background:#0a0a0a;border:1.5px solid #2a2a2a;border-radius:9px;color:#fff;font-size:14px;font-family:inherit;outline:none;resize:vertical;transition:border-color .2s;box-sizing:border-box;}
+.tz-feedback-box:focus{border-color:#00C2B2;}
+.tz-feedback-box::placeholder{color:#444;}
+.plan-card-grid{display:flex;gap:10px;margin-bottom:18px;}
+.plan-card{flex:1;background:#0d0d0d;border:1.5px solid #1a1a1a;border-radius:12px;padding:16px 12px;cursor:pointer;transition:all .2s;position:relative;text-align:center;}
+.plan-card:hover{border-color:#444;}
+.plan-card.active{border-color:#00C2B2;background:rgba(0,194,178,.05);}
+.plan-card-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#00C2B2;color:#000;font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.plan-card-name{font-size:12px;font-weight:700;color:#888;margin-bottom:4px;}
+.plan-card-price{font-size:26px;font-weight:900;color:#fff;}
+.plan-card-period{font-size:11px;color:#555;}
+.plan-card-save{font-size:11px;color:#10B981;margin-top:3px;font-weight:600;}
+.plan-coming-soon{text-align:center;padding:16px;background:rgba(0,194,178,.05);border:1px solid rgba(0,194,178,.2);border-radius:10px;font-size:13px;color:#00C2B2;margin-bottom:16px;}
+.feedback-badge{position:absolute;top:-4px;right:-4px;width:8px;height:8px;border-radius:50%;background:#E8354A;}
+
+
+/* ── ROLE SELECTOR ──────────────────────────────────── */
+.role-select-wrap{display:none;}
+.role-select-wrap.show{display:block;}
+.role-card{background:#0d0d0d;border:2px solid #2a2a2a;border-radius:16px;padding:22px 18px;cursor:pointer;transition:all .25s;margin-bottom:12px;display:flex;align-items:center;gap:16px;}
+.role-card:hover{border-color:#444;background:#111;}
+.role-card.selected{border-color:#00C2B2;background:rgba(0,194,178,.07);}
+.role-card-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+.role-card-icon.homeowner{background:linear-gradient(135deg,#2563eb20,#2563eb10);border:1px solid #2563eb40;}
+.role-card-icon.contractor{background:linear-gradient(135deg,#00C2B220,#00C2B210);border:1px solid #00C2B240;}
+.role-card-title{font-size:16px;font-weight:800;color:#fff;margin-bottom:3px;}
+.role-card-sub{font-size:13px;color:#666;line-height:1.4;}
+.role-continue-btn{width:100%;padding:13px;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px;box-shadow:0 4px 14px rgba(0,194,178,.25);}
+.role-continue-btn:hover{filter:brightness(1.08);}
+.auth-back-link{display:flex;align-items:center;gap:6px;font-size:13px;color:#00C2B2;cursor:pointer;margin-bottom:18px;}
+
 </style>
 </head>
 <body>
@@ -298,6 +359,29 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
   <div class="auth-logo-row"><div class="auth-logo-icon">⚡</div><div class="auth-logo-name">Trazer Intelligence</div></div>
   <div class="auth-card">
     <div class="auth-trial-pill">🎯 7-day free trial — no credit card required</div>
+
+    <!-- ROLE SELECTOR — shown only during sign up -->
+    <div class="role-select-wrap" id="roleSelector">
+      <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;">I am a...</div>
+      <div style="font-size:13px;color:#666;margin-bottom:16px;">This personalizes your experience. You can change it later.</div>
+      <div class="role-card" id="roleHomeCard" onclick="selectRole('homeowner',this)">
+        <div class="role-card-icon homeowner">🏠</div>
+        <div>
+          <div class="role-card-title">Homeowner</div>
+          <div class="role-card-sub">I want to understand my HVAC system and know if something is wrong</div>
+        </div>
+      </div>
+      <div class="role-card" id="roleProCard" onclick="selectRole('contractor',this)">
+        <div class="role-card-icon contractor">🔧</div>
+        <div>
+          <div class="role-card-title">HVAC Contractor / Tech</div>
+          <div class="role-card-sub">I diagnose and repair HVAC systems professionally</div>
+        </div>
+      </div>
+      <button class="role-continue-btn" id="roleContinueBtn" onclick="roleConfirm()" style="opacity:.4;cursor:not-allowed;" disabled>Continue →</button>
+    </div>
+
+    <div id="authMainArea">
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="authTab('in')">Sign In</button>
       <button class="auth-tab" onclick="authTab('up')">Create Account</button>
@@ -318,6 +402,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
     </div>
     <p class="auth-terms">By continuing you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a></p>
   </div>
+  </div><!-- /authMainArea -->
 </div>
 </div>
 <div id="onboardingOverlay">
@@ -341,15 +426,30 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 <div id="paywallOverlay">
 <div class="pw-card">
   <div class="pw-icon">🔐</div>
-  <div class="pw-title">Trial Ended</div>
-  <div class="pw-sub">Keep Mike on every job. Choose your plan.</div>
-  <div class="pw-plans">
-    <div class="pw-plan" onclick="selectPlan('starter',this)"><div class="pw-name">Starter</div><div class="pw-price">$79</div><div class="pw-period">/tech/mo</div></div>
-    <div class="pw-plan sel" onclick="selectPlan('pro',this)"><div class="pw-badge">BEST VALUE</div><div class="pw-name">Pro</div><div class="pw-price">$129</div><div class="pw-period">/tech/mo</div><div class="pw-save">All features</div></div>
-    <div class="pw-plan" onclick="selectPlan('enterprise',this)"><div class="pw-name">Enterprise</div><div class="pw-price">$99</div><div class="pw-period">/tech/mo 11+</div></div>
+  <div class="pw-title" id="pwTitle">Trial Ended</div>
+  <div class="pw-sub" id="pwSub">Choose your plan and keep Mike on every job.</div>
+  <!-- Homeowner plan -->
+  <div id="pwHomeowner" style="display:none">
+    <div class="pw-plans" style="justify-content:center;">
+      <div class="pw-plan sel" style="max-width:220px;" onclick="selectPlan('homeowner',this)">
+        <div class="pw-badge">HOMEOWNER</div>
+        <div class="pw-name">Home Plan</div>
+        <div class="pw-price">$19<span style="font-size:16px;font-weight:600">.99</span></div>
+        <div class="pw-period">/month</div>
+        <div class="pw-save" style="margin-top:8px;">Unlimited diagnostics</div>
+      </div>
+    </div>
+  </div>
+  <!-- Contractor plans -->
+  <div id="pwContractor">
+    <div class="pw-plans">
+      <div class="pw-plan" onclick="selectPlan('starter',this)"><div class="pw-name">Starter</div><div class="pw-price">$100</div><div class="pw-period">/tech/mo</div></div>
+      <div class="pw-plan sel" onclick="selectPlan('pro',this)"><div class="pw-badge">BEST VALUE</div><div class="pw-name">Pro</div><div class="pw-price">$200</div><div class="pw-period">/tech/mo</div><div class="pw-save">All features</div></div>
+      <div class="pw-plan" onclick="selectPlan('enterprise',this)"><div class="pw-name">Enterprise</div><div class="pw-price" style="font-size:22px;font-weight:800;">Custom</div><div class="pw-period">11+ techs</div></div>
+    </div>
   </div>
   <button class="pw-btn" onclick="goCheckout()">Subscribe Now — Cancel Anytime</button>
-  <div class="pw-note">Annual saves 20%</div>
+  <div class="pw-note">Annual billing saves 20%</div>
 </div>
 </div>
 <div id="adminOverlay">
@@ -373,6 +473,11 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
     <div class="adm-sec-title">Feature Usage</div>
     <table class="adm-tbl"><thead><tr><th>Feature</th><th>Uses</th><th>Popularity</th></tr></thead>
     <tbody id="admFeats"></tbody></table>
+  </div>
+  <div class="adm-sec">
+    <div class="adm-sec-title">User Feedback</div>
+    <table class="adm-tbl"><thead><tr><th>From</th><th>Email</th><th>Feedback</th><th>Date</th></tr></thead>
+    <tbody id="admFeedback"></tbody></table>
   </div>
 </div>
 </div>
@@ -732,7 +837,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
       <div style="width:28px;height:28px;background:#00C2B2;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;">❄️</div>
       <p style="font-size:16px;font-weight:700;color:#2563EB;letter-spacing:.5px;text-transform:uppercase;">Trazer Intelligence</p>
     </div>
-    <p style="font-size:14px;color:#6B7190;margin-bottom:6px;">Homeowner $9.99/mo · Contractor Pro $29.99/mo</p>
+    <p style="font-size:14px;color:#6B7190;margin-bottom:6px;">Homeowner $19.99/mo · Contractor Starter $100/mo · Pro $200/mo</p>
     <p style="font-size:11px;color:#9499B0;line-height:1.6;max-width:400px;margin:0 auto;">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician.</p>
   </div>
 <!-- LIVE CAMERA OVERLAY — Premium Quality -->
@@ -823,6 +928,88 @@ var currentUser=null;
 var TZ_ADMIN='trazerintelligencegeinus';
 var TZ_PASS='173028';
 
+
+// ── ROLE SELECTION ─────────────────────────────────────────────
+var pendingRole = null;
+
+function showRoleSelector() {
+  document.getElementById('roleSelector').classList.add('show');
+  document.getElementById('authMainArea').style.display = 'none';
+}
+
+function hideRoleSelector() {
+  document.getElementById('roleSelector').classList.remove('show');
+  document.getElementById('authMainArea').style.display = 'block';
+}
+
+function selectRole(role, el) {
+  pendingRole = role;
+  document.querySelectorAll('.role-card').forEach(function(c){c.classList.remove('selected');});
+  el.classList.add('selected');
+  var btn = document.getElementById('roleContinueBtn');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  btn.style.cursor = 'pointer';
+}
+
+function roleConfirm() {
+  if (!pendingRole) return;
+  hideRoleSelector();
+  // Go to sign up tab with role pre-selected
+  authTab('up');
+}
+
+// Override authTab to show role selector when tapping 'Create Account' if role not set
+var _origAuthTab = null;
+function initRoleFlow() {
+  // When user taps Create Account, show role selector first
+  var tabs = document.querySelectorAll('.auth-tab');
+  if (tabs[1]) {
+    tabs[1].addEventListener('click', function(e) {
+      if (!pendingRole) {
+        e.stopImmediatePropagation();
+        showRoleSelector();
+      }
+    }, true);
+  }
+}
+
+// Apply role to user account after signup
+function applyRoleToUser() {
+  if (!currentUser || !pendingRole) return;
+  currentUser.role = pendingRole;
+  var users = JSON.parse(localStorage.getItem('trazer_users') || '{}');
+  if (users[currentUser.email]) {
+    users[currentUser.email].role = pendingRole;
+    localStorage.setItem('trazer_users', JSON.stringify(users));
+    localStorage.setItem('trazer_user', JSON.stringify(currentUser));
+  }
+}
+
+// Set the correct mode when user logs in based on their role
+function applyModeFromRole() {
+  if (!currentUser) return;
+  var role = currentUser.role || 'contractor';
+  if (role === 'homeowner') {
+    // Show only homeowner side
+    setMode('home');
+    // Hide mode tabs — homeowners don't need contractor tab
+    var tabsCard = document.querySelector('.mode-tabs');
+    if (tabsCard) {
+      var tabsParent = tabsCard.parentElement;
+      if (tabsParent) tabsParent.style.display = 'none';
+    }
+  } else {
+    // Contractor — show only contractor side, hide homeowner tab
+    setMode('pro');
+    var tabsCard2 = document.querySelector('.mode-tabs');
+    if (tabsCard2) {
+      var tabsParent2 = tabsCard2.parentElement;
+      if (tabsParent2) tabsParent2.style.display = 'none';
+    }
+  }
+}
+
 function tracerInit(){
   var s=localStorage.getItem('trazer_user');
   if(s){
@@ -830,6 +1017,7 @@ function tracerInit(){
       currentUser=JSON.parse(s);
       document.getElementById('authOverlay').classList.add('hidden');
       updateProfileUI();checkTrial();
+      applyModeFromRole();
       if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
     }catch(e){localStorage.removeItem('trazer_user');}
   }
@@ -864,6 +1052,7 @@ function authSignIn(){
       localStorage.setItem('trazer_user',JSON.stringify(currentUser));
       document.getElementById('authOverlay').classList.add('hidden');
       updateProfileUI();checkTrial();
+      applyModeFromRole();
     }else{
       showAuthErr('Wrong email or password. New? Create an account above.');
       btn.disabled=false;btn.textContent='Sign In';
@@ -890,7 +1079,10 @@ function authSignUp(){
     localStorage.setItem('trazer_users',JSON.stringify(users));
     localStorage.setItem('trazer_user',JSON.stringify(currentUser));
     document.getElementById('authOverlay').classList.add('hidden');
-    updateProfileUI();checkTrial();showOnboarding();
+    applyRoleToUser();
+    updateProfileUI();checkTrial();
+    applyModeFromRole();
+    showOnboarding();
   },600);
 }
 
@@ -965,25 +1157,115 @@ function isAccessAllowed(){
   return true;
 }
 
-function pddBilling(){closeProfileDD();showPaywall();}
+// pddBilling replaced below
 function pddStats(){closeProfileDD();showAdminDashboard();}
-function pddWhatsNew(){closeProfileDD();alert("What's New:\n\n- Mike retries when overloaded\n- Camera crash fixed\n- Clear chat keeps memory\n- Clickable warranty links\n- Auto-learn from corrections\n- HVAC-specific diagrams\n- Pressure table by outdoor temp");}
-function pddHelp(){closeProfileDD();alert("Help: support@trazerintelligence.ai\n\nOr ask Mike directly.");}
+// pddWhatsNew replaced below
+// pddHelp replaced below
 function pddProfile(){
   closeProfileDD();
-  var n=prompt('Update name:',currentUser?currentUser.name:'');
-  if(n&&n.trim()&&currentUser){
-    currentUser.name=n.trim();
-    currentUser.initials=n.trim().split(' ').map(function(x){return x[0]||'';}).join('').toUpperCase().slice(0,2)||'U';
+  var el=document.getElementById('profileModal');
+  if(!el)return;
+  var nameInp=document.getElementById('profileNameInput');
+  var compInp=document.getElementById('profileCompanyInput');
+  var emailInp=document.getElementById('profileEmailDisplay');
+  if(nameInp)nameInp.value=currentUser?currentUser.name:'';
+  if(compInp)compInp.value=currentUser?currentUser.company||'':'';
+  if(emailInp)emailInp.value=currentUser?currentUser.email:'';
+  el.classList.add('show');
+}
+
+function saveProfileSettings(){
+  var name=(document.getElementById('profileNameInput').value||'').trim();
+  var company=(document.getElementById('profileCompanyInput').value||'').trim();
+  if(!name){alert('Name cannot be empty.');return;}
+  if(currentUser){
+    currentUser.name=name;
+    currentUser.company=company;
+    currentUser.initials=name.split(' ').map(function(x){return x[0]||'';}).join('').toUpperCase().slice(0,2)||'U';
     var u=JSON.parse(localStorage.getItem('trazer_users')||'{}');
     if(u[currentUser.email]){u[currentUser.email]=currentUser;localStorage.setItem('trazer_users',JSON.stringify(u));}
     localStorage.setItem('trazer_user',JSON.stringify(currentUser));
     updateProfileUI();
   }
+  closeModal('profileModal');
 }
 
-var selPlan='pro';
-function showPaywall(){closeProfileDD();var e=document.getElementById('paywallOverlay');if(e)e.classList.add('show');}
+function pddBilling(){
+  closeProfileDD();
+  var isHome=currentUser&&currentUser.role==='homeowner';
+  var hc=document.getElementById('billingHomeCards');
+  var pc=document.getElementById('billingProCards');
+  if(hc)hc.style.display=isHome?'block':'none';
+  if(pc)pc.style.display=isHome?'none':'flex';
+  openModal('billingModal');
+}
+function pddWhatsNew(){closeProfileDD();openModal('whatsNewModal');}
+function pddHelp(){closeProfileDD();document.getElementById('feedbackSection').style.display='none';openModal('helpModal');}
+
+function openModal(id){var el=document.getElementById(id);if(el)el.classList.add('show');}
+function closeModal(id){var el=document.getElementById(id);if(el)el.classList.remove('show');}
+
+function selectBillingPlan(plan,el){
+  document.querySelectorAll('.plan-card').forEach(function(c){c.classList.remove('active');});
+  el.classList.add('active');
+}
+
+function notifyWhenBillingLive(){
+  if(currentUser){
+    currentUser.wantsBillingNotify=true;
+    var u=JSON.parse(localStorage.getItem('trazer_users')||'{}');
+    if(u[currentUser.email]){u[currentUser.email]=currentUser;localStorage.setItem('trazer_users',JSON.stringify(u));}
+    localStorage.setItem('trazer_user',JSON.stringify(currentUser));
+  }
+  alert('Got it! We will notify you at '+((currentUser&&currentUser.email)||'your email')+' when billing goes live.');
+  closeModal('billingModal');
+}
+
+function replayOnboarding(){
+  closeModal('helpModal');
+  localStorage.removeItem('trazer_onboarded');
+  showOnboarding();
+}
+
+function showFeedbackSection(){
+  var el=document.getElementById('feedbackSection');
+  if(el)el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function submitFeedback(){
+  var text=(document.getElementById('feedbackText').value||'').trim();
+  if(!text){alert('Please write your feedback before sending.');return;}
+  // Store feedback to admin account
+  var allFeedback=JSON.parse(localStorage.getItem('trazer_feedback')||'[]');
+  allFeedback.push({
+    user:currentUser?currentUser.name:'Anonymous',
+    email:currentUser?currentUser.email:'',
+    text:text,
+    date:new Date().toISOString(),
+    timestamp:Date.now()
+  });
+  localStorage.setItem('trazer_feedback',JSON.stringify(allFeedback));
+  document.getElementById('feedbackText').value='';
+  document.getElementById('feedbackSection').style.display='none';
+  alert('Thank you! Your feedback has been sent.');
+  closeModal('helpModal');
+}
+function showPaywall(){
+  closeProfileDD();
+  var e=document.getElementById('paywallOverlay');
+  if(!e)return;
+  var isHome=currentUser&&currentUser.role==='homeowner';
+  var homeDiv=document.getElementById('pwHomeowner');
+  var proDiv=document.getElementById('pwContractor');
+  var title=document.getElementById('pwTitle');
+  var sub=document.getElementById('pwSub');
+  if(homeDiv)homeDiv.style.display=isHome?'block':'none';
+  if(proDiv)proDiv.style.display=isHome?'none':'block';
+  if(title)title.textContent=isHome?'Upgrade Your Plan':'Trial Ended';
+  if(sub)sub.textContent=isHome?'Keep Mike helping with your home.':'Choose your plan and keep Mike on every job.';
+  if(isHome)selPlan='homeowner';
+  e.classList.add('show');
+}
 function selectPlan(p,el){selPlan=p;document.querySelectorAll('.pw-plan').forEach(function(x){x.classList.remove('sel');});el.classList.add('sel');}
 function goCheckout(){alert('Stripe checkout ready.\nPlan: '+selPlan+'\n\nAdd STRIPE_SECRET_KEY to Railway + create price IDs to activate.');}
 
@@ -997,8 +1279,32 @@ var OB_SLIDES=[
 ];
 var obStep=0;
 
+var OB_SLIDES_HOME=[
+  {bg:'linear-gradient(160deg,#010a14 0%,#031428 60%,#041f38 100%)',emoji:'🏠',title:'Welcome to <span>Trazer Intelligence</span>',body:'Finally, a way to understand your HVAC system without needing to be an expert. <strong>We have your back.</strong>',voice:"Welcome! I am Mike, and I am here to help you understand exactly what is going on with your home's heating and cooling system. No technical jargon. No guessing. Just clear, honest answers."},
+  {bg:'linear-gradient(160deg,#010a14 0%,#030f18 60%,#051828 100%)',emoji:'📷',title:'<span>Show Me</span> Your System',body:'Take a photo or video of your unit, the thermostat, or anything that looks off. I will tell you exactly what it is and what is happening.',voice:"Take a photo of your system, your thermostat, or anything that does not look right, and I will tell you exactly what it is, whether there is a problem, and what you should do next. It is that simple."},
+  {bg:'linear-gradient(160deg,#010a14 0%,#030f18 60%,#051828 100%)',emoji:'💡',title:'<span>Understand</span> the Problem',body:'I will explain what is wrong in plain English, how urgent it is, and what a fair repair should cost. <strong>No surprises.</strong>',voice:"I will explain exactly what is wrong with your system in plain English. How urgent it is, whether you can wait, and what a fair repair price looks like in your area. No more wondering if you are being overcharged."},
+  {bg:'linear-gradient(160deg,#010a14 0%,#0d0d03 60%,#181803 100%)',emoji:'🛡️',title:'<span>Stay Safe</span> at Home',body:'I will flag any safety concerns immediately — carbon monoxide risks, gas leaks, electrical hazards. <strong>Your family comes first.</strong>',voice:"Most importantly, if I see anything that could be a safety risk — carbon monoxide, a gas leak, an electrical hazard — I will tell you immediately and clearly. Your family's safety is the number one priority."},
+  {bg:'linear-gradient(160deg,#010a14 0%,#030318 60%,#060a25 100%)',emoji:'✅',title:"You're <span>All Set</span>",body:'Take a photo, describe what is happening, and I will walk you through everything. <strong>Let us get your home comfortable again.</strong>',voice:"You are all set. Take a photo of your system, tell me what is happening, and I will walk you through everything step by step. Let us get your home comfortable again."},
+];
+
 function showOnboarding(){
   obStep=0;
+  // Use homeowner slides if role is homeowner
+  if(currentUser&&currentUser.role==='homeowner'){
+    OB_SLIDES=OB_SLIDES_HOME;
+    // Update dots count
+    var dots=document.getElementById('obBar');
+    if(dots)dots.innerHTML='';
+  } else {
+    // Reset to contractor slides (already defined above)
+    OB_SLIDES=[
+      {bg:'linear-gradient(160deg,#010a14 0%,#031828 60%,#061f38 100%)',emoji:'⚡',title:'<span>Trazer Intelligence</span>',body:'The most advanced HVAC field platform ever built. Your senior tech is in your pocket — 24 hours a day, 7 days a week.',voice:"Hey! I am Mike — and I am about to change the way you work forever. 25 years in the field, every system I have ever seen, every repair I have ever made — all of it is right here in your pocket. This is Trazer Intelligence. Let me show you what we can do together."},
+      {bg:'linear-gradient(160deg,#010a14 0%,#03180f 60%,#062016 100%)',emoji:'🎙️',title:'Talk to Me <span>Hands-Free</span>',body:'Tap Voice and just speak. I listen like a senior tech and diagnose in real time. <strong>No typing. No searching. Just answers.</strong>',voice:"You are crawling under a unit, your hands are full, and you need answers right now. Just tap the mic and talk to me. Tell me what you are seeing, what the pressures are, what the customer said — and I will walk you through it step by step. Hands free. Real time. Like your most experienced tech is right there with you on every single job."},
+      {bg:'linear-gradient(160deg,#010a14 0%,#180303 60%,#200607 100%)',emoji:'📷',title:'My <span>Camera Sees</span> Everything',body:'Point at any unit, nameplate, or part. Ask me what I see. <strong>Live diagnosis — like a master tech on every job.</strong>',voice:"Point your camera at anything — a nameplate, a capacitor, a wiring diagram, a unit you have never seen before — and ask me what I see. I will identify it instantly, find the parts you need with live pricing, check the warranty, and tell you exactly what is wrong. It is like having x-ray vision on every job."},
+      {bg:'linear-gradient(160deg,#010a14 0%,#0d0d03 60%,#1a1803 100%)',emoji:'💰',title:'<span>Revenue</span> on Every Job',body:'After every diagnosis I spot add-on opportunities and give you the exact words to say. <strong>Average ticket up 20 to 40 percent.</strong>',voice:"Here is where it gets really exciting. After every diagnosis, I find every dollar you might be leaving on the table — weak capacitor, dirty coils, no surge protection, a drain line waiting to flood a ceiling — and I give you the exact words to say to the homeowner. Not pushy. Just honest. Your average ticket is about to go up on every single job starting today."},
+      {bg:'linear-gradient(160deg,#010a14 0%,#030318 60%,#060a25 100%)',emoji:'🚀',title:'<span>Let us Go Dominate</span>',body:'Warranty lookup. Live parts pricing. Real-time inventory. Sales coaching. Safety alerts. <strong>This is your unfair advantage.</strong>',voice:"Warranty lookup, live parts pricing, real time inventory, sales scripts, safety alerts — everything a master tech needs, right in your hand. The other guys are still guessing. You have me. Now let us go out there, take care of every customer, grow your business, and absolutely dominate the HVAC world. I will be right here every single time you need me. Let us go!"},
+    ];
+  }
   var el=document.getElementById('onboardingOverlay');
   if(!el)return;
   el.classList.add('show');
@@ -1103,6 +1409,14 @@ function showAdminDashboard(){
       var pct=Math.round(f[1]/maxF*100);
       return '<tr><td style="font-weight:600">'+f[0]+'</td><td style="color:#00C2B2;font-weight:700">'+f[1]+'</td><td><div style="height:5px;background:#1a1a2a;border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:#00C2B2;border-radius:3px"></div></div></td></tr>';
     }).join('')||'<tr><td colspan="3" style="color:#555;text-align:center">No data yet</td></tr>';
+  }
+  // Show feedback
+  var allFeedback=JSON.parse(localStorage.getItem('trazer_feedback')||'[]');
+  var fbody=document.getElementById('admFeedback');
+  if(fbody){
+    fbody.innerHTML=allFeedback.length?allFeedback.sort(function(a,b){return b.timestamp-a.timestamp;}).map(function(f){
+      return '<tr><td style="font-weight:600">'+f.user+'</td><td style="color:#555;font-size:12px">'+f.email+'</td><td style="color:#ccc">'+f.text.substring(0,120)+(f.text.length>120?'...':'')+'</td><td style="color:#555;font-size:12px">'+new Date(f.timestamp).toLocaleDateString()+'</td></tr>';
+    }).join(''):'<tr><td colspan="4" style="color:#555;text-align:center">No feedback yet</td></tr>';
   }
   el.classList.add('show');
 }
@@ -1626,7 +1940,7 @@ function resetDiagnostic(){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
-var AGENT_SYSTEM='You are Mike, a master HVAC/R technician and field coach with 25+ years of experience. Current to 2026. Real-time web search available -- USE IT before answering any technical question. ACCURACY IS CRITICAL -- wrong answers endanger apprentices and homeowners. Search first, answer second.\n\nTONE: Confident and direct. React naturally first. NEVER say Certainly, Absolutely, Of course, Great question, I understand. Talk like a real senior tech, not a chatbot.\n\nVOICE MODE: 2-3 sentences max. Save detail for text.\n\nTEMPERATURES: Always say degrees Fahrenheit. Say 95 degrees Fahrenheit, never just 95.\n\nSAFETY -- BEFORE ANYTHING ELSE:\nCO or cracked heat exchanger: STOP. Carbon monoxide risk. Evacuate. SAFETY ALERT.\nGas leak: STOP. No switches. Call gas company from outside. SAFETY ALERT.\nLive wiring or burned components: STOP. Breaker off. SAFETY ALERT.\nCO alarm sounding: STOP. Evacuate. Call 911. SAFETY ALERT.\nRefrigerant spraying: STOP. Evacuate. SAFETY ALERT.\n\nPRESSURES -- ALWAYS ASK OUTDOOR TEMP FIRST. Do NOT assume 95 degrees Fahrenheit.\nR-410A at 65 degrees Fahrenheit outdoor: suction 83-93 PSI, discharge 300-330 PSI.\nR-410A at 75 degrees Fahrenheit outdoor: suction 99-108 PSI, discharge 345-375 PSI.\nR-410A at 85 degrees Fahrenheit outdoor: suction 108-118 PSI, discharge 375-400 PSI.\nR-410A at 95 degrees Fahrenheit outdoor: suction 118-125 PSI, discharge 400-418 PSI.\nR-410A at 105 degrees Fahrenheit outdoor: suction 125-135 PSI, discharge 418-445 PSI.\nR-22 at 75 degrees Fahrenheit: suction 58-65 PSI, discharge 200-225 PSI.\nR-22 at 95 degrees Fahrenheit: suction 68-72 PSI, discharge 225-260 PSI.\nSuperheat fixed orifice: 10-20 degrees Fahrenheit. Superheat TXV: 8-12 degrees Fahrenheit. Subcooling: 10-15 degrees Fahrenheit.\n\nELECTRICAL:\nThermostat wires: R=24V hot, C=common, Y=compressor, G=fan, W=heat, O=reversing valve energized cooling, B=reversing valve energized heating Carrier/Bryant.\nCapacitor: measure MFD with capacitance meter, within 6 percent of rating is OK. Dual run cap: HERM=compressor, FAN=fan motor, C=common.\nContactor: coil 24VAC, check pitting on contacts, voltage at coil during call.\n\nFURNACE SEQUENCE: W call, inducer starts, pressure switch proves, ignitor heats 17-30 seconds, gas valve opens, flame sensor proves within 7 seconds or lockout, blower starts 30-60 second delay.\nManifold pressure: natural gas 3.5 inches WC, LP 10-11 inches WC.\nRed-tag criteria: cracked heat exchanger, CO over 400ppm in flue, blocked flue, repeated limit trips.\n\nHEAT PUMP:\nReversing valve O terminal energizes in cooling on most systems. B terminal energizes in heating on Carrier/Bryant.\nDefrost: outdoor coil below 28-32 degrees Fahrenheit triggers defrost. Should complete in 2-10 minutes.\n\nCOMPRESSOR:\nScroll compressors cannot run in reverse -- grinding noise means reverse rotation on 3-phase.\nMegohm test: 1 megohm or above to ground required. Check RLA vs actual amp draw.\nWeak capacitor causes high amp draw and early compressor failure -- always check capacitor first.\n\nREFRIGERATION CYCLE:\nSubcooling over 20 degrees Fahrenheit: overcharge or restriction. Under 5 degrees: undercharge.\nHigh head with normal subcooling: non-condensables in system.\nAlways replace filter drier when opening system. Pull to 500 microns before charging.\n\nMINI-SPLITS: Flare to manufacturer spec. Vacuum to 500 microns. Charge by weight not by pressure. Always look up error codes by exact brand and model number.\n\n2026 REGULATIONS: R-410A phase-down complete under AIM Act. R-454B and R-32 are A2L replacements. A2L requires no open flames, ventilation required, leak detection over 100g charge, spark-resistant tools. EPA 608 required. SEER2/EER2 minimum 14.3 SEER2 split systems, 15.2 SEER2 Southeast and Southwest regions.\n\nSELF-LEARNING: When a tech corrects you with a verifiable technical fact, acknowledge it professionally and end your response with exactly this on its own line: LEARN:{"fact":"the corrected fact","topic":"topic label"} -- only for genuine technical corrections.\n\nWARRANTY LOOKUP: Ask for brand, model, serial. Give the exact tappable link:\nGoodman/Amana: https://www.goodmanmfg.com/warranty-lookup\nCarrier: https://www.carrier.com/residential/en/us/warranty-lookup/\nTrane/American Standard: https://www.americanstandardair.com/resources/warranty-and-registration/lookup/\nLennox: https://www.lennox.com/residential/owners/assistance/warranty/\nRheem/Ruud: https://rheem.registermyunit.com/en-US/Warranty\nYork: https://www.york.com/owner-support/warranty\nDaikin: https://www.daikincomfort.com/contact-us/warranty-lookup\nADP: https://www.adpwarranty.com/Lookup.aspx\nFormat as: Tap here to check warranty: URL\n\nPARTS: OEM part number, aftermarket alternatives, current price, local availability. Search johnstonesupply.com, supplyhouse.com, grainger.com, fergusonhvac.com.\n\nSALES -- SPIN SELLING: Situation questions to gather facts. Problem questions to identify pain. Implication questions to show cost of inaction: if this capacitor fails in August and kills your compressor that goes from 180 dollars to 2500 dollars. Need-payoff: let them tell you why they need the solution.\n\nOBJECTION HANDLING:\nPrice too high: Feel/Felt/Found -- other customers felt the same, what they found is the lower price cost more long term.\nValue anchor: your electric bill is 350 dollars a month -- this system saves 80 dollars a month and pays for itself in 8 years with a 10 year warranty.\nNeed to think about it: what specifically -- is it money or something else? Isolate the real objection.\nOther quotes: make sure they compare permits pulled, brands used, warranty offered.\n\nREVENUE AFTER EVERY JOB:\nCapacitor near end of life: proactive replacement 180 dollars versus 2500 dollar compressor.\nDirty coils: 15-20 percent efficiency loss, 250 dollars pays for itself in 2 months in energy savings.\nNo surge protection: 150 dollars versus 1500 to 2500 dollar repair.\nDrain line: 75 dollars now versus ceiling damage and mold later.\nMaintenance agreement: priority scheduling, 15 percent off repairs, annual tune-up included.\nUV system: kills mold and bacteria at the coil source, 350 dollars installed.\n\nVISUALS: When asked for a diagram or illustration -- respond with ONE SHORT SENTENCE only. Example: Here is the capacitor wiring diagram. Do NOT write SVG code, do NOT describe the diagram, do NOT use code blocks. The visual generates automatically.\n\nMINIMIZE MISTAKES: Always confirm outdoor ambient temp before giving pressure targets. Search before answering model-specific questions. Never fabricate part numbers or prices. Cite sources. If unsure say so and search.';
+var AGENT_SYSTEM='You are Mike  --  master HVAC technician, field coach, and the most knowledgeable tech any contractor has ever worked with. 25 years in the field. You have seen every system, every failure, every situation. You are passionate about this trade and genuinely excited to help every tech succeed. You care about getting it right because people\'s homes, safety, and livelihoods depend on it.\n\nPERSONALITY: You are upbeat, confident, and direct. You celebrate wins with the tech. When a tech figures something out, you affirm it. When something is dangerous, you are serious. You talk like the best senior tech anyone has ever worked with  --  someone who loves the trade and loves teaching it. React naturally before answering. NEVER say Certainly, Absolutely, Of course, Great question, or I understand. Never sound like a chatbot. Sound like Mike.\n\nVOICE MODE: 2-3 sentences max. High energy, clear, direct.\n\nTEMPERATURES: Always say degrees Fahrenheit. 95 degrees Fahrenheit, never just 95.\n\nSAFETY  --  BEFORE ANYTHING ELSE  --  BE SERIOUS HERE:\nCO or cracked heat exchanger: STOP. Carbon monoxide risk. Do not run this system. Evacuate if anyone has symptoms. SAFETY ALERT.\nGas leak: STOP. No switches, no phones inside. Get everyone out. Call the gas company from outside. SAFETY ALERT.\nLive wiring or burned components: STOP. Kill the breaker right now. SAFETY ALERT.\nCO alarm sounding: STOP. Evacuate immediately. Call 911. SAFETY ALERT.\nRefrigerant spraying: STOP. Get everyone away from it. SAFETY ALERT.\n\nPRESSURES  --  ALWAYS ASK OUTDOOR AMBIENT TEMP FIRST. Never assume 95 degrees Fahrenheit.\nR-410A at 65 degrees Fahrenheit outdoor: suction 83-93 PSI, discharge 300-330 PSI.\nR-410A at 75 degrees Fahrenheit outdoor: suction 99-108 PSI, discharge 345-375 PSI.\nR-410A at 85 degrees Fahrenheit outdoor: suction 108-118 PSI, discharge 375-400 PSI.\nR-410A at 95 degrees Fahrenheit outdoor: suction 118-125 PSI, discharge 400-418 PSI.\nR-410A at 105 degrees Fahrenheit outdoor: suction 125-135 PSI, discharge 418-445 PSI.\nR-22 at 75 degrees Fahrenheit: suction 58-65 PSI, discharge 200-225 PSI.\nR-22 at 95 degrees Fahrenheit: suction 68-72 PSI, discharge 225-260 PSI.\nSuperheat fixed orifice target: 10-20 degrees Fahrenheit. TXV target: 8-12 degrees Fahrenheit. Subcooling: 10-15 degrees Fahrenheit.\n\nELECTRICAL:\nThermostat wires: R=24V hot, C=common, Y=compressor, G=fan, W=heat, O=reversing valve cooling, B=reversing valve heating Carrier/Bryant.\nCapacitor: measure MFD, within 6 percent of rating is good. Dual run: HERM=compressor, FAN=fan motor, C=common.\nContactor: coil 24VAC, check for pitting, verify voltage pull-in during call.\n\nFURNACE SEQUENCE: W call, inducer starts, pressure switch proves, ignitor heats 17-30 seconds, gas valve opens, flame sensor proves within 7 seconds or lockout, blower starts 30-60 second delay.\nNatural gas manifold pressure: 3.5 inches WC. LP: 10-11 inches WC.\nRed-tag criteria: cracked heat exchanger, CO over 400ppm in flue, blocked flue, repeated limit trips.\n\nHEAT PUMP: O terminal energizes in cooling on most systems. B terminal energizes in heating on Carrier/Bryant.\nDefrost triggers when outdoor coil drops below 28-32 degrees Fahrenheit. Should complete in 2-10 minutes.\n\nCOMPRESSOR: Scroll compressors cannot run in reverse. Megohm test needs 1 megohm or above to ground. Always check the capacitor first before condemning a compressor.\n\nREFRIGERATION CYCLE: Subcooling over 20 degrees means overcharge or restriction. Under 5 degrees means undercharge. Non-condensables cause high head with normal subcooling. Replace filter drier every time you open the system. Pull to 500 microns before charging.\n\n2026 REGULATIONS: R-410A phase-down complete. R-454B and R-32 are the A2L replacements. A2L requires no open flames, proper ventilation, leak detection over 100g. EPA 608 required. SEER2 minimum 14.3 most regions, 15.2 Southeast and Southwest.\n\nSELF-LEARNING: When a tech corrects you with a real technical fact, acknowledge it professionally and end your response with: LEARN:{"fact":"the corrected fact","topic":"topic label"} on its own line. Only for genuine technical corrections.\n\nWARRANTY LOOKUP: Ask for brand, model, and serial. Then give the exact tappable link:\nGoodman/Amana: https://www.goodmanmfg.com/warranty-lookup\nCarrier: https://www.carrier.com/residential/en/us/warranty-lookup/\nTrane/American Standard: https://www.americanstandardair.com/resources/warranty-and-registration/lookup/\nLennox: https://www.lennox.com/residential/owners/assistance/warranty/\nRheem/Ruud: https://rheem.registermyunit.com/en-US/Warranty\nYork: https://www.york.com/owner-support/warranty\nDaikin: https://www.daikincomfort.com/contact-us/warranty-lookup\nADP: https://www.adpwarranty.com/Lookup.aspx\nFormat: Tap here to check warranty: URL\n\nPARTS: OEM part number, aftermarket alternatives, current price, local availability. Search johnstonesupply.com, supplyhouse.com, grainger.com, fergusonhvac.com.\n\nSALES  --  SPIN SELLING: Situation questions to gather facts. Problem questions to identify pain. Implication: show the cost of inaction  --  that capacitor fails in August, your 180 dollar repair becomes a 2500 dollar compressor. Need-payoff: let them tell you why they need the solution.\n\nOBJECTION HANDLING:\nPrice too high: Feel/Felt/Found  --  other customers felt the same, what they found is the cheaper option cost more long term.\nNeed to think about it: what specifically? Is it the money or something else? Isolate the real objection.\nGetting other quotes: absolutely smart  --  make sure they ask about permits, brands, and warranty.\n\nREVENUE AFTER EVERY JOB: Capacitor near end of life, dirty coils, no surge protection, drain line, maintenance agreement, UV system. Give the tech the exact words to say. Make it natural, not pushy.\n\nVISUALS: When asked for a diagram or illustration  --  ONE SHORT SENTENCE only. Example: Here is the capacitor wiring diagram. Do NOT write SVG, do NOT describe it, do NOT use code blocks. The visual generates automatically.\n\nACCURACY: Search before answering anything model-specific, pressure-related, or time-sensitive. Never fabricate part numbers or prices. Always confirm outdoor ambient temp before giving pressure targets. If unsure, say so and search. People are counting on you to get this right.';
 
 var LANG_MIKE={
   en:'Respond in English. Speak like an experienced professional technician.',
@@ -2666,6 +2980,7 @@ document.addEventListener('click',function(e){
 
 document.addEventListener('DOMContentLoaded',function(){
   tracerInit();
+  initRoleFlow();
   populateSelects();
   buildSymptomGrid();
   buildHomeSymptomGrid();
@@ -2675,5 +2990,127 @@ document.addEventListener('DOMContentLoaded',function(){
   if(window.speechSynthesis){window.speechSynthesis.onvoiceschanged=loadMikeVoice;loadMikeVoice();}
 });
 </script>
+
+<!-- ── PROFILE SETTINGS MODAL ──────────────────────────────── -->
+<div class="tz-modal-overlay" id="profileModal">
+<div class="tz-modal">
+  <div class="tz-modal-header">
+    <div class="tz-modal-title">👤 Profile Settings</div>
+    <button class="tz-modal-close" onclick="closeModal('profileModal')">✕</button>
+  </div>
+  <div class="tz-modal-body">
+    <div class="tz-modal-field">
+      <label class="tz-modal-label">Full Name</label>
+      <input class="tz-modal-input" type="text" id="profileNameInput" placeholder="Your name"/>
+    </div>
+    <div class="tz-modal-field">
+      <label class="tz-modal-label">Company</label>
+      <input class="tz-modal-input" type="text" id="profileCompanyInput" placeholder="Your HVAC company"/>
+    </div>
+    <div class="tz-modal-field">
+      <label class="tz-modal-label">Email</label>
+      <input class="tz-modal-input" type="text" id="profileEmailDisplay" disabled style="opacity:.5;cursor:not-allowed;"/>
+    </div>
+    <button class="tz-modal-btn" onclick="saveProfileSettings()">Save Changes</button>
+    <button class="tz-modal-btn-outline" onclick="closeModal('profileModal')">Cancel</button>
+  </div>
+</div>
+</div>
+
+<!-- ── BILLING MODAL ─────────────────────────────────────────── -->
+<div class="tz-modal-overlay" id="billingModal">
+<div class="tz-modal">
+  <div class="tz-modal-header">
+    <div class="tz-modal-title">💳 Billing &amp; Plan</div>
+    <button class="tz-modal-close" onclick="closeModal('billingModal')">✕</button>
+  </div>
+  <div class="tz-modal-body">
+    <span class="tz-modal-back" onclick="closeModal('billingModal')">← Back</span>
+    <div class="plan-coming-soon">🚀 Billing is coming soon — you are on beta access</div>
+    <div class="plan-card-grid">
+      <!-- Homeowner billing -->
+      <div id="billingHomeCards" style="display:none;width:100%;max-width:220px;margin:0 auto;">
+        <div class="plan-card active" onclick="selectBillingPlan('homeowner',this)">
+          <div class="plan-card-badge">HOME PLAN</div>
+          <div class="plan-card-name">Homeowner</div>
+          <div class="plan-card-price">$19.99</div>
+          <div class="plan-card-period">/month</div>
+          <div class="plan-card-save">Unlimited diagnostics</div>
+        </div>
+      </div>
+      <!-- Contractor billing -->
+      <div id="billingProCards">
+        <div class="plan-card" onclick="selectBillingPlan('starter',this)">
+          <div class="plan-card-name">Starter</div>
+          <div class="plan-card-price">$100</div>
+          <div class="plan-card-period">/tech/mo</div>
+        </div>
+        <div class="plan-card active" onclick="selectBillingPlan('pro',this)">
+          <div class="plan-card-badge">BEST VALUE</div>
+          <div class="plan-card-name">Pro</div>
+          <div class="plan-card-price">$200</div>
+          <div class="plan-card-period">/tech/mo</div>
+          <div class="plan-card-save">All features</div>
+        </div>
+        <div class="plan-card" onclick="selectBillingPlan('enterprise',this)">
+          <div class="plan-card-name">Enterprise</div>
+          <div class="plan-card-price" style="font-size:20px;font-weight:800;">Custom</div>
+          <div class="plan-card-period">11+ techs</div>
+        </div>
+      </div>
+    </div>
+    <button class="tz-modal-btn" onclick="notifyWhenBillingLive()">Notify Me When Billing Goes Live</button>
+    <button class="tz-modal-btn-outline" onclick="closeModal('billingModal')">← Back</button>
+  </div>
+</div>
+</div>
+
+<!-- ── WHAT'S NEW MODAL ──────────────────────────────────────── -->
+<div class="tz-modal-overlay" id="whatsNewModal">
+<div class="tz-modal">
+  <div class="tz-modal-header">
+    <div class="tz-modal-title">🔔 Meet Mike</div>
+    <button class="tz-modal-close" onclick="closeModal('whatsNewModal')">✕</button>
+  </div>
+  <div class="tz-modal-body">
+    <div style="font-size:13px;color:#666;margin-bottom:16px;">5 things every tech needs to know about Mike</div>
+    <div class="tz-fact"><div class="tz-fact-num">1</div><div class="tz-fact-text"><strong>Mike knows every system ever made.</strong> Ask him about any brand, any model, any fault code. He searches in real time so his knowledge is always current — including 2026 regulations, R-454B, A2L refrigerants, and SEER2 standards.</div></div>
+    <div class="tz-fact"><div class="tz-fact-num">2</div><div class="tz-fact-text"><strong>Always confirm outdoor temp before pressures.</strong> Mike will ask you the outdoor ambient temperature before giving any pressure targets. R-410A at 75°F is 99-108 PSI suction — very different from 95°F. This keeps your diagnosis accurate.</div></div>
+    <div class="tz-fact"><div class="tz-fact-num">3</div><div class="tz-fact-text"><strong>Mike sees through your camera.</strong> Tap ▶ Start on the camera card, point at any unit or part, and ask Mike what he sees. He reads nameplates, identifies components, finds parts with live pricing, and checks warranty — all in real time.</div></div>
+    <div class="tz-fact"><div class="tz-fact-num">4</div><div class="tz-fact-text"><strong>Mike learns when you correct him.</strong> If Mike gets something wrong, correct him with the right information. He will acknowledge it, store it, and remember it for every future job. Tap 📚 Knowledge to see everything Mike has learned.</div></div>
+    <div class="tz-fact"><div class="tz-fact-num">5</div><div class="tz-fact-text"><strong>Mike coaches your revenue after every diagnosis.</strong> Ask "what can I upsell on this job?" and Mike gives you 3 specific recommendations with the exact words to say to the homeowner. Capacitor, coils, surge protection, maintenance agreement — every ticket counts.</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ── HELP MODAL ────────────────────────────────────────────── -->
+<div class="tz-modal-overlay" id="helpModal">
+<div class="tz-modal">
+  <div class="tz-modal-header">
+    <div class="tz-modal-title">❓ Help &amp; Support</div>
+    <button class="tz-modal-close" onclick="closeModal('helpModal')">✕</button>
+  </div>
+  <div class="tz-modal-body">
+    <div class="tz-help-option" onclick="replayOnboarding()">
+      <div class="tz-help-icon">🎬</div>
+      <div><div class="tz-help-title">Watch Mike's Intro Again</div><div class="tz-help-sub">Replay the full onboarding with Mike's voice</div></div>
+    </div>
+    <div class="tz-help-option" onclick="showFeedbackSection()">
+      <div class="tz-help-icon">💬</div>
+      <div><div class="tz-help-title">Send Feedback</div><div class="tz-help-sub">Tell us what's working and what's not</div></div>
+    </div>
+    <div id="feedbackSection" style="display:none;margin-top:16px;">
+      <div class="tz-modal-field">
+        <label class="tz-modal-label">Your Feedback</label>
+        <textarea class="tz-feedback-box" id="feedbackText" placeholder="Tell us what you love, what needs fixing, or what features you want next..."></textarea>
+      </div>
+      <button class="tz-modal-btn" onclick="submitFeedback()">Send Feedback</button>
+    </div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid #1a1a1a;font-size:13px;color:#555;text-align:center;">
+      Direct support: <a href="mailto:support@trazerintelligence.ai" style="color:#00C2B2;">support@trazerintelligence.ai</a>
+    </div>
+  </div>
+</div>
+</div>
 </body>
 </html>

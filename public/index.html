@@ -351,6 +351,17 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .role-continue-btn:hover{filter:brightness(1.08);}
 .auth-back-link{display:flex;align-items:center;gap:6px;font-size:13px;color:#00C2B2;cursor:pointer;margin-bottom:18px;}
 
+
+/* ── ADMIN DELETE BUTTON ─────────────────────────────── */
+.adm-del-btn{background:rgba(232,53,74,.12);border:1px solid rgba(232,53,74,.3);color:#E8354A;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;}
+.adm-del-btn:hover{background:rgba(232,53,74,.25);border-color:#E8354A;}
+.adm-plan-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+.adm-plan-trial{background:rgba(245,158,11,.12);color:#F59E0B;border:1px solid rgba(245,158,11,.25);}
+.adm-plan-pro{background:rgba(0,194,178,.12);color:#00C2B2;border:1px solid rgba(0,194,178,.25);}
+.adm-plan-starter{background:rgba(59,130,246,.12);color:#3b82f6;border:1px solid rgba(59,130,246,.25);}
+.adm-plan-enterprise{background:rgba(139,92,246,.12);color:#8b5cf6;border:1px solid rgba(139,92,246,.25);}
+.adm-plan-admin{background:rgba(255,215,0,.12);color:#ffd700;border:1px solid rgba(255,215,0,.25);}
+
 </style>
 </head>
 <body>
@@ -466,7 +477,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
   </div>
   <div class="adm-sec">
     <div class="adm-sec-title">Users</div>
-    <table class="adm-tbl"><thead><tr><th>Name</th><th>Email</th><th>Plan</th><th>Company</th><th>Calls</th><th>Joined</th></tr></thead>
+    <table class="adm-tbl"><thead><tr><th>Name</th><th>Email</th><th>Plan</th><th>Role</th><th>Company</th><th>Calls</th><th>Joined</th><th>Action</th></tr></thead>
     <tbody id="admUsers"></tbody></table>
   </div>
   <div class="adm-sec">
@@ -1382,6 +1393,19 @@ function obFinish(){
 }
 
 // ── ADMIN DASHBOARD ─────────────────────────────────────────────
+
+function deleteAdminUser(email){
+  if(!email)return;
+  if(!confirm('Delete account for '+email+'?\n\nThis cannot be undone.'))return;
+  var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
+  if(users[email]){
+    delete users[email];
+    localStorage.setItem('trazer_users',JSON.stringify(users));
+  }
+  // Refresh the dashboard
+  showAdminDashboard();
+}
+
 function showAdminDashboard(){
   var el=document.getElementById('adminOverlay');if(!el)return;
   var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
@@ -1396,8 +1420,22 @@ function showAdminDashboard(){
   if(tbody){
     tbody.innerHTML=list.sort(function(a,b){return (b.usageCount||0)-(a.usageCount||0);}).map(function(u){
       var dl=u.plan==='trial'?Math.max(0,7-Math.floor((Date.now()-u.trialStart)/86400000)):null;
-      return '<tr><td>'+u.name+'</td><td style="color:#555;font-size:12px">'+u.email+'</td><td style="color:#00C2B2;font-weight:700">'+u.plan+(dl!==null?' ('+dl+'d)':'')+'</td><td>'+u.company+'</td><td style="color:#00C2B2;font-weight:700">'+(u.usageCount||0)+'</td><td style="color:#555;font-size:12px">'+new Date(u.createdAt||Date.now()).toLocaleDateString()+'</td></tr>';
-    }).join('')||'<tr><td colspan="6" style="color:#555;text-align:center">No beta users yet</td></tr>';
+      var planLabel=u.plan==='trial'?'Trial '+(dl!==null?'('+dl+'d left)':'expired'):u.plan==='pro'?'Pro':u.plan==='starter'?'Starter':u.plan==='enterprise'?'Enterprise':u.plan==='admin'?'Admin':u.plan||'—';
+      var planClass='adm-plan-'+(u.plan==='pro'?'pro':u.plan==='starter'?'starter':u.plan==='enterprise'?'enterprise':u.plan==='admin'?'admin':'trial');
+      var roleLabel=u.role==='homeowner'?'🏠 Homeowner':u.role==='contractor'?'🔧 Contractor':'🔧 Contractor';
+      var safeEmail=u.email.replace(/'/g,"\'");
+      var canDelete=!u.isAdmin;
+      return '<tr>'
+        +'<td style="font-weight:600;color:#fff">'+u.name+'</td>'
+        +'<td style="color:#555;font-size:12px">'+u.email+'</td>'
+        +'<td><span class="adm-plan-badge '+planClass+'">'+planLabel+'</span></td>'
+        +'<td style="font-size:12px;color:#888">'+roleLabel+'</td>'
+        +'<td style="font-size:12px;color:#666">'+u.company+'</td>'
+        +'<td style="color:#00C2B2;font-weight:700;text-align:center">'+(u.usageCount||0)+'</td>'
+        +'<td style="color:#555;font-size:11px">'+new Date(u.createdAt||Date.now()).toLocaleDateString()+'</td>'
+        +'<td>'+(canDelete?'<button class="adm-del-btn" onclick="deleteAdminUser(\''+safeEmail+'\')">Delete</button>':'<span style="font-size:11px;color:#333">Admin</span>')+'</td>'
+        +'</tr>';
+    }).join('')||'<tr><td colspan="8" style="color:#555;text-align:center;padding:20px">No beta users yet</td></tr>';
   }
   var featTotals={};
   list.forEach(function(u){if(u.features){Object.keys(u.features).forEach(function(k){featTotals[k]=(featTotals[k]||0)+u.features[k];});}});

@@ -16,8 +16,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Trazer Intelligence">
 <link rel="manifest" href="data:application/json,{%22name%22:%22Trazer%20Intelligence%22,%22short_name%22:%22Trazer%20Intelligence%22,%22start_url%22:%22/%22,%22display%22:%22standalone%22,%22background_color%22:%22%230F0F0F%22,%22theme_color%22:%22%2300C2B2%22}">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
-<noscript><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/></noscript>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800&family=DM+Mono:wght@500&display=swap&subset=latin" rel="stylesheet" media="print" onload="this.media='all'"/>
+<noscript></noscript>
 <style>
 
 :root{
@@ -775,6 +777,16 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 </style>
 </head>
 <body>
+<div id="appLoader" style="position:fixed;inset:0;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s ease;">
+  <svg width="52" height="52" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="9" fill="url(#ll)"/><path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/><defs><linearGradient id="ll" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#00C2B2"/><stop offset="100%" stop-color="#007A6E"/></linearGradient></defs></svg>
+  <div style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-.3px;">Trazer Intelligence</div>
+  <div style="display:flex;gap:6px;align-items:center;">
+    <div style="width:6px;height:6px;border-radius:50%;background:#00C2B2;animation:ld .8s infinite ease-in-out both;"></div>
+    <div style="width:6px;height:6px;border-radius:50%;background:#00C2B2;animation:ld .8s .15s infinite ease-in-out both;"></div>
+    <div style="width:6px;height:6px;border-radius:50%;background:#00C2B2;animation:ld .8s .3s infinite ease-in-out both;"></div>
+  </div>
+</div>
+<style>@keyframes ld{0%,80%,100%{transform:scale(0.5);opacity:.4;}40%{transform:scale(1);opacity:1;}}</style>
 <div id="offlineBanner"></div>
 <div id="toastContainer"></div>
 <div id="jobTimer" onclick="toggleJobTimer()" title="Tap to stop timer"></div>
@@ -4547,6 +4559,7 @@ function initReconnectToast(){
   window.addEventListener('online',function(){if(was){showToast('Back online — Mike is ready','success');was=false;}});
 }
 document.addEventListener('DOMContentLoaded',function(){
+  (function(){var l=document.getElementById('appLoader');if(l){l.style.opacity='0';setTimeout(function(){if(l&&l.parentNode)l.parentNode.removeChild(l);},450);}})();
   tracerInit();
   initRoleFlow();
   initOfflineDetection();

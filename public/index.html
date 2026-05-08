@@ -786,56 +786,446 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
     <div style="width:6px;height:6px;border-radius:50%;background:#00C2B2;animation:ld .8s .3s infinite ease-in-out both;"></div>
   </div>
 </div>
-<style>@keyframes ld{0%,80%,100%{transform:scale(0.5);opacity:.4;}40%{transform:scale(1);opacity:1;}}</style>
+<style>@keyframes ld{0%,80%,100%{transform:scale(0.5);opacity:.4;}40%{transform:scale(1);opacity:1;}}
+/* ═══════════════════════════════════════════════════════════════
+   COMPREHENSIVE DARK MODE FIXES — every visible element covered
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Quick chips bar */
+[data-theme="dark"] #panelDiag [style*="background:#F5F6FA;border-left:1px solid #d8d8d8"]{
+  background:#111111 !important;border-color:#1f1f1f !important;
+}
+
+/* Chat input container (white box holding textarea + send btn) */
+[data-theme="dark"] #panelDiag [style*="background:#FFFFFF;border:1px solid #E2E4ED;border-top:2px solid #00C2B2"]{
+  background:#111111 !important;border-color:#1f1f1f !important;border-top-color:#00C2B2 !important;
+}
+
+/* Chat attach preview */
+[data-theme="dark"] #chatAttachPreview{
+  background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;
+}
+
+/* Toolbar buttons under chat input (Search, Timer, Draw Diagram, Illustrate) */
+[data-theme="dark"] #panelDiag [style*="background:#F5F6FA;border:1px solid #E2E4ED;color:#666"]{
+  background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;
+}
+[data-theme="dark"] #panelDiag [style*="background:#F5F3FF;border:1px solid #DDD6FE"]{
+  background:#1a0a30 !important;border-color:#4c1d95 !important;color:#a78bfa !important;
+}
+[data-theme="dark"] #panelDiag [style*="background:#E6FAF8;border:1px solid #B2F0EA"]{
+  background:#002a26 !important;border-color:#00C2B2 !important;color:#00C2B2 !important;
+}
+
+/* Mike knowledge bar — already dark bg (#0F0F0F) but text color #666 is invisible */
+[data-theme="dark"] #panelDiag [style*="background:#0F0F0F;border-left:1px solid #222"]{
+  background:#0a0a0a !important;
+}
+[data-theme="dark"] [style*="color:#666;font-weight:600"]{
+  color:#6b7280 !important;
+}
+
+/* Knowledge panel (F8F9FC background) */
+[data-theme="dark"] #knowledgePanel{
+  background:#161616 !important;border-color:#2a2a2a !important;
+}
+[data-theme="dark"] #knowledgePanel [style*="color:#0F0F0F"]{
+  color:#e5e7eb !important;
+}
+[data-theme="dark"] #knowledgePanel [style*="color:#6B7190"]{
+  color:#9ca3af !important;
+}
+
+/* Full diagnostic form — all hardcoded light colors */
+[data-theme="dark"] #fullDiagBody [style*="color:#0F0F0F"]{color:#e5e7eb !important;}
+[data-theme="dark"] #fullDiagBody [style*="color:#6B7190"]{color:#9ca3af !important;}
+[data-theme="dark"] #fullDiagBody [style*="border:1px solid #E2E4ED"]{border-color:#2a2a2a !important;}
+[data-theme="dark"] #fullDiagBody [style*="border:1.5px solid #E2E4ED"]{border-color:#2a2a2a !important;}
+[data-theme="dark"] #fullDiagBody [style*="border:1px solid #e2e8f0"]{border-color:#2a2a2a !important;}
+[data-theme="dark"] #fullDiagBody [style*="background:#F5F6FA"]{background:#1a1a1a !important;}
+[data-theme="dark"] #fullDiagBody [style*="background:#fff"]{background:#161616 !important;}
+[data-theme="dark"] #fullDiagBody [style*="background:#ffffff"]{background:#161616 !important;}
+[data-theme="dark"] #fullDiagBody [style*="background:#ECFDF5"]{background:#052e16 !important;}
+[data-theme="dark"] #fullDiagBody [style*="background:#EFF6FF"]{background:#0a1628 !important;}
+[data-theme="dark"] #fullDiagBody [style*="background:#F5F3FF"]{background:#1a0a30 !important;}
+[data-theme="dark"] #fullDiagBody [style*="background:#E6FAF8"]{background:#002a26 !important;}
+[data-theme="dark"] #fullDiagBody [style*="color:#7C3AED"]{color:#a78bfa !important;}
+[data-theme="dark"] #fullDiagBody [style*="color:#2563EB"]{color:#93c5fd !important;}
+[data-theme="dark"] #fullDiagBody [style*="color:#00C2B2"]{color:#00C2B2 !important;}
+
+/* Nameplate scan area in full diag */
+[data-theme="dark"] #fullDiagBody [style*="background:#F5F6FA;border-radius:8px;border:1px solid #E2E4ED"]{
+  background:#1a1a1a !important;border-color:#2a2a2a !important;
+}
+[data-theme="dark"] #diagScanStatus{background:#0a1628 !important;border-color:#1e3a5f !important;color:#93c5fd !important;}
+[data-theme="dark"] #diagScanSuccess{background:#052e16 !important;border-color:#14532d !important;color:#86efac !important;}
+
+/* Tag badges (file, voice, symptoms) */
+[data-theme="dark"] #tagFile{background:#0a1628 !important;border-color:#1e3a5f !important;color:#93c5fd !important;}
+[data-theme="dark"] #tagVoice{background:#1a0a30 !important;border-color:#4c1d95 !important;color:#a78bfa !important;}
+[data-theme="dark"] #tagSymps{background:#052e16 !important;border-color:#14532d !important;color:#86efac !important;}
+
+/* Result panel title + content */
+[data-theme="dark"] .result-title{color:#e5e7eb !important;}
+[data-theme="dark"] #resultPanel [style*="color:#0F0F0F"]{color:#e5e7eb !important;}
+[data-theme="dark"] #resultPanel [style*="color:#6B7190"]{color:#9ca3af !important;}
+
+/* Homeowner result panel */
+[data-theme="dark"] #homeResultPanel [style*="color:#0F0F0F"]{color:#e5e7eb !important;}
+[data-theme="dark"] #homeResultPanel [style*="color:#6B7190"]{color:#9ca3af !important;}
+[data-theme="dark"] #homeResultPanel [style*="background:#F5F6FA"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;}
+[data-theme="dark"] #homeResultPanel [style*="border:1.5px solid #E2E4ED"]{border-color:#2a2a2a !important;}
+
+/* Homeowner panel cards — "How it works" strip is already dark */
+[data-theme="dark"] #panelHome .card [style*="color:#0F0F0F"]{color:#e5e7eb !important;}
+[data-theme="dark"] #panelHome .card [style*="color:#6B7190"]{color:#9ca3af !important;}
+[data-theme="dark"] #panelHome .card [style*="color:#9499B0"]{color:#6b7280 !important;}
+[data-theme="dark"] #panelHome [style*="background:#F5F6FA"]{background:#1a1a1a !important;}
+[data-theme="dark"] .photo-tips{color:#9ca3af;}
+
+/* Homeowner system age select */
+[data-theme="dark"] #homeSysAge{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#e5e7eb !important;}
+
+/* Terms & Privacy modal headings */
+[data-theme="dark"] #termsModal [style*="color:#0F0F0F"]{color:#e5e7eb !important;}
+[data-theme="dark"] #privacyModal [style*="color:#0F0F0F"]{color:#e5e7eb !important;}
+[data-theme="dark"] #termsModal strong{color:#e5e7eb !important;}
+[data-theme="dark"] #privacyModal strong{color:#e5e7eb !important;}
+
+/* Chat area border strips (the borders connecting chat sections) */
+[data-theme="dark"] [style*="border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8"]{
+  border-left-color:#1f1f1f !important;border-right-color:#1f1f1f !important;
+}
+
+/* Voice waveform bars */
+[data-theme="dark"] .wave-bar{background:rgba(0,194,178,.7);}
+
+/* Job timer */
+[data-theme="dark"] #jobTimer{color:#e5e7eb !important;}
+
+/* Trial banner upgrade button */
+[data-theme="dark"] #trialBanner button{background:rgba(245,158,11,.2) !important;color:#fbbf24 !important;border-color:rgba(245,158,11,.3) !important;}
+
+/* scrollBottomBtn arrow */
+[data-theme="dark"] #scrollBottomBtn{color:#e5e7eb !important;}
+
+/* Contractor Education Mode panel */
+[data-theme="dark"] #eduPanel .info-box{background:#0a1628 !important;border-color:#1e3a5f !important;}
+[data-theme="dark"] #eduPanel .info-box p{color:#93c5fd !important;}
+[data-theme="dark"] #eduPanel [style*="color:#2563EB"]{color:#93c5fd !important;}
+
+/* Revenue nudge */
+[data-theme="dark"] #contractorNudge .info-box{background:#052e16 !important;border-color:#14532d !important;}
+[data-theme="dark"] #contractorNudge [style*="color:#059669"]{color:#86efac !important;}
+
+/* Homeowner "how it works" step numbers — already have teal bg, fine */
+/* Homeowner "describe problem" textarea */
+[data-theme="dark"] #homeDesc{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#e5e7eb !important;}
+[data-theme="dark"] #homeDesc::placeholder{color:#4b5563 !important;}
+
+/* Homeowner description label text */
+[data-theme="dark"] #panelHome [style*="color:#0F0F0F"]{color:#e5e7eb !important;}
+[data-theme="dark"] #panelHome [style*="font-size:16px;font-weight:700;color:#0F0F0F"]{color:#e5e7eb !important;}
+
+/* Photo tip icons */
+[data-theme="dark"] .photo-tip strong{color:#e5e7eb !important;}
+
+/* Nav status dot label */
+[data-theme="dark"] #statusText{color:#9ca3af !important;}
+
+/* AVP stats text */
+[data-theme="dark"] .avp-stat-lbl{color:rgba(255,255,255,.5) !important;}
+
+/* Mode tabs description area */
+[data-theme="dark"] [style*="background:#F8F9FC;border-top:1px solid #E2E4ED"]{
+  background:#111111 !important;border-top-color:#1f1f1f !important;
+}
+[data-theme="dark"] #modeDesc{color:#9ca3af !important;}
+
+/* Homeowner drop zone inner text */
+[data-theme="dark"] #homeDropPrompt [style*="font-size:16px;font-weight:700;color:#0F0F0F"]{
+  color:#e5e7eb !important;
+}
+[data-theme="dark"] #homeDropPrompt [style*="font-size:12px;color:#9499B0"]{
+  color:#6b7280 !important;
+}
+
+/* Full diag voice description toggle */
+[data-theme="dark"] [style*="cursor:pointer;padding:10px 12px;background:#F5F6FA"]{
+  background:#1a1a1a !important;border-color:#2a2a2a !important;
+}
+[data-theme="dark"] [style*="cursor:pointer;padding:10px 12px;background:#F5F6FA"] span{
+  color:#e5e7eb !important;
+}
+
+/* Homeowner result section dividers */
+[data-theme="dark"] #homeResultText [style*="border-bottom:1px solid #F0F1F6"]{
+  border-bottom-color:#1f1f1f !important;
+}
+[data-theme="dark"] #resultText [style*="border-bottom:1px solid #F0F1F6"]{
+  border-bottom-color:#1f1f1f !important;
+}
+
+/* Section labels in homeowner result */
+[data-theme="dark"] #homeResultText [style*="color:#6B7190"]{color:#9ca3af !important;}
+[data-theme="dark"] #resultText [style*="color:#6B7190"]{color:#9ca3af !important;}
+
+/* Camera overlay response text */
+[data-theme="dark"] #cameraResponseText{color:#ffffff !important;}
+
+/* Share sheet icon backgrounds */
+[data-theme="dark"] .share-option-icon{filter:brightness(0.6);}
+[data-theme="dark"] .share-option-label{color:#9ca3af !important;}
+[data-theme="dark"] .share-option{border-color:#2a2a2a !important;}
+
+[data-theme="dark"] .footer [style*="color:#0F0F0F"]{color:#e5e7eb !important;}
+[data-theme="dark"] .footer [style*="color:#9499B0"]{color:#6b7280 !important;}
+/* ═══════════════════════════════════════════════════════════
+   CHAT CARD — unified dark surface, professional & clean
+   ═══════════════════════════════════════════════════════════ */
+.chat-card{
+  background:#111111;
+  border-radius:16px;
+  overflow:hidden;
+  margin-bottom:12px;
+  box-shadow:0 4px 24px rgba(0,0,0,.3);
+}
+
+/* Header */
+.chat-header{
+  background:linear-gradient(135deg,#0A0A0F,#111827);
+  padding:12px 14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border-bottom:1px solid rgba(0,194,178,.12);
+}
+.chat-icon-btn{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;
+  padding:7px 12px;
+  cursor:pointer;
+  transition:all .15s;
+  min-width:46px;
+  -webkit-tap-highlight-color:transparent;
+}
+.chat-icon-btn:active{background:rgba(0,194,178,.15);border-color:rgba(0,194,178,.3);}
+.icon-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:rgba(255,255,255,.4);}
+
+/* Voice bar */
+.voice-bar{
+  background:#0a0a0a;
+  padding:10px 14px;
+  border-bottom:1px solid rgba(0,194,178,.1);
+  animation:slideDown .2s ease;
+}
+@keyframes slideDown{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+.voice-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:#4caf50;flex-shrink:0;
+  animation:pulse 1.4s ease infinite;
+}
+.voice-mic-btn{
+  width:38px;height:38px;border-radius:50%;
+  background:#00C2B2;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;transition:all .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.voice-mic-btn.active{background:#E8354A;box-shadow:0 0 0 4px rgba(232,53,74,.25);}
+.voice-stop-btn{
+  width:34px;height:34px;border-radius:50%;
+  background:#E8354A;border:none;cursor:pointer;
+  font-size:14px;flex-shrink:0;
+  box-shadow:0 2px 8px rgba(232,53,74,.4);
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* Chips bar */
+.chips-bar{
+  background:#0d0d0d;
+  padding:8px 12px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.chips-bar::-webkit-scrollbar{display:none;}
+.chips-bar .quick-chip{
+  background:#1a1a1a !important;
+  border-color:#2a2a2a !important;
+  color:#9ca3af !important;
+  font-size:12px;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.chips-bar .quick-chip:active{transform:scale(.95);}
+
+/* Chat messages */
+.chat-messages{
+  background:#111111;
+  min-height:260px;
+  max-height:520px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* Capability tags in welcome */
+.cap-tag{
+  background:rgba(0,194,178,.1);
+  border:1px solid rgba(0,194,178,.25);
+  border-radius:99px;
+  padding:3px 9px;
+  font-size:11px;
+  color:#00C2B2;
+  font-weight:600;
+}
+
+/* Example prompts */
+.example-prompt{
+  display:block;
+  width:100%;
+  text-align:left;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;
+  padding:9px 12px;
+  font-size:13px;
+  color:#d1d5db;
+  font-family:var(--font);
+  cursor:pointer;
+  font-weight:500;
+  margin-bottom:6px;
+  transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.example-prompt:last-child{margin-bottom:0;}
+.example-prompt:active{background:rgba(0,194,178,.1);border-color:rgba(0,194,178,.3);color:#fff;}
+
+/* Typing indicator */
+.typing-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 14px;
+  background:#111111;
+  border-top:1px solid rgba(255,255,255,.05);
+}
+
+/* Chat input area */
+.chat-input-area{
+  background:#111111;
+  padding:10px 12px 12px;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.chat-attach-btn{
+  width:38px;height:38px;min-width:38px;
+  background:#1a1a1a;
+  border:1.5px solid #2a2a2a;
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;cursor:pointer;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
+}
+#chatInput{
+  flex:1;
+  background:#1a1a1a !important;
+  border:1px solid #2a2a2a !important;
+  border-radius:10px !important;
+  padding:10px 12px !important;
+  font-size:15px;
+  font-family:var(--font);
+  color:#e5e7eb !important;
+  resize:none;
+  min-height:40px;
+  max-height:100px;
+  line-height:1.5;
+  outline:none;
+}
+#chatInput::placeholder{color:#4b5563 !important;}
+.send-btn{
+  background:linear-gradient(135deg,#00C2B2,#009E90);
+  color:#fff;border:none;border-radius:10px;
+  width:40px;height:40px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;font-size:17px;
+  box-shadow:0 4px 12px rgba(0,194,178,.35);
+  transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.send-btn:active{transform:scale(.92);box-shadow:none;}
+
+/* Toolbar under input */
+.chat-toolbar{
+  display:flex;
+  gap:5px;
+  margin-top:8px;
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.chat-toolbar::-webkit-scrollbar{display:none;}
+.toolbar-btn{
+  font-size:11px;
+  background:#1a1a1a;
+  border:1px solid #2a2a2a;
+  color:#9ca3af;
+  border-radius:8px;
+  padding:6px 10px;
+  cursor:pointer;
+  font-family:var(--font);
+  font-weight:600;
+  white-space:nowrap;
+  flex-shrink:0;
+  transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.toolbar-btn:active{background:#222;color:#fff;}
+.toolbar-btn-purple{background:rgba(124,58,237,.1);border-color:rgba(124,58,237,.3);color:#a78bfa;}
+.toolbar-btn-teal{background:rgba(0,194,178,.08);border-color:rgba(0,194,178,.2);color:#00C2B2;}
+
+/* Scroll bottom button */
+#scrollBottomBtn{
+  position:absolute;bottom:10px;right:10px;
+  width:34px;height:34px;border-radius:50%;
+  background:#1a1a1a;border:1px solid #2a2a2a;
+  box-shadow:0 2px 8px rgba(0,0,0,.4);
+  display:none;align-items:center;justify-content:center;
+  cursor:pointer;font-size:14px;color:#9ca3af;
+  transition:all .15s;z-index:10;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* Dark mode overrides for new chat card */
+[data-theme="dark"] .chat-card{background:#0a0a0a;box-shadow:0 4px 24px rgba(0,0,0,.6);}
+[data-theme="dark"] .chat-messages{background:#0a0a0a;}
+[data-theme="dark"] .typing-row{background:#0a0a0a;}
+[data-theme="dark"] .chat-input-area{background:#0a0a0a;border-top-color:rgba(255,255,255,.04);}
+[data-theme="dark"] .example-prompt{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.06);}
+[data-theme="dark"] #examplePrompts{background:rgba(0,194,178,.04);border-color:rgba(0,194,178,.12);}
+[data-theme="dark"] .chips-bar{background:#080808;}
+</style>
 <div id="offlineBanner"></div>
 <div id="toastContainer"></div>
 <div id="jobTimer" onclick="toggleJobTimer()" title="Tap to stop timer"></div>
 
 <div id="authOverlay">
 <div class="auth-wrap">
-  <!-- VALUE PROP — shown before auth form -->
-  <div class="auth-value-prop" id="authValueProp">
-    <div class="avp-logo-row">
-      <svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="9" fill="url(#lg2)"/>
-  <path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/>
-  <defs><linearGradient id="lg2" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#00C2B2"/>
-    <stop offset="100%" stop-color="#007A6E"/>
-  </linearGradient></defs>
-</svg>
-      <div style="text-align:left;">
-        <div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-.4px;line-height:1.1;">Trazer Intelligence</div>
-        <div style="font-size:12px;color:#00C2B2;font-weight:600;letter-spacing:.4px;text-transform:uppercase;">Field Intelligence Platform</div>
-      </div>
-    </div>
-    <div class="avp-headline">Your AI master tech.<br>Always on. Always ready.</div>
-    <div class="avp-sub">Diagnose any system, find parts, coach revenue, and talk hands-free — like a senior tech riding along on every job.</div>
-    <div class="avp-stats">
-      <div class="avp-stat"><div class="avp-stat-num">25+</div><div class="avp-stat-lbl">Years of<br>HVAC knowledge</div></div>
-      <div class="avp-stat-divider"></div>
-      <div class="avp-stat"><div class="avp-stat-num">Live</div><div class="avp-stat-lbl">Camera<br>diagnosis</div></div>
-      <div class="avp-stat-divider"></div>
-      <div class="avp-stat"><div class="avp-stat-num">$0</div><div class="avp-stat-lbl">No credit card<br>to start</div></div>
-    </div>
-    <div class="avp-features">
-      <div class="avp-feature">✦ <span>Diagnose any system from a photo</span></div>
-      <div class="avp-feature">✦ <span>Live parts pricing from Johnstone & Grainger</span></div>
-      <div class="avp-feature">✦ <span>Revenue coaching after every job</span></div>
-      <div class="avp-feature">✦ <span>Hands-free voice mode on every job</span></div>
-    </div>
-    <button class="avp-cta" onclick="document.getElementById('authValueProp').style.display='none';document.getElementById('authMainArea').scrollIntoView({behavior:'smooth'});">
-      Start Free — 7 Days Free, No Card Required →
-    </button>
+  <div class="auth-logo-row">
+    <div class="auth-logo-icon"><svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="9" fill="url(#lgauth)"/><path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/><defs><linearGradient id="lgauth" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#00C2B2"/><stop offset="100%" stop-color="#007A6E"/></linearGradient></defs></svg></div>
+    <div class="auth-logo-name">Trazer Intelligence</div>
   </div>
-  <div class="auth-logo-row"><div class="auth-logo-icon"><svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="9" fill="url(#lg2)"/>
-  <path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/>
-  <defs><linearGradient id="lg2" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#00C2B2"/>
-    <stop offset="100%" stop-color="#007A6E"/>
-  </linearGradient></defs>
-</svg></div><div class="auth-logo-name">Trazer Intelligence</div></div>
   <div class="auth-card">
     <div class="auth-trial-pill">🎯 7-day free trial — no credit card required</div>
 
@@ -888,6 +1278,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
   </div><!-- /authMainArea -->
 </div>
 </div>
+
 <div id="onboardingOverlay">
 <div class="ob-wrap">
   <button id="obBackBtn" onclick="obBack()" style="position:absolute;top:max(env(safe-area-inset-top),18px);left:16px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;color:rgba(255,255,255,.8);cursor:pointer;display:none;">← Back</button>
@@ -1131,208 +1522,209 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 
   <!-- PRO DIAGNOSE PANEL -->
   <div id="panelDiag" style="display:none;">
-    <!-- MIKE BAR -->
-    <div class="mike-bar">
-      <div style="position:relative;flex-shrink:0;">
-        <div style="width:42px;height:42px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;">🧑‍🔧</div>
-        <div style="position:absolute;bottom:1px;right:1px;width:11px;height:11px;background:#4caf50;border-radius:50%;border:2px solid #1a1a1a;"></div>
-      </div>
-      <div style="flex:1;">
-        <div style="font-size:15px;font-weight:700;color:#fff;">Mike — Master Tech</div>
-        <div style="font-size:11px;color:#00C2B2;font-weight:500;">● Online · EPA 608 · NATE Certified</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div style="text-align:right;">
-          <div style="font-size:11px;font-weight:700;color:#fff;line-height:1.3;">Talk to Mike</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.45);line-height:1.3;">Hands-free · like a phone call</div>
-        </div>
-        <button id="voiceModeBtn" onclick="toggleVoiceMode()" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;padding:8px 14px;cursor:pointer;transition:all .15s;min-width:56px;">
-          <span style="font-size:22px;">🎙️</span>
-          <span id="voiceModeBtnLabel" style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.3px;">Voice</span>
-        </button>
-      </div>
-      <button onclick="clearChat()" style="background:rgba(255,255,255,.08);border:none;border-radius:6px;padding:6px 10px;color:rgba(255,255,255,.5);font-size:11px;font-family:var(--font);cursor:pointer;font-weight:600;">Clear</button>
-    </div>
-    <!-- VOICE BAR - stays inline, no overlay -->
-    <div id="voiceModeBar" style="display:none;background:#0F0F0F;border-left:1px solid #333;border-right:1px solid #333;padding:10px 16px;">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div id="voiceStatusDot" style="width:10px;height:10px;border-radius:50%;background:#4caf50;flex-shrink:0;animation:pulse 1.4s ease infinite;"></div>
-        <div style="flex:1;">
-          <div id="voiceStatusText" style="font-size:13px;font-weight:700;color:#fff;line-height:1.3;">Listening…</div>
-          <div id="voiceTranscript" style="font-size:12px;color:#9499B0;min-height:14px;line-height:1.4;"></div>
-        </div>
-        <button id="micBtn" onclick="toggleMic()" style="width:40px;height:40px;border-radius:50%;background:#00C2B2;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;transition:all .2s;">🎙️</button>
-        <button id="stopSpeakBtn" onclick="stopMikeSpeaking()" style="display:none;width:36px;height:36px;border-radius:50%;background:#E8354A;border:none;cursor:pointer;font-size:16px;flex-shrink:0;box-shadow:0 2px 8px rgba(232,53,74,.4);">⏹️</button>
-      </div>
-      <p style="font-size:10px;color:#444;margin-top:6px;">Hands-free — Mike listens automatically · Tap Voice button to end</p>
-    </div>
-    <!-- LIVE CAMERA DIAGNOSTICS -->
-    <div class="camera-card">
-      <div style="width:44px;height:44px;background:linear-gradient(135deg,#00C2B2,#009E91);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 4px 12px rgba(0,194,178,.4);">📷</div>
-      <div style="flex:1;">
-        <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:3px;letter-spacing:-.2px;">Live Camera Diagnostics</div>
-        <div style="font-size:12px;color:rgba(0,194,178,.8);font-weight:500;line-height:1.4;">Point camera at any unit — Mike sees it live and diagnoses in real time</div>
-      </div>
-      <button onclick="startLiveCamera()" style="background:linear-gradient(135deg,#00C2B2,#009E91);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;box-shadow:0 4px 14px rgba(0,194,178,.5);">▶ Start</button>
-    </div>
-    <div id="quickReplies"></div>
 
-    <!-- QUICK CHIPS -->
-    <div style="background:#F5F6FA;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;border-top:1px solid #E2E4ED;padding:8px 12px;">
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button class="quick-chip" onclick="document.getElementById('chatInput').value='I need a part: ';document.getElementById('chatInput').focus();" style="border-color:#0EA5E9;color:#0284C7;background:#F0F9FF;font-weight:700;">🔩 Find a Part</button>
-        <button class="quick-chip" onclick="sendQuick('I just finished the repair — what else should I check for upsell opportunities?')" style="border-color:#10B981;color:#059669;background:#F0FDF4;font-weight:700;">💰 Find Upsells</button>
-        <button class="quick-chip" onclick="sendQuick('The homeowner said the price seems too high. How do I overcome that?')" style="border-color:#F59E0B;color:#d97706;background:#FFFBEB;font-weight:700;">💬 Handle Objection</button>
-        <button class="quick-chip" onclick="sendQuick('Help me pitch a maintenance agreement. System is about 10 years old.')" style="border-color:#8B5CF6;color:#7C3AED;background:#F5F3FF;font-weight:700;">📋 Pitch Maintenance</button>
-        <button class="quick-chip" onclick="var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b&&b.style.display==='none'){b.style.display='block';a.textContent='▲';}b&&b.scrollIntoView({behavior:'smooth'});" style="background:linear-gradient(135deg,#E8354A,#c0272d);color:#fff;border-color:#E8354A;font-weight:800;box-shadow:0 2px 8px rgba(232,53,74,.35);">⚡ Full Diagnostic</button>
-        <button class="quick-chip" onclick="sendQuick('What are the correct R-410A pressures for current outdoor temperature? I need to check my charge.')" style="border-color:#E8354A;color:#dc2626;background:#FFF0F2;font-weight:700;">🌡️ Pressure Check</button>
-        <button class="quick-chip" onclick="sendQuick('Give me a job summary for this diagnostic — what the problem was, what I did, and what to document on my invoice.')" style="border-color:#6366f1;color:#4f46e5;background:#eef2ff;font-weight:700;">📋 Job Summary</button>
-      </div>
-    </div>
+    <!-- ── MIKE CHAT CARD ─────────────────────────────────────── -->
+    <div class="chat-card">
 
-    <!-- CHAT SEARCH BAR — hidden by default, shown by openChatSearch() -->
-    <div id="chatSearchBar">
-      <input id="chatSearchInput" placeholder="Search messages…" oninput="searchMessages(this.value)" type="text"/>
-      <div id="searchResultCount"></div>
-      <button id="chatSearchClose" onclick="closeChatSearch()">✕</button>
-    </div>
-
-    <!-- CHAT MESSAGES -->
-    <div style="position:relative;">
-      <div id="chatMessages" style="background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:280px;max-height:600px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:10px;">
-        <div class="msg-agent" id="mikeWelcomeMsg">
-          <div class="msg-bubble msg-bubble-agent">
-            <p style="margin-bottom:8px;"><strong>Hey, I'm Mike.</strong> 25 years in the field — every system, every failure, every fix. Ask me anything.</p>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
-              <span style="background:rgba(0,194,178,.12);border:1px solid rgba(0,194,178,.3);border-radius:99px;padding:4px 10px;font-size:11px;color:#00C2B2;font-weight:600;">🔍 Diagnose</span>
-              <span style="background:rgba(0,194,178,.12);border:1px solid rgba(0,194,178,.3);border-radius:99px;padding:4px 10px;font-size:11px;color:#00C2B2;font-weight:600;">💰 Revenue</span>
-              <span style="background:rgba(0,194,178,.12);border:1px solid rgba(0,194,178,.3);border-radius:99px;padding:4px 10px;font-size:11px;color:#00C2B2;font-weight:600;">🔩 Parts</span>
-              <span style="background:rgba(0,194,178,.12);border:1px solid rgba(0,194,178,.3);border-radius:99px;padding:4px 10px;font-size:11px;color:#00C2B2;font-weight:600;">📋 Warranty</span>
-            </div>
+      <!-- MIKE HEADER -->
+      <div class="chat-header">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+          <div style="position:relative;flex-shrink:0;">
+            <div style="width:38px;height:38px;background:linear-gradient(135deg,#00C2B2,#009E90);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;">&#x1F9D1;&#x200D;&#x1F527;</div>
+            <div style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:#4caf50;border-radius:50%;border:2px solid #111;"></div>
           </div>
-          <div class="msg-time">Just now</div>
-        <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;padding:0 2px;">
-          <div style="font-size:11px;color:var(--gray-400);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">Try asking:</div>
-          <button onclick="document.getElementById('chatInput').value='My AC is running but not cooling — suction is 55 PSI at 85°F outdoor. What's wrong?';document.getElementById('chatInput').focus();" style="text-align:left;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--gray-600);font-family:var(--font);cursor:pointer;font-weight:500;">🌡️ "AC not cooling — suction 55 PSI at 85°F"</button>
-          <button onclick="document.getElementById('chatInput').value='What can I upsell on this capacitor replacement job? System is 9 years old.';document.getElementById('chatInput').focus();" style="text-align:left;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--gray-600);font-family:var(--font);cursor:pointer;font-weight:500;">💰 "What can I upsell on this capacitor job?"</button>
-          <button onclick="document.getElementById('chatInput').value='Furnace is not igniting — board shows 3 flashes. What does that mean?';document.getElementById('chatInput').focus();" style="text-align:left;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--gray-600);font-family:var(--font);cursor:pointer;font-weight:500;">🔥 "Furnace not igniting — 3 flash fault code"</button>
+          <div style="min-width:0;">
+            <div style="font-size:14px;font-weight:800;color:#fff;letter-spacing:-.2px;">Mike — Master Tech</div>
+            <div style="font-size:11px;color:#00C2B2;font-weight:500;">&#x25CF; Live &middot; EPA 608 &middot; NATE</div>
+          </div>
         </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button id="voiceModeBtn" onclick="toggleVoiceMode()" class="chat-icon-btn" title="Hands-free voice">
+            <span style="font-size:16px;">&#x1F399;</span>
+            <span id="voiceModeBtnLabel" class="icon-label">Voice</span>
+          </button>
+          <button onclick="startLiveCamera()" class="chat-icon-btn" title="Live camera">
+            <span style="font-size:16px;">&#x1F4F7;</span>
+            <span class="icon-label">Camera</span>
+          </button>
+          <button onclick="clearChat()" class="chat-icon-btn" title="Clear chat">
+            <span style="font-size:14px;color:rgba(255,255,255,.35);">&#x2715;</span>
+          </button>
         </div>
       </div>
-    <button id="scrollBottomBtn" onclick="scrollToBottom()">↓</button>
-    </div>
 
-    <!-- TYPING INDICATOR -->
-    <div id="typingIndicator" style="display:none;background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;padding:8px 14px;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div style="width:28px;height:28px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🧑‍🔧</div>
+      <!-- VOICE BAR -->
+      <div id="voiceModeBar" style="display:none;" class="voice-bar">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div id="voiceStatusDot" class="voice-dot"></div>
+          <div style="flex:1;">
+            <div id="voiceStatusText" style="font-size:13px;font-weight:700;color:#fff;">Listening&hellip;</div>
+            <div id="voiceTranscript" style="font-size:11px;color:#9499B0;min-height:14px;"></div>
+          </div>
+          <button id="micBtn" onclick="toggleMic()" class="voice-mic-btn">&#x1F399;</button>
+          <button id="stopSpeakBtn" onclick="stopMikeSpeaking()" class="voice-stop-btn" style="display:none;">&#x23F9;</button>
+        </div>
+      </div>
+
+      <!-- QUICK CHIPS -->
+      <div class="chips-bar">
+        <div id="quickReplies"></div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="quick-chip" onclick="document.getElementById('chatInput').value='I need a part: ';document.getElementById('chatInput').focus();" style="border-color:#0EA5E9;color:#0284C7;background:#F0F9FF;">&#x1F529; Find a Part</button>
+          <button class="quick-chip" onclick="sendQuick('I just finished the repair — what else should I check for upsell opportunities?')" style="border-color:#10B981;color:#059669;background:#F0FDF4;">&#x1F4B0; Find Upsells</button>
+          <button class="quick-chip" onclick="sendQuick('The homeowner said the price seems too high. How do I overcome that?')" style="border-color:#F59E0B;color:#d97706;background:#FFFBEB;">&#x1F4AC; Objection</button>
+          <button class="quick-chip" onclick="sendQuick('Help me pitch a maintenance agreement. System is about 10 years old.')" style="border-color:#8B5CF6;color:#7C3AED;background:#F5F3FF;">&#x1F4CB; Maintenance</button>
+          <button class="quick-chip" onclick="sendQuick('What are the correct R-410A pressures for current outdoor temperature?')" style="border-color:#E8354A;color:#dc2626;background:#FFF0F2;">&#x1F321; Pressures</button>
+          <button class="quick-chip" onclick="sendQuick('Give me a job summary — problem, fix, and what to put on the invoice.')" style="border-color:#6366f1;color:#4f46e5;background:#eef2ff;">&#x1F4CB; Job Summary</button>
+          <button class="quick-chip" onclick="var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b&&b.style.display==='none'){b.style.display='block';a.textContent='&#x25B2;';}b&&b.scrollIntoView({behavior:'smooth'});" style="background:linear-gradient(135deg,#E8354A,#c0272d);color:#fff;border-color:#E8354A;font-weight:800;">&#x26A1; Full Diag</button>
+        </div>
+      </div>
+
+      <!-- CHAT SEARCH BAR -->
+      <div id="chatSearchBar">
+        <input id="chatSearchInput" placeholder="Search messages&hellip;" oninput="searchMessages(this.value)" type="text"/>
+        <div id="searchResultCount"></div>
+        <button id="chatSearchClose" onclick="closeChatSearch()">&#x2715;</button>
+      </div>
+
+      <!-- CHAT MESSAGES -->
+      <div style="position:relative;">
+        <div id="chatMessages" class="chat-messages">
+          <div class="msg-agent" id="mikeWelcomeMsg">
+            <div class="msg-bubble msg-bubble-agent">
+              <p style="margin-bottom:8px;"><strong>Hey, I'm Mike.</strong> 25 years in the field &mdash; every system, every failure, every fix. Ask me anything.</p>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">
+                <span class="cap-tag">&#x1F50D; Diagnose</span>
+                <span class="cap-tag">&#x1F4B0; Revenue</span>
+                <span class="cap-tag">&#x1F529; Parts</span>
+                <span class="cap-tag">&#x1F4CB; Warranty</span>
+              </div>
+            </div>
+            <div class="msg-time">Just now</div>
+          </div>
+          <!-- DISMISSIBLE EXAMPLE PROMPTS -->
+          <div id="examplePrompts" style="margin-top:6px;padding:10px 12px;background:rgba(0,194,178,.05);border:1px solid rgba(0,194,178,.15);border-radius:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <span style="font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Try asking</span>
+              <button onclick="document.getElementById('examplePrompts').style.display='none';" style="background:none;border:none;font-size:11px;color:#9ca3af;cursor:pointer;font-family:var(--font);font-weight:600;padding:2px 6px;border-radius:4px;">&#x2715; Dismiss</button>
+            </div>
+            <button onclick="document.getElementById('chatInput').value='My AC is running but not cooling — suction is 55 PSI at 85°F outdoor. What's wrong?';document.getElementById('chatInput').focus();document.getElementById('examplePrompts').style.display='none';" class="example-prompt">&#x1F321; AC not cooling &mdash; suction 55 PSI at 85&deg;F</button>
+            <button onclick="document.getElementById('chatInput').value='What can I upsell on this capacitor replacement job? System is 9 years old.';document.getElementById('chatInput').focus();document.getElementById('examplePrompts').style.display='none';" class="example-prompt">&#x1F4B0; What can I upsell on this capacitor job?</button>
+            <button onclick="document.getElementById('chatInput').value='Furnace is not igniting — board shows 3 flashes. What does that mean?';document.getElementById('chatInput').focus();document.getElementById('examplePrompts').style.display='none';" class="example-prompt">&#x1F525; Furnace not igniting &mdash; 3 flash fault code</button>
+          </div>
+        </div>
+        <button id="scrollBottomBtn" onclick="scrollToBottom()">&#x2193;</button>
+      </div>
+
+      <!-- TYPING INDICATOR -->
+      <div id="typingIndicator" style="display:none;" class="typing-row">
+        <div style="width:26px;height:26px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">&#x1F9D1;&#x200D;&#x1F527;</div>
         <div class="typing-dots"><span></span><span></span><span></span></div>
       </div>
+
+      <!-- CHAT INPUT -->
+      <div class="chat-input-area">
+        <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none" onchange="handleChatFile(event)"/>
+        <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:rgba(0,194,178,.08);border:1px solid rgba(0,194,178,.2);border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:#00C2B2;"></div>
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <label for="chatFileInput" class="chat-attach-btn" title="Attach">&#x1F4CE;</label>
+          <textarea id="chatInput" placeholder="Ask Mike anything&hellip;" rows="1" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+          <span id="chatCharCount" style="display:none;font-size:10px;color:var(--gray-400);align-self:center;white-space:nowrap;"></span>
+          <button onclick="sendChat()" id="chatSendBtn" class="send-btn">&#x279E;</button>
+        </div>
+        <div class="chat-toolbar">
+          <button onclick="openChatSearch()" class="toolbar-btn">&#x1F50D; Search</button>
+          <button onclick="toggleJobTimer()" class="toolbar-btn" id="jobTimerBtn">&#x23F1; Timer</button>
+          <button onclick="triggerDiagram()" class="toolbar-btn toolbar-btn-purple">&#x1F4D0; Diagram</button>
+          <button onclick="triggerIllustration()" class="toolbar-btn toolbar-btn-teal">&#x1F3A8; Illustrate</button>
+          <button onclick="showKnowledge()" class="toolbar-btn" style="margin-left:auto;">&#x1F9E0; Memory</button>
+        </div>
+        <div id="voiceWaveform" style="display:none;justify-content:center;align-items:center;gap:3px;padding:4px 0;">
+          <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+        </div>
+      </div>
+
+      <!-- CORRECTION ALERT -->
+      <div id="correctionAlert" style="display:none;padding:8px 14px;background:rgba(0,194,178,.1);border-top:1px solid rgba(0,194,178,.2);font-size:12px;color:#00C2B2;font-weight:600;border-radius:0 0 16px 16px;"></div>
+
+    </div><!-- /chat-card -->
+
+    <!-- MIKE'S MEMORY PANEL -->
+    <div id="knowledgePanel" style="display:none;background:#161616;border:1px solid #2a2a2a;border-radius:12px;padding:14px;margin-bottom:12px;margin-top:4px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:13px;font-weight:700;color:#fff;">&#x1F9E0; Mike's Memory</span>
+        <button onclick="document.getElementById('knowledgePanel').style.display='none'" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9499B0;line-height:1;">&#xD7;</button>
+      </div>
+      <div id="knowledgeList" style="font-size:13px;color:#9ca3af;line-height:1.8;max-height:200px;overflow-y:auto;"></div>
+      <button onclick="clearKnowledge()" style="margin-top:10px;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:6px;padding:6px 12px;font-size:12px;color:#f87171;font-weight:600;cursor:pointer;">Clear All</button>
     </div>
 
-    <!-- CHAT INPUT -->
-    <div style="background:#FFFFFF;border:1px solid #E2E4ED;border-top:2px solid #00C2B2;padding:10px 12px;margin-bottom:12px;">
-      <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none" onchange="handleChatFile(event)"/>
-      <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:#F5F6FA;border:1.5px solid #E2E4ED;border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:#6B7190;"></div>
-      <div style="display:flex;gap:8px;align-items:flex-end;">
-        <label for="chatFileInput" style="width:38px;height:38px;min-width:38px;background:#F5F6FA;border:1.5px solid #E2E4ED;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;flex-shrink:0;">📎</label>
-        <textarea id="chatInput" placeholder="Ask Mike anything — pressures, wiring, parts, sales…" rows="1" style="flex:1;border:1px solid #E2E4ED;border-radius:6px;padding:9px 12px;font-size:15px;font-family:var(--font);resize:none;min-height:38px;max-height:100px;line-height:1.5;outline:none;" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
-        <span id="chatCharCount"></span>
-        <button onclick="sendChat()" id="chatSendBtn" style="background:#00C2B2;color:#fff;border:none;border-radius:6px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:18px;">➤</button>
-      </div>
-      <div style="display:flex;gap:6px;margin-top:8px;">
-        <button onclick="openChatSearch()" style="font-size:11px;background:#F5F6FA;border:1px solid #E2E4ED;color:#666;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:var(--font);font-weight:600;">🔍 Search</button>
-        <button onclick="toggleJobTimer()" title="Job timer" style="font-size:11px;background:#F5F6FA;border:1px solid #E2E4ED;color:#666;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:var(--font);font-weight:600;white-space:nowrap;">⏱ Timer</button>
-        <button onclick="triggerDiagram()" style="font-size:11px;background:#F5F3FF;border:1px solid #DDD6FE;color:#7C3AED;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:var(--font);font-weight:600;white-space:nowrap;">📐 Draw Diagram</button>
-        <button onclick="triggerIllustration()" style="font-size:11px;background:#E6FAF8;border:1px solid #B2F0EA;color:#009E90;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:var(--font);font-weight:600;white-space:nowrap;">🎨 Illustrate It</button>
-      </div>
-      <div id="voiceWaveform" style="display:none;justify-content:center;align-items:center;gap:3px;padding:6px 0;">
-        <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
-      </div>
-    </div>
-    <!-- MIKE'S KNOWLEDGE -->
-    <div style="background:#0F0F0F;border-left:1px solid #222;border-right:1px solid #222;padding:10px 12px;margin-bottom:12px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-size:12px;color:#666;font-weight:600;">💡 Correct Mike in chat — he listens and remembers automatically</div>
-        <button onclick="showKnowledge()" style="background:#1a1a1a;color:#9499B0;border:1px solid #333;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">📚 Mike's Memory</button>
-      </div>
-      <div id="correctionAlert" style="display:none;margin-top:8px;background:rgba(0,194,178,.1);border:1px solid rgba(0,194,178,.3);border-radius:8px;padding:8px 12px;font-size:12px;color:#00C2B2;font-weight:600;"></div>
-    </div>
-    <div id="knowledgePanel" style="display:none;background:#F8F9FC;border:1px solid #E2E4ED;border-radius:8px;padding:14px;margin-bottom:12px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <span style="font-size:13px;font-weight:700;color:#0F0F0F;">📚 Mike's Memory</span>
-        <button onclick="document.getElementById('knowledgePanel').style.display='none'" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9499B0;">×</button>
-      </div>
-      <div id="knowledgeList" style="font-size:13px;color:#6B7190;line-height:1.8;max-height:200px;overflow-y:auto;"></div>
-      <button onclick="clearKnowledge()" style="margin-top:10px;background:#FFF0F2;border:1px solid #FECACA;border-radius:6px;padding:6px 12px;font-size:12px;color:#dc2626;font-weight:600;cursor:pointer;">Clear All</button>
-    </div>
     <!-- FULL DIAGNOSTIC FORM -->
-    <div class="card" style="border-top:3px solid #00C2B2;">
-      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;" onclick="var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b.style.display==='none'){b.style.display='block';a.textContent='▲';}else{b.style.display='none';a.textContent='▼ Expand';}">
-        <label class="field-label" style="margin:0;cursor:pointer;">⚡ Full Diagnostic</label>
-        <span id="fullDiagArrow" style="font-size:12px;color:#00C2B2;font-weight:700;white-space:nowrap;">▼ Expand</span>
+    <div class="card" style="border-top:3px solid #00C2B2;margin-top:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;" onclick="var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b.style.display==='none'){b.style.display='block';a.textContent='&#x25B2;';}else{b.style.display='none';a.textContent='&#x25BC; Expand';}">
+        <label class="field-label" style="margin:0;cursor:pointer;">&#x26A1; Full Diagnostic</label>
+        <span id="fullDiagArrow" style="font-size:12px;color:#00C2B2;font-weight:700;white-space:nowrap;">&#x25BC; Expand</span>
       </div>
       <div id="fullDiagBody" style="display:none;margin-top:14px;">
       <input type="file" id="fileInput" accept="video/*,image/*" style="display:none" onchange="handleFileSelect(event)"/>
       <input type="file" id="fileInputCam" accept="image/*,video/*" capture="environment" style="display:none" onchange="handleFileSelect(event)"/>
       <div id="dropZone" class="drop-zone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()" style="min-height:0;">
         <div id="dropPrompt" style="padding:12px 16px;display:flex;align-items:center;gap:12px;" onclick="event.stopPropagation()">
-          <div style="width:42px;height:42px;background:#F5F6FA;border-radius:10px;display:flex;align-items:center;justify-content:center;border:1.5px solid #E2E4ED;flex-shrink:0;"><span style="font-size:20px;">📷</span></div>
-          <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#0F0F0F;">Upload Photo or Video</div><div style="font-size:11px;color:#9499B0;margin-top:1px;">Photo · Video · up to 50MB</div></div>
+          <div style="width:42px;height:42px;background:#F5F6FA;border-radius:10px;display:flex;align-items:center;justify-content:center;border:1.5px solid #E2E4ED;flex-shrink:0;"><span style="font-size:20px;">&#x1F4F7;</span></div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#0F0F0F;">Upload Photo or Video</div><div style="font-size:11px;color:#9499B0;margin-top:1px;">Photo &middot; Video &middot; up to 50MB</div></div>
           <div style="display:flex;gap:6px;">
-            <label for="fileInputCam" style="padding:7px 12px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;">📸</label>
-            <label for="fileInput" style="padding:7px 12px;background:#fff;color:#0F0F0F;border:1.5px solid #E2E4ED;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;">🖼️</label>
+            <label for="fileInputCam" style="padding:7px 12px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;">&#x1F4F8;</label>
+            <label for="fileInput" style="padding:7px 12px;background:#fff;color:#0F0F0F;border:1.5px solid #E2E4ED;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;">&#x1F5BC;</label>
           </div>
         </div>
       </div>
       <div id="previewWrapper" style="display:none;margin-top:8px;position:relative;">
         <img id="imgPreview" style="width:100%;border-radius:8px;border:1px solid #E2E4ED;display:none;max-height:200px;object-fit:contain;background:#111;"/>
         <video id="videoPreview" style="width:100%;border-radius:8px;border:1px solid #E2E4ED;display:none;" controls playsinline></video>
-        <button onclick="clearUpload()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+        <button onclick="clearUpload()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#xD7;</button>
         <div id="fileNameTag" style="margin-top:4px;font-size:11px;color:#9499B0;text-align:center;"></div>
       </div>
-      <!-- Nameplate -->
       <input type="file" id="diagNameplateInput" accept="image/*" capture="environment" style="display:none" onchange="handleDiagNameplateScan(event)"/>
       <input type="file" id="diagNameplateLib" accept="image/*" style="display:none" onchange="handleDiagNameplateScan(event)"/>
       <div style="background:#F5F6FA;border-radius:8px;border:1px solid #E2E4ED;padding:12px;margin-top:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:11px;font-weight:700;color:#6B7190;text-transform:uppercase;letter-spacing:.6px;">🏷️ Nameplate Scan</span>
+          <span style="font-size:11px;font-weight:700;color:#6B7190;text-transform:uppercase;letter-spacing:.6px;">&#x1F3F7; Nameplate Scan</span>
           <span style="font-size:10px;background:#00C2B2;color:#fff;padding:2px 7px;border-radius:99px;font-weight:700;">Auto-fills fields</span>
         </div>
         <div style="display:flex;gap:6px;margin-bottom:8px;">
-          <label for="diagNameplateInput" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">📸 Camera</label>
-          <label for="diagNameplateLib" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#fff;color:#6B7190;border:1.5px solid #E2E4ED;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">🖼️ Library</label>
+          <label for="diagNameplateInput" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">&#x1F4F8; Camera</label>
+          <label for="diagNameplateLib" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#fff;color:#6B7190;border:1.5px solid #E2E4ED;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">&#x1F5BC; Library</label>
         </div>
-        <div id="diagScanStatus" style="display:none;padding:8px 10px;background:#E6FAF8;border:1px solid #B2F0EA;border-radius:6px;margin-bottom:8px;font-size:12px;color:#009E90;font-weight:600;align-items:center;gap:6px;"><span class="spinner" style="border-color:rgba(0,181,181,.2);border-top-color:#00C2B2;"></span><span id="diagScanStatusText">Reading nameplate…</span></div>
-        <div id="diagScanSuccess" style="display:none;padding:8px 10px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:6px;margin-bottom:8px;font-size:12px;color:#059669;font-weight:600;">✅ <span id="diagScanSuccessText">Nameplate read successfully</span></div>
+        <div id="diagScanStatus" style="display:none;padding:8px 10px;background:#E6FAF8;border:1px solid #B2F0EA;border-radius:6px;margin-bottom:8px;font-size:12px;color:#009E90;font-weight:600;align-items:center;gap:6px;"><span class="spinner" style="border-color:rgba(0,181,181,.2);border-top-color:#00C2B2;"></span><span id="diagScanStatusText">Reading nameplate&hellip;</span></div>
+        <div id="diagScanSuccess" style="display:none;padding:8px 10px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:6px;margin-bottom:8px;font-size:12px;color:#059669;font-weight:600;">&#x2705; <span id="diagScanSuccessText">Nameplate read successfully</span></div>
         <div class="grid2" style="gap:6px;">
           <div><label class="field-label" style="font-size:10px;margin-bottom:3px;">Model Number</label><input type="text" id="modelNumber" placeholder="e.g. 4TTX6048J" style="font-size:13px;padding:8px 10px;text-transform:uppercase;" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/></div>
           <div><label class="field-label" style="font-size:10px;margin-bottom:3px;">Serial Number</label><input type="text" id="serialNumber" placeholder="e.g. 4006E12345" style="font-size:13px;padding:8px 10px;text-transform:uppercase;" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/></div>
         </div>
       </div>
       <div class="grid2" style="margin-top:10px;gap:8px;">
-        <div><label class="field-label">System Type</label><select id="sysType"><option value="">Select…</option></select></div>
-        <div><label class="field-label">Age</label><select id="sysAge"><option value="">Select…</option></select></div>
+        <div><label class="field-label">System Type</label><select id="sysType"><option value="">Select&hellip;</option></select></div>
+        <div><label class="field-label">Age</label><select id="sysAge"><option value="">Select&hellip;</option></select></div>
       </div>
-      <div id="brandRow" style="margin-top:8px;"><label class="field-label">Brand</label><select id="brand"><option value="">Select brand…</option></select></div>
+      <div id="brandRow" style="margin-top:8px;"><label class="field-label">Brand</label><select id="brand"><option value="">Select brand&hellip;</option></select></div>
       <div style="margin-top:10px;">
         <label class="field-label" id="symptomsLabel">What's it doing?</label>
         <div class="symptoms-grid" id="symptomsGrid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;"></div>
       </div>
       <div style="margin-top:10px;">
         <label class="field-label" id="descLabel">Technical Notes</label>
-        <textarea id="desc" placeholder="e.g. Suction 58 PSI, head 285 PSI at 85°F. Compressor draws 18A then trips breaker…" style="min-height:64px;"></textarea>
+        <textarea id="desc" placeholder="e.g. Suction 58 PSI, head 285 PSI at 85&deg;F&hellip;" style="min-height:64px;"></textarea>
       </div>
       <div style="margin-top:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 12px;background:#F5F6FA;border-radius:8px;border:1px solid #E2E4ED;" onclick="toggleVoiceDesc()">
-          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">🎙️</span><span style="font-size:13px;font-weight:700;color:#0F0F0F;">Voice Description</span></div>
-          <span id="voiceDescIcon" style="font-size:16px;color:#9499B0;">▼</span>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">&#x1F399;</span><span style="font-size:13px;font-weight:700;color:#0F0F0F;">Voice Description</span></div>
+          <span id="voiceDescIcon" style="font-size:16px;color:#9499B0;">&#x25BC;</span>
         </div>
         <div id="voiceDescBody" style="display:none;margin-top:8px;">
           <p class="field-sub" id="voiceSub">Record yourself describing the issue or hold near the unit</p>
           <div class="recorder" id="recorder">
             <div class="recorder-row">
-              <div class="rec-btn-wrap" id="recBtnWrap"><button class="btn btn-purple btn-sm" onclick="toggleRecording()">🎙️ Record Voice</button></div>
+              <div class="rec-btn-wrap" id="recBtnWrap"><button class="btn btn-purple btn-sm" onclick="toggleRecording()">&#x1F399; Record Voice</button></div>
               <div id="recStatus" style="flex:1;"><p style="font-size:14px;color:#9499B0;">Record yourself describing the issue</p></div>
             </div>
             <div id="transcriptBox" style="display:none;margin-top:10px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
@@ -1344,12 +1736,12 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
         <span id="tagFile" style="display:none;padding:4px 10px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:99px;font-size:12px;color:#2563EB;font-weight:600;"></span>
-        <span id="tagVoice" style="display:none;padding:4px 10px;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:99px;font-size:12px;color:#7C3AED;font-weight:600;">🎙️ Voice</span>
+        <span id="tagVoice" style="display:none;padding:4px 10px;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:99px;font-size:12px;color:#7C3AED;font-weight:600;">&#x1F399; Voice</span>
         <span id="tagSymps" style="display:none;padding:4px 10px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:99px;font-size:12px;color:#059669;font-weight:600;"></span>
       </div>
       <div style="display:flex;gap:8px;margin-top:12px;">
-        <button id="runBtn" onclick="runDiagnostic()" style="flex:1;padding:16px;border:none;border-radius:6px;cursor:pointer;background:linear-gradient(135deg,#E8354A,#c0272d);box-shadow:0 4px 16px rgba(232,53,74,.4);color:#fff;font-family:var(--font);font-size:18px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(0,181,181,.4);transition:all .15s;">⚡ Run Diagnostic</button>
-        <button onclick="resetDiagnostic()" style="padding:16px 14px;border:2px solid #d0d0d0;border-radius:6px;cursor:pointer;background:#fff;color:#6B7190;font-family:var(--font);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;">🔄 New</button>
+        <button id="runBtn" onclick="runDiagnostic()" style="flex:1;padding:16px;border:none;border-radius:12px;cursor:pointer;background:linear-gradient(135deg,#00C2B2,#009E90);box-shadow:0 4px 16px rgba(0,194,178,.4);color:#fff;font-family:var(--font);font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;">&#x26A1; Run Diagnostic</button>
+        <button onclick="resetDiagnostic()" style="padding:16px 14px;border:2px solid #d0d0d0;border-radius:12px;cursor:pointer;background:#fff;color:#6B7190;font-family:var(--font);font-size:12px;font-weight:700;text-transform:uppercase;white-space:nowrap;">&#x1F504; New</button>
       </div>
     </div>
       </div>
@@ -1361,31 +1753,31 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <div id="eduPanel" style="display:none;margin-bottom:16px;">
         <div class="info-box info-blue" style="margin-bottom:0;">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-            <div><p style="font-size:15px;font-weight:700;color:#2563EB;margin-bottom:3px;">📚 Homeowner Education Mode</p><p style="font-size:13px;color:#2563EB;">Generate a plain-English explanation to show your customer</p></div>
+            <div><p style="font-size:15px;font-weight:700;color:#2563EB;margin-bottom:3px;">&#x1F4DA; Homeowner Education Mode</p><p style="font-size:13px;color:#2563EB;">Generate a plain-English explanation to show your customer</p></div>
             <button class="btn btn-blue btn-sm" onclick="runEduMode()" id="eduBtn">Generate Explanation</button>
           </div>
           <div id="eduContent" style="display:none;margin-top:14px;background:#fff;border-radius:10px;padding:16px;">
             <div id="eduText" style="font-size:15px;line-height:1.8;color:#6B7190;"></div>
-            <button class="btn btn-outline btn-sm" onclick="copyEdu()" style="margin-top:12px;">📋 Copy to Show Customer</button>
+            <button class="btn btn-outline btn-sm" onclick="copyEdu()" style="margin-top:12px;">&#x1F4CB; Copy to Show Customer</button>
           </div>
         </div>
       </div>
       <div id="contractorNudge" style="display:none;">
         <div class="info-box info-green">
           <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
-            <span style="font-size:24px;">💰</span>
+            <span style="font-size:24px;">&#x1F4B0;</span>
             <div style="flex:1;"><p style="font-size:15px;font-weight:700;color:#059669;margin-bottom:4px;">Turn This Visit Into More Revenue</p><p style="font-size:14px;color:#059669;line-height:1.5;">Ask Mike: "What can I upsell on this job?" for personalized add-on recommendations.</p></div>
           </div>
         </div>
       </div>
       <div style="display:flex;gap:8px;margin-top:8px;">
-        <button onclick="copyDiagReport()" style="flex:1;padding:12px;background:#F5F3FF;border:1.5px solid #DDD6FE;border-radius:8px;color:#7C3AED;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);">📋 Copy Report</button>
+        <button onclick="copyDiagReport()" style="flex:1;padding:12px;background:#F5F3FF;border:1.5px solid #DDD6FE;border-radius:8px;color:#7C3AED;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);">&#x1F4CB; Copy Report</button>
         <button class="btn btn-outline" onclick="resetDiagnostic()" style="flex:1;margin-top:0;">+ New Diagnosis</button>
       </div>
     </div>
   </div>
 
-  <!-- REFRIGERANT PANEL -->
+    <!-- REFRIGERANT PANEL -->
   <!-- FOOTER -->
   <div class="footer">
     <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">

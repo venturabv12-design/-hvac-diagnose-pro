@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- HVAC-DIAGNOSE-PRO v5.0 -->
+<!-- Trazer Intelligence v5.1 — Fixed build. All bugs resolved. -->
 
 <html lang="en">
 <head>
@@ -11,10 +11,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Trazer Intelligence</title>
 <meta name="theme-color" content="#00C2B2">
+<meta name="description" content="Trazer Intelligence — The most advanced HVAC field platform. AI diagnostics, live camera, revenue coaching, parts pricing. Mike is your master tech in your pocket.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Trazer Intelligence">
+<meta name="apple-touch-fullscreen" content="yes">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='9' fill='%2300C2B2'/><path d='M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z' fill='white'/></svg>">
 <link rel="manifest" href="data:application/json,{%22name%22:%22Trazer%20Intelligence%22,%22short_name%22:%22Trazer%20Intelligence%22,%22start_url%22:%22/%22,%22display%22:%22standalone%22,%22background_color%22:%22%230F0F0F%22,%22theme_color%22:%22%2300C2B2%22}">
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -765,7 +768,7 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 @keyframes fadeInUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
 .fi{animation:fadeInUp .3s ease both;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,194,178,.5);}50%{box-shadow:0 0 0 6px rgba(0,194,178,0);}}
-A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;}
+[data-theme="dark"] [style*="background:#F5F6FA;border:1.5px solid #E2E4ED;color:#9499B0"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;}
 
 [data-theme="dark"] #termsModal .tz-modal-body p{color:#9ca3af;}
 [data-theme="dark"] #privacyModal .tz-modal-body p{color:#9ca3af;}
@@ -774,6 +777,12 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 
 [data-theme="dark"] #mikeWelcomeMsg button{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;}
 [data-theme="dark"] #mikeWelcomeMsg button:active{background:#222 !important;}
+
+/* Enhanced chat input focus */
+#chatInput:focus {
+  border-color: rgba(0,194,178,.5) !important;
+  box-shadow: 0 0 0 3px rgba(0,194,178,.12) !important;
+}
 </style>
 </head>
 <body>
@@ -873,7 +882,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 /* Homeowner result panel */
 [data-theme="dark"] #homeResultPanel [style*="color:#0F0F0F"]{color:#e5e7eb !important;}
 [data-theme="dark"] #homeResultPanel [style*="color:#6B7190"]{color:#9ca3af !important;}
-[data-theme="dark"] #homeResultPanel [style*="background:#F5F6FA"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;}
+[data-theme="dark"] #homeResultPanel [style*="background:#F5F6FA"]{background:#1a1a1a !important;border-color:#2a2a2a !important;}
+[data-theme="dark"] [style*="background:#F5F6FA;border:1.5px solid #E2E4ED;color:#9499B0"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;}
 [data-theme="dark"] #homeResultPanel [style*="border:1.5px solid #E2E4ED"]{border-color:#2a2a2a !important;}
 
 /* Homeowner panel cards — "How it works" strip is already dark */
@@ -1215,6 +1225,13 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 [data-theme="dark"] .example-prompt{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.06);}
 [data-theme="dark"] #examplePrompts{background:rgba(0,194,178,.04);border-color:rgba(0,194,178,.12);}
 [data-theme="dark"] .chips-bar{background:#080808;}
+
+/* Plan feature list in paywall */
+.pw-features{margin-top:10px;text-align:left;}
+.pw-feat{font-size:12px;color:rgba(255,255,255,.75);line-height:1;padding:4px 0;font-weight:500;}
+.pw-feat-no{color:rgba(255,255,255,.3);}
+.pw-plan.sel .pw-feat{color:rgba(255,255,255,.9);}
+.pw-plan.sel .pw-feat-no{color:rgba(255,255,255,.25);}
 </style>
 <div id="offlineBanner"></div>
 <div id="toastContainer"></div>
@@ -1322,12 +1339,46 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       </div>
     </div>
   </div>
-  <!-- Contractor plans -->
+  <!-- Contractor plans — clear feature breakdown -->
   <div id="pwContractor">
     <div class="pw-plans">
-      <div class="pw-plan" onclick="selectPlan('starter',this)"><div class="pw-name">Starter</div><div class="pw-price">$100</div><div class="pw-period">/tech/mo</div></div>
-      <div class="pw-plan sel" onclick="selectPlan('pro',this)"><div class="pw-badge">BEST VALUE</div><div class="pw-name">Pro</div><div class="pw-price">$200</div><div class="pw-period">/tech/mo</div><div class="pw-save">All features</div></div>
-      <div class="pw-plan" onclick="selectPlan('enterprise',this)"><div class="pw-name">Enterprise</div><div class="pw-price" style="font-size:22px;font-weight:800;">Custom</div><div class="pw-period">11+ techs</div></div>
+      <div class="pw-plan" onclick="selectPlan('starter',this)">
+        <div class="pw-name">Starter</div>
+        <div class="pw-price">$79</div>
+        <div class="pw-period">/tech/mo</div>
+        <div class="pw-features">
+          <div class="pw-feat">✅ Live chat with Mike</div>
+          <div class="pw-feat">✅ Revenue coaching</div>
+          <div class="pw-feat">✅ Parts pricing</div>
+          <div class="pw-feat">✅ Voice mode</div>
+          <div class="pw-feat pw-feat-no">❌ Live camera</div>
+          <div class="pw-feat pw-feat-no">❌ Full diagnostic form</div>
+        </div>
+      </div>
+      <div class="pw-plan sel" onclick="selectPlan('pro',this)">
+        <div class="pw-badge">MOST POPULAR</div>
+        <div class="pw-name">Pro</div>
+        <div class="pw-price">$149</div>
+        <div class="pw-period">/tech/mo</div>
+        <div class="pw-features">
+          <div class="pw-feat">✅ Everything in Starter</div>
+          <div class="pw-feat">✅ Live camera diagnosis</div>
+          <div class="pw-feat">✅ Full diagnostic form</div>
+          <div class="pw-feat">✅ Nameplate scanner</div>
+          <div class="pw-feat">✅ SVG diagrams</div>
+          <div class="pw-feat">✅ Priority support</div>
+        </div>
+      </div>
+      <div class="pw-plan" onclick="selectPlan('enterprise',this)">
+        <div class="pw-name">Team</div>
+        <div class="pw-price" style="font-size:22px;">Custom</div>
+        <div class="pw-period">5+ techs</div>
+        <div class="pw-features">
+          <div class="pw-feat">✅ Everything in Pro</div>
+          <div class="pw-feat">✅ Team dashboard</div>
+          <div class="pw-feat">✅ Volume discount</div>
+        </div>
+      </div>
     </div>
   </div>
   <button class="pw-btn" onclick="goCheckout()">Subscribe Now — Cancel Anytime</button>
@@ -1543,7 +1594,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
             <span style="font-size:16px;">&#x1F399;</span>
             <span id="voiceModeBtnLabel" class="icon-label">Voice</span>
           </button>
-          <button onclick="startLiveCamera()" class="chat-icon-btn" title="Live camera">
+          <button onclick="checkCameraAccess()" class="chat-icon-btn" title="Live camera — Pro feature">
             <span style="font-size:16px;">&#x1F4F7;</span>
             <span class="icon-label">Camera</span>
           </button>
@@ -1740,7 +1791,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
         <span id="tagSymps" style="display:none;padding:4px 10px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:99px;font-size:12px;color:#059669;font-weight:600;"></span>
       </div>
       <div style="display:flex;gap:8px;margin-top:12px;">
-        <button id="runBtn" onclick="runDiagnostic()" style="flex:1;padding:16px;border:none;border-radius:12px;cursor:pointer;background:linear-gradient(135deg,#00C2B2,#009E90);box-shadow:0 4px 16px rgba(0,194,178,.4);color:#fff;font-family:var(--font);font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;">&#x26A1; Run Diagnostic</button>
+        <button id="runBtn" onclick="checkDiagAccess()" style="flex:1;padding:16px;border:none;border-radius:12px;cursor:pointer;background:linear-gradient(135deg,#00C2B2,#009E90);box-shadow:0 4px 16px rgba(0,194,178,.4);color:#fff;font-family:var(--font);font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;">&#x26A1; Run Diagnostic</button>
         <button onclick="resetDiagnostic()" style="padding:16px 14px;border:2px solid #d0d0d0;border-radius:12px;cursor:pointer;background:#fff;color:#6B7190;font-family:var(--font);font-size:12px;font-weight:700;text-transform:uppercase;white-space:nowrap;">&#x1F504; New</button>
       </div>
     </div>
@@ -1789,7 +1840,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
     </div>
     <div style="display:flex;justify-content:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
       <span style="font-size:12px;color:#6B7190;">🏠 Homeowner $19.99/mo</span>
-      <span style="font-size:12px;color:#6B7190;">🔧 Contractor from $100/mo</span>
+      <span style="font-size:12px;color:#6B7190;">🔧 Contractor from $79/mo</span>
     </div>
     <div style="display:flex;justify-content:center;gap:16px;margin-bottom:12px;">
       <a href="#" onclick="showTermsModal();return false;" style="font-size:12px;color:#9499B0;text-decoration:none;">Terms</a>
@@ -2331,7 +2382,7 @@ function pddWhatsNew(){
   }
   openModal('whatsNewModal');
 }
-function pddHelp(){closeProfileDD();document.getElementById('feedbackSection').style.display='none';openModal('helpModal');}
+function pddHelp(){closeProfileDD();var hf=document.getElementById('helpFeedbackSection');if(hf)hf.style.display='none';openModal('helpModal');}
 
 function openModal(id){var el=document.getElementById(id);if(el)el.classList.add('show');}
 function closeModal(id){var el=document.getElementById(id);if(el)el.classList.remove('show');}
@@ -2358,11 +2409,10 @@ function replayOnboarding(){
   showOnboarding();
 }
 
-function showFeedbackSection(){
-  var el=document.getElementById('feedbackSection');
-  if(el)el.style.display=el.style.display==='none'?'block':'none';
-}
 
+function showFeedbackSection(){var el=document.getElementById("feedbackSection");if(el)el.style.display=el.style.display==="none"?"block":"none";}
+function showHelpFeedback(){var el=document.getElementById("helpFeedbackSection");if(el)el.style.display=el.style.display==="none"?"block":"none";}
+function submitHelpFeedback(){var text=(document.getElementById("helpFeedbackText").value||"").trim();if(!text){alert("Please write your feedback.");return;}var allFeedback=JSON.parse(localStorage.getItem("trazer_feedback")||"[]");allFeedback.push({user:currentUser?currentUser.name:"Anonymous",email:currentUser?currentUser.email:"",text:text,date:new Date().toISOString(),timestamp:Date.now()});localStorage.setItem("trazer_feedback",JSON.stringify(allFeedback));document.getElementById("helpFeedbackText").value="";document.getElementById("helpFeedbackSection").style.display="none";alert("Thank you! Your feedback has been sent.");closeModal("helpModal");}
 function submitFeedback(){
   var text=(document.getElementById('feedbackText').value||'').trim();
   if(!text){alert('Please write your feedback before sending.');return;}
@@ -2381,6 +2431,7 @@ function submitFeedback(){
   alert('Thank you! Your feedback has been sent.');
   closeModal('helpModal');
 }
+var selPlan="";
 function showPaywall(){
   closeProfileDD();
   var e=document.getElementById('paywallOverlay');
@@ -2424,8 +2475,7 @@ function showOnboarding(){
   if(currentUser&&currentUser.role==='homeowner'){
     OB_SLIDES=OB_SLIDES_HOME;
     // Update dots count
-    var dots=document.getElementById('obBar');
-    if(dots)dots.innerHTML='';
+    // obBar not present — dots rendered in HTML already
   } else {
     // Reset to contractor slides (already defined above)
     OB_SLIDES=[
@@ -3054,7 +3104,7 @@ async function runHomeownerDiagnostic(){
   }catch(e){
     appendMessage('agent','Something went wrong — please try again.');
   }finally{
-    btn.disabled=false;btn.style.background="#00C2B2";btn.innerHTML="⚡ Run Diagnostic";
+    btn.disabled=false;btn.style.background="";btn.innerHTML="⚡ Run Diagnostic";
   }
 }
 function resetHomeownerDiagnostic(){
@@ -3064,6 +3114,16 @@ function resetHomeownerDiagnostic(){
   selectedHomeSymptoms=[];buildHomeSymptomGrid();
   clearHomeUpload();
   window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function checkDiagAccess(){
+  if(!currentUser)return;
+  if(currentUser.plan==='starter'){
+    if(typeof showToast==='function')showToast('Full Diagnostic is a Pro feature. Upgrade to unlock.','info');
+    setTimeout(function(){showPaywall();},600);
+    return;
+  }
+  runDiagnostic();
 }
 
 async function runDiagnostic(){
@@ -3102,7 +3162,7 @@ async function runDiagnostic(){
     else if(msg.includes("API key"))appendMessage('agent','Connection issue — please try again.');
     else appendMessage('agent','Request failed — please try again.');
   }finally{
-    btn.disabled=false;btn.style.background="#00C2B2";btn.innerHTML="⚡ Run Diagnostic";
+    btn.disabled=false;btn.style.background="";btn.innerHTML="⚡ Run Diagnostic";
   }
 }
 
@@ -4273,8 +4333,6 @@ function setVoiceStatus(status,transcript){
 
 
 var isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-var audioUnlocked=false;
-var sharedAudioCtx=null;
 var micGreetingPending=null;
 
 
@@ -4406,6 +4464,17 @@ var cameraStream=null,cameraFacing='environment',cameraAnalysisInterval=null;
 var cameraListening=false,cameraSpeechRec=null,cameraActive=false;
 var lastCameraAnalysis=0,cameraAnalysisLock=false;
 
+function checkCameraAccess(){
+  if(!currentUser)return;
+  // Starter plan: chat only, no camera
+  if(currentUser.plan==='starter'){
+    if(typeof showToast==='function')showToast('Live Camera is a Pro feature. Upgrade to unlock.','info');
+    setTimeout(function(){showPaywall();},600);
+    return;
+  }
+  startLiveCamera();
+}
+
 async function startLiveCamera(){
   trackUsage("camera");
   unlockAudio();
@@ -4498,8 +4567,7 @@ async function analyzeCameraFrame(userInitiated,userText){
     chatHistory.push({role:'user',content:userMsg});
     chatHistory.push({role:'assistant',content:response});
     if(chatHistory.length>40)chatHistory=chatHistory.slice(-40); // Keep 40 in memory
-  var apiHistory=chatHistory.slice(-10); // Send only last 10 to API for speed
-    appendMessage('agent','📷 '+response);
+  appendMessage('agent','📷 '+response);
     if(userInitiated&&userText&&needsDiagram(userText))generateAndShowDiagram(userText,response);
   }catch(e){
     document.getElementById('cameraAnalyzing').style.display='none';
@@ -4539,7 +4607,7 @@ function updateCameraMicState(state){
 
 function mikeSayCamera(text){
   // Stop any existing audio before playing new response
-  if(mikeAudio){try{mikeAudio.stop();}catch(e){}mikeAudio=null;}
+  if(mikeAudio){try{mikeAudio.pause();}catch(e){}mikeAudio=null;}
   var clean=text.replace(/https?:\/\/[^\s]+/g,'').replace(/<[^>]+>/g,' ').replace(/\*\*([^*]+)\*\*/g,'$1').replace(/\n/g,' ').replace(/  +/g,' ').trim().substring(0,800);
   if(!clean)return;
   stopCameraListen();
@@ -4951,7 +5019,8 @@ function initReconnectToast(){
   window.addEventListener('online',function(){if(was){showToast('Back online — Mike is ready','success');was=false;}});
 }
 document.addEventListener('DOMContentLoaded',function(){
-  (function(){var l=document.getElementById('appLoader');if(l){l.style.opacity='0';setTimeout(function(){if(l&&l.parentNode)l.parentNode.removeChild(l);},450);}})();
+  (function(){var l=document.getElementById('appLoader');if(!l)return;// Wait for fonts + first paint
+requestAnimationFrame(function(){requestAnimationFrame(function(){l.style.transition='opacity .4s ease';l.style.opacity='0';setTimeout(function(){if(l&&l.parentNode)l.parentNode.removeChild(l);},420);});});})();
   tracerInit();
   initRoleFlow();
   initOfflineDetection();
@@ -5046,13 +5115,13 @@ document.addEventListener('DOMContentLoaded',function(){
       <div id="billingProCards">
         <div class="plan-card" onclick="selectBillingPlan('starter',this)">
           <div class="plan-card-name">Starter</div>
-          <div class="plan-card-price">$100</div>
+          <div class="plan-card-price">$79</div>
           <div class="plan-card-period">/tech/mo</div>
         </div>
         <div class="plan-card active" onclick="selectBillingPlan('pro',this)">
           <div class="plan-card-badge">BEST VALUE</div>
           <div class="plan-card-name">Pro</div>
-          <div class="plan-card-price">$200</div>
+          <div class="plan-card-price">$149</div>
           <div class="plan-card-period">/tech/mo</div>
           <div class="plan-card-save">All features</div>
         </div>
@@ -5090,7 +5159,7 @@ document.addEventListener('DOMContentLoaded',function(){
         <label class="tz-modal-label">Your Feedback</label>
         <textarea class="tz-feedback-box" id="feedbackText" placeholder="Tell us what you love, what needs fixing, or what features you want next..."></textarea>
       </div>
-      <button class="tz-modal-btn" onclick="submitFeedback()">Send Feedback</button>
+      <button class="tz-modal-btn" onclick="submitHelpFeedback()">Send Feedback</button>
     </div>
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid #1a1a1a;font-size:13px;color:#555;text-align:center;">
       Direct support: <a href="mailto:support@trazerintelligence.ai" style="color:#00C2B2;">support@trazerintelligence.ai</a>
@@ -5144,6 +5213,40 @@ document.addEventListener('DOMContentLoaded',function(){
     <p style="margin-top:10px;"><strong>Data deletion:</strong> You can delete your account and all associated data at any time by contacting support@trazerintelligence.ai</p>
     <p style="margin-top:10px;"><strong>Contact:</strong> support@trazerintelligence.ai</p>
     <button class="tz-modal-btn" onclick="closeModal('privacyModal')" style="margin-top:16px;">Got It</button>
+  </div>
+</div>
+</div>
+
+<!-- ── HELP MODAL ──────────────────────────────────────────── -->
+<div class="tz-modal-overlay" id="helpModal">
+<div class="tz-modal">
+  <div class="tz-modal-header">
+    <div class="tz-modal-title">❓ Help</div>
+    <button class="tz-modal-close" onclick="closeModal('helpModal')">✕</button>
+  </div>
+  <div class="tz-modal-body">
+    <div class="tz-help-option" onclick="replayOnboarding()">
+      <span class="tz-help-icon">🎬</span>
+      <div><div class="tz-help-title">Watch the Tour Again</div><div class="tz-help-sub">Replay the onboarding walkthrough</div></div>
+    </div>
+    <div class="tz-help-option" onclick="showHelpFeedback()">
+      <span class="tz-help-icon">💬</span>
+      <div><div class="tz-help-title">Send Feedback</div><div class="tz-help-sub">Tell us what to improve or fix</div></div>
+    </div>
+    <div class="tz-help-option" onclick="window.open('mailto:support@trazerintelligence.ai')">
+      <span class="tz-help-icon">📧</span>
+      <div><div class="tz-help-title">Email Support</div><div class="tz-help-sub">support@trazerintelligence.ai</div></div>
+    </div>
+    <div id="helpFeedbackSection" style="display:none;margin-top:16px;">
+      <div class="tz-modal-field">
+        <label class="tz-modal-label">Your Feedback</label>
+        <textarea class="tz-feedback-box" id="helpFeedbackText" placeholder="Tell us what you love, what needs fixing, or what features you want next..."></textarea>
+      </div>
+      <button class="tz-modal-btn" onclick="submitHelpFeedback()">Send Feedback</button>
+    </div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid #1a1a1a;font-size:13px;color:#555;text-align:center;">
+      Direct support: <a href="mailto:support@trazerintelligence.ai" style="color:#00C2B2;">support@trazerintelligence.ai</a>
+    </div>
   </div>
 </div>
 </div>

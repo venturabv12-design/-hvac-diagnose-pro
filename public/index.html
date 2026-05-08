@@ -896,6 +896,7 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
       <button onclick="startLiveCamera()" style="background:linear-gradient(135deg,#00C2B2,#009E91);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;box-shadow:0 4px 14px rgba(0,194,178,.5);">▶ Start</button>
     </div>
     <div id="quickReplies"></div>
+
     <!-- QUICK CHIPS -->
     <div style="background:#F5F6FA;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;border-top:1px solid #E2E4ED;padding:8px 12px;">
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
@@ -906,30 +907,44 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
         <button class="quick-chip" onclick="var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b&&b.style.display==='none'){b.style.display='block';a.textContent='▲';}b&&b.scrollIntoView({behavior:'smooth'});" style="background:linear-gradient(135deg,#E8354A,#c0272d);color:#fff;border-color:#E8354A;font-weight:800;box-shadow:0 2px 8px rgba(232,53,74,.35);">⚡ Full Diagnostic</button>
       </div>
     </div>
-<!-- CHAT MESSAGES -->
-    <div style="position:relative;"><div id="chatMessages" style="background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:280px;max-height:600px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
-      <div class="msg-agent" id="mikeWelcomeMsg">
-        <div class="msg-bubble msg-bubble-agent">
-          <p style="margin-bottom:6px;"><strong>Hey, it's Mike.</strong> 25 years in the field — I can help you with diagnostics, sales, and everything else you'd ever need on the job.</p>
-          <p style="margin-bottom:6px;">Snap a photo of the unit, nameplate, or any part — I'll identify it, find pricing, and walk you through it. What are you dealing with?</p>
-        </div><button id="scrollBottomBtn" onclick="scrollToBottom()">↓</button></div>
-        <div class="msg-time">Just now</div>
-      </div>
+
+    <!-- CHAT SEARCH BAR — hidden by default, shown by openChatSearch() -->
+    <div id="chatSearchBar">
+      <input id="chatSearchInput" placeholder="Search messages…" oninput="searchMessages(this.value)" type="text"/>
+      <div id="searchResultCount"></div>
+      <button id="chatSearchClose" onclick="closeChatSearch()">✕</button>
     </div>
-    <div <div id="chatSearchBar"><input id="chatSearchInput" placeholder="Search messages…" oninput="searchMessages(this.value)" type="text"/><div id="searchResultCount"></div><button id="chatSearchClose" onclick="closeChatSearch()">✕</button></div>
-    id="typingIndicator" style="display:none;background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;padding:8px 14px;">
+
+    <!-- CHAT MESSAGES -->
+    <div style="position:relative;">
+      <div id="chatMessages" style="background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:280px;max-height:600px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
+        <div class="msg-agent" id="mikeWelcomeMsg">
+          <div class="msg-bubble msg-bubble-agent">
+            <p style="margin-bottom:6px;"><strong>Hey, it's Mike.</strong> 25 years in the field — I can help you with diagnostics, sales, and everything else you'd ever need on the job.</p>
+            <p style="margin-bottom:6px;">Snap a photo of the unit, nameplate, or any part — I'll identify it, find pricing, and walk you through it. What are you dealing with?</p>
+          </div>
+          <div class="msg-time">Just now</div>
+        </div>
+      </div>
+    <button id="scrollBottomBtn" onclick="scrollToBottom()">↓</button>
+    </div>
+
+    <!-- TYPING INDICATOR -->
+    <div id="typingIndicator" style="display:none;background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;padding:8px 14px;">
       <div style="display:flex;align-items:center;gap:8px;">
         <div style="width:28px;height:28px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🧑‍🔧</div>
         <div class="typing-dots"><span></span><span></span><span></span></div>
       </div>
     </div>
+
     <!-- CHAT INPUT -->
     <div style="background:#FFFFFF;border:1px solid #E2E4ED;border-top:2px solid #00C2B2;padding:10px 12px;margin-bottom:12px;">
       <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none" onchange="handleChatFile(event)"/>
       <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:#F5F6FA;border:1.5px solid #E2E4ED;border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:#6B7190;"></div>
       <div style="display:flex;gap:8px;align-items:flex-end;">
         <label for="chatFileInput" style="width:38px;height:38px;min-width:38px;background:#F5F6FA;border:1.5px solid #E2E4ED;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;flex-shrink:0;">📎</label>
-        <textarea id="chatInput" placeholder="Ask Mike anything — pressures, wiring, parts, sales…" rows="1" style="flex:1;border:1px solid #E2E4ED;border-radius:6px;padding:9px 12px;font-size:15px;font-family:var(--font);resize:none;min-height:38px;max-height:100px;line-height:1.5;outline:none;" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea><span id="chatCharCount"></span>
+        <textarea id="chatInput" placeholder="Ask Mike anything — pressures, wiring, parts, sales…" rows="1" style="flex:1;border:1px solid #E2E4ED;border-radius:6px;padding:9px 12px;font-size:15px;font-family:var(--font);resize:none;min-height:38px;max-height:100px;line-height:1.5;outline:none;" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+        <span id="chatCharCount"></span>
         <button onclick="sendChat()" id="chatSendBtn" style="background:#00C2B2;color:#fff;border:none;border-radius:6px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:18px;">➤</button>
       </div>
       <div style="display:flex;gap:6px;margin-top:8px;">
@@ -937,10 +952,11 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
         <button onclick="toggleJobTimer()" title="Job timer" style="font-size:11px;background:#F5F6FA;border:1px solid #E2E4ED;color:#666;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:var(--font);font-weight:600;white-space:nowrap;">⏱ Timer</button>
         <button onclick="triggerDiagram()" style="font-size:11px;background:#F5F3FF;border:1px solid #DDD6FE;color:#7C3AED;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:var(--font);font-weight:600;white-space:nowrap;">📐 Draw Diagram</button>
         <button onclick="triggerIllustration()" style="font-size:11px;background:#E6FAF8;border:1px solid #B2F0EA;color:#009E90;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:var(--font);font-weight:600;white-space:nowrap;">🎨 Illustrate It</button>
-      
-      <div id="voiceWaveform"><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span></div></div>
+      </div>
+      <div id="voiceWaveform" style="display:none;justify-content:center;align-items:center;gap:3px;padding:6px 0;">
+        <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+      </div>
     </div>
-
     <!-- MIKE'S KNOWLEDGE -->
     <div style="background:#0F0F0F;border-left:1px solid #222;border-right:1px solid #222;padding:10px 12px;margin-bottom:12px;">
       <div style="display:flex;align-items:center;justify-content:space-between;">

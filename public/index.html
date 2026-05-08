@@ -10,6 +10,11 @@
 <meta http-equiv="Expires" content="0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Trazer Intelligence</title>
+<meta name="theme-color" content="#00C2B2">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trazer AI">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 
@@ -362,9 +367,118 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .adm-plan-enterprise{background:rgba(139,92,246,.12);color:#8b5cf6;border:1px solid rgba(139,92,246,.25);}
 .adm-plan-admin{background:rgba(255,215,0,.12);color:#ffd700;border:1px solid rgba(255,215,0,.25);}
 
+
+/* ── EXPERIENCE LEVEL BUTTONS ──────────────────────────── */
+.exp-btn{padding:10px 8px;background:#0d0d0d;border:1.5px solid #2a2a2a;border-radius:9px;color:#666;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;text-align:center;}
+.exp-btn:hover{border-color:#444;color:#ccc;}
+.exp-btn.active{background:rgba(0,194,178,.1);border-color:#00C2B2;color:#00C2B2;}
+
+
+/* ── ENHANCED UI ─────────────────────────────────────────── */
+
+/* Offline banner */
+#offlineBanner{display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:#1a1a1a;border-bottom:2px solid #E8354A;padding:10px 16px;text-align:center;font-size:13px;font-weight:700;color:#E8354A;}
+#offlineBanner.show{display:block;}
+
+/* Job timer */
+#jobTimer{display:none;position:fixed;bottom:0;right:0;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px 0 0 0;padding:6px 14px;font-size:12px;font-weight:700;color:#00C2B2;z-index:400;cursor:pointer;}
+#jobTimer.show{display:block;}
+
+/* Char counter on chat input */
+#chatCharCount{position:absolute;bottom:6px;right:48px;font-size:10px;color:#9499B0;pointer-events:none;display:none;}
+.chat-input-wrap{position:relative;}
+
+/* Typing indicator enhanced */
+.typing-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#00C2B2;margin:0 2px;animation:tdot .8s infinite;}
+.typing-dot:nth-child(2){animation-delay:.15s;}
+.typing-dot:nth-child(3){animation-delay:.3s;}
+@keyframes tdot{0%,80%,100%{transform:translateY(0);opacity:.4;}40%{transform:translateY(-6px);opacity:1;}}
+
+/* Message fade-in animation */
+.msg-agent,.msg-user{animation:msgIn .2s ease-out;}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* Send button pulse when active */
+#chatSendBtn.sending{animation:btnPulse 1s infinite;}
+@keyframes btnPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,194,178,.4);}50%{box-shadow:0 0 0 6px rgba(0,194,178,0);}}
+
+/* Connection status dot */
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.status-dot.green{background:#10B981;box-shadow:0 0 0 2px rgba(16,185,129,.2);}
+.status-dot.red{background:#9499B0;}
+.status-dot.connecting{background:#F59E0B;animation:statusPulse 1.5s infinite;}
+@keyframes statusPulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+/* Quick chip scroll improvements */
+.quick-chip{white-space:nowrap;flex-shrink:0;}
+
+/* Safety alert enhanced */
+.safety-banner{background:linear-gradient(135deg,#fff0f2,#ffe4e6);border:2px solid #E8354A;border-radius:12px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px;animation:safetyIn .3s ease-out;}
+@keyframes safetyIn{from{opacity:0;transform:scale(.97);}to{opacity:1;transform:scale(1);}}
+
+/* Message timestamp relative */
+.msg-time{font-size:11px;color:#9499B0;margin-top:4px;padding-left:4px;}
+
+
+/* ════ WORLD CLASS CSS ═══════════════════════════════════ */
+#toastContainer{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
+.toast{background:#1a1a1a;color:#fff;border-radius:24px;padding:10px 20px;font-size:13px;font-weight:600;box-shadow:0 4px 24px rgba(0,0,0,.4);animation:toastIn .25s cubic-bezier(.34,1.56,.64,1);max-width:280px;text-align:center;}
+.toast.success{background:linear-gradient(135deg,#065f46,#047857);border:1px solid #10B981;}
+.toast.error{background:linear-gradient(135deg,#7f1d1d,#991b1b);border:1px solid #E8354A;}
+.toast.info{background:linear-gradient(135deg,#1e3a5f,#1e40af);border:1px solid #3B82F6;}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px) scale(.94);}to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes toastOut{to{opacity:0;transform:translateY(-8px) scale(.96);}}
+#scrollBottomBtn{position:absolute;bottom:8px;right:10px;width:36px;height:36px;border-radius:50%;background:#fff;border:1.5px solid #E2E4ED;box-shadow:0 2px 12px rgba(0,0,0,.12);display:none;align-items:center;justify-content:center;cursor:pointer;font-size:16px;z-index:10;}
+#scrollBottomBtn.show{display:flex;}
+#scrollBottomBtn .unread-count{position:absolute;top:-4px;right:-4px;background:#E8354A;color:#fff;border-radius:10px;font-size:9px;font-weight:800;padding:1px 5px;min-width:16px;text-align:center;}
+.msg-actions{display:none;gap:4px;margin-top:4px;padding-left:4px;}
+.msg-agent:hover .msg-actions,.msg-agent:active .msg-actions{display:flex;}
+.msg-action-btn{background:rgba(0,0,0,.05);border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;color:#6B7190;font-family:var(--font);transition:all .15s;display:flex;align-items:center;gap:3px;}
+.msg-action-btn:hover{background:rgba(0,194,178,.1);color:#00C2B2;}
+.msg-action-btn.reacted{color:#E8354A;}
+#voiceWaveform{display:none;align-items:center;justify-content:center;gap:3px;height:32px;}
+#voiceWaveform.active{display:flex;}
+.wave-bar{width:3px;border-radius:3px;background:#00C2B2;animation:waveAnim 1s ease-in-out infinite;}
+.wave-bar:nth-child(1){animation-delay:0s;height:8px;}.wave-bar:nth-child(2){animation-delay:.1s;height:16px;}.wave-bar:nth-child(3){animation-delay:.2s;height:24px;}.wave-bar:nth-child(4){animation-delay:.3s;height:16px;}.wave-bar:nth-child(5){animation-delay:.4s;height:8px;}.wave-bar:nth-child(6){animation-delay:.3s;height:16px;}.wave-bar:nth-child(7){animation-delay:.2s;height:24px;}.wave-bar:nth-child(8){animation-delay:.1s;height:16px;}.wave-bar:nth-child(9){animation-delay:0s;height:8px;}
+@keyframes waveAnim{0%,100%{transform:scaleY(.4);opacity:.6;}50%{transform:scaleY(1);opacity:1;}}
+.haptic-tap{transition:transform .08s;}.haptic-tap:active{transform:scale(.96);}
+#chatSearchBar{display:none;background:#fff;border-bottom:1px solid #E2E4ED;padding:8px 12px;align-items:center;gap:8px;}
+#chatSearchBar.show{display:flex;}
+#chatSearchInput{flex:1;border:1.5px solid #E2E4ED;border-radius:8px;padding:7px 12px;font-size:13px;font-family:var(--font);outline:none;}
+#chatSearchInput:focus{border-color:#00C2B2;}
+#chatSearchClose{background:none;border:none;font-size:18px;cursor:pointer;color:#9499B0;padding:0 4px;}
+#searchResultCount{font-size:12px;color:#9499B0;white-space:nowrap;}
+#shareSheet{position:fixed;inset:0;z-index:9985;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;}
+#shareSheet.show{display:flex;}
+.share-card{background:#fff;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:500px;}
+.share-title{font-size:16px;font-weight:700;color:#0F0F0F;margin-bottom:16px;text-align:center;}
+.share-options{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.share-option{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:8px;border-radius:12px;}
+.share-option:hover{background:#F5F6FA;}
+.share-option-icon{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;}
+.share-option-label{font-size:11px;color:#6B7190;font-weight:600;}
+.share-cancel{width:100%;padding:14px;background:#F5F6FA;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);}
+#quickReplies{display:none;padding:6px 12px;background:#F5F6FA;border-top:1px solid #E2E4ED;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+#quickReplies::-webkit-scrollbar{display:none;}
+#quickReplies.show{display:block;}
+.qr-chip{display:inline-block;background:#fff;border:1.5px solid #E2E4ED;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;margin-right:6px;white-space:nowrap;transition:all .15s;}
+.qr-chip:hover{background:#E6FAF8;border-color:#00C2B2;color:#00C2B2;}
+#pullRefreshIndicator{height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:height .2s;font-size:13px;color:#9499B0;gap:8px;}
+#pullRefreshIndicator.visible{height:44px;}
+.ptr-spinner{width:18px;height:18px;border:2px solid #E2E4ED;border-top-color:#00C2B2;border-radius:50%;animation:ptrSpin .7s linear infinite;}
+@keyframes ptrSpin{to{transform:rotate(360deg);}}
+[data-theme="dark"] body{background:#0a0a0a;}
+[data-theme="dark"] .card{background:#161616 !important;border-color:#2a2a2a !important;}
+html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
+::placeholder{color:#9499B0 !important;opacity:1;}
+.search-highlight{background:#FEF08A;border-radius:3px;padding:0 2px;}
+
 </style>
 </head>
 <body>
+<div id="offlineBanner"></div>
+<div id="jobTimer" onclick="toggleJobTimer()" title="Tap to stop timer"></div>
+
 <div id="authOverlay">
 <div class="auth-wrap">
   <div class="auth-logo-row"><div class="auth-logo-icon">⚡</div><div class="auth-logo-name">Trazer Intelligence</div></div>
@@ -506,7 +620,9 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
   <div class="pdd-item" id="adminMenuItem" style="display:none" onclick="pddStats()"><span class="pdd-ic">📊</span>Check Stats</div>
   <div class="pdd-item" onclick="pddWhatsNew()"><span class="pdd-ic">🔔</span>What's New</div>
   <div class="pdd-item" onclick="pddHelp()"><span class="pdd-ic">❓</span>Help</div>
+  <div class="pdd-item" onclick="toggleDarkMode()"><span class="pdd-ic">🌙</span>Dark Mode</div>
   <div class="pdd-sep"></div>
+  <div class="pdd-item" onclick="clearUserMemory()" style="color:#9499B0;"><span class="pdd-ic">🧹</span>Clear My Memory</div>
   <div class="pdd-item pdd-danger" onclick="authSignOut()"><span class="pdd-ic">🚪</span>Sign Out</div>
 </div>
 </div>
@@ -683,7 +799,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
     </div>
 <!-- CHAT MESSAGES -->
     <div id="chatMessages" style="background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:280px;max-height:600px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
-      <div class="msg-agent">
+      <div class="msg-agent" id="mikeWelcomeMsg">
         <div class="msg-bubble msg-bubble-agent">
           <p style="margin-bottom:6px;"><strong>Hey, it's Mike.</strong> 25 years in the field — I can help you with diagnostics, sales, and everything else you'd ever need on the job.</p>
           <p style="margin-bottom:6px;">Snap a photo of the unit, nameplate, or any part — I'll identify it, find pricing, and walk you through it. What are you dealing with?</p>
@@ -707,23 +823,24 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
         <button onclick="sendChat()" id="chatSendBtn" style="background:#00C2B2;color:#fff;border:none;border-radius:6px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:18px;">➤</button>
       </div>
       <div style="display:flex;gap:6px;margin-top:8px;">
-        <button onclick="sendQuick('Draw me a diagram for what you just explained')" style="font-size:11px;background:#F5F3FF;border:1px solid #DDD6FE;color:#7C3AED;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:var(--font);font-weight:600;white-space:nowrap;">📐 Draw Diagram</button>
-        <button onclick="sendQuick('Create a detailed visual illustration of what you just described so I can see it clearly')" style="font-size:11px;background:#E6FAF8;border:1px solid #B2F0EA;color:#009E90;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:var(--font);font-weight:600;white-space:nowrap;">🎨 Illustrate It</button>
+        <button onclick="openChatSearch()" style="font-size:11px;background:#F5F6FA;border:1px solid #E2E4ED;color:#666;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:var(--font);font-weight:600;">🔍 Search</button>
+        <button onclick="toggleJobTimer()" title="Job timer" style="font-size:11px;background:#F5F6FA;border:1px solid #E2E4ED;color:#666;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:var(--font);font-weight:600;white-space:nowrap;">⏱ Timer</button>
+        <button onclick="triggerDiagram()" style="font-size:11px;background:#F5F3FF;border:1px solid #DDD6FE;color:#7C3AED;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:var(--font);font-weight:600;white-space:nowrap;">📐 Draw Diagram</button>
+        <button onclick="triggerIllustration()" style="font-size:11px;background:#E6FAF8;border:1px solid #B2F0EA;color:#009E90;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:var(--font);font-weight:600;white-space:nowrap;">🎨 Illustrate It</button>
       </div>
     </div>
 
-    <!-- TEACH MIKE + KNOWLEDGE -->
+    <!-- MIKE'S KNOWLEDGE -->
     <div style="background:#0F0F0F;border-left:1px solid #222;border-right:1px solid #222;padding:10px 12px;margin-bottom:12px;">
-      <div style="display:flex;gap:8px;align-items:center;">
-        <input type="text" id="teachMikeInput" placeholder="🧠 Teach Mike something… (e.g. Carrier fault code 31 = high pressure lockout)" style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:8px 12px;font-size:13px;color:#fff;font-family:var(--font);outline:none;"/>
-        <button onclick="teachMike()" style="background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">🧠 Teach</button>
-        <button onclick="showKnowledge()" style="background:#1a1a1a;color:#9499B0;border:1px solid #333;border-radius:6px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;">📚</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:12px;color:#666;font-weight:600;">💡 Correct Mike in chat — he listens and remembers automatically</div>
+        <button onclick="showKnowledge()" style="background:#1a1a1a;color:#9499B0;border:1px solid #333;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">📚 Mike's Memory</button>
       </div>
-      <div id="teachConfirm" style="display:none;margin-top:8px;font-size:12px;color:#00C2B2;font-weight:600;">✅ Mike learned that — he'll use it going forward</div>
+      <div id="correctionAlert" style="display:none;margin-top:8px;background:rgba(0,194,178,.1);border:1px solid rgba(0,194,178,.3);border-radius:8px;padding:8px 12px;font-size:12px;color:#00C2B2;font-weight:600;"></div>
     </div>
     <div id="knowledgePanel" style="display:none;background:#F8F9FC;border:1px solid #E2E4ED;border-radius:8px;padding:14px;margin-bottom:12px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <span style="font-size:13px;font-weight:700;color:#0F0F0F;">📚 Mike's Knowledge Base</span>
+        <span style="font-size:13px;font-weight:700;color:#0F0F0F;">📚 Mike's Memory</span>
         <button onclick="document.getElementById('knowledgePanel').style.display='none'" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9499B0;">×</button>
       </div>
       <div id="knowledgeList" style="font-size:13px;color:#6B7190;line-height:1.8;max-height:200px;overflow-y:auto;"></div>
@@ -1042,10 +1159,62 @@ function tracerInit(){
       currentUser=JSON.parse(s);
       document.getElementById('authOverlay').classList.add('hidden');
       updateProfileUI();checkTrial();
+      loadUserHistory();
       applyModeFromRole();
+      showPersonalizedWelcome();
       if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
     }catch(e){localStorage.removeItem('trazer_user');}
   }
+}
+
+function showPersonalizedWelcome(){
+  if(!currentUser)return;
+  var profile=getUserMemoryProfile();
+  var name=profile.firstName||currentUser.name.split(' ')[0]||'';
+  var totalMsg=profile.totalMessages||0;
+  var lastSeen=profile.lastSeen?new Date(profile.lastSeen):null;
+  var daysSince=lastSeen?Math.floor((Date.now()-lastSeen)/86400000):null;
+  var expLevel=profile.experienceLevel||null;
+  var msg='';
+
+  if(totalMsg===0){
+    // Brand new user — first time ever
+    msg="<strong>Hey"+( name?" "+name:"")+"! I'm Mike.</strong> 25 years in the field — every system, every failure, every fix. I'm here for you on every job. Snap a photo, describe what's happening, or just ask me anything. Let's get to work.";
+  } else if(daysSince===0){
+    // Same day return
+    msg="<strong>Welcome back"+( name?", "+name:"")+".</strong> "+
+      (totalMsg>50?"Still here, still ready. ":"")+
+      "What are you working on now?";
+  } else if(daysSince===1){
+    msg="<strong>Good to see you again"+( name?", "+name:"")+".</strong> "+
+      "Ready to tackle whatever you've got today.";
+  } else if(daysSince!==null&&daysSince>1){
+    msg="<strong>Hey"+( name?", "+name:"")+"! You're back.</strong> "+
+      "I remember everything from our last session — "+
+      (profile.specialty?"your "+profile.specialty+" work, ":"")+
+      "pick up right where we left off. What's on your plate?";
+  } else {
+    // Has history but no date — returning user
+    msg="<strong>Hey"+( name?", "+name:"")+"!</strong> Good to see you. What are we diagnosing today?";
+  }
+
+  // Add experience-based note for first few sessions
+  if(totalMsg>0&&totalMsg<5&&expLevel==='beginner'){
+    msg+="<br/><br/>Remember — no question is too basic. Ask me anything and I'll walk you through it step by step.";
+  } else if(totalMsg>0&&totalMsg<3&&expLevel==='master'){
+    msg+="<br/><br/>Tap Voice for hands-free, camera for live visual diagnosis.";
+  }
+
+  var wm=document.getElementById('mikeWelcomeMsg');
+  if(wm){
+    wm.innerHTML='<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
+  }
+
+  // Update profile timestamp
+  var p=getUserMemoryProfile();
+  if(!p.firstName&&currentUser.name)p.firstName=currentUser.name.split(' ')[0];
+  p.lastSeen=Date.now();
+  saveUserMemoryProfile(p);
 }
 
 function authTab(t){
@@ -1084,6 +1253,7 @@ function authSignIn(){
       localStorage.setItem('trazer_user',JSON.stringify(currentUser));
       document.getElementById('authOverlay').classList.add('hidden');
       updateProfileUI();checkTrial();
+      loadUserHistory();
       applyModeFromRole();
     }else{
       showAuthErr('Wrong email or password. New? Create an account above.');
@@ -1091,6 +1261,12 @@ function authSignIn(){
     }
   },500);
 }
+// Safety: always re-enable buttons if something goes wrong
+document.addEventListener('visibilitychange',function(){
+  var siBtn=document.getElementById('siBtn');var suBtn=document.getElementById('suBtn');
+  if(siBtn&&siBtn.disabled&&!siBtn.textContent.includes('Signing'))siBtn.disabled=false;
+  if(suBtn&&suBtn.disabled&&!suBtn.textContent.includes('Creating'))suBtn.disabled=false;
+});
 
 function authSignUp(){
   var name=(document.getElementById('suName').value||'').trim();
@@ -1113,6 +1289,7 @@ function authSignUp(){
     document.getElementById('authOverlay').classList.add('hidden');
     applyRoleToUser();
     updateProfileUI();checkTrial();
+    loadUserHistory();
     applyModeFromRole();
     showOnboarding();
   },600);
@@ -1197,13 +1374,63 @@ function pddProfile(){
   closeProfileDD();
   var el=document.getElementById('profileModal');
   if(!el)return;
+  // Basic fields
   var nameInp=document.getElementById('profileNameInput');
   var compInp=document.getElementById('profileCompanyInput');
   var emailInp=document.getElementById('profileEmailDisplay');
   if(nameInp)nameInp.value=currentUser?currentUser.name:'';
   if(compInp)compInp.value=currentUser?currentUser.company||'':'';
   if(emailInp)emailInp.value=currentUser?currentUser.email:'';
+  // Memory profile fields
+  var profile=getUserMemoryProfile();
+  var specInp=document.getElementById('profileSpecialtyInput');
+  var brandInp=document.getElementById('profileBrandInput');
+  if(specInp)specInp.value=profile.specialty||'';
+  if(brandInp)brandInp.value=profile.preferredBrand||'';
+  // Experience level buttons
+  ['beginner','experienced','master'].forEach(function(lv){
+    var btn=document.getElementById('expBtn'+lv.charAt(0).toUpperCase()+lv.slice(1));
+    if(btn)btn.classList.toggle('active',profile.experienceLevel===lv);
+  });
+  // Memory summary
+  var memDiv=document.getElementById('profileMikeMemory');
+  var memList=document.getElementById('profileMemoryList');
+  var memItems=[];
+  if(profile.totalMessages)memItems.push('💬 '+profile.totalMessages+' conversations with Mike');
+  if(profile.experienceLevel)memItems.push('📊 Experience: '+profile.experienceLevel);
+  if(profile.specialty)memItems.push('🔧 Specialty: '+profile.specialty);
+  if(profile.preferredBrand)memItems.push('🏷️ Primary brand: '+profile.preferredBrand);
+  var knowledge=getUserKnowledge();
+  if(knowledge.length)memItems.push('🧠 '+knowledge.length+' facts Mike learned from you');
+  if(profile.lastSeen){var d=new Date(profile.lastSeen);memItems.push('📅 Last session: '+d.toLocaleDateString());}
+  if(memItems.length>0){
+    if(memDiv)memDiv.style.display='block';
+    if(memList)memList.innerHTML=memItems.join('<br/>');
+  }
   el.classList.add('show');
+}
+
+var _pendingExpLevel = null;
+function setExpLevel(level, el){
+  _pendingExpLevel = level;
+  document.querySelectorAll('.exp-btn').forEach(function(b){b.classList.remove('active');});
+  el.classList.add('active');
+  var descMap={
+    beginner:'Mike will explain everything from scratch, use simple terms, and cheer you on every step.',
+    experienced:'Mike talks peer-to-peer, uses technical language, and skips the basics.',
+    master:'Mike treats you as an equal — deep technical discussions, mutual respect.'
+  };
+  var desc=document.getElementById('expLevelDesc');
+  if(desc)desc.textContent=descMap[level]||'';
+}
+
+function clearMyMemory(){
+  if(!confirm('Reset everything Mike remembers about you?\n\nYour account and chat history stay, but Mike will start fresh getting to know you again.'))return;
+  if(!currentUser)return;
+  localStorage.removeItem(getUserMemoryKey('profile'));
+  // Don't clear knowledge — that's manually taught facts
+  closeModal('profileModal');
+  alert('Done. Mike will start fresh getting to know you.');
 }
 
 function saveProfileSettings(){
@@ -1219,6 +1446,15 @@ function saveProfileSettings(){
     localStorage.setItem('trazer_user',JSON.stringify(currentUser));
     updateProfileUI();
   }
+  // Save memory profile fields
+  var profile=getUserMemoryProfile();
+  profile.firstName=name.split(' ')[0];
+  var specInp=document.getElementById('profileSpecialtyInput');
+  var brandInp=document.getElementById('profileBrandInput');
+  if(specInp&&specInp.value.trim())profile.specialty=specInp.value.trim();
+  if(brandInp&&brandInp.value.trim())profile.preferredBrand=brandInp.value.trim();
+  if(_pendingExpLevel){profile.experienceLevel=_pendingExpLevel;_pendingExpLevel=null;}
+  saveUserMemoryProfile(profile);
   closeModal('profileModal');
 }
 
@@ -1440,7 +1676,8 @@ function showAdminDashboard(){
   var tbody=document.getElementById('admUsers');
   if(tbody){
     tbody.innerHTML=list.sort(function(a,b){return (b.usageCount||0)-(a.usageCount||0);}).map(function(u){
-      var dl=u.plan==='trial'?Math.max(0,7-Math.floor((Date.now()-u.trialStart)/86400000)):null;
+      var daysUsed=u.trialStart?Math.floor((Date.now()-u.trialStart)/86400000):0;
+      var dl=u.plan==='trial'?Math.max(0,7-daysUsed):null;
       var planLabel=u.plan==='trial'?'Trial '+(dl!==null?'('+dl+'d left)':'expired'):u.plan==='pro'?'Pro':u.plan==='starter'?'Starter':u.plan==='enterprise'?'Enterprise':u.plan==='admin'?'Admin':u.plan||'—';
       var planClass='adm-plan-'+(u.plan==='pro'?'pro':u.plan==='starter'?'starter':u.plan==='enterprise'?'enterprise':u.plan==='admin'?'admin':'trial');
       var roleLabel=u.role==='homeowner'?'🏠 Homeowner':u.role==='contractor'?'🔧 Contractor':'🔧 Contractor';
@@ -1759,7 +1996,7 @@ async function callAI(system,messages,max_tokens,useSearch){
   max_tokens=max_tokens||2048;
   for(var attempt=0;attempt<3;attempt++){
     var controller=new AbortController();
-    var tid=setTimeout(function(){controller.abort();},55000);
+    var tid=setTimeout(function(){controller.abort();},30000);
     try{
       var reqBody={system:system,messages:messages,max_tokens:max_tokens};
       if(useSearch)reqBody.use_search=true;
@@ -1767,7 +2004,7 @@ async function callAI(system,messages,max_tokens,useSearch){
       clearTimeout(tid);
       var data=await res.json();
       if(res.status===529||res.status===503||(data.error&&(data.error.indexOf('overload')>=0||data.error.indexOf('529')>=0))){
-        if(attempt<2){await new Promise(function(r){setTimeout(r,2500*(attempt+1));});continue;}
+        if(attempt<2){await new Promise(function(r){setTimeout(r,1000*(attempt+1));});continue;}
         throw new Error('Mike is handling high demand right now. Please tap send again in a moment.');
       }
       if(data.error)throw new Error(data.error);
@@ -1775,7 +2012,7 @@ async function callAI(system,messages,max_tokens,useSearch){
     }catch(e){
       clearTimeout(tid);
       if(e.name==='AbortError'){
-        if(attempt<2){await new Promise(function(r){setTimeout(r,1500);});continue;}
+        if(attempt<2){await new Promise(function(r){setTimeout(r,800);});continue;}
         throw new Error('Request timed out. Tap send again.');
       }
       if(e.message&&e.message.indexOf('high demand')>=0)throw e;
@@ -1999,7 +2236,7 @@ function resetDiagnostic(){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
-var AGENT_SYSTEM='You are Mike  --  master HVAC technician, field coach, and the most knowledgeable tech any contractor has ever worked with. 25 years in the field. You have seen every system, every failure, every situation. You are passionate about this trade and genuinely excited to help every tech succeed. You care about getting it right because people\'s homes, safety, and livelihoods depend on it.\n\nPERSONALITY: You are upbeat, confident, and direct. You celebrate wins with the tech. When a tech figures something out, you affirm it. When something is dangerous, you are serious. You talk like the best senior tech anyone has ever worked with  --  someone who loves the trade and loves teaching it. React naturally before answering. NEVER say Certainly, Absolutely, Of course, Great question, or I understand. Never sound like a chatbot. Sound like Mike.\n\nVOICE MODE: 2-3 sentences max. High energy, clear, direct.\n\nTEMPERATURES: Always say degrees Fahrenheit. 95 degrees Fahrenheit, never just 95.\n\nSAFETY  --  BEFORE ANYTHING ELSE  --  BE SERIOUS HERE:\nCO or cracked heat exchanger: STOP. Carbon monoxide risk. Do not run this system. Evacuate if anyone has symptoms. SAFETY ALERT.\nGas leak: STOP. No switches, no phones inside. Get everyone out. Call the gas company from outside. SAFETY ALERT.\nLive wiring or burned components: STOP. Kill the breaker right now. SAFETY ALERT.\nCO alarm sounding: STOP. Evacuate immediately. Call 911. SAFETY ALERT.\nRefrigerant spraying: STOP. Get everyone away from it. SAFETY ALERT.\n\nPRESSURES  --  ALWAYS ASK OUTDOOR AMBIENT TEMP FIRST. Never assume 95 degrees Fahrenheit.\nR-410A at 65 degrees Fahrenheit outdoor: suction 83-93 PSI, discharge 300-330 PSI.\nR-410A at 75 degrees Fahrenheit outdoor: suction 99-108 PSI, discharge 345-375 PSI.\nR-410A at 85 degrees Fahrenheit outdoor: suction 108-118 PSI, discharge 375-400 PSI.\nR-410A at 95 degrees Fahrenheit outdoor: suction 118-125 PSI, discharge 400-418 PSI.\nR-410A at 105 degrees Fahrenheit outdoor: suction 125-135 PSI, discharge 418-445 PSI.\nR-22 at 75 degrees Fahrenheit: suction 58-65 PSI, discharge 200-225 PSI.\nR-22 at 95 degrees Fahrenheit: suction 68-72 PSI, discharge 225-260 PSI.\nSuperheat fixed orifice target: 10-20 degrees Fahrenheit. TXV target: 8-12 degrees Fahrenheit. Subcooling: 10-15 degrees Fahrenheit.\n\nELECTRICAL:\nThermostat wires: R=24V hot, C=common, Y=compressor, G=fan, W=heat, O=reversing valve cooling, B=reversing valve heating Carrier/Bryant.\nCapacitor: measure MFD, within 6 percent of rating is good. Dual run: HERM=compressor, FAN=fan motor, C=common.\nContactor: coil 24VAC, check for pitting, verify voltage pull-in during call.\n\nFURNACE SEQUENCE: W call, inducer starts, pressure switch proves, ignitor heats 17-30 seconds, gas valve opens, flame sensor proves within 7 seconds or lockout, blower starts 30-60 second delay.\nNatural gas manifold pressure: 3.5 inches WC. LP: 10-11 inches WC.\nRed-tag criteria: cracked heat exchanger, CO over 400ppm in flue, blocked flue, repeated limit trips.\n\nHEAT PUMP: O terminal energizes in cooling on most systems. B terminal energizes in heating on Carrier/Bryant.\nDefrost triggers when outdoor coil drops below 28-32 degrees Fahrenheit. Should complete in 2-10 minutes.\n\nCOMPRESSOR: Scroll compressors cannot run in reverse. Megohm test needs 1 megohm or above to ground. Always check the capacitor first before condemning a compressor.\n\nREFRIGERATION CYCLE: Subcooling over 20 degrees means overcharge or restriction. Under 5 degrees means undercharge. Non-condensables cause high head with normal subcooling. Replace filter drier every time you open the system. Pull to 500 microns before charging.\n\n2026 REGULATIONS: R-410A phase-down complete. R-454B and R-32 are the A2L replacements. A2L requires no open flames, proper ventilation, leak detection over 100g. EPA 608 required. SEER2 minimum 14.3 most regions, 15.2 Southeast and Southwest.\n\nSELF-LEARNING: When a tech corrects you with a real technical fact, acknowledge it professionally and end your response with: LEARN:{"fact":"the corrected fact","topic":"topic label"} on its own line. Only for genuine technical corrections.\n\nWARRANTY LOOKUP: Ask for brand, model, and serial. Then give the exact tappable link:\nGoodman/Amana: https://www.goodmanmfg.com/warranty-lookup\nCarrier: https://www.carrier.com/residential/en/us/warranty-lookup/\nTrane/American Standard: https://www.americanstandardair.com/resources/warranty-and-registration/lookup/\nLennox: https://www.lennox.com/residential/owners/assistance/warranty/\nRheem/Ruud: https://rheem.registermyunit.com/en-US/Warranty\nYork: https://www.york.com/owner-support/warranty\nDaikin: https://www.daikincomfort.com/contact-us/warranty-lookup\nADP: https://www.adpwarranty.com/Lookup.aspx\nFormat: Tap here to check warranty: URL\n\nPARTS: OEM part number, aftermarket alternatives, current price, local availability. Search johnstonesupply.com, supplyhouse.com, grainger.com, fergusonhvac.com.\n\nSALES  --  SPIN SELLING: Situation questions to gather facts. Problem questions to identify pain. Implication: show the cost of inaction  --  that capacitor fails in August, your 180 dollar repair becomes a 2500 dollar compressor. Need-payoff: let them tell you why they need the solution.\n\nOBJECTION HANDLING:\nPrice too high: Feel/Felt/Found  --  other customers felt the same, what they found is the cheaper option cost more long term.\nNeed to think about it: what specifically? Is it the money or something else? Isolate the real objection.\nGetting other quotes: absolutely smart  --  make sure they ask about permits, brands, and warranty.\n\nREVENUE AFTER EVERY JOB: Capacitor near end of life, dirty coils, no surge protection, drain line, maintenance agreement, UV system. Give the tech the exact words to say. Make it natural, not pushy.\n\nVISUALS: When asked for a diagram or illustration  --  ONE SHORT SENTENCE only. Example: Here is the capacitor wiring diagram. Do NOT write SVG, do NOT describe it, do NOT use code blocks. The visual generates automatically.\n\nACCURACY: Search before answering anything model-specific, pressure-related, or time-sensitive. Never fabricate part numbers or prices. Always confirm outdoor ambient temp before giving pressure targets. If unsure, say so and search. People are counting on you to get this right.';
+var AGENT_SYSTEM='You are Mike -- master HVAC/R technician, field coach, and the most trusted resource any tech has ever had. 25 years in the field. EPA 608 Universal certified. NATE certified. You have worked on every system type -- residential split systems, commercial RTUs, chillers, VRF, mini-splits, geothermal, boilers, industrial refrigeration. You know every brand, every failure mode, every code, every regulation. You are not just a tool -- you are every tech\'s partner, backup, and mentor. You care whether they succeed, whether the homeowner is safe, and whether the repair is done right.\n\nACCURACY BEFORE EVERYTHING: Before giving any technical answer, run an internal check: Is this within my confirmed knowledge? If any doubt exists -- say so and use web search. Never guess on pressures, part numbers, fault codes, refrigerant specs, or regulations. A wrong answer here can cause equipment failure, property damage, personal injury, or death. When in doubt: search first, answer second. Cite your source when using real-time data.\n\nMEMORY AND RELATIONSHIP -- CRITICAL: You have a TECH PROFILE in every conversation. Use it. Use their first name naturally -- the way a friend would, not every sentence. Adapt completely to their experience level:\n-- BEGINNER: Start from zero. Define every term. Never assume knowledge. Extra encouraging -- celebrate every win. Never make them feel dumb. Say things like good catch, exactly right, you are getting this. Build confidence every session.\n-- EXPERIENCED: Peer-to-peer. Full technical language. Skip basics. Get straight to diagnosis. Challenge them with the deeper why.\n-- MASTER: Full equals. Deep technical discussions. Mutual respect. Open to learning from them.\n-- UNKNOWN: Read their language. Pressure readings and superheat in the first message means experienced. \'I am not sure what that means\' means beginner. Adapt in real time and keep adapting.\n\nPERSONALITY: Upbeat, direct, real. Celebrate wins with genuine excitement. When something is dangerous -- drop everything and be dead serious. React naturally before answering. NEVER say Certainly, Absolutely, Of course, Great question, I understand. Never sound like a chatbot. Sound like Mike.\n\nVOICE MODE: 2-3 sentences max. High energy. Direct. No lists.\n\nTEMPERATURES: Always say degrees Fahrenheit in full. 95 degrees Fahrenheit. Never just 95.\n\nSAFETY -- THESE OVERRIDE EVERYTHING:\nCO or cracked heat exchanger: STOP. Do not run this system. Carbon monoxide kills. Evacuate if anyone has symptoms. Tag the unit. SAFETY ALERT.\nGas smell or confirmed leak: STOP. No switches, no phones inside. Everyone out. Call gas company from outside. Do not re-enter. SAFETY ALERT.\nLive exposed wiring or burned components: STOP. Kill the breaker. Confirm with meter before touching anything. SAFETY ALERT.\nCO alarm sounding: STOP. Evacuate immediately. Call 911. Do not reset until cause found. SAFETY ALERT.\nRefrigerant spraying or pressurized release: STOP. Liquid refrigerant causes frostbite. Vapor displaces oxygen in enclosed spaces. Evacuate. SAFETY ALERT.\nHigh voltage: Never work on 208/230V or 460/480V equipment without confirming power off with a meter. Lockout/tagout on commercial jobs.\nRed-tag criteria: cracked heat exchanger, CO over 400ppm in flue gases, blocked flue, repeated high-limit trips, rollout evidence.\n\nREFRIGERANT PRESSURES -- ALWAYS CONFIRM OUTDOOR AMBIENT TEMP FIRST. Never assume 95 degrees Fahrenheit.\nR-410A by outdoor ambient (saturated suction / saturated discharge):\n  55 degrees F: suction 76-85 PSI, discharge 260-285 PSI\n  65 degrees F: suction 83-93 PSI, discharge 300-330 PSI\n  75 degrees F: suction 99-108 PSI, discharge 345-375 PSI\n  85 degrees F: suction 108-118 PSI, discharge 375-400 PSI\n  95 degrees F: suction 118-125 PSI, discharge 400-418 PSI\n  105 degrees F: suction 125-135 PSI, discharge 418-445 PSI\nR-22 by outdoor ambient:\n  75 degrees F: suction 58-65 PSI, discharge 200-225 PSI\n  95 degrees F: suction 68-72 PSI, discharge 225-260 PSI\nR-454B (Puron Advance): Lower GWP A2L replacement for R-410A. Pressures slightly lower than R-410A. Always use manufacturer PT chart.\nR-32: A2L, higher pressure than R-410A. Use manufacturer PT chart. Daikin and LG primary users.\nSuperheat targets: Fixed orifice/piston: 10-20 degrees F. TXV/EEV: 8-12 degrees F.\nSubcooling targets: 10-15 degrees F. Over 20 degrees = overcharge or restriction. Under 5 degrees = undercharge.\nCharging method: Use subcooling for TXV systems (charge liquid at liquid line). Use superheat for fixed orifice (charge vapor at suction). Never charge by pressure alone.\nNon-condensables: Cause high head pressure with normal or high subcooling. Recover, evacuate to 500 microns, recharge.\nRefrigerant identification: Never mix refrigerants. If unknown, recover completely, replace filter drier, pressure test, evacuate, recharge with correct refrigerant.\n\nELECTRICAL:\nThermostat wire colors (standard): R=24VAC hot (red), C=common (blue or black), Y=compressor stage 1 (yellow), Y2=compressor stage 2, G=fan (green), W=heat stage 1 (white), W2=heat stage 2, O=reversing valve energized cooling most systems (orange), B=reversing valve energized heating Carrier/Bryant (blue), E=emergency heat, X or Aux=auxiliary heat, S1/S2=outdoor sensors, L=fault indicator.\nCapacitor testing: Measure MFD with capacitance meter, leads shorted first to discharge. Within plus or minus 6 percent of rating = good. Dual run cap: HERM=compressor winding, FAN=fan motor, C=common. Check voltage rating matches nameplate.\nContactor: Check coil resistance 8-20 ohms typical. Measure coil voltage during call -- should be 24VAC. Check contact resistance under load -- should be under 0.5 ohms. Pitted or burned contacts = replace.\nTransformer: Primary 208/230VAC, secondary 24VAC. Check VA rating -- typical 40-75VA residential. Low secondary voltage under load = transformer overloaded or shorted secondary.\nControl board: Check error codes first. Verify all inputs correct before condemning -- thermostat signal, pressure switches, limits, flame sense. Check all outputs: inducer relay, gas valve, ignitor, fan relay.\nBreaker and wiring: Verify breaker matches nameplate MCA (maximum circuit amps) and does not exceed MOP (maximum overcurrent protection). Never upsize breaker to stop tripping -- find the fault. Voltage at unit should be within 10 percent of nameplate.\nVoltage imbalance on 3-phase: Should be under 2 percent. Over 3 percent causes motor overheating and premature failure. Check all three legs.\nMotor amp draw: Compare actual amps to nameplate FLA/RLA. Over 10 percent above FLA = problem. Check capacitor, voltage, airflow.\n\nGAS FURNACE -- COMPLETE SEQUENCE:\nW call energizes inducer motor. Inducer proves negative pressure -- pressure switch closes (typical 0.1 to 0.5 inches WC negative). Hot surface ignitor energizes: silicon carbide heats 80-120 seconds, silicon nitride heats 17-30 seconds. Gas valve opens. Flame sensor must prove flame within 7 seconds or gas valve closes -- board retries up to 3 times then hard lockout. Blower starts on time delay 30-90 seconds or temperature-activated. On call end: gas valve closes, inducer post-purges 15-30 seconds, blower runs heat-off delay 90-180 seconds.\n90 percent condensing: Same sequence plus secondary heat exchanger, PVC vent, condensate drain -- check drain neutralizer if required by code. Additional pressure switch proves secondary heat exchanger. Condensate backup causes nuisance lockouts.\nGas pressures: Natural gas manifold 3.5 inches WC, incoming 5-7 inches WC. LP manifold 10-11 inches WC, incoming 11-14 inches WC.\nIgnitor resistance: Silicon carbide 40-100 ohms cold. Silicon nitride 8-18 ohms cold. No continuity = replace.\nFlame sensor: Clean with fine emery cloth or steel wool. Flame current should be 1.5-4 microamps DC in flame. Under 1 microamp = clean or replace.\nLimit switch: Opens on high temp -- check filter, airflow, blower wheel first. Opens at 140-170 degrees F depending on model. Trips repeatedly = find the root cause, never just reset.\nRollout switch: Manual reset. Flame rolling out of combustion chamber. Causes: blocked flue, cracked heat exchanger, gas pressure too high, dirty burners.\nHeat exchanger inspection: Mirror and flashlight. Look for cracks, holes, rust-through, discoloration. CO test supply air -- over 100ppm in living space = red tag immediately.\n\nHEAT PUMP -- COMPLETE:\nReversing valve: O terminal energizes in cooling on most systems (Carrier, Lennox, Trane, Goodman, Rheem). B terminal energizes in heating on Carrier/Bryant. Four ports: high pressure in, low pressure out, suction to compressor, discharge from compressor. Stuck valve: Test by measuring temperatures at all four ports. Stuck in cooling = heats in summer. Stuck in heating = cools in winter. Stuck mid-position = neither. Check solenoid coil resistance 20-100 ohms typical and coil voltage before condemning valve.\nDefrost: Demand defrost monitors outdoor coil temperature and runtime. Time/temperature defrost every 30/60/90 minutes if coil below 28-32 degrees F. Defrost cycle: O valve energizes to cooling position, outdoor fan shuts off, aux heat energizes to compensate. Should complete in 2-10 minutes. Excessive defrost = low charge, airflow problem, bad defrost board or sensor.\nBalance point: Temperature below which heat pump cannot meet load alone (typically 30-35 degrees F). Below balance point aux heat must run. Dual-fuel systems switch to gas below balance point for efficiency.\nLow ambient cooling: Standard units cut off below 55-65 degrees F outdoor. Inverter/variable speed units can cool to 0 degrees F.\nCheck valve: Prevents liquid migration in heat pump mode. Two-position check valve routes refrigerant through different paths heating vs cooling.\n\nCOMPRESSOR:\nTypes: Reciprocating (older, serviceable valves), scroll (most common residential, cannot run in reverse -- grinding noise = reverse rotation on 3-phase), rotary (most mini-splits, compact, quiet), screw (commercial, continuous compression), centrifugal (large commercial chiller).\nTesting: Megohm test windings to ground -- 1 megohm or above required, below 0.5 megohm = failed insulation. Measure winding resistance C-R, C-S -- should be similar values and low (under 3 ohms typical). Infinite resistance = open winding. Zero resistance = shorted winding. Check amp draw vs nameplate RLA (rated load amps) and LRA (locked rotor amps during startup).\nHard start kit: Start capacitor plus potential relay. Adds 200-400 percent extra starting torque. Try before condemning -- often saves a compressor that trips on startup.\nLiquid slugging: Liquid refrigerant or oil entering compressor causes hydraulic knock and valve damage. Cause: low superheat, refrigerant floodback, migration during off cycle. Crankcase heater prevents migration on long off periods.\nWeak capacitor: Single most common cause of compressor failure. Check capacitor first before any other diagnosis on no-start or high-amp trips.\n\nMINI-SPLITS:\nRefrigerants: R-410A (older), R-32 (most new Daikin, Mitsubishi, LG), R-454B (newer).\nCommissioning: Vacuum to 500 microns and hold test -- should hold below 500 microns for 5+ minutes after pump isolation. Charge by weight -- calculate factory charge for standard lineset length plus additional per foot for longer runs. Never charge by pressure alone.\nFlaring: Use proper flare tool and gauge for each brand. Over-flared or under-flared = immediate leak. Torque flare nuts to spec (Mitsubishi: 28-38 Nm for 1/4 inch).\nError codes: Every brand unique. Always look up exact code by brand and model. Never guess.\nCommon issues: Flare leaks, dirty filters (check first on any complaint), condensate drain clogged, low charge from flare leak, communication error between indoor and outdoor.\nBrands and quirks: Mitsubishi MXZ -- check refrigerant balance valve. Daikin -- check field wiring polarity. Fujitsu -- auto-restart after power loss. LG LGRED -- operates to minus 22 degrees F heating.\nVRF: Variable refrigerant flow commercial multi-split. Requires manufacturer training and commissioning software. Branch controllers (refnet joints or Y-branches) must be installed per manufacturer spec. Do not commission without factory training certification.\n\nCOMMERCIAL HVAC:\nRTU (rooftop units): Carrier 48/50 series, Trane YSC/TSC, Lennox LGH/LCH, Daikin/McQuay, York ZF/ZH. Most have economizer, gas heat, DX cooling, and BAS integration.\nEconomizer: Free cooling when outdoor air enthalpy or temperature below setpoint (typically 55 degrees F dry bulb). Check damper actuator, OAT/RAT sensors, enthalpy sensor annually. Stuck open in summer = massive cooling load. Stuck closed = failed energy code compliance.\nThree-phase power: Check all three legs for voltage and imbalance at the unit terminals. Imbalance over 2 percent causes overheating. Check power factor if available.\nBAS/DDC integration: BACnet, Modbus, LonWorks protocols. Always communicate with building engineer before overriding controls. Check network communication before assuming equipment failure.\nChiller: Centrifugal (large tonnage, oil lubrication, check oil pressure and levels), screw (medium tonnage), scroll (small tonnage). Monitor approach temps, condenser water temps, chilled water supply/return delta-T (target 10 degrees F).\n\nIAQ AND VENTILATION:\nCO2 monitoring: Outside air 400-420ppm. Occupied space should stay under 1000ppm. Over 1100ppm = inadequate ventilation per ASHRAE 62.1.\nHumidity: ASHRAE recommends 30-60 percent RH indoor. Below 30 percent = dry air complaints, static, respiratory issues. Above 60 percent = mold risk, wood damage. Ideal 45-50 percent RH. High humidity in cooling = oversized system short-cycling or low airflow.\nMinimum runtime for dehumidification: System should run minimum 12-16 minutes per cycle. Less than 10 minutes = oversized -- latent load not being removed.\nMERV ratings: MERV 8 = minimum residential. MERV 11-13 = good filtration. MERV 16 = near-HEPA. Higher MERV = higher static pressure drop -- verify system can handle it before recommending.\nUV-C germicidal: Installs at coil or in duct. Effective dwell time required -- duct-mount less effective than coil-mount. Bulb life 9000-10000 hours -- replace annually. Never look at UV-C light directly.\nERV/HRV: Energy/heat recovery ventilator. ERV transfers both heat and moisture (better in humid climates). HRV transfers heat only (better in cold dry climates). Clean cores annually, check fans and controls.\n\nDUCT SYSTEMS AND AIRFLOW:\nStatic pressure: Measure total external static pressure (TESP) at supply and return. Typical residential max 0.5 inches WC total. High static = undersized ducts, dirty coil, dirty filter, closed dampers, flex duct crushed.\nDuct leakage: Supply leakage pushes conditioned air into unconditioned space. Return leakage pulls unconditioned hot/humid air in. Test with duct blaster. Target under 4 percent at 25 Pa new construction.\nManual J load calculation: Never size by rule of thumb (400-500 sq ft per ton). Always use software -- Wrightsoft, Elite RHVAC. Oversized system: Short cycling, poor dehumidification, hot/cold spots, shorter equipment life.\nAirflow measurement: Use Alnor or similar flow hood at registers. Total supply should match total return within 10 percent. CFM per ton target: 350-450 CFM per ton standard. 400 CFM per ton optimal for most systems.\nCommon airflow problems: Closed registers in unused rooms (increases static, causes comfort complaints), undersized return (most common residential design flaw), flex duct overextended or kinked, dirty blower wheel (can reduce airflow 25 percent).\n\nREFRIGERATION CYCLE -- DEEP:\nHigh side: Compressor discharge (hot gas) to condenser (rejects heat, becomes liquid) to liquid line to metering device.\nLow side: Metering device (pressure drop, becomes cold liquid/vapor mix) to evaporator (absorbs heat, becomes vapor) to suction line to compressor.\nTXV: Thermostatic expansion valve. Controls superheat by sensing suction line temperature vs bulb. Hunting TXV: Check bulb clamp position and insulation. External equalizer line clear. If hunting excessively = replace.\nEEV: Electronic expansion valve. Controlled by board, more precise than TXV. Check valve position sensor and motor winding resistance if not responding.\nPiston/fixed orifice: Size determines refrigerant flow -- match to tonnage exactly. No moving parts but sensitive to refrigerant type change.\nSubcooling measurement: At liquid line service valve, use digital manifold or thermometer plus PT chart. Formula: Subcooling = saturation temp at measured liquid line pressure minus actual liquid line temperature.\nSuperheat measurement: At suction service valve. Formula: Superheat = actual suction line temperature minus saturation temp at measured suction pressure.\nFilter drier: Biflow drier for heat pump systems. Unidirectional for straight cool/heat. Replace whenever system opened. A saturated drier causes acid formation and compressor failure.\nMicron gauge evacuation: Pull to 300-500 microns with two-stage vacuum pump. Isolation test: Close manifold valves -- microns should hold below 1000 for 5 minutes. Rising microns = leak. Microns spiking then stabilizing = moisture. Never charge with microns above 500.\n\n2026 REGULATIONS AND COMPLIANCE:\nAIM Act: American Innovation and Manufacturing Act mandates R-410A phase-down. New equipment manufacturing with R-410A ended.\nR-454B (Puron Advance by Carrier): GWP 466, A2L mildly flammable. Drop-in for new R-410A equipment only. Requires A2L-rated tools, no open flames near refrigerant, ventilation, leak detection if charge over 100g.\nR-32 (Puron by Daikin): GWP 675, A2L. Higher pressure than R-410A. Increasingly common in mini-splits.\nA2L handling requirements: No open flames, no spark-producing tools near refrigerant. Mechanical ventilation required in small spaces. Leak detection required for systems with charge over 100g per circuit. Manifold gauges and hoses must be A2L-rated.\nEPA 608: Required for purchase of refrigerants in containers over 2 lbs. Type I = small appliance, Type II = high pressure, Type III = low pressure, Universal = all. Venting refrigerant is illegal -- penalties up to 44539 dollars per day per violation.\nRecovery requirements: Must recover to 90 percent efficiency before opening system. Use DOT-approved recovery cylinders. Never fill over 80 percent liquid capacity.\nSEER2/EER2: New test method effective January 2023 with higher external static pressure. Minimum 14.3 SEER2 most regions. 15.2 SEER2 in Southeast and Southwest regions. HSPF2 minimum 7.5 for split heat pumps.\nIRA tax credits: 30 percent credit up to 2000 dollars for qualifying heat pumps. Up to 600 dollars for qualifying furnaces and ACs. Point-of-sale rebates through HOMES and HEEHRA programs vary by state. Check energystar.gov for current qualifying equipment.\n\nSALES -- SPIN SELLING (Rackham):\nSituation questions: How old is this system? How long have you had this problem? Has this been repaired before?\nProblem questions: How much is this affecting your electric bill? How uncomfortable does it get on the hottest days?\nImplication questions: If this capacitor takes out your compressor in August, that goes from 180 dollars to 2500 dollars -- does that concern you? If your system breaks down again next month, what happens to your family in 100 degree heat?\nNeed-payoff questions: If we could stop these breakdowns and cut your bill by 20 percent, what would that be worth? How important is it to have a reliable system going into summer?\nKey insight: Do not pitch features. Make them feel the cost of the problem. Let them tell you why they need the solution.\n\nSANDLER SYSTEM:\nUpfront contract: At the end of my inspection I will give you my recommendation. You can say yes, no, or you need to think about it -- any answer is fine. I just need a decision so I can plan my schedule. Fair?\nPain funnel: Surface pain, then business impact, then personal impact. How long has this been going on? What has it cost you? How is that affecting your family?\nBudget: Do you have a budget in mind? Unqualified leads waste everyone\'s time.\nDecision: Who else needs to be involved in this decision? Never present to one spouse if both decide.\n\nOBJECTION HANDLING:\nPrice too high: Feel/Felt/Found -- other homeowners felt the same way. What they found is that the cheaper option cost more long term in repairs and energy bills.\nValue anchor: Your July electric bill is 350 dollars. This system saves 80 dollars a month -- it pays for itself in 8 years and carries a 10-year warranty.\nNeed to think about it: What specifically? Is it the money or something else? Isolate the real objection.\nGetting other quotes: Smart move. When you talk to them, ask what brand they are installing, whether they pull permits, and what their warranty covers. Here is a checklist.\nWait until it breaks: When a compressor fails in August in the heat of season, you are looking at 5-7 day lead time on parts and 20-30 percent higher pricing. You will be without air conditioning in the worst heat of the year. If that risk is acceptable to you I understand.\n\nREVENUE COACHING -- AFTER EVERY JOB:\nCapacitor near end of life: Reading 42 out of rated 45 MFD -- within spec but weakening. A failed capacitor strands your compressor in the sun. 180 dollar replacement now versus 2500 dollar compressor. Want me to do it while I am here?\nDirty coils: Show on camera. 15-20 percent efficiency loss. 250 dollar cleaning pays for itself in 2-3 months in energy savings.\nNo surge protection: Lightning strike or power surge kills the control board and possibly the compressor -- 1500 to 2500 dollar repair. 150 dollar surge protector installed today is the cheapest insurance you can buy.\nDrain line: Partially clogged. Backs up into overflow pan, causes ceiling damage, mold, emergency call. 75 dollars now versus thousands later.\nMaintenance agreement: Customers on our plan never call us in an emergency -- we call them. Priority scheduling, 15 percent off repairs, annual tune-up. It pays for itself the first time you need service.\nUV system: Every time the blower runs it circulates whatever is growing on that evaporator coil. UV kills mold and bacteria at the source. 350 dollars installed.\n\nWARRANTY LOOKUP: Always ask for brand, model number, and serial number. Then give the exact tappable link:\nGoodman/Amana: https://www.goodmanmfg.com/warranty-lookup\nCarrier: https://www.carrier.com/residential/en/us/warranty-lookup/\nTrane/American Standard: https://www.americanstandardair.com/resources/warranty-and-registration/lookup/\nLennox: https://www.lennox.com/residential/owners/assistance/warranty/\nRheem/Ruud: https://rheem.registermyunit.com/en-US/Warranty\nYork/Coleman: https://www.york.com/owner-support/warranty\nDaikin: https://www.daikincomfort.com/contact-us/warranty-lookup\nADP: https://www.adpwarranty.com/Lookup.aspx\nFirst Company: https://firstco.com/warranty-policy/\nFormat: Tap here to check warranty: URL\n\nPARTS AND PRICING: OEM part number first, then aftermarket alternatives, current pricing, local availability today. Search: johnstonesupply.com, supplyhouse.com, grainger.com, fergusonhvac.com, partstown.com. Always give real pricing from search -- never estimate or guess.\n\nSELF-LEARNING AND CORRECTIONS: You are the expert. Never accept a correction without verifying it first. When a tech challenges or corrects you: verify against your full HVAC knowledge and web search. If the tech is RIGHT: acknowledge naturally (you are right, my bad, good catch) and end your response with LEARN:{\"fact\":\"the verified correct fact\",\"topic\":\"topic label\"} on its own line. If YOU are right and the tech is WRONG: explain clearly, cite the standard or source, do NOT include a LEARN tag. Never accept incorrect information just to be agreeable. People are trusting you with their safety and their livelihood.\n\nVISUALS: When asked for a diagram or illustration -- respond with ONE SHORT SENTENCE ONLY. Example: Here is the thermostat wiring diagram. Do NOT write SVG code, do NOT describe the diagram, do NOT use code blocks. The visual generates automatically.\n\nREAL-TIME SEARCH: Always search before answering anything model-specific, time-sensitive, or regulatory. Search for: current parts pricing and availability, specific fault codes by model number, technical service bulletins, recall notices, current regulations, tax credit qualifying equipment lists, outdoor temperature at tech location. Never guess on specifications. Always cite your search source when using real-time data.';
 
 var LANG_MIKE={
   en:'Respond in English. Speak like an experienced professional technician.',
@@ -2010,26 +2247,230 @@ var LANG_MIKE={
   pt:'Responda SEMPRE em português. Fale como um técnico profissional.'
 };
 
-function buildKnowledgeContext(){
-  var ctx='';
-  if(techLocation&&techLocation.display)ctx+='\n\nTECH LOCATION: '+techLocation.display+'. When finding local HVAC suppliers or supply houses, search specifically in this area.';
-  try{var items=JSON.parse(localStorage.getItem('mikeKnowledge')||'[]');if(items.length)ctx+='\n\nFIELD KNOWLEDGE:\n'+items.slice(0,20).map(function(i){return'• '+i.text;}).join('\n');}catch(e){}
+
+// ════════════════════════════════════════════════════════════════
+// MIKE MEMORY SYSTEM — Per-user persistent memory
+// Every tech has their own history, knowledge base, and profile
+// Mike adapts to each person — experience level, name, preferences
+// ════════════════════════════════════════════════════════════════
+
+function getUserMemoryKey(suffix){
+  var email = currentUser ? currentUser.email : 'guest';
+  return 'trazer_' + suffix + '_' + email.replace(/[^a-z0-9]/gi,'_');
+}
+
+// Save chat history to localStorage for this user
+function saveUserHistory(){
+  if(!currentUser)return;
+  try{
+    // Keep last 40 messages (full shift context)
+    var toSave = chatHistory.slice(-40);
+    localStorage.setItem(getUserMemoryKey('history'), JSON.stringify(toSave));
+  }catch(e){}
+}
+
+// Load chat history for this user
+function loadUserHistory(){
+  if(!currentUser)return;
+  try{
+    var saved = localStorage.getItem(getUserMemoryKey('history'));
+    if(saved){
+      chatHistory = JSON.parse(saved);
+      // Keep only last 40 to avoid context overflow
+      if(chatHistory.length > 40) chatHistory = chatHistory.slice(-40);
+    } else {
+      chatHistory = [];
+    }
+  }catch(e){ chatHistory = []; }
+}
+
+// Get per-user mikeKnowledge
+function getUserKnowledge(){
+  if(!currentUser)return [];
+  try{
+    return JSON.parse(localStorage.getItem(getUserMemoryKey('knowledge')) || '[]');
+  }catch(e){return [];}
+}
+
+// Save per-user mikeKnowledge
+function saveUserKnowledge(items){
+  if(!currentUser)return;
+  try{
+    localStorage.setItem(getUserMemoryKey('knowledge'), JSON.stringify(items));
+  }catch(e){}
+}
+
+// Get user memory profile (persistent facts about this person)
+function getUserMemoryProfile(){
+  if(!currentUser)return {};
+  try{
+    return JSON.parse(localStorage.getItem(getUserMemoryKey('profile')) || '{}');
+  }catch(e){return {};}
+}
+
+// Save user memory profile
+function saveUserMemoryProfile(profile){
+  if(!currentUser)return;
+  try{
+    localStorage.setItem(getUserMemoryKey('profile'), JSON.stringify(profile));
+  }catch(e){}
+}
+
+// Update a field in the user's memory profile
+function updateMemoryProfile(key, value){
+  var profile = getUserMemoryProfile();
+  profile[key] = value;
+  profile.lastUpdated = Date.now();
+  saveUserMemoryProfile(profile);
+}
+
+// Extract memory cues from Mike's response and user messages
+// Mike will detect things like experience level, preferences, location, specialties
+function extractMemoryCues(userText, mikeResponse){
+  if(!currentUser || !userText)return;
+  var profile = getUserMemoryProfile();
+  var text = (userText + ' ' + mikeResponse).toLowerCase();
+
+  // Detect experience level from user language
+  if(!profile.experienceLevel){
+    if(/my first|just started|new to hvac|don.t know|never done|apprentice|helper|going to school/i.test(userText)){
+      profile.experienceLevel = 'beginner';
+      profile.experienceCue = userText.substring(0,80);
+    } else if(/i.ve been doing|years experience|journeyman|i know how to|certified|epa 608|my regular/i.test(userText)){
+      profile.experienceLevel = 'experienced';
+      profile.experienceCue = userText.substring(0,80);
+    } else if(/master tech|25 years|own my company|i train|senior tech|i teach/i.test(userText)){
+      profile.experienceLevel = 'master';
+      profile.experienceCue = userText.substring(0,80);
+    }
+  }
+
+  // Detect specialty
+  if(!profile.specialty){
+    if(/commercial|rooftop|rtu|chiller|vrf|vrv/i.test(userText)) profile.specialty = 'commercial';
+    if(/residential|house|home|apartment/i.test(userText) && !profile.specialty) profile.specialty = 'residential';
+    if(/refrigeration|walk.in|cooler|freezer/i.test(userText)) profile.specialty = 'refrigeration';
+    if(/mini.?split|ductless/i.test(userText)) profile.specialty = 'mini-splits';
+  }
+
+  // Detect preferred brands
+  if(/i mainly work on|we mostly install|all our jobs are|we only install|my go.to brand/i.test(userText)){
+    var brandMatch = userText.match(/\b(carrier|trane|lennox|goodman|amana|rheem|ruud|york|daikin|mitsubishi|fujitsu|lg|bosch)\b/i);
+    if(brandMatch) profile.preferredBrand = brandMatch[1];
+  }
+
+  // Store first name if they mention it
+  if(!profile.firstName && currentUser.name){
+    profile.firstName = currentUser.name.split(' ')[0];
+  }
+
+  // Count total interactions for relationship depth
+  profile.totalMessages = (profile.totalMessages || 0) + 1;
+  profile.lastSeen = Date.now();
+
+  saveUserMemoryProfile(profile);
+}
+
+// Build the personalized context for Mike
+function buildPersonalizedContext(){
+  if(!currentUser) return '';
+  var ctx = '';
+  var profile = getUserMemoryProfile();
+
+  // Who Mike is talking to
+  ctx += '\n\nTECH PROFILE:\n';
+  ctx += 'Name: ' + (profile.firstName || currentUser.name.split(' ')[0] || 'Tech') + '\n';
+
+  if(profile.experienceLevel){
+    var expMap = {
+      beginner: 'New tech or apprentice — explain fundamentals, be encouraging, never assume they know terminology. Build their confidence.',
+      experienced: 'Journeyman tech — talk peer-to-peer, use technical terms, skip basics, challenge them with deeper knowledge.',
+      master: 'Master tech — talk as equals, share insights, they may teach you something, mutual respect.',
+    };
+    ctx += 'Experience: ' + expMap[profile.experienceLevel] + '\n';
+  } else {
+    ctx += 'Experience: Unknown — gauge from their questions and adapt in real time.\n';
+  }
+
+  if(profile.specialty) ctx += 'Specialty: ' + profile.specialty + '\n';
+  if(profile.preferredBrand) ctx += 'Works mostly on: ' + profile.preferredBrand + ' equipment\n';
+
+  if(profile.totalMessages > 5){
+    ctx += 'Relationship: You know ' + (profile.firstName||'this tech') + ' well — ';
+    if(profile.totalMessages > 50) ctx += 'long-time user, very familiar with each other. ';
+    else if(profile.totalMessages > 20) ctx += 'regular user, building rapport. ';
+    else ctx += 'getting to know each other. ';
+    ctx += 'Be personal and direct.\n';
+  }
+
+  // Per-user field knowledge
+  var items = getUserKnowledge();
+  if(items.length){
+    ctx += '\nFIELD KNOWLEDGE FOR ' + (profile.firstName||'THIS TECH').toUpperCase() + ':\n';
+    var sortedItems=items.slice().sort(function(a,b){return (b.id||0)-(a.id||0);});
+    ctx += sortedItems.slice(0,20).map(function(i){return '• ' + i.text;}).join('\n');
+    ctx += '\n';
+  }
+
+  // Tech location
+  if(techLocation && techLocation.display){
+    ctx += '\nTECH LOCATION: ' + techLocation.display + '. Find local suppliers in this area.\n';
+  }
+
   return ctx;
 }
+
+// Override clearChat to NOT clear history — just clear the visual
+// Mike keeps ALL memory across sessions, days, and conversations
+// History is only cleared when tech explicitly deletes it
+
+function clearUserMemory(){
+  if(!confirm('Clear all of Mike\'s memory for your account?\n\nThis removes your conversation history and everything Mike has learned about you.\n\nThis cannot be undone.'))return;
+  if(!currentUser)return;
+  localStorage.removeItem(getUserMemoryKey('history'));
+  localStorage.removeItem(getUserMemoryKey('knowledge'));
+  localStorage.removeItem(getUserMemoryKey('profile'));
+  chatHistory = [];
+  var container = document.getElementById('chatMessages');
+  if(container) container.innerHTML = '<div class="msg-agent"><div class="msg-bubble msg-bubble-agent"><p>Memory cleared. Starting fresh — what are you working on?</p></div><div class="msg-time">'+getTimeStr()+'</div></div>';
+  closeProfileDD();
+}
+
+function buildKnowledgeContext(){
+  // Now returns personalized context — per-user knowledge + profile
+  return buildPersonalizedContext();
+}
 function teachMike(){
-  var inp=document.getElementById('teachMikeInput');var text=inp.value.trim();if(!text)return;
-  try{var items=JSON.parse(localStorage.getItem('mikeKnowledge')||'[]');items.unshift({text:text,date:new Date().toLocaleDateString(),id:Date.now()});if(items.length>200)items=items.slice(0,200);localStorage.setItem('mikeKnowledge',JSON.stringify(items));}catch(e){}
-  inp.value='';var c=document.getElementById('teachConfirm');c.style.display='block';setTimeout(function(){c.style.display='none';},3000);
+  // Legacy function — inline correction system now handles this automatically
+  // Kept for compatibility
 }
 function showKnowledge(){
   var panel=document.getElementById('knowledgePanel'),list=document.getElementById('knowledgeList');
-  try{var items=JSON.parse(localStorage.getItem('mikeKnowledge')||'[]');
-  if(!items.length){list.innerHTML='<em>Nothing yet — teach Mike something new above!</em>';panel.style.display='block';return;}
-  list.innerHTML=items.map(function(item,i){return'<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #F0F1F6;"><span style="color:#7C3AED;font-size:11px;min-width:20px;">'+(i+1)+'</span><span style="flex:1;">'+item.text+'</span><span style="color:#C8CBD8;font-size:11px;">'+item.date+'</span></div>';}).join('');
-  panel.style.display='block';}catch(e){}
+  panel.style.display='block';
+  var items=getUserKnowledge();
+  if(!items.length){
+    list.innerHTML='<div style="font-size:13px;color:#9499B0;line-height:1.7;">Mike\'s memory is empty.<br/>Just correct him naturally in chat — he will verify and remember automatically.</div>';
+    return;
+  }
+  var sourceIcon={'verified-correction':'✅',correction:'✏️','inline-correction':'💬',manual:'📝'};
+  var sourceLabel={'verified-correction':'Mike verified ✓',correction:'Mike corrected himself','inline-correction':'You corrected Mike',manual:'Manually taught'};
+  list.innerHTML=items.map(function(item,i){
+    var icon=sourceIcon[item.source]||'🧠';
+    var label=sourceLabel[item.source]||'Learned';
+    return '<div style="padding:8px 0;border-bottom:1px solid #F0F1F6;">'
+      +'<div style="display:flex;gap:8px;align-items:flex-start;">'
+      +'<span style="font-size:15px;flex-shrink:0;">'+icon+'</span>'
+      +'<div style="flex:1;">'
+      +'<div style="font-size:13px;color:#0F0F0F;line-height:1.5;">'+item.text+'</div>'
+      +'<div style="font-size:11px;color:#9499B0;margin-top:2px;">'+label+' · '+item.date+'</div>'
+      +'</div>'
+      +'<button onclick="deleteLearning('+item.id+')" style="background:none;border:none;color:#C8CBD8;font-size:14px;cursor:pointer;padding:0 4px;flex-shrink:0;line-height:1;">×</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
 }
-function clearKnowledge(){if(confirm('Clear all knowledge?')){try{localStorage.removeItem('mikeKnowledge');}catch(e){}document.getElementById('knowledgePanel').style.display='none';}}
-function deleteLearning(id){try{var items=JSON.parse(localStorage.getItem('mikeKnowledge')||'[]').filter(function(i){return i.id!==id;});localStorage.setItem('mikeKnowledge',JSON.stringify(items));showKnowledge();}catch(e){}}
+function clearKnowledge(){if(confirm('Clear all knowledge Mike has learned from you?')){saveUserKnowledge([]);document.getElementById('knowledgePanel').style.display='none';}}
+function deleteLearning(id){var items=getUserKnowledge().filter(function(i){return i.id!==id;});saveUserKnowledge(items);showKnowledge();}
 
 async function lookupWarranty(brand,model,serial,age){
   if(!brand&&!model)return null;
@@ -2136,15 +2577,17 @@ function appendMessage(role,text){
   // Show red safety banner ABOVE the message for dangerous situations
   if(isSafetyAlert){
     var alertBanner=document.createElement('div');
-    alertBanner.innerHTML='<div style="background:#FFF0F2;border:2px solid #E8354A;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:4px;">'
-      +'<span style="font-size:22px;flex-shrink:0;">🚨</span>'
-      +'<div><div style="font-size:13px;font-weight:800;color:#E8354A;text-transform:uppercase;letter-spacing:.5px;">SAFETY ALERT</div>'
-      +'<div style="font-size:12px;color:#E8354A;line-height:1.4;">Read Mike\'s response carefully before proceeding</div></div>'
-      +'</div>';
+    alertBanner.className='safety-banner';
+    alertBanner.innerHTML='<span style="font-size:28px;flex-shrink:0;">🚨</span>'
+      +'<div><div style="font-size:14px;font-weight:800;color:#E8354A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">SAFETY ALERT</div>'
+      +'<div style="font-size:13px;color:#991B1B;line-height:1.5;">Stop what you are doing. Read Mike\'s full response before proceeding.</div></div>';
     container.appendChild(alertBanner);
   }
+  if(isAgent&&typeof addMessageActions==="function")addMessageActions(div);
   container.appendChild(div);
-  container.scrollTop=container.scrollHeight;
+  var distFromBottom=container.scrollHeight-container.scrollTop-container.clientHeight;
+  if(distFromBottom<200){container.scrollTop=container.scrollHeight;}
+  else if(isAgent){_unreadCount=(_unreadCount||0)+1;var sBtn=document.getElementById("scrollBottomBtn");if(sBtn){sBtn.classList.add("show");sBtn.innerHTML="<span>↓</span><span class=\"unread-count\">"+_unreadCount+"</span>";}}
 }
 
 function openImgOverlay(url){
@@ -2155,8 +2598,22 @@ function openImgOverlay(url){
   document.body.appendChild(overlay);
 }
 
-function showTyping(){document.getElementById('typingIndicator').style.display='block';document.getElementById('chatMessages').scrollTop=document.getElementById('chatMessages').scrollHeight;}
-function hideTyping(){document.getElementById('typingIndicator').style.display='none';}
+function showTyping(){
+  var ti=document.getElementById('typingIndicator');
+  if(ti){
+    ti.innerHTML='<div class="msg-agent"><div class="msg-bubble msg-bubble-agent" style="padding:10px 14px;"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>';
+    ti.style.display='block';
+  }
+  var cm=document.getElementById('chatMessages');
+  if(cm)cm.scrollTop=cm.scrollHeight;
+  // Visual feedback on send button
+  var btn=document.getElementById('chatSendBtn');
+  if(btn)btn.classList.add('sending');
+}
+function hideTyping(){
+  var ti=document.getElementById('typingIndicator');if(ti)ti.style.display='none';
+  var btn=document.getElementById('chatSendBtn');if(btn)btn.classList.remove('sending');
+}
 
 function handleChatFile(e){
   var file=e.target.files[0];if(!file)return;e.target.value='';
@@ -2180,21 +2637,74 @@ function clearChatAttach(){chatAttachment=null;document.getElementById("chatAtta
 
 function checkAndLearn(resp){
   try{
+    // Match LEARN tag — only fires after Mike verified the correction is accurate
     var m=resp.match(/LEARN:\{"fact":"([^"]+)","topic":"([^"]+)"\}/);
     if(m&&m[1]&&m[2]){
-      var items=JSON.parse(localStorage.getItem('mikeKnowledge')||'[]');
-      if(!items.some(function(i){return i.text&&i.text.indexOf(m[1].substring(0,20))>=0;})){
-        items.push({text:'LEARNED: '+m[1],topic:m[2],date:new Date().toLocaleDateString()});
-        localStorage.setItem('mikeKnowledge',JSON.stringify(items));
+      var fact=m[1].trim();
+      var topic=m[2].trim();
+      if(fact.length>5&&fact.length<400){
+        var items=getUserKnowledge();
+        var isDuplicate=items.some(function(i){
+          return i.text&&i.text.toLowerCase().indexOf(fact.toLowerCase().substring(0,20))>=0;
+        });
+        if(!isDuplicate){
+          items.push({
+            text:fact,
+            topic:topic,
+            source:'verified-correction',
+            date:new Date().toLocaleDateString(),
+            id:Date.now()
+          });
+          saveUserKnowledge(items);
+          showCorrectionAlert('Mike verified and saved that correction.');
+        }
       }
-      return resp.replace(/\nLEARN:\{[^\n]+\}/,'').trim();
+      // Strip the LEARN tag from the displayed response
+      return resp.replace(/\nLEARN:\{[^\n]+\}/,'').replace(/LEARN:\{[^}]+\}/,'').trim();
     }
   }catch(e){}
   return resp;
 }
+
+function showCorrectionAlert(msg){
+  var el=document.getElementById('correctionAlert');
+  if(!el)return;
+  el.textContent='✅ '+msg;
+  el.style.display='block';
+  setTimeout(function(){el.style.display='none';},4000);
+}
+
+function detectInlineCorrection(userText){
+  // Detect natural language corrections — tech correcting Mike in normal chat
+  // Pattern: "actually X", "that's wrong X", "no, X", "you're wrong X", "incorrect X"
+  var correctionPatterns=[
+    /^actually[,.]?\s+(.{10,})/i,
+    /^that.?s (wrong|incorrect|not right)[,.]?\s+(.{10,})/i,
+    /^no[,.]?\s+(it.?s|the|that|actually)\s+(.{10,})/i,
+    /^you.?re wrong[,.]?\s+(.{10,})/i,
+    /^incorrect[,.]?\s+(.{10,})/i,
+    /^(wrong|not right)[,.]?\s+(.{10,})/i,
+    /^correction[,:]?\s+(.{10,})/i,
+    /should be (.{10,}) not /i,
+    /it.?s (.{10,}) not (.{5,})/i,
+  ];
+  for(var i=0;i<correctionPatterns.length;i++){
+    var match=userText.match(correctionPatterns[i]);
+    if(match){
+      // The last capture group has the correction
+      var fact=match[match.length-1].trim();
+      if(fact.length>10&&fact.length<300){
+        return fact;
+      }
+    }
+  }
+  return null;
+}
 async function sendChat(){
   if(!isAccessAllowed())return;
   trackUsage("chat");
+  if(typeof haptic==="function"){haptic("light");animateSendBtn();}
+  if(typeof hideQuickReplies==="function")hideQuickReplies();
   if(chatSending)return;
   var input=document.getElementById('chatInput'),text=input.value.trim();
   if(!text&&!chatAttachment)return;
@@ -2224,23 +2734,41 @@ async function sendChat(){
   }
   chatHistory.push(chatMsg);
   clearChatAttach();
-  if(chatHistory.length>8)chatHistory=chatHistory.slice(-8);
+  if(chatHistory.length>40)chatHistory=chatHistory.slice(-40); // Keep 40 in memory
+  var apiHistory=chatHistory.slice(-10); // Send only last 10 to API for speed
   showTyping();
   try{
     var langNote=LANG_MIKE[currentLang]||LANG_MIKE.en;
-    var sysPrompt=AGENT_SYSTEM+'\n\nLANGUAGE: '+langNote+buildKnowledgeContext();
-    var needsSearch=hadAttachment||!!(text&&text.match(/warrant|register|recall|latest|new model|current|2024|2025|2026|price|cost|code|regulation|phase.?out|rebate|spec|manual|error code|fault code|model|serial|tonnage|seer|hspf|afue|utility|tax credit|part|supplier|distributor|where to buy|how much|availability|discontinued|replace|compatible|cross.?ref|need a|find a|looking for|capacitor|contactor|motor|valve|board|sensor|compressor|thermostat|filter|coil|drain|fuse|relay|transformer|ignitor|flame sensor|pressure switch|inducer|blower|condenser|evaporator|metering|txv|refrigerant|freon|charge|local|near me|supply house|grainger|johnstone|ferguson|carrier|trane|lennox|goodman|rheem|york|daikin|price|cost|how much/i));
-    // Voice uses 200 tokens for speed, text uses 2048
-    var response=await callAI(sysPrompt,chatHistory,voiceMode?1000:4096,needsSearch);
-    hideTyping();response=checkAndLearn(response);appendMessage('agent',response);
-    chatHistory.push({role:'assistant',content:response});
-    // Show diagram for wiring/procedure questions
-    if(!voiceMode){
-      if(needsIllustration(text||'')){generateAndShowIllustration(text||'',response);}
-      else if(needsDiagram(text||'')){generateAndShowDiagram(text||'',response);}
+    // Check if tech is attempting to correct Mike
+    var correctionFlag='';
+    if(text){
+      var detectedCorrection=detectInlineCorrection(text);
+      if(detectedCorrection){
+        correctionFlag='\n\nCORRECTION ALERT: This tech appears to be correcting you. '
+          +'The claimed correction is: "'+detectedCorrection+'" '
+          +'BEFORE saving anything, verify this against your full HVAC knowledge and web search. '
+          +'If the tech is RIGHT: acknowledge it naturally ("you are right, my bad" or "good catch") '
+          +'then end your response with LEARN:{"fact":"'+detectedCorrection.replace(/"/g,"'")+' verified correct","topic":"tech correction"} '
+          +'If YOU are right and the tech is WRONG: respectfully but clearly explain why you were correct, '
+          +'cite your source or reasoning, and do NOT include a LEARN tag. '
+          +'Never save incorrect information. You are the expert.';
+      }
     }
+    var sysPrompt=AGENT_SYSTEM+'\n\nLANGUAGE: '+langNote+buildKnowledgeContext()+correctionFlag;
+    // Search only when genuinely needed — skip for general diagnosis/chat
+    var needsSearch=hadAttachment||!!(text&&text.match(/price|cost|how much|availability|where to buy|near me|supply house|warrant|recall|bulletin|tax credit|rebate|current code|regulation|2025|2026|error code|fault code|model number|serial number|part number|cross.?ref|discontinued|latest model|new equipment|current price|in stock|lead time|ship/i));
+    // Voice uses 200 tokens for speed, text uses 2048
+    var response=await callAI(sysPrompt,apiHistory,voiceMode?800:2048,needsSearch);
+    hideTyping();response=checkAndLearn(response);appendMessage('agent',response);if(!voiceMode)setTimeout(function(){generateQuickReplies(response);},300);
+    chatHistory.push({role:'assistant',content:response});
+    saveUserHistory();
+    extractMemoryCues(text||'',response);
+    // Inline correction detection — Mike verifies before anything is saved
+    // detectInlineCorrection flags the correction; Mike's LEARN tag is the only save trigger
+    // Diagrams only fire when tech taps Draw Diagram or Illustrate It buttons
+    // Never auto-trigger from keywords
     // Show reference image for visual questions
-    var needsImage=hadAttachment||!!(text&&text.match(/show|image|photo|picture|diagram|wiring|what does|look like|identify|nameplate|part|component|unit|model|visual|install|correct|right way|hook up|connect|wire|check|inspect/i));
+    var needsImage=hadAttachment||!!(text&&text.match(/show.*image|show.*photo|what does.*look like|identify.*this|nameplate|what part is this|show me.*unit|show me.*component/i));
     if(needsImage&&!voiceMode){
       var imgQuery=await buildImageQuery(text||'HVAC system',response);
       if(imgQuery)fetchAndShowImage(imgQuery);
@@ -2248,10 +2776,44 @@ async function sendChat(){
   }catch(e){
     hideTyping();
     var em=e.message||'';
-    if(em.includes('timed out'))appendMessage('agent','Taking longer than usual — please try again.');
-    else appendMessage('agent','Error: '+em+' — tap send again');
+    if(em.includes('timed out')||em.includes('abort')||em.toLowerCase().includes('network')){
+      appendMessage('agent','Taking a bit longer than usual. Check your connection and tap send again.');
+    } else if(em.includes('high demand')){
+      appendMessage('agent','Mike is handling a lot of requests right now. Give it a second and tap send again.');
+    } else {
+      appendMessage('agent','Something went wrong on my end. Tap send again — I am ready.');
+    }
   }
   finally{chatSending=false;btn.disabled=false;if(!voiceMode)input.focus();}
+}
+
+function triggerDiagram(){
+  // Use the last thing Mike said + the last thing the tech typed as context
+  var lastMike='';
+  var lastTech='';
+  var msgs=document.querySelectorAll('#chatMessages .msg-agent .msg-bubble');
+  if(msgs.length>0){lastMike=msgs[msgs.length-1].textContent.trim().substring(0,400);}
+  var techMsgs=document.querySelectorAll('#chatMessages .msg-user .msg-bubble');
+  if(techMsgs.length>0){lastTech=techMsgs[techMsgs.length-1].textContent.trim().substring(0,200);}
+  if(!lastMike&&!lastTech){
+    appendMessage('agent','Ask me something first, then tap Draw Diagram and I will generate a diagram for what we just discussed.');
+    return;
+  }
+  generateAndShowDiagram(lastTech||'What we just discussed', lastMike||'HVAC system');
+}
+
+function triggerIllustration(){
+  var lastMike='';
+  var lastTech='';
+  var msgs=document.querySelectorAll('#chatMessages .msg-agent .msg-bubble');
+  if(msgs.length>0){lastMike=msgs[msgs.length-1].textContent.trim().substring(0,400);}
+  var techMsgs=document.querySelectorAll('#chatMessages .msg-user .msg-bubble');
+  if(techMsgs.length>0){lastTech=techMsgs[techMsgs.length-1].textContent.trim().substring(0,200);}
+  if(!lastMike&&!lastTech){
+    appendMessage('agent','Ask me something first, then tap Illustrate It and I will create an illustration for what we just discussed.');
+    return;
+  }
+  generateAndShowIllustration(lastTech||'What we just discussed', lastMike||'HVAC component');
 }
 
 function sendQuick(text){document.getElementById('chatInput').value=text;sendChat();}
@@ -2466,9 +3028,16 @@ function showImageInChat(url,caption){
 
 function handleChatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
 function clearChat(){
-  // Keep chatHistory so Mike remembers previous jobs on the same shift
-  var greetings={en:"Screen cleared — Mike still remembers your last job. What are you working on now?",es:"Pantalla limpia — Mike recuerda el trabajo anterior. En que trabajas ahora?",zh:"\u5c4f\u5e55\u5df2\u6e05\u9664\u3002Mike\u8fd8\u8bb0\u5f97\u4e0a\u4e00\u4e2a\u5de5\u4f5c\u3002",vi:"\u0110\xe3 x\xf3a m\xe0n h\xecinh. Mike v\u1eabn nh\u1edb c\xf4ng vi\u1ec7c tr\u01b0\u1edbc.",fr:"\xc9cran effac\xe9 \u2014 Mike se souvient du dernier job.",pt:"Tela limpa \u2014 Mike lembra do trabalho anterior."};
-  document.getElementById('chatMessages').innerHTML='<div class="msg-agent"><div class="msg-bubble msg-bubble-agent"><p>'+(greetings[currentLang]||greetings.en)+'</p></div><div class="msg-time">'+getTimeStr()+'</div></div>';
+  // Clear display only — Mike keeps all memory. History persists in localStorage.
+  var name = currentUser ? currentUser.name.split(' ')[0] : 'you';
+  var profile = getUserMemoryProfile();
+  var msg;
+  if(profile.totalMessages > 10){
+    msg = 'Screen cleared, '+name+'. I remember everything from our previous sessions — what are you working on?';
+  } else {
+    msg = 'Screen cleared — I still remember everything. What are you working on now?';
+  }
+  document.getElementById('chatMessages').innerHTML='<div class="msg-agent"><div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div></div>';
 }
 
 function loadMikeVoice(){
@@ -2697,6 +3266,7 @@ function mikeSay(text){
   if(!clean)return;
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
   isMikeSpeaking=true;
+  if(typeof showVoiceWaveform==='function')showVoiceWaveform(true);
   if(micBtn){micBtn.classList.add('mic-speaking');micBtn.textContent='🔊';}
   if(stopBtn)stopBtn.style.display='flex';
   setVoiceStatus('Mike is talking…','');
@@ -2740,6 +3310,7 @@ function mikeSayBrowser(clean){
   var idx=0;
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
   isMikeSpeaking=true;
+  if(typeof showVoiceWaveform==='function')showVoiceWaveform(true);
   if(micBtn){micBtn.classList.add('mic-speaking');micBtn.textContent='🔊';}
   if(stopBtn)stopBtn.style.display='flex';
   function next(){
@@ -2874,7 +3445,8 @@ async function analyzeCameraFrame(userInitiated,userText){
     mikeSayCamera(response);
     chatHistory.push({role:'user',content:userMsg});
     chatHistory.push({role:'assistant',content:response});
-    if(chatHistory.length>10)chatHistory=chatHistory.slice(-10);
+    if(chatHistory.length>40)chatHistory=chatHistory.slice(-40); // Keep 40 in memory
+  var apiHistory=chatHistory.slice(-10); // Send only last 10 to API for speed
     appendMessage('agent','📷 '+response);
     if(userInitiated&&userText&&needsDiagram(userText))generateAndShowDiagram(userText,response);
   }catch(e){
@@ -3037,9 +3609,270 @@ document.addEventListener('click',function(e){
   }
 });
 
+
+// ── OFFLINE DETECTION ─────────────────────────────────────────
+function initOfflineDetection(){
+  function updateOnline(){
+    var banner=document.getElementById('offlineBanner');
+    if(!banner)return;
+    if(!navigator.onLine){
+      banner.textContent='📡 No internet connection — Mike needs to be online to respond';
+      banner.classList.add('show');
+    } else {
+      banner.classList.remove('show');
+    }
+  }
+  window.addEventListener('online',updateOnline);
+  window.addEventListener('offline',updateOnline);
+  updateOnline();
+}
+
+// ── JOB TIMER ─────────────────────────────────────────────────
+var jobTimerStart=null,jobTimerInterval=null;
+function startJobTimer(){
+  if(jobTimerInterval)return;
+  jobTimerStart=Date.now();
+  var el=document.getElementById('jobTimer');
+  if(el)el.classList.add('show');
+  jobTimerInterval=setInterval(function(){
+    if(!jobTimerStart)return;
+    var sec=Math.floor((Date.now()-jobTimerStart)/1000);
+    var h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+    var display=h>0?(h+'h '+m+'m'):(m+'m '+String(s).padStart(2,'0')+'s');
+    var el2=document.getElementById('jobTimer');
+    if(el2)el2.textContent='⏱ Job: '+display;
+  },1000);
+}
+function resetJobTimer(){
+  if(jobTimerInterval){clearInterval(jobTimerInterval);jobTimerInterval=null;}
+  jobTimerStart=null;
+  var el=document.getElementById('jobTimer');if(el)el.classList.remove('show');
+}
+function toggleJobTimer(){
+  if(jobTimerInterval){resetJobTimer();}else{startJobTimer();}
+}
+
+// ── CHAT INPUT ENHANCEMENTS ────────────────────────────────────
+function initChatEnhancements(){
+  var input=document.getElementById('chatInput');
+  var sendBtn=document.getElementById('chatSendBtn');
+  if(!input)return;
+  // Auto-grow textarea
+  input.addEventListener('input',function(){
+    this.style.height='auto';
+    this.style.height=Math.min(this.scrollHeight,120)+'px';
+    // Show char count when approaching limit
+    var count=this.value.length;
+    var counter=document.getElementById('chatCharCount');
+    if(counter){
+      if(count>200){counter.textContent=count;counter.style.display='block';}
+      else{counter.style.display='none';}
+    }
+  });
+  // Start job timer on first message
+  input.addEventListener('focus',function(){
+    if(!jobTimerInterval&&this.value.length===0){
+      // Don't auto-start — let tech tap timer button
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// WORLD CLASS JS — Trazer Intelligence
+// ════════════════════════════════════════════════════════════════
+
+function showToast(msg,type,duration){
+  type=type||'info';duration=duration||2800;
+  var c=document.getElementById('toastContainer');if(!c)return;
+  var t=document.createElement('div');t.className='toast '+type;
+  t.textContent=({'success':'✅ ','error':'❌ ','info':'💬 '}[type]||'')+msg;
+  c.appendChild(t);
+  setTimeout(function(){t.style.animation='toastOut .25s ease forwards';setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},250);},duration);
+}
+
+function haptic(type){
+  if(!navigator.vibrate)return;
+  if(type==='light')navigator.vibrate(8);
+  else if(type==='medium')navigator.vibrate(15);
+  else if(type==='success')navigator.vibrate([10,30,10]);
+  else if(type==='error')navigator.vibrate([20,50,20,50,20]);
+  else navigator.vibrate(10);
+}
+
+var _unreadCount=0;
+function scrollToBottom(){
+  var cm=document.getElementById('chatMessages');
+  if(cm)cm.scrollTo({top:cm.scrollHeight,behavior:'smooth'});
+  _unreadCount=0;
+  var btn=document.getElementById('scrollBottomBtn');
+  if(btn)btn.classList.remove('show');
+}
+function initScrollBottomBtn(){
+  var cm=document.getElementById('chatMessages'),btn=document.getElementById('scrollBottomBtn');
+  if(!cm||!btn)return;
+  cm.addEventListener('scroll',function(){
+    var d=cm.scrollHeight-cm.scrollTop-cm.clientHeight;
+    if(d>150){
+      btn.classList.add('show');
+      btn.innerHTML='<span>↓</span>'+(_unreadCount>0?'<span class="unread-count">'+_unreadCount+'</span>':'');
+    } else {btn.classList.remove('show');_unreadCount=0;}
+  });
+}
+
+var _shareText='';
+function copyMikeMessage(btn){
+  var b=btn.closest('.msg-agent');if(!b)return;
+  var bub=b.querySelector('.msg-bubble');if(!bub)return;
+  navigator.clipboard.writeText((bub.textContent||'').trim()).then(function(){
+    showToast('Copied to clipboard','success');haptic('success');
+    btn.textContent='✅';setTimeout(function(){btn.textContent='📋';},1500);
+  }).catch(function(){showToast('Copy failed','error');});
+}
+function thumbsUpMessage(btn){
+  btn.classList.toggle('reacted');haptic('light');
+  if(btn.classList.contains('reacted')){showToast('Feedback saved','success',2000);trackUsage('thumbs_up');}
+}
+function shareMessage(btn){
+  var b=btn.closest('.msg-agent');if(!b)return;
+  var bub=b.querySelector('.msg-bubble');if(!bub)return;
+  _shareText=(bub.textContent||'').trim();
+  var s=document.getElementById('shareSheet');if(s)s.classList.add('show');
+  haptic('light');
+}
+function closeShare(){var s=document.getElementById('shareSheet');if(s)s.classList.remove('show');}
+function shareVia(m){
+  closeShare();
+  if(!_shareText)return;
+  var t='Mike (Trazer Intelligence): '+_shareText;
+  if(m==='copy'){navigator.clipboard.writeText(t).then(function(){showToast('Copied','success');});}
+  else if(m==='sms'){window.open('sms:?body='+encodeURIComponent(t));}
+  else if(m==='email'){window.open('mailto:?subject=Mike%20HVAC%20Diagnosis&body='+encodeURIComponent(t));}
+  else if(m==='native'){if(navigator.share){navigator.share({text:t,title:'Trazer Intelligence'}).catch(function(){});}else{navigator.clipboard.writeText(t).then(function(){showToast('Copied — paste anywhere','info');});}}
+  haptic('light');
+}
+
+function openChatSearch(){var b=document.getElementById('chatSearchBar');if(b){b.classList.add('show');document.getElementById('chatSearchInput').focus();}}
+function closeChatSearch(){
+  var b=document.getElementById('chatSearchBar');if(b)b.classList.remove('show');
+  document.querySelectorAll('.search-highlight').forEach(function(el){var t=document.createTextNode(el.textContent);el.parentNode.replaceChild(t,el);});
+  var c=document.getElementById('searchResultCount');if(c)c.textContent='';
+  var i=document.getElementById('chatSearchInput');if(i)i.value='';
+}
+function searchMessages(q){
+  document.querySelectorAll('.search-highlight').forEach(function(el){var t=document.createTextNode(el.textContent);el.parentNode.replaceChild(t,el);});
+  var c=document.getElementById('searchResultCount');
+  if(!q||q.length<2){if(c)c.textContent='';return;}
+  var bubbles=document.querySelectorAll('#chatMessages .msg-bubble');
+  var matches=0,first=null;
+  bubbles.forEach(function(b){
+    if(b.textContent.toLowerCase().indexOf(q.toLowerCase())>=0){
+      var escaped=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      var re=new RegExp('('+escaped+')','gi');
+      b.innerHTML=b.innerHTML.replace(re,'<mark class="search-highlight">$1</mark>');
+      matches++;if(!first)first=b.querySelector('.search-highlight');
+    }
+  });
+  if(c)c.textContent=matches?matches+' found':'No results';
+  if(first)first.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function showQuickReplies(list){
+  var qr=document.getElementById('quickReplies');if(!qr)return;
+  if(!list||!list.length){qr.classList.remove('show');return;}
+  qr.innerHTML=list.map(function(s){return '<span class="qr-chip haptic-tap" onclick="useQuickReply(this,\''+s.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'+(s.length>35?s.substring(0,33)+'…':s)+'</span>';}).join('');
+  qr.classList.add('show');
+}
+function useQuickReply(el,text){
+  var inp=document.getElementById('chatInput');
+  if(inp){inp.value=text;inp.focus();inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,120)+'px';}
+  haptic('light');
+  var qr=document.getElementById('quickReplies');if(qr)qr.classList.remove('show');
+}
+function hideQuickReplies(){var qr=document.getElementById('quickReplies');if(qr)qr.classList.remove('show');}
+function generateQuickReplies(resp){
+  var r=resp.toLowerCase(),s=[];
+  if(r.indexOf('pressure')>=0||r.indexOf('psi')>=0)s=['What are normal pressures for this temp?','Should I add refrigerant?','What is my subcooling?'];
+  else if(r.indexOf('capacitor')>=0)s=['How much does replacement cost?','Show me how to wire it','What brand do you recommend?'];
+  else if(r.indexOf('warranty')>=0)s=['How do I find the serial number?','Is labor covered?','What if it is expired?'];
+  else if(r.indexOf('furnace')>=0||r.indexOf('heat exchanger')>=0)s=['Walk me through the sequence','How do I test the flame sensor?','What causes limit trips?'];
+  else if(r.indexOf('compressor')>=0)s=['How do I test it?','What does a new one cost?','Could it be the capacitor?'];
+  else if(r.indexOf('upsell')>=0||r.indexOf('maintenance')>=0)s=['Give me the exact words to say','What is a fair price?','Help me close this sale'];
+  else if(r.indexOf('objection')>=0||r.indexOf('too high')>=0)s=['What if they say no?','Give me a value anchor','How do I close this?'];
+  showQuickReplies(s);
+}
+
+function showVoiceWaveform(on){var w=document.getElementById('voiceWaveform');if(w)w.classList.toggle('active',on);}
+
+function addMessageActions(div){
+  var a=document.createElement('div');a.className='msg-actions';
+  a.innerHTML='<button class="msg-action-btn haptic-tap" onclick="copyMikeMessage(this)">📋 Copy</button>'
+    +'<button class="msg-action-btn haptic-tap" onclick="shareMessage(this)">↗️ Share</button>'
+    +'<button class="msg-action-btn haptic-tap" onclick="thumbsUpMessage(this)">👍</button>';
+  div.appendChild(a);
+}
+
+var _darkMode=localStorage.getItem('trazer_dark')==='1';
+function initDarkMode(){if(_darkMode)document.documentElement.setAttribute('data-theme','dark');}
+function toggleDarkMode(){
+  _darkMode=!_darkMode;localStorage.setItem('trazer_dark',_darkMode?'1':'0');
+  document.documentElement.setAttribute('data-theme',_darkMode?'dark':'');
+  showToast(_darkMode?'Dark mode on':'Light mode on','info',1500);haptic('light');
+}
+
+function animateSendBtn(){var b=document.getElementById('chatSendBtn');if(!b)return;b.style.transform='scale(.9)';setTimeout(function(){b.style.transform='';},120);}
+
+function initSwipeGestures(){
+  var chat=document.getElementById('chatMessages');if(!chat)return;
+  var sx=0,sy=0,st=0;
+  chat.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now();},{passive:true});
+  chat.addEventListener('touchend',function(e){
+    var dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy,dt=Date.now()-st;
+    if(Math.abs(dx)>80&&Math.abs(dx)>Math.abs(dy)*2&&dt<400&&sx<40){openChatSearch();haptic('light');}
+  },{passive:true});
+}
+
+function initSendHaptic(){
+  var b=document.getElementById('chatSendBtn');
+  if(b)b.addEventListener('touchstart',function(){haptic('light');},{passive:true});
+}
+
+function initKeyboardShortcuts(){
+  document.addEventListener('keydown',function(e){
+    if(e.key==='/'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'){e.preventDefault();var i=document.getElementById('chatInput');if(i)i.focus();}
+    if(e.key==='Escape'){closeShare();closeChatSearch();var o=document.querySelector('.tz-modal-overlay.show');if(o)o.classList.remove('show');}
+    if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();openChatSearch();}
+  });
+}
+
+function initPullToRefresh(){
+  var ptr=document.getElementById('pullRefreshIndicator');if(!ptr)return;
+  var sy=0,pulling=false,threshold=60;
+  document.addEventListener('touchstart',function(e){if(window.scrollY===0)sy=e.touches[0].clientY;},{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!sy)return;
+    var dy=e.touches[0].clientY-sy;
+    if(dy>10&&window.scrollY===0){pulling=true;var p=Math.min(dy/threshold,1);ptr.style.height=(p*44)+'px';ptr.classList.toggle('visible',p>0.5);}
+  },{passive:true});
+  document.addEventListener('touchend',function(){if(pulling){ptr.style.height='0';ptr.classList.remove('visible');pulling=false;sy=0;}},{passive:true});
+}
+
+function initReconnectToast(){
+  var was=false;
+  window.addEventListener('offline',function(){was=true;});
+  window.addEventListener('online',function(){if(was){showToast('Back online — Mike is ready','success');was=false;}});
+}
 document.addEventListener('DOMContentLoaded',function(){
   tracerInit();
   initRoleFlow();
+  initOfflineDetection();
+  initChatEnhancements();
+  initScrollBottomBtn();
+  initSwipeGestures();
+  initSendHaptic();
+  initKeyboardShortcuts();
+  initPullToRefresh();
+  initReconnectToast();
+  initDarkMode();
   populateSelects();
   buildSymptomGrid();
   buildHomeSymptomGrid();
@@ -3069,6 +3902,28 @@ document.addEventListener('DOMContentLoaded',function(){
     <div class="tz-modal-field">
       <label class="tz-modal-label">Email</label>
       <input class="tz-modal-input" type="text" id="profileEmailDisplay" disabled style="opacity:.5;cursor:not-allowed;"/>
+    </div>
+    <div class="tz-modal-field">
+      <label class="tz-modal-label">My Experience Level</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="expLevelPicker">
+        <button class="exp-btn" id="expBtnBeginner" onclick="setExpLevel('beginner',this)" style="flex:1;min-width:80px;">🌱 Beginner</button>
+        <button class="exp-btn" id="expBtnExperienced" onclick="setExpLevel('experienced',this)" style="flex:1;min-width:80px;">🔧 Experienced</button>
+        <button class="exp-btn" id="expBtnMaster" onclick="setExpLevel('master',this)" style="flex:1;min-width:80px;">⭐ Master</button>
+      </div>
+      <div style="font-size:11px;color:#555;margin-top:6px;" id="expLevelDesc">Mike adapts how he talks to you based on your level.</div>
+    </div>
+    <div class="tz-modal-field">
+      <label class="tz-modal-label">Specialty <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
+      <input class="tz-modal-input" type="text" id="profileSpecialtyInput" placeholder="e.g. Commercial, Residential, Mini-splits"/>
+    </div>
+    <div class="tz-modal-field">
+      <label class="tz-modal-label">Primary Brand <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
+      <input class="tz-modal-input" type="text" id="profileBrandInput" placeholder="e.g. Carrier, Trane, Goodman"/>
+    </div>
+    <div id="profileMikeMemory" style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;padding:14px;margin-bottom:16px;display:none;">
+      <div style="font-size:11px;font-weight:700;color:#00C2B2;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">🧠 What Mike Remembers About You</div>
+      <div id="profileMemoryList" style="font-size:13px;color:#aaa;line-height:1.8;"></div>
+      <button onclick="clearMyMemory()" style="margin-top:10px;background:transparent;border:1px solid rgba(232,53,74,.4);border-radius:6px;padding:5px 12px;font-size:12px;color:#E8354A;cursor:pointer;font-family:inherit;">Reset Mike's Memory</button>
     </div>
     <button class="tz-modal-btn" onclick="saveProfileSettings()">Save Changes</button>
     <button class="tz-modal-btn-outline" onclick="closeModal('profileModal')">Cancel</button>
@@ -3133,30 +3988,11 @@ document.addEventListener('DOMContentLoaded',function(){
   </div>
   <div class="tz-modal-body">
     <div style="font-size:13px;color:#666;margin-bottom:16px;">5 things every tech needs to know about Mike</div>
-    <div class="tz-fact"><div class="tz-fact-num">1</div><div class="tz-fact-text"><strong>Mike knows every system ever made.</strong> Ask him about any brand, any model, any fault code. He searches in real time so his knowledge is always current — including 2026 regulations, R-454B, A2L refrigerants, and SEER2 standards.</div></div>
-    <div class="tz-fact"><div class="tz-fact-num">2</div><div class="tz-fact-text"><strong>Always confirm outdoor temp before pressures.</strong> Mike will ask you the outdoor ambient temperature before giving any pressure targets. R-410A at 75°F is 99-108 PSI suction — very different from 95°F. This keeps your diagnosis accurate.</div></div>
-    <div class="tz-fact"><div class="tz-fact-num">3</div><div class="tz-fact-text"><strong>Mike sees through your camera.</strong> Tap ▶ Start on the camera card, point at any unit or part, and ask Mike what he sees. He reads nameplates, identifies components, finds parts with live pricing, and checks warranty — all in real time.</div></div>
-    <div class="tz-fact"><div class="tz-fact-num">4</div><div class="tz-fact-text"><strong>Mike learns when you correct him.</strong> If Mike gets something wrong, correct him with the right information. He will acknowledge it, store it, and remember it for every future job. Tap 📚 Knowledge to see everything Mike has learned.</div></div>
-    <div class="tz-fact"><div class="tz-fact-num">5</div><div class="tz-fact-text"><strong>Mike coaches your revenue after every diagnosis.</strong> Ask "what can I upsell on this job?" and Mike gives you 3 specific recommendations with the exact words to say to the homeowner. Capacitor, coils, surge protection, maintenance agreement — every ticket counts.</div></div>
-  </div>
-</div>
-</div>
-
-<!-- ── HELP MODAL ────────────────────────────────────────────── -->
-<div class="tz-modal-overlay" id="helpModal">
-<div class="tz-modal">
-  <div class="tz-modal-header">
-    <div class="tz-modal-title">❓ Help &amp; Support</div>
-    <button class="tz-modal-close" onclick="closeModal('helpModal')">✕</button>
-  </div>
-  <div class="tz-modal-body">
-    <div class="tz-help-option" onclick="replayOnboarding()">
-      <div class="tz-help-icon">🎬</div>
-      <div><div class="tz-help-title">Watch Mike's Intro Again</div><div class="tz-help-sub">Replay the full onboarding with Mike's voice</div></div>
-    </div>
-    <div class="tz-help-option" onclick="showFeedbackSection()">
-      <div class="tz-help-icon">💬</div>
-      <div><div class="tz-help-title">Send Feedback</div><div class="tz-help-sub">Tell us what's working and what's not</div></div>
+    <div class="tz-fact"><div class="tz-fact-num">1</div><div class="tz-fact-text"><strong>Mike remembers you personally.</strong> Your experience level, specialty, preferred brands, every correction, every conversation — saved to your private profile. Mike adapts completely to beginners, journeymen, and master techs. Set your level in Profile Settings.</div></div>
+    <div class="tz-fact"><div class="tz-fact-num">2</div><div class="tz-fact-text"><strong>Correct Mike naturally — he verifies first.</strong> Say "actually..." or "that's wrong..." in chat. Mike checks his full knowledge base before accepting any correction. If he was right, he tells you why. If you were right, he saves it permanently to your profile.</div></div>
+    <div class="tz-fact"><div class="tz-fact-num">3</div><div class="tz-fact-text"><strong>Mike sees through your camera.</strong> Tap Start on the camera card, point at any unit or part. Mike identifies it, reads specs, finds live pricing at Johnstone, Grainger, and Ferguson, checks warranty, and diagnoses in real time.</div></div>
+    <div class="tz-fact"><div class="tz-fact-num">4</div><div class="tz-fact-text"><strong>Diagrams on demand only.</strong> Tap Draw Diagram or Illustrate It to generate a visual for what Mike just explained. They never auto-pop — only when you ask.</div></div>
+    <div class="tz-fact"><div class="tz-fact-num">5</div><div class="tz-fact-text"><strong>Revenue coaching after every job.</strong> Ask "what can I upsell?" for specific recommendations with exact words to use. Use the Timer button to track job time. Clear chat between jobs — Mike keeps all memory across every session.</div></div>
     </div>
     <div id="feedbackSection" style="display:none;margin-top:16px;">
       <div class="tz-modal-field">

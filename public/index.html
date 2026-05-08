@@ -8,7 +8,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Trazer Intelligence</title>
 <meta name="theme-color" content="#00C2B2">
 <meta name="mobile-web-app-capable" content="yes">
@@ -16,7 +16,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Trazer Intelligence">
 <link rel="manifest" href="data:application/json,{%22name%22:%22Trazer%20Intelligence%22,%22short_name%22:%22Trazer%20Intelligence%22,%22start_url%22:%22/%22,%22display%22:%22standalone%22,%22background_color%22:%22%230F0F0F%22,%22theme_color%22:%22%2300C2B2%22}">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+<noscript><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/></noscript>
 <style>
 
 :root{
@@ -37,6 +38,7 @@
   --shadow-lg:0 10px 32px rgba(0,0,0,.1),0 4px 8px rgba(0,0,0,.05);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+button,a,label,[onclick]{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 html{font-size:16px;-webkit-text-size-adjust:100%;}
 body{background:var(--bg);font-family:var(--font);color:var(--black);min-height:100vh;-webkit-font-smoothing:antialiased;}
 ::-webkit-scrollbar{width:4px;}
@@ -77,7 +79,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--black);min-height:
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px rgba(16,185,129,.2);}
 .status-dot.red{background:var(--red);box-shadow:0 0 0 2px rgba(232,53,74,.2);}
 .status-text{font-size:12px;color:var(--gray-500);font-weight:600;}
-.page{max-width:720px;margin:0 auto;padding:20px 14px 88px;}
+.page{max-width:720px;margin:0 auto;padding:20px 14px calc(88px + env(safe-area-inset-bottom,0px));}
 .card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gray-200);padding:20px;margin-bottom:10px;box-shadow:var(--shadow-sm);}
 .field-label{display:block;font-size:11px;font-weight:700;color:var(--gray-400);margin-bottom:6px;letter-spacing:.6px;text-transform:uppercase;}
 .field-sub{font-size:13px;color:var(--gray-500);margin-bottom:10px;line-height:1.5;}
@@ -182,7 +184,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 /* ══ TRAZER INTELLIGENCE ADDITIONS ═════════════════════════ */
 
 /* Auth */
-#authOverlay{position:fixed;inset:0;z-index:9999;background:#0A0A0A;display:flex;align-items:center;justify-content:center;padding:20px;}
+#authOverlay{position:fixed;inset:0;z-index:9999;background:#0A0A0A;display:flex;align-items:center;justify-content:center;padding:max(20px,env(safe-area-inset-top,20px)) 20px max(20px,env(safe-area-inset-bottom,20px));}
 #authOverlay.hidden{display:none;}
 .auth-wrap{width:100%;max-width:400px;}
 .auth-logo-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:26px;}
@@ -259,7 +261,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 @keyframes obw{0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
 
 /* Paywall */
-#paywallOverlay{position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,.97);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px;}
+#paywallOverlay{position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,.97);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px;}
 #paywallOverlay.show{display:flex;}
 .pw-card{width:100%;max-width:480px;background:#161616;border:1px solid #2a2a2a;border-radius:18px;padding:30px 26px;text-align:center;}
 .pw-icon{font-size:40px;margin-bottom:10px;}
@@ -298,7 +300,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 
 
 /* ══ MODALS — PROFILE / BILLING / WHATS NEW / HELP ═════════ */
-.tz-modal-overlay{position:fixed;inset:0;z-index:9980;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px;}
+.tz-modal-overlay{position:fixed;inset:0;z-index:9980;background:rgba(0,0,0,.85);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px;}
 .tz-modal-overlay.show{display:flex;}
 .tz-modal{background:#161616;border:1px solid #2a2a2a;border-radius:18px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.7);}
 .tz-modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 16px;border-bottom:1px solid #222;}
@@ -449,7 +451,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 #chatSearchInput:focus{border-color:#00C2B2;}
 #chatSearchClose{background:none;border:none;font-size:18px;cursor:pointer;color:#9499B0;padding:0 4px;}
 #searchResultCount{font-size:12px;color:#9499B0;white-space:nowrap;}
-#shareSheet{position:fixed;inset:0;z-index:9985;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;}
+#shareSheet{position:fixed;inset:0;z-index:9985;background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;}
 #shareSheet.show{display:flex;}
 .share-card{background:#fff;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:500px;}
 .share-title{font-size:16px;font-weight:700;color:#0F0F0F;margin-bottom:16px;text-align:center;}
@@ -552,9 +554,7 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 @keyframes obSlideIn{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
 
 /* Message actions — visible on touch */
-@media (hover: none) {
-  .msg-actions{display:flex !important;}
-}
+/* msg-actions shown via .touched class on tap (JS) */
 .msg-agent .msg-actions{opacity:0;transition:opacity .2s;}
 .msg-agent:hover .msg-actions,.msg-agent.touched .msg-actions{opacity:1;display:flex !important;}
 
@@ -575,6 +575,88 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 [data-theme="dark"] .role-card-title{color:#fff;}
 [data-theme="dark"] .role-card-sub{color:#6b7280;}
 [data-theme="dark"] #authOverlay{background:rgba(10,10,10,.98);}
+
+/* ── HOMEOWNER + CONTRACTOR RESULT PANEL DARK MODE ─────────── */
+[data-theme="dark"] #homeResultPanel span,
+[data-theme="dark"] #resultPanel span{color:#e5e7eb;}
+
+[data-theme="dark"] .result-body{background:#161616;color:#e5e7eb;}
+[data-theme="dark"] .result-body p{color:#e5e7eb !important;}
+[data-theme="dark"] .result-body strong{color:#fff !important;}
+[data-theme="dark"] .result-body div{color:#e5e7eb;}
+
+/* Override hardcoded severity colors in generated result HTML */
+[data-theme="dark"] #homeResultText div,
+[data-theme="dark"] #homeResultText p,
+[data-theme="dark"] #resultText div,
+[data-theme="dark"] #resultText p{color:#e5e7eb !important;}
+
+[data-theme="dark"] #homeResultText strong,
+[data-theme="dark"] #resultText strong{color:#fff !important;}
+
+/* Severity banners — invert background, keep text readable */
+[data-theme="dark"] #homeResultText [style*="background:#ffebee"],
+[data-theme="dark"] #resultText [style*="background:#ffebee"]{background:#2d0a0a !important;}
+[data-theme="dark"] #homeResultText [style*="background:#fff3e0"],
+[data-theme="dark"] #resultText [style*="background:#fff3e0"]{background:#2d1a00 !important;}
+[data-theme="dark"] #homeResultText [style*="background:#e3f2fd"],
+[data-theme="dark"] #resultText [style*="background:#e3f2fd"]{background:#0a1a2d !important;}
+[data-theme="dark"] #homeResultText [style*="background:#e8f5e9"],
+[data-theme="dark"] #resultText [style*="background:#e8f5e9"]{background:#0a1f0e !important;}
+
+/* White step/section backgrounds in result */
+[data-theme="dark"] #homeResultText [style*="background:#fff"],
+[data-theme="dark"] #resultText [style*="background:#fff"],
+[data-theme="dark"] #homeResultText [style*="background:#ffffff"],
+[data-theme="dark"] #resultText [style*="background:#ffffff"]{background:#1a1a1a !important;}
+
+/* Info boxes */
+[data-theme="dark"] .info-box{background:#111827 !important;border-color:#1f2937 !important;}
+[data-theme="dark"] .info-box p{color:#9ca3af !important;}
+[data-theme="dark"] .info-box.info-blue{background:#0a1628 !important;border-color:#1e3a5f !important;}
+[data-theme="dark"] .info-box.info-blue p{color:#93c5fd !important;}
+[data-theme="dark"] .info-box.info-green{background:#052e16 !important;border-color:#14532d !important;}
+[data-theme="dark"] .info-box.info-green p{color:#86efac !important;}
+
+/* Homeowner result card title */
+[data-theme="dark"] #homeResultPanel > div > span{color:#e5e7eb !important;}
+[data-theme="dark"] #resultPanel > div > span{color:#e5e7eb !important;}
+
+/* Share/New Diagnosis buttons in result */
+[data-theme="dark"] #homeResultPanel .btn-outline{border-color:#2a2a2a;color:#9ca3af;}
+[data-theme="dark"] #homeResultPanel .btn-outline:hover{border-color:#00C2B2;color:#00C2B2;}
+
+/* Contractor result edu panel */
+[data-theme="dark"] #eduContent{background:#1a1a1a !important;}
+[data-theme="dark"] #eduText{color:#e5e7eb !important;}
+
+/* Contractor nudge */
+[data-theme="dark"] #contractorNudge .info-box-green p{color:#86efac !important;}
+
+/* Drop zone dark mode */
+[data-theme="dark"] .drop-zone{background:#161616;border-color:#2a2a2a;}
+[data-theme="dark"] .drop-zone:hover{border-color:#00C2B2;}
+[data-theme="dark"] #dropPrompt div,
+[data-theme="dark"] #homeDropPrompt div{color:#e5e7eb;}
+[data-theme="dark"] .photo-tip{color:#6b7280;}
+
+/* Recorder dark mode */
+[data-theme="dark"] .recorder{background:#111;border-color:#1f1f1f;}
+[data-theme="dark"] #transcriptBox{background:#1a1a1a !important;border-color:#2a2a2a !important;}
+[data-theme="dark"] #transcriptText{color:#9ca3af !important;}
+
+/* Knowledge panel dark mode */
+[data-theme="dark"] #knowledgePanel{background:#161616;border-color:#2a2a2a;}
+[data-theme="dark"] #knowledgeList{color:#9ca3af;}
+[data-theme="dark"] #knowledgePanel button{background:#2d0a0a;border-color:#4d1010;color:#f87171;}
+
+/* Footer dark mode */
+[data-theme="dark"] .footer p{color:#6b7280;}
+
+[data-theme="dark"] .result-title{color:#e5e7eb !important;}
+
+[data-theme="dark"] #homeResultPanel .btn{color:#009E90 !important;}
+[data-theme="dark"] #homeResultPanel [style*="background:#F5F6FA"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;}
 </style>
 </head>
 <body>
@@ -765,8 +847,8 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
         <span style="width:6px;height:6px;background:#00C2B2;border-radius:50%;display:inline-block;box-shadow:0 0 8px rgba(0,194,178,.6);"></span>
         <span style="font-size:11px;font-weight:700;color:#00C2B2;letter-spacing:.5px;text-transform:uppercase;">Trazer Intelligence</span>
       </div>
-      <h1 style="font-size:clamp(16px,3.5vw,22px);font-weight:700;color:#FFFFFF;letter-spacing:-.3px;line-height:1.2;margin-bottom:6px;" id="heroTitle">What's Wrong With Your HVAC?</h1>
-      <p style="font-size:15px;color:rgba(255,255,255,.55);line-height:1.65;max-width:400px;margin:0 auto;" id="heroSub">Upload a photo or video, describe what's happening, and we'll tell you exactly what's wrong.</p>
+      <h1 style="font-size:clamp(16px,3.5vw,22px);font-weight:700;color:#FFFFFF;letter-spacing:-.3px;line-height:1.2;margin-bottom:6px;" id="heroTitle">Is Your AC or Heat Not Working?</h1>
+      <p style="font-size:15px;color:rgba(255,255,255,.55);line-height:1.65;max-width:400px;margin:0 auto;" id="heroSub">Take a photo, describe what's happening, and get a clear answer in seconds. No HVAC knowledge needed.</p>
     </div>
   </div>
   <!-- MODE TABS -->
@@ -776,15 +858,33 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
       <button class="mode-tab" id="tabPro" onclick="setMode('pro')">🔧 Contractor <span class="pro-badge">PRO</span></button>
     </div>
     <div style="padding:16px 20px;background:#F8F9FC;border-top:1px solid #E2E4ED;">
-      <p style="font-size:14px;color:#6B7190;line-height:1.5;" id="modeDesc">Easy-to-understand explanations, safety guidance, and connections to certified local technicians.</p>
+      <p style="font-size:14px;color:#6B7190;line-height:1.5;" id="modeDesc">Plain English explanations. Know if it's safe, how urgent it is, and exactly what to tell your technician.</p>
     </div>
   </div>
 
   <!-- HOMEOWNER PANEL -->
   <div id="panelHome">
+    <!-- HOW IT WORKS strip — visible to new users -->
+    <div style="background:linear-gradient(135deg,#0F0F0F,#1a2232);border-radius:12px;padding:16px 18px;margin-bottom:12px;">
+      <div style="font-size:13px;font-weight:700;color:#00C2B2;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;">How it works</div>
+      <div style="display:flex;gap:0;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:28px;height:28px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">1</div>
+          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;">Take a photo of your system or describe what's happening</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:28px;height:28px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">2</div>
+          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;">Get a plain-English explanation — no technical jargon</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:28px;height:28px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">3</div>
+          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;">Know exactly what to tell your technician when you call</span>
+        </div>
+      </div>
+    </div>
     <div class="card">
-      <label class="field-label">Show Us Your System</label>
-      <p class="field-sub">A short video or photo helps us see exactly what's happening</p>
+      <label class="field-label">📷 Take or Upload a Photo</label>
+      <p class="field-sub">A photo of your AC, furnace, or thermostat helps us give you a more accurate answer</p>
       <input type="file" id="homeFileInput" accept="video/*,image/*" style="display:none" onchange="handleHomeFileSelect(event)"/>
       <input type="file" id="homeFileInputCam" accept="image/*,video/*" capture="environment" style="display:none" onchange="handleHomeFileSelect(event)"/>
       <div class="drop-zone" id="homeDropZone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleHomeDrop(event)" onclick="document.getElementById('homeFileInput').click()">
@@ -819,32 +919,29 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
     <div class="card">
       <label class="field-label">Describe the problem in your own words</label>
       <p class="field-sub">When did it start? Is it getting worse? Anything else you've noticed?</p>
-      <textarea id="homeDesc" placeholder="e.g. My air conditioner runs all day but the house never gets below 78°…"></textarea>
+      <textarea id="homeDesc" placeholder="e.g. My AC runs all day but the house stays hot. Started 2 days ago…"></textarea>
     </div>
     <div class="card">
       <label class="field-label">System Age</label>
       <select id="homeSysAge"><option value="">Select age…</option></select>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:16px;">
-      <button id="homeRunBtn" onclick="runHomeownerDiagnostic()" style="flex:1;padding:18px;border:none;border-radius:6px;cursor:pointer;background:#00C2B2;color:#fff;font-family:var(--font);font-size:20px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(0,181,181,.4);transition:all .15s;">⚡ Run Diagnostic</button>
+      <button id="homeRunBtn" onclick="runHomeownerDiagnostic()" style="flex:1;padding:18px;border:none;border-radius:6px;cursor:pointer;background:#00C2B2;color:#fff;font-family:var(--font);font-size:18px;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(0,181,181,.4);transition:all .15s;">🔍 Analyze My System</button>
       <button onclick="resetHomeownerDiagnostic()" style="padding:18px 16px;border:2px solid #d0d0d0;border-radius:6px;cursor:pointer;background:#FFFFFF;color:#6B7190;font-family:var(--font);font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;">🔄 New</button>
     </div>
     <div id="homeResultPanel" style="display:none;margin-top:8px;" class="fi">
-      <div style="margin-bottom:14px;"><span style="font-size:18px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;">Your Diagnostic Report</span></div>
+      <div style="margin-bottom:14px;"><span style="font-size:18px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;" class="result-title">Your Diagnostic Report</span></div>
       <div class="card" id="homeResultCard" style="margin-bottom:16px;"><div class="result-body" id="homeResultText"></div></div>
-      <div class="info-box info-blue">
-        <div style="display:flex;gap:14px;align-items:flex-start;">
-          <div style="width:48px;height:48px;background:#2563eb;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🛠️</div>
-          <div style="flex:1;">
-            <p style="font-size:17px;font-weight:700;color:#2563EB;margin-bottom:6px;">Need a Certified HVAC Technician?</p>
-            <p style="font-size:15px;color:#2563EB;line-height:1.6;margin-bottom:14px;">Get connected with a licensed, insured HVAC pro. Free estimates, same-day service available.</p>
-            <button class="btn btn-blue" onclick="console.info('Booking link placeholder')">📞 Request a Free Estimate</button>
-          </div>
-        </div>
+      <!-- CTA: Call a tech -->
+      <div style="background:linear-gradient(135deg,#00C2B2,#009E90);border-radius:12px;padding:20px;margin-top:4px;text-align:center;">
+        <div style="font-size:24px;margin-bottom:8px;">🔧</div>
+        <div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:6px;">Ready to get this fixed?</div>
+        <div style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.5;margin-bottom:16px;">A licensed HVAC technician can diagnose and repair this properly. Always use a certified pro for HVAC work.</div>
+        <button class="btn" onclick="console.info('Booking link placeholder')" style="background:#fff;color:#009E90;font-size:15px;font-weight:800;padding:14px 24px;border:none;border-radius:8px;cursor:pointer;width:100%;font-family:var(--font);">📞 Call a Technician</button>
       </div>
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <button onclick="shareHomeDiagnosis()" style="flex:1;padding:12px;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:8px;color:#2563EB;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);">↗️ Share Report</button>
-        <button class="btn btn-outline" onclick="resetHomeownerDiagnostic()" style="flex:1;margin-top:0;">+ New Diagnosis</button>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button onclick="shareHomeDiagnosis()" style="flex:1;padding:12px;background:#F5F6FA;border:1.5px solid #E2E4ED;border-radius:8px;color:#6B7190;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);">↗️ Share Report</button>
+        <button onclick="resetHomeownerDiagnostic()" style="flex:1;padding:12px;background:#F5F6FA;border:1.5px solid #E2E4ED;border-radius:8px;color:#6B7190;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);">+ New Diagnosis</button>
       </div>
     </div>
   </div>
@@ -903,7 +1000,7 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
         <button class="quick-chip" onclick="document.getElementById('chatInput').value='I need a part: ';document.getElementById('chatInput').focus();" style="border-color:#0EA5E9;color:#0284C7;background:#F0F9FF;font-weight:700;">🔩 Find a Part</button>
         <button class="quick-chip" onclick="sendQuick('I just finished the repair — what else should I check for upsell opportunities?')" style="border-color:#10B981;color:#059669;background:#F0FDF4;font-weight:700;">💰 Find Upsells</button>
         <button class="quick-chip" onclick="sendQuick('The homeowner said the price seems too high. How do I overcome that?')" style="border-color:#F59E0B;color:#d97706;background:#FFFBEB;font-weight:700;">💬 Objection</button>
-        <button class="quick-chip" onclick="sendQuick('Help me pitch a maintenance agreement. System is about 10 years old.')" style="border-color:#8B5CF6;color:#7C3AED;background:#F5F3FF;font-weight:700;">📋 Pitch Maint.</button>
+        <button class="quick-chip" onclick="sendQuick('Help me pitch a maintenance agreement. System is about 10 years old.')" style="border-color:#8B5CF6;color:#7C3AED;background:#F5F3FF;font-weight:700;">📋 Pitch Maintenance</button>
         <button class="quick-chip" onclick="var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b&&b.style.display==='none'){b.style.display='block';a.textContent='▲';}b&&b.scrollIntoView({behavior:'smooth'});" style="background:linear-gradient(135deg,#E8354A,#c0272d);color:#fff;border-color:#E8354A;font-weight:800;box-shadow:0 2px 8px rgba(232,53,74,.35);">⚡ Full Diagnostic</button>
       </div>
     </div>
@@ -917,7 +1014,7 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 
     <!-- CHAT MESSAGES -->
     <div style="position:relative;">
-      <div id="chatMessages" style="background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:280px;max-height:600px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
+      <div id="chatMessages" style="background:#FFFFFF;border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;min-height:280px;max-height:600px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:10px;">
         <div class="msg-agent" id="mikeWelcomeMsg">
           <div class="msg-bubble msg-bubble-agent">
             <p style="margin-bottom:6px;"><strong>Hey, it's Mike.</strong> 25 years in the field — I can help you with diagnostics, sales, and everything else you'd ever need on the job.</p>
@@ -1063,7 +1160,7 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 
     <!-- RESULT PANEL -->
     <div id="resultPanel" style="display:none;margin-top:16px;" class="fi">
-      <div style="margin-bottom:14px;"><span style="font-size:18px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;">Diagnostic Report</span></div>
+      <div style="margin-bottom:14px;"><span style="font-size:18px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;" class="result-title">Diagnostic Report</span></div>
       <div class="card" id="resultCard" style="margin-bottom:16px;"><div class="result-body" id="resultText"></div></div>
       <div id="eduPanel" style="display:none;margin-bottom:16px;">
         <div class="info-box info-blue" style="margin-bottom:0;">
@@ -1612,7 +1709,23 @@ function pddBilling(){
   if(pc)pc.style.display=isHome?'none':'flex';
   openModal('billingModal');
 }
-function pddWhatsNew(){closeProfileDD();openModal('whatsNewModal');}
+function pddWhatsNew(){
+  closeProfileDD();
+  var isHome=currentUser&&currentUser.role==='homeowner';
+  var title=document.getElementById('whatsNewTitle');
+  var subtitle=document.getElementById('whatsNewSub');
+  var facts=document.getElementById('whatsNewFacts');
+  if(title)title.textContent=isHome?'Meet Your HVAC Assistant':'Meet Mike';
+  if(subtitle)subtitle.textContent=isHome?'5 things to know before your first diagnosis':'5 things every tech needs to know about Mike';
+  if(facts&&isHome){
+    facts.innerHTML='<div id="whatsNewFacts"><div class="tz-fact"><div class="tz-fact-num">1</div><div class="tz-fact-text"><strong>No HVAC knowledge needed.</strong> Just describe what you\'re experiencing or take a photo. We handle the rest in plain English.</div></div>'
+    +'<div class="tz-fact"><div class="tz-fact-num">2</div><div class="tz-fact-text"><strong>We never guess on safety.</strong> If we see anything dangerous — carbon monoxide risk, gas smell, electrical hazard — we tell you immediately and clearly.</div></div>'
+    +'<div class="tz-fact"><div class="tz-fact-num">3</div><div class="tz-fact-text"><strong>Take a photo for the best result.</strong> A clear photo of your unit or thermostat helps us identify your system and give you a more accurate answer.</div></div>'
+    +'<div class="tz-fact"><div class="tz-fact-num">4</div><div class="tz-fact-text"><strong>We always recommend a licensed tech.</strong> We help you understand the problem — a certified HVAC technician handles the repair safely and correctly.</div></div>'
+    +'<div class="tz-fact"><div class="tz-fact-num">5</div><div class="tz-fact-text"><strong>Share your report with your technician.</strong> After your diagnosis, tap Share Report and send it directly to your HVAC pro so they arrive prepared.</div></div>';
+  }
+  openModal('whatsNewModal');
+}
 function pddHelp(){closeProfileDD();document.getElementById('feedbackSection').style.display='none';openModal('helpModal');}
 
 function openModal(id){var el=document.getElementById(id);if(el)el.classList.add('show');}
@@ -1926,9 +2039,9 @@ function setMode(m){
   document.getElementById('tabPro').className='mode-tab'+(m==='pro'?' active':'');
   document.getElementById('panelHome').style.display=isPro?'none':'block';
   document.getElementById('panelDiag').style.display=isPro?'block':'none';
-  document.getElementById('heroTitle').textContent=isPro?'Professional HVAC Diagnostics':'What\'s Wrong With Your HVAC?';
-  document.getElementById('heroSub').textContent=isPro?'Full technical diagnostics, Mike live chat, nameplate scanner, revenue tools.':'Upload a photo or video, describe what\'s happening, and we\'ll tell you exactly what\'s wrong.';
-  document.getElementById('modeDesc').textContent=isPro?'Mike handles diagnostics, revenue, refrigerant, maintenance — everything in one chat.':'Easy-to-understand explanations, safety guidance, and connections to certified local technicians.';
+  document.getElementById('heroTitle').textContent=isPro?'Professional HVAC Field Intelligence':'Is Your AC or Heat Not Working?';
+  document.getElementById('heroSub').textContent=isPro?'Mike — your AI master tech. Diagnostics, live camera, parts pricing, revenue coaching.':'Take a photo, describe what\'s happening, and get a clear answer in seconds. No HVAC knowledge needed.';
+  document.getElementById('modeDesc').textContent=isPro?'Mike handles diagnostics, revenue, refrigerant, maintenance — everything in one chat.':'Plain English explanations. Know if it\'s safe, how urgent it is, and exactly what to tell your technician.';
 }
 
 
@@ -2218,50 +2331,76 @@ function parseJSON(raw){
 async function runHomeownerDiagnostic(){
   var sysAge=document.getElementById("homeSysAge").value;
   var desc=document.getElementById("homeDesc").value;
-  if(!selectedHomeSymptoms.length&&!desc&&!homeUploadedFile){appendMessage('agent','Please describe the problem, select symptoms, or upload a photo.');return;}
+  if(!selectedHomeSymptoms.length&&!desc&&!homeUploadedFile){
+    appendMessage('agent','Please describe the problem, select a symptom, or upload a photo.');
+    return;
+  }
   var btn=document.getElementById("homeRunBtn");
   btn.disabled=true;btn.style.background="#009E90";
   btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing" style="font-size:18px;">Analyzing…</span>';
   try{
     var syms=selectedHomeSymptoms.length?selectedHomeSymptoms.join(", "):"None selected";
-    var SYSTEM="You are HVACGenius AI. Diagnose this homeowner's HVAC problem in plain, friendly English. No jargon. Be clear and helpful.";
+
+    // SYSTEM: friendly, plain English, NO prices, pushes toward calling a tech
+    var SYSTEM="You are a friendly HVAC assistant helping a homeowner understand what is wrong with their system. Your ONLY job is to help them understand the problem in plain, simple English — then encourage them to call a licensed HVAC technician. Rules you must follow:\n1. Use plain language. No technical jargon. One or two short sentences per section — never long paragraphs.\n2. Do NOT include any cost estimates, price ranges, or dollar amounts. Never mention money.\n3. Always end by recommending they call a licensed technician.\n4. Be warm and reassuring. Homeowners are often stressed.\n5. If there is any safety concern (CO, gas, no cooling in extreme heat), make it urgent and clear.\n6. Keep every section body to 1-2 short sentences maximum.";
+
+    var prompt="HOMEOWNER HVAC DIAGNOSTIC\nSystem age: "+(sysAge||"Unknown")+"\nSymptoms: "+syms+"\nDescription: "+(desc||"None")+'\n\nReturn ONLY valid compact JSON — no markdown, no explanation:\n{"severity":"CRITICAL|HIGH|MEDIUM|LOW","urgency":"Call today|Call this week|Schedule when ready","summary":"One plain sentence — what is likely wrong.","sections":[{"label":"What\'s Happening","icon":"💡","body":"1-2 sentences max, plain English, what the problem likely is."},{"label":"Is It Safe?","icon":"🛡️","body":"1-2 sentences. Is it safe to keep running the system or should they shut it off?"},{"label":"How Urgent","icon":"🕐","body":"1-2 sentences. Should they call today, this week, or can they wait?"},{"label":"What To Do Next","icon":"📞","body":"Tell them to call a licensed HVAC technician. Keep it warm and helpful."}]}';
+
     var messages;
     if(homeUploadedFile){
       var isImg=homeUploadedFile.type.startsWith("image/");
       var b64=isImg?await blobToBase64(homeUploadedFile):await grabVideoFrame(homeUploadedFile);
       var mime=isImg?homeUploadedFile.type:"image/jpeg";
-      messages=[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:"HVAC HOMEOWNER DIAGNOSTIC\nAge: "+(sysAge||"Unknown")+"\nSymptoms: "+syms+"\nDescription: "+(desc||"None")+'\n\nReturn ONLY compact JSON:\n{"severity":"CRITICAL|HIGH|MEDIUM|LOW","urgency":"Today|This week|Can wait","summary":"One plain sentence","estimatedCost":"$X-$X","sections":[{"label":"What Is Wrong","icon":"💡","body":"plain English"},{"label":"Is It Dangerous?","icon":"⚠️","body":"direct answer"},{"label":"How Urgent","icon":"🕐","body":"can it wait"},{"label":"What It Will Cost","icon":"💰","body":"repair range"}]}'}]}];
+      messages=[{role:"user",content:[
+        {type:"image",source:{type:"base64",media_type:mime,data:b64}},
+        {type:"text",text:prompt}
+      ]}];
     }else{
-      messages=[{role:"user",content:"HVAC HOMEOWNER DIAGNOSTIC\nAge: "+(sysAge||"Unknown")+"\nSymptoms: "+syms+"\nDescription: "+(desc||"None")+'\n\nReturn ONLY compact JSON:\n{"severity":"CRITICAL|HIGH|MEDIUM|LOW","urgency":"Today|This week|Can wait","summary":"One plain sentence","estimatedCost":"$X-$X","sections":[{"label":"What Is Wrong","icon":"💡","body":"plain English"},{"label":"Is It Dangerous?","icon":"⚠️","body":"direct answer"},{"label":"How Urgent","icon":"🕐","body":"can it wait"},{"label":"What It Will Cost","icon":"💰","body":"repair range"}]}'}];
+      messages=[{role:"user",content:prompt}];
     }
-    var raw=await callAI(SYSTEM,messages,600);
-    var data=parseJSON(raw),sev=(data&&data.severity)||"MEDIUM";
-    var COLORS={CRITICAL:{bg:"#ffebee",border:"#c62828"},HIGH:{bg:"#fff3e0",border:"#e65100"},MEDIUM:{bg:"#e3f2fd",border:"#1565c0"},LOW:{bg:"#e8f5e9",border:"#2e7d32"}};
+
+    var raw=await callAI(SYSTEM,messages,500);
+    var data=parseJSON(raw);
+    var sev=(data&&data.severity)||"MEDIUM";
+
+    // Severity colors — muted, approachable (not alarming red unless truly critical)
+    var COLORS={
+      CRITICAL:{bg:"#fff0f0",border:"#dc2626",label:"Needs Immediate Attention"},
+      HIGH:    {bg:"#fffbeb",border:"#d97706",label:"Should Be Looked At Soon"},
+      MEDIUM:  {bg:"#eff6ff",border:"#2563eb",label:"Worth Getting Checked Out"},
+      LOW:     {bg:"#f0fdf4",border:"#16a34a",label:"Minor Issue"}
+    };
     var c=COLORS[sev]||COLORS.MEDIUM;
+
     document.getElementById("homeResultCard").style.borderLeft="4px solid "+c.border;
+
+    var out="";
+
+    // Top summary banner — simple, no price
+    out+="<div style='background:"+c.bg+";border-left:4px solid "+c.border+";border-radius:8px;padding:14px 16px;margin-bottom:20px;'>";
+    out+="<div style='font-size:11px;font-weight:700;color:"+c.border+";text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;'>"+c.label+"</div>";
+    if(data&&data.summary)out+="<p style='font-size:16px;font-weight:600;color:#0F0F0F;line-height:1.5;margin-bottom:8px;'>"+data.summary+"</p>";
+    if(data&&data.urgency)out+="<div style='font-size:13px;font-weight:700;color:"+c.border+";'>🕐 "+data.urgency+"</div>";
+    out+="</div>";
+
+    // Sections — short, simple
     if(data&&data.sections){
-      var html="<div style='background:"+c.bg+";border-left:4px solid "+c.border+";border-radius:6px;padding:14px 16px;margin-bottom:20px;'>";
-      if(data.summary)html+="<p style='font-size:16px;font-weight:700;color:#0F0F0F;line-height:1.6;margin-bottom:10px;'>"+data.summary+"</p>";
-      var stats=[];
-      if(data.urgency)stats.push("🕐 "+data.urgency);
-      if(data.estimatedCost)stats.push("💰 "+data.estimatedCost);
-      if(stats.length)html+="<p style='font-size:13px;color:"+c.border+";font-weight:600;'>"+stats.join("  ·  ")+"</p>";
-      html+="</div>";
       data.sections.forEach(function(sec,i){
-        if(!sec)return;
-        var hasBody=sec.body&&sec.body.trim().length>2;
-        if(!hasBody)return;
-        html+="<div style='margin-bottom:18px;'><div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'><div style='width:30px;height:30px;min-width:30px;background:#0F0F0F;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;'>"+(i+1)+"</div><span style='font-size:16px;font-weight:700;color:#0F0F0F;'>"+(sec.icon||"")+" "+(sec.label||"")+"</span></div>";
-        html+="<div style='padding-left:40px;'><p style='font-size:15px;line-height:1.8;color:#0F0F0F;'>"+sec.body+"</p></div></div>";
+        if(!sec||!sec.body||sec.body.trim().length<2)return;
+        out+="<div style='display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #F0F1F6;'>";
+        out+="<div style='font-size:22px;flex-shrink:0;margin-top:1px;'>"+( sec.icon||"•")+"</div>";
+        out+="<div><div style='font-size:13px;font-weight:700;color:#6B7190;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;'>"+sec.label+"</div>";
+        out+="<p style='font-size:15px;line-height:1.6;color:#0F0F0F;margin:0;'>"+sec.body+"</p></div>";
+        out+="</div>";
       });
-      document.getElementById("homeResultText").innerHTML=html;
-    }else{
-      document.getElementById("homeResultText").innerHTML="<p style='font-size:15px;line-height:1.8;'>"+raw+"</p>";
     }
+
+    document.getElementById("homeResultText").innerHTML=out;
     document.getElementById("homeResultPanel").style.display="block";
     document.getElementById("homeResultPanel").scrollIntoView({behavior:"smooth",block:"start"});
+
   }catch(e){
-    appendMessage('agent','Request failed — please try again.');
+    appendMessage('agent','Something went wrong — please try again.');
   }finally{
     btn.disabled=false;btn.style.background="#00C2B2";btn.innerHTML="⚡ Run Diagnostic";
   }
@@ -4233,17 +4372,17 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="tz-modal-overlay" id="whatsNewModal">
 <div class="tz-modal">
   <div class="tz-modal-header">
-    <div class="tz-modal-title">🔔 Meet Mike</div>
+    <div class="tz-modal-title" id="whatsNewTitle">🔔 Meet Mike</div>
     <button class="tz-modal-close" onclick="closeModal('whatsNewModal')">✕</button>
   </div>
   <div class="tz-modal-body">
-    <div style="font-size:13px;color:#666;margin-bottom:16px;">5 things every tech needs to know about Mike</div>
+    <div style="font-size:13px;color:#666;margin-bottom:16px;" id="whatsNewSub">5 things every tech needs to know about Mike</div>
     <div class="tz-fact"><div class="tz-fact-num">1</div><div class="tz-fact-text"><strong>Mike remembers you personally.</strong> Your experience level, specialty, preferred brands, every correction, every conversation — saved to your private profile. Mike adapts completely to beginners, journeymen, and master techs. Set your level in Profile Settings.</div></div>
     <div class="tz-fact"><div class="tz-fact-num">2</div><div class="tz-fact-text"><strong>Correct Mike naturally — he verifies first.</strong> Say "actually..." or "that's wrong..." in chat. Mike checks his full knowledge base before accepting any correction. If he was right, he tells you why. If you were right, he saves it permanently to your profile.</div></div>
     <div class="tz-fact"><div class="tz-fact-num">3</div><div class="tz-fact-text"><strong>Mike sees through your camera.</strong> Tap Start on the camera card, point at any unit or part. Mike identifies it, reads specs, finds live pricing at Johnstone, Grainger, and Ferguson, checks warranty, and diagnoses in real time.</div></div>
     <div class="tz-fact"><div class="tz-fact-num">4</div><div class="tz-fact-text"><strong>Diagrams on demand only.</strong> Tap Draw Diagram or Illustrate It to generate a visual for what Mike just explained. They never auto-pop — only when you ask.</div></div>
     <div class="tz-fact"><div class="tz-fact-num">5</div><div class="tz-fact-text"><strong>Revenue coaching after every job.</strong> Ask "what can I upsell?" for specific recommendations with exact words to use. Use the Timer button to track job time. Clear chat between jobs — Mike keeps all memory across every session.</div></div>
-    </div>
+    </div></div>
     <div id="feedbackSection" style="display:none;margin-top:16px;">
       <div class="tz-modal-field">
         <label class="tz-modal-label">Your Feedback</label>

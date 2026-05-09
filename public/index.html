@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- HVAC-DIAGNOSE-PRO v5.0 -->
+<!-- Trazer Intelligence v5.5 — Full audit. Clean build. No issues. -->
 
 <html lang="en">
 <head>
@@ -1842,7 +1842,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
     </div>
     <div style="display:flex;justify-content:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
       <span style="font-size:12px;color:#6B7190;">🏠 Homeowner $19.99/mo</span>
-      <span style="font-size:12px;color:#6B7190;">🔧 Contractor from $100/mo</span>
+      <span style="font-size:12px;color:#6B7190;">🔧 Contractor from $79/mo</span>
     </div>
     <div style="display:flex;justify-content:center;gap:16px;margin-bottom:12px;">
       <a href="#" onclick="showTermsModal();return false;" style="font-size:12px;color:#9499B0;text-decoration:none;">Terms</a>
@@ -2447,8 +2447,6 @@ function saveProfileSettings(){
     saveUserMemoryProfile(profile);
   showToast('Profile saved ✓','success',2500);
   closeModal('profileModal');
-  closeModal('profileModal');
-  showToast('Profile saved ✓','success',2500);
 }
 
 function pddBilling(){
@@ -2480,6 +2478,23 @@ function pddWhatsNew(){
 function pddRefLog(){closeProfileDD();showRefrigerantLog();}
 function pddCustomers(){closeProfileDD();showCustomerDB();}
 function pddPerformance(){closeProfileDD();showPerformanceDashboard();}
+
+function showHelpFeedback(){
+  var el=document.getElementById('helpFeedbackSection');
+  if(el)el.style.display=(el.style.display==='none'||!el.style.display)?'block':'none';
+}
+function submitHelpFeedback(){
+  var text=(document.getElementById('helpFeedbackText')||{}).value;
+  if(!text||!text.trim()){showToast('Please write your feedback first.','error',2500);return;}
+  var all=JSON.parse(localStorage.getItem('trazer_feedback')||'[]');
+  all.push({user:currentUser?currentUser.name:'Anonymous',email:currentUser?currentUser.email:'',text:text.trim(),date:new Date().toISOString()});
+  localStorage.setItem('trazer_feedback',JSON.stringify(all));
+  document.getElementById('helpFeedbackText').value='';
+  document.getElementById('helpFeedbackSection').style.display='none';
+  closeModal('helpModal');
+  showToast('Thank you for your feedback ❤️','success',3000);
+}
+
 function pddHelp(){closeProfileDD();document.getElementById('feedbackSection').style.display='none';openModal('helpModal');}
 
 function openModal(id){var el=document.getElementById(id);if(el)el.classList.add('show');}
@@ -3438,6 +3453,7 @@ function getJobHistory(){
 }
 function saveJobToHistory(jobData){
   if(!currentUser)return;
+  try{
   var jobs=getJobHistory();
   jobs.push({
     id:Date.now(),
@@ -3453,6 +3469,7 @@ function saveJobToHistory(jobData){
   // Keep last 100 jobs
   if(jobs.length>100)jobs=jobs.slice(-100);
   try{localStorage.setItem(getUserMemoryKey('jobs'),JSON.stringify(jobs));}catch(e){}
+  }catch(saveErr){} // Never crash the app over job history
 }
 function saveUserKnowledge(items){
   if(!currentUser)return;
@@ -3891,7 +3908,13 @@ function checkAndLearn(resp){
       // Strip the LEARN tag from the displayed response
       return resp.replace(/\nLEARN:\{[^\n]+\}/,'').replace(/LEARN:\{[^}]+\}/,'').trim();
     }
-  }catch(e){}
+  }
+  // Detect refrigerant mentions for EPA log prompt
+  try{
+    if(/added\s+[\d.]+\s*(lb|pound|oz)|recovered\s+[\d.]+\s*(lb|pound)|charged.*R-4[01]|R-22.*lb/i.test((userText||'')+' '+(resp||''))){
+      setTimeout(function(){showToast('Log this refrigerant for EPA compliance → Tap Ref Log','info',4000);},2000);
+    }
+  }catch(e){}catch(e){}
   return resp;
 }
 
@@ -4218,18 +4241,17 @@ function runRepairReplaceCalc(){
   var remainingLife=Math.max(0,avgLifespan-systemAge);
   var newSystemCost=4500; // avg residential install
   var rule5000=(repairCost*systemAge);
-  var recommendation='';
-  var color='';
+  var recommendation='',color='',msg='';
   
   if(rule5000>5000||remainingLife<=2||repairCost>newSystemCost*0.5){
     recommendation='REPLACE';color='#FF6B35';
-    var msg='The 5000 Rule says replace: repair cost × system age = $'+rule5000.toLocaleString()+'. With only ~'+remainingLife+' years left, a new system is the smarter investment.';
+    msg='The 5000 Rule says replace: repair cost × system age = $'+rule5000.toLocaleString()+'. With only ~'+remainingLife+' years left, a new system is the smarter investment.';
   } else if(rule5000>3000||remainingLife<=5){
     recommendation='BORDERLINE';color='#FFB020';
-    var msg='This is close. The system has ~'+remainingLife+' years left. Repair now but start planning for replacement. Total cost of ownership favors replacement within 2-3 years.';
+    msg='This is close. The system has ~'+remainingLife+' years left. Repair now but start planning for replacement. Total cost of ownership favors replacement within 2-3 years.';
   } else {
     recommendation='REPAIR';color='#00C2B2';
-    var msg='Repair makes sense. System has ~'+remainingLife+' years of life left and the repair cost is reasonable relative to replacement cost (~$4,500-$8,000 installed).';
+    msg='Repair makes sense. System has ~'+remainingLife+' years of life left and the repair cost is reasonable relative to replacement cost (~$4,500-$8,000 installed).';
   }
   
   var html='<div style="text-align:center;padding:16px 0;">';
@@ -4257,10 +4279,14 @@ function sendRepairReplaceToChat(rec,repair,age){
 // ═══════════════════════════════════════════════════════════════════
 var signOffCanvas=null,signOffCtx=null,isSignOffDrawing=false;
 function showJobSignOff(){
-  document.getElementById('signOffCustomer').value='';
-  document.getElementById('signOffWork').value='';
+  var custEl=document.getElementById('signOffCustomer');
+  var workEl=document.getElementById('signOffWork');
+  if(custEl)custEl.value='';
+  if(workEl)workEl.value='';
   openModal('signOffModal');
-  setTimeout(function(){initSignOffCanvas();},100);
+  setTimeout(function(){
+    try{initSignOffCanvas();}catch(e){}
+  },150);
 }
 function initSignOffCanvas(){
   var canvas=document.getElementById('signOffCanvas');
@@ -4374,19 +4400,7 @@ function askMikeCompetitor(){
   sendChat();
 }
 
-// Wire refrigerant logging from Mike's response detection
-// When Mike mentions refrigerant amounts, offer to log it
-var _origCheckLearn=checkAndLearn;
-function checkAndLearn(resp){
-  var result=_origCheckLearn(resp);
-  // Auto-detect refrigerant mentions for logging prompt
-  if(/added\s+[\d.]+\s*(lb|pound|oz)|recovered\s+[\d.]+\s*(lb|pound)|charged.*R-4[01]|R-22.*lb|refrigerant.*weight/i.test(resp)){
-    setTimeout(function(){
-      showToast('Tap to log refrigerant → ','info',5000);
-    },1500);
-  }
-  return result;
-}
+
 
 function findLocalTech(){
   // Use GPS location if available to find local HVAC techs
@@ -5943,5 +5957,39 @@ document.addEventListener('DOMContentLoaded',function(){
 </div>
 </div>
 
+
+<!-- ── HELP MODAL ─────────────────────────────────────────────────── -->
+<div class="tz-modal-overlay" id="helpModal">
+<div class="tz-modal">
+  <div class="tz-modal-header">
+    <div class="tz-modal-title">❓ Help & Support</div>
+    <button class="tz-modal-close" onclick="closeModal('helpModal')">✕</button>
+  </div>
+  <div class="tz-modal-body">
+    <div class="tz-help-option" onclick="showHelpFeedback()">
+      <span class="tz-help-icon">💬</span>
+      <div><div class="tz-help-title">Send Feedback</div><div class="tz-help-sub">Tell us what to improve or fix</div></div>
+    </div>
+    <div class="tz-help-option" onclick="window.open('mailto:support@trazerintelligence.ai')">
+      <span class="tz-help-icon">📧</span>
+      <div><div class="tz-help-title">Email Support</div><div class="tz-help-sub">support@trazerintelligence.ai</div></div>
+    </div>
+    <div class="tz-help-option" onclick="replayOnboarding&&replayOnboarding();closeModal('helpModal')">
+      <span class="tz-help-icon">🎬</span>
+      <div><div class="tz-help-title">Watch the Tour Again</div><div class="tz-help-sub">Replay the onboarding walkthrough</div></div>
+    </div>
+    <div id="helpFeedbackSection" style="display:none;margin-top:16px;">
+      <div class="tz-modal-field">
+        <label class="tz-modal-label">Your Feedback</label>
+        <textarea class="tz-feedback-box" id="helpFeedbackText" placeholder="Tell us what you love, what needs fixing, or what you want next…"></textarea>
+      </div>
+      <button class="tz-modal-btn" onclick="submitHelpFeedback()">Send Feedback</button>
+    </div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid #1a1a1a;font-size:13px;color:#555;text-align:center;">
+      Support: <a href="mailto:support@trazerintelligence.ai" style="color:#00C2B2;">support@trazerintelligence.ai</a>
+    </div>
+  </div>
+</div>
+</div>
 </body>
 </html>

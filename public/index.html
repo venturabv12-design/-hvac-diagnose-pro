@@ -2176,27 +2176,23 @@ function authSignUp(){
 }
 
 function authForgot(){
-  var e=(document.getElementById('siEmail').value||'').trim();
-  if(!e){showAuthErr('Enter your email first.');return;}
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){showAuthErr('Enter a valid email address.');return;}
-  // Call backend password reset endpoint
-  fetch('/api/auth/reset',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({email:e})
-  }).then(function(r){return r.json();})
-  .then(function(d){
-    if(d.error){showAuthErr(d.error);return;}
-    showAuthErr(''); 
-    // Show success in the form
-    var errEl=document.getElementById('authErr');
-    if(errEl){errEl.style.color='#00C2B2';errEl.textContent='Reset link sent to '+e+'. Check your inbox.';errEl.classList.add('show');}
-  })
-  .catch(function(){
-    // Fallback if endpoint not yet wired
-    var errEl=document.getElementById('authErr');
-    if(errEl){errEl.style.color='#00C2B2';errEl.textContent='Contact support@trazerintelligence.ai to reset your password.';errEl.classList.add('show');}
-  });
+  var email=(document.getElementById('forgotEmail')||document.getElementById('siEmail')||{}).value||'';
+  email=email.trim().toLowerCase();
+  if(!email){showAuthErr('Enter your email address first.');return;}
+  var btn=document.getElementById('forgotBtn');
+  if(btn){btn.disabled=true;btn.textContent='Sending...';}
+  fetch('/api/auth/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      showAuthErr('');
+      showToast('Password reset email sent to '+email+'. Check your inbox.','success',5000);
+      authTab('signin');
+      if(btn){btn.disabled=false;btn.textContent='Send Reset Link';}
+    })
+    .catch(function(){
+      showToast('Connection error. Try again.','error',3000);
+      if(btn){btn.disabled=false;btn.textContent='Send Reset Link';}
+    });
 }
 
 function authSignOut(){
@@ -2268,10 +2264,27 @@ function trackUsage(feature){
 
 function isAccessAllowed(){
   if(!currentUser)return false;
-  if(currentUser.plan==='admin')return true;
-  if(currentUser.plan!=='trial')return true;
-  if(Math.floor((Date.now()-currentUser.trialStart)/86400000)>=7){showPaywall();return false;}
+  var plan=currentUser.plan||'trial';
+  // Admin and pro always allowed
+  if(plan==='admin'||plan==='pro'||plan==='team')return true;
+  // Trial: check 7 day window
+  if(plan==='trial'){
+    var trialStart=currentUser.trialStart||Date.now();
+    var daysLeft=Math.ceil((trialStart+(7*24*60*60*1000)-Date.now())/(24*60*60*1000));
+    if(daysLeft>0)return true;
+    // Trial expired
+    showPaywall();
+    return false;
+  }
+  // Starter: allowed
+  if(plan==='starter'||plan==='homeowner')return true;
+  // Unknown plan - allow during beta
   return true;
+}
+
+// Pro-only features check - gating disabled until billing is live
+function isProFeature(feature){
+  return true; // All features open during beta
 }
 
 // pddBilling replaced below
@@ -2435,6 +2448,19 @@ function saveProfileSettings(){
     saveUserMemoryProfile(profile);
   showToast('Profile saved ✓','success',2500);
   closeModal('profileModal');
+  // Sync profile to Supabase
+  if(currentUser&&currentUser.token){
+    var syncData={
+      name:profile.name,company:profile.company,role:currentUser.role,
+      epaCert:profile.epaCert,nateCert:profile.nateCert,
+      yearsExperience:profile.yearsExperience,serviceZip:profile.serviceZip,
+      truckStock:profile.truckStock,phone:profile.phone,
+      profile:profile,features:currentUser.features||{}
+    };
+    fetch('/api/auth/profile',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:currentUser.token,updates:syncData})
+    }).catch(function(){});// Silent fail - localStorage already saved
+  }
 }
 
 function pddBilling(){
@@ -2782,7 +2808,8 @@ var techLocation=null,wakeLock=null;
 
 // ── TECH LOCATION (GPS) ──────────────────────────────────────
 function requestTechLocation(){
-  if(techLocation)return;
+  // Don't block if we already have a good location (accuracy < 500m)
+  if(techLocation&&techLocation.accuracy&&techLocation.accuracy<500)return;
   if(!navigator.geolocation){
     window._locationDenied=true;
     return;
@@ -2794,7 +2821,17 @@ function requestTechLocation(){
     var lat=pos.coords.latitude.toFixed(5);
     var lon=pos.coords.longitude.toFixed(5);
     var acc=Math.round(pos.coords.accuracy);
-    // Reverse geocode for city name
+    // Only use this fix if it's better than what we have
+    if(techLocation&&techLocation.accuracy&&acc>techLocation.accuracy)return;
+    // Store raw coords immediately so Mike has something
+    if(!techLocation||acc<(techLocation.accuracy||9999)){
+      techLocation={lat:lat,lon:lon,display:'GPS: '+lat+', '+lon,accuracy:acc,timestamp:Date.now()};
+    }
+    // Only reverse geocode when accuracy is reasonable (under 1000m)
+    if(acc>1000){
+      console.log('GPS accuracy poor ('+acc+'m) - waiting for better fix');
+      return;
+    }
     fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lon+'&format=json')
       .then(function(r){return r.json();})
       .then(function(d){
@@ -2802,7 +2839,7 @@ function requestTechLocation(){
         var state=d.address&&(d.address.state_code||d.address.state)||'';
         var display=city&&state?city+', '+state:(city||('GPS: '+lat+', '+lon));
         techLocation={lat:lat,lon:lon,display:display,accuracy:acc,timestamp:Date.now()};
-        console.log('Trazer GPS: '+display+' (±'+acc+'m)');
+        console.log('Trazer GPS confirmed: '+display+' (±'+acc+'m)');
       })
       .catch(function(){
         techLocation={lat:lat,lon:lon,display:'GPS: '+lat+', '+lon,accuracy:acc,timestamp:Date.now()};
@@ -2812,9 +2849,15 @@ function requestTechLocation(){
     console.warn('GPS error:',err.code,err.message);
     window._locationDenied=(err.code===1);
     if(err.code!==1){
-      // Not denied - try low accuracy fallback
       navigator.geolocation.getCurrentPosition(onSuccess,function(){window._locationDenied=false;},opts_low);
     }
+    // Use profile zip as fallback
+    try{
+      var profile=getUserMemoryProfile();
+      if(profile&&profile.serviceZip&&!techLocation){
+        techLocation={lat:null,lon:null,display:'Service area: '+profile.serviceZip,accuracy:9999,timestamp:Date.now()};
+      }
+    }catch(e){}
   }
   navigator.geolocation.getCurrentPosition(onSuccess,onError,opts_high);
   // Also start watching for updates
@@ -4005,8 +4048,14 @@ function detectInlineCorrection(userText){
 }
 async function sendChat(){
   if(!isAccessAllowed())return;
-  // Re-request location on user interaction
-  if(!techLocation&&!window._locationDenied){try{requestTechLocation();}catch(e){}}
+  // Request/refresh location on every chat until we have a good one
+  if(!window._locationDenied){
+    try{
+      if(!techLocation||!techLocation.lat||(techLocation.accuracy&&techLocation.accuracy>1000)){
+        requestTechLocation();
+      }
+    }catch(e){}
+  }
   if(!navigator.onLine){
     var _offText=(document.getElementById('chatInput').value||'').trim();
     if(_offText){queueOfflineMessage(_offText);document.getElementById('chatInput').value='';}
@@ -4071,11 +4120,9 @@ async function sendChat(){
     if(techLocation&&techLocation.display){
       var now=new Date();
       var timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
-      locationReminder='\n\nCRITICAL LOCATION DATA — USE THIS:\nTech GPS: '+techLocation.display+' ('+techLocation.lat+', '+techLocation.lon+')\nLocal time: '+timeStr+'\nAccuracy: ±'+(techLocation.accuracy||'?')+'m\nIF ANY QUESTION involves temperature, weather, outdoor conditions, refrigerant pressures, superheat, subcooling, or parts availability — SEARCH current conditions at this exact location BEFORE answering. Never guess the outdoor temperature.';
-    } else if(window._serviceZip){
-      locationReminder='\n\nTech service area zip: '+window._serviceZip+'. Use this for local parts pricing and weather when GPS is unavailable.';
+      locationReminder='\n\n=== TECH LOCATION (VERIFIED GPS) ===\nLocation: '+techLocation.display+'\nCoordinates: '+techLocation.lat+', '+techLocation.lon+'\nLocal time: '+timeStr+'\nAccuracy: \u00b1'+(techLocation.accuracy||'?')+'m\n\nYOU MUST: Before answering ANY question about temperature, weather, pressures, refrigerant, superheat, or subcooling - SEARCH current conditions at '+techLocation.display+' right now using the coordinates above. Use ONLY this location. Never guess or use a default location.\n===================================';
     } else {
-      locationReminder='\n\nLOCATION: Not available. Ask the tech for their city and current outdoor temperature before giving pressure readings.';
+      locationReminder='\n\nLOCATION: GPS not available. Ask the tech: What city are you in right now? What is the current outdoor temperature at your job site?';
     }
     var sysPrompt=AGENT_SYSTEM+'\n\nLANGUAGE: '+langNote+buildKnowledgeContext()+locationReminder+correctionFlag;
     // Search only when genuinely needed — skip for general diagnosis/chat
@@ -4633,6 +4680,7 @@ function findLocalTech(){
   }
 }
 function triggerDiagram(){
+  if(!isProFeature('diagram'))return;
   // Use the last thing Mike said + the last thing the tech typed as context
   var lastMike='';
   var lastTech='';
@@ -4648,6 +4696,7 @@ function triggerDiagram(){
 }
 
 function triggerIllustration(){
+  if(!isProFeature('illustration'))return;
   var lastMike='';
   var lastTech='';
   var msgs=document.querySelectorAll('#chatMessages .msg-agent .msg-bubble');
@@ -5121,17 +5170,39 @@ function toggleMic(){
 
 function mikeSay(text){
   if(!voiceMode)return;
-  stopMikeSpeaking();
   stopListening();
   document.getElementById('chatInput').value='';
-  var clean=text.replace(/https?:\/\/[^\s)>\]"]+/g,'').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim().substring(0,5000);
+  var clean=text.replace(/https?:\/\/[^\s)>\]"]+/g,'').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim().substring(0,4000);
   if(!clean)return;
-  var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
+  // Add to audio queue instead of interrupting
+  if(!window._audioQueue)window._audioQueue=[];
+  window._audioQueue.push(clean);
+  if(!window._audioPlaying)_playNextInQueue();
+}
+
+function _playNextInQueue(){
+  if(!window._audioQueue||window._audioQueue.length===0){
+    window._audioPlaying=false;
+    isMikeSpeaking=false;
+    var micBtn=document.getElementById('micBtn');
+    var stopBtn=document.getElementById('stopSpeakBtn');
+    if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
+    if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
+    if(stopBtn)stopBtn.style.display='none';
+    if(voiceMode){setVoiceStatus('Go ahead…','');setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},600);}
+    else{setVoiceStatus('','');}
+    return;
+  }
+  window._audioPlaying=true;
   isMikeSpeaking=true;
-  if(typeof showVoiceWaveform==='function')showVoiceWaveform(true);
+  var clean=window._audioQueue.shift();
+  var micBtn=document.getElementById('micBtn');
+  var stopBtn=document.getElementById('stopSpeakBtn');
   if(micBtn){micBtn.classList.add('mic-speaking');micBtn.textContent='🔊';}
   if(stopBtn)stopBtn.style.display='flex';
+  if(typeof showVoiceWaveform==='function')showVoiceWaveform(true);
   setVoiceStatus('Mike is talking…','');
+
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})})
     .then(function(res){
       if(!res.ok)throw new Error('TTS '+res.status);
@@ -5139,62 +5210,39 @@ function mikeSay(text){
     })
     .then(function(arrayBuf){
       if(!arrayBuf||arrayBuf.byteLength<500){mikeSayBrowser(clean);return;}
-      // iOS Safari fix: use pre-unlocked audio element
       var blob=new Blob([arrayBuf],{type:'audio/mpeg'});
       var url=URL.createObjectURL(blob);
       if(mikeAudio){try{mikeAudio.pause();mikeAudio.src='';}catch(e){}}
-      // Reuse the pre-unlocked audio element if available (iOS requires this)
-      if(window._iosAudioEl){
-        mikeAudio=window._iosAudioEl;
-        window._iosAudioEl=null;
-      } else {
-        mikeAudio=new Audio();
-      }
+      if(window._iosAudioEl){mikeAudio=window._iosAudioEl;window._iosAudioEl=null;}
+      else{mikeAudio=new Audio();}
       mikeAudio.src=url;
       mikeAudio.setAttribute('playsinline','');
       mikeAudio.setAttribute('webkit-playsinline','');
       mikeAudio.onended=function(){
-        isMikeSpeaking=false;URL.revokeObjectURL(url);mikeAudio=null;
-        if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
-        if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
-        if(stopBtn)stopBtn.style.display='none';
-        if(voiceMode){setVoiceStatus('Go ahead…','');setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},600);}
-        else{setVoiceStatus('','');}
+        URL.revokeObjectURL(url);
+        mikeAudio=null;
+        _playNextInQueue();
       };
-      mikeAudio.onerror=function(){URL.revokeObjectURL(url);mikeAudio=null;mikeSayBrowser(clean);};
+      mikeAudio.onerror=function(){
+        URL.revokeObjectURL(url);
+        mikeAudio=null;
+        mikeSayBrowser(clean);
+        _playNextInQueue();
+      };
       var pp=mikeAudio.play();
-      if(pp!==undefined){pp.catch(function(){URL.revokeObjectURL(url);mikeAudio=null;mikeSayBrowser(clean);});}
-      return;
-      var AudioCtx=window.AudioContext||window.webkitAudioContext;
-      if(!AudioCtx){mikeSayBrowser(clean);return;}
-      var ctx=sharedAudioCtx||(sharedAudioCtx=new AudioCtx());
-      var play=function(){
-        ctx.decodeAudioData(arrayBuf.slice(0),function(decoded){
-          var src=ctx.createBufferSource();
-          // GainNode lets us control volume and respects iOS media session
-          var gainNode=ctx.createGain();
-          gainNode.gain.value=1.0;
-          src.buffer=decoded;
-          src.connect(gainNode);
-          gainNode.connect(ctx.destination);
-          src.onended=function(){
-            isMikeSpeaking=false;
-            if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
-            if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
-            if(stopBtn)stopBtn.style.display='none';
-            if(voiceMode){
-              setVoiceStatus('Go ahead…','');
-              setTimeout(function(){if(voiceMode&&!isListening)startListening();},1200);
-            }
-          };
-          src.start(0);
-          mikeAudio={pause:function(){try{src.stop(0);}catch(e){}try{src.disconnect();}catch(e2){}try{gainNode.disconnect();}catch(e3){}}};
-        },function(){mikeSayBrowser(clean);});
-      };
-      if(ctx.state==='suspended'||ctx.state==='interrupted'){ctx.resume().then(play).catch(function(){mikeSayBrowser(clean);});}
-      else play();
+      if(pp!==undefined){
+        pp.catch(function(){
+          URL.revokeObjectURL(url);
+          mikeAudio=null;
+          mikeSayBrowser(clean);
+          _playNextInQueue();
+        });
+      }
     })
-    .catch(function(){mikeSayBrowser(clean);});
+    .catch(function(){
+      mikeSayBrowser(clean);
+      _playNextInQueue();
+    });
 }
 
 function mikeSayBrowser(clean){
@@ -5227,20 +5275,18 @@ function mikeSayBrowser(clean){
 }
 
 function stopMikeSpeaking(){
-  isMikeSpeaking=false;
-  if(mikeAudio){try{mikeAudio.pause();}catch(e){}mikeAudio=null;}
+  // Clear the audio queue
+  window._audioQueue=[];
+  window._audioPlaying=false;
+  if(mikeAudio){try{mikeAudio.pause();mikeAudio.src='';}catch(e){} mikeAudio=null;}
   if(window.speechSynthesis)window.speechSynthesis.cancel();
-  var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
-  if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';micBtn.style.background='#00C2B2';}
+  isMikeSpeaking=false;
+  var micBtn=document.getElementById('micBtn');
+  var stopBtn=document.getElementById('stopSpeakBtn');
+  if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
+  if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
   if(stopBtn)stopBtn.style.display='none';
-  var delay=isSafari?600:300;
-  if(voiceMode&&!isListening){
-    setVoiceStatus('Go ahead…','');
-    setTimeout(function(){if(voiceMode&&!isListening)startListening();},delay);
-  }
-  if(cameraActive&&!cameraListening){
-    setTimeout(function(){if(cameraActive&&!cameraListening)startCameraListen();},delay);
-  }
+  setVoiceStatus('','');
 }
 
 // ─── LIVE CAMERA DIAGNOSTICS ───────────────────────────────
@@ -5260,6 +5306,7 @@ function checkCameraAccess(){
 }
 
 async function startLiveCamera(){
+  if(!isProFeature('camera'))return;
   trackUsage("camera");
   unlockAudio();
   try{stopMikeSpeaking();}catch(e){}

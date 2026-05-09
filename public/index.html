@@ -1131,6 +1131,9 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
   background:#111111;
   padding:10px 12px 12px;
   border-top:1px solid rgba(255,255,255,.06);
+  overflow:visible;
+  position:relative;
+  z-index:20;
 }
 .chat-attach-btn{
   width:38px;height:38px;min-width:38px;
@@ -1618,39 +1621,12 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <!-- QUICK CHIPS -->
       <div class="chips-bar">
         <div id="quickReplies"></div>
-        <div style="position:relative;">
+        <div style="position:relative;z-index:50;">
           <button id="quickActionsBtn" onclick="toggleQuickActions()" style="display:flex;align-items:center;gap:6px;background:var(--white);border:1.5px solid var(--gray-200);border-radius:99px;padding:7px 14px;font-size:12px;font-family:var(--font);font-weight:700;color:var(--gray-600);cursor:pointer;transition:all .15s;width:100%;">
             <span>&#x26A1;</span><span>Quick Actions</span>
             <span id="qaArrow" style="margin-left:auto;font-size:10px;transition:transform .2s;">&#x25BC;</span>
           </button>
-          <div id="quickActionsMenu" style="display:none;position:fixed;background:var(--white);border:1.5px solid var(--gray-200);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.15);z-index:9000;overflow:hidden;max-height:60vh;overflow-y:auto;min-width:260px;max-width:400px;">
-            <div style="padding:8px;">
-              <div style="font-size:10px;font-weight:800;color:var(--gray-400);letter-spacing:.6px;text-transform:uppercase;padding:6px 8px 4px;">DIAGNOSE</div>
-              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){document.getElementById('chatInput').value='I need a part: ';document.getElementById('chatInput').focus();})">&#x1F529; Find a Part</button>
-              <button class="qa-item" style="color:#E8354A;font-weight:800;" onclick="qaClick(function(){var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b&&b.style.display==='none'){b.style.display='block';if(a)a.textContent='&#x25B2;';}if(b)b.scrollIntoView({behavior:'smooth'});})">&#x26A1; Full Diagnostic</button>
-              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick('What are the correct R-410A pressures for current outdoor temperature?');})">&#x1F321; Pressures</button>
-              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>
-              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>
-              <button class="qa-item" style="color:#009E90;" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>
-              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>
-              <div style="font-size:10px;font-weight:800;color:var(--gray-400);letter-spacing:.6px;text-transform:uppercase;padding:6px 8px 4px;">REVENUE</div>
-              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick('I just finished the repair — what else should I check for upsell opportunities?');})">&#x1F4B0; Find Upsells</button>
-              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>
-              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>
-              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>
-              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>
-              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>
-              <div style="font-size:10px;font-weight:800;color:var(--gray-400);letter-spacing:.6px;text-transform:uppercase;padding:6px 8px 4px;">JOB TOOLS</div>
-              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick('Give me a job summary — problem, fix, and what to put on the invoice.');})">&#x1F4CB; Job Summary</button>
-              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>
-              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>
-              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>
-              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>
-              <div style="font-size:10px;font-weight:800;color:var(--gray-400);letter-spacing:.6px;text-transform:uppercase;padding:6px 8px 4px;">SALES</div>
-              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick('The homeowner said the price seems too high. How do I overcome that?');})">&#x1F4AC; Handle Objection</button>
-              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick('Help me pitch a maintenance agreement. System is about 10 years old.');})">&#x1F4CB; Pitch Maintenance</button>
-            </div>
-          </div>
+          <div id="quickActionsMenuPlaceholder"></div>
         </div>
       </div>
 <!-- CHAT SEARCH BAR -->
@@ -2141,35 +2117,28 @@ function authTab(t){
 function showAuthErr(m){var e=document.getElementById('authErr');if(e){e.textContent=m;e.classList.add('show');}}
 
 function authSignIn(){
-  showAuthErr(''); // Clear stale errors before new attempt
+  showAuthErr('');
   var email=(document.getElementById('siEmail').value||'').trim().toLowerCase();
   var pass=document.getElementById('siPass').value||'';
   var btn=document.getElementById('siBtn');
   if(!email||!pass){showAuthErr('Enter your email and password.');return;}
-  btn.disabled=true;btn.textContent='Signing in...';
-  setTimeout(function(){
-    if(email===TZ_ADMIN&&pass===TZ_PASS){
-      currentUser={name:'Brandon Ventura',email:TZ_ADMIN,plan:'admin',initials:'BV',usageCount:0,isAdmin:true,createdAt:Date.now()};
-      try{localStorage.setItem('trazer_user',JSON.stringify(currentUser));}catch(e){}
+  if(btn){btn.disabled=true;btn.textContent='Signing in...';}
+  fetch('/api/auth/signin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})})
+    .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
+    .then(function(result){
+      if(!result.ok){showAuthErr(result.data.error||'Sign in failed.');if(btn){btn.disabled=false;btn.textContent='Sign In';}return;}
+      var user=result.data.user;user.token=result.data.token;
+      var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
+      users[email]=user;localStorage.setItem('trazer_users',JSON.stringify(users));
+      localStorage.setItem('trazer_user',JSON.stringify(user));
+      currentUser=user;
       document.getElementById('authOverlay').classList.add('hidden');
-      updateProfileUI();
-      return;
-    }
-    var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
-    if(users[email]&&users[email].password===btoa(unescape(encodeURIComponent(pass)))){
-      currentUser=users[email];
-      localStorage.setItem('trazer_user',JSON.stringify(currentUser));
-      document.getElementById('authOverlay').classList.add('hidden');
-      updateProfileUI();checkTrial();
-      loadUserHistory();
-      applyModeFromRole();
+      updateProfileUI();checkTrial();loadUserHistory();applyModeFromRole();
       showPersonalizedWelcome();
+      if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
       setTimeout(requestTechLocation,2000);
-    }else{
-      showAuthErr('Wrong email or password. New? Create an account above.');
-      btn.disabled=false;btn.textContent='Sign In';
-    }
-  },500);
+    })
+    .catch(function(){showAuthErr('Connection error. Try again.');if(btn){btn.disabled=false;btn.textContent='Sign In';}});
 }
 // Safety: always re-enable buttons if something goes wrong
 document.addEventListener('visibilitychange',function(){
@@ -2182,29 +2151,28 @@ function authSignUp(){
   var name=(document.getElementById('suName').value||'').trim();
   var email=(document.getElementById('suEmail').value||'').trim().toLowerCase();
   var pass=document.getElementById('suPass').value||'';
-  var company=(document.getElementById('suCompany').value||'').trim();
+  var company=(document.getElementById('suCompany')&&document.getElementById('suCompany').value||'').trim();
+  if(!name||!email||!pass){showAuthErr('Please fill in all required fields.');return;}
+  if(pass.length<8){showAuthErr('Password must be at least 8 characters.');return;}
   var btn=document.getElementById('suBtn');
-  if(!name){showAuthErr('Enter your name.');return;}
-  if(!email||!email.includes('@')){showAuthErr('Enter a valid email.');return;}
-  if(pass.length<8){showAuthErr('Password needs at least 8 characters.');return;}
-  btn.disabled=true;btn.textContent='Creating account...';
-  setTimeout(function(){
-    var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
-    if(users[email]){showAuthErr('Account exists. Sign in above.');btn.disabled=false;btn.textContent='Start Free Trial';return;}
-    var ini=name.split(' ').map(function(n){return n[0]||'';}).join('').toUpperCase().slice(0,2)||'U';
-    currentUser={name:name,email:email,password:btoa(unescape(encodeURIComponent(pass))),company:company,plan:'trial',trialStart:Date.now(),createdAt:Date.now(),initials:ini,usageCount:0,features:{}};
-    users[email]=currentUser;
-    localStorage.setItem('trazer_users',JSON.stringify(users));
-    localStorage.setItem('trazer_user',JSON.stringify(currentUser));
-    document.getElementById('authOverlay').classList.add('hidden');
-    applyRoleToUser();
-    updateProfileUI();checkTrial();
-    loadUserHistory();
-    applyModeFromRole();
-    showPersonalizedWelcome();
-    showOnboarding();
-    setTimeout(requestTechLocation,3000);
-  },600);
+  if(btn){btn.disabled=true;btn.textContent='Creating account...';}
+  var selectedRole=window._pendingRole||'contractor';
+  fetch('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,password:pass,company:company,role:selectedRole})})
+    .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
+    .then(function(result){
+      if(!result.ok){showAuthErr(result.data.error||'Sign up failed.');if(btn){btn.disabled=false;btn.textContent='Start Free Trial';}return;}
+      var user=result.data.user;user.token=result.data.token;
+      var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
+      users[email]=user;localStorage.setItem('trazer_users',JSON.stringify(users));
+      localStorage.setItem('trazer_user',JSON.stringify(user));
+      currentUser=user;
+      document.getElementById('authOverlay').classList.add('hidden');
+      updateProfileUI();checkTrial();loadUserHistory();applyModeFromRole();
+      showPersonalizedWelcome();
+      if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
+      setTimeout(requestTechLocation,2000);
+    })
+    .catch(function(){showAuthErr('Connection error. Try again.');if(btn){btn.disabled=false;btn.textContent='Start Free Trial';}});
 }
 
 function authForgot(){
@@ -2587,7 +2555,12 @@ function showPaywall(){
   e.classList.add('show');
 }
 function selectPlan(p,el){selPlan=p;document.querySelectorAll('.pw-plan').forEach(function(x){x.classList.remove('sel');});el.classList.add('sel');}
-function goCheckout(){alert('Stripe checkout ready.\nPlan: '+selPlan+'\n\nAdd STRIPE_SECRET_KEY to Railway + create price IDs to activate.');}
+async function goCheckout(){
+  var plan=selectedBillingPlan||'pro';
+  if(!currentUser){showToast('Please sign in first.','error',2500);return;}
+  showToast('Billing goes live soon — you\'re on beta access','info',3000);
+  closeModal('billingModal');
+}
 
 // ── ONBOARDING ─────────────────────────────────────────────────
 var OB_SLIDES=[
@@ -3889,56 +3862,74 @@ function handleChatFile(e){
   preview.style.display='flex';
 }
 function toggleQuickActions(){
-  var menu=document.getElementById('quickActionsMenu');
   var arrow=document.getElementById('qaArrow');
   var btn=document.getElementById('quickActionsBtn');
-  if(!menu||!btn)return;
-  var open=menu.style.display!=='none';
-  if(open){
-    menu.style.display='none';
-    if(arrow)arrow.style.transform='';
-    btn.style.borderColor='';btn.style.color='var(--gray-600)';
-    return;
+  if(!btn)return;
+  var menu=document.getElementById('quickActionsMenu');
+  if(menu&&menu.style.display!=='none'){closeQuickActions();return;}
+  // Create menu at body level if not exists
+  if(!menu){
+    menu=document.createElement('div');
+    menu.id='quickActionsMenu';
+    menu.style.cssText='position:fixed;background:#fff;border:1.5px solid #e2e4ed;border-radius:12px;box-shadow:0 4px 32px rgba(0,0,0,.18);z-index:99999;overflow-y:auto;max-height:360px;min-width:240px;';
+    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF0F2;color:#E8354A;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){document.getElementById(\'chatInput\').value=\'I need a part: \';document.getElementById(\'chatInput\').focus();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#E8354A;font-weight:800;" onclick="qaClick(function(){var b=document.getElementById(\'fullDiagBody\');var a=document.getElementById(\'fullDiagArrow\');if(b&&b.style.display===\'none\'){b.style.display=\'block\';if(a)a.textContent=\'&#x25B2;\';}if(b)b.scrollIntoView({behavior:\'smooth\'});})">&#x26A1; Full Diagnostic</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick(\'What are the correct R-410A pressures for current outdoor temperature?\');})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:#009E90;" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F0FDF4;color:#059669;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick(\'I just finished the repair — what else should I check for upsell opportunities?\');})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF7ED;color:#ea580c;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick(\'Give me a job summary — problem, fix, and what to put on the invoice.\');})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#EFF6FF;color:#2563eb;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick(\'The homeowner said the price seems too high. How do I overcome that?\');})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick(\'Help me pitch a maintenance agreement. System is about 10 years old.\');})">&#x1F4CB; Pitch Maintenance</button>            </div>          ';
+    document.body.appendChild(menu);
+    // Tap outside closes
+    setTimeout(function(){
+      document.addEventListener('click',function handler(e){
+        if(!menu.contains(e.target)&&!btn.contains(e.target)){
+          closeQuickActions();
+          document.removeEventListener('click',handler);
+        }
+      });
+    },10);
   }
-  // Position menu using fixed coords from button position
+  // Position it above the button
   var rect=btn.getBoundingClientRect();
-  var menuWidth=Math.min(Math.max(rect.width,260),400);
-  var spaceBelow=window.innerHeight-rect.bottom-8;
-  var spaceAbove=rect.top-8;
-  menu.style.width=menuWidth+'px';
+  var menuW=Math.min(Math.max(rect.width,260),360);
+  menu.style.width=menuW+'px';
   menu.style.left=rect.left+'px';
-  // Open down if enough space, else up
-  if(spaceBelow>=200||spaceBelow>=spaceAbove){
-    menu.style.top=(rect.bottom+6)+'px';
-    menu.style.bottom='';
-  } else {
-    menu.style.bottom=(window.innerHeight-rect.top+6)+'px';
-    menu.style.top='';
-  }
+  menu.style.top=(rect.top-4)+'px';
   menu.style.display='block';
+  // Position below the button and keep it anchored on scroll/resize
+  function positionMenu(){
+    var r=btn.getBoundingClientRect();
+    var w=Math.min(Math.max(r.width,260),360);
+    menu.style.width=w+'px';
+    menu.style.left=r.left+'px';
+    menu.style.top=(r.bottom+4)+'px';
+  }
+  positionMenu();
+  // Store handler so we can remove it on close
+  menu._reposition=positionMenu;
+  window.addEventListener('scroll',positionMenu,true);
+  window.addEventListener('resize',positionMenu);
   if(arrow)arrow.style.transform='rotate(180deg)';
   btn.style.borderColor='var(--teal)';btn.style.color='var(--teal)';
 }
-function qaClick(fn){
+function qaClick(fn){closeQuickActions();setTimeout(fn,50);}
+function closeQuickActions(){
   var menu=document.getElementById('quickActionsMenu');
   var arrow=document.getElementById('qaArrow');
   var btn=document.getElementById('quickActionsBtn');
-  if(menu)menu.style.display='none';
+  if(menu){
+    menu.style.display='none';
+    if(menu._reposition){
+      window.removeEventListener('scroll',menu._reposition,true);
+      window.removeEventListener('resize',menu._reposition);
+      menu._reposition=null;
+    }
+  }
   if(arrow)arrow.style.transform='';
   if(btn){btn.style.borderColor='';btn.style.color='var(--gray-600)';}
-  setTimeout(fn,50);
 }
 document.addEventListener('click',function(e){
   var menu=document.getElementById('quickActionsMenu');
   var btn=document.getElementById('quickActionsBtn');
   if(!menu||menu.style.display==='none')return;
-  if(btn&&!btn.contains(e.target)&&!menu.contains(e.target)){
-    menu.style.display='none';
-    var arrow=document.getElementById('qaArrow');
-    if(arrow)arrow.style.transform='';
-    btn.style.borderColor='';btn.style.color='var(--gray-600)';
-  }
+  if(btn&&!btn.contains(e.target)&&!menu.contains(e.target)){closeQuickActions();}
 });
+
 function clearChatAttach(){chatAttachment=null;document.getElementById("chatAttachPreview").style.display="none";}
 
 function checkAndLearn(resp){
@@ -4014,8 +4005,8 @@ function detectInlineCorrection(userText){
 }
 async function sendChat(){
   if(!isAccessAllowed())return;
-  // Re-request location if we don't have it yet
-  if(!techLocation&&!window._locationDenied)requestTechLocation();
+  // Re-request location on user interaction
+  if(!techLocation&&!window._locationDenied){try{requestTechLocation();}catch(e){}}
   if(!navigator.onLine){
     var _offText=(document.getElementById('chatInput').value||'').trim();
     if(_offText){queueOfflineMessage(_offText);document.getElementById('chatInput').value='';}
@@ -5837,6 +5828,17 @@ function initReconnectToast(){
 document.addEventListener('DOMContentLoaded',function(){
   (function(){var l=document.getElementById('appLoader');if(l){l.style.opacity='0';setTimeout(function(){if(l&&l.parentNode)l.parentNode.removeChild(l);},450);}})();
   tracerInit();
+  // Handle Stripe payment return
+  try{
+    var _up=new URLSearchParams(window.location.search);
+    if(_up.get('payment')==='success'){
+      var _pl=_up.get('plan')||'pro';
+      if(currentUser){currentUser.plan=_pl;localStorage.setItem('trazer_user',JSON.stringify(currentUser));updateProfileUI();}
+      setTimeout(function(){showToast('Welcome to '+_pl.charAt(0).toUpperCase()+_pl.slice(1)+'! You are all set.','success',5000);},500);
+      window.history.replaceState({},'','/');
+    }
+    if(_up.get('payment')==='cancelled'){showToast('Checkout cancelled - no charge made.','info',3000);window.history.replaceState({},'','/'); }
+  }catch(_e){}
   initRoleFlow();
   initOfflineDetection();
   initChatEnhancements();

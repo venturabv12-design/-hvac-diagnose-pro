@@ -4069,6 +4069,8 @@ async function sendChat(){
   var input=document.getElementById('chatInput'),text=input.value.trim();
   if(text.length>8000){showToast('Message too long — please shorten it.','error',3000);return;}
   if(!text&&!chatAttachment)return;
+  // Stop Mike speaking when user sends a new message
+  stopMikeSpeaking();
   chatSending=true;
   var btn=document.getElementById('chatSendBtn');btn.disabled=true;
   input.value='';input.style.height='auto';
@@ -4120,7 +4122,7 @@ async function sendChat(){
     if(techLocation&&techLocation.display){
       var now=new Date();
       var timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
-      locationReminder='\n\n=== TECH LOCATION (VERIFIED GPS) ===\nLocation: '+techLocation.display+'\nCoordinates: '+techLocation.lat+', '+techLocation.lon+'\nLocal time: '+timeStr+'\nAccuracy: \u00b1'+(techLocation.accuracy||'?')+'m\n\nYOU MUST: Before answering ANY question about temperature, weather, pressures, refrigerant, superheat, or subcooling - SEARCH current conditions at '+techLocation.display+' right now using the coordinates above. Use ONLY this location. Never guess or use a default location.\n===================================';
+      locationReminder='\n\nCRITICAL LOCATION DATA — TECH LOCATION (VERIFIED GPS)\nLocation: '+techLocation.display+'\nCoordinates: '+techLocation.lat+', '+techLocation.lon+'\nLocal time: '+timeStr+'\nAccuracy: \u00b1'+(techLocation.accuracy||'?')+'m\n\nYOU MUST: Before answering ANY question about temperature, weather, pressures, refrigerant, superheat, or subcooling - SEARCH current conditions at '+techLocation.display+' right now using the coordinates above. Use ONLY this location. Never guess or use a default location.\n===================================';
     } else {
       locationReminder='\n\nLOCATION: GPS not available. Ask the tech: What city are you in right now? What is the current outdoor temperature at your job site?';
     }
@@ -4156,7 +4158,12 @@ async function sendChat(){
       appendMessage('agent','Something went wrong on my end. Tap send again — I am ready.');
     }
   }
-  finally{chatSending=false;btn.disabled=false;if(!voiceMode)input.focus();}
+  finally{
+    chatSending=false;
+    btn.disabled=false;
+    if(!voiceMode)input.focus();
+    // In voice mode, listening restarts after Mike finishes speaking (handled by audio queue)
+  }
 }
 
 
@@ -5001,6 +5008,8 @@ function startListeningWithGreeting(greeting){
 }
 
 function startListening(){
+  // Don't start listening while Mike is speaking
+  if(isMikeSpeaking||window._audioPlaying)return;
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){setVoiceStatus('Voice not supported on this browser','');return;}
   if(isMikeSpeaking)return;
@@ -5189,8 +5198,12 @@ function _playNextInQueue(){
     if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
     if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
     if(stopBtn)stopBtn.style.display='none';
-    if(voiceMode){setVoiceStatus('Go ahead…','');setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},600);}
-    else{setVoiceStatus('','');}
+    setVoiceStatus('','');
+    if(voiceMode){
+      setTimeout(function(){
+        if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying)startListening();
+      },800);
+    }
     return;
   }
   window._audioPlaying=true;
@@ -5203,46 +5216,75 @@ function _playNextInQueue(){
   if(typeof showVoiceWaveform==='function')showVoiceWaveform(true);
   setVoiceStatus('Mike is talking…','');
 
+  // Safety timeout — if TTS takes too long, move on
+  var safetyTimer=setTimeout(function(){
+    console.warn('TTS timeout — skipping to next');
+    if(mikeAudio){try{mikeAudio.pause();mikeAudio.src='';}catch(e){}}
+    mikeAudio=null;
+    _playNextInQueue();
+  },15000);
+
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})})
     .then(function(res){
       if(!res.ok)throw new Error('TTS '+res.status);
       return res.arrayBuffer();
     })
     .then(function(arrayBuf){
-      if(!arrayBuf||arrayBuf.byteLength<500){mikeSayBrowser(clean);return;}
+      clearTimeout(safetyTimer);
+      if(!arrayBuf||arrayBuf.byteLength<500){
+        // Fallback to browser TTS then continue queue
+        _mikeSayBrowserThenNext(clean);
+        return;
+      }
       var blob=new Blob([arrayBuf],{type:'audio/mpeg'});
       var url=URL.createObjectURL(blob);
       if(mikeAudio){try{mikeAudio.pause();mikeAudio.src='';}catch(e){}}
+      // iOS: reuse pre-unlocked element or create new
       if(window._iosAudioEl){mikeAudio=window._iosAudioEl;window._iosAudioEl=null;}
       else{mikeAudio=new Audio();}
       mikeAudio.src=url;
       mikeAudio.setAttribute('playsinline','');
       mikeAudio.setAttribute('webkit-playsinline','');
       mikeAudio.onended=function(){
+        clearTimeout(safetyTimer);
         URL.revokeObjectURL(url);
         mikeAudio=null;
         _playNextInQueue();
       };
       mikeAudio.onerror=function(){
+        clearTimeout(safetyTimer);
         URL.revokeObjectURL(url);
         mikeAudio=null;
-        mikeSayBrowser(clean);
         _playNextInQueue();
       };
       var pp=mikeAudio.play();
       if(pp!==undefined){
-        pp.catch(function(){
+        pp.catch(function(e){
+          clearTimeout(safetyTimer);
+          console.warn('Audio play blocked:',e.message);
           URL.revokeObjectURL(url);
           mikeAudio=null;
-          mikeSayBrowser(clean);
-          _playNextInQueue();
+          // On iOS autoplay block, try browser TTS
+          _mikeSayBrowserThenNext(clean);
         });
       }
     })
-    .catch(function(){
-      mikeSayBrowser(clean);
-      _playNextInQueue();
+    .catch(function(e){
+      clearTimeout(safetyTimer);
+      console.warn('TTS fetch failed:',e.message);
+      _mikeSayBrowserThenNext(clean);
     });
+}
+
+function _mikeSayBrowserThenNext(text){
+  // Use browser TTS then continue queue when done
+  if(!window.speechSynthesis){_playNextInQueue();return;}
+  window.speechSynthesis.cancel();
+  var utt=new SpeechSynthesisUtterance(text.substring(0,300));
+  utt.rate=1.1;utt.pitch=0.9;utt.volume=1;
+  utt.onend=function(){_playNextInQueue();};
+  utt.onerror=function(){_playNextInQueue();};
+  window.speechSynthesis.speak(utt);
 }
 
 function mikeSayBrowser(clean){

@@ -4161,8 +4161,11 @@ async function sendChat(){
   finally{
     chatSending=false;
     btn.disabled=false;
-    if(!voiceMode)input.focus();
-    // In voice mode, listening restarts after Mike finishes speaking (handled by audio queue)
+    if(!voiceMode){
+      isMikeSpeaking=false;
+      input.focus();
+    }
+    // In voice mode: isMikeSpeaking stays true until _playNextInQueue finishes
   }
 }
 
@@ -5082,9 +5085,12 @@ function _doStartListening(SR){
       if(text){
         setVoiceStatus('Sending to Mike…',text);
         autoListenAfterSpeak=true;
+        // Block mic immediately - Mike is about to respond
+        // isMikeSpeaking=true prevents startListening from firing during TTS fetch
+        isMikeSpeaking=true;
         sendChat();
-      } else if(voiceMode&&!isMikeSpeaking){
-        setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1200:600);
+      } else if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying){
+        setTimeout(function(){if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying)startListening();},isSafari?1200:600);
       }
     };
     speechRecognition.onerror=function(ev){
@@ -5101,12 +5107,12 @@ function _doStartListening(SR){
         if(vbtn)vbtn.classList.remove('voice-mode-active');
         if(vlbl){vlbl.style.color='rgba(255,255,255,.5)';vlbl.textContent='Voice';}
       } else if(ev.error==='no-speech'||ev.error==='aborted'){
-        if(voiceMode&&!isMikeSpeaking){
-          setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1000:500);
+        if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying){
+          setTimeout(function(){if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying)startListening();},isSafari?1000:500);
         }
       } else {
-        if(voiceMode&&!isMikeSpeaking){
-          setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1500:800);
+        if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying){
+          setTimeout(function(){if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying)startListening();},isSafari?1500:800);
         }
       }
     };

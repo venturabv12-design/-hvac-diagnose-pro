@@ -5195,11 +5195,22 @@ function mikeSay(text){
   if(!voiceMode)return;
   stopListening();
   document.getElementById('chatInput').value='';
-  var clean=text.replace(/https?:\/\/[^\s)>\]"]+/g,'').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim().substring(0,4000);
+  var clean=text.replace(/https?:\/\/[^\s)>\]"]+/g,'').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim();
   if(!clean)return;
-  // Add to audio queue instead of interrupting
   if(!window._audioQueue)window._audioQueue=[];
-  window._audioQueue.push(clean);
+  // Split into sentences so each chunk is short and plays fast on iOS
+  // Max 200 chars per chunk to keep TTS response time under 2 seconds
+  var sentences=clean.match(/[^.!?]+[.!?]+/g)||[clean];
+  var chunk='';
+  sentences.forEach(function(s){
+    if((chunk+s).length>200){
+      if(chunk.trim())window._audioQueue.push(chunk.trim());
+      chunk=s;
+    } else {
+      chunk+=s;
+    }
+  });
+  if(chunk.trim())window._audioQueue.push(chunk.trim());
   if(!window._audioPlaying)_playNextInQueue();
 }
 

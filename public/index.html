@@ -4956,19 +4956,27 @@ function loadMikeVoice(){
 }
 
 function toggleVoiceMode(){
-  // iOS Safari: pre-create and unlock Audio element during user gesture
-  // This is the ONLY way to guarantee audio plays on iOS
+  // iOS 18: unlock audio context during user gesture tap
+  // Create a real Audio element and play it silently RIGHT NOW during the tap
   try{
-    if(!window._iosAudioEl){
-      window._iosAudioEl=new Audio();
-      window._iosAudioEl.setAttribute('playsinline','');
-      window._iosAudioEl.setAttribute('webkit-playsinline','');
-      // Play silence to unlock - this must happen in the tap handler
-      window._iosAudioEl.src='data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIC8gaHR0cHM6Ly93d3c';
-      window._iosAudioEl.volume=0;
-      window._iosAudioEl.play().catch(function(){});
+    var silentAudio=new Audio();
+    silentAudio.setAttribute('playsinline','');
+    silentAudio.setAttribute('webkit-playsinline','');
+    // Shortest valid MP3 - 0.1 seconds of silence
+    silentAudio.src='data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgCenp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6e////////////////////////////////////////////////////////////////////////////////AAAAAExhdmM1OC41AAAAAAAAAAAAAAAAJAAAAAAAAAAB/4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/7kGQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAElnZm8AAAAPAAAAAgAAAYYBnp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6e////////////////////////////////////////////////////////////////////////////////AAAAAExhdmM1OC41AAAAAAAAAAAAAAAAJAAAAAAAAAAB/4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+    silentAudio.volume=0.001;
+    var unlockPromise=silentAudio.play();
+    if(unlockPromise){
+      unlockPromise.then(function(){
+        silentAudio.pause();
+        silentAudio=null;
+        window._audioUnlockedIOS18=true;
+        console.log('iOS 18 audio unlocked');
+      }).catch(function(e){
+        console.warn('Audio unlock failed:',e.message);
+      });
     }
-  }catch(e){}
+  }catch(e){console.warn('unlock error:',e);}
   if(!voiceMode)trackUsage("voice");
   if(!voiceMode&&typeof setSilentAudioForIOS==="function")setSilentAudioForIOS();
   voiceMode=!voiceMode;
@@ -5230,6 +5238,14 @@ function _playNextInQueue(){
     _playNextInQueue();
   },15000);
 
+  // iOS 18 fix: create Audio element first with empty src,
+  // then set src to blob URL after fetch — keeps element in gesture chain
+  if(mikeAudio){try{mikeAudio.pause();mikeAudio.src='';}catch(e){}}
+  mikeAudio=new Audio();
+  mikeAudio.setAttribute('playsinline','');
+  mikeAudio.setAttribute('webkit-playsinline','');
+  mikeAudio.preload='auto';
+
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})})
     .then(function(res){
       if(!res.ok)throw new Error('TTS '+res.status);
@@ -5238,46 +5254,45 @@ function _playNextInQueue(){
     .then(function(arrayBuf){
       clearTimeout(safetyTimer);
       if(!arrayBuf||arrayBuf.byteLength<500){
-        // Fallback to browser TTS then continue queue
+        mikeAudio=null;
         _mikeSayBrowserThenNext(clean);
         return;
       }
       var blob=new Blob([arrayBuf],{type:'audio/mpeg'});
       var url=URL.createObjectURL(blob);
-      if(mikeAudio){try{mikeAudio.pause();mikeAudio.src='';}catch(e){}}
-      // iOS: reuse pre-unlocked element or create new
-      if(window._iosAudioEl){mikeAudio=window._iosAudioEl;window._iosAudioEl=null;}
-      else{mikeAudio=new Audio();}
-      mikeAudio.src=url;
-      mikeAudio.setAttribute('playsinline','');
-      mikeAudio.setAttribute('webkit-playsinline','');
+      mikeAudio.oncanplaythrough=function(){
+        mikeAudio.oncanplaythrough=null;
+        var pp=mikeAudio.play();
+        if(pp!==undefined){
+          pp.catch(function(e){
+            clearTimeout(safetyTimer);
+            console.warn('iOS audio blocked:',e.message);
+            URL.revokeObjectURL(url);
+            mikeAudio=null;
+            _mikeSayBrowserThenNext(clean);
+          });
+        }
+      };
       mikeAudio.onended=function(){
         clearTimeout(safetyTimer);
         URL.revokeObjectURL(url);
         mikeAudio=null;
         _playNextInQueue();
       };
-      mikeAudio.onerror=function(){
+      mikeAudio.onerror=function(e){
         clearTimeout(safetyTimer);
+        console.warn('Audio error:',e);
         URL.revokeObjectURL(url);
         mikeAudio=null;
         _playNextInQueue();
       };
-      var pp=mikeAudio.play();
-      if(pp!==undefined){
-        pp.catch(function(e){
-          clearTimeout(safetyTimer);
-          console.warn('Audio play blocked:',e.message);
-          URL.revokeObjectURL(url);
-          mikeAudio=null;
-          // On iOS autoplay block, try browser TTS
-          _mikeSayBrowserThenNext(clean);
-        });
-      }
+      mikeAudio.src=url;
+      mikeAudio.load();
     })
     .catch(function(e){
       clearTimeout(safetyTimer);
       console.warn('TTS fetch failed:',e.message);
+      if(mikeAudio){mikeAudio=null;}
       _mikeSayBrowserThenNext(clean);
     });
 }

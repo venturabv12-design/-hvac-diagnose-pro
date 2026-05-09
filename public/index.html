@@ -3905,7 +3905,7 @@ function checkAndLearn(resp){
     if(/added\s+[\d.]+\s*(lb|pound|oz)|recovered\s+[\d.]+\s*(lb|pound)|charged.*R-4[01]|R-22.*lb/i.test((userText||'')+' '+(resp||''))){
       setTimeout(function(){showToast('Log this refrigerant for EPA compliance → Tap Ref Log','info',4000);},2000);
     }
-  }catch(e){}catch(e){}
+  }catch(e){}
   return resp;
 }
 

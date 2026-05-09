@@ -1421,6 +1421,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
   <div class="pdd-item" id="adminMenuItem" style="display:none" onclick="pddStats()"><span class="pdd-ic">📊</span>Check Stats</div>
   <div class="pdd-item" onclick="pddWhatsNew()"><span class="pdd-ic">🔔</span>What's New</div>
   <div class="pdd-item" onclick="pddPerformance()"><span class="pdd-ic">📊</span>My Performance</div>
+  <div class="pdd-item" onclick="pddInvoice()"><span class="pdd-ic">🧾</span>Invoice Generator</div>
   <div class="pdd-item" onclick="pddCustomers()"><span class="pdd-ic">👥</span>Customers</div>
   <div class="pdd-item" onclick="pddRefLog()"><span class="pdd-ic">🧪</span>Refrigerant Log</div>
   <div class="pdd-item" onclick="pddHelp()"><span class="pdd-ic">❓</span>Help</div>
@@ -1628,6 +1629,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
           <button class="quick-chip" onclick="askMikeSafetyChecklist()" style="border-color:#EF4444;color:#dc2626;background:#FFF0F0;">&#x26A0; Safety Check</button>
           <button class="quick-chip" onclick="askMikeAHRI()" style="border-color:#00C2B2;color:#009E90;background:#F0FDFB;">&#x1F4CA; AHRI Lookup</button>
           <button class="quick-chip" onclick="askMikeCompetitor()" style="border-color:#6B7280;color:#4B5563;background:#F9FAFB;">&#x1F94A; Beat Quote</button>
+          <button class="quick-chip" onclick="generateInvoice()" style="border-color:#10B981;color:#059669;background:#F0FDF4;">🧾 Invoice</button>
           <button class="quick-chip" onclick="askMikeLoadCalc()" style="border-color:#3B82F6;color:#2563eb;background:#EFF6FF;">&#x1F4D0; Load Calc</button>
           <button class="quick-chip" onclick="var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b&&b.style.display==='none'){b.style.display='block';a.textContent='&#x25B2;';}b&&b.scrollIntoView({behavior:'smooth'});" style="background:linear-gradient(135deg,#E8354A,#c0272d);color:#fff;border-color:#E8354A;font-weight:800;">&#x26A1; Full Diag</button>
         </div>
@@ -1849,7 +1851,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <a href="#" onclick="showPrivacyModal();return false;" style="font-size:12px;color:#9499B0;text-decoration:none;">Privacy</a>
       <a href="mailto:support@trazerintelligence.ai" style="font-size:12px;color:#9499B0;text-decoration:none;">Support</a>
     </div>
-    <p style="font-size:11px;color:#C8CBD8;line-height:1.6;max-width:400px;margin:0 auto;text-align:center;">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician.</p>
+    <p style="font-size:11px;color:#C8CBD8;line-height:1.6;max-width:400px;margin:0 auto;text-align:center;">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician. Mike is an AI — not a licensed contractor. Use of this Service constitutes acceptance of our Terms of Service.</p>
   </div>
 <!-- LIVE CAMERA OVERLAY — Premium Quality -->
 <div id="liveCameraOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9998;flex-direction:column;font-family:'Plus Jakarta Sans',-apple-system,sans-serif;">
@@ -2476,6 +2478,7 @@ function pddWhatsNew(){
   openModal('whatsNewModal');
 }
 function pddRefLog(){closeProfileDD();showRefrigerantLog();}
+function pddInvoice(){closeProfileDD();generateInvoice();}
 function pddCustomers(){closeProfileDD();showCustomerDB();}
 function pddPerformance(){closeProfileDD();showPerformanceDashboard();}
 
@@ -4174,28 +4177,6 @@ function saveCustomer(data){
   saveCustomers(list);
   return data;
 }
-function showCustomerDB(){
-  var customers=getCustomers();
-  var html='';
-  if(!customers.length){
-    html='<div style="color:#555;font-size:13px;padding:16px 0;text-align:center;">No customers saved yet.<br><br>After a job, tap <strong style="color:#00C2B2">Save Customer</strong> to build your database.</div>';
-  } else {
-    customers.slice().reverse().forEach(function(c){
-      html+='<div style="padding:10px;background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;margin-bottom:8px;cursor:pointer;" onclick="loadCustomerToChat('+c.id+')">';
-      html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
-      html+='<div><div style="font-weight:700;color:#fff;font-size:14px;">'+escapeHtml(c.name||'No name')+'</div>';
-      html+='<div style="font-size:12px;color:#555;margin-top:2px;">'+escapeHtml(c.address||'No address')+'</div>';
-      if(c.equipment)html+='<div style="font-size:11px;color:#00C2B2;margin-top:3px;">'+escapeHtml(c.equipment)+'</div>';
-      html+='</div>';
-      html+='<div style="font-size:10px;color:#333;">'+new Date(c.created||Date.now()).toLocaleDateString()+'</div>';
-      html+='</div>';
-      if(c.notes)html+='<div style="font-size:12px;color:#666;margin-top:6px;font-style:italic;">'+escapeHtml(c.notes)+'</div>';
-      html+='</div>';
-    });
-  }
-  document.getElementById('customerDBBody').innerHTML=html;
-  openModal('customerDBModal');
-}
 function loadCustomerToChat(id){
   var c=getCustomers().find(function(x){return x.id===id;});
   if(!c)return;
@@ -4401,6 +4382,211 @@ function askMikeCompetitor(){
 }
 
 
+
+// ═══════════════════════════════════════════════════════════════════
+// ── JOB REMINDERS / FOLLOW-UP SCHEDULER ─────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+function getReminders(){
+  if(!currentUser)return[];
+  try{return JSON.parse(localStorage.getItem(getUserMemoryKey('reminders'))||'[]');}catch(e){return[];}
+}
+function saveReminders(list){
+  if(!currentUser)return;
+  try{localStorage.setItem(getUserMemoryKey('reminders'),JSON.stringify(list));}catch(e){}
+}
+function addReminder(customerName, months, note){
+  var reminders=getReminders();
+  var dueDate=new Date();
+  dueDate.setMonth(dueDate.getMonth()+parseInt(months||6));
+  reminders.push({
+    id:Date.now(),
+    customer:customerName||'',
+    note:note||'Follow-up maintenance call',
+    dueDate:dueDate.toISOString(),
+    months:parseInt(months||6),
+    created:new Date().toISOString(),
+    done:false
+  });
+  saveReminders(reminders);
+}
+function checkDueReminders(){
+  if(!currentUser)return;
+  var reminders=getReminders();
+  var now=Date.now();
+  var due=reminders.filter(function(r){return!r.done&&new Date(r.dueDate).getTime()<=now;});
+  if(due.length){
+    showToast(due.length+' follow-up reminder'+(due.length>1?'s':'')+' due! Check Customers.','info',6000);
+  }
+}
+function showRemindersInCustomerView(){
+  var reminders=getReminders().filter(function(r){return!r.done;});
+  var overdue=reminders.filter(function(r){return new Date(r.dueDate)<=new Date();});
+  return{all:reminders,overdue:overdue};
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ── INVOICE GENERATOR ───────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+function getNextInvoiceNum(){
+  var n=parseInt(localStorage.getItem(getUserMemoryKey('invoice_seq'))||'1000');
+  localStorage.setItem(getUserMemoryKey('invoice_seq'),n+1);
+  return n+1;
+}
+function generateInvoice(){
+  document.getElementById('invNum').textContent='INV-'+getNextInvoiceNum();
+  document.getElementById('invDate').textContent=new Date().toLocaleDateString();
+  document.getElementById('invCustomer').value='';
+  document.getElementById('invAddress').value='';
+  document.getElementById('invWork').value='';
+  document.getElementById('invAmount').value='';
+  document.getElementById('invNotes').value='';
+  openModal('invoiceModal');
+}
+function copyInvoice(){
+  var num=document.getElementById('invNum').textContent;
+  var date=document.getElementById('invDate').textContent;
+  var customer=document.getElementById('invCustomer').value.trim();
+  var address=document.getElementById('invAddress').value.trim();
+  var work=document.getElementById('invWork').value.trim();
+  var amount=document.getElementById('invAmount').value.trim();
+  var notes=document.getElementById('invNotes').value.trim();
+  var profile=getUserMemoryProfile();
+  var companyName=(profile&&profile.company)||'HVAC Services';
+  var text=companyName+'
+'+
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+'+
+    'INVOICE '+num+'
+'+
+    'Date: '+date+'
+'+
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+'+
+    'BILL TO:
+'+customer+(address?'
+'+address:'')+'
+
+'+
+    'WORK PERFORMED:
+'+work+'
+
+'+
+    'AMOUNT DUE: $'+amount+
+    (notes?'
+
+Notes: '+notes:'')+'
+'+
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+'+
+    'Thank you for your business!
+'+
+    'Questions? Contact us at: support@trazerintelligence.ai';
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('Invoice copied — paste into any message or email ✓','success',3000);
+    });
+  } else {
+    var ta=document.createElement('textarea');
+    ta.value=text;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    showToast('Invoice copied ✓','success',2500);
+  }
+}
+function askMikeForInvoice(){
+  closeModal('invoiceModal');
+  document.getElementById('chatInput').value='Write me a professional invoice summary for this job. Ask me the customer name, address, work performed, and amount to charge.';
+  sendChat();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ── ENHANCED CUSTOMER VIEW WITH REMINDERS ───────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+function showCustomerDB(){
+  var customers=getCustomers();
+  var reminderData=showRemindersInCustomerView();
+  var html='';
+
+  // Show overdue reminders at top
+  if(reminderData.overdue.length){
+    html+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:10px 12px;margin-bottom:12px;">';
+    html+='<div style="font-size:11px;font-weight:800;color:#F59E0B;margin-bottom:6px;">⏰ FOLLOW-UP DUE ('+reminderData.overdue.length+')</div>';
+    reminderData.overdue.forEach(function(r){
+      html+='<div style="font-size:12px;color:#aaa;padding:3px 0;display:flex;justify-content:space-between;">';
+      html+='<span>'+escapeHtml(r.customer)+' — '+escapeHtml(r.note)+'</span>';
+      html+='<button onclick="markReminderDone('+r.id+')" style="background:none;border:none;color:#00C2B2;cursor:pointer;font-size:11px;padding:0 4px;">Done ✓</button>';
+      html+='</div>';
+    });
+    html+='</div>';
+  }
+
+  if(!customers.length){
+    html+='<div style="color:#555;font-size:13px;padding:16px 0;text-align:center;">No customers saved yet.<br><br>After a job, tap <strong style="color:#00C2B2">Save Customer</strong> to build your database.</div>';
+  } else {
+    customers.slice().reverse().forEach(function(c){
+      var custReminders=reminderData.all.filter(function(r){return r.customer===c.name;});
+      html+='<div style="padding:10px;background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;margin-bottom:8px;">';
+      html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
+      html+='<div style="flex:1;cursor:pointer;" onclick="loadCustomerToChat('+c.id+')">';
+      html+='<div style="font-weight:700;color:#fff;font-size:14px;">'+escapeHtml(c.name||'No name')+'</div>';
+      html+='<div style="font-size:12px;color:#555;margin-top:2px;">'+escapeHtml(c.address||'No address')+'</div>';
+      if(c.equipment)html+='<div style="font-size:11px;color:#00C2B2;margin-top:3px;">'+escapeHtml(c.equipment)+'</div>';
+      html+='</div>';
+      html+='<div style="display:flex;gap:6px;flex-shrink:0;">';
+      html+='<button onclick="addReminderForCustomer(''+c.name.replace(/'/g,'\'')+'')" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#F59E0B;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">⏰</button>';
+      html+='<button onclick="deleteCustomer('+c.id+')" style="background:rgba(232,53,74,.08);border:1px solid rgba(232,53,74,.2);color:#E8354A;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">✕</button>';
+      html+='</div></div>';
+      if(c.notes)html+='<div style="font-size:12px;color:#555;margin-top:6px;font-style:italic;">'+escapeHtml(c.notes)+'</div>';
+      if(custReminders.length)html+='<div style="font-size:11px;color:#F59E0B;margin-top:4px;">⏰ '+custReminders.length+' reminder'+(custReminders.length>1?'s':'')+' set</div>';
+      html+='</div>';
+    });
+  }
+  document.getElementById('customerDBBody').innerHTML=html;
+  openModal('customerDBModal');
+}
+function addReminderForCustomer(name){
+  var months=prompt('Set a follow-up reminder for '+name+'.
+
+Remind me in how many months? (e.g. 6 for semi-annual, 12 for annual)','6');
+  if(!months)return;
+  addReminder(name, parseInt(months)||6, 'Maintenance follow-up');
+  showToast('Reminder set for '+name+' in '+months+' months ✓','success',2500);
+  showCustomerDB(); // refresh
+}
+function markReminderDone(id){
+  var reminders=getReminders();
+  var r=reminders.find(function(x){return x.id===id;});
+  if(r)r.done=true;
+  saveReminders(reminders);
+  showCustomerDB();
+}
+function deleteCustomer(id){
+  if(!confirm('Delete this customer?'))return;
+  var list=getCustomers().filter(function(c){return c.id!==id;});
+  saveCustomers(list);
+  showCustomerDB();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ── DARK MODE DEFAULT FOR CONTRACTORS ───────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+function applyContractorDefaults(){
+  // Contractors default to dark mode — most work in dark spaces
+  if(currentUser&&currentUser.role==='contractor'){
+    var savedTheme=localStorage.getItem('theme');
+    if(!savedTheme){
+      document.documentElement.setAttribute('data-theme','dark');
+      localStorage.setItem('theme','dark');
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ── QUICK INVOICE CHIP ───────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+function askMikeInvoice(){
+  document.getElementById('chatInput').value='Build me an invoice for this job. Ask me the customer name, what was done, parts used, labor hours, and what to charge.';
+  sendChat();
+}
 
 function findLocalTech(){
   // Use GPS location if available to find local HVAC techs
@@ -5801,39 +5987,102 @@ document.addEventListener('DOMContentLoaded',function(){
 
 <!-- Terms Modal -->
 <div class="tz-modal-overlay" id="termsModal">
-<div class="tz-modal" style="max-height:80vh;overflow-y:auto;">
+<div class="tz-modal">
   <div class="tz-modal-header">
-    <div class="tz-modal-title">Terms of Service</div>
+    <div class="tz-modal-title">📄 Terms of Service</div>
     <button class="tz-modal-close" onclick="closeModal('termsModal')">✕</button>
   </div>
-  <div class="tz-modal-body" style="font-size:13px;color:#6B7190;line-height:1.8;">
-    <p><strong style="color:#0F0F0F;">Trazer Intelligence Terms of Service</strong></p>
-    <p style="margin-top:10px;">By using Trazer Intelligence you agree to the following:</p>
-    <p style="margin-top:10px;"><strong>1. Diagnostic Information</strong> — All diagnostic information provided is for guidance only. Always have repairs involving refrigerant, gas, electrical, or high voltage performed by a licensed, certified HVAC technician.</p>
-    <p style="margin-top:10px;"><strong>2. Accuracy</strong> — While we strive for accuracy, AI-generated diagnostics may not be 100% correct. Always verify critical information with qualified professionals.</p>
-    <p style="margin-top:10px;"><strong>3. Subscription</strong> — Your subscription is billed monthly and can be cancelled at any time. Trial periods are 7 days and require a paid plan to continue after the trial ends.</p>
-    <p style="margin-top:10px;"><strong>4. Data</strong> — Conversation history and profile data is stored locally on your device. We do not sell your personal data.</p>
-    <p style="margin-top:10px;"><strong>5. Contact</strong> — Questions? Email support@trazerintelligence.ai</p>
-    <button class="tz-modal-btn" onclick="closeModal('termsModal')" style="margin-top:16px;">Got It</button>
+  <div class="tz-modal-body" style="font-size:13px;color:#aaa;line-height:1.7;">
+    <p style="font-size:11px;color:#555;margin-bottom:14px;">Last updated: January 2025 &nbsp;·&nbsp; Effective immediately upon use</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">1. Acceptance of Terms</p>
+    <p style="margin-bottom:14px;">By accessing or using Trazer Intelligence ("the Service," "we," "our"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Service. Use by persons under 18 is prohibited. This Service is intended for business and professional use only.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">2. AI Disclosure</p>
+    <p style="margin-bottom:14px;">Trazer Intelligence uses artificial intelligence, including a virtual assistant named Mike. Mike is an AI system — not a human, not a licensed HVAC contractor, and not a certified professional. All responses are AI-generated. You are expressly notified that you are interacting with an AI system at all times.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">3. Diagnostic Disclaimer</p>
+    <p style="margin-bottom:14px;">All diagnostic information, recommendations, pressure readings, part suggestions, and repair guidance provided by the Service is for informational and educational purposes only. It does not constitute licensed contracting advice, engineering guidance, or professional HVAC services. Always have repairs involving refrigerant, gas, electrical systems, or high voltage performed by a licensed, certified HVAC technician. Never rely solely on AI-generated information for safety-critical decisions.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">4. Refrigerant Log Disclaimer</p>
+    <p style="margin-bottom:14px;">The refrigerant tracking log is provided as a convenience tool only. It is the sole responsibility of the user to ensure compliance with EPA Section 608, all applicable federal, state, and local refrigerant regulations, and any audit requirements. Trazer Intelligence makes no representation that use of the log satisfies any regulatory requirement. Consult a compliance professional for EPA audit preparation.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">5. Limitation of Liability</p>
+    <p style="margin-bottom:14px;">TO THE MAXIMUM EXTENT PERMITTED BY LAW, TRAZER INTELLIGENCE AND ITS OWNERS, OFFICERS, EMPLOYEES, AND AFFILIATES SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO: PROPERTY DAMAGE, PERSONAL INJURY, LOST REVENUE, LOST PROFITS, OR DATA LOSS ARISING FROM YOUR USE OF OR INABILITY TO USE THE SERVICE, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. OUR TOTAL LIABILITY TO YOU FOR ANY CLAIM SHALL NOT EXCEED THE AMOUNT YOU PAID TO US IN THE 12 MONTHS PRECEDING THE CLAIM.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">6. Indemnification</p>
+    <p style="margin-bottom:14px;">You agree to indemnify, defend, and hold harmless Trazer Intelligence and its affiliates from any claims, damages, losses, costs, and expenses (including reasonable attorneys' fees) arising from: (a) your use of the Service; (b) any diagnosis, repair, or recommendation made based on the Service; (c) your violation of these Terms; or (d) your violation of any third-party rights.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">7. Arbitration &amp; Class Action Waiver</p>
+    <p style="margin-bottom:14px;">ANY DISPUTE ARISING FROM THESE TERMS OR YOUR USE OF THE SERVICE SHALL BE RESOLVED BY BINDING INDIVIDUAL ARBITRATION. YOU WAIVE YOUR RIGHT TO A JURY TRIAL AND TO PARTICIPATE IN A CLASS ACTION LAWSUIT OR CLASS ARBITRATION. Arbitration shall be conducted under the rules of the American Arbitration Association in the state of Texas.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">8. Governing Law</p>
+    <p style="margin-bottom:14px;">These Terms are governed by the laws of the State of Texas, without regard to conflict of law principles. Any dispute not subject to arbitration shall be resolved in the state or federal courts located in Texas.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">9. Subscription &amp; Cancellation</p>
+    <p style="margin-bottom:14px;">Subscriptions are billed monthly or annually in advance. You may cancel at any time; cancellation takes effect at the end of the current billing period. No partial refunds are issued for unused time. Trial periods are 7 days. After trial, access requires a paid subscription. We reserve the right to change pricing with 30 days notice.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">10. Data &amp; Privacy</p>
+    <p style="margin-bottom:14px;">Your use of the Service is also governed by our Privacy Policy. Images, audio, and text you submit are sent to Anthropic, Inc. for AI processing. By using the Service you consent to this processing. Conversation data is stored locally on your device. We do not sell your personal data.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">11. Modifications</p>
+    <p style="margin-bottom:14px;">We reserve the right to modify these Terms at any time. Continued use of the Service after changes constitutes acceptance. We will notify users of material changes via the app.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">12. Contact</p>
+    <p style="margin-bottom:4px;">Trazer Intelligence &nbsp;·&nbsp; <a href="mailto:legal@trazerintelligence.ai" style="color:#00C2B2;">legal@trazerintelligence.ai</a></p>
+    <p style="margin-bottom:14px;color:#555;font-size:12px;">For legal notices, use the email above. For support, use support@trazerintelligence.ai</p>
+
+    <button class="tz-modal-btn" onclick="closeModal('termsModal')">I Understand &amp; Agree</button>
   </div>
 </div>
 </div>
-<!-- Privacy Modal -->
+
+
 <div class="tz-modal-overlay" id="privacyModal">
-<div class="tz-modal" style="max-height:80vh;overflow-y:auto;">
+<div class="tz-modal">
   <div class="tz-modal-header">
-    <div class="tz-modal-title">Privacy Policy</div>
+    <div class="tz-modal-title">🔒 Privacy Policy</div>
     <button class="tz-modal-close" onclick="closeModal('privacyModal')">✕</button>
   </div>
-  <div class="tz-modal-body" style="font-size:13px;color:#6B7190;line-height:1.8;">
-    <p><strong style="color:#0F0F0F;">Trazer Intelligence Privacy Policy</strong></p>
-    <p style="margin-top:10px;"><strong>What we collect:</strong> Your name, email address, and the conversation history you generate using the app. Photos and videos you upload are processed by AI and not stored on our servers.</p>
-    <p style="margin-top:10px;"><strong>How we use it:</strong> To provide the diagnostic service, improve Mike's responses, and send you important account notifications.</p>
-    <p style="margin-top:10px;"><strong>Location data:</strong> With your permission, we access your GPS location to provide accurate weather data and local supplier information. This is never stored on our servers.</p>
-    <p style="margin-top:10px;"><strong>We never sell your data.</strong> Your information is not sold to third parties.</p>
-    <p style="margin-top:10px;"><strong>Data deletion:</strong> You can delete your account and all associated data at any time by contacting support@trazerintelligence.ai</p>
-    <p style="margin-top:10px;"><strong>Contact:</strong> support@trazerintelligence.ai</p>
-    <button class="tz-modal-btn" onclick="closeModal('privacyModal')" style="margin-top:16px;">Got It</button>
+  <div class="tz-modal-body" style="font-size:13px;color:#aaa;line-height:1.7;">
+    <p style="font-size:11px;color:#555;margin-bottom:14px;">Last updated: January 2025 &nbsp;·&nbsp; Applies to all Trazer Intelligence users</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">What We Collect</p>
+    <p style="margin-bottom:14px;">• <strong style="color:#fff;">Account data:</strong> Name, email address, company name, and password (hashed)<br>
+    • <strong style="color:#fff;">Usage data:</strong> Feature usage counts, session frequency, plan type<br>
+    • <strong style="color:#fff;">Location data:</strong> GPS coordinates (with your permission) used to find local supplier pricing and weather data. Not stored on our servers.<br>
+    • <strong style="color:#fff;">Content you submit:</strong> Text messages, photos, videos, and audio sent to Mike for diagnosis. Processed by Anthropic, Inc. (our AI provider) and not permanently stored.<br>
+    • <strong style="color:#fff;">Feedback:</strong> Voluntary feedback you submit through the app</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">Third-Party AI Processing</p>
+    <p style="margin-bottom:14px;">All AI responses are generated by Anthropic, Inc. Text, images, and audio you submit are sent to Anthropic's API for processing. Anthropic's privacy policy applies to this processing. We do not control Anthropic's data handling. By using the Service you consent to this processing. Do not submit sensitive personal information (SSNs, financial data, medical records) through the Service.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">Local Storage</p>
+    <p style="margin-bottom:14px;">Your conversation history, profile settings, customer database, refrigerant logs, and job history are stored locally on your device using browser localStorage. This data is not transmitted to our servers. If you clear browser data or switch devices, this data is lost. We recommend exporting important records (refrigerant logs) regularly.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">How We Use Your Data</p>
+    <p style="margin-bottom:14px;">• To provide and improve the Service<br>
+    • To manage your account and subscription<br>
+    • To send account-related notifications (billing, security)<br>
+    • To analyze aggregate usage patterns (never individual conversations)<br>
+    • We do not use your data for advertising. We do not sell your data.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">California Residents (CCPA)</p>
+    <p style="margin-bottom:14px;">Under the California Consumer Privacy Act, California residents have the right to: (1) know what personal information we collect; (2) request deletion of personal information; (3) opt out of the sale of personal information (we do not sell data); (4) non-discrimination for exercising these rights. To exercise these rights, email <a href="mailto:privacy@trazerintelligence.ai" style="color:#00C2B2;">privacy@trazerintelligence.ai</a>.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">International Users (GDPR)</p>
+    <p style="margin-bottom:14px;">If you are located in the European Economic Area, you have rights under GDPR including: access, correction, deletion, restriction, portability, and objection. Our lawful basis for processing is legitimate interests and contract performance. Contact us to exercise your rights.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">Data Retention &amp; Deletion</p>
+    <p style="margin-bottom:14px;">Account data is retained until you request deletion or your account is closed. To delete your account and all associated data, email <a href="mailto:support@trazerintelligence.ai" style="color:#00C2B2;">support@trazerintelligence.ai</a>. We will process deletion requests within 30 days.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">Children</p>
+    <p style="margin-bottom:14px;">The Service is not directed to persons under 18. We do not knowingly collect data from minors. If you believe a minor has created an account, contact us immediately for deletion.</p>
+
+    <p style="color:#fff;font-weight:700;margin-bottom:6px;">Contact</p>
+    <p style="margin-bottom:14px;"><a href="mailto:privacy@trazerintelligence.ai" style="color:#00C2B2;">privacy@trazerintelligence.ai</a> &nbsp;·&nbsp; <a href="mailto:support@trazerintelligence.ai" style="color:#00C2B2;">support@trazerintelligence.ai</a></p>
+
+    <button class="tz-modal-btn" onclick="closeModal('privacyModal')">Got It</button>
   </div>
 </div>
 </div>
@@ -5991,5 +6240,45 @@ document.addEventListener('DOMContentLoaded',function(){
   </div>
 </div>
 </div>
+
+<!-- ── INVOICE GENERATOR MODAL ───────────────────────────────── -->
+<div class="tz-modal-overlay" id="invoiceModal">
+<div class="tz-modal">
+  <div class="tz-modal-header">
+    <div class="tz-modal-title">🧾 Invoice Generator</div>
+    <button class="tz-modal-close" onclick="closeModal('invoiceModal')">✕</button>
+  </div>
+  <div class="tz-modal-body">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding:10px 14px;background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;">
+      <span style="font-size:13px;font-weight:700;color:#00C2B2;" id="invNum">INV-1001</span>
+      <span style="font-size:12px;color:#555;" id="invDate"></span>
+    </div>
+    <div class="tz-modal-field">
+      <label class="tz-modal-label">Customer Name</label>
+      <input class="tz-modal-input" type="text" id="invCustomer" placeholder="e.g. John Smith"/>
+    </div>
+    <div class="tz-modal-field">
+      <label class="tz-modal-label">Address</label>
+      <input class="tz-modal-input" type="text" id="invAddress" placeholder="e.g. 123 Main St, Houston TX"/>
+    </div>
+    <div class="tz-modal-field">
+      <label class="tz-modal-label">Work Performed</label>
+      <textarea class="tz-modal-input" id="invWork" placeholder="e.g. Replaced 40/5 MFD dual run capacitor on Carrier 3-ton condenser. System tested and cooling properly." style="min-height:80px;font-family:inherit;font-size:13px;resize:vertical;"></textarea>
+    </div>
+    <div class="tz-modal-field">
+      <label class="tz-modal-label">Amount Due ($)</label>
+      <input class="tz-modal-input" type="number" id="invAmount" placeholder="e.g. 285" min="0"/>
+    </div>
+    <div class="tz-modal-field">
+      <label class="tz-modal-label">Notes (optional)</label>
+      <input class="tz-modal-input" type="text" id="invNotes" placeholder="e.g. Recommend annual maintenance agreement"/>
+    </div>
+    <button class="tz-modal-btn" onclick="copyInvoice()" style="margin-bottom:8px;">📋 Copy Invoice Text</button>
+    <button onclick="askMikeForInvoice()" style="width:100%;padding:11px;background:rgba(0,194,178,.1);border:1px solid rgba(0,194,178,.25);border-radius:9px;color:#00C2B2;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Ask Mike to write it →</button>
+    <button class="tz-modal-btn-outline" onclick="closeModal('invoiceModal')">Cancel</button>
+  </div>
+</div>
+</div>
+
 </body>
 </html>

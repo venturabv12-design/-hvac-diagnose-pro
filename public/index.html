@@ -5060,15 +5060,15 @@ function toggleVoiceMode(){
 
 function _vsListen(){
   if(!voiceMode)return;
-  if(_vs==='listening'||_vs==='processing'||_vs==='speaking')return;
+  if(_vs==='processing'||_vs==='speaking')return;
   _vsSet('listening');
   isListening=true;
   isMikeSpeaking=false;
-
   var micBtn=document.getElementById('micBtn');
-  if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🎙️';}
-  setVoiceStatus('Listening\u2026','');
-
+  if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='\u1F399\uFE0F';}
+  setVoiceStatus('Listening...','');
+  if(window._vsAccumulated===undefined)window._vsAccumulated='';
+  if(window._vsSendTimer)clearTimeout(window._vsSendTimer);
   var SpeechRec=window.SpeechRecognition||window.webkitSpeechRecognition;
   var rec=new SpeechRec();
   _vsRec=rec;
@@ -5076,51 +5076,49 @@ function _vsListen(){
   rec.interimResults=true;
   rec.lang=currentLang||'en-US';
   rec.maxAlternatives=1;
-
-  var latestTranscript='';
-
+  var sessionText='';
   rec.onresult=function(e){
-    var transcript='';
-    for(var i=e.resultIndex;i<e.results.length;i++){
-      transcript+=e.results[i][0].transcript;
-    }
-    if(transcript.trim()){
-      latestTranscript=transcript.trim();
-      if(e.results[e.results.length-1].isFinal){
-        setVoiceStatus('Got it…',latestTranscript);
-      }
+    var t='';
+    for(var i=e.resultIndex;i<e.results.length;i++){t+=e.results[i][0].transcript;}
+    if(t.trim()){
+      sessionText=t.trim();
+      if(window._vsSendTimer)clearTimeout(window._vsSendTimer);
+      window._vsSendTimer=setTimeout(function(){
+        if(_vs==='listening'){
+          var full=(window._vsAccumulated+' '+sessionText).trim();
+          window._vsAccumulated='';
+          sessionText='';
+          if(_vsRec){try{_vsRec.abort();}catch(ex){}}
+          _vsSendText(full);
+        }
+      },1500);
     }
   };
-
   rec.onend=function(){
     _vsRec=null;
     isListening=false;
-    if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='\uD83C\uDF99\uFE0F';}
-    if(_vs!=='listening')return; // state changed already, ignore
-    var text=latestTranscript||document.getElementById('chatInput').value.trim();
-    latestTranscript='';
-    if(text){
-      document.getElementById('chatInput').value=text;
-      _vsSet('processing');
-      setVoiceStatus('Sending to Mike\u2026',text);
-      isMikeSpeaking=true; // Block listening during processing
-      sendChat();
+    if(_vs!=='listening')return;
+    if(sessionText.trim()){
+      window._vsAccumulated=(window._vsAccumulated+' '+sessionText).trim();
+      sessionText='';
+      if(micBtn)micBtn.classList.add('mic-listening');
+      setTimeout(function(){if(voiceMode&&_vs==='listening')_vsRestartRec();},150);
+    } else if(window._vsAccumulated){
+      if(window._vsSendTimer)clearTimeout(window._vsSendTimer);
+      var full=window._vsAccumulated.trim();
+      window._vsAccumulated='';
+      _vsSendText(full);
     } else {
-      // No speech heard — go back to listening after short pause
       _vsSet('idle');
-      setTimeout(function(){
-        if(voiceMode&&_vs==='idle')_vsListen();
-      },600);
+      setTimeout(function(){if(voiceMode&&_vs==='idle')_vsListen();},600);
     }
   };
-
   rec.onerror=function(ev){
     _vsRec=null;
     isListening=false;
-    if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='\uD83C\uDF99\uFE0F';}
     if(_vs!=='listening')return;
-    _vsSet('idle');
     if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){
+      _vsSet('idle');
       setVoiceStatus('Mic permission needed','');
       voiceMode=false;
       var vbar=document.getElementById('voiceModeBar');
@@ -5131,24 +5129,39 @@ function _vsListen(){
       if(vlbl){vlbl.style.color='rgba(255,255,255,.5)';vlbl.textContent='Voice';}
       return;
     }
-    // Any other error — retry after pause
-    setTimeout(function(){
-      if(voiceMode&&_vs==='idle')_vsListen();
-    },800);
-  };
-
-  var _noSpeech=setTimeout(function(){
-    if(_vs==='listening'){try{rec.abort();}catch(e){}}
-  },8000);
-  var _realOnEnd=rec.onend;
-  rec.onend=function(){clearTimeout(_noSpeech);if(_realOnEnd)_realOnEnd.call(this);};
-  try{
-    rec.start();
-  }catch(e){
-    clearTimeout(_noSpeech);
     _vsSet('idle');
-    setTimeout(function(){if(voiceMode&&_vs==='idle')_vsListen();},1000);
-  }
+    setTimeout(function(){if(voiceMode&&_vs==='idle')_vsListen();},500);
+  };
+  _vsRestartRec();
+}
+
+function _vsRestartRec(){
+  if(!_vsRec)return;
+  var t=setTimeout(function(){
+    if(_vs==='listening'){
+      if(window._vsAccumulated){var full=window._vsAccumulated.trim();window._vsAccumulated='';_vsSendText(full);}
+      else{try{_vsRec.abort();}catch(e){}}
+    }
+  },8000);
+  var orig=_vsRec.onend;
+  _vsRec.onend=function(){clearTimeout(t);if(orig)orig.call(this);};
+  try{_vsRec.start();}catch(e){clearTimeout(t);_vsSet('idle');setTimeout(function(){if(voiceMode&&_vs==='idle')_vsListen();},1000);}
+}
+
+function _vsSendText(text){
+  if(!text)return;
+  // Show tech what was captured BEFORE sending
+  document.getElementById('chatInput').value=text;
+  var micBtn=document.getElementById('micBtn');
+  if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='✉️';}
+  setVoiceStatus('Got it: "'+text.substring(0,40)+(text.length>40?'...':'')+'"','');
+  _vsSet('processing');
+  isMikeSpeaking=true;
+  // Small delay so tech can see message was captured
+  setTimeout(function(){
+    setVoiceStatus('Sending to Mike...','');
+    sendChat();
+  },400);
 }
 
 function _vsStop(){
@@ -5335,6 +5348,9 @@ function toggleMic(){
 }
 
 function stopMikeSpeaking(){
+  window._vsAccumulated='';
+  if(window._vsSendTimer){clearTimeout(window._vsSendTimer);window._vsSendTimer=null;}
+
   _vsQueue=[];
   if(_vsAudio){try{_vsAudio.pause();_vsAudio.src='';}catch(e){} _vsAudio=null;}
   if(window.speechSynthesis)window.speechSynthesis.cancel();

@@ -517,34 +517,201 @@ app.get('/api/weather', async (req, res) => {
   const { lat, lon } = req.query;
   if (!lat || !lon) return res.status(400).json({ error: 'lat and lon required' });
   try {
-    // Open-Meteo: free, accurate, no API key needed
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Weather API error');
-    const data = await response.json();
-    const c = data.current;
-    // Weather code descriptions
-    const conditions = {
-      0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
-      45:'Foggy',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',
-      61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',
-      77:'Snow grains',80:'Light showers',81:'Showers',82:'Heavy showers',
-      85:'Light snow showers',86:'Heavy snow showers',
-      95:'Thunderstorm',96:'Thunderstorm with hail',99:'Thunderstorm with heavy hail'
-    };
-    const condition = conditions[c.weather_code] || 'Unknown';
+    // Strategy: Try NWS (real station observations) first, fall back to Open-Meteo
+    let temp_f, feels_like_f, humidity, wind_mph, condition;
+
+    try {
+      // Step 1: Get NWS grid point for coords
+      const pointsRes = await fetch(`https://api.weather.gov/points/${lat},${lon}`, {
+        headers: { 'User-Agent': 'TrazerIntelligence/1.0 (venturabv12@gmail.com)' }
+      });
+      if (!pointsRes.ok) throw new Error('NWS points failed');
+      const pointsData = await pointsRes.json();
+      const stationsUrl = pointsData.properties.observationStations;
+
+      // Step 2: Get nearest station
+      const stationsRes = await fetch(stationsUrl, {
+        headers: { 'User-Agent': 'TrazerIntelligence/1.0 (venturabv12@gmail.com)' }
+      });
+      if (!stationsRes.ok) throw new Error('NWS stations failed');
+      const stationsData = await stationsRes.json();
+      const stationId = stationsData.features[0].properties.stationIdentifier;
+
+      // Step 3: Get latest observation from that station
+      const obsRes = await fetch(`https://api.weather.gov/stations/${stationId}/observations/latest`, {
+        headers: { 'User-Agent': 'TrazerIntelligence/1.0 (venturabv12@gmail.com)' }
+      });
+      if (!obsRes.ok) throw new Error('NWS obs failed');
+      const obsData = await obsRes.json();
+      const obs = obsData.properties;
+
+      // NWS returns Celsius - convert to F
+      const toF = c => c != null ? Math.round(c * 9/5 + 32) : null;
+      const toMph = ms => ms != null ? Math.round(ms * 2.237) : null;
+
+      temp_f = toF(obs.temperature?.value);
+      feels_like_f = toF(obs.windChill?.value) || toF(obs.heatIndex?.value) || temp_f;
+      humidity = obs.relativeHumidity?.value != null ? Math.round(obs.relativeHumidity.value) : null;
+      wind_mph = toMph(obs.windSpeed?.value);
+      condition = obs.textDescription || 'Clear';
+
+      if (temp_f == null) throw new Error('No temp from NWS');
+      console.log(`NWS station ${stationId}: ${temp_f}°F ${condition}`);
+
+    } catch (nwsErr) {
+      // Fall back to Open-Meteo if NWS fails
+      console.log('NWS failed, trying Open-Meteo:', nwsErr.message);
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
+      const omRes = await fetch(url);
+      if (!omRes.ok) throw new Error('Open-Meteo also failed');
+      const omData = await omRes.json();
+      const c = omData.current;
+      const codes = {0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',
+        51:'Light drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',
+        71:'Light snow',73:'Snow',80:'Showers',95:'Thunderstorm'};
+      temp_f = Math.round(c.temperature_2m);
+      feels_like_f = Math.round(c.apparent_temperature);
+      humidity = Math.round(c.relative_humidity_2m);
+      wind_mph = Math.round(c.wind_speed_10m);
+      condition = codes[c.weather_code] || 'Clear';
+      console.log(`Open-Meteo fallback: ${temp_f}°F`);
+    }
+
     res.json({
-      temp_f: Math.round(c.temperature_2m),
-      feels_like_f: Math.round(c.apparent_temperature),
-      humidity: Math.round(c.relative_humidity_2m),
-      wind_mph: Math.round(c.wind_speed_10m),
+      temp_f,
+      feels_like_f,
+      humidity,
+      wind_mph,
       condition,
-      summary: `${Math.round(c.temperature_2m)}°F, ${condition}, feels like ${Math.round(c.apparent_temperature)}°F, humidity ${Math.round(c.relative_humidity_2m)}%, wind ${Math.round(c.wind_speed_10m)} mph`
+      summary: `${temp_f}°F, ${condition}, feels like ${feels_like_f}°F, humidity ${humidity}%, wind ${wind_mph} mph`
     });
+
   } catch(err) {
     console.error('Weather error:', err.message);
     res.status(502).json({ error: 'Weather unavailable' });
   }
+});
+
+
+// ── CUSTOMERS ─────────────────────────────────────────────────────────────────
+app.get('/api/customers', async (req, res) => {
+  const { user_id } = req.query;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  try {
+    const { data, error } = await supabase.from('customers').select('*').eq('user_id', user_id).order('name');
+    if (error) throw error;
+    res.json({ customers: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/customers', async (req, res) => {
+  const { user_id, ...fields } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  try {
+    const { data, error } = await supabase.from('customers').upsert({ user_id, ...fields, updated_at: new Date() }).select().single();
+    if (error) throw error;
+    res.json({ customer: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/customers/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.from('customers').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── JOBS ──────────────────────────────────────────────────────────────────────
+app.get('/api/jobs', async (req, res) => {
+  const { user_id } = req.query;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  try {
+    const { data, error } = await supabase.from('jobs').select('*').eq('user_id', user_id).order('date', { ascending: false });
+    if (error) throw error;
+    res.json({ jobs: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/jobs', async (req, res) => {
+  const { user_id, ...fields } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  try {
+    const { data, error } = await supabase.from('jobs').insert({ user_id, ...fields }).select().single();
+    if (error) throw error;
+    res.json({ job: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── REFRIGERANT LOG ───────────────────────────────────────────────────────────
+app.get('/api/refrigerant-log', async (req, res) => {
+  const { user_id } = req.query;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  try {
+    const { data, error } = await supabase.from('refrigerant_log').select('*').eq('user_id', user_id).order('date', { ascending: false });
+    if (error) throw error;
+    res.json({ logs: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/refrigerant-log', async (req, res) => {
+  const { user_id, ...fields } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  try {
+    const { data, error } = await supabase.from('refrigerant_log').insert({ user_id, ...fields }).select().single();
+    if (error) throw error;
+    res.json({ log: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── REMINDERS ─────────────────────────────────────────────────────────────────
+app.get('/api/reminders', async (req, res) => {
+  const { user_id } = req.query;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  try {
+    const { data, error } = await supabase.from('reminders').select('*').eq('user_id', user_id).order('due_date');
+    if (error) throw error;
+    res.json({ reminders: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/reminders', async (req, res) => {
+  const { user_id, ...fields } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  try {
+    const { data, error } = await supabase.from('reminders').insert({ user_id, ...fields }).select().single();
+    if (error) throw error;
+    res.json({ reminder: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.patch('/api/reminders/:id', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('reminders').update(req.body).eq('id', req.params.id).select().single();
+    if (error) throw error;
+    res.json({ reminder: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── MIKE KNOWLEDGE ────────────────────────────────────────────────────────────
+app.get('/api/knowledge', async (req, res) => {
+  const { user_id } = req.query;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  try {
+    const { data, error } = await supabase.from('mike_knowledge').select('*').eq('user_id', user_id).order('created_at', { ascending: false }).limit(100);
+    if (error) throw error;
+    res.json({ knowledge: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/knowledge', async (req, res) => {
+  const { user_id, fact, topic } = req.body;
+  if (!user_id || !fact) return res.status(400).json({ error: 'user_id and fact required' });
+  try {
+    const { data, error } = await supabase.from('mike_knowledge').insert({ user_id, fact, topic }).select().single();
+    if (error) throw error;
+    res.json({ knowledge: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 // ── AI ────────────────────────────────────────────────────────────────────────

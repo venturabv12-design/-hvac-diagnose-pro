@@ -5077,21 +5077,17 @@ function _vsListen(){
   rec.lang=currentLang||'en-US';
   rec.maxAlternatives=1;
 
-  var finalTranscript='';
-  var silenceTimer=null;
+  var latestTranscript='';
 
   rec.onresult=function(e){
     var transcript='';
     for(var i=e.resultIndex;i<e.results.length;i++){
       transcript+=e.results[i][0].transcript;
     }
-    document.getElementById('chatInput').value=transcript;
-    if(!isSafari)setVoiceStatus('Listening\u2026',transcript);
-    if(e.results[e.results.length-1].isFinal){
-      finalTranscript=transcript;
-      if(isSafari){
-        // Safari: submit on final result
-        setVoiceStatus('Got it\u2026',transcript);
+    if(transcript.trim()){
+      latestTranscript=transcript.trim();
+      if(e.results[e.results.length-1].isFinal){
+        setVoiceStatus('Got it…',latestTranscript);
       }
     }
   };
@@ -5104,6 +5100,7 @@ function _vsListen(){
     var text=latestTranscript||document.getElementById('chatInput').value.trim();
     latestTranscript='';
     if(text){
+      document.getElementById('chatInput').value=text;
       _vsSet('processing');
       setVoiceStatus('Sending to Mike\u2026',text);
       isMikeSpeaking=true; // Block listening during processing

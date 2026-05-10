@@ -2893,7 +2893,9 @@ function getWeatherContext(){
   if(!techLocation)return '';
   if(techLocation.display){
     var now=new Date();
+    var dateStr=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
     var timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
+    var dateTimeStr=dateStr+' at '+timeStr;
     return 'TECH LOCATION: '+techLocation.display+' (GPS: '+techLocation.lat+', '+techLocation.lon+'). Local time: '+timeStr+'. CRITICAL: Search the current outdoor temperature at this exact location RIGHT NOW before answering any question involving temperature, weather, refrigerant pressures, superheat, subcooling, or outdoor conditions. Never assume or guess the temperature. Search it. A wrong outdoor temp causes wrong pressure targets and wrong diagnosis.';
   }
   return '';
@@ -3596,6 +3598,8 @@ function extractMemoryCues(userText, mikeResponse){
 
 // Build the personalized context for Mike
 function buildPersonalizedContext(){
+  var _now=new Date();
+  var _dateStr=_now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' at '+_now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
   // Camera state awareness
   var cameraActive=window._cameraMode||false;
   if(!currentUser) return '';
@@ -3661,6 +3665,12 @@ function buildPersonalizedContext(){
     ctx += '\nCAMERA MODE ACTIVE: The tech is using the live camera. Analyze what you see in the image they send.\n';
   } else {
     ctx += '\nCURRENT MODE: Live text chat. The tech is NOT using the camera. Do not ask them to point the camera at anything. Answer their question directly.\n';
+  }
+  // Only inject date for agreement/invoice/scheduling related messages
+  var _msgLower=(document.getElementById('chatInput').value||'').toLowerCase();
+  var _needsDate=/agreement|invoice|contract|schedule|appointment|what.*date|what.*day|what.*time|today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|month|year|season|annual|expir|warrant|due|remind|how long|when is|when does|what year/i.test(_msgLower);
+  if(_needsDate){
+    ctx += '\nCurrent date and time: '+_dateStr+'.\n';
   }
   return ctx;
 }
@@ -5328,10 +5338,13 @@ function stopListening(){
 
 function toggleMic(){
   if(!voiceMode)return;
-  if(_vs==='speaking'){
+  if(_vs==='speaking'||_vs==='processing'){
+    // Interrupt Mike and start listening immediately
     stopMikeSpeaking();
+    window._vsAccumulated='';
+    if(window._vsSendTimer){clearTimeout(window._vsSendTimer);window._vsSendTimer=null;}
     _vsSet('idle');
-    setVoiceStatus('Paused. Tap mic to resume.','');
+    setTimeout(function(){_vsListen();},200);
     return;
   }
   if(_vs==='listening'){
@@ -5344,9 +5357,6 @@ function toggleMic(){
     return;
   }
   if(_vs==='idle'){
-    var micBtn=document.getElementById('micBtn');
-    if(micBtn)micBtn.textContent='🎙️';
-    setVoiceStatus('Listening...','');
     _vsListen();
     return;
   }

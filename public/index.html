@@ -3638,6 +3638,10 @@ function buildPersonalizedContext(){
   }
 
   // Tell Mike what mode the tech is in right now
+  // Voice mode = shorter responses for faster audio
+  if(voiceMode){
+    ctx += '\n\nVOICE MODE ACTIVE: The tech is listening through their phone speaker. Keep ALL responses SHORT — maximum 2-3 sentences per reply. Give the most important info first. If they need more detail, they will ask. Do NOT give long lists or full pressure charts in one response — break it up.\n';
+  }
   if(window._cameraMode){
     ctx += '\nCAMERA MODE ACTIVE: The tech is using the live camera. Analyze what you see in the image they send.\n';
   } else {
@@ -5213,19 +5217,29 @@ function mikeSay(text){
   var clean=text.replace(/https?:\/\/[^\s)>\]"]+/g,'').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim();
   if(!clean)return;
   if(!window._audioQueue)window._audioQueue=[];
-  // Split into sentences so each chunk is short and plays fast on iOS
-  // Max 200 chars per chunk to keep TTS response time under 2 seconds
-  var sentences=clean.match(/[^.!?]+[.!?]+/g)||[clean];
-  var chunk='';
+  // Smart iOS audio splitter - keeps chunks under 130 chars
+  // Splits on: sentence endings, then commas/dashes if still too long
+  var sentences=clean.match(/[^.!?]+[.!?]*/g)||[clean];
+  var audioChunks=[];
   sentences.forEach(function(s){
-    if((chunk+s).length>150){
-      if(chunk.trim())window._audioQueue.push(chunk.trim());
-      chunk=s;
+    s=s.trim();
+    if(!s)return;
+    if(s.length>130){
+      // Split long sentence on comma or dash
+      var parts=s.split(/,\s*|\s--\s|:\s/);
+      var sub='';
+      parts.forEach(function(p){
+        p=p.trim();if(!p)return;
+        var cand=sub?(sub+', '+p):p;
+        if(cand.length>130){if(sub)audioChunks.push(sub);sub=p;}
+        else{sub=cand;}
+      });
+      if(sub)audioChunks.push(sub);
     } else {
-      chunk+=s;
+      audioChunks.push(s);
     }
   });
-  if(chunk.trim())window._audioQueue.push(chunk.trim());
+  audioChunks.forEach(function(c){if(c.trim())window._audioQueue.push(c.trim());});
   if(!window._audioPlaying)_playNextInQueue();
 }
 
@@ -5301,19 +5315,8 @@ function _playNextInQueue(){
       }
       var blob=new Blob([arrayBuf],{type:'audio/mpeg'});
       var url=URL.createObjectURL(blob);
-      mikeAudio.oncanplaythrough=function(){
-        mikeAudio.oncanplaythrough=null;
-        var pp=mikeAudio.play();
-        if(pp!==undefined){
-          pp.catch(function(e){
-            clearTimeout(safetyTimer);
-            console.warn('iOS audio blocked:',e.message);
-            URL.revokeObjectURL(url);
-            mikeAudio=null;
-            _mikeSayBrowserThenNext(clean);
-          });
-        }
-      };
+      // Play immediately without waiting for canplaythrough
+      // oncanplaythrough adds latency between sentences on iOS
       mikeAudio.onended=function(){
         clearTimeout(safetyTimer);
         URL.revokeObjectURL(url);
@@ -5329,6 +5332,16 @@ function _playNextInQueue(){
       };
       mikeAudio.src=url;
       mikeAudio.load();
+      var pp=mikeAudio.play();
+      if(pp!==undefined){
+        pp.catch(function(e){
+          clearTimeout(safetyTimer);
+          console.warn('iOS audio blocked:',e.message);
+          URL.revokeObjectURL(url);
+          mikeAudio=null;
+          _mikeSayBrowserThenNext(clean);
+        });
+      }
     })
     .catch(function(e){
       clearTimeout(safetyTimer);

@@ -5030,6 +5030,20 @@ function _vsSet(state){
 }
 
 function toggleVoiceMode(){
+  // Pre-create persistent Audio element during user gesture tap (iOS requirement)
+  if(!window._mikeAudioEl){
+    window._mikeAudioEl=new Audio();
+    window._mikeAudioEl.setAttribute('playsinline','');
+    window._mikeAudioEl.setAttribute('webkit-playsinline','');
+  }
+  // Unlock with silent play
+  try{
+    var silent=window._mikeAudioEl;
+    silent.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    silent.volume=0.001;
+    silent.play().catch(function(){});
+    setTimeout(function(){silent.src='';},200);
+  }catch(e){}
   // iOS 18: create and unlock AudioContext during user gesture tap
   // This is the key — AudioContext MUST be created/resumed in a gesture handler
   try{
@@ -5222,7 +5236,6 @@ function _vsStop(){
 
 function _vsSpeak(){
   if(_vsQueue.length===0){
-    // Done speaking — go back to listening
     _vsSet('idle');
     window._audioPlaying=false;
     isMikeSpeaking=false;
@@ -5239,7 +5252,6 @@ function _vsSpeak(){
     }
     return;
   }
-
   _vsSet('speaking');
   window._audioPlaying=true;
   isMikeSpeaking=true;
@@ -5249,21 +5261,15 @@ function _vsSpeak(){
   if(micBtn){micBtn.classList.remove('mic-listening');micBtn.classList.add('mic-speaking');micBtn.textContent='🔊';}
   if(stopBtn)stopBtn.style.display='flex';
   if(typeof showVoiceWaveform==='function')showVoiceWaveform(true);
-  setVoiceStatus('Mike is talking\u2026','');
+  setVoiceStatus('Mike is talking...','');
 
-  // Safety timeout — if audio hangs, move on
   var safety=setTimeout(function(){
-    console.warn('[VOICE] safety timeout');
-    if(_vsAudio){try{_vsAudio.pause();_vsAudio.src='';}catch(e){} _vsAudio=null;}
-    _vsSpeak();
+    if(!window._vsStopped){
+      console.warn('[VOICE] safety timeout');
+      if(window._mikeAudioEl){try{window._mikeAudioEl.pause();window._mikeAudioEl.src='';}catch(e){}}
+      _vsSpeak();
+    }
   },12000);
-
-  // Always create fresh Audio element
-  if(_vsAudio){try{_vsAudio.pause();_vsAudio.onended=null;_vsAudio.onerror=null;_vsAudio.oncanplaythrough=null;_vsAudio.src='';}catch(e){}}
-  _vsAudio=new Audio();
-  _vsAudio.setAttribute('playsinline','');
-  _vsAudio.setAttribute('webkit-playsinline','');
-  _vsAudio.preload='auto';
 
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:chunk})})
     .then(function(res){
@@ -5272,33 +5278,45 @@ function _vsSpeak(){
     })
     .then(function(buf){
       clearTimeout(safety);
-      if(!buf||buf.byteLength<500){_vsBrowserSay(chunk,safety);return;}
-      // Try Web Audio API first (unlocked during voice tap, works on iOS 18)
-      var ctx=window._vsAudioCtx;
-      if(ctx&&ctx.state!=='closed'){
-        if(ctx.state==='suspended')ctx.resume();
-        ctx.decodeAudioData(buf.slice(0),
-          function(decoded){
-            var src=ctx.createBufferSource();
-            src.buffer=decoded;
-            src.connect(ctx.destination);
-            src.onended=function(){clearTimeout(safety);_vsAudio=null;if(!window._vsStopped)_vsSpeak();};
-            src.start(0);
-            _vsAudio=src;
-          },
-          function(){
-            // decode failed - use Audio element
-            _vsPlayWithElement(buf,chunk,safety);
-          }
-        );
-      } else {
-        // No Web Audio - use Audio element
-        _vsPlayWithElement(buf,chunk,safety);
+      if(window._vsStopped)return;
+      if(!buf||buf.byteLength<500){_vsBrowserSay(chunk,null);return;}
+
+      // Use single persistent Audio element - most reliable on iOS
+      if(!window._mikeAudioEl){
+        window._mikeAudioEl=new Audio();
+        window._mikeAudioEl.setAttribute('playsinline','');
+        window._mikeAudioEl.setAttribute('webkit-playsinline','');
+      }
+      var el=window._mikeAudioEl;
+      // Clean up previous
+      try{el.pause();}catch(e){}
+      el.onended=null;
+      el.onerror=null;
+
+      var blob=new Blob([buf],{type:'audio/mpeg'});
+      var url=URL.createObjectURL(blob);
+
+      el.onended=function(){
+        URL.revokeObjectURL(url);
+        if(!window._vsStopped)_vsSpeak();
+      };
+      el.onerror=function(){
+        URL.revokeObjectURL(url);
+        if(!window._vsStopped)_vsSpeak();
+      };
+      el.src=url;
+      var pp=el.play();
+      if(pp){
+        pp.catch(function(e){
+          clearTimeout(safety);
+          URL.revokeObjectURL(url);
+          _vsBrowserSay(chunk,null);
+        });
       }
     })
     .catch(function(){
       clearTimeout(safety);
-      _vsBrowserSay(chunk,safety);
+      if(!window._vsStopped)_vsBrowserSay(chunk,null);
     });
 }
 
@@ -5384,19 +5402,19 @@ function toggleMic(){
 }
 
 function stopMikeSpeaking(){
-  window._vsStopped=true; // Flag to prevent onended from continuing queue
+  window._vsStopped=true;
   window._vsAccumulated='';
   if(window._vsSendTimer){clearTimeout(window._vsSendTimer);window._vsSendTimer=null;}
   _vsQueue=[];
-  // Kill audio node - clear onended FIRST so it can't restart
-  try{if(_vsAudio){_vsAudio.onended=null;if(_vsAudio.stop)_vsAudio.stop(0);else{_vsAudio.pause();_vsAudio.src='';}}}catch(e){}
-  _vsAudio=null;
-  // Close AudioContext completely
-  try{if(window._vsAudioCtx){window._vsAudioCtx.close();window._vsAudioCtx=null;}}catch(e){}
-  // Cancel browser TTS
+  // Stop the persistent Audio element - this is what actually plays Mike's voice
+  if(window._mikeAudioEl){
+    try{window._mikeAudioEl.onended=null;}catch(e){}
+    try{window._mikeAudioEl.onerror=null;}catch(e){}
+    try{window._mikeAudioEl.pause();}catch(e){}
+    try{window._mikeAudioEl.src='';}catch(e){}
+  }
   try{window.speechSynthesis.cancel();}catch(e){}
-  setTimeout(function(){window._vsStopped=false;},500);
-  if(window.speechSynthesis)window.speechSynthesis.cancel();
+  setTimeout(function(){window._vsStopped=false;},300);
   window._audioPlaying=false;
   isMikeSpeaking=false;
   _vsSet('idle');

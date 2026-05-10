@@ -5406,22 +5406,24 @@ function toggleMic(){
 }
 
 function stopMikeSpeaking(){
-  console.log('[STOP] called. _mikeAudioEl:', window._mikeAudioEl?'exists':'null', 'paused:', window._mikeAudioEl?window._mikeAudioEl.paused:'n/a', 'src:', window._mikeAudioEl?window._mikeAudioEl.src.substring(0,30):'n/a');
+  // FIRST: kill audio immediately - nothing before this
+  try{if(window._mikeAudioEl){
+    window._mikeAudioEl.onended=null;
+    window._mikeAudioEl.onerror=null;
+    window._mikeAudioEl.volume=0;
+    window._mikeAudioEl.muted=true;
+    window._mikeAudioEl.pause();
+    window._mikeAudioEl.currentTime=0;
+    window._mikeAudioEl.src='';
+    window._mikeAudioEl.load();
+    console.log('[STOP] audio killed');
+  } else {
+    console.log('[STOP] _mikeAudioEl is null - nothing to stop');
+  }}catch(ex){console.log('[STOP] error:',ex.message);}
   window._vsStopped=true;
   window._vsAccumulated='';
   if(window._vsSendTimer){clearTimeout(window._vsSendTimer);window._vsSendTimer=null;}
   _vsQueue=[];
-  // Stop the persistent Audio element
-  if(window._mikeAudioEl){
-    try{window._mikeAudioEl.onended=null;}catch(e){}
-    try{window._mikeAudioEl.onerror=null;}catch(e){}
-    try{window._mikeAudioEl.volume=0;}catch(e){}
-    try{window._mikeAudioEl.muted=true;}catch(e){}
-    try{window._mikeAudioEl.pause();}catch(e){}
-    try{window._mikeAudioEl.currentTime=0;}catch(e){}
-    try{window._mikeAudioEl.src='';}catch(e){}
-    try{window._mikeAudioEl.load();}catch(e){}
-  }
   // Also kill via speechSynthesis in case browser TTS is playing
   try{window.speechSynthesis.cancel();}catch(e){}
   try{window.speechSynthesis.cancel();}catch(e){}

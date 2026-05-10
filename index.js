@@ -511,6 +511,42 @@ app.delete('/api/admin/users/:email', async (req, res) => {
   }
 });
 
+
+// ── WEATHER ───────────────────────────────────────────────────────────────────
+app.get('/api/weather', async (req, res) => {
+  const { lat, lon } = req.query;
+  if (!lat || !lon) return res.status(400).json({ error: 'lat and lon required' });
+  try {
+    // Open-Meteo: free, accurate, no API key needed
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Weather API error');
+    const data = await response.json();
+    const c = data.current;
+    // Weather code descriptions
+    const conditions = {
+      0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
+      45:'Foggy',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',
+      61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',
+      77:'Snow grains',80:'Light showers',81:'Showers',82:'Heavy showers',
+      85:'Light snow showers',86:'Heavy snow showers',
+      95:'Thunderstorm',96:'Thunderstorm with hail',99:'Thunderstorm with heavy hail'
+    };
+    const condition = conditions[c.weather_code] || 'Unknown';
+    res.json({
+      temp_f: Math.round(c.temperature_2m),
+      feels_like_f: Math.round(c.apparent_temperature),
+      humidity: Math.round(c.relative_humidity_2m),
+      wind_mph: Math.round(c.wind_speed_10m),
+      condition,
+      summary: `${Math.round(c.temperature_2m)}°F, ${condition}, feels like ${Math.round(c.apparent_temperature)}°F, humidity ${Math.round(c.relative_humidity_2m)}%, wind ${Math.round(c.wind_speed_10m)} mph`
+    });
+  } catch(err) {
+    console.error('Weather error:', err.message);
+    res.status(502).json({ error: 'Weather unavailable' });
+  }
+});
+
 // ── AI ────────────────────────────────────────────────────────────────────────
 app.post('/api/ai', async (req, res) => {
   if (globalActive >= MAX_GLOBAL)

@@ -3637,6 +3637,12 @@ function buildPersonalizedContext(){
     }
   }
 
+  // Tell Mike what mode the tech is in right now
+  if(window._cameraMode){
+    ctx += '\nCAMERA MODE ACTIVE: The tech is using the live camera. Analyze what you see in the image they send.\n';
+  } else {
+    ctx += '\nCURRENT MODE: Live text chat. The tech is NOT using the camera. Do not ask them to point the camera at anything. Answer their question directly.\n';
+  }
   return ctx;
 }
 

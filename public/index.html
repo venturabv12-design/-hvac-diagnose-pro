@@ -5304,6 +5304,9 @@ function _vsSpeak(){
         URL.revokeObjectURL(url);
         if(!window._vsStopped)_vsSpeak();
       };
+      // Reset muted/volume before playing (may have been muted by stop button)
+      el.muted=false;
+      el.volume=1;
       el.src=url;
       var pp=el.play();
       if(pp){
@@ -5406,13 +5409,19 @@ function stopMikeSpeaking(){
   window._vsAccumulated='';
   if(window._vsSendTimer){clearTimeout(window._vsSendTimer);window._vsSendTimer=null;}
   _vsQueue=[];
-  // Stop the persistent Audio element - this is what actually plays Mike's voice
+  // Stop the persistent Audio element
   if(window._mikeAudioEl){
     try{window._mikeAudioEl.onended=null;}catch(e){}
     try{window._mikeAudioEl.onerror=null;}catch(e){}
+    try{window._mikeAudioEl.volume=0;}catch(e){}
+    try{window._mikeAudioEl.muted=true;}catch(e){}
     try{window._mikeAudioEl.pause();}catch(e){}
+    try{window._mikeAudioEl.currentTime=0;}catch(e){}
     try{window._mikeAudioEl.src='';}catch(e){}
+    try{window._mikeAudioEl.load();}catch(e){}
   }
+  // Also kill via speechSynthesis in case browser TTS is playing
+  try{window.speechSynthesis.cancel();}catch(e){}
   try{window.speechSynthesis.cancel();}catch(e){}
   setTimeout(function(){window._vsStopped=false;},300);
   window._audioPlaying=false;
@@ -5678,47 +5687,59 @@ function updateCameraMicState(state){
 }
 
 function mikeSayCamera(text){
-  // Stop any existing audio before playing new response
-  if(mikeAudio){try{mikeAudio.stop();}catch(e){}mikeAudio=null;}
   var clean=text.replace(/https?:\/\/[^\s]+/g,'').replace(/<[^>]+>/g,' ').replace(/\*\*([^*]+)\*\*/g,'$1').replace(/\n/g,' ').replace(/  +/g,' ').trim().substring(0,800);
   if(!clean)return;
   stopCameraListen();
   isMikeSpeaking=true;
   updateCameraMicState('speaking');
   setCameraResponse(clean);
+  // Use same persistent Audio element as voice mode
+  if(!window._mikeAudioEl){
+    window._mikeAudioEl=new Audio();
+    window._mikeAudioEl.setAttribute('playsinline','');
+    window._mikeAudioEl.setAttribute('webkit-playsinline','');
+  }
+  var el=window._mikeAudioEl;
+  try{el.pause();}catch(e){}
+  el.onended=null;el.onerror=null;
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})})
     .then(function(r){if(!r.ok)throw new Error('tts');return r.arrayBuffer();})
     .then(function(buf){
-      if(!buf||buf.byteLength<500){isMikeSpeaking=false;updateCameraMicState('idle');if(cameraActive)setTimeout(startCameraListen,1200);return;}
-      var AudioCtx=window.AudioContext||window.webkitAudioContext;
-      if(!AudioCtx){isMikeSpeaking=false;updateCameraMicState('idle');if(cameraActive)setTimeout(startCameraListen,1200);return;}
-      var ctx=sharedAudioCtx||(sharedAudioCtx=new AudioCtx());
-      var play=function(){
-        ctx.decodeAudioData(buf.slice(0),function(decoded){
-          var src=ctx.createBufferSource();
-          var camGain=ctx.createGain();camGain.gain.value=1.0;
-          src.buffer=decoded;src.connect(camGain);camGain.connect(ctx.destination);
-          src.onended=function(){
-            isMikeSpeaking=false;updateCameraMicState('idle');
-            if(cameraActive)setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},1200);
-          };
-          src.start(0);
-          mikeAudio={pause:function(){try{src.stop(0);}catch(e){}try{src.disconnect();}catch(e2){}}};
-        },function(){isMikeSpeaking=false;updateCameraMicState('idle');if(cameraActive)setTimeout(startCameraListen,1200);});
+      if(!buf||buf.byteLength<500){
+        isMikeSpeaking=false;updateCameraMicState('idle');
+        if(cameraActive)setTimeout(startCameraListen,1200);return;
+      }
+      var blob=new Blob([buf],{type:'audio/mpeg'});
+      var url=URL.createObjectURL(blob);
+      el.onended=function(){
+        URL.revokeObjectURL(url);
+        isMikeSpeaking=false;updateCameraMicState('idle');
+        if(cameraActive&&!window._vsStopped)setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},1200);
       };
-      if(ctx.state==='suspended'||ctx.state==='interrupted'){ctx.resume().then(play).catch(function(){isMikeSpeaking=false;updateCameraMicState('idle');});}
-      else play();
-    })
-    .catch(function(){
-      if(window.speechSynthesis&&clean){
-        var utt=new SpeechSynthesisUtterance(clean.substring(0,300));
-        utt.rate=1.05;utt.pitch=0.95;utt.volume=1;
-        utt.onend=function(){isMikeSpeaking=false;updateCameraMicState('idle');if(cameraActive)setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},1200);};
-        window.speechSynthesis.speak(utt);
-      }else{
+      el.onerror=function(){
+        URL.revokeObjectURL(url);
         isMikeSpeaking=false;updateCameraMicState('idle');
         if(cameraActive)setTimeout(startCameraListen,1200);
-      }
+      };
+      el.muted=false;
+      el.volume=1;
+      el.src=url;
+      el.play().catch(function(){
+        URL.revokeObjectURL(url);
+        // Browser TTS fallback
+        if(window.speechSynthesis){
+          var utt=new SpeechSynthesisUtterance(clean.substring(0,300));
+          utt.rate=1.05;utt.pitch=0.95;utt.volume=1;
+          utt.onend=function(){isMikeSpeaking=false;updateCameraMicState('idle');if(cameraActive)setTimeout(startCameraListen,1200);};
+          window.speechSynthesis.speak(utt);
+        } else {
+          isMikeSpeaking=false;updateCameraMicState('idle');
+        }
+      });
+    })
+    .catch(function(){
+      isMikeSpeaking=false;updateCameraMicState('idle');
+      if(cameraActive)setTimeout(startCameraListen,1200);
     });
 }
 

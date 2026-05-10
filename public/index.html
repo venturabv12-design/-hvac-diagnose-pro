@@ -3932,6 +3932,9 @@ function handleChatFile(e){
   preview.style.display='flex';
 }
 function toggleQuickActions(){
+  // Stop Mike speaking when opening quick actions
+  if(typeof stopMikeSpeaking==='function')stopMikeSpeaking();
+
   var arrow=document.getElementById('qaArrow');
   var btn=document.getElementById('quickActionsBtn');
   if(!btn)return;
@@ -5067,7 +5070,7 @@ function _vsListen(){
   isListening=true;
   isMikeSpeaking=false;
   var micBtn=document.getElementById('micBtn');
-  if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='\u1F399\uFE0F';}
+  if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🎙️';}
   setVoiceStatus('Listening...','');
   if(window._vsAccumulated===undefined)window._vsAccumulated='';
   if(window._vsSendTimer)clearTimeout(window._vsSendTimer);
@@ -5180,7 +5183,7 @@ function _vsStop(){
   window._audioPlaying=false;
   isMikeSpeaking=false;
   var micBtn=document.getElementById('micBtn');
-  if(micBtn){micBtn.classList.remove('mic-listening','mic-speaking');micBtn.textContent='\uD83C\uDF99\uFE0F';}
+  if(micBtn){micBtn.classList.remove('mic-listening','mic-speaking');micBtn.textContent='🎙️';}
   var stopBtn=document.getElementById('stopSpeakBtn');
   if(stopBtn)stopBtn.style.display='none';
   if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
@@ -5193,7 +5196,7 @@ function _vsSpeak(){
     window._audioPlaying=false;
     isMikeSpeaking=false;
     var micBtn=document.getElementById('micBtn');
-    if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='\uD83C\uDF99\uFE0F';}
+    if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
     var stopBtn=document.getElementById('stopSpeakBtn');
     if(stopBtn)stopBtn.style.display='none';
     if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
@@ -5212,7 +5215,7 @@ function _vsSpeak(){
   var chunk=_vsQueue.shift();
   var micBtn=document.getElementById('micBtn');
   var stopBtn=document.getElementById('stopSpeakBtn');
-  if(micBtn){micBtn.classList.remove('mic-listening');micBtn.classList.add('mic-speaking');micBtn.textContent='\uD83D\uDD0A';}
+  if(micBtn){micBtn.classList.remove('mic-listening');micBtn.classList.add('mic-speaking');micBtn.textContent='🔊';}
   if(stopBtn)stopBtn.style.display='flex';
   if(typeof showVoiceWaveform==='function')showVoiceWaveform(true);
   setVoiceStatus('Mike is talking\u2026','');
@@ -5336,13 +5339,13 @@ function toggleMic(){
     isListening=false;
     _vsSet('idle');
     var micBtn=document.getElementById('micBtn');
-    if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='\u23F8';}
+    if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='⏸';}
     setVoiceStatus('Paused. Tap mic to resume.','');
     return;
   }
   if(_vs==='idle'){
     var micBtn=document.getElementById('micBtn');
-    if(micBtn)micBtn.textContent='\uD83C\uDF99\uFE0F';
+    if(micBtn)micBtn.textContent='🎙️';
     setVoiceStatus('Listening...','');
     _vsListen();
     return;
@@ -5361,7 +5364,7 @@ function stopMikeSpeaking(){
   _vsSet('idle');
   var micBtn=document.getElementById('micBtn');
   var stopBtn=document.getElementById('stopSpeakBtn');
-  if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='\uD83C\uDF99\uFE0F';}
+  if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
   if(stopBtn)stopBtn.style.display='none';
   if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
   setVoiceStatus('','');

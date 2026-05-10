@@ -5367,13 +5367,13 @@ function stopMikeSpeaking(){
   if(window._vsSendTimer){clearTimeout(window._vsSendTimer);window._vsSendTimer=null;}
 
   _vsQueue=[];
-  if(_vsAudio){
-    try{
-      if(_vsAudio.stop){_vsAudio.stop();} // Web Audio API AudioBufferSourceNode
-      else{_vsAudio.pause();_vsAudio.src='';} // HTML Audio element fallback
-    }catch(e){}
-    _vsAudio=null;
-  }
+  try{if(_vsAudio&&_vsAudio.stop)_vsAudio.stop();}catch(e){}
+  try{if(_vsAudio&&_vsAudio.pause){_vsAudio.pause();_vsAudio.src='';}}catch(e){}
+  _vsAudio=null;
+  // Also suspend AudioContext to cut sound immediately
+  try{if(window._vsAudioCtx&&window._vsAudioCtx.state==='running')window._vsAudioCtx.suspend();}catch(e){}
+  // Resume context for next play
+  try{if(window._vsAudioCtx)setTimeout(function(){try{window._vsAudioCtx.resume();}catch(e){}},100);}catch(e){}
   if(window.speechSynthesis)window.speechSynthesis.cancel();
   window._audioPlaying=false;
   isMikeSpeaking=false;

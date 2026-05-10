@@ -2821,8 +2821,10 @@ var techLocation=null,wakeLock=null;
 
 // ── TECH LOCATION (GPS) ──────────────────────────────────────
 function requestTechLocation(){
-  // Don't block if we already have a good location (accuracy < 500m)
-  if(techLocation&&techLocation.accuracy&&techLocation.accuracy<500)return;
+  // Refresh if: no location, poor accuracy, or older than 10 minutes
+  var tenMin=10*60*1000;
+  if(techLocation&&techLocation.accuracy&&techLocation.accuracy<500&&
+     techLocation.timestamp&&(Date.now()-techLocation.timestamp)<tenMin)return;
   if(!navigator.geolocation){
     window._locationDenied=true;
     return;
@@ -2840,9 +2842,9 @@ function requestTechLocation(){
     if(!techLocation||acc<(techLocation.accuracy||9999)){
       techLocation={lat:lat,lon:lon,display:'GPS: '+lat+', '+lon,accuracy:acc,timestamp:Date.now()};
     }
-    // Only reverse geocode when accuracy is reasonable (under 1000m)
-    if(acc>1000){
-      console.log('GPS accuracy poor ('+acc+'m) - waiting for better fix');
+    // Only reverse geocode when accuracy is reasonable (under 2000m)
+    if(acc>2000){
+      console.log('GPS accuracy poor ('+acc+'m) - using raw coords');
       return;
     }
     fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lon+'&format=json')
@@ -5091,7 +5093,7 @@ function _vsListen(){
           if(_vsRec){try{_vsRec.abort();}catch(ex){}}
           _vsSendText(full);
         }
-      },1500);
+      },2000);
     }
   };
   rec.onend=function(){

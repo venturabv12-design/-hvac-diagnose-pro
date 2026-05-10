@@ -5367,7 +5367,13 @@ function stopMikeSpeaking(){
   if(window._vsSendTimer){clearTimeout(window._vsSendTimer);window._vsSendTimer=null;}
 
   _vsQueue=[];
-  if(_vsAudio){try{_vsAudio.pause();_vsAudio.src='';}catch(e){} _vsAudio=null;}
+  if(_vsAudio){
+    try{
+      if(_vsAudio.stop){_vsAudio.stop();} // Web Audio API AudioBufferSourceNode
+      else{_vsAudio.pause();_vsAudio.src='';} // HTML Audio element fallback
+    }catch(e){}
+    _vsAudio=null;
+  }
   if(window.speechSynthesis)window.speechSynthesis.cancel();
   window._audioPlaying=false;
   isMikeSpeaking=false;

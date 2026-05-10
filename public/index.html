@@ -5038,6 +5038,7 @@ function startListeningWithGreeting(greeting){
 }
 
 function startListening(){
+  window._intentionalStop=false; // Clear intentional stop flag
   // Don't start listening while Mike is speaking
   if(isMikeSpeaking||window._audioPlaying)return;
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -5123,6 +5124,11 @@ function _doStartListening(SR){
     speechRecognition.onerror=function(ev){
       isListening=false;
       if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
+      // If we stopped deliberately (mikeSay called stopListening), ignore the error
+      if(window._intentionalStop){
+        window._intentionalStop=false;
+        return; // Don't restart — Mike is about to speak
+      }
       if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){
         setVoiceStatus('Mic permission needed','');
         autoListenAfterSpeak=false;
@@ -5160,6 +5166,7 @@ function _doStartListening(SR){
 }
 
 function stopListening(){
+  window._intentionalStop=true; // Suppress onerror restart
   isListening=false;
   if(speechRecognition){
     try{speechRecognition.abort();}catch(e){}

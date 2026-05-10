@@ -5433,6 +5433,8 @@ function stopMikeSpeaking(){
   if(stopBtn)stopBtn.style.display='none';
   if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
   setVoiceStatus('','');
+  // Reset camera UI if camera is active
+  if(typeof updateCameraMicState==='function')updateCameraMicState('idle');
 }
 
 function mikeSay(text){
@@ -5643,6 +5645,8 @@ async function analyzeCameraFrame(userInitiated,userText){
     }
     document.getElementById('cameraAnalyzing').style.display='none';
     setCameraResponse(response);
+    // Also show Mike's analysis in main chat
+    if(typeof appendMessage==='function')appendMessage('agent',response);
     mikeSayCamera(response);
     chatHistory.push({role:'user',content:userMsg});
     chatHistory.push({role:'assistant',content:response});
@@ -5744,7 +5748,20 @@ function mikeSayCamera(text){
 }
 
 function snapAndAnalyze(){
-  stopCameraListen();stopMikeSpeaking();
+  stopCameraListen();
+  stopMikeSpeaking();
+  // Capture the frame
+  var frame=captureFrame();
+  if(!frame){setCameraResponse('Could not capture frame. Try again.');return;}
+  // Put image in main chat so tech has a record
+  var chatContainer=document.getElementById('chatMessages');
+  if(chatContainer){
+    var imgDiv=document.createElement('div');
+    imgDiv.className='msg-user';
+    imgDiv.innerHTML='<div class="msg-bubble msg-bubble-user" style="padding:6px;"><img src="data:image/jpeg;base64,'+frame+'" style="max-width:220px;border-radius:10px;display:block;" /></div><div class="msg-time">'+getTimeStr()+'</div>';
+    chatContainer.appendChild(imgDiv);
+    chatContainer.scrollTop=chatContainer.scrollHeight;
+  }
   setCameraResponse('Analyzing this frame…');
   analyzeCameraFrame(true);
 }
@@ -5762,27 +5779,47 @@ function startCameraListen(){
   stopCameraListen();
   cameraSpeechRec=new SR();
   cameraSpeechRec.continuous=false;
-  cameraSpeechRec.interimResults=!isSafari;
+  cameraSpeechRec.interimResults=true;
   cameraSpeechRec.lang='en-US';
   cameraListening=true;
   updateCameraMicState('listening');
   document.getElementById('cameraTranscript').textContent='Listening…';
+  var camAccumulated='';
+  var camSendTimer=null;
   cameraSpeechRec.onresult=function(e){
-    var t='';for(var i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;
-    document.getElementById('cameraTranscript').textContent=t;
-    if(isMikeSpeaking&&/\b(stop|wait|hold on|hey mike|pause|found it)\b/i.test(t)){stopMikeSpeaking();}
-    if(e.results[e.results.length-1].isFinal&&t.trim()){
-      document.getElementById('cameraTranscript').textContent='';
-      analyzeCameraFrame(true,t.trim());
+    var t='';
+    for(var i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;
+    if(t.trim()){
+      camAccumulated=t.trim();
+      if(camSendTimer)clearTimeout(camSendTimer);
+      camSendTimer=setTimeout(function(){
+        if(camAccumulated&&cameraActive&&!isMikeSpeaking){
+          var text=camAccumulated;
+          camAccumulated='';
+          document.getElementById('cameraTranscript').textContent='';
+          try{cameraSpeechRec.abort();}catch(ex){}
+          analyzeCameraFrame(true,text);
+        }
+      },1500);
     }
+    if(isMikeSpeaking&&/\b(stop|wait|hold on|hey mike|pause|found it)\b/i.test(t)){stopMikeSpeaking();}
   };
   cameraSpeechRec.onend=function(){
-    cameraListening=false;updateCameraMicState('idle');
-    // TAP-TO-TALK: do not auto-restart — tech taps mic when ready to speak
+    cameraListening=false;
+    if(camAccumulated&&!isMikeSpeaking){
+      var text=camAccumulated;
+      camAccumulated='';
+      if(camSendTimer)clearTimeout(camSendTimer);
+      document.getElementById('cameraTranscript').textContent='';
+      analyzeCameraFrame(true,text);
+    } else {
+      updateCameraMicState('idle');
+    }
   };
   cameraSpeechRec.onerror=function(ev){
-    cameraListening=false;updateCameraMicState('idle');
-    if((ev.error==='no-speech'||ev.error==='aborted')&&cameraActive){setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},isSafari?1200:600);}
+    cameraListening=false;
+    updateCameraMicState('idle');
+    document.getElementById('cameraTranscript').textContent='';
   };
   try{cameraSpeechRec.start();}catch(e){cameraListening=false;updateCameraMicState('idle');}
 }

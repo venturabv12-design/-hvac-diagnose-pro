@@ -5308,6 +5308,7 @@ function _vsSpeak(){
       el.muted=false;
       el.volume=1;
       el.src=url;
+      console.log('[PLAY] starting audio, el:', el===window._mikeAudioEl?'_mikeAudioEl':'OTHER');
       var pp=el.play();
       if(pp){
         pp.catch(function(e){
@@ -5405,6 +5406,7 @@ function toggleMic(){
 }
 
 function stopMikeSpeaking(){
+  console.log('[STOP] called. _mikeAudioEl:', window._mikeAudioEl?'exists':'null', 'paused:', window._mikeAudioEl?window._mikeAudioEl.paused:'n/a', 'src:', window._mikeAudioEl?window._mikeAudioEl.src.substring(0,30):'n/a');
   window._vsStopped=true;
   window._vsAccumulated='';
   if(window._vsSendTimer){clearTimeout(window._vsSendTimer);window._vsSendTimer=null;}

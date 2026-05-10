@@ -4966,6 +4966,13 @@ function loadMikeVoice(){
 function toggleVoiceMode(){
   // iOS 18: unlock audio context during user gesture tap
   // Create a real Audio element and play it silently RIGHT NOW during the tap
+  // Reset any stale audio state from previous session
+  try{
+    if(mikeAudio){try{mikeAudio.pause();mikeAudio.src='';}catch(e){} mikeAudio=null;}
+    window._audioQueue=[];
+    window._audioPlaying=false;
+    isMikeSpeaking=false;
+  }catch(e){}
   try{
     var silentAudio=new Audio();
     silentAudio.setAttribute('playsinline','');
@@ -5211,7 +5218,7 @@ function mikeSay(text){
   var sentences=clean.match(/[^.!?]+[.!?]+/g)||[clean];
   var chunk='';
   sentences.forEach(function(s){
-    if((chunk+s).length>200){
+    if((chunk+s).length>150){
       if(chunk.trim())window._audioQueue.push(chunk.trim());
       chunk=s;
     } else {
@@ -5262,9 +5269,19 @@ function _playNextInQueue(){
     _playNextInQueue();
   },15000);
 
-  // iOS 18 fix: create Audio element first with empty src,
-  // then set src to blob URL after fetch — keeps element in gesture chain
-  if(mikeAudio){try{mikeAudio.pause();mikeAudio.src='';}catch(e){}}
+  // Always fully destroy previous audio before creating new one
+  // This prevents iOS stale audio session (works in private mode = fresh session each time)
+  if(mikeAudio){
+    try{
+      mikeAudio.pause();
+      mikeAudio.onended=null;
+      mikeAudio.onerror=null;
+      mikeAudio.oncanplaythrough=null;
+      mikeAudio.src='';
+      mikeAudio.load();
+    }catch(e){}
+    mikeAudio=null;
+  }
   mikeAudio=new Audio();
   mikeAudio.setAttribute('playsinline','');
   mikeAudio.setAttribute('webkit-playsinline','');

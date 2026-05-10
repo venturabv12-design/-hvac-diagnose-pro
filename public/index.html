@@ -2046,20 +2046,7 @@ function tracerInit(){
       showPersonalizedWelcome();
       if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
       setTimeout(requestTechLocation,2000);
-      // If chat is empty (new day / fresh session), have Mike greet in voice
-      setTimeout(function(){
-        if(voiceMode){
-          var container=document.getElementById('chatMessages');
-          if(container&&container.children.length<=1){
-            var profile=getUserMemoryProfile();
-            var name=currentUser?currentUser.name.split(' ')[0]:'there';
-            var greeting=profile.totalMessages>0?
-              'Hey '+name+'! Welcome back. What are we working on today?':
-              'Hey '+name+"! I'm Mike. Tell me what you're working on and let's get to it.";
-            mikeSay(greeting);
-          }
-        }
-      },1500);
+
     }catch(e){localStorage.removeItem('trazer_user');}
   }
 }
@@ -2102,24 +2089,22 @@ function showPersonalizedWelcome(){
     msg+="<br/><br/>Tap Voice for hands-free, camera for live visual diagnosis.";
   }
 
-  // Show in welcome element if it exists
-  var wm=document.getElementById('mikeWelcomeMsg');
-  if(wm){
-    wm.innerHTML='<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
-  }
-  // Also append to chat so Mike's greeting is always the first message
+  // Always show in chat as first message
   var container=document.getElementById('chatMessages');
-  if(container&&container.children.length===0){
+  if(container){
+    container.innerHTML='';
     var div=document.createElement('div');
     div.className='msg-agent';
     div.innerHTML='<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
     container.appendChild(div);
   }
-  // Speak greeting in voice mode
-  if(voiceMode&&msg){
-    var plainMsg=msg.replace(/<[^>]+>/g,' ').replace(/  +/g,' ').trim();
-    setTimeout(function(){mikeSay(plainMsg);},500);
+  // Also update welcome element if present
+  var wm=document.getElementById('mikeWelcomeMsg');
+  if(wm){
+    wm.innerHTML='<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
   }
+  // Store greeting for voice mode to speak when voice turns on
+  window._pendingGreeting=msg.replace(/<[^>]+>/g,' ').replace(/  +/g,' ').trim();
 
   // Update profile timestamp
   var p=getUserMemoryProfile();
@@ -5049,7 +5034,20 @@ function toggleVoiceMode(){
   if(vbtn)vbtn.classList.add('voice-mode-active');
   if(vlbl){vlbl.style.color='#00C2B2';vlbl.textContent='Voice ON';}
   _vsSet('idle');
-  setTimeout(function(){_vsListen();},300);
+  // Speak pending greeting if Mike hasn't spoken yet this session
+  if(window._pendingGreeting){
+    var greeting=window._pendingGreeting;
+    window._pendingGreeting=null;
+    setTimeout(function(){
+      _vsSet('speaking');
+      isMikeSpeaking=true;
+      window._audioPlaying=true;
+      _vsQueue=[greeting];
+      _vsSpeak();
+    },400);
+  } else {
+    setTimeout(function(){_vsListen();},300);
+  }
 }
 
 function _vsListen(){

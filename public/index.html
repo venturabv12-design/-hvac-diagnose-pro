@@ -5214,16 +5214,6 @@ function _vsSpeak(){
       if(!buf||buf.byteLength<500){_vsBrowserSay(chunk,safety);return;}
       var blob=new Blob([buf],{type:'audio/mpeg'});
       var url=URL.createObjectURL(blob);
-      _vsAudio.oncanplaythrough=function(){
-        _vsAudio.oncanplaythrough=null;
-        _vsAudio.play().catch(function(e){
-          clearTimeout(safety);
-          console.warn('[VOICE] play blocked:',e.message);
-          URL.revokeObjectURL(url);
-          _vsAudio=null;
-          _vsBrowserSay(chunk,safety);
-        });
-      };
       _vsAudio.onended=function(){
         clearTimeout(safety);
         URL.revokeObjectURL(url);
@@ -5237,7 +5227,17 @@ function _vsSpeak(){
         _vsSpeak();
       };
       _vsAudio.src=url;
-      _vsAudio.load();
+      // Play immediately — don't wait for canplaythrough (unreliable on iOS 18)
+      var pp=_vsAudio.play();
+      if(pp!==undefined){
+        pp.catch(function(e){
+          clearTimeout(safety);
+          console.warn('[VOICE] play blocked:',e.message);
+          URL.revokeObjectURL(url);
+          _vsAudio=null;
+          _vsBrowserSay(chunk,null);
+        });
+      }
     })
     .catch(function(){
       clearTimeout(safety);

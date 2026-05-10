@@ -2046,6 +2046,20 @@ function tracerInit(){
       showPersonalizedWelcome();
       if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
       setTimeout(requestTechLocation,2000);
+      // If chat is empty (new day / fresh session), have Mike greet in voice
+      setTimeout(function(){
+        if(voiceMode){
+          var container=document.getElementById('chatMessages');
+          if(container&&container.children.length<=1){
+            var profile=getUserMemoryProfile();
+            var name=currentUser?currentUser.name.split(' ')[0]:'there';
+            var greeting=profile.totalMessages>0?
+              'Hey '+name+'! Welcome back. What are we working on today?':
+              'Hey '+name+"! I'm Mike. Tell me what you're working on and let's get to it.";
+            mikeSay(greeting);
+          }
+        }
+      },1500);
     }catch(e){localStorage.removeItem('trazer_user');}
   }
 }
@@ -2088,9 +2102,23 @@ function showPersonalizedWelcome(){
     msg+="<br/><br/>Tap Voice for hands-free, camera for live visual diagnosis.";
   }
 
+  // Show in welcome element if it exists
   var wm=document.getElementById('mikeWelcomeMsg');
   if(wm){
     wm.innerHTML='<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
+  }
+  // Also append to chat so Mike's greeting is always the first message
+  var container=document.getElementById('chatMessages');
+  if(container&&container.children.length===0){
+    var div=document.createElement('div');
+    div.className='msg-agent';
+    div.innerHTML='<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
+    container.appendChild(div);
+  }
+  // Speak greeting in voice mode
+  if(voiceMode&&msg){
+    var plainMsg=msg.replace(/<[^>]+>/g,' ').replace(/  +/g,' ').trim();
+    setTimeout(function(){mikeSay(plainMsg);},500);
   }
 
   // Update profile timestamp
@@ -4944,16 +4972,17 @@ function showImageInChat(url,caption){
 
 function handleChatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
 function clearChat(){
-  // Clear display only — Mike keeps all memory. History persists in localStorage.
-  var name = currentUser ? currentUser.name.split(' ')[0] : 'you';
-  var profile = getUserMemoryProfile();
+  var name=currentUser?currentUser.name.split(' ')[0]:'there';
+  var profile=getUserMemoryProfile();
   var msg;
-  if(profile.totalMessages > 10){
-    msg = 'Screen cleared, '+name+'. I remember everything from our previous sessions — what are you working on?';
+  if(profile.totalMessages>10){
+    msg='Screen cleared, '+name+'. I remember everything from our previous sessions — what are you working on?';
   } else {
-    msg = 'Screen cleared — I still remember everything. What are you working on now?';
+    msg='Screen cleared — I still remember everything. What are you working on now?';
   }
   document.getElementById('chatMessages').innerHTML='<div class="msg-agent"><div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div></div>';
+  // Speak the greeting in voice mode
+  if(voiceMode){setTimeout(function(){mikeSay(msg);},300);}
 }
 
 function loadMikeVoice(){
@@ -4967,407 +4996,347 @@ function loadMikeVoice(){
   if(!mikeVoice)mikeVoice=voices.find(function(v){return v.lang==='en-US'&&!/female|zira|samantha|victoria/i.test(v.name);})||voices.find(function(v){return v.lang.startsWith('en');})||voices[0];
 }
 
+// ── VOICE STATE MACHINE ──────────────────────────────────────────
+// States: idle, listening, processing, speaking
+// Only one state active at a time. No flags fighting each other.
+var _vs = 'idle'; // voice state
+var _vsRec = null; // current recognition instance
+var _vsQueue = []; // TTS sentence queue
+var _vsAudio = null; // current audio element
+
+function _vsSet(state){
+  _vs = state;
+  console.log('[VOICE] state:', state);
+}
+
 function toggleVoiceMode(){
-  // iOS 18: unlock audio context during user gesture tap
-  // Create a real Audio element and play it silently RIGHT NOW during the tap
-  // Reset any stale audio state from previous session
+  // iOS: unlock audio on this tap
   try{
-    if(mikeAudio){try{mikeAudio.pause();mikeAudio.src='';}catch(e){} mikeAudio=null;}
-    window._audioQueue=[];
-    window._audioPlaying=false;
-    isMikeSpeaking=false;
+    var u=new Audio();
+    u.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    u.volume=0.001;
+    u.play().catch(function(){});
+    setTimeout(function(){u.src='';},500);
   }catch(e){}
-  try{
-    var silentAudio=new Audio();
-    silentAudio.setAttribute('playsinline','');
-    silentAudio.setAttribute('webkit-playsinline','');
-    // Shortest valid MP3 - 0.1 seconds of silence
-    silentAudio.src='data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgCenp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6e////////////////////////////////////////////////////////////////////////////////AAAAAExhdmM1OC41AAAAAAAAAAAAAAAAJAAAAAAAAAAB/4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/7kGQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAElnZm8AAAAPAAAAAgAAAYYBnp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6e////////////////////////////////////////////////////////////////////////////////AAAAAExhdmM1OC41AAAAAAAAAAAAAAAAJAAAAAAAAAAB/4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
-    silentAudio.volume=0.001;
-    var unlockPromise=silentAudio.play();
-    if(unlockPromise){
-      unlockPromise.then(function(){
-        silentAudio.pause();
-        silentAudio=null;
-        window._audioUnlockedIOS18=true;
-        console.log('iOS 18 audio unlocked');
-      }).catch(function(e){
-        console.warn('Audio unlock failed:',e.message);
-      });
-    }
-  }catch(e){console.warn('unlock error:',e);}
-  if(!voiceMode)trackUsage("voice");
-  if(!voiceMode&&typeof setSilentAudioForIOS==="function")setSilentAudioForIOS();
-  voiceMode=!voiceMode;
-  var bar=document.getElementById('voiceModeBar');
-  var btn=document.getElementById('voiceModeBtn');
-  var lbl=document.getElementById('voiceModeBtnLabel');
+
   if(voiceMode){
-    bar.style.display='block';
-    btn.classList.add('voice-mode-active');
-    lbl.style.color='#00C2B2';lbl.textContent='ON';
-    setVoiceStatus('Starting…','');
-    autoListenAfterSpeak=true;
-    if(navigator.wakeLock){
-      navigator.wakeLock.request('screen').then(function(wl){wakeLock=wl;}).catch(function(){});
-    }
-    // Set greeting for fresh chat
-    if(chatHistory.length===0){
-      var g={en:"Hey, I'm Mike. 25 years in the field — I've seen everything. What are you dealing with?",es:"Hola, soy Mike. ¿En qué puedo ayudarte?",zh:"我是Mike，有什么需要帮忙的？",vi:"Mike đây. Tôi có thể giúp gì?",fr:"C'est Mike. Sur quoi travaillez-vous?",pt:"Mike aqui. Em que posso ajudar?"};
-      micGreetingPending=g[currentLang]||g.en;
-    }
-    // Start immediately — tech just tapped the button, that IS the user gesture
-    if(!isMikeSpeaking&&!window._audioPlaying)startListening();
-  }else{
+    // Turn off voice mode
     voiceMode=false;
-    bar.style.display='none';
-    btn.classList.remove('voice-mode-active');
-    lbl.style.color='rgba(255,255,255,.5)';lbl.textContent='Voice';
-    stopMikeSpeaking();stopListening();autoListenAfterSpeak=false;
-    micGreetingPending=null;
-    if(wakeLock){try{wakeLock.release();}catch(e){}wakeLock=null;}
-    var micBtn=document.getElementById('micBtn');
-    if(micBtn){micBtn.classList.remove('mic-listening','mic-speaking');micBtn.textContent='🎙️';micBtn.style.background='#00C2B2';}
-    var stopBtn=document.getElementById('stopSpeakBtn');if(stopBtn)stopBtn.style.display='none';
-    setVoiceStatus('Tap Voice to start','');
+    _vsStop();
+    _vsSet('idle');
+    var vbar=document.getElementById('voiceModeBar');
+    var vbtn=document.getElementById('voiceModeBtn');
+    var vlbl=document.getElementById('voiceModeBtnLabel');
+    if(vbar)vbar.style.display='none';
+    if(vbtn)vbtn.classList.remove('voice-mode-active');
+    if(vlbl){vlbl.style.color='rgba(255,255,255,.5)';vlbl.textContent='Voice';}
+    setVoiceStatus('','');
+    isMikeSpeaking=false;
+    window._audioPlaying=false;
+    return;
   }
-}
 
-function startListeningWithGreeting(greeting){
-  // Not used anymore - kept for safety
-}
-
-function startListening(){
-  window._intentionalStop=false; // Clear intentional stop flag
-  // Don't start listening while Mike is speaking
-  if(isMikeSpeaking||window._audioPlaying)return;
-  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){setVoiceStatus('Voice not supported on this browser','');return;}
-  if(isMikeSpeaking)return;
-  stopListening();
-
-  // Safari iOS fix: warm up the audio session with getUserMedia FIRST
-  // This prevents the WKWebView crash when SpeechRecognition requests mic
-  if(isSafari&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
-    navigator.mediaDevices.getUserMedia({audio:true})
-      .then(function(stream){
-        // Got permission and warm audio session - stop the stream immediately
-        stream.getTracks().forEach(function(t){t.stop();});
-        // Now safe to start SpeechRecognition
-        _doStartListening(SR);
-      })
-      .catch(function(err){
-        // Permission denied or error
-        if(err.name==='NotAllowedError'||err.name==='PermissionDeniedError'){
-          setVoiceStatus('Mic permission needed','');
-          voiceMode=false;
-          var bar=document.getElementById('voiceModeBar');
-          var btn=document.getElementById('voiceModeBtn');
-          var lbl=document.getElementById('voiceModeBtnLabel');
-          if(bar)bar.style.display='none';
-          if(btn)btn.classList.remove('voice-mode-active');
-          if(lbl){lbl.style.color='rgba(255,255,255,.5)';lbl.textContent='Voice';}
-        } else {
-          // Try anyway
-          _doStartListening(SR);
-        }
-      });
-  } else {
-    // Android Chrome and others - go straight to SpeechRecognition
-    _doStartListening(SR);
+  // Turn on voice mode
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){
+    showToast('Voice not supported in this browser. Try Safari.','error',3000);
+    return;
   }
+  voiceMode=true;
+  var vbar=document.getElementById('voiceModeBar');
+  var vbtn=document.getElementById('voiceModeBtn');
+  var vlbl=document.getElementById('voiceModeBtnLabel');
+  if(vbar)vbar.style.display='flex';
+  if(vbtn)vbtn.classList.add('voice-mode-active');
+  if(vlbl){vlbl.style.color='#00C2B2';vlbl.textContent='Voice ON';}
+  _vsSet('idle');
+  setTimeout(function(){_vsListen();},300);
 }
 
-function _doStartListening(SR){
-  try{
-    speechRecognition=new SR();
-    speechRecognition.continuous=false;
-    speechRecognition.interimResults=!isSafari;
-    speechRecognition.lang=currentLang==='es'?'es-MX':currentLang==='zh'?'zh-CN':currentLang==='vi'?'vi-VN':currentLang==='fr'?'fr-FR':currentLang==='pt'?'pt-BR':'en-US';
-    var micBtn=document.getElementById('micBtn');
-    speechRecognition.onstart=function(){
-      isListening=true;
-      if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🔴';}
-      setVoiceStatus('Listening…','Go ahead…');
-      unlockAudioSafe();
-      if(micGreetingPending&&voiceMode){
-        var g=micGreetingPending;micGreetingPending=null;
-        setTimeout(function(){
-          if(voiceMode){stopListening();setTimeout(function(){if(voiceMode)mikeSay(g);},150);}
-        },300);
-      }
-    };
-    speechRecognition.onresult=function(e){
-      var transcript='';
-      for(var i=e.resultIndex;i<e.results.length;i++)transcript+=e.results[i][0].transcript;
-      if(!isSafari)setVoiceStatus('Listening…',transcript);
-      if(e.results[e.results.length-1].isFinal){
-        document.getElementById('chatInput').value=transcript;
-        if(isSafari)setVoiceStatus('Got it…',transcript);
-      }
-    };
-    speechRecognition.onend=function(){
-      isListening=false;
-      if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
-      var text=document.getElementById('chatInput').value.trim();
-      if(text){
-        setVoiceStatus('Sending to Mike…',text);
-        autoListenAfterSpeak=true;
-        // Block mic immediately - Mike is about to respond
-        // isMikeSpeaking=true prevents startListening from firing during TTS fetch
-        isMikeSpeaking=true;
-        sendChat();
-      } else if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying){
-        setTimeout(function(){if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying)startListening();},isSafari?1200:600);
-      }
-    };
-    speechRecognition.onerror=function(ev){
-      isListening=false;
-      if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
-      // If we stopped deliberately (mikeSay called stopListening), ignore the error
-      if(window._intentionalStop){
-        window._intentionalStop=false;
-        return; // Don't restart — Mike is about to speak
-      }
-      if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){
-        setVoiceStatus('Mic permission needed','');
-        autoListenAfterSpeak=false;
-        voiceMode=false;
-        var vbar=document.getElementById('voiceModeBar');
-        var vbtn=document.getElementById('voiceModeBtn');
-        var vlbl=document.getElementById('voiceModeBtnLabel');
-        if(vbar)vbar.style.display='none';
-        if(vbtn)vbtn.classList.remove('voice-mode-active');
-        if(vlbl){vlbl.style.color='rgba(255,255,255,.5)';vlbl.textContent='Voice';}
-      } else if(ev.error==='no-speech'||ev.error==='aborted'){
-        if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying){
-          setTimeout(function(){if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying)startListening();},isSafari?1000:500);
-        }
-      } else {
-        if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying){
-          setTimeout(function(){if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying)startListening();},isSafari?1500:800);
-        }
-      }
-    };
-    try{
-      speechRecognition.start();
-      // Auto-stop after 60s — prevents mic staying open forever
-      if(window._recTimeout)clearTimeout(window._recTimeout);
-      window._recTimeout=setTimeout(function(){try{if(speechRecognition)speechRecognition.abort();}catch(e){}setVoiceStatus('','');},60000);
-    }catch(err){
-      isListening=false;
-      setVoiceStatus('Tap mic to try again','');
-      if(voiceMode){setTimeout(function(){if(voiceMode&&!isListening&&!isMikeSpeaking&&!window._audioPlaying)startListening();},1500);}
-    }
-  }catch(outerErr){
-    isListening=false;
-    setVoiceStatus('Tap mic to try again','');
-  }
-}
-
-function stopListening(){
-  window._intentionalStop=true; // Suppress onerror restart
-  isListening=false;
-  if(speechRecognition){
-    try{speechRecognition.abort();}catch(e){}
-    speechRecognition.onresult=null;speechRecognition.onend=null;
-    speechRecognition.onerror=null;speechRecognition.onstart=null;
-    speechRecognition=null;
-  }
-  var micBtn=document.getElementById('micBtn');
-  if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
-}
-
-function setVoiceStatus(status,transcript){
-  var el=document.getElementById('voiceStatusText');
-  var tr=document.getElementById('voiceTranscript');
-  if(el)el.textContent=status;
-  if(tr)tr.textContent=transcript||'';
-}
-
-
-var isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-var audioUnlocked=false;
-var sharedAudioCtx=null;
-var micGreetingPending=null;
-
-
-function unlockAudioSafe(){
-  try{
-    var A=window.AudioContext||window.webkitAudioContext;if(!A)return;
-    if(!sharedAudioCtx)sharedAudioCtx=new A();
-    if(sharedAudioCtx.state==='suspended'||sharedAudioCtx.state==='interrupted'){
-      sharedAudioCtx.resume().catch(function(){});
-    }
-    if(!audioUnlocked){
-      var b=sharedAudioCtx.createBuffer(1,1,22050),s=sharedAudioCtx.createBufferSource();
-      s.buffer=b;s.connect(sharedAudioCtx.destination);s.start(0);
-      audioUnlocked=true;
-    }
-  }catch(e){sharedAudioCtx=null;}
-}
-
-function toggleMic(){
-  if(isListening){stopListening();return;}
-  if(isMikeSpeaking){stopMikeSpeaking();return;}
-  if(chatHistory.length===0&&voiceMode&&!micGreetingPending){
-    var g={en:"Hey, I'm Mike. 25 years in the field — I've seen everything. What are you dealing with?",es:"Hola, soy Mike. ¿En qué puedo ayudarte?",zh:"我是Mike，有什么需要帮忙的？",vi:"Mike đây. Tôi có thể giúp gì?",fr:"C'est Mike. Sur quoi travaillez-vous?",pt:"Mike aqui. Em que posso ajudar?"};
-    micGreetingPending=g[currentLang]||g.en;
-  }
-  if(!isMikeSpeaking&&!window._audioPlaying)startListening();
-}
-
-function mikeSay(text){
+function _vsListen(){
   if(!voiceMode)return;
-  stopListening();
-  document.getElementById('chatInput').value='';
-  var clean=text.replace(/https?:\/\/[^\s)>\]"]+/g,'').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim();
-  if(!clean)return;
-  if(!window._audioQueue)window._audioQueue=[];
-  // Smart iOS audio splitter - keeps chunks under 130 chars
-  // Splits on: sentence endings, then commas/dashes if still too long
-  var sentences=clean.match(/[^.!?]+[.!?]*/g)||[clean];
-  var audioChunks=[];
-  sentences.forEach(function(s){
-    s=s.trim();
-    if(!s)return;
-    if(s.length>130){
-      // Split long sentence on comma or dash
-      var parts=s.split(/,\s*|\s--\s|:\s/);
-      var sub='';
-      parts.forEach(function(p){
-        p=p.trim();if(!p)return;
-        var cand=sub?(sub+', '+p):p;
-        if(cand.length>130){if(sub)audioChunks.push(sub);sub=p;}
-        else{sub=cand;}
-      });
-      if(sub)audioChunks.push(sub);
-    } else {
-      audioChunks.push(s);
+  if(_vs==='listening'||_vs==='processing'||_vs==='speaking')return;
+  _vsSet('listening');
+  isListening=true;
+  isMikeSpeaking=false;
+
+  var micBtn=document.getElementById('micBtn');
+  if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🎙️';}
+  setVoiceStatus('Listening\u2026','');
+
+  var SpeechRec=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var rec=new SpeechRec();
+  _vsRec=rec;
+  rec.continuous=false;
+  rec.interimResults=true;
+  rec.lang=currentLang||'en-US';
+  rec.maxAlternatives=1;
+
+  var finalTranscript='';
+  var silenceTimer=null;
+
+  rec.onresult=function(e){
+    var transcript='';
+    for(var i=e.resultIndex;i<e.results.length;i++){
+      transcript+=e.results[i][0].transcript;
     }
-  });
-  audioChunks.forEach(function(c){if(c.trim())window._audioQueue.push(c.trim());});
-  if(!window._audioPlaying)_playNextInQueue();
+    document.getElementById('chatInput').value=transcript;
+    if(!isSafari)setVoiceStatus('Listening\u2026',transcript);
+    if(e.results[e.results.length-1].isFinal){
+      finalTranscript=transcript;
+      if(isSafari){
+        // Safari: submit on final result
+        setVoiceStatus('Got it\u2026',transcript);
+      }
+    }
+  };
+
+  rec.onend=function(){
+    _vsRec=null;
+    isListening=false;
+    if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='\uD83C\uDF99\uFE0F';}
+    if(_vs!=='listening')return; // state changed already, ignore
+    var text=document.getElementById('chatInput').value.trim();
+    if(text){
+      _vsSet('processing');
+      setVoiceStatus('Sending to Mike\u2026',text);
+      isMikeSpeaking=true; // Block listening during processing
+      sendChat();
+    } else {
+      // No speech heard — go back to listening after short pause
+      _vsSet('idle');
+      setTimeout(function(){
+        if(voiceMode&&_vs==='idle')_vsListen();
+      },600);
+    }
+  };
+
+  rec.onerror=function(ev){
+    _vsRec=null;
+    isListening=false;
+    if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='\uD83C\uDF99\uFE0F';}
+    if(_vs!=='listening')return;
+    _vsSet('idle');
+    if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){
+      setVoiceStatus('Mic permission needed','');
+      voiceMode=false;
+      var vbar=document.getElementById('voiceModeBar');
+      var vbtn=document.getElementById('voiceModeBtn');
+      var vlbl=document.getElementById('voiceModeBtnLabel');
+      if(vbar)vbar.style.display='none';
+      if(vbtn)vbtn.classList.remove('voice-mode-active');
+      if(vlbl){vlbl.style.color='rgba(255,255,255,.5)';vlbl.textContent='Voice';}
+      return;
+    }
+    // Any other error — retry after pause
+    setTimeout(function(){
+      if(voiceMode&&_vs==='idle')_vsListen();
+    },800);
+  };
+
+  try{
+    rec.start();
+  }catch(e){
+    _vsSet('idle');
+    setTimeout(function(){if(voiceMode&&_vs==='idle')_vsListen();},1000);
+  }
 }
 
-function _playNextInQueue(){
-  if(!window._audioQueue||window._audioQueue.length===0){
+function _vsStop(){
+  isListening=false;
+  if(_vsRec){
+    try{_vsRec.abort();}catch(e){}
+    _vsRec=null;
+  }
+  if(_vsAudio){
+    try{_vsAudio.pause();_vsAudio.src='';}catch(e){}
+    _vsAudio=null;
+  }
+  _vsQueue=[];
+  window._audioPlaying=false;
+  isMikeSpeaking=false;
+  var micBtn=document.getElementById('micBtn');
+  if(micBtn){micBtn.classList.remove('mic-listening','mic-speaking');micBtn.textContent='\uD83C\uDF99\uFE0F';}
+  var stopBtn=document.getElementById('stopSpeakBtn');
+  if(stopBtn)stopBtn.style.display='none';
+  if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
+}
+
+function _vsSpeak(){
+  if(_vsQueue.length===0){
+    // Done speaking — go back to listening
+    _vsSet('idle');
     window._audioPlaying=false;
     isMikeSpeaking=false;
     var micBtn=document.getElementById('micBtn');
+    if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='\uD83C\uDF99\uFE0F';}
     var stopBtn=document.getElementById('stopSpeakBtn');
-    if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
-    if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
     if(stopBtn)stopBtn.style.display='none';
+    if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
     setVoiceStatus('','');
     if(voiceMode){
-      // Wait 1.5s before restarting mic - gives time for any pending queue items
-      // and prevents mic from cutting in between sentences
       setTimeout(function(){
-        if(voiceMode&&!isMikeSpeaking&&!window._audioPlaying&&
-           (!window._audioQueue||window._audioQueue.length===0)){
-          startListening();
-        }
-      },1500);
+        if(voiceMode&&_vs==='idle')_vsListen();
+      },800);
     }
     return;
   }
+
+  _vsSet('speaking');
   window._audioPlaying=true;
   isMikeSpeaking=true;
-  var clean=window._audioQueue.shift();
+  var chunk=_vsQueue.shift();
   var micBtn=document.getElementById('micBtn');
   var stopBtn=document.getElementById('stopSpeakBtn');
-  if(micBtn){micBtn.classList.add('mic-speaking');micBtn.textContent='🔊';}
+  if(micBtn){micBtn.classList.remove('mic-listening');micBtn.classList.add('mic-speaking');micBtn.textContent='\uD83D\uDD0A';}
   if(stopBtn)stopBtn.style.display='flex';
   if(typeof showVoiceWaveform==='function')showVoiceWaveform(true);
-  setVoiceStatus('Mike is talking…','');
+  setVoiceStatus('Mike is talking\u2026','');
 
-  // Safety timeout — if TTS takes too long, move on
-  var safetyTimer=setTimeout(function(){
-    console.warn('TTS timeout — skipping to next');
-    if(mikeAudio){try{mikeAudio.pause();mikeAudio.src='';}catch(e){}}
-    mikeAudio=null;
-    _playNextInQueue();
-  },15000);
+  // Safety timeout — if audio hangs, move on
+  var safety=setTimeout(function(){
+    console.warn('[VOICE] safety timeout');
+    if(_vsAudio){try{_vsAudio.pause();_vsAudio.src='';}catch(e){} _vsAudio=null;}
+    _vsSpeak();
+  },12000);
 
-  // Always fully destroy previous audio before creating new one
-  // This prevents iOS stale audio session (works in private mode = fresh session each time)
-  if(mikeAudio){
-    try{
-      mikeAudio.pause();
-      mikeAudio.onended=null;
-      mikeAudio.onerror=null;
-      mikeAudio.oncanplaythrough=null;
-      mikeAudio.src='';
-      mikeAudio.load();
-    }catch(e){}
-    mikeAudio=null;
-  }
-  mikeAudio=new Audio();
-  mikeAudio.setAttribute('playsinline','');
-  mikeAudio.setAttribute('webkit-playsinline','');
-  mikeAudio.preload='auto';
+  // Always create fresh Audio element
+  if(_vsAudio){try{_vsAudio.pause();_vsAudio.onended=null;_vsAudio.onerror=null;_vsAudio.oncanplaythrough=null;_vsAudio.src='';}catch(e){}}
+  _vsAudio=new Audio();
+  _vsAudio.setAttribute('playsinline','');
+  _vsAudio.setAttribute('webkit-playsinline','');
+  _vsAudio.preload='auto';
 
-  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})})
+  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:chunk})})
     .then(function(res){
       if(!res.ok)throw new Error('TTS '+res.status);
       return res.arrayBuffer();
     })
-    .then(function(arrayBuf){
-      clearTimeout(safetyTimer);
-      if(!arrayBuf||arrayBuf.byteLength<500){
-        mikeAudio=null;
-        _mikeSayBrowserThenNext(clean);
-        return;
-      }
-      var blob=new Blob([arrayBuf],{type:'audio/mpeg'});
+    .then(function(buf){
+      clearTimeout(safety);
+      if(!buf||buf.byteLength<500){_vsBrowserSay(chunk,safety);return;}
+      var blob=new Blob([buf],{type:'audio/mpeg'});
       var url=URL.createObjectURL(blob);
-      // Play immediately without waiting for canplaythrough
-      // oncanplaythrough adds latency between sentences on iOS
-      mikeAudio.onended=function(){
-        clearTimeout(safetyTimer);
-        URL.revokeObjectURL(url);
-        mikeAudio=null;
-        _playNextInQueue();
-      };
-      mikeAudio.onerror=function(e){
-        clearTimeout(safetyTimer);
-        console.warn('Audio error:',e);
-        URL.revokeObjectURL(url);
-        mikeAudio=null;
-        _playNextInQueue();
-      };
-      mikeAudio.src=url;
-      mikeAudio.load();
-      var pp=mikeAudio.play();
-      if(pp!==undefined){
-        pp.catch(function(e){
-          clearTimeout(safetyTimer);
-          console.warn('iOS audio blocked:',e.message);
+      _vsAudio.oncanplaythrough=function(){
+        _vsAudio.oncanplaythrough=null;
+        _vsAudio.play().catch(function(e){
+          clearTimeout(safety);
+          console.warn('[VOICE] play blocked:',e.message);
           URL.revokeObjectURL(url);
-          mikeAudio=null;
-          _mikeSayBrowserThenNext(clean);
+          _vsAudio=null;
+          _vsBrowserSay(chunk,safety);
         });
-      }
+      };
+      _vsAudio.onended=function(){
+        clearTimeout(safety);
+        URL.revokeObjectURL(url);
+        _vsAudio=null;
+        _vsSpeak();
+      };
+      _vsAudio.onerror=function(){
+        clearTimeout(safety);
+        URL.revokeObjectURL(url);
+        _vsAudio=null;
+        _vsSpeak();
+      };
+      _vsAudio.src=url;
+      _vsAudio.load();
     })
-    .catch(function(e){
-      clearTimeout(safetyTimer);
-      console.warn('TTS fetch failed:',e.message);
-      if(mikeAudio){mikeAudio=null;}
-      _mikeSayBrowserThenNext(clean);
+    .catch(function(){
+      clearTimeout(safety);
+      _vsBrowserSay(chunk,safety);
     });
 }
 
-function _mikeSayBrowserThenNext(text){
-  // Use browser TTS then continue queue when done
-  if(!window.speechSynthesis){_playNextInQueue();return;}
+function _vsBrowserSay(text,safety){
+  if(!window.speechSynthesis){if(safety)clearTimeout(safety);_vsSpeak();return;}
   window.speechSynthesis.cancel();
-  var utt=new SpeechSynthesisUtterance(text.substring(0,300));
-  utt.rate=1.1;utt.pitch=0.9;utt.volume=1;
-  utt.onend=function(){_playNextInQueue();};
-  utt.onerror=function(){_playNextInQueue();};
-  window.speechSynthesis.speak(utt);
+  var u=new SpeechSynthesisUtterance(text.substring(0,250));
+  u.rate=1.05;u.pitch=0.95;u.volume=1;
+  u.onend=function(){if(safety)clearTimeout(safety);_vsSpeak();};
+  u.onerror=function(){if(safety)clearTimeout(safety);_vsSpeak();};
+  window.speechSynthesis.speak(u);
 }
+
+// ── PUBLIC API (called from rest of app) ──────────────────────────
+function startListening(){
+  if(!voiceMode)return;
+  if(_vs==='idle')_vsListen();
+}
+
+function stopListening(){
+  if(_vsRec){try{_vsRec.abort();}catch(e){} _vsRec=null;}
+  isListening=false;
+  var micBtn=document.getElementById('micBtn');
+  if(micBtn){micBtn.classList.remove('mic-listening');}
+}
+
+function stopMikeSpeaking(){
+  _vsQueue=[];
+  if(_vsAudio){try{_vsAudio.pause();_vsAudio.src='';}catch(e){} _vsAudio=null;}
+  if(window.speechSynthesis)window.speechSynthesis.cancel();
+  window._audioPlaying=false;
+  isMikeSpeaking=false;
+  _vsSet('idle');
+  var micBtn=document.getElementById('micBtn');
+  var stopBtn=document.getElementById('stopSpeakBtn');
+  if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='\uD83C\uDF99\uFE0F';}
+  if(stopBtn)stopBtn.style.display='none';
+  if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
+  setVoiceStatus('','');
+}
+
+function mikeSay(text){
+  if(!voiceMode)return;
+  // Stop listening — we are about to speak
+  if(_vsRec){try{_vsRec.abort();}catch(e){} _vsRec=null;}
+  isListening=false;
+  document.getElementById('chatInput').value='';
+
+  // Clean text
+  var clean=text
+    .replace(/https?:\/\/[^\s)>\]"]+/g,'')
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g,'$1')
+    .replace(/<[^>]+>/g,' ')
+    .replace(/\*\*([^*]+)\*\*/g,'$1')
+    .replace(/\*([^*]+)\*/g,'$1')
+    .replace(/\n\n/g,'. ')
+    .replace(/\n/g,' ')
+    .replace(/[▸▼▲→*#_]/g,'')
+    .replace(/  +/g,' ')
+    .trim();
+  if(!clean)return;
+
+  // Split into short chunks (150 chars max, split on sentence boundaries)
+  var sentences=clean.match(/[^.!?]+[.!?]*/g)||[clean];
+  var chunk='';
+  sentences.forEach(function(s){
+    if(!s.trim())return;
+    if((chunk+s).length>150){
+      if(chunk.trim())_vsQueue.push(chunk.trim());
+      chunk=s;
+    } else {
+      chunk+=s;
+    }
+  });
+  if(chunk.trim())_vsQueue.push(chunk.trim());
+
+  // Start speaking
+  _vsSet('speaking');
+  isMikeSpeaking=true;
+  window._audioPlaying=true;
+  _vsSpeak();
+}
+
+// Legacy compatibility
+function _playNextInQueue(){_vsSpeak();}
+function setVoiceStatus(msg,sub){
+  var el=document.getElementById('voiceStatus');
+  var sel=document.getElementById('voiceSubStatus');
+  if(el)el.textContent=msg;
+  if(sel)sel.textContent=sub||'';
+}
+function _mikeSayBrowserThenNext(text){_vsBrowserSay(text,null);}
 
 function mikeSayBrowser(clean){
   if(!window.speechSynthesis){isMikeSpeaking=false;if(voiceMode)setTimeout(startListening,1200);return;}
@@ -5398,20 +5367,7 @@ function mikeSayBrowser(clean){
   next();
 }
 
-function stopMikeSpeaking(){
-  // Clear the audio queue
-  window._audioQueue=[];
-  window._audioPlaying=false;
-  if(mikeAudio){try{mikeAudio.pause();mikeAudio.src='';}catch(e){} mikeAudio=null;}
-  if(window.speechSynthesis)window.speechSynthesis.cancel();
-  isMikeSpeaking=false;
-  var micBtn=document.getElementById('micBtn');
-  var stopBtn=document.getElementById('stopSpeakBtn');
-  if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
-  if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
-  if(stopBtn)stopBtn.style.display='none';
-  setVoiceStatus('','');
-}
+
 
 // ─── LIVE CAMERA DIAGNOSTICS ───────────────────────────────
 var cameraStream=null,cameraFacing='environment',cameraAnalysisInterval=null;

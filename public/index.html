@@ -5017,7 +5017,7 @@ function toggleVoiceMode(){
       micGreetingPending=g[currentLang]||g.en;
     }
     // Start immediately — tech just tapped the button, that IS the user gesture
-    startListening();
+    if(!isMikeSpeaking&&!window._audioPlaying)startListening();
   }else{
     voiceMode=false;
     bar.style.display='none';
@@ -5151,7 +5151,7 @@ function _doStartListening(SR){
     }catch(err){
       isListening=false;
       setVoiceStatus('Tap mic to try again','');
-      if(voiceMode){setTimeout(function(){if(voiceMode&&!isListening&&!isMikeSpeaking)startListening();},1500);}
+      if(voiceMode){setTimeout(function(){if(voiceMode&&!isListening&&!isMikeSpeaking&&!window._audioPlaying)startListening();},1500);}
     }
   }catch(outerErr){
     isListening=false;
@@ -5207,7 +5207,7 @@ function toggleMic(){
     var g={en:"Hey, I'm Mike. 25 years in the field — I've seen everything. What are you dealing with?",es:"Hola, soy Mike. ¿En qué puedo ayudarte?",zh:"我是Mike，有什么需要帮忙的？",vi:"Mike đây. Tôi có thể giúp gì?",fr:"C'est Mike. Sur quoi travaillez-vous?",pt:"Mike aqui. Em que posso ajudar?"};
     micGreetingPending=g[currentLang]||g.en;
   }
-  startListening();
+  if(!isMikeSpeaking&&!window._audioPlaying)startListening();
 }
 
 function mikeSay(text){
@@ -5377,7 +5377,7 @@ function mikeSayBrowser(clean){
       isMikeSpeaking=false;
       if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
       if(stopBtn)stopBtn.style.display='none';
-      if(voiceMode){setVoiceStatus('Go ahead…','');setTimeout(function(){if(voiceMode&&!isListening)startListening();},1200);}
+      if(voiceMode){setVoiceStatus('Go ahead…','');setTimeout(function(){if(voiceMode&&!isListening&&!isMikeSpeaking&&!window._audioPlaying)startListening();},1200);}
       return;
     }
     var utt=new SpeechSynthesisUtterance(chunks[idx]);

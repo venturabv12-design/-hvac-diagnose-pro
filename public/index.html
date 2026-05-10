@@ -4995,13 +4995,22 @@ function _vsSet(state){
 }
 
 function toggleVoiceMode(){
-  // iOS: unlock audio on this tap
+  // iOS 18: create and unlock AudioContext during user gesture tap
+  // This is the key — AudioContext MUST be created/resumed in a gesture handler
   try{
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!window._vsAudioCtx){
+      window._vsAudioCtx=new AC();
+    }
+    if(window._vsAudioCtx.state==='suspended'){
+      window._vsAudioCtx.resume();
+    }
+    // Also play silent audio to unlock Audio element fallback
     var u=new Audio();
     u.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
     u.volume=0.001;
     u.play().catch(function(){});
-    setTimeout(function(){u.src='';},500);
+    setTimeout(function(){try{u.src='';}catch(e){}},500);
   }catch(e){}
 
   if(voiceMode){
@@ -5134,11 +5143,8 @@ function _vsListen(){
   var _noSpeech=setTimeout(function(){
     if(_vs==='listening'){try{rec.abort();}catch(e){}}
   },8000);
-  var _origOnEnd=rec.onend;
-  rec.onend=function(){
-    clearTimeout(_noSpeech);
-    if(_origOnEnd)_origOnEnd.call(this);
-  };
+  var _realOnEnd=rec.onend;
+  rec.onend=function(){clearTimeout(_noSpeech);if(_realOnEnd)_realOnEnd.call(this);};
   try{
     rec.start();
   }catch(e){
@@ -5221,37 +5227,65 @@ function _vsSpeak(){
     .then(function(buf){
       clearTimeout(safety);
       if(!buf||buf.byteLength<500){_vsBrowserSay(chunk,safety);return;}
-      var blob=new Blob([buf],{type:'audio/mpeg'});
-      var url=URL.createObjectURL(blob);
-      _vsAudio.onended=function(){
-        clearTimeout(safety);
-        URL.revokeObjectURL(url);
-        _vsAudio=null;
-        _vsSpeak();
-      };
-      _vsAudio.onerror=function(){
-        clearTimeout(safety);
-        URL.revokeObjectURL(url);
-        _vsAudio=null;
-        _vsSpeak();
-      };
-      _vsAudio.src=url;
-      // Play immediately — don't wait for canplaythrough (unreliable on iOS 18)
-      var pp=_vsAudio.play();
-      if(pp!==undefined){
-        pp.catch(function(e){
-          clearTimeout(safety);
-          console.warn('[VOICE] play blocked:',e.message);
-          URL.revokeObjectURL(url);
-          _vsAudio=null;
-          _vsBrowserSay(chunk,null);
-        });
+      // Try Web Audio API first (unlocked during voice tap, works on iOS 18)
+      var ctx=window._vsAudioCtx;
+      if(ctx&&ctx.state!=='closed'){
+        if(ctx.state==='suspended')ctx.resume();
+        ctx.decodeAudioData(buf.slice(0),
+          function(decoded){
+            var src=ctx.createBufferSource();
+            src.buffer=decoded;
+            src.connect(ctx.destination);
+            src.onended=function(){clearTimeout(safety);_vsAudio=null;_vsSpeak();};
+            src.start(0);
+            _vsAudio=src;
+          },
+          function(){
+            // decode failed - use Audio element
+            _vsPlayWithElement(buf,chunk,safety);
+          }
+        );
+      } else {
+        // No Web Audio - use Audio element
+        _vsPlayWithElement(buf,chunk,safety);
       }
     })
     .catch(function(){
       clearTimeout(safety);
       _vsBrowserSay(chunk,safety);
     });
+}
+
+function _vsPlayWithElement(buf,chunk,safety){
+  // Fallback: Audio element approach
+  var blob=new Blob([buf],{type:'audio/mpeg'});
+  var url=URL.createObjectURL(blob);
+  if(_vsAudio){try{_vsAudio.pause();_vsAudio.src='';}catch(e){}}
+  _vsAudio=new Audio();
+  _vsAudio.setAttribute('playsinline','');
+  _vsAudio.setAttribute('webkit-playsinline','');
+  _vsAudio.onended=function(){
+    if(safety)clearTimeout(safety);
+    URL.revokeObjectURL(url);
+    _vsAudio=null;
+    _vsSpeak();
+  };
+  _vsAudio.onerror=function(){
+    if(safety)clearTimeout(safety);
+    URL.revokeObjectURL(url);
+    _vsAudio=null;
+    _vsSpeak();
+  };
+  _vsAudio.src=url;
+  var pp=_vsAudio.play();
+  if(pp!==undefined){
+    pp.catch(function(e){
+      if(safety)clearTimeout(safety);
+      URL.revokeObjectURL(url);
+      _vsAudio=null;
+      _vsBrowserSay(chunk,null);
+    });
+  }
 }
 
 function _vsBrowserSay(text,safety){

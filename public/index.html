@@ -4960,14 +4960,9 @@ function clearChat(){
   var name=currentUser?currentUser.name.split(' ')[0]:'there';
   var profile=getUserMemoryProfile();
   var msg;
-  if(profile.totalMessages>10){
-    msg='Screen cleared, '+name+'. I remember everything from our previous sessions — what are you working on?';
-  } else {
-    msg='Screen cleared — I still remember everything. What are you working on now?';
-  }
+  msg='Screen cleared. What are you working on?';
   document.getElementById('chatMessages').innerHTML='<div class="msg-agent"><div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div></div>';
-  // Speak the greeting in voice mode
-  if(voiceMode){setTimeout(function(){mikeSay(msg);},300);}
+  // Silent — don't speak on clear
 }
 
 function loadMikeVoice(){
@@ -5309,6 +5304,32 @@ function stopListening(){
   isListening=false;
   var micBtn=document.getElementById('micBtn');
   if(micBtn){micBtn.classList.remove('mic-listening');}
+}
+
+function toggleMic(){
+  if(!voiceMode)return;
+  if(_vs==='speaking'){
+    stopMikeSpeaking();
+    _vsSet('idle');
+    setVoiceStatus('Paused. Tap mic to resume.','');
+    return;
+  }
+  if(_vs==='listening'){
+    if(_vsRec){try{_vsRec.abort();}catch(e){} _vsRec=null;}
+    isListening=false;
+    _vsSet('idle');
+    var micBtn=document.getElementById('micBtn');
+    if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='\u23F8';}
+    setVoiceStatus('Paused. Tap mic to resume.','');
+    return;
+  }
+  if(_vs==='idle'){
+    var micBtn=document.getElementById('micBtn');
+    if(micBtn)micBtn.textContent='\uD83C\uDF99\uFE0F';
+    setVoiceStatus('Listening...','');
+    _vsListen();
+    return;
+  }
 }
 
 function stopMikeSpeaking(){

@@ -4803,8 +4803,12 @@ async function generateAndShowSVG(prompt, caption, isIllustration){
     svgEl.style.cursor='pointer';
     svgEl.addEventListener('click',function(){
       var overlay=document.createElement('div');
-      overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;-webkit-overflow-scrolling:touch;';
-      var clone=svgEl.cloneNode(true);clone.style.cssText='width:100%;max-width:640px;height:auto;';
+      overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;-webkit-overflow-scrolling:touch;';
+      var clone=svgEl.cloneNode(true);
+      // Force proper sizing and white background for readability
+      clone.style.cssText='width:100%;max-width:720px;height:auto;background:#0f172a;border-radius:12px;';
+      clone.setAttribute('width','100%');
+      clone.removeAttribute('height');
       var closeBtn=document.createElement('button');
       closeBtn.textContent='✕';
       closeBtn.style.cssText='position:fixed;top:max(env(safe-area-inset-top,0px),16px);right:16px;background:rgba(255,255,255,.25);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;z-index:10000;-webkit-tap-highlight-color:transparent;';
@@ -5097,7 +5101,8 @@ function _vsListen(){
     isListening=false;
     if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='\uD83C\uDF99\uFE0F';}
     if(_vs!=='listening')return; // state changed already, ignore
-    var text=document.getElementById('chatInput').value.trim();
+    var text=latestTranscript||document.getElementById('chatInput').value.trim();
+    latestTranscript='';
     if(text){
       _vsSet('processing');
       setVoiceStatus('Sending to Mike\u2026',text);

@@ -5034,20 +5034,20 @@ function toggleVoiceMode(){
   if(vbtn)vbtn.classList.add('voice-mode-active');
   if(vlbl){vlbl.style.color='#00C2B2';vlbl.textContent='Voice ON';}
   _vsSet('idle');
-  // Speak pending greeting if Mike hasn't spoken yet this session
-  if(window._pendingGreeting){
-    var greeting=window._pendingGreeting;
-    window._pendingGreeting=null;
-    setTimeout(function(){
-      _vsSet('speaking');
-      isMikeSpeaking=true;
-      window._audioPlaying=true;
-      _vsQueue=[greeting];
-      _vsSpeak();
-    },400);
-  } else {
-    setTimeout(function(){_vsListen();},300);
+  // Always greet when voice turns on
+  var greetText=window._pendingGreeting;
+  if(!greetText){
+    try{
+      var _p=getUserMemoryProfile();
+      var _n=currentUser?currentUser.name.split(' ')[0]:'';
+      var _t=_p.totalMessages||0;
+      greetText=_t===0?
+        'Hey'+(_n?' '+_n:'')+"! I'm Mike. What are you working on?":
+        'Hey'+(_n?' '+_n:'')+', welcome back. What are you working on?';
+    }catch(e){greetText='Hey! Mike here. What are you working on?';}
   }
+  window._pendingGreeting=null;
+  setTimeout(function(){_vsQueue=[greetText];_vsSpeak();},400);
 }
 
 function _vsListen(){
@@ -5131,9 +5131,18 @@ function _vsListen(){
     },800);
   };
 
+  var _noSpeech=setTimeout(function(){
+    if(_vs==='listening'){try{rec.abort();}catch(e){}}
+  },8000);
+  var _origOnEnd=rec.onend;
+  rec.onend=function(){
+    clearTimeout(_noSpeech);
+    if(_origOnEnd)_origOnEnd.call(this);
+  };
   try{
     rec.start();
   }catch(e){
+    clearTimeout(_noSpeech);
     _vsSet('idle');
     setTimeout(function(){if(voiceMode&&_vs==='idle')_vsListen();},1000);
   }

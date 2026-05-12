@@ -5116,7 +5116,7 @@ function toggleVoiceMode(){
     }catch(e){greetText='Hey! Mike here. What are you working on?';}
   }
   window._pendingGreeting=null;
-  setTimeout(function(){_vsQueue=[greetText];_vsSpeak();},400);
+  setTimeout(function(){window._vsStopped=false;_vsQueue=[greetText];_vsSpeak();},400);
 }
 
 function _vsListen(){
@@ -5282,7 +5282,9 @@ function _vsSpeak(){
     }
   },12000);
 
-  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:chunk})})
+  try{if(window._vsTtsCtl)window._vsTtsCtl.abort();}catch(e){}
+  window._vsTtsCtl=new AbortController();
+  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:chunk}),signal:window._vsTtsCtl.signal})
     .then(function(res){
       if(!res.ok)throw new Error('TTS '+res.status);
       return res.arrayBuffer();
@@ -5434,7 +5436,7 @@ function stopMikeSpeaking(){
   // Also kill via speechSynthesis in case browser TTS is playing
   try{window.speechSynthesis.cancel();}catch(e){}
   try{window.speechSynthesis.cancel();}catch(e){}
-  setTimeout(function(){window._vsStopped=false;},300);
+  try{if(window._vsTtsCtl){window._vsTtsCtl.abort();window._vsTtsCtl=null;}}catch(e){}
   window._audioPlaying=false;
   isMikeSpeaking=false;
   _vsSet('idle');
@@ -5450,6 +5452,7 @@ function stopMikeSpeaking(){
 
 function mikeSay(text){
   if(!voiceMode)return;
+  window._vsStopped=false;
   // Stop listening — we are about to speak
   if(_vsRec){try{_vsRec.abort();}catch(e){} _vsRec=null;}
   isListening=false;
@@ -5556,7 +5559,6 @@ async function startLiveCamera(){
   try{stopMikeSpeaking();}catch(e){}
   try{stopListening();}catch(e){}
   try{if(cameraStream){cameraStream.getTracks().forEach(function(t){try{t.stop();}catch(er){}});cameraStream=null;}}catch(e){}
-  await new Promise(function(r){setTimeout(r,200);});
   var overlay=document.getElementById('liveCameraOverlay');
   if(overlay)overlay.style.display='flex';
   cameraActive=true;

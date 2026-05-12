@@ -597,121 +597,107 @@ app.get('/api/weather', async (req, res) => {
 app.get('/api/customers', async (req, res) => {
   const { user_id } = req.query;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  try {
-    const { data, error } = await supabase.from('customers').select('*').eq('user_id', user_id).order('name');
-    if (error) throw error;
-    res.json({ customers: data });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  const rows = await supabase('GET', 'customers', null,
+    `?user_id=eq.${encodeURIComponent(user_id)}&order=name`);
+  if (rows === null) return res.status(500).json({ error: 'Database error' });
+  res.json({ customers: rows });
 });
 
 app.post('/api/customers', async (req, res) => {
-  const { user_id, ...fields } = req.body;
+  const { user_id, id, ...fields } = req.body;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  try {
-    const { data, error } = await supabase.from('customers').upsert({ user_id, ...fields, updated_at: new Date() }).select().single();
-    if (error) throw error;
-    res.json({ customer: data });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  const payload = { ...fields, updated_at: new Date() };
+  const rows = id
+    ? await supabase('PATCH', 'customers', payload, `?id=eq.${encodeURIComponent(id)}`)
+    : await supabase('POST', 'customers', { user_id, ...payload });
+  if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save customer' });
+  res.json({ customer: rows[0] });
 });
 
 app.delete('/api/customers/:id', async (req, res) => {
-  try {
-    const { error } = await supabase.from('customers').delete().eq('id', req.params.id);
-    if (error) throw error;
-    res.json({ success: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  const result = await supabase('DELETE', 'customers', null,
+    `?id=eq.${encodeURIComponent(req.params.id)}`);
+  if (result === null) return res.status(500).json({ error: 'Database error' });
+  res.json({ success: true });
 });
 
 // ── JOBS ──────────────────────────────────────────────────────────────────────
 app.get('/api/jobs', async (req, res) => {
   const { user_id } = req.query;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  try {
-    const { data, error } = await supabase.from('jobs').select('*').eq('user_id', user_id).order('date', { ascending: false });
-    if (error) throw error;
-    res.json({ jobs: data });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  const rows = await supabase('GET', 'jobs', null,
+    `?user_id=eq.${encodeURIComponent(user_id)}&order=date.desc`);
+  if (rows === null) return res.status(500).json({ error: 'Database error' });
+  res.json({ jobs: rows });
 });
 
 app.post('/api/jobs', async (req, res) => {
   const { user_id, ...fields } = req.body;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  try {
-    const { data, error } = await supabase.from('jobs').insert({ user_id, ...fields }).select().single();
-    if (error) throw error;
-    res.json({ job: data });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  const rows = await supabase('POST', 'jobs', { user_id, ...fields });
+  if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save job' });
+  res.json({ job: rows[0] });
 });
 
 // ── REFRIGERANT LOG ───────────────────────────────────────────────────────────
 app.get('/api/refrigerant-log', async (req, res) => {
   const { user_id } = req.query;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  try {
-    const { data, error } = await supabase.from('refrigerant_log').select('*').eq('user_id', user_id).order('date', { ascending: false });
-    if (error) throw error;
-    res.json({ logs: data });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  const rows = await supabase('GET', 'refrigerant_log', null,
+    `?user_id=eq.${encodeURIComponent(user_id)}&order=date.desc`);
+  if (rows === null) return res.status(500).json({ error: 'Database error' });
+  res.json({ logs: rows });
 });
 
 app.post('/api/refrigerant-log', async (req, res) => {
   const { user_id, ...fields } = req.body;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  try {
-    const { data, error } = await supabase.from('refrigerant_log').insert({ user_id, ...fields }).select().single();
-    if (error) throw error;
-    res.json({ log: data });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  const rows = await supabase('POST', 'refrigerant_log', { user_id, ...fields });
+  if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save log' });
+  res.json({ log: rows[0] });
 });
 
 // ── REMINDERS ─────────────────────────────────────────────────────────────────
 app.get('/api/reminders', async (req, res) => {
   const { user_id } = req.query;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  try {
-    const { data, error } = await supabase.from('reminders').select('*').eq('user_id', user_id).order('due_date');
-    if (error) throw error;
-    res.json({ reminders: data });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  const rows = await supabase('GET', 'reminders', null,
+    `?user_id=eq.${encodeURIComponent(user_id)}&order=due_date`);
+  if (rows === null) return res.status(500).json({ error: 'Database error' });
+  res.json({ reminders: rows });
 });
 
 app.post('/api/reminders', async (req, res) => {
   const { user_id, ...fields } = req.body;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  try {
-    const { data, error } = await supabase.from('reminders').insert({ user_id, ...fields }).select().single();
-    if (error) throw error;
-    res.json({ reminder: data });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  const rows = await supabase('POST', 'reminders', { user_id, ...fields });
+  if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save reminder' });
+  res.json({ reminder: rows[0] });
 });
 
 app.patch('/api/reminders/:id', async (req, res) => {
-  try {
-    const { data, error } = await supabase.from('reminders').update(req.body).eq('id', req.params.id).select().single();
-    if (error) throw error;
-    res.json({ reminder: data });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  const rows = await supabase('PATCH', 'reminders', req.body,
+    `?id=eq.${encodeURIComponent(req.params.id)}`);
+  if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to update reminder' });
+  res.json({ reminder: rows[0] });
 });
 
 // ── MIKE KNOWLEDGE ────────────────────────────────────────────────────────────
 app.get('/api/knowledge', async (req, res) => {
   const { user_id } = req.query;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  try {
-    const { data, error } = await supabase.from('mike_knowledge').select('*').eq('user_id', user_id).order('created_at', { ascending: false }).limit(100);
-    if (error) throw error;
-    res.json({ knowledge: data });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  const rows = await supabase('GET', 'mike_knowledge', null,
+    `?user_id=eq.${encodeURIComponent(user_id)}&order=created_at.desc&limit=100`);
+  if (rows === null) return res.status(500).json({ error: 'Database error' });
+  res.json({ knowledge: rows });
 });
 
 app.post('/api/knowledge', async (req, res) => {
   const { user_id, fact, topic } = req.body;
   if (!user_id || !fact) return res.status(400).json({ error: 'user_id and fact required' });
-  try {
-    const { data, error } = await supabase.from('mike_knowledge').insert({ user_id, fact, topic }).select().single();
-    if (error) throw error;
-    res.json({ knowledge: data });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  const rows = await supabase('POST', 'mike_knowledge', { user_id, fact, topic });
+  if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save knowledge' });
+  res.json({ knowledge: rows[0] });
 });
 
 // ── AI ────────────────────────────────────────────────────────────────────────

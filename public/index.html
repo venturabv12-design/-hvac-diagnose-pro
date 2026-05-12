@@ -2641,7 +2641,7 @@ function showOnboarding(){
   if(!el)return;
   el.classList.add('show');
   renderOb();
-  setTimeout(speakOb,700);
+  window._obSpeakTimer=setTimeout(speakOb,700);
 }
 
 function renderOb(){
@@ -2660,32 +2660,39 @@ function speakOb(){
   var s=OB_SLIDES[obStep];
   if(!s||!s.voice)return;
   var text=s.voice;
+  var gen=window._obGen=(window._obGen||0)+1;
+  try{if(window._obFetchController)window._obFetchController.abort();}catch(e){}
+  var ctrl=window._obFetchController=(typeof AbortController!=='undefined')?new AbortController():null;
   // Try ElevenLabs (same engine as Mike in chat) — fall back to browser TTS
-  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text})})
+  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text}),signal:ctrl?ctrl.signal:undefined})
     .then(function(res){
+      if(gen!==window._obGen)throw new Error('cancelled');
       if(!res.ok)throw new Error('tts '+res.status);
       return res.arrayBuffer();
     })
     .then(function(buf){
-      if(!buf||buf.byteLength<500){speakObBrowser(text);return;}
+      if(gen!==window._obGen)return;
+      if(!buf||buf.byteLength<500){speakObBrowser(text,gen);return;}
       var AudioCtx=window.AudioContext||window.webkitAudioContext;
-      if(!AudioCtx){speakObBrowser(text);return;}
+      if(!AudioCtx){speakObBrowser(text,gen);return;}
       var ctx=window._obAudioCtx||(window._obAudioCtx=new AudioCtx());
       if(ctx.state==='suspended')ctx.resume();
       ctx.decodeAudioData(buf.slice(0),function(decoded){
+        if(gen!==window._obGen)return;
         if(window._obSource){try{window._obSource.stop();}catch(e){}}
         var src=ctx.createBufferSource();
         src.buffer=decoded;
         src.connect(ctx.destination);
         window._obSource=src;
         src.start(0);
-      },function(){speakObBrowser(text);});
+      },function(){if(gen===window._obGen)speakObBrowser(text,gen);});
     })
-    .catch(function(){speakObBrowser(text);});
+    .catch(function(){if(gen===window._obGen)speakObBrowser(text,gen);});
 }
 
-function speakObBrowser(text){
+function speakObBrowser(text,gen){
   if(!window.speechSynthesis)return;
+  if(typeof gen==='number'&&gen!==window._obGen)return;
   window.speechSynthesis.cancel();
   var u=new SpeechSynthesisUtterance(text);
   u.rate=0.92;u.pitch=0.95;u.volume=1;
@@ -2695,21 +2702,25 @@ function speakObBrowser(text){
     return n.includes('daniel')||n.includes('alex')||n.includes('ryan')||n.includes('mark')||n.includes('male')||(v.lang==='en-US'&&!n.includes('female')&&!n.includes('siri'));
   });
   if(pref)u.voice=pref;
+  if(typeof gen==='number'&&gen!==window._obGen)return;
   window.speechSynthesis.speak(u);
 }
 
 function stopObSpeaking(){
+  window._obGen=(window._obGen||0)+1;
+  if(window._obSpeakTimer){clearTimeout(window._obSpeakTimer);window._obSpeakTimer=null;}
+  try{if(window._obFetchController){window._obFetchController.abort();window._obFetchController=null;}}catch(e){}
   try{if(window._obSource){window._obSource.stop();window._obSource=null;}}catch(e){}
   if(window.speechSynthesis)window.speechSynthesis.cancel();
 }
 
 function obBack(){
   stopObSpeaking();
-  if(obStep>0){obStep--;renderOb();setTimeout(speakOb,400);}
+  if(obStep>0){obStep--;renderOb();window._obSpeakTimer=setTimeout(speakOb,400);}
 }
 function obNext(){
   stopObSpeaking();
-  if(obStep<OB_SLIDES.length-1){obStep++;renderOb();setTimeout(speakOb,400);}
+  if(obStep<OB_SLIDES.length-1){obStep++;renderOb();window._obSpeakTimer=setTimeout(speakOb,400);}
   else{obFinish();}
 }
 

@@ -1851,7 +1851,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 <div id="liveCameraOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9998;flex-direction:column;font-family:'Plus Jakarta Sans',-apple-system,sans-serif;">
 
   <!-- Full-screen camera feed -->
-  <video id="liveCameraFeed" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"></video>
+  <video id="liveCameraFeed" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"></video>
 
   <!-- Top gradient -->
   <div style="position:absolute;top:0;left:0;right:0;height:180px;background:linear-gradient(to bottom,rgba(0,0,0,.8) 0%,transparent 100%);pointer-events:none;z-index:1;"></div>
@@ -5601,8 +5601,35 @@ async function startCameraStream(){
     stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}}
     cameraStream=stream;
     var vid=document.getElementById('liveCameraFeed');
+    vid.muted=true;
+    vid.setAttribute('playsinline','');
+    vid.setAttribute('webkit-playsinline','');
     vid.srcObject=stream;
-    try{await vid.play();}catch(pe){vid.muted=true;try{await vid.play();}catch(pe2){}}
+    var tryPlay=function(){
+      vid.muted=true;
+      var p=vid.play();
+      if(p&&p.catch)p.catch(function(pe){
+        try{localStorage.setItem('camDebugPlay',JSON.stringify({err:pe&&pe.name,msg:pe&&pe.message,t:Date.now(),rs:vid.readyState,paused:vid.paused,muted:vid.muted}));}catch(_e){}
+        var ov=document.getElementById('liveCameraOverlay');
+        if(ov&&!ov._tapToStartArmed){
+          ov._tapToStartArmed=true;
+          if(typeof showToast==='function')showToast('Tap the camera screen to start the video.','info',4000);
+          var onTap=function(){
+            ov.removeEventListener('click',onTap);
+            ov._tapToStartArmed=false;
+            vid.muted=true;
+            try{vid.play().catch(function(){});}catch(_e){}
+          };
+          ov.addEventListener('click',onTap);
+        }
+      });
+    };
+    if(vid.readyState>=1){
+      tryPlay();
+    } else {
+      vid.addEventListener('loadedmetadata',tryPlay,{once:true});
+      setTimeout(function(){if(vid.paused)tryPlay();},600);
+    }
   }catch(e){
     stopLiveCamera();
     appendMessage('agent','Camera access needed. Allow camera permission in browser settings, then tap Start again.');

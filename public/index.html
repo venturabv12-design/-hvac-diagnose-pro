@@ -2645,6 +2645,16 @@ function showOnboarding(){
   el.classList.add('show');
   renderOb();
   window._obSpeakTimer=setTimeout(speakOb,700);
+  // Mark onboarded on ANY exit, not just Skip / Get Started — users often close the
+  // tab or background the app mid-slides; pagehide alone is unreliable on iOS PWA.
+  if(!window._obExitMarkInstalled){
+    window._obExitMarkInstalled=true;
+    var markObDone=function(){try{localStorage.setItem('trazer_onboarded','1');}catch(e){}};
+    window.addEventListener('pagehide',markObDone);
+    document.addEventListener('visibilitychange',function(){
+      if(document.visibilityState==='hidden')markObDone();
+    });
+  }
 }
 
 function renderOb(){

@@ -2219,6 +2219,9 @@ function authSignOut(){
 
 function updateProfileUI(){
   if(!currentUser)return;
+  if(currentUser.name&&!currentUser.initials){
+    currentUser.initials=currentUser.name.split(' ').map(function(x){return x[0]||'';}).join('').toUpperCase().slice(0,2)||'U';
+  }
   var b=document.getElementById('navProfileBtn');if(b)b.textContent=currentUser.initials||'?';
   var pn=document.getElementById('pddName');if(pn)pn.textContent=currentUser.name||'';
   var pe=document.getElementById('pddEmail');if(pe)pe.textContent=currentUser.email||'';

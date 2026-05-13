@@ -781,7 +781,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 </style>
 </head>
 <body>
-<div id="appLoader" style="position:fixed;inset:0;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s ease;">
+<div id="appLoader" style="position:fixed;inset:0;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s ease;pointer-events:none;">
   <svg width="52" height="52" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="9" fill="url(#ll)"/><path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/><defs><linearGradient id="ll" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#00C2B2"/><stop offset="100%" stop-color="#007A6E"/></linearGradient></defs></svg>
   <div style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-.3px;">Trazer Intelligence</div>
   <div style="display:flex;gap:6px;align-items:center;">
@@ -5541,7 +5541,12 @@ var cameraListening=false,cameraSpeechRec=null,cameraActive=false;
 var lastCameraAnalysis=0,cameraAnalysisLock=false;
 
 function checkCameraAccess(){
-  if(!currentUser)return;
+  window._camTapN=(window._camTapN||0)+1;
+  try{localStorage.setItem('camDebug',JSON.stringify({n:window._camTapN,t:Date.now(),user:!!currentUser,plan:currentUser&&currentUser.plan}));}catch(e){}
+  if(!currentUser){
+    if(typeof showToast==='function')showToast('Loading… tap again in a moment.','info',2000);
+    return;
+  }
   // Starter plan: chat only, no camera
   if(currentUser.plan==='starter'){
     if(typeof showToast==='function')showToast('Live Camera is a Pro feature. Upgrade to unlock.','info');
@@ -5553,14 +5558,14 @@ function checkCameraAccess(){
 
 async function startLiveCamera(){
   if(!isProFeature('camera'))return;
+  var overlay=document.getElementById('liveCameraOverlay');
+  if(overlay)overlay.style.display='flex';
   window._cameraMode=true;
   trackUsage("camera");
   unlockAudio();
   try{stopMikeSpeaking();}catch(e){}
   try{stopListening();}catch(e){}
   try{if(cameraStream){cameraStream.getTracks().forEach(function(t){try{t.stop();}catch(er){}});cameraStream=null;}}catch(e){}
-  var overlay=document.getElementById('liveCameraOverlay');
-  if(overlay)overlay.style.display='flex';
   cameraActive=true;
   try{
     await startCameraStream();

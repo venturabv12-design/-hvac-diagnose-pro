@@ -3765,6 +3765,7 @@ function showWarrantyBanner(w){
   var rc=document.getElementById('resultCard');if(rc)rc.insertAdjacentHTML('beforebegin',html);
 }
 
+var isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 var audioUnlocked=false,sharedAudioCtx=null;
 function unlockAudio(){
   if(audioUnlocked)return;audioUnlocked=true;

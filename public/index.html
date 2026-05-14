@@ -1613,6 +1613,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
             <div id="voiceStatusText" style="font-size:13px;font-weight:700;color:#fff;">Listening&hellip;</div>
             <div id="voiceTranscript" style="font-size:11px;color:#9499B0;min-height:14px;"></div>
           </div>
+          <button id="voiceRetryBtn" onclick="_vsManualRetry()" style="display:none;background:#FF6B6B;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;">Tap to retry</button>
           <button id="micBtn" onclick="toggleMic()" class="voice-mic-btn">&#x1F399;</button>
           <button id="stopSpeakBtn" onclick="stopMikeSpeaking()" class="voice-stop-btn" style="display:none;">&#x23F9;</button>
         </div>
@@ -5372,6 +5373,7 @@ var _vs = 'idle'; // voice state
 var _vsRec = null; // current recognition instance
 var _vsQueue = []; // TTS sentence queue
 var _vsAudio = null; // current audio element
+var _vsRebuildCount = 0; // watchdog rebuilds in current voice-mode session (WebKit #218815)
 
 function _vsSet(state){
   _vs = state;
@@ -5434,6 +5436,7 @@ function toggleVoiceMode(){
     return;
   }
   voiceMode=true;
+  _vsRebuildCount=0;
   var vbar=document.getElementById('voiceModeBar');
   var vbtn=document.getElementById('voiceModeBtn');
   var vlbl=document.getElementById('voiceModeBtnLabel');
@@ -5470,6 +5473,10 @@ function _vsListen(){
   // Show a placeholder during the audio-session handoff. Safety timer
   // promotes the cue anyway after 1s if onaudiostart never fires.
   setVoiceStatus('Getting ready…','');
+  var _retryBtn=document.getElementById('voiceRetryBtn');
+  if(_retryBtn)_retryBtn.style.display='none';
+  window._vsHeardSomething=false;
+  if(window._vsWatchdog){clearTimeout(window._vsWatchdog);window._vsWatchdog=null;}
   var promoteListeningCue=function(){
     if(_vs!=='listening')return;
     if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🎙️';}
@@ -5489,12 +5496,26 @@ function _vsListen(){
   rec.onaudiostart=function(){
     if(window._vsListeningCueTimer){clearTimeout(window._vsListeningCueTimer);window._vsListeningCueTimer=null;}
     promoteListeningCue();
+    // WebKit #218815 watchdog: if no speech detected within 4s of audio
+    // capture starting, iOS silently muted the mic — force a rebuild.
+    if(window._vsWatchdog)clearTimeout(window._vsWatchdog);
+    window._vsWatchdog=setTimeout(function(){
+      if(_vs!=='listening')return;
+      if(window._vsHeardSomething)return;
+      _vsHandleSilentMicMute();
+    },4000);
+  };
+  rec.onspeechstart=function(){
+    window._vsHeardSomething=true;
+    if(window._vsWatchdog){clearTimeout(window._vsWatchdog);window._vsWatchdog=null;}
   };
   var sessionText='';
   rec.onresult=function(e){
     var t='';
     for(var i=e.resultIndex;i<e.results.length;i++){t+=e.results[i][0].transcript;}
     if(t.trim()){
+      window._vsHeardSomething=true;
+      if(window._vsWatchdog){clearTimeout(window._vsWatchdog);window._vsWatchdog=null;}
       sessionText=t.trim();
       if(window._vsSendTimer)clearTimeout(window._vsSendTimer);
       window._vsSendTimer=setTimeout(function(){
@@ -5510,6 +5531,7 @@ function _vsListen(){
   };
   rec.onend=function(){
     _vsRec=null;
+    if(window._vsWatchdog){clearTimeout(window._vsWatchdog);window._vsWatchdog=null;}
     isListening=false;
     if(_vs!=='listening')return;
     if(sessionText.trim()){
@@ -5529,6 +5551,7 @@ function _vsListen(){
   };
   rec.onerror=function(ev){
     _vsRec=null;
+    if(window._vsWatchdog){clearTimeout(window._vsWatchdog);window._vsWatchdog=null;}
     isListening=false;
     if(_vs!=='listening')return;
     if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){
@@ -5562,8 +5585,41 @@ function _vsRestartRec(){
   try{_vsRec.start();}catch(e){clearTimeout(t);_vsSet('idle');setTimeout(function(){if(voiceMode&&_vs==='idle')_vsListen();},1000);}
 }
 
+function _vsHandleSilentMicMute(){
+  // WebKit Bug #218815: iOS silently muted the getUserMedia audio track.
+  // No error fires, recognizer thinks it's listening but no audio comes in.
+  // Only fix is to abort the dead instance and rebuild from scratch.
+  if(window._vsWatchdog){clearTimeout(window._vsWatchdog);window._vsWatchdog=null;}
+  if(_vsRec){try{_vsRec.abort();}catch(e){}_vsRec=null;}
+  _vsRebuildCount++;
+  console.log('[VOICE] watchdog: silent mic mute, rebuild #'+_vsRebuildCount);
+  if(_vsRebuildCount>=2){
+    _vsSet('idle');
+    _vsShowMicStallRetry();
+    return;
+  }
+  _vsSet('idle');
+  setTimeout(function(){if(voiceMode&&_vs==='idle')_vsListen();},300);
+}
+
+function _vsShowMicStallRetry(){
+  setVoiceStatus('Mic stalled — tap to retry','');
+  var micBtn=document.getElementById('micBtn');
+  if(micBtn)micBtn.classList.remove('mic-listening');
+  var retryBtn=document.getElementById('voiceRetryBtn');
+  if(retryBtn)retryBtn.style.display='inline-block';
+}
+
+function _vsManualRetry(){
+  var retryBtn=document.getElementById('voiceRetryBtn');
+  if(retryBtn)retryBtn.style.display='none';
+  _vsRebuildCount=0;
+  if(voiceMode&&_vs==='idle')_vsListen();
+}
+
 function _vsSendText(text){
   if(!text)return;
+  _vsRebuildCount=0;
   // Show tech what was captured BEFORE sending
   document.getElementById('chatInput').value=text;
   var micBtn=document.getElementById('micBtn');
@@ -5580,6 +5636,10 @@ function _vsSendText(text){
 
 function _vsStop(){
   isListening=false;
+  if(window._vsWatchdog){clearTimeout(window._vsWatchdog);window._vsWatchdog=null;}
+  _vsRebuildCount=0;
+  var retryBtn=document.getElementById('voiceRetryBtn');
+  if(retryBtn)retryBtn.style.display='none';
   if(_vsRec){
     try{_vsRec.abort();}catch(e){}
     _vsRec=null;
@@ -5612,7 +5672,7 @@ function _vsSpeak(){
     if(voiceMode){
       setTimeout(function(){
         if(voiceMode&&_vs==='idle')_vsListen();
-      },800);
+      },1500);
     }
     return;
   }

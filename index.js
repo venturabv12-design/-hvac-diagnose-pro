@@ -782,7 +782,7 @@ app.post('/api/tts', async (req, res) => {
         body: JSON.stringify({
           text: text.substring(0, 5000),
           model_id: 'eleven_turbo_v2_5',
-          voice_settings: { stability: 0.50, similarity_boost: 0.80, style: 0.20, use_speaker_boost: true },
+          voice_settings: { stability: 0.50, similarity_boost: 0.80, style: 0.20, use_speaker_boost: true, speed: 0.9 },
         }),
         signal: controller.signal,
       }

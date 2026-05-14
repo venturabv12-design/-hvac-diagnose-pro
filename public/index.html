@@ -5464,8 +5464,19 @@ function _vsListen(){
   isListening=true;
   isMikeSpeaking=false;
   var micBtn=document.getElementById('micBtn');
-  if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🎙️';}
-  setVoiceStatus('Listening...','');
+  // Defer the 'Listening...' cue + mic-active icon until rec.onaudiostart
+  // fires (iOS has actually engaged the mic). Prevents the user from
+  // speaking before audio capture begins, which was clipping first words.
+  // Show a placeholder during the audio-session handoff. Safety timer
+  // promotes the cue anyway after 1s if onaudiostart never fires.
+  setVoiceStatus('Getting ready…','');
+  var promoteListeningCue=function(){
+    if(_vs!=='listening')return;
+    if(micBtn){micBtn.classList.add('mic-listening');micBtn.textContent='🎙️';}
+    setVoiceStatus('Listening...','');
+  };
+  if(window._vsListeningCueTimer)clearTimeout(window._vsListeningCueTimer);
+  window._vsListeningCueTimer=setTimeout(promoteListeningCue,1000);
   if(window._vsAccumulated===undefined)window._vsAccumulated='';
   if(window._vsSendTimer)clearTimeout(window._vsSendTimer);
   var SpeechRec=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -5475,6 +5486,10 @@ function _vsListen(){
   rec.interimResults=true;
   rec.lang=currentLang||'en-US';
   rec.maxAlternatives=1;
+  rec.onaudiostart=function(){
+    if(window._vsListeningCueTimer){clearTimeout(window._vsListeningCueTimer);window._vsListeningCueTimer=null;}
+    promoteListeningCue();
+  };
   var sessionText='';
   rec.onresult=function(e){
     var t='';

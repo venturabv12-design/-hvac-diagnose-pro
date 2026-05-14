@@ -5374,6 +5374,7 @@ var _vsRec = null; // current recognition instance
 var _vsQueue = []; // TTS sentence queue
 var _vsAudio = null; // current audio element
 var _vsRebuildCount = 0; // watchdog rebuilds in current voice-mode session (WebKit #218815)
+var _vsPrewarmedRec = null; // SpeechRecognition pre-warmed during Mike's TTS playback
 
 function _vsSet(state){
   _vs = state;
@@ -5487,12 +5488,20 @@ function _vsListen(){
   if(window._vsAccumulated===undefined)window._vsAccumulated='';
   if(window._vsSendTimer)clearTimeout(window._vsSendTimer);
   var SpeechRec=window.SpeechRecognition||window.webkitSpeechRecognition;
-  var rec=new SpeechRec();
+  var rec;
+  if(_vsPrewarmedRec){
+    rec=_vsPrewarmedRec;
+    _vsPrewarmedRec=null;
+    rec.lang=currentLang||'en-US';
+    console.log('[VOICE] consuming pre-warmed SpeechRecognition');
+  }else{
+    rec=new SpeechRec();
+    rec.continuous=false;
+    rec.interimResults=true;
+    rec.lang=currentLang||'en-US';
+    rec.maxAlternatives=1;
+  }
   _vsRec=rec;
-  rec.continuous=false;
-  rec.interimResults=true;
-  rec.lang=currentLang||'en-US';
-  rec.maxAlternatives=1;
   rec.onaudiostart=function(){
     if(window._vsListeningCueTimer){clearTimeout(window._vsListeningCueTimer);window._vsListeningCueTimer=null;}
     promoteListeningCue();
@@ -5585,6 +5594,24 @@ function _vsRestartRec(){
   try{_vsRec.start();}catch(e){clearTimeout(t);_vsSet('idle');setTimeout(function(){if(voiceMode&&_vs==='idle')_vsListen();},1000);}
 }
 
+function _vsPrewarmRec(){
+  if(_vsPrewarmedRec)return;
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window))return;
+  try{
+    var SpeechRec=window.SpeechRecognition||window.webkitSpeechRecognition;
+    var rec=new SpeechRec();
+    rec.continuous=false;
+    rec.interimResults=true;
+    rec.lang=currentLang||'en-US';
+    rec.maxAlternatives=1;
+    _vsPrewarmedRec=rec;
+    console.log('[VOICE] pre-warmed SpeechRecognition during TTS');
+  }catch(e){
+    console.warn('[VOICE] pre-warm failed:',e);
+    _vsPrewarmedRec=null;
+  }
+}
+
 function _vsHandleSilentMicMute(){
   // WebKit Bug #218815: iOS silently muted the getUserMedia audio track.
   // No error fires, recognizer thinks it's listening but no audio comes in.
@@ -5638,6 +5665,7 @@ function _vsStop(){
   isListening=false;
   if(window._vsWatchdog){clearTimeout(window._vsWatchdog);window._vsWatchdog=null;}
   _vsRebuildCount=0;
+  _vsPrewarmedRec=null;
   var retryBtn=document.getElementById('voiceRetryBtn');
   if(retryBtn)retryBtn.style.display='none';
   if(_vsRec){
@@ -5672,13 +5700,17 @@ function _vsSpeak(){
     if(voiceMode){
       setTimeout(function(){
         if(voiceMode&&_vs==='idle')_vsListen();
-      },1500);
+      },400);
     }
     return;
   }
   _vsSet('speaking');
   window._audioPlaying=true;
   isMikeSpeaking=true;
+  // Pre-warm next SpeechRecognition during TTS playback so the gap after
+  // 'ended' shrinks. Construction only — .start() waits until 'ended' to
+  // avoid WebKit Bug #218815 audio-session conflict.
+  if(voiceMode)_vsPrewarmRec();
   var chunk=_vsQueue.shift();
   var micBtn=document.getElementById('micBtn');
   var stopBtn=document.getElementById('stopSpeakBtn');

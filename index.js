@@ -188,7 +188,7 @@ app.post('/api/auth/signup', async (req, res) => {
   if (!SUPABASE_URL) {
     // Fallback: return success without DB (beta mode)
     return res.json({
-      user: { name, email, company: company||'', role: role||'contractor', plan: 'trial', trialStart: Date.now(), usageCount: 0 },
+      user: { name, email, company: company||'', role: role||'contractor', plan: 'beta', trialStart: Date.now(), usageCount: 0 },
       token: Buffer.from(JSON.stringify({email, name, ts: Date.now()})).toString('base64'),
     });
   }
@@ -209,7 +209,7 @@ app.post('/api/auth/signup', async (req, res) => {
       password_salt: salt,
       company: company?.trim() || '',
       role: role || 'contractor',
-      plan: 'trial',
+      plan: 'beta',
       trial_start: now,
       usage_count: 0,
       created_at: now,

@@ -3,6 +3,11 @@
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const rateLimit = require('express-rate-limit');
+const cors = require('cors');
+const helmet = require('helmet');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,7 +26,17 @@ const STRIPE_PRICE_PRO       = process.env.STRIPE_PRICE_PRO;
 const STRIPE_PRICE_TEAM      = process.env.STRIPE_PRICE_TEAM;
 const APP_URL = process.env.APP_URL || 'https://nodejs-production-cb99f.up.railway.app';
 
+// JWT_SECRET signs every auth token. Must be set in Railway env vars — a missing
+// secret means tokens from a previous deploy would be accepted, which is worse
+// than refusing to start.
+const JWT_SECRET = process.env.JWT_SECRET;
+
 if (!ANTHROPIC_API_KEY) { console.error('FATAL: ANTHROPIC_API_KEY not set'); process.exit(1); }
+if (!JWT_SECRET) { console.error('FATAL: JWT_SECRET not set'); process.exit(1); }
+
+// bcrypt cost factor — 12 rounds is ~250ms on modern hardware, which is painful
+// enough for attackers while imperceptible to users logging in.
+const BCRYPT_ROUNDS = 12;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 let globalActive = 0;
@@ -63,20 +78,134 @@ async function supabase(method, table, body, query = '') {
   return res.json().catch(()=>null);
 }
 
-// Hash password with SHA-256 + salt
-function hashPassword(password, salt) {
-  const s = salt || crypto.randomBytes(16).toString('hex');
-  const hash = crypto.createHmac('sha256', s).update(password).digest('hex');
-  return { hash, salt: s };
+// ── PASSWORD HASHING ──────────────────────────────────────────────────────────
+// bcrypt is intentionally slow — designed to resist GPU cracking.
+// SHA-256 HMAC (the old approach) is fast by design and GPU-crackable.
+// On first successful login with old hash format, we transparently upgrade the
+// stored hash to bcrypt so users don't need a forced password reset.
+async function hashPassword(password) {
+  return bcrypt.hash(password, BCRYPT_ROUNDS);
 }
 
-function verifyPassword(password, hash, salt) {
-  const { hash: h } = hashPassword(password, salt);
+async function verifyPassword(password, storedHash) {
+  // Detect legacy SHA-256 HMAC format: "hexhash:hexsalt" (both 64 and 32 hex chars)
+  // Legacy format was stored as separate password_hash and password_salt columns.
+  // This function only receives the bcrypt hash; legacy verification is handled
+  // inline in signin where we have access to both columns.
+  return bcrypt.compare(password, storedHash);
+}
+
+// Verify a legacy SHA-256 HMAC password (used during transparent migration)
+function verifyLegacyPassword(password, hash, salt) {
+  const h = crypto.createHmac('sha256', salt).update(password).digest('hex');
   return h === hash;
 }
 
-// ── MIDDLEWARE ────────────────────────────────────────────────────────────────
-// Stripe webhook needs raw body — must be before express.json
+// ── JWT AUTH ──────────────────────────────────────────────────────────────────
+// Tokens are HS256 JWTs, signed with JWT_SECRET. 30-day expiry.
+// Payload: { id, email } — minimal surface area.
+function signToken(user) {
+  return jwt.sign(
+    { id: user.id, email: user.email },
+    JWT_SECRET,
+    { expiresIn: '30d', algorithm: 'HS256' }
+  );
+}
+
+// ── AUTH MIDDLEWARE ───────────────────────────────────────────────────────────
+// Single place to verify tokens — apply to every protected route.
+// Routes receive req.user = { id, email } after passing through this.
+// Previously each route decoded a base64 token inline — one bug there meant
+// every route had the same bug. One middleware means one place to audit.
+function authenticateToken(req, res, next) {
+  // Support token in Authorization header (Bearer <token>) or request body.
+  // Body-based token is kept for backwards compatibility with existing frontend.
+  const authHeader = req.headers['authorization'];
+  const token = (authHeader && authHeader.startsWith('Bearer '))
+    ? authHeader.slice(7)
+    : req.body?.token || req.query?.token;
+
+  if (!token) return res.status(401).json({ error: 'Authentication required' });
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
+    req.user = { id: decoded.id, email: decoded.email };
+    next();
+  } catch (err) {
+    // jwt.verify throws JsonWebTokenError, TokenExpiredError, NotBeforeError
+    const msg = err.name === 'TokenExpiredError' ? 'Session expired — please sign in again' : 'Invalid token';
+    return res.status(401).json({ error: msg });
+  }
+}
+
+// Admin-only gate — always follows authenticateToken so req.user is set.
+// Checks role === 'admin' in the DB; plan field is billing data, not auth level.
+async function requireAdmin(req, res, next) {
+  if (!SUPABASE_URL) return next(); // no DB = dev mode, allow
+  try {
+    const admins = await supabase('GET', 'users', null,
+      `?email=eq.${encodeURIComponent(req.user.email)}&select=role`);
+    if (!admins || !admins[0] || admins[0].role !== 'admin')
+      return res.status(403).json({ error: 'Access denied' });
+    next();
+  } catch (err) {
+    console.error('Admin check error:', err.message);
+    res.status(500).json({ error: 'Authorization check failed' });
+  }
+}
+
+// ── INPUT VALIDATION HELPERS ──────────────────────────────────────────────────
+// Lightweight validation without a full schema library — keeps the dep count low.
+// Validates that email is a real-looking address before it ever touches a DB query.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function isValidEmail(e) { return typeof e === 'string' && EMAIL_RE.test(e.trim()); }
+
+// UUIDs from Supabase — reject anything that isn't one before it hits a query string.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isValidUUID(id) { return typeof id === 'string' && UUID_RE.test(id); }
+
+// Sanitise a string to only printable non-special chars for use in query strings.
+// This is belt-and-suspenders — Supabase parameterises on their end, but we
+// validate before we ever construct the query string.
+function sanitiseString(s, maxLen = 255) {
+  if (typeof s !== 'string') return null;
+  const t = s.trim().substring(0, maxLen);
+  // Reject strings containing Supabase PostgREST injection patterns
+  if (/[<>'"`;{}()|\\]/.test(t)) return null;
+  return t;
+}
+
+// ── RATE LIMITERS ─────────────────────────────────────────────────────────────
+// Auth endpoints get the tightest limit — they're the primary brute-force surface.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,   // 15 minutes
+  max: 10,                      // 10 attempts per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts — please wait 15 minutes before trying again' },
+});
+
+// AI endpoint: more generous but still rate-limited per IP to control costs.
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,          // 1 minute
+  max: 20,                       // 20 AI requests per IP per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'AI rate limit exceeded — please wait a moment' },
+});
+
+// Global fallback — catches anything that slips through endpoint-specific limits.
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,          // 1 minute
+  max: 100,                      // 100 requests per IP per minute globally
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests — please slow down' },
+});
+
+// ── MIDDLEWARE STACK ──────────────────────────────────────────────────────────
+// CRITICAL ORDER: Stripe webhook MUST be registered before express.json() because
+// it needs the raw body for HMAC signature verification. JSON parsing corrupts it.
 app.post('/api/webhook', express.raw({type: 'application/json'}), async (req, res) => {
   if (!STRIPE_SECRET_KEY || !STRIPE_WEBHOOK_SECRET) return res.json({ok:true});
   
@@ -84,13 +213,22 @@ app.post('/api/webhook', express.raw({type: 'application/json'}), async (req, re
   let event;
   
   try {
-    // Manual webhook signature verification (no stripe npm needed)
+    // Manual webhook signature verification (no stripe npm needed).
+    // Stripe signs: HMAC-SHA256( t=<timestamp>.<raw_body>, STRIPE_WEBHOOK_SECRET )
     const payload = req.body.toString();
     const elements = sig.split(',');
     const timestamp = elements.find(e=>e.startsWith('t=')).split('=')[1];
     const signatures = elements.filter(e=>e.startsWith('v1=')).map(e=>e.split('=')[1]);
     const signedPayload = `${timestamp}.${payload}`;
     const expectedSig = crypto.createHmac('sha256', STRIPE_WEBHOOK_SECRET).update(signedPayload).digest('hex');
+
+    // Stripe recommends also validating the timestamp to reject replayed webhooks
+    // (within 5 min tolerance). See: https://stripe.com/docs/webhooks/signatures
+    const webhookAge = Math.floor(Date.now() / 1000) - parseInt(timestamp, 10);
+    if (webhookAge > 300) {
+      console.error('Webhook timestamp too old:', webhookAge, 'seconds');
+      return res.status(400).json({ error: 'Webhook expired' });
+    }
     
     if (!signatures.includes(expectedSig)) {
       console.error('Webhook signature mismatch');
@@ -147,13 +285,53 @@ app.post('/api/webhook', express.raw({type: 'application/json'}), async (req, re
   res.json({received: true});
 });
 
+// Global rate limit applies to everything except the webhook (which has its own sig check)
+app.use(globalLimiter);
+
 app.use(express.json({ limit: '25mb' }));
+
+// CORS — only allow our own app origin (and localhost in dev).
+// Without this, any website can make credentialed cross-origin requests to our API.
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow same-origin (no origin header) and our known origins
+    const allowed = [APP_URL, 'http://localhost:3000', 'http://127.0.0.1:3000'];
+    if (!origin || allowed.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+}));
+
+// Helmet sets ~14 security headers by default (HSTS, CSP, referrer-policy, etc.)
+// CSP is configured to allow the external services this app calls from the client side.
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],      // Needed: inline JS in index.html (no bundler)
+      styleSrc: ["'self'", "'unsafe-inline'"],        // Needed: inline CSS
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: [
+        "'self'",
+        'https://api.anthropic.com',
+        'https://api.elevenlabs.io',
+        'https://js.stripe.com',
+        'https://api.stripe.com',
+        APP_URL,
+      ],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+    },
+  },
+  // HSTS: tell browsers to always use HTTPS for 1 year
+  hsts: { maxAge: 31536000, includeSubDomains: true },
+}));
+
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h', etag: true, lastModified: true }));
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  next();
-});
+
+// Request logger — stays intact
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/'))
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} active=${globalActive}`);
@@ -161,6 +339,8 @@ app.use((req, res, next) => {
 });
 
 // ── HEALTH ────────────────────────────────────────────────────────────────────
+// Public endpoint — intentionally no auth so load balancers and Railway can
+// check it without credentials. Does NOT expose env var values, just readiness flags.
 app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
@@ -175,40 +355,46 @@ app.get('/api/health', (req, res) => {
 });
 
 // ── AUTH: SIGN UP ─────────────────────────────────────────────────────────────
-app.post('/api/auth/signup', async (req, res) => {
+app.post('/api/auth/signup', authLimiter, async (req, res) => {
   const { name, email, password, company, role } = req.body;
   
   if (!name || !email || !password)
     return res.status(400).json({ error: 'Name, email and password required' });
   if (password.length < 8)
     return res.status(400).json({ error: 'Password must be at least 8 characters' });
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+  if (!isValidEmail(email))
     return res.status(400).json({ error: 'Invalid email address' });
+
+  // Validate optional fields — role must be a known value
+  const validRoles = ['contractor', 'homeowner', 'technician', 'admin'];
+  const userRole = validRoles.includes(role) ? role : 'contractor';
 
   if (!SUPABASE_URL) {
     // Fallback: return success without DB (beta mode)
     return res.json({
-      user: { name, email, company: company||'', role: role||'contractor', plan: 'beta', trialStart: Date.now(), usageCount: 0 },
-      token: Buffer.from(JSON.stringify({email, name, ts: Date.now()})).toString('base64'),
+      user: { name, email, company: company||'', role: userRole, plan: 'beta', trialStart: Date.now(), usageCount: 0 },
+      token: signToken({ id: 'beta', email }),
     });
   }
 
   try {
     // Check if user exists
-    const existing = await supabase('GET', 'users', null, `?email=eq.${encodeURIComponent(email)}&select=id`);
+    const existing = await supabase('GET', 'users', null, `?email=eq.${encodeURIComponent(email.toLowerCase().trim())}&select=id`);
     if (existing && existing.length > 0)
       return res.status(409).json({ error: 'An account with this email already exists' });
 
-    const { hash, salt } = hashPassword(password);
+    // bcrypt hash — replaces SHA-256 HMAC
+    const passwordHash = await hashPassword(password);
     const now = new Date().toISOString();
     
     const users = await supabase('POST', 'users', {
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      password_hash: hash,
-      password_salt: salt,
+      password_hash: passwordHash,
+      // password_salt column is no longer used (bcrypt stores the salt in the hash)
+      // but we keep the column in the DB to avoid a migration on existing rows
       company: company?.trim() || '',
-      role: role || 'contractor',
+      role: userRole,
       plan: 'beta',
       trial_start: now,
       usage_count: 0,
@@ -220,7 +406,8 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(500).json({ error: 'Failed to create account' });
 
     const user = users[0];
-    const token = Buffer.from(JSON.stringify({id: user.id, email: user.email, ts: Date.now()})).toString('base64');
+    // Issue a signed JWT — the client treats this opaquely, same as before
+    const token = signToken(user);
     
     res.json({
       user: {
@@ -242,10 +429,12 @@ app.post('/api/auth/signup', async (req, res) => {
 });
 
 // ── AUTH: SIGN IN ─────────────────────────────────────────────────────────────
-app.post('/api/auth/signin', async (req, res) => {
+app.post('/api/auth/signin', authLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).json({ error: 'Email and password required' });
+  if (!isValidEmail(email))
+    return res.status(400).json({ error: 'Invalid email address' });
 
   if (!SUPABASE_URL) {
     return res.status(404).json({ error: 'Account not found' });
@@ -260,14 +449,34 @@ app.post('/api/auth/signin', async (req, res) => {
 
     const user = users[0];
     
-    if (!verifyPassword(password, user.password_hash, user.password_salt))
+    // Transparent password hash migration: if the stored hash looks like a bcrypt hash
+    // (starts with $2b$ or $2a$) use bcrypt.compare; otherwise fall through to legacy
+    // HMAC path and re-hash with bcrypt on success so future logins use the new algo.
+    let passwordOk = false;
+    const isBcrypt = typeof user.password_hash === 'string' && user.password_hash.startsWith('$2');
+
+    if (isBcrypt) {
+      passwordOk = await bcrypt.compare(password, user.password_hash);
+    } else {
+      // Legacy SHA-256 HMAC path — only reached if the account was created before this deploy
+      passwordOk = verifyLegacyPassword(password, user.password_hash, user.password_salt);
+      if (passwordOk) {
+        // Upgrade to bcrypt silently so next login hits the fast path
+        const newHash = await hashPassword(password);
+        await supabase('PATCH', 'users', { password_hash: newHash }, `?id=eq.${user.id}`)
+          .catch(e => console.error('Hash upgrade failed:', e.message));
+        console.log(`Upgraded password hash for user: ${user.email}`);
+      }
+    }
+    
+    if (!passwordOk)
       return res.status(401).json({ error: 'Incorrect password' });
 
     // Update last login
     await supabase('PATCH', 'users', { last_login: new Date().toISOString() }, 
       `?id=eq.${user.id}`);
 
-    const token = Buffer.from(JSON.stringify({id: user.id, email: user.email, ts: Date.now()})).toString('base64');
+    const token = signToken(user);
     
     res.json({
       user: {
@@ -297,14 +506,12 @@ app.post('/api/auth/signin', async (req, res) => {
 });
 
 // ── AUTH: UPDATE PROFILE ──────────────────────────────────────────────────────
-app.post('/api/auth/profile', async (req, res) => {
-  const { token, updates } = req.body;
-  if (!token || !updates) return res.status(400).json({ error: 'Missing data' });
+// authenticateToken provides req.user — no more manual Buffer.from decode
+app.post('/api/auth/profile', authenticateToken, async (req, res) => {
+  const { updates } = req.body;
+  if (!updates) return res.status(400).json({ error: 'Missing updates' });
 
   try {
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
-    if (!decoded.email) return res.status(401).json({ error: 'Invalid token' });
-
     if (!SUPABASE_URL) return res.json({ ok: true });
 
     const allowed = {
@@ -325,7 +532,8 @@ app.post('/api/auth/profile', async (req, res) => {
     // Remove undefined values
     Object.keys(allowed).forEach(k => allowed[k] === undefined && delete allowed[k]);
 
-    await supabase('PATCH', 'users', allowed, `?email=eq.${encodeURIComponent(decoded.email)}`);
+    // Use req.user.email (from verified JWT) — never trust client-supplied identity
+    await supabase('PATCH', 'users', allowed, `?email=eq.${encodeURIComponent(req.user.email)}`);
     res.json({ ok: true });
   } catch(err) {
     console.error('Profile update error:', err.message);
@@ -334,9 +542,10 @@ app.post('/api/auth/profile', async (req, res) => {
 });
 
 // ── AUTH: RESET PASSWORD ──────────────────────────────────────────────────────
-app.post('/api/auth/reset', async (req, res) => {
+app.post('/api/auth/reset', authLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
+  if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email address' });
   // In production, send a real reset email
   // For now, acknowledge the request
   console.log(`Password reset requested for: ${email}`);
@@ -344,26 +553,36 @@ app.post('/api/auth/reset', async (req, res) => {
 });
 
 // ── AUTH: CHANGE PASSWORD ─────────────────────────────────────────────────────
-app.post('/api/auth/change-password', async (req, res) => {
-  const { token, oldPassword, newPassword } = req.body;
-  if (!token || !oldPassword || !newPassword)
+app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  if (!oldPassword || !newPassword)
     return res.status(400).json({ error: 'Missing required fields' });
   if (newPassword.length < 8)
     return res.status(400).json({ error: 'New password must be at least 8 characters' });
 
   try {
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
     if (!SUPABASE_URL) return res.json({ ok: true });
 
-    const users = await supabase('GET', 'users', null, `?email=eq.${encodeURIComponent(decoded.email)}&select=*`);
+    // req.user.email comes from the verified JWT — no client-supplied email trusted
+    const users = await supabase('GET', 'users', null, `?email=eq.${encodeURIComponent(req.user.email)}&select=*`);
     if (!users || !users[0]) return res.status(404).json({ error: 'User not found' });
 
     const user = users[0];
-    if (!verifyPassword(oldPassword, user.password_hash, user.password_salt))
+
+    // Support both bcrypt and legacy HMAC hashes during the migration window
+    let passwordOk = false;
+    const isBcrypt = typeof user.password_hash === 'string' && user.password_hash.startsWith('$2');
+    if (isBcrypt) {
+      passwordOk = await bcrypt.compare(oldPassword, user.password_hash);
+    } else {
+      passwordOk = verifyLegacyPassword(oldPassword, user.password_hash, user.password_salt);
+    }
+
+    if (!passwordOk)
       return res.status(401).json({ error: 'Current password is incorrect' });
 
-    const { hash, salt } = hashPassword(newPassword);
-    await supabase('PATCH', 'users', { password_hash: hash, password_salt: salt }, `?id=eq.${user.id}`);
+    const newHash = await hashPassword(newPassword);
+    await supabase('PATCH', 'users', { password_hash: newHash }, `?id=eq.${user.id}`);
     res.json({ ok: true });
   } catch(err) {
     console.error('Change password error:', err.message);
@@ -375,6 +594,7 @@ app.post('/api/auth/change-password', async (req, res) => {
 app.post('/api/billing/checkout', async (req, res) => {
   const { plan, email, name } = req.body;
   if (!plan || !email) return res.status(400).json({ error: 'Plan and email required' });
+  if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email address' });
   if (!STRIPE_SECRET_KEY) return res.status(503).json({ error: 'Billing not configured' });
 
   const priceMap = {
@@ -423,16 +643,14 @@ app.post('/api/billing/checkout', async (req, res) => {
 });
 
 // ── STRIPE: CANCEL SUBSCRIPTION ──────────────────────────────────────────────
-app.post('/api/billing/cancel', async (req, res) => {
-  const { token } = req.body;
-  if (!token) return res.status(400).json({ error: 'Token required' });
+app.post('/api/billing/cancel', authenticateToken, async (req, res) => {
   if (!STRIPE_SECRET_KEY) return res.status(503).json({ error: 'Billing not configured' });
 
   try {
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
     if (!SUPABASE_URL) return res.json({ ok: true });
 
-    const users = await supabase('GET', 'users', null, `?email=eq.${encodeURIComponent(decoded.email)}&select=stripe_subscription_id`);
+    // req.user.email from verified JWT — not from client body
+    const users = await supabase('GET', 'users', null, `?email=eq.${encodeURIComponent(req.user.email)}&select=stripe_subscription_id`);
     if (!users || !users[0]?.stripe_subscription_id)
       return res.status(404).json({ error: 'No active subscription found' });
 
@@ -459,6 +677,7 @@ app.post('/api/billing/cancel', async (req, res) => {
 app.post('/api/billing/notify', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
+  if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email address' });
   console.log(`Billing notify request: ${email}`);
   // Store in DB if available
   if (SUPABASE_URL) {
@@ -469,19 +688,11 @@ app.post('/api/billing/notify', async (req, res) => {
 });
 
 // ── ADMIN: GET ALL USERS ──────────────────────────────────────────────────────
-app.get('/api/admin/users', async (req, res) => {
-  const { token } = req.query;
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
-
+// authenticateToken verifies the JWT; requireAdmin checks role === 'admin' in DB.
+// Previously this checked plan === 'admin' — plan is billing data, not an auth level.
+app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
     if (!SUPABASE_URL) return res.json({ users: [] });
-
-    // Verify requester is admin
-    const admins = await supabase('GET', 'users', null, `?email=eq.${encodeURIComponent(decoded.email)}&select=role,plan`);
-    if (!admins || !admins[0] || admins[0].plan !== 'admin')
-      return res.status(403).json({ error: 'Access denied' });
-
     const users = await supabase('GET', 'users', null, '?select=id,name,email,company,role,plan,usage_count,created_at,trial_start,last_login&order=created_at.desc&limit=500');
     res.json({ users: users || [] });
   } catch(err) {
@@ -491,19 +702,16 @@ app.get('/api/admin/users', async (req, res) => {
 });
 
 // ── ADMIN: DELETE USER ────────────────────────────────────────────────────────
-app.delete('/api/admin/users/:email', async (req, res) => {
-  const { token } = req.query;
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
-
+app.delete('/api/admin/users/:email', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
     if (!SUPABASE_URL) return res.json({ ok: true });
 
-    const admins = await supabase('GET', 'users', null, `?email=eq.${encodeURIComponent(decoded.email)}&select=plan`);
-    if (!admins || !admins[0] || admins[0].plan !== 'admin')
-      return res.status(403).json({ error: 'Access denied' });
+    // Validate target email before letting it touch a DB query string
+    const targetEmail = req.params.email;
+    if (!isValidEmail(targetEmail))
+      return res.status(400).json({ error: 'Invalid email parameter' });
 
-    await supabase('DELETE', 'users', null, `?email=eq.${encodeURIComponent(req.params.email)}`);
+    await supabase('DELETE', 'users', null, `?email=eq.${encodeURIComponent(targetEmail)}`);
     res.json({ ok: true });
   } catch(err) {
     console.error('Delete user error:', err.message);
@@ -516,6 +724,11 @@ app.delete('/api/admin/users/:email', async (req, res) => {
 app.get('/api/weather', async (req, res) => {
   const { lat, lon } = req.query;
   if (!lat || !lon) return res.status(400).json({ error: 'lat and lon required' });
+
+  // Validate lat/lon are numeric — reject anything that could be an injection
+  if (isNaN(parseFloat(lat)) || isNaN(parseFloat(lon)))
+    return res.status(400).json({ error: 'lat and lon must be numeric' });
+
   try {
     // Strategy: Try NWS (real station observations) first, fall back to Open-Meteo
     let temp_f, feels_like_f, humidity, wind_mph, condition;
@@ -597,6 +810,7 @@ app.get('/api/weather', async (req, res) => {
 app.get('/api/customers', async (req, res) => {
   const { user_id } = req.query;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
   const rows = await supabase('GET', 'customers', null,
     `?user_id=eq.${encodeURIComponent(user_id)}&order=name`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
@@ -606,6 +820,8 @@ app.get('/api/customers', async (req, res) => {
 app.post('/api/customers', async (req, res) => {
   const { user_id, id, ...fields } = req.body;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
+  if (id && !isValidUUID(id)) return res.status(400).json({ error: 'Invalid id' });
   const payload = { ...fields, updated_at: new Date() };
   const rows = id
     ? await supabase('PATCH', 'customers', payload, `?id=eq.${encodeURIComponent(id)}`)
@@ -615,6 +831,7 @@ app.post('/api/customers', async (req, res) => {
 });
 
 app.delete('/api/customers/:id', async (req, res) => {
+  if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
   const result = await supabase('DELETE', 'customers', null,
     `?id=eq.${encodeURIComponent(req.params.id)}`);
   if (result === null) return res.status(500).json({ error: 'Database error' });
@@ -625,6 +842,7 @@ app.delete('/api/customers/:id', async (req, res) => {
 app.get('/api/jobs', async (req, res) => {
   const { user_id } = req.query;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
   const rows = await supabase('GET', 'jobs', null,
     `?user_id=eq.${encodeURIComponent(user_id)}&order=date.desc`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
@@ -634,6 +852,7 @@ app.get('/api/jobs', async (req, res) => {
 app.post('/api/jobs', async (req, res) => {
   const { user_id, ...fields } = req.body;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
   const rows = await supabase('POST', 'jobs', { user_id, ...fields });
   if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save job' });
   res.json({ job: rows[0] });
@@ -643,6 +862,7 @@ app.post('/api/jobs', async (req, res) => {
 app.get('/api/refrigerant-log', async (req, res) => {
   const { user_id } = req.query;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
   const rows = await supabase('GET', 'refrigerant_log', null,
     `?user_id=eq.${encodeURIComponent(user_id)}&order=date.desc`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
@@ -652,6 +872,7 @@ app.get('/api/refrigerant-log', async (req, res) => {
 app.post('/api/refrigerant-log', async (req, res) => {
   const { user_id, ...fields } = req.body;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
   const rows = await supabase('POST', 'refrigerant_log', { user_id, ...fields });
   if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save log' });
   res.json({ log: rows[0] });
@@ -661,6 +882,7 @@ app.post('/api/refrigerant-log', async (req, res) => {
 app.get('/api/reminders', async (req, res) => {
   const { user_id } = req.query;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
   const rows = await supabase('GET', 'reminders', null,
     `?user_id=eq.${encodeURIComponent(user_id)}&order=due_date`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
@@ -670,12 +892,14 @@ app.get('/api/reminders', async (req, res) => {
 app.post('/api/reminders', async (req, res) => {
   const { user_id, ...fields } = req.body;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
   const rows = await supabase('POST', 'reminders', { user_id, ...fields });
   if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save reminder' });
   res.json({ reminder: rows[0] });
 });
 
 app.patch('/api/reminders/:id', async (req, res) => {
+  if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
   const rows = await supabase('PATCH', 'reminders', req.body,
     `?id=eq.${encodeURIComponent(req.params.id)}`);
   if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to update reminder' });
@@ -686,6 +910,7 @@ app.patch('/api/reminders/:id', async (req, res) => {
 app.get('/api/knowledge', async (req, res) => {
   const { user_id } = req.query;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
   const rows = await supabase('GET', 'mike_knowledge', null,
     `?user_id=eq.${encodeURIComponent(user_id)}&order=created_at.desc&limit=100`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
@@ -695,13 +920,14 @@ app.get('/api/knowledge', async (req, res) => {
 app.post('/api/knowledge', async (req, res) => {
   const { user_id, fact, topic } = req.body;
   if (!user_id || !fact) return res.status(400).json({ error: 'user_id and fact required' });
+  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
   const rows = await supabase('POST', 'mike_knowledge', { user_id, fact, topic });
   if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save knowledge' });
   res.json({ knowledge: rows[0] });
 });
 
 // ── AI ────────────────────────────────────────────────────────────────────────
-app.post('/api/ai', async (req, res) => {
+app.post('/api/ai', aiLimiter, async (req, res) => {
   if (globalActive >= MAX_GLOBAL)
     return res.status(503).json({ error: 'Server at capacity — please try again in a moment.' });
 

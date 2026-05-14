@@ -5639,6 +5639,18 @@ function mikeSayBrowser(clean){
 function stopMikeSpeaking(){
   isMikeSpeaking=false;
   if(mikeAudio){try{mikeAudio.pause();}catch(e){}mikeAudio=null;}
+  if(window._mikeAudioEl){
+    try{window._mikeAudioEl.onended=null;window._mikeAudioEl.onerror=null;}catch(e){}
+    try{window._mikeAudioEl.pause();}catch(e){}
+    try{
+      var prevSrc=window._mikeAudioEl.src;
+      if(prevSrc&&prevSrc.indexOf('blob:')===0)URL.revokeObjectURL(prevSrc);
+    }catch(e){}
+    try{window._mikeAudioEl.removeAttribute('src');window._mikeAudioEl.load();}catch(e){}
+  }
+  if(typeof updateCameraMicState==='function'&&typeof cameraActive!=='undefined'&&cameraActive){
+    try{updateCameraMicState('idle');}catch(e){}
+  }
   if(window.speechSynthesis)window.speechSynthesis.cancel();
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
   if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';micBtn.style.background='#00C2B2';}

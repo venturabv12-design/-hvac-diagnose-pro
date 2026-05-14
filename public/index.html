@@ -4474,8 +4474,8 @@ async function sendChat(){
   if(text.length>8000){showToast('Message too long — please shorten it.','error',3000);return;}
   if(!text&&!chatAttachment)return;
   // Stop Mike speaking when user sends a new message
-  stopMikeSpeaking();
   chatSending=true;
+  stopMikeSpeaking();
   var btn=document.getElementById('chatSendBtn');btn.disabled=true;
   input.value='';input.style.height='auto';
   var hadAttachment=!!chatAttachment;
@@ -5644,9 +5644,9 @@ function stopMikeSpeaking(){
   if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';micBtn.style.background='#00C2B2';}
   if(stopBtn)stopBtn.style.display='none';
   var delay=isSafari?600:300;
-  if(voiceMode&&!isListening){
+  if(voiceMode&&!isListening&&!chatSending){
     setVoiceStatus('Go ahead…','');
-    setTimeout(function(){if(voiceMode&&!isListening)startListening();},delay);
+    setTimeout(function(){if(voiceMode&&!isListening&&!chatSending)startListening();},delay);
   }
   if(typeof cameraActive!=='undefined'&&cameraActive&&!cameraListening){
     setTimeout(function(){if(cameraActive&&!cameraListening)startCameraListen();},delay);

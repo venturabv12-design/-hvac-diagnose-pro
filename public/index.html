@@ -5397,7 +5397,17 @@ function toggleVoiceMode(){
   if(vbar)vbar.style.display='flex';
   if(vbtn)vbtn.classList.add('voice-mode-active');
   if(vlbl){vlbl.style.color='#00C2B2';vlbl.textContent='Voice ON';}
-  setVoiceStatus('Tap mic to start','');
+  // Greet on first open. unlockAudioSafe (called above on this gesture) resumed
+  // the AudioContext, so mikeSay can play through it. If resuming mid-conversation,
+  // auto-engage mic so the user can talk immediately.
+  if(chatHistory.length===0){
+    var greet={en:"Hey, I'm Mike. 25 years in the field — I've seen everything. What are you dealing with?",es:"Hola, soy Mike. ¿En qué puedo ayudarte?",zh:"我是Mike，有什么需要帮忙的？",vi:"Mike đây. Tôi có thể giúp gì?",fr:"C'est Mike. Sur quoi travaillez-vous?",pt:"Mike aqui. Em que posso ajudar?"};
+    setVoiceStatus('Mike is starting…','');
+    setTimeout(function(){if(voiceMode)mikeSay(greet[currentLang]||greet.en);},200);
+  } else {
+    setVoiceStatus('Listening…','Go ahead…');
+    setTimeout(function(){if(voiceMode&&!isListening&&!isMikeSpeaking)startListening();},300);
+  }
 }
 
 function unlockAudioSafe(){
@@ -5543,10 +5553,6 @@ function stopListening(){
 function toggleMic(){
   if(isListening){stopListening();return;}
   if(isMikeSpeaking){stopMikeSpeaking();return;}
-  if(chatHistory.length===0&&voiceMode&&!micGreetingPending){
-    var g={en:"Hey, I'm Mike. 25 years in the field — I've seen everything. What are you dealing with?",es:"Hola, soy Mike. ¿En qué puedo ayudarte?",zh:"我是Mike，有什么需要帮忙的？",vi:"Mike đây. Tôi có thể giúp gì?",fr:"C'est Mike. Sur quoi travaillez-vous?",pt:"Mike aqui. Em que posso ajudar?"};
-    micGreetingPending=g[currentLang]||g.en;
-  }
   startListening();
 }
 

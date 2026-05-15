@@ -1282,6 +1282,12 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <button class="auth-btn" id="siBtn" onclick="authSignIn()">Sign In</button>
     </div>
     <div id="authUpForm" style="display:none">
+      <div class="auth-field"><label class="auth-lbl">I am a...</label>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button type="button" id="roleHomeBtn" onclick="selectRoleInline('homeowner')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,194,178,.15);">🏠 Homeowner</button>
+          <button type="button" id="roleProBtn" onclick="selectRoleInline('contractor')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,194,178,.15);">🔧 Contractor / Tech</button>
+        </div>
+      </div>
       <div class="auth-field"><label class="auth-lbl">Full Name</label><input class="auth-inp" type="text" id="suName" placeholder="Your name" autocomplete="name" onkeydown="if(event.key==='Enter')authSignUp()"/></div>
       <div class="auth-field"><label class="auth-lbl">Email</label><input class="auth-inp" type="email" id="suEmail" placeholder="you@company.com" autocomplete="email" onkeydown="if(event.key==='Enter')authSignUp()"/></div>
       <div class="auth-field"><label class="auth-lbl">Password</label><input class="auth-inp" type="password" id="suPass" placeholder="Min 8 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')authSignUp()"/></div>
@@ -1940,32 +1946,27 @@ var TZ_PASS='173028';
 // ── ROLE SELECTION ─────────────────────────────────────────────
 var pendingRole = null;
 
+// selectRoleInline — used by the inline role picker buttons in the signup form
+// Uses native <button> elements so iOS Safari fires onclick reliably
+function selectRoleInline(role) {
+  pendingRole = role;
+  var homeBtn = document.getElementById('roleHomeBtn');
+  var proBtn = document.getElementById('roleProBtn');
+  var active = 'border:2px solid #00C2B2;background:#0a1f1d;color:#00C2B2;';
+  var inactive = 'border:2px solid #2a2a2a;background:#0d0d0d;color:#888;';
+  if (homeBtn) homeBtn.setAttribute('style', homeBtn.getAttribute('style').replace(/border:[^;]+;background:[^;]+;color:[^;]+;/, '') + (role==='homeowner' ? active : inactive));
+  if (proBtn) proBtn.setAttribute('style', proBtn.getAttribute('style').replace(/border:[^;]+;background:[^;]+;color:[^;]+;/, '') + (role==='contractor' ? active : inactive));
+}
+
 function showRoleSelector() {
-  document.getElementById('roleSelector').classList.add('show');
-  document.getElementById('authMainArea').style.display = 'none';
-  // Bind touchend on role cards — onclick on divs is unreliable in iOS Safari fixed overlays
-  ['roleHomeCard','roleProCard'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el && !el._touchBound) {
-      el._touchBound = true;
-      el.addEventListener('touchend', function(e) {
-        e.preventDefault();
-        selectRole(id === 'roleHomeCard' ? 'homeowner' : 'contractor', el);
-      }, {passive: false});
-    }
-  });
-  // Also ensure Continue button fires on touch
-  var continueBtn = document.getElementById('roleContinueBtn');
-  if (continueBtn && !continueBtn._touchBound) {
-    continueBtn._touchBound = true;
-    continueBtn.addEventListener('touchend', function(e) {
-      e.preventDefault();
-      roleConfirm();
-    }, {passive: false});
-  }
+  // Legacy — no longer used. Role selection is now inline in authUpForm.
 }
 
 function hideRoleSelector() {
+  // Legacy — no longer used.
+}
+
+function hideRoleSelectorOld() {
   document.getElementById('roleSelector').classList.remove('show');
   document.getElementById('authMainArea').style.display = 'block';
 }
@@ -2012,32 +2013,8 @@ function roleConfirm() {
 // Override authTab to show role selector when tapping 'Create Account' if role not set
 var _origAuthTab = null;
 function initRoleFlow() {
-  // Intercept Create Account tab — show role selector first if role not yet chosen
-  var tabs = document.querySelectorAll('.auth-tab');
-  if (tabs[1]) {
-    // Use touchend + click both, but prevent double-fire
-    var _roleTabHandler = function(e) {
-      if (!pendingRole) {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        showRoleSelector();
-      }
-      // If pendingRole already set, let the tab switch happen normally
-    };
-    tabs[1].addEventListener('touchend', function(e) {
-      if (!pendingRole) {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        showRoleSelector();
-      }
-    }, {passive: false});
-    tabs[1].addEventListener('click', function(e) {
-      if (!pendingRole) {
-        e.stopImmediatePropagation();
-        showRoleSelector();
-      }
-    }, true);
-  }
+  // Role selection is now inline in the signup form — no interception needed.
+  // This function is intentionally empty.
 }
 
 // Apply role to user account after signup
@@ -2165,22 +2142,6 @@ function showPersonalizedWelcome(){
 }
 
 function authTab(t){
-  // If role selector is showing, hide it first
-  var rs=document.getElementById('roleSelector');
-  var ma=document.getElementById('authMainArea');
-  if(rs&&rs.classList.contains('show')){
-    rs.classList.remove('show');
-    if(ma)ma.style.display='block';
-  }
-  // Reset touch bindings when switching tabs so they re-bind fresh
-  if(t==='in'){
-    var rc=document.getElementById('roleHomeCard');
-    var pc=document.getElementById('roleProCard');
-    var cb=document.getElementById('roleContinueBtn');
-    if(rc)rc._touchBound=false;
-    if(pc)pc._touchBound=false;
-    if(cb)cb._touchBound=false;
-  }
   document.querySelectorAll('.auth-tab').forEach(function(b,i){b.classList.toggle('active',(i===0&&t==='in')||(i===1&&t==='up'));});
   document.getElementById('authInForm').style.display=t==='in'?'block':'none';
   document.getElementById('authUpForm').style.display=t==='up'?'block':'none';

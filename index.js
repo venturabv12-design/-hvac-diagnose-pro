@@ -25,6 +25,7 @@ const STRIPE_PRICE_STARTER   = process.env.STRIPE_PRICE_STARTER;
 const STRIPE_PRICE_PRO       = process.env.STRIPE_PRICE_PRO;
 const STRIPE_PRICE_TEAM      = process.env.STRIPE_PRICE_TEAM;
 const APP_URL = process.env.APP_URL || 'https://nodejs-production-cb99f.up.railway.app';
+const RESEND_API_KEY = process.env.RESEND_API_KEY; // Optional — password reset emails
 
 // JWT_SECRET signs every auth token. Must be set in Railway env vars — a missing
 // secret means tokens from a previous deploy would be accepted, which is worse
@@ -203,7 +204,68 @@ const globalLimiter = rateLimit({
   message: { error: 'Too many requests — please slow down' },
 });
 
-// ── MIDDLEWARE STACK ──────────────────────────────────────────────────────────
+// ── EMAIL (Resend) ────────────────────────────────────────────────────────────
+// Sends transactional email via Resend API. No SDK — plain fetch.
+// Gated by RESEND_API_KEY — if not set, logs and returns false silently.
+async function sendEmail({ to, subject, html }) {
+  if (!RESEND_API_KEY) {
+    console.log(`[email skipped — no RESEND_API_KEY] to=${to} subject="${subject}"`);
+    return false;
+  }
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Trazer Intelligence <noreply@trazerintelligence.com>',
+        to,
+        subject,
+        html,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.text().catch(() => '');
+      console.error('Resend error:', res.status, err.substring(0, 200));
+      return false;
+    }
+    console.log(`Email sent: to=${to} subject="${subject}"`);
+    return true;
+  } catch (err) {
+    console.error('Email send error:', err.message);
+    return false;
+  }
+}
+
+// Generate a time-limited password reset token.
+// Token format: base64url( userId + ':' + expiry + ':' + HMAC )
+// Expiry: 1 hour. HMAC prevents forgery without JWT overhead.
+function generateResetToken(userId) {
+  const expiry = Date.now() + 60 * 60 * 1000; // 1 hour
+  const data = `${userId}:${expiry}`;
+  const sig = crypto.createHmac('sha256', JWT_SECRET).update(data).digest('hex');
+  return Buffer.from(`${data}:${sig}`).toString('base64url');
+}
+
+function verifyResetToken(token) {
+  try {
+    const decoded = Buffer.from(token, 'base64url').toString();
+    const parts = decoded.split(':');
+    if (parts.length !== 3) return null;
+    const [userId, expiry, sig] = parts;
+    if (Date.now() > parseInt(expiry, 10)) return null; // expired
+    const data = `${userId}:${expiry}`;
+    const expected = crypto.createHmac('sha256', JWT_SECRET).update(data).digest('hex');
+    if (sig !== expected) return null; // tampered
+    return userId;
+  } catch {
+    return null;
+  }
+}
+
+
 // CRITICAL ORDER: Stripe webhook MUST be registered before express.json() because
 // it needs the raw body for HMAC signature verification. JSON parsing corrupts it.
 app.post('/api/webhook', express.raw({type: 'application/json'}), async (req, res) => {
@@ -370,10 +432,11 @@ app.post('/api/auth/signup', authLimiter, async (req, res) => {
   const userRole = validRoles.includes(role) ? role : 'contractor';
 
   if (!SUPABASE_URL) {
-    // Fallback: return success without DB (beta mode)
+    // Fallback: return success without DB (dev mode — no persistence)
+    const now = Date.now();
     return res.json({
-      user: { name, email, company: company||'', role: userRole, plan: 'beta', trialStart: Date.now(), usageCount: 0 },
-      token: signToken({ id: 'beta', email }),
+      user: { name, email, company: company||'', role: userRole, plan: 'trial', trialStart: now, usageCount: 0 },
+      token: signToken({ id: 'dev', email }),
     });
   }
 
@@ -395,7 +458,7 @@ app.post('/api/auth/signup', authLimiter, async (req, res) => {
       // but we keep the column in the DB to avoid a migration on existing rows
       company: company?.trim() || '',
       role: userRole,
-      plan: 'beta',
+      plan: 'trial',
       trial_start: now,
       usage_count: 0,
       created_at: now,
@@ -546,10 +609,82 @@ app.post('/api/auth/reset', authLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
   if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email address' });
-  // In production, send a real reset email
-  // For now, acknowledge the request
-  console.log(`Password reset requested for: ${email}`);
-  res.json({ ok: true, message: 'If an account exists, a reset email will be sent.' });
+
+  // Always return the same response whether the account exists or not.
+  // This prevents email enumeration — attacker can't learn which emails are registered.
+  const genericResponse = { ok: true, message: 'If an account exists, a reset email will be sent.' };
+
+  try {
+    if (!SUPABASE_URL) {
+      console.log(`Password reset requested for: ${email} (no DB — skipped)`);
+      return res.json(genericResponse);
+    }
+
+    const users = await supabase('GET', 'users', null,
+      `?email=eq.${encodeURIComponent(email.toLowerCase().trim())}&select=id,name`);
+
+    if (!users || users.length === 0) {
+      // Account not found — return generic response (don't reveal this)
+      return res.json(genericResponse);
+    }
+
+    const user = users[0];
+    const resetToken = generateResetToken(user.id);
+    const resetUrl = `${APP_URL}?reset=${resetToken}`;
+
+    await sendEmail({
+      to: email,
+      subject: 'Reset your Trazer Intelligence password',
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#0a0a0a;color:#fff;border-radius:12px;">
+          <img src="${APP_URL}/logo.png" alt="Trazer" style="height:32px;margin-bottom:24px;" onerror="this.style.display='none'">
+          <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;">Reset your password</h2>
+          <p style="color:#888;margin:0 0 24px;font-size:15px;">Hi ${user.name || 'there'}, we received a request to reset your Trazer Intelligence password.</p>
+          <a href="${resetUrl}"
+             style="display:inline-block;background:#00C2B2;color:#000;font-weight:800;font-size:15px;
+                    padding:14px 28px;border-radius:8px;text-decoration:none;margin-bottom:24px;">
+            Reset Password →
+          </a>
+          <p style="color:#555;font-size:13px;margin:0 0 8px;">This link expires in 1 hour.</p>
+          <p style="color:#555;font-size:13px;margin:0;">If you didn't request this, you can ignore this email — your password won't change.</p>
+          <hr style="border:none;border-top:1px solid #222;margin:24px 0;">
+          <p style="color:#444;font-size:12px;margin:0;">Trazer Intelligence · HVAC Field Platform</p>
+        </div>
+      `,
+    });
+
+    res.json(genericResponse);
+  } catch(err) {
+    console.error('Reset error:', err.message);
+    // Still return generic response — don't leak server errors
+    res.json(genericResponse);
+  }
+});
+
+// ── AUTH: RESET CONFIRM (link from email) ─────────────────────────────────────
+// The reset email links to APP_URL?reset=<token>. The frontend should POST that
+// token here with the new password to complete the reset.
+app.post('/api/auth/reset-confirm', authLimiter, async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword)
+    return res.status(400).json({ error: 'Token and new password required' });
+  if (newPassword.length < 8)
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  if (!SUPABASE_URL)
+    return res.status(503).json({ error: 'Database not configured' });
+
+  const userId = verifyResetToken(token);
+  if (!userId)
+    return res.status(400).json({ error: 'Reset link is invalid or has expired — please request a new one' });
+
+  try {
+    const newHash = await hashPassword(newPassword);
+    await supabase('PATCH', 'users', { password_hash: newHash }, `?id=eq.${encodeURIComponent(userId)}`);
+    res.json({ ok: true, message: 'Password updated. You can now sign in.' });
+  } catch(err) {
+    console.error('Reset confirm error:', err.message);
+    res.status(500).json({ error: 'Failed to update password' });
+  }
 });
 
 // ── AUTH: CHANGE PASSWORD ─────────────────────────────────────────────────────
@@ -927,9 +1062,64 @@ app.post('/api/knowledge', async (req, res) => {
 });
 
 // ── AI ────────────────────────────────────────────────────────────────────────
+// ── SERVER-SIDE PAYWALL CHECK ─────────────────────────────────────────────────
+// This runs on EVERY /api/ai request. The frontend also checks, but client-side
+// checks are decorative — anyone can curl this endpoint directly.
+// Logic mirrors what the frontend's isAccessAllowed() does, but enforced here.
+async function checkPaywall(token) {
+  // No token at all → deny
+  if (!token) return { allowed: false, reason: 'Authentication required' };
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
+  } catch {
+    return { allowed: false, reason: 'Invalid or expired session' };
+  }
+
+  // No DB → dev mode, allow through
+  if (!SUPABASE_URL) return { allowed: true };
+
+  try {
+    const users = await supabase('GET', 'users', null,
+      `?id=eq.${encodeURIComponent(decoded.id)}&select=plan,trial_start,usage_count`);
+
+    if (!users || users.length === 0)
+      return { allowed: false, reason: 'Account not found' };
+
+    const { plan, trial_start } = users[0];
+
+    // Always-allowed plans
+    if (['admin', 'pro', 'team', 'starter', 'homeowner'].includes(plan))
+      return { allowed: true };
+
+    // Trial — check 7-day window
+    if (plan === 'trial') {
+      const start = trial_start ? new Date(trial_start).getTime() : Date.now();
+      const daysElapsed = (Date.now() - start) / (1000 * 60 * 60 * 24);
+      if (daysElapsed <= 7) return { allowed: true };
+      return { allowed: false, reason: 'Your 7-day free trial has expired. Upgrade to keep using Trazer.', paywall: true };
+    }
+
+    // Any other plan (unknown, beta legacy) → deny to be safe
+    return { allowed: false, reason: 'A subscription is required to use Trazer AI.', paywall: true };
+  } catch (err) {
+    console.error('Paywall check error:', err.message);
+    // If DB check fails — fail open to avoid blocking paying users during an outage
+    return { allowed: true };
+  }
+}
+
 app.post('/api/ai', aiLimiter, async (req, res) => {
   if (globalActive >= MAX_GLOBAL)
     return res.status(503).json({ error: 'Server at capacity — please try again in a moment.' });
+
+  // Enforce paywall server-side. Token comes from body (existing frontend sends it this way).
+  const authToken = req.body?.token
+    || (req.headers['authorization']?.startsWith('Bearer ') ? req.headers['authorization'].slice(7) : null);
+  const access = await checkPaywall(authToken);
+  if (!access.allowed)
+    return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
 
   const { messages, system, max_tokens = 1024, use_search = false } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0)

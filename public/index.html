@@ -52,7 +52,8 @@
   --shadow-teal:0 8px 32px rgba(0,194,178,.25);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-button,a,label,[onclick]{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+button,a,label,[onclick]{-webkit-tap-highlight-color:transparent;touch-action:manipulation;cursor:pointer;}
+*{-webkit-tap-highlight-color:transparent;}
 html{font-size:16px;-webkit-text-size-adjust:100%;}
 body{background:var(--bg);font-family:var(--font);color:var(--black);min-height:100vh;-webkit-font-smoothing:antialiased;}
 ::-webkit-scrollbar{width:4px;}
@@ -6450,21 +6451,35 @@ document.addEventListener('DOMContentLoaded',function(){
     if(_up.get('payment')==='cancelled'){showToast('Checkout cancelled - no charge made.','info',3000);window.history.replaceState({},'','/'); }
   }catch(_e){}
   initRoleFlow();
-  // Fix iOS Safari: suBtn onclick unreliable after dynamic show — bind touchend directly
-  var suBtn=document.getElementById('suBtn');
-  if(suBtn){
-    suBtn.addEventListener('touchend',function(e){
-      e.preventDefault();
-      authSignUp();
-    },{passive:false});
-  }
-  var siBtn=document.getElementById('siBtn');
-  if(siBtn){
-    siBtn.addEventListener('touchend',function(e){
-      e.preventDefault();
-      authSignIn();
-    },{passive:false});
-  }
+  // GLOBAL iOS Safari fix: onclick unreliable on elements inside fixed/flex containers.
+  // One delegated touchend listener covers every button, [onclick] div, and interactive element.
+  document.addEventListener('touchend', function(e) {
+    var el = e.target;
+    // Walk up max 5 levels to find a clickable element
+    for (var i = 0; i < 5; i++) {
+      if (!el || el === document.body) break;
+      var tag = el.tagName;
+      var hasOnclick = el.hasAttribute && el.hasAttribute('onclick');
+      var isBtn = tag === 'BUTTON' || tag === 'A';
+      var isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+      if (isInput) break; // don't intercept inputs — let native focus work
+      if (isBtn || hasOnclick) {
+        // Only intercept if the element didn't already handle the tap
+        if (!el._tapped) {
+          el._tapped = true;
+          setTimeout(function(){ el._tapped = false; }, 600);
+          // Don't preventDefault on buttons — let onclick fire naturally
+          // Just ensure the element is treated as tappable
+          if (hasOnclick && !isBtn) {
+            e.preventDefault();
+            try { el.click(); } catch(err) {}
+          }
+        }
+        break;
+      }
+      el = el.parentElement;
+    }
+  }, {passive: false});
   initOfflineDetection();
   initChatEnhancements();
   initScrollBottomBtn();

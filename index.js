@@ -454,8 +454,9 @@ app.post('/api/auth/signup', authLimiter, async (req, res) => {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password_hash: passwordHash,
-      // password_salt column is no longer used (bcrypt stores the salt in the hash)
-      // but we keep the column in the DB to avoid a migration on existing rows
+      // password_salt is no longer used — bcrypt stores the salt inside the hash.
+      // Sending '' satisfies the NOT NULL constraint in Supabase without a migration.
+      password_salt: '',
       company: company?.trim() || '',
       role: userRole,
       plan: 'trial',

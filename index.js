@@ -1080,10 +1080,14 @@ app.post('/api/knowledge', async (req, res) => {
 
 // ── AI ────────────────────────────────────────────────────────────────────────
 // ── SERVER-SIDE PAYWALL CHECK ─────────────────────────────────────────────────
-// This runs on EVERY /api/ai request. The frontend also checks, but client-side
-// checks are decorative — anyone can curl this endpoint directly.
-// Logic mirrors what the frontend's isAccessAllowed() does, but enforced here.
+// PAYWALL TEMPORARILY DISABLED — Kaizen will say when to turn it on.
+// The full logic is preserved below the early return for the eventual flip.
 async function checkPaywall(token) {
+  // EMERGENCY DISABLE: allow everyone through. No trial expiry, no plan gate.
+  // Re-enable by deleting this block and the function will resume its 7-day trial enforcement.
+  return { allowed: true };
+
+  // ----- ORIGINAL LOGIC (kept for when paywall is re-enabled) -----
   // No token at all → deny
   if (!token) return { allowed: false, reason: 'Authentication required' };
 

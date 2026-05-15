@@ -2330,22 +2330,12 @@ document.addEventListener('click',function(e){
 });
 
 function checkTrial(){
-  if(!currentUser)return;
+  // PAYWALL TEMPORARILY DISABLED — never show the trial banner or paywall.
+  // Hide any leftover banner from a previous session.
   var banner=document.getElementById('trialBanner'),pt=document.getElementById('pddTrial');
-  if(currentUser.plan!=='trial'){if(banner)banner.classList.remove('show');if(pt)pt.style.display='none';return;}
-  var left=Math.max(0,7-Math.floor((Date.now()-currentUser.trialStart)/86400000));
-  if(left<=0){showPaywall();return;}
-  if(banner){
-    banner.classList.add('show');
-    var s=document.getElementById('trialDaysLeft');
-    if(s)s.textContent=left+' day'+(left===1?'':'s');
-    // Urgent warning at 2 days or less
-    if(left<=2){
-      banner.style.background='rgba(232,53,74,.15)';
-      banner.style.borderColor='rgba(232,53,74,.3)';
-    }
-  }
-  if(pt){pt.style.display='flex';var pd=document.getElementById('pddTrialDays');if(pd)pd.textContent=left;}
+  if(banner)banner.classList.remove('show');
+  if(pt)pt.style.display='none';
+  return;
 }
 
 function trackUsage(feature){
@@ -2359,23 +2349,8 @@ function trackUsage(feature){
 }
 
 function isAccessAllowed(){
-  if(!currentUser)return false;
-  var plan=currentUser.plan||'trial';
-  // Admin and pro always allowed
-  if(plan==='admin'||plan==='pro'||plan==='team')return true;
-  // Trial: check 7 day window
-  if(plan==='trial'){
-    var trialStart=currentUser.trialStart||Date.now();
-    var daysLeft=Math.ceil((trialStart+(7*24*60*60*1000)-Date.now())/(24*60*60*1000));
-    if(daysLeft>0)return true;
-    // Trial expired
-    showPaywall();
-    return false;
-  }
-  // Starter: allowed
-  if(plan==='starter'||plan==='homeowner')return true;
-  // Unknown plan - allow during beta
-  return true;
+  // PAYWALL TEMPORARILY DISABLED — every logged-in user gets full access.
+  return !!currentUser;
 }
 
 // Pro-only features check - gating disabled until billing is live
@@ -2665,6 +2640,14 @@ function submitFeedback(){
   closeModal('helpModal');
 }
 function showPaywall(){
+  // PAYWALL TEMPORARILY DISABLED — hard short-circuit. Never display the paywall overlay,
+  // and proactively hide it in case something else already toggled it on.
+  closeProfileDD();
+  var e=document.getElementById('paywallOverlay');
+  if(e){e.classList.remove('show');e.style.display='none';}
+  return;
+}
+function _showPaywall_DISABLED(){
   closeProfileDD();
   var e=document.getElementById('paywallOverlay');
   if(!e)return;

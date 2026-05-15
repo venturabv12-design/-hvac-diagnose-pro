@@ -1243,62 +1243,63 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
   </div>
   <div class="auth-card">
     <div class="auth-trial-pill">🎯 7-day free trial — no credit card required</div>
-
-    <!-- ROLE SELECTOR — shown only during sign up -->
-    <div class="role-select-wrap" id="roleSelector">
-      <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;">I am a...</div>
-      <div style="font-size:13px;color:#666;margin-bottom:16px;">This personalizes your experience. You can change it later.</div>
-      <div class="role-card" id="roleHomeCard" onclick="selectRole('homeowner',this)">
-        <div class="role-card-icon homeowner">🏠</div>
-        <div>
-          <div class="role-card-title">Homeowner</div>
-          <div class="role-card-sub">I want to understand my HVAC system and know if something is wrong</div>
-        </div>
-      </div>
-      <div class="role-card" id="roleProCard" onclick="selectRole('contractor',this)">
-        <div class="role-card-icon contractor">🔧</div>
-        <div>
-          <div class="role-card-title">HVAC Contractor / Tech</div>
-          <div class="role-card-sub">I diagnose and repair HVAC systems professionally</div>
-        </div>
-      </div>
-      <button class="role-continue-btn" id="roleContinueBtn" onclick="roleConfirm()" style="opacity:.4;cursor:not-allowed;" disabled>Continue →</button>
-      <div style="text-align:center;margin-top:14px;">
-        <span style="font-size:13px;color:#555;">Already have an account? </span>
-        <span style="font-size:13px;color:#00C2B2;cursor:pointer;font-weight:600;" onclick="goBackToSignIn()">Sign In</span>
-      </div>
-    </div>
-
-    <div id="authMainArea">
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="authTab('in')">Sign In</button>
-      <button class="auth-tab" onclick="authTab('up')">Create Account</button>
+      <button class="auth-tab active" id="tabSignIn" onclick="authTab('in')">Sign In</button>
+      <button class="auth-tab" id="tabSignUp" onclick="authTab('up')">Create Account</button>
     </div>
     <div class="auth-err" id="authErr"></div>
+
+    <!-- SIGN IN FORM -->
     <div id="authInForm">
-      <div class="auth-field"><label class="auth-lbl">Email</label><input class="auth-inp" type="text" id="siEmail" placeholder="you@company.com" autocomplete="username" onkeydown="if(event.key==='Enter')authSignIn()"/></div>
-      <div class="auth-field"><label class="auth-lbl">Password</label><div style="position:relative;"><input class="auth-inp" type="password" id="siPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')authSignIn()" style="padding-right:42px;"/><button type="button" onclick="var i=document.getElementById('siPass');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁':'🙈';" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:#9499B0;padding:0;line-height:1;">👁</button></div></div>
-      <span class="auth-forgot" onclick="authForgot()">Forgot password?</span>
-      <button class="auth-btn" id="siBtn" onclick="authSignIn()">Sign In</button>
+      <div class="auth-field">
+        <label class="auth-lbl">Email</label>
+        <input class="auth-inp" type="email" id="siEmail" placeholder="you@company.com" autocomplete="email" inputmode="email"/>
+      </div>
+      <div class="auth-field">
+        <label class="auth-lbl">Password</label>
+        <input class="auth-inp" type="password" id="siPass" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+      <div style="text-align:right;margin-bottom:14px;">
+        <span class="auth-forgot" onclick="authForgot()" style="cursor:pointer;">Forgot password?</span>
+      </div>
+      <button class="auth-btn" id="siBtn" type="button" onclick="authSignIn()">Sign In</button>
     </div>
+
+    <!-- SIGN UP FORM -->
     <div id="authUpForm" style="display:none">
-      <div class="auth-field"><label class="auth-lbl">I am a...</label>
+      <div class="auth-field">
+        <label class="auth-lbl">I am a...</label>
         <div style="display:flex;gap:8px;margin-top:6px;">
-          <button type="button" id="roleHomeBtn" onclick="selectRoleInline('homeowner')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,194,178,.15);">🏠 Homeowner</button>
-          <button type="button" id="roleProBtn" onclick="selectRoleInline('contractor')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,194,178,.15);">🔧 Contractor / Tech</button>
+          <button type="button" id="roleHomeBtn" onclick="selectRoleInline('homeowner')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">🏠 Homeowner</button>
+          <button type="button" id="roleProBtn" onclick="selectRoleInline('contractor')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">🔧 Contractor</button>
         </div>
       </div>
-      <div class="auth-field"><label class="auth-lbl">Full Name</label><input class="auth-inp" type="text" id="suName" placeholder="Your name" autocomplete="name" onkeydown="if(event.key==='Enter')authSignUp()"/></div>
-      <div class="auth-field"><label class="auth-lbl">Email</label><input class="auth-inp" type="email" id="suEmail" placeholder="you@company.com" autocomplete="email" onkeydown="if(event.key==='Enter')authSignUp()"/></div>
-      <div class="auth-field"><label class="auth-lbl">Password</label><input class="auth-inp" type="password" id="suPass" placeholder="Min 8 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')authSignUp()"/></div>
-      <div class="auth-field"><label class="auth-lbl">Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label><input class="auth-inp" type="text" id="suCompany" placeholder="Your HVAC company"/></div>
-      <button class="auth-btn" id="suBtn" onclick="authSignUp()">Start Free Trial</button>
+      <div class="auth-field">
+        <label class="auth-lbl">Full Name</label>
+        <input class="auth-inp" type="text" id="suName" placeholder="Your name" autocomplete="name"/>
+      </div>
+      <div class="auth-field">
+        <label class="auth-lbl">Email</label>
+        <input class="auth-inp" type="email" id="suEmail" placeholder="you@company.com" autocomplete="email" inputmode="email"/>
+      </div>
+      <div class="auth-field">
+        <label class="auth-lbl">Password</label>
+        <input class="auth-inp" type="password" id="suPass" placeholder="Min 8 characters" autocomplete="new-password"/>
+      </div>
+      <div class="auth-field">
+        <label class="auth-lbl">Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
+        <input class="auth-inp" type="text" id="suCompany" placeholder="Your HVAC company" autocomplete="organization"/>
+      </div>
+      <button class="auth-btn" id="suBtn" type="button" onclick="authSignUp()">Start Free Trial</button>
     </div>
+
     <p class="auth-terms">By continuing you agree to our <a href="#" onclick="showTermsModal();return false;" style="color:#00C2B2;">Terms</a> and <a href="#" onclick="showPrivacyModal();return false;" style="color:#00C2B2;">Privacy Policy</a></p>
   </div>
-  </div><!-- /authMainArea -->
 </div>
 </div>
+
+
+  
 
 <div id="onboardingOverlay">
 <div class="ob-wrap">
@@ -6494,7 +6495,9 @@ document.addEventListener('DOMContentLoaded',function(){
   }catch(_e){}
   initRoleFlow();
   // iOS Safari: bind touchend on key buttons that sit inside dynamically shown panels
-  ['homeRunBtn','runBtn','suBtn','siBtn','obNextBtn'].forEach(function(id) {
+  // iOS Safari: bind touchend only on non-auth buttons inside dynamically shown panels.
+  // siBtn and suBtn are native <button> elements — their onclick fires natively. No touchend needed.
+  ['homeRunBtn','runBtn','obNextBtn'].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('touchend', function(e) {

@@ -372,7 +372,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],      // Needed: inline JS in index.html (no bundler)
+      scriptSrc: ["'self'", "'unsafe-inline'"],      // Needed: inline <script> blocks in index.html
+      // CRITICAL: scriptSrcAttr defaults to 'none' in Helmet, which blocks every onclick="" attribute
+      // on every element silently (no console error). public/index.html has 150+ inline onclick handlers
+      // — auth buttons, modal buttons, role pickers, etc. Without this directive, every click is dead.
+      scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],        // Needed: inline CSS
       imgSrc: ["'self'", 'data:', 'https:'],
       connectSrc: [

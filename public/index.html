@@ -365,7 +365,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 /* ── ROLE SELECTOR ──────────────────────────────────── */
 .role-select-wrap{display:none;}
 .role-select-wrap.show{display:block;}
-.role-card{background:#0d0d0d;border:2px solid #2a2a2a;border-radius:16px;padding:22px 18px;cursor:pointer;transition:all .25s;margin-bottom:12px;display:flex;align-items:center;gap:16px;}
+.role-card{background:#0d0d0d;border:2px solid #2a2a2a;border-radius:16px;padding:22px 18px;cursor:pointer;transition:all .25s;margin-bottom:12px;display:flex;align-items:center;gap:16px;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,194,178,.15);}
 .role-card:hover{border-color:#444;background:#111;}
 .role-card.selected{border-color:#00C2B2;background:rgba(0,194,178,.07);}
 .role-card-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
@@ -1942,6 +1942,17 @@ var pendingRole = null;
 function showRoleSelector() {
   document.getElementById('roleSelector').classList.add('show');
   document.getElementById('authMainArea').style.display = 'none';
+  // Bind touchend on role cards — onclick on divs is unreliable in iOS Safari fixed overlays
+  ['roleHomeCard','roleProCard'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && !el._touchBound) {
+      el._touchBound = true;
+      el.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        selectRole(id === 'roleHomeCard' ? 'homeowner' : 'contractor', el);
+      }, {passive: false});
+    }
+  });
 }
 
 function hideRoleSelector() {

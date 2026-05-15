@@ -6450,6 +6450,21 @@ document.addEventListener('DOMContentLoaded',function(){
     if(_up.get('payment')==='cancelled'){showToast('Checkout cancelled - no charge made.','info',3000);window.history.replaceState({},'','/'); }
   }catch(_e){}
   initRoleFlow();
+  // Fix iOS Safari: suBtn onclick unreliable after dynamic show — bind touchend directly
+  var suBtn=document.getElementById('suBtn');
+  if(suBtn){
+    suBtn.addEventListener('touchend',function(e){
+      e.preventDefault();
+      authSignUp();
+    },{passive:false});
+  }
+  var siBtn=document.getElementById('siBtn');
+  if(siBtn){
+    siBtn.addEventListener('touchend',function(e){
+      e.preventDefault();
+      authSignIn();
+    },{passive:false});
+  }
   initOfflineDetection();
   initChatEnhancements();
   initScrollBottomBtn();

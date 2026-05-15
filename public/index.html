@@ -2224,7 +2224,15 @@ function authSignUp(){
   var email=(document.getElementById('suEmail').value||'').trim().toLowerCase();
   var pass=document.getElementById('suPass').value||'';
   var company=(document.getElementById('suCompany')&&document.getElementById('suCompany').value||'').trim();
-  if(!name||!email||!pass){showAuthErr('Please fill in all required fields.');return;}
+  // Debug: surface exactly what's missing
+  if(!name||!email||!pass){
+    var missing=[];
+    if(!name)missing.push('Name');
+    if(!email)missing.push('Email');
+    if(!pass)missing.push('Password');
+    showAuthErr('Please fill in: '+missing.join(', '));
+    return;
+  }
   if(pass.length<8){showAuthErr('Password must be at least 8 characters.');return;}
   var btn=document.getElementById('suBtn');
   if(btn){btn.disabled=true;btn.textContent='Creating account...';}
@@ -2244,7 +2252,7 @@ function authSignUp(){
       if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
       setTimeout(requestTechLocation,2000);
     })
-    .catch(function(){showAuthErr('Connection error. Try again.');if(btn){btn.disabled=false;btn.textContent='Start Free Trial';}});
+    .catch(function(err){showAuthErr('Connection error — '+( err&&err.message?err.message:'try again'));if(btn){btn.disabled=false;btn.textContent='Start Free Trial';}});
 }
 
 function authForgot(){

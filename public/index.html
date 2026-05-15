@@ -5811,43 +5811,63 @@ async function startCameraStream(){
   try{
     if(cameraStream){cameraStream.getTracks().forEach(function(t){t.stop();});}
     var stream=null;
-    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:cameraFacing,width:{ideal:1280},height:{ideal:720}},audio:false});}catch(e1){
-    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:cameraFacing,width:{ideal:1920},height:{ideal:1080}},audio:false});}catch(e2){
-    stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}}
+    // iOS Safari requires exact constraints — try progressively simpler
+    var constraints=[
+      {video:{facingMode:cameraFacing,width:{ideal:1280},height:{ideal:720}},audio:false},
+      {video:{facingMode:cameraFacing},audio:false},
+      {video:true,audio:false}
+    ];
+    for(var ci=0;ci<constraints.length;ci++){
+      try{stream=await navigator.mediaDevices.getUserMedia(constraints[ci]);break;}catch(e){
+        if(ci===constraints.length-1)throw e;
+      }
+    }
     cameraStream=stream;
     var vid=document.getElementById('liveCameraFeed');
     vid.muted=true;
     vid.setAttribute('playsinline','');
     vid.setAttribute('webkit-playsinline','');
+    vid.setAttribute('autoplay','');
     vid.srcObject=stream;
-    var tryPlay=function(){
-      vid.muted=true;
-      var p=vid.play();
-      if(p&&p.catch)p.catch(function(pe){
-        try{localStorage.setItem('camDebugPlay',JSON.stringify({err:pe&&pe.name,msg:pe&&pe.message,t:Date.now(),rs:vid.readyState,paused:vid.paused,muted:vid.muted}));}catch(_e){}
-        var ov=document.getElementById('liveCameraOverlay');
-        if(ov&&!ov._tapToStartArmed){
-          ov._tapToStartArmed=true;
-          if(typeof showToast==='function')showToast('Tap the camera screen to start the video.','info',4000);
-          var onTap=function(){
-            ov.removeEventListener('click',onTap);
-            ov._tapToStartArmed=false;
-            vid.muted=true;
-            try{vid.play().catch(function(){});}catch(_e){}
-          };
-          ov.addEventListener('click',onTap);
-        }
-      });
-    };
-    if(vid.readyState>=1){
-      tryPlay();
-    } else {
-      vid.addEventListener('loadedmetadata',tryPlay,{once:true});
-      setTimeout(function(){if(vid.paused)tryPlay();},600);
-    }
+    // iOS Safari requires play() to be called after srcObject is set
+    await new Promise(function(resolve){
+      vid.onloadedmetadata=function(){ resolve(); };
+      setTimeout(resolve,2000); // fallback
+    });
+    vid.muted=true;
+    try{
+      var playPromise=vid.play();
+      if(playPromise&&playPromise.catch){
+        playPromise.catch(function(pe){
+          // Autoplay blocked — show tap-to-start
+          var ov=document.getElementById('liveCameraOverlay');
+          if(ov&&!ov._tapToStartArmed){
+            ov._tapToStartArmed=true;
+            if(typeof showToast==='function')showToast('Tap the camera screen to start the video.','info',4000);
+            var onTap=function(){
+              ov.removeEventListener('click',onTap);
+              ov._tapToStartArmed=false;
+              vid.muted=true;
+              try{vid.play().catch(function(){});}catch(_e){}
+            };
+            ov.addEventListener('click',onTap);
+          }
+        });
+      }
+    }catch(pe){}
   }catch(e){
     stopLiveCamera();
-    appendMessage('agent','Camera access needed. Allow camera permission in browser settings, then tap Start again.');
+    var msg='Camera access needed.';
+    if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError'){
+      msg='Camera permission denied. Go to Settings → Safari → Camera and allow this site.';
+    } else if(e.name==='NotFoundError'){
+      msg='No camera found on this device.';
+    } else if(e.name==='NotReadableError'){
+      msg='Camera is being used by another app. Close it and try again.';
+    }
+    if(typeof showToast==='function')showToast(msg,'error',8000);
+    appendMessage('agent',msg);
+    throw e;
   }
 }
 
@@ -6451,29 +6471,31 @@ document.addEventListener('DOMContentLoaded',function(){
     if(_up.get('payment')==='cancelled'){showToast('Checkout cancelled - no charge made.','info',3000);window.history.replaceState({},'','/'); }
   }catch(_e){}
   initRoleFlow();
-  // GLOBAL iOS Safari fix: onclick unreliable on elements inside fixed/flex containers.
-  // One delegated touchend listener covers every button, [onclick] div, and interactive element.
+  // iOS Safari: bind touchend on key buttons that sit inside dynamically shown panels
+  ['homeRunBtn','runBtn','suBtn','siBtn','obNextBtn'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('touchend', function(e) {
+      if (el.disabled) return;
+      e.preventDefault();
+      if (el.onclick) { try { el.onclick(e); } catch(err) {} }
+      else { try { el.click(); } catch(err) {} }
+    }, {passive: false});
+  });
+  // GLOBAL iOS Safari fix: onclick unreliable on non-button elements inside fixed/flex containers.
+  // Delegated touchend — only fires on divs/spans with onclick, not native buttons (avoids double-fire).
   document.addEventListener('touchend', function(e) {
     var el = e.target;
-    // Walk up max 5 levels to find a clickable element
     for (var i = 0; i < 5; i++) {
       if (!el || el === document.body) break;
       var tag = el.tagName;
-      var hasOnclick = el.hasAttribute && el.hasAttribute('onclick');
-      var isBtn = tag === 'BUTTON' || tag === 'A';
-      var isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
-      if (isInput) break; // don't intercept inputs — let native focus work
-      if (isBtn || hasOnclick) {
-        // Only intercept if the element didn't already handle the tap
+      if (tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') break;
+      if (el.hasAttribute && el.hasAttribute('onclick')) {
         if (!el._tapped) {
           el._tapped = true;
           setTimeout(function(){ el._tapped = false; }, 600);
-          // Don't preventDefault on buttons — let onclick fire naturally
-          // Just ensure the element is treated as tappable
-          if (hasOnclick && !isBtn) {
-            e.preventDefault();
-            try { el.click(); } catch(err) {}
-          }
+          e.preventDefault();
+          try { el.click(); } catch(err) {}
         }
         break;
       }

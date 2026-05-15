@@ -2011,9 +2011,25 @@ function roleConfirm() {
 // Override authTab to show role selector when tapping 'Create Account' if role not set
 var _origAuthTab = null;
 function initRoleFlow() {
-  // When user taps Create Account, show role selector first
+  // Intercept Create Account tab — show role selector first if role not yet chosen
   var tabs = document.querySelectorAll('.auth-tab');
   if (tabs[1]) {
+    // Use touchend + click both, but prevent double-fire
+    var _roleTabHandler = function(e) {
+      if (!pendingRole) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        showRoleSelector();
+      }
+      // If pendingRole already set, let the tab switch happen normally
+    };
+    tabs[1].addEventListener('touchend', function(e) {
+      if (!pendingRole) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        showRoleSelector();
+      }
+    }, {passive: false});
     tabs[1].addEventListener('click', function(e) {
       if (!pendingRole) {
         e.stopImmediatePropagation();
@@ -2040,22 +2056,15 @@ function applyModeFromRole() {
   if (!currentUser) return;
   var role = currentUser.role || 'contractor';
   if (role === 'homeowner') {
-    // Show only homeowner side
     setMode('home');
-    // Hide mode tabs — homeowners don't need contractor tab
-    var tabsCard = document.querySelector('.mode-tabs');
-    if (tabsCard) {
-      var tabsParent = tabsCard.parentElement;
-      if (tabsParent) tabsParent.style.display = 'none';
-    }
+    // Hide the contractor tab only — keep the card visible
+    var proTab = document.getElementById('tabPro');
+    if (proTab) proTab.style.display = 'none';
   } else {
-    // Contractor — show only contractor side, hide homeowner tab
     setMode('pro');
-    var tabsCard2 = document.querySelector('.mode-tabs');
-    if (tabsCard2) {
-      var tabsParent2 = tabsCard2.parentElement;
-      if (tabsParent2) tabsParent2.style.display = 'none';
-    }
+    // Hide the homeowner tab only — keep the card visible
+    var homeTab = document.getElementById('tabHome');
+    if (homeTab) homeTab.style.display = 'none';
   }
 }
 
@@ -2161,6 +2170,15 @@ function authTab(t){
   if(rs&&rs.classList.contains('show')){
     rs.classList.remove('show');
     if(ma)ma.style.display='block';
+  }
+  // Reset touch bindings when switching tabs so they re-bind fresh
+  if(t==='in'){
+    var rc=document.getElementById('roleHomeCard');
+    var pc=document.getElementById('roleProCard');
+    var cb=document.getElementById('roleContinueBtn');
+    if(rc)rc._touchBound=false;
+    if(pc)pc._touchBound=false;
+    if(cb)cb._touchBound=false;
   }
   document.querySelectorAll('.auth-tab').forEach(function(b,i){b.classList.toggle('active',(i===0&&t==='in')||(i===1&&t==='up'));});
   document.getElementById('authInForm').style.display=t==='in'?'block':'none';

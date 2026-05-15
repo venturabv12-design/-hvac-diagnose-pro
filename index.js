@@ -1102,7 +1102,11 @@ async function checkPaywall(token) {
       return { allowed: false, reason: 'Your 7-day free trial has expired. Upgrade to keep using Trazer.', paywall: true };
     }
 
-    // Any other plan (unknown, beta legacy) → deny to be safe
+    // 'beta' = legacy plan from before Phase 1. Treat same as trial — allow through.
+    // These are early users who signed up before billing went live.
+    if (plan === 'beta') return { allowed: true };
+
+    // Any other unknown plan → deny
     return { allowed: false, reason: 'A subscription is required to use Trazer AI.', paywall: true };
   } catch (err) {
     console.error('Paywall check error:', err.message);

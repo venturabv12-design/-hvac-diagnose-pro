@@ -2039,14 +2039,23 @@ function tracerInit(){
   if(s){
     try{
       currentUser=JSON.parse(s);
-      document.getElementById('authOverlay').classList.add('hidden');
-      updateProfileUI();checkTrial();
-      loadUserHistory();
-      applyModeFromRole();
-      showPersonalizedWelcome();
-      if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
-      setTimeout(requestTechLocation,2000);
-
+      // Detect old base64 tokens from before Phase 1 (JWTs always start with 'eyJ' and have 2 dots)
+      var tok=currentUser.token||'';
+      var isJWT=tok.startsWith('eyJ')&&tok.split('.').length===3;
+      if(!isJWT){
+        // Old token — force re-login to get a proper JWT
+        localStorage.removeItem('trazer_user');
+        currentUser=null;
+        // Auth overlay stays visible — user will sign in fresh
+      } else {
+        document.getElementById('authOverlay').classList.add('hidden');
+        updateProfileUI();checkTrial();
+        loadUserHistory();
+        applyModeFromRole();
+        showPersonalizedWelcome();
+        if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
+        setTimeout(requestTechLocation,2000);
+      }
     }catch(e){localStorage.removeItem('trazer_user');}
   }
 }
@@ -2169,7 +2178,7 @@ function authSignUp(){
   if(pass.length<8){showAuthErr('Password must be at least 8 characters.');return;}
   var btn=document.getElementById('suBtn');
   if(btn){btn.disabled=true;btn.textContent='Creating account...';}
-  var selectedRole=window._pendingRole||'contractor';
+  var selectedRole=window._pendingRole||pendingRole||'contractor';
   fetch('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,password:pass,company:company,role:selectedRole})})
     .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
     .then(function(result){
@@ -3191,6 +3200,20 @@ async function callAI(system,messages,max_tokens,useSearch){
       var res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(reqBody),signal:controller.signal});
       clearTimeout(tid);
       var data=await res.json();
+      // 401 = invalid/expired token (old base64 token from before Phase 1, or truly expired JWT)
+      // Force a clean re-login so user gets a fresh JWT.
+      if(res.status===401||res.status===402){
+        if(res.status===401){
+          // Stale token — clear it and show login screen
+          localStorage.removeItem('trazer_user');
+          currentUser=null;
+          document.getElementById('authOverlay').classList.remove('hidden');
+          throw new Error('Your session expired. Please sign in again.');
+        }
+        // 402 = paywall (trial expired, no subscription)
+        showPaywall();
+        throw new Error(data.error||'Subscription required.');
+      }
       if(res.status===529||res.status===503||(data.error&&(data.error.indexOf('overload')>=0||data.error.indexOf('529')>=0))){
         if(attempt<2){await new Promise(function(r){setTimeout(r,1000*(attempt+1));});continue;}
         throw new Error('Mike is handling high demand right now. Please tap send again in a moment.');

@@ -203,7 +203,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 /* ══ TRAZER INTELLIGENCE ADDITIONS ═════════════════════════ */
 
 /* Auth */
-#authOverlay{position:fixed;inset:0;z-index:9999;background:#0A0A0A;display:flex;align-items:flex-start;justify-content:center;padding:max(20px,env(safe-area-inset-top,20px)) 20px max(20px,env(safe-area-inset-bottom,20px));overflow-y:auto;}
+#authOverlay{position:fixed;inset:0;z-index:9999;background:#0A0A0A;display:flex;align-items:flex-start;justify-content:center;padding:max(20px,env(safe-area-inset-top,20px)) 20px max(20px,env(safe-area-inset-bottom,20px));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
 #authOverlay.hidden{display:none;}
 .auth-wrap{width:100%;max-width:400px;}
 .auth-logo-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:26px;}
@@ -212,7 +212,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .auth-card{background:#161616;border:1px solid #2a2a2a;border-radius:18px;padding:26px 22px;box-shadow:0 24px 60px rgba(0,0,0,.7);}
 .auth-trial-pill{display:flex;align-items:center;gap:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;color:#F59E0B;margin-bottom:18px;}
 .auth-tabs{display:flex;gap:2px;background:#0d0d0d;border-radius:9px;padding:3px;margin-bottom:18px;}
-.auth-tab{flex:1;padding:9px;border:none;border-radius:7px;background:transparent;color:#555;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;}
+.auth-tab{flex:1;padding:9px;border:none;border-radius:7px;background:transparent;color:#555;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .auth-tab.active{background:#252525;color:#fff;}
 .auth-err{background:rgba(232,53,74,.1);border:1px solid rgba(232,53,74,.3);border-radius:8px;padding:9px 12px;font-size:13px;color:#E8354A;margin-bottom:12px;display:none;}
 .auth-err.show{display:block;}
@@ -223,7 +223,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .auth-inp::placeholder{color:#444 !important;-webkit-text-fill-color:#444 !important;}
 .auth-inp:-webkit-autofill,.auth-inp:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px #0a0a0a inset !important;-webkit-text-fill-color:#fff !important;caret-color:#fff;}
 .auth-forgot{display:block;text-align:right;font-size:12px;color:#00C2B2;cursor:pointer;margin-top:-8px;margin-bottom:14px;}
-.auth-btn{width:100%;padding:12px;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(0,194,178,.25);}
+.auth-btn{width:100%;padding:12px;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(0,194,178,.25);touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .auth-btn:hover{filter:brightness(1.08);}
 .auth-btn:disabled{opacity:.6;cursor:not-allowed;}
 .auth-terms{font-size:11px;color:#444;text-align:center;margin-top:12px;line-height:1.7;}
@@ -2153,8 +2153,13 @@ function showAuthErr(m){var e=document.getElementById('authErr');if(e){e.textCon
 
 function authSignIn(){
   showAuthErr('');
-  var email=(document.getElementById('siEmail').value||'').trim().toLowerCase();
-  var pass=document.getElementById('siPass').value||'';
+  // iOS Safari autofill populates .value asynchronously — read after a 50ms tick
+  // to ensure the filled value is available before we validate and submit.
+  setTimeout(function(){
+  var siEmailEl=document.getElementById('siEmail');
+  var siPassEl=document.getElementById('siPass');
+  var email=((siEmailEl&&(siEmailEl.value||siEmailEl.getAttribute('value')))||'').trim().toLowerCase();
+  var pass=(siPassEl&&(siPassEl.value||siPassEl.getAttribute('value')))||'';
   var btn=document.getElementById('siBtn');
   if(!email||!pass){showAuthErr('Enter your email and password.');return;}
   if(btn){btn.disabled=true;btn.textContent='Signing in...';}
@@ -2170,7 +2175,7 @@ function authSignIn(){
           // Show a "Create Account" helper link below the error
           var e=document.getElementById('authErr');
           if(e){
-            e.innerHTML=errMsg+' <a href="#" onclick="showRoleSelector();return false;" style="color:#00C2B2;text-decoration:underline;font-weight:600;">Create Account →</a>';
+            e.innerHTML=errMsg+' <a href="#" onclick="authTab(\'up\');return false;" style="color:#00C2B2;text-decoration:underline;font-weight:600;">Create Account →</a>';
             e.classList.add('show');
             if(btn){btn.disabled=false;btn.textContent='Sign In';}
             return;
@@ -2190,8 +2195,8 @@ function authSignIn(){
       setTimeout(requestTechLocation,2000);
     })
     .catch(function(){showAuthErr('Connection error. Try again.');if(btn){btn.disabled=false;btn.textContent='Sign In';}});
+  },50);
 }
-// Safety: always re-enable buttons if something goes wrong
 document.addEventListener('visibilitychange',function(){
   var siBtn=document.getElementById('siBtn');var suBtn=document.getElementById('suBtn');
   if(siBtn&&siBtn.disabled&&!siBtn.textContent.includes('Signing'))siBtn.disabled=false;
@@ -2199,10 +2204,16 @@ document.addEventListener('visibilitychange',function(){
 });
 
 function authSignUp(){
-  var name=(document.getElementById('suName').value||'').trim();
-  var email=(document.getElementById('suEmail').value||'').trim().toLowerCase();
-  var pass=document.getElementById('suPass').value||'';
-  var company=(document.getElementById('suCompany')&&document.getElementById('suCompany').value||'').trim();
+  // iOS Safari autofill populates .value asynchronously — read after a 50ms tick
+  setTimeout(function(){
+  var suNameEl=document.getElementById('suName');
+  var suEmailEl=document.getElementById('suEmail');
+  var suPassEl=document.getElementById('suPass');
+  var suCompanyEl=document.getElementById('suCompany');
+  var name=((suNameEl&&(suNameEl.value||suNameEl.getAttribute('value')))||'').trim();
+  var email=((suEmailEl&&(suEmailEl.value||suEmailEl.getAttribute('value')))||'').trim().toLowerCase();
+  var pass=(suPassEl&&(suPassEl.value||suPassEl.getAttribute('value')))||'';
+  var company=((suCompanyEl&&(suCompanyEl.value||suCompanyEl.getAttribute('value')))||'').trim();
   // Debug: surface exactly what's missing
   if(!name||!email||!pass){
     var missing=[];
@@ -2232,6 +2243,7 @@ function authSignUp(){
       setTimeout(requestTechLocation,2000);
     })
     .catch(function(err){showAuthErr('Connection error — '+( err&&err.message?err.message:'try again'));if(btn){btn.disabled=false;btn.textContent='Start Free Trial';}});
+  },50);
 }
 
 function submitPasswordReset(token){

@@ -1953,6 +1953,15 @@ function showRoleSelector() {
       }, {passive: false});
     }
   });
+  // Also ensure Continue button fires on touch
+  var continueBtn = document.getElementById('roleContinueBtn');
+  if (continueBtn && !continueBtn._touchBound) {
+    continueBtn._touchBound = true;
+    continueBtn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      roleConfirm();
+    }, {passive: false});
+  }
 }
 
 function hideRoleSelector() {
@@ -1982,9 +1991,21 @@ function selectRole(role, el) {
 
 function roleConfirm() {
   if (!pendingRole) return;
-  hideRoleSelector();
-  // Go to sign up tab with role pre-selected
-  authTab('up');
+  // Manually hide role selector and show main area BEFORE authTab
+  // so authTab's internal state check doesn't interfere
+  var rs = document.getElementById('roleSelector');
+  var ma = document.getElementById('authMainArea');
+  if (rs) rs.classList.remove('show');
+  if (ma) ma.style.display = 'block';
+  // Switch to sign up tab
+  document.querySelectorAll('.auth-tab').forEach(function(b,i){
+    b.classList.toggle('active', i === 1);
+  });
+  document.getElementById('authInForm').style.display = 'none';
+  document.getElementById('authUpForm').style.display = 'block';
+  var e = document.getElementById('authErr'); if(e) e.classList.remove('show');
+  // Focus the name field
+  setTimeout(function(){ var n=document.getElementById('suName'); if(n) n.focus(); }, 100);
 }
 
 // Override authTab to show role selector when tapping 'Create Account' if role not set

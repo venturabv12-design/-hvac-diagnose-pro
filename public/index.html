@@ -3186,6 +3186,7 @@ async function callAI(system,messages,max_tokens,useSearch){
     var tid=setTimeout(function(){controller.abort();},30000);
     try{
       var reqBody={system:system,messages:messages,max_tokens:max_tokens};
+      if(currentUser&&currentUser.token)reqBody.token=currentUser.token;
       if(useSearch)reqBody.use_search=true;
       var res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(reqBody),signal:controller.signal});
       clearTimeout(tid);

@@ -1152,7 +1152,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
 
   globalActive++;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 55000);
+  const timeout = setTimeout(() => controller.abort(), 75000);
 
   try {
     const body = {

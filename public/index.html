@@ -3253,7 +3253,7 @@ async function callAI(system,messages,max_tokens,useSearch){
     // Fall back to a per-attempt controller for our own 30s timeout.
     var externalCtrl=window.chatAbortController;
     var controller=externalCtrl||new AbortController();
-    var tid=setTimeout(function(){try{controller.abort();}catch(e){}},30000);
+    var tid=setTimeout(function(){try{controller.abort();}catch(e){}},60000);
     try{
       var reqBody={system:system,messages:messages,max_tokens:max_tokens};
       if(currentUser&&currentUser.token)reqBody.token=currentUser.token;
@@ -5289,7 +5289,7 @@ async function generateAndShowSVG(prompt, caption, isIllustration){
         ?'You generate SVG illustrations for HVAC technicians. Your ENTIRE response must be valid SVG XML starting with <svg and ending with </svg>. No other text. No markdown. No code blocks. Just the raw SVG code.'
         :'You generate SVG wiring diagrams for HVAC technicians. Your ENTIRE response must be valid SVG XML starting with <svg and ending with </svg>. No other text. No markdown. No code blocks. Just the raw SVG code.';
       var userPrompt=(isIllustration?buildIllustrationPrompt(prompt):buildDiagramPrompt(prompt))+(attempt>0?'\n\nIMPORTANT: Start your response with <svg and end with </svg>. Nothing else. No explanation.':'');
-      var raw=await callAI(sysPrompt,[{role:'user',content:userPrompt}],4096);
+      var raw=await callAI(sysPrompt,[{role:'user',content:userPrompt}],2500);
       if(!raw||raw.length<100){lastErr='AI returned <100 chars';continue;}
       var extracted=raw.replace(/^```[\w]*\s*/i,'').replace(/\s*```\s*$/i,'').trim();
       var svgIdx=extracted.toLowerCase().indexOf('<svg');
@@ -5716,6 +5716,8 @@ function toggleMic(){
 
 function mikeSay(text){
   if(!voiceMode)return;
+  // Kill any other Mike that may be speaking — voice mode, camera mode, or browser fallback.
+  // This is the single source of truth: only ONE Mike voice may ever play at a time.
   stopMikeSpeaking();
   stopListening();
   document.getElementById('chatInput').value='';
@@ -5727,18 +5729,42 @@ function mikeSay(text){
   if(micBtn){micBtn.classList.add('mic-speaking');micBtn.textContent='🔊';}
   if(stopBtn)stopBtn.style.display='flex';
   setVoiceStatus('Mike is talking…','');
-  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})})
+  // Stale-token guard: if user presses stop or camera opens while fetch is in flight,
+  // the token below will get bumped and the .then() will drop the audio on the floor.
+  var myToken=(window._voiceTTSToken=(window._voiceTTSToken||0)+1);
+  var voiceCtrl=(typeof AbortController!=='undefined')?new AbortController():null;
+  try{if(window._voiceTTSAbort)window._voiceTTSAbort.abort();}catch(e){}
+  window._voiceTTSAbort=voiceCtrl;
+  var stale=function(){return myToken!==window._voiceTTSToken||!voiceMode;};
+  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean}),signal:voiceCtrl?voiceCtrl.signal:undefined})
     .then(function(res){
       if(!res.ok)throw new Error('TTS '+res.status);
       return res.arrayBuffer();
     })
     .then(function(arrayBuf){
-      if(!arrayBuf||arrayBuf.byteLength<500){mikeSayBrowser(clean);return;}
+      if(stale()){return;} // user pressed stop / opened camera — drop this audio
+      if(!arrayBuf||arrayBuf.byteLength<500){
+        // ElevenLabs returned nothing — go silent rather than fall back to robot voice.
+        // Robot speechSynthesis was causing "two Mikes talking" when it overlapped real Mike.
+        isMikeSpeaking=false;
+        if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
+        if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
+        if(stopBtn)stopBtn.style.display='none';
+        if(voiceMode&&!isListening){setVoiceStatus('Go ahead…','');setTimeout(function(){if(voiceMode&&!isListening)startListening();},1200);}
+        return;
+      }
       var AudioCtx=window.AudioContext||window.webkitAudioContext;
-      if(!AudioCtx){mikeSayBrowser(clean);return;}
+      if(!AudioCtx){
+        isMikeSpeaking=false;
+        if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
+        if(stopBtn)stopBtn.style.display='none';
+        return;
+      }
       var ctx=sharedAudioCtx||(sharedAudioCtx=new AudioCtx());
       var play=function(){
+        if(stale()){return;} // double-check right before decode
         ctx.decodeAudioData(arrayBuf.slice(0),function(decoded){
+          if(stale()){return;} // and right before playback
           var src=ctx.createBufferSource();
           var gainNode=ctx.createGain();
           gainNode.gain.value=1.0;
@@ -5757,48 +5783,49 @@ function mikeSay(text){
           };
           src.start(0);
           mikeAudio={pause:function(){try{src.stop(0);}catch(e){}try{src.disconnect();}catch(e2){}try{gainNode.disconnect();}catch(e3){}}};
-        },function(){mikeSayBrowser(clean);});
+        },function(){
+          // Decode failed — go silent, don't fall back to robot voice.
+          isMikeSpeaking=false;
+          if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
+          if(stopBtn)stopBtn.style.display='none';
+        });
       };
-      if(ctx.state==='suspended'||ctx.state==='interrupted'){ctx.resume().then(play).catch(function(){mikeSayBrowser(clean);});}
+      if(ctx.state==='suspended'||ctx.state==='interrupted'){ctx.resume().then(play).catch(function(){isMikeSpeaking=false;});}
       else play();
     })
-    .catch(function(){mikeSayBrowser(clean);});
-}
-
-function mikeSayBrowser(clean){
-  if(!window.speechSynthesis){isMikeSpeaking=false;if(voiceMode)setTimeout(startListening,1200);return;}
-  window.speechSynthesis.cancel();
-  var chunks=clean.match(/[^.!?]+[.!?]*/g)||[clean];
-  var idx=0;
-  var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
-  isMikeSpeaking=true;
-  if(typeof showVoiceWaveform==='function')showVoiceWaveform(true);
-  if(micBtn){micBtn.classList.add('mic-speaking');micBtn.textContent='🔊';}
-  if(stopBtn)stopBtn.style.display='flex';
-  function next(){
-    if(idx>=chunks.length||!isMikeSpeaking){
+    .catch(function(err){
+      // AbortError = user pressed stop / camera opened. Silent exit.
+      if(err&&err.name==='AbortError'){isMikeSpeaking=false;return;}
+      // Network/TTS error — go silent. Do NOT call mikeSayBrowser (it's the robot-voice double-Mike).
       isMikeSpeaking=false;
+      if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
       if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
       if(stopBtn)stopBtn.style.display='none';
-      if(voiceMode){setVoiceStatus('Go ahead…','');setTimeout(function(){if(voiceMode&&!isListening)startListening();},1200);}
-      return;
-    }
-    var utt=new SpeechSynthesisUtterance(chunks[idx]);
-    if(mikeVoice)utt.voice=mikeVoice;
-    utt.rate=1.0;utt.pitch=0.88;utt.volume=1;
-    utt.onend=function(){idx++;next();};
-    utt.onerror=function(){isMikeSpeaking=false;if(micBtn)micBtn.classList.remove('mic-speaking');};
-    window.speechSynthesis.speak(utt);
-    idx++;
-  }
-  next();
+      if(voiceMode&&!isListening){setVoiceStatus('Go ahead…','');setTimeout(function(){if(voiceMode&&!isListening)startListening();},1500);}
+    });
+}
+
+// mikeSayBrowser DEPRECATED — was the robot-voice fallback that caused "two Mikes talking at once".
+// Kept as a no-op for any straggler callers; just goes silent instead of speaking.
+function mikeSayBrowser(clean){
+  isMikeSpeaking=false;
+  var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
+  if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
+  if(stopBtn)stopBtn.style.display='none';
+  if(voiceMode&&!isListening)setTimeout(function(){if(voiceMode&&!isListening)startListening();},1200);
 }
 
 function stopMikeSpeaking(){
   isMikeSpeaking=false;
-  // Abort any in-flight camera TTS so a slow download doesn't start playing after stop.
+  // Abort any in-flight TTS fetches (both voice mode and camera) so slow downloads
+  // never start playing AFTER stop. This is the fix for "Mike keeps talking after stop".
+  try{if(window._voiceTTSAbort){window._voiceTTSAbort.abort();window._voiceTTSAbort=null;}}catch(e){}
   try{if(window._cameraTTSAbort){window._cameraTTSAbort.abort();window._cameraTTSAbort=null;}}catch(e){}
+  // Bump tokens so any TTS promise resolving in flight treats itself as stale.
+  window._voiceTTSToken=(window._voiceTTSToken||0)+1;
   window._cameraTTSToken=(window._cameraTTSToken||0)+1;
+  // Stop any robot speechSynthesis chunks left in the queue (legacy mikeSayBrowser).
+  try{if(window.speechSynthesis){window.speechSynthesis.cancel();}}catch(e){}
   if(mikeAudio){try{mikeAudio.pause();}catch(e){}mikeAudio=null;}
   if(window._mikeAudioEl){
     try{window._mikeAudioEl.onended=null;window._mikeAudioEl.onerror=null;}catch(e){}
@@ -5876,13 +5903,15 @@ async function startLiveCamera(){
     showToast(msg,'error',6000);
     return;
   }
-  // Mike watches silently - only analyzes when tech asks
-  // Auto-analysis disabled: prevents Mike from talking unprompted
-  setTimeout(function(){startCameraListen();},1500);
+  // Camera open sequence (per Kaizen):
+  // 1. Show overlay immediately
+  // 2. Mike speaks the intro: "Point your camera at the unit"
+  // 3. AFTER Mike finishes, listener starts automatically (handled in mikeSayCamera's onended)
+  // We do NOT start the listener on a timer — that caused Mike's voice to echo into the mic.
   setTimeout(function(){
-    setCameraResponse('Point your camera at the unit — I can see everything in real time. Tell me what you\'re working on.');
-    mikeSayCamera('Point your camera at the unit. I can see everything. Tell me what you\'re working on.');
-  },800);
+    setCameraResponse('Point your camera at the unit — tell me what you\'re working on.');
+    mikeSayCamera('Point your camera at the unit. Tell me what you are working on.');
+  },600);
 }
 
 async function startCameraStream(){

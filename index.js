@@ -377,14 +377,20 @@ app.use(helmet({
       // on every element silently (no console error). public/index.html has 150+ inline onclick handlers
       // — auth buttons, modal buttons, role pickers, etc. Without this directive, every click is dead.
       scriptSrcAttr: ["'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],        // Needed: inline CSS
-      imgSrc: ["'self'", 'data:', 'https:'],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+      // media-src: blob: is required for mikeSayCamera's URL.createObjectURL audio playback.
+      // data: is required for the iOS silent-audio primer and primeCameraAudio's data-URL MP3.
+      mediaSrc: ["'self'", 'blob:', 'data:'],
+      manifestSrc: ["'self'", 'data:'],
       connectSrc: [
         "'self'",
         'https://api.anthropic.com',
         'https://api.elevenlabs.io',
         'https://js.stripe.com',
         'https://api.stripe.com',
+        'https://nominatim.openstreetmap.org',
         APP_URL,
       ],
       frameSrc: ["'none'"],

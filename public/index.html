@@ -3249,8 +3249,11 @@ function resetRecording(){
 async function callAI(system,messages,max_tokens,useSearch){
   max_tokens=max_tokens||2048;
   for(var attempt=0;attempt<3;attempt++){
-    var controller=new AbortController();
-    var tid=setTimeout(function(){controller.abort();},30000);
+    // Prefer the external chat Stop controller if present (so user-press-Stop aborts the fetch).
+    // Fall back to a per-attempt controller for our own 30s timeout.
+    var externalCtrl=window.chatAbortController;
+    var controller=externalCtrl||new AbortController();
+    var tid=setTimeout(function(){try{controller.abort();}catch(e){}},30000);
     try{
       var reqBody={system:system,messages:messages,max_tokens:max_tokens};
       if(currentUser&&currentUser.token)reqBody.token=currentUser.token;
@@ -3281,6 +3284,11 @@ async function callAI(system,messages,max_tokens,useSearch){
     }catch(e){
       clearTimeout(tid);
       if(e.name==='AbortError'){
+        // If the external chat controller was nulled out, it means the user pressed Stop.
+        // Don't retry — re-throw so sendChat's catch can show "(stopped)".
+        if(externalCtrl&&!window.chatAbortController){
+          throw e;
+        }
         if(attempt<2){await new Promise(function(r){setTimeout(r,800);});continue;}
         throw new Error('Request timed out. Tap send again.');
       }
@@ -4532,7 +4540,46 @@ function detectInlineCorrection(userText){
   }
   return null;
 }
+// Global controller so the Stop button can cancel an in-flight Mike request
+var chatAbortController=null;
+
+function stopChatStream(){
+  if(chatAbortController){
+    try{chatAbortController.abort();}catch(e){}
+    chatAbortController=null;
+  }
+  if(typeof hideTyping==='function')hideTyping();
+  resetChatSendButton();
+  chatSending=false;
+}
+
+function resetChatSendButton(){
+  var btn=document.getElementById('chatSendBtn');
+  if(!btn)return;
+  btn.disabled=false;
+  btn.classList.remove('sending');
+  btn.innerHTML='&#x279E;'; // ➞ arrow
+  btn.setAttribute('onclick','sendChat()');
+  btn.setAttribute('title','Send');
+}
+
+function setChatSendButtonStopMode(){
+  var btn=document.getElementById('chatSendBtn');
+  if(!btn)return;
+  btn.disabled=false; // stop must remain clickable
+  btn.classList.add('sending');
+  btn.innerHTML='&#x25A0;'; // ■ stop
+  btn.setAttribute('onclick','stopChatStream()');
+  btn.setAttribute('title','Stop Mike');
+}
+
 async function sendChat(){
+  // Defensive: if a previous request left state in a bad state, recover
+  if(chatSending){
+    // User tapped send while a request is in flight. Treat this as Stop+restart.
+    stopChatStream();
+    return;
+  }
   if(!isAccessAllowed())return;
   // Request/refresh location on every chat until we have a good one
   if(!window._locationDenied){
@@ -4551,14 +4598,14 @@ async function sendChat(){
   trackUsage("chat");
   if(typeof haptic==="function"){haptic("light");animateSendBtn();}
   if(typeof hideQuickReplies==="function")hideQuickReplies();
-  if(chatSending)return;
   var input=document.getElementById('chatInput'),text=input.value.trim();
   if(text.length>8000){showToast('Message too long — please shorten it.','error',3000);return;}
   if(!text&&!chatAttachment)return;
-  // Stop Mike speaking when user sends a new message
+  // Mark state and switch button to Stop mode (so user can abort a long response)
   chatSending=true;
   stopMikeSpeaking();
-  var btn=document.getElementById('chatSendBtn');btn.disabled=true;
+  setChatSendButtonStopMode();
+  chatAbortController=(typeof AbortController!=='undefined')?new AbortController():null;
   input.value='';input.style.height='auto';
   var hadAttachment=!!chatAttachment;
 
@@ -4642,8 +4689,11 @@ async function sendChat(){
     }
   }catch(e){
     hideTyping();
-    var em=e.message||'';
-    if(em.includes('timed out')||em.includes('abort')||em.toLowerCase().includes('network')){
+    var em=(e&&e.message)||'';
+    if(e&&e.name==='AbortError'){
+      // User pressed Stop. Don't show an error — they did this on purpose.
+      appendMessage('agent','(stopped)');
+    } else if(em.includes('timed out')||em.includes('abort')||em.toLowerCase().includes('network')){
       appendMessage('agent','Taking a bit longer than usual. Check your connection and tap send again.');
     } else if(em.includes('high demand')){
       appendMessage('agent','Mike is handling a lot of requests right now. Give it a second and tap send again.');
@@ -4652,11 +4702,12 @@ async function sendChat(){
     }
   }
   finally{
+    chatAbortController=null;
     chatSending=false;
-    btn.disabled=false;
+    resetChatSendButton();
     if(!voiceMode){
       isMikeSpeaking=false;
-      input.focus();
+      try{input.focus();}catch(_f){}
     }
     // In voice mode: isMikeSpeaking stays true until _playNextInQueue finishes
   }
@@ -5231,6 +5282,7 @@ async function generateAndShowSVG(prompt, caption, isIllustration){
   container.appendChild(loadDiv);
   container.scrollTop = container.scrollHeight;
   var svg = null;
+  var lastErr = null;
   for(var attempt=0;attempt<3&&!svg;attempt++){
     try{
       var sysPrompt=isIllustration
@@ -5238,19 +5290,31 @@ async function generateAndShowSVG(prompt, caption, isIllustration){
         :'You generate SVG wiring diagrams for HVAC technicians. Your ENTIRE response must be valid SVG XML starting with <svg and ending with </svg>. No other text. No markdown. No code blocks. Just the raw SVG code.';
       var userPrompt=(isIllustration?buildIllustrationPrompt(prompt):buildDiagramPrompt(prompt))+(attempt>0?'\n\nIMPORTANT: Start your response with <svg and end with </svg>. Nothing else. No explanation.':'');
       var raw=await callAI(sysPrompt,[{role:'user',content:userPrompt}],4096);
-      if(!raw||raw.length<100)continue;
+      if(!raw||raw.length<100){lastErr='AI returned <100 chars';continue;}
       var extracted=raw.replace(/^```[\w]*\s*/i,'').replace(/\s*```\s*$/i,'').trim();
       var svgIdx=extracted.toLowerCase().indexOf('<svg');
       if(svgIdx>0)extracted=extracted.substring(svgIdx);
       var endIdx=extracted.toLowerCase().lastIndexOf('</svg>');
       if(endIdx>0)extracted=extracted.substring(0,endIdx+6);
       if(extracted.toLowerCase().startsWith('<svg')&&extracted.includes('</svg>')&&extracted.length>300){svg=extracted;}
-    }catch(e){}
+      else{lastErr='SVG parse failed: starts='+extracted.substring(0,30)+' len='+extracted.length;}
+    }catch(e){lastErr=e&&e.message?e.message:String(e);console.warn('Diagram attempt '+attempt+' failed:',lastErr);}
   }
+  if(lastErr&&!svg)console.warn('Diagram all attempts failed. Last error:',lastErr);
   if(container.contains(loadDiv))container.removeChild(loadDiv);
-  if(!svg){svg=isIllustration?buildFallbackIllustration(caption):buildFallbackDiagram(caption);}
-  svg=svg.replace(/\s+width=["']\d+[^"']*["']/g,'').replace(/\s+height=["']\d+[^"']*["']/g,'');
-  if(!svg.includes('style="width:100%'))svg=svg.replace('<svg','<svg style="width:100%;height:auto;display:block;" ');
+  if(!svg){
+    // All 3 attempts failed. Show the user a real error instead of a generic-looking fallback
+    // (the silent fallback made the feature feel broken). Surface a retry option.
+    if(typeof showToast==='function')showToast('Diagram generation failed. Tap Diagram again to retry.','error',4000);
+    svg=isIllustration?buildFallbackIllustration(caption):buildFallbackDiagram(caption);
+  }
+  // ONLY strip width/height from the OUTER <svg> tag — not every <rect>, <circle>, etc.
+  // The original regex stripped width/height from EVERY element, turning all shapes into invisible 0x0 boxes.
+  // Match only the opening <svg ...> tag (lazy, non-greedy) and clean its attrs.
+  svg=svg.replace(/<svg\b([^>]*)>/i,function(match,attrs){
+    var cleaned=attrs.replace(/\s+(?:width|height)=["'][^"']*["']/gi,'');
+    return '<svg'+cleaned+' style="width:100%;height:auto;display:block;cursor:pointer;">';
+  });
   var div=document.createElement('div');div.className='msg-agent';
   var wrapper=document.createElement('div');
   wrapper.className='msg-bubble msg-bubble-agent';
@@ -5291,11 +5355,11 @@ async function generateAndShowSVG(prompt, caption, isIllustration){
 }
 
 function buildDiagramPrompt(prompt){
-  return prompt+'\n\nSVG diagram requirements: viewBox="0 0 500 440", first child element must be <rect width="500" height="440" fill="#111827"/>, title in white at top, components as teal #00C2B2 filled rectangles with white labels, colored wire lines (R=red #ef4444, C=blue #3b82f6, Y=yellow #eab308, G=green #22c55e, W=white stroke, O=orange #f97316), all text font-family="Arial,sans-serif". Include all relevant components, terminals, and labels.';
+  return prompt+'\n\nGenerate a professional, contractor-grade SVG wiring diagram. This must look like something out of an OEM service manual — clean, readable, accurate.\n\nMANDATORY structure:\n- viewBox="0 0 600 500" so there is room for proper labels\n- FIRST child element must be a full background: <rect x="0" y="0" width="600" height="500" fill="#0f172a"/>\n- Title at top center: white text, font-size 16-18, font-weight bold, y=28\n- Components: <rect> elements with EXPLICIT x, y, width, height attributes (never omit width/height), rounded corners rx="6", fill="#1e293b" with teal #00C2B2 stroke 2px\n- Component labels: white text centered inside each rect, font-size 12-13\n- Terminal labels: small circles (r=5) with letter codes (R, C, Y, G, W, O, B) — place ON the component edge where wires connect\n- Wires: <line> or <path> with color matching the terminal (R=#ef4444, C=#3b82f6, Y=#eab308, G=#22c55e, W=white stroke 2.5px, O=#f97316, B=#8b5cf6) — make wires thick (stroke-width 2.5-3) and clearly traceable\n- Wire labels: small text next to each wire showing voltage or function (e.g. "24V", "common", "fan")\n- All text: font-family="Arial,sans-serif", proper text-anchor, no overlapping labels\n- Include a SHORT legend at the bottom if there are 3+ wire colors\n- Show every connection the tech needs to make in the field — no placeholder labels like "wire here"\n- Be specific to the exact equipment mentioned (board model, transformer specs, etc.)\n\nNEVER use <rect> without width and height attributes. Every shape must have explicit dimensions.';
 }
 
 function buildIllustrationPrompt(prompt){
-  return prompt+'\n\nSVG illustration requirements: viewBox="0 0 500 400", background <rect width="500" height="400" fill="#f8f9fa"/>, realistic colors (copper #b87333, steel #9ca3af, plastic #e5e7eb), title in dark text at top, labeled arrows pointing to key parts, font-family="Arial,sans-serif". Make it look like a professional technical manual.';
+  return prompt+'\n\nGenerate a professional, manual-quality SVG illustration of the part or component.\n\nMANDATORY structure:\n- viewBox="0 0 600 500"\n- FIRST child element must be a full background: <rect x="0" y="0" width="600" height="500" fill="#f8fafc"/>\n- Title in dark text at top, y=30, font-size 16-18, bold, text-anchor middle\n- Use realistic colors: copper #b87333, steel/aluminum #9ca3af, plastic housing #e5e7eb, rubber #1f2937, gold/brass terminals #d4a017, wire insulation per code colors\n- Draw the component with proportional <rect>, <circle>, <path>, <ellipse> — ALWAYS include explicit width/height on rects, r on circles\n- Labeled callouts: thin gray lines (#9ca3af, stroke 1px) from the part to a label box, with the label in dark text (#1f2937), font-size 11\n- Include exterior, interior, and any cutaway view if relevant to the part being shown\n- Show all visible terminals, wire entries, fasteners, and ports with labels\n- If part numbers were mentioned, include them in a corner badge\n- All text: font-family="Arial,sans-serif"\n\nNEVER use <rect> without width and height attributes. Every shape must have explicit dimensions. Aim for the visual quality of a Carrier/Trane/Goodman service manual.';
 }
 
 function buildFallbackDiagram(caption){
@@ -6081,56 +6145,103 @@ function toggleCameraMic(){
 function startCameraListen(){
   if(!cameraActive||isMikeSpeaking)return;
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR)return;
+  if(!SR){
+    if(typeof showToast==='function')showToast('Voice not supported in this browser. Use Safari on iOS or Chrome on Android.','error',4000);
+    return;
+  }
   stopCameraListen();
-  cameraSpeechRec=new SR();
-  cameraSpeechRec.continuous=false;
-  cameraSpeechRec.interimResults=true;
-  cameraSpeechRec.lang='en-US';
-  cameraListening=true;
-  updateCameraMicState('listening');
-  document.getElementById('cameraTranscript').textContent='Listening…';
-  var camAccumulated='';
-  var camSendTimer=null;
-  cameraSpeechRec.onresult=function(e){
-    // If Mike is speaking, anything coming through the mic is almost certainly
-    // his own voice echoing back through the iPhone speaker (no AEC on mobile Safari).
-    // Drop the entire result so we don't queue Mike's words for analysis.
-    if(isMikeSpeaking)return;
-    var t='';
-    for(var i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;
-    if(t.trim()){
-      camAccumulated=t.trim();
-      if(camSendTimer)clearTimeout(camSendTimer);
-      camSendTimer=setTimeout(function(){
-        if(camAccumulated&&cameraActive&&!isMikeSpeaking){
-          var text=camAccumulated;
-          camAccumulated='';
-          document.getElementById('cameraTranscript').textContent='';
-          try{cameraSpeechRec.abort();}catch(ex){}
-          analyzeCameraFrame(true,text);
-        }
-      },1500);
-    }
-  };
-  cameraSpeechRec.onend=function(){
-    cameraListening=false;
-    if(camAccumulated&&!isMikeSpeaking){
-      var text=camAccumulated;
-      camAccumulated='';
-      if(camSendTimer)clearTimeout(camSendTimer);
-      document.getElementById('cameraTranscript').textContent='';
-      analyzeCameraFrame(true,text);
-    } else {
+  // iOS Safari: SpeechRecognition needs explicit mic permission via getUserMedia FIRST.
+  // Without this, the recognizer silently no-ops or fires service-not-allowed.
+  // We grab the audio stream just to trigger the permission prompt, then immediately release it
+  // (the recognizer creates its own internal stream after).
+  var go=function(){
+    cameraSpeechRec=new SR();
+    cameraSpeechRec.continuous=false;
+    cameraSpeechRec.interimResults=true;
+    cameraSpeechRec.lang='en-US';
+    cameraListening=true;
+    updateCameraMicState('listening');
+    document.getElementById('cameraTranscript').textContent='Listening…';
+    var camAccumulated='';
+    var camSendTimer=null;
+    cameraSpeechRec.onresult=function(e){
+      // If Mike is speaking, anything coming through the mic is almost certainly
+      // his own voice echoing back through the iPhone speaker (no AEC on mobile Safari).
+      // Drop the entire result so we don't queue Mike's words for analysis.
+      if(isMikeSpeaking)return;
+      var t='';
+      for(var i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;
+      if(t.trim()){
+        camAccumulated=t.trim();
+        document.getElementById('cameraTranscript').textContent=camAccumulated;
+        if(camSendTimer)clearTimeout(camSendTimer);
+        camSendTimer=setTimeout(function(){
+          if(camAccumulated&&cameraActive&&!isMikeSpeaking){
+            var text=camAccumulated;
+            camAccumulated='';
+            document.getElementById('cameraTranscript').textContent='';
+            try{cameraSpeechRec.abort();}catch(ex){}
+            analyzeCameraFrame(true,text);
+          }
+        },1500);
+      }
+    };
+    cameraSpeechRec.onend=function(){
+      cameraListening=false;
+      if(camAccumulated&&!isMikeSpeaking){
+        var text=camAccumulated;
+        camAccumulated='';
+        if(camSendTimer)clearTimeout(camSendTimer);
+        document.getElementById('cameraTranscript').textContent='';
+        analyzeCameraFrame(true,text);
+      } else {
+        updateCameraMicState('idle');
+      }
+    };
+    cameraSpeechRec.onerror=function(ev){
+      cameraListening=false;
       updateCameraMicState('idle');
+      document.getElementById('cameraTranscript').textContent='';
+      // Surface real error to the tech instead of silently dying.
+      var err=(ev&&ev.error)||'unknown';
+      var msg='';
+      if(err==='not-allowed'||err==='service-not-allowed')
+        msg='Mic blocked. Go to Settings → Safari → Microphone and allow this site.';
+      else if(err==='no-speech')
+        msg='I didn\'t catch that. Tap the mic and speak again.';
+      else if(err==='audio-capture')
+        msg='Mic in use by another app. Close it and try again.';
+      else if(err==='network')
+        msg='Voice recognition needs internet. Check your connection.';
+      else if(err==='aborted'){/* user-initiated, no toast */return;}
+      else msg='Mic error ('+err+'). Tap the mic to try again.';
+      if(msg&&typeof showToast==='function')showToast(msg,'error',4000);
+    };
+    try{cameraSpeechRec.start();}
+    catch(e){
+      cameraListening=false;
+      updateCameraMicState('idle');
+      if(typeof showToast==='function')showToast('Mic failed to start: '+(e.message||'unknown')+'. Tap mic to retry.','error',4000);
     }
   };
-  cameraSpeechRec.onerror=function(ev){
-    cameraListening=false;
+  // Try to preflight mic permission. On iOS, this is what actually shows the permission prompt.
+  // Only do this once per session (cached after first successful call).
+  if(window._micPermissionOk||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    go();return;
+  }
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+    // Got permission — release the stream immediately, the recognizer makes its own.
+    try{stream.getTracks().forEach(function(t){t.stop();});}catch(e){}
+    window._micPermissionOk=true;
+    go();
+  }).catch(function(err){
+    var msg='Microphone permission is required for voice.';
+    if(err&&err.name==='NotAllowedError')msg='Mic blocked. Tap the camera permission icon in the address bar to allow microphone access.';
+    else if(err&&err.name==='NotFoundError')msg='No microphone found on this device.';
+    else if(err&&err.name==='NotReadableError')msg='Mic is in use by another app. Close it and try again.';
+    if(typeof showToast==='function')showToast(msg,'error',5000);
     updateCameraMicState('idle');
-    document.getElementById('cameraTranscript').textContent='';
-  };
-  try{cameraSpeechRec.start();}catch(e){cameraListening=false;updateCameraMicState('idle');}
+  });
 }
 
 function stopCameraListen(){

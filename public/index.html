@@ -5887,6 +5887,9 @@ function stopMikeSpeaking(){
 var cameraStream=null,cameraFacing='environment',cameraAnalysisInterval=null;
 var cameraListening=false,cameraSpeechRec=null,cameraActive=false;
 var lastCameraAnalysis=0,cameraAnalysisLock=false;
+// Consecutive empty-onend / error retries inside startCameraListen. Capped at
+// 5 to prevent runaway loops. Reset on real transcript text and on camera open.
+var cameraEmptyRetries=0;
 
 function checkCameraAccess(){
   window._camTapN=(window._camTapN||0)+1;
@@ -5919,6 +5922,7 @@ async function startLiveCamera(){
   try{stopListening();}catch(e){}
   try{if(cameraStream){cameraStream.getTracks().forEach(function(t){try{t.stop();}catch(er){}});cameraStream=null;}}catch(e){}
   cameraActive=true;
+  cameraEmptyRetries=0;
   try{
     await startCameraStream();
   }catch(camErr){
@@ -6233,12 +6237,16 @@ function startCameraListen(){
     cameraSpeechRec=new SR();
     cameraSpeechRec.continuous=false;
     cameraSpeechRec.interimResults=true;
-    cameraSpeechRec.lang='en-US';
+    cameraSpeechRec.lang=currentLang==='es'?'es-MX':currentLang==='zh'?'zh-CN':currentLang==='vi'?'vi-VN':currentLang==='fr'?'fr-FR':currentLang==='pt'?'pt-BR':'en-US';
     cameraListening=true;
     updateCameraMicState('listening');
     document.getElementById('cameraTranscript').textContent='Listening…';
     var camAccumulated='';
     var camSendTimer=null;
+    // Tracks whether WE called .abort() because the silence-debounce just sent
+    // a transcript to analyzeCameraFrame. In that case Mike will speak next and
+    // his onended will re-arm the mic — we must NOT silent-retry on the abort.
+    var sentToAnalyze=false;
     cameraSpeechRec.onresult=function(e){
       // If Mike is speaking, anything coming through the mic is almost certainly
       // his own voice echoing back through the iPhone speaker (no AEC on mobile Safari).
@@ -6247,6 +6255,7 @@ function startCameraListen(){
       var t='';
       for(var i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;
       if(t.trim()){
+        cameraEmptyRetries=0;
         camAccumulated=t.trim();
         document.getElementById('cameraTranscript').textContent=camAccumulated;
         if(camSendTimer)clearTimeout(camSendTimer);
@@ -6255,6 +6264,7 @@ function startCameraListen(){
             var text=camAccumulated;
             camAccumulated='';
             document.getElementById('cameraTranscript').textContent='';
+            sentToAnalyze=true;
             try{cameraSpeechRec.abort();}catch(ex){}
             analyzeCameraFrame(true,text);
           }
@@ -6269,34 +6279,49 @@ function startCameraListen(){
         if(camSendTimer)clearTimeout(camSendTimer);
         document.getElementById('cameraTranscript').textContent='';
         analyzeCameraFrame(true,text);
+      } else if(cameraActive&&!isMikeSpeaking){
+        // Empty onend → auto-retry like voice chat. Cap at 5 consecutive empties
+        // to prevent runaway loops; counter resets on real transcript text.
+        if(cameraEmptyRetries<5){
+          cameraEmptyRetries++;
+          setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},isSafari?1200:600);
+        } else {
+          updateCameraMicState('idle');
+        }
       } else {
         updateCameraMicState('idle');
       }
     };
     cameraSpeechRec.onerror=function(ev){
       cameraListening=false;
+      var err=(ev&&ev.error)||'unknown';
+      // We aborted ourselves after sending a transcript — Mike will speak and
+      // his onended will re-arm the mic. Don't silent-retry here.
+      if(err==='aborted'&&sentToAnalyze){return;}
       updateCameraMicState('idle');
       document.getElementById('cameraTranscript').textContent='';
-      // Surface real error to the tech instead of silently dying.
-      var err=(ev&&ev.error)||'unknown';
-      var msg='';
-      if(err==='not-allowed'||err==='service-not-allowed')
-        msg='Mic blocked. Go to Settings → Safari → Microphone and allow this site.';
-      else if(err==='no-speech')
-        msg='I didn\'t catch that. Tap the mic and speak again.';
-      else if(err==='audio-capture')
-        msg='Mic in use by another app. Close it and try again.';
-      else if(err==='network')
-        msg='Voice recognition needs internet. Check your connection.';
-      else if(err==='aborted'){/* user-initiated, no toast */return;}
-      else msg='Mic error ('+err+'). Tap the mic to try again.';
-      if(msg&&typeof showToast==='function')showToast(msg,'error',4000);
+      // Real permission failure — keep a toast so the tech can act on it.
+      if(err==='not-allowed'||err==='service-not-allowed'){
+        if(typeof showToast==='function')showToast('Mic blocked. Go to Settings → Safari → Microphone and allow this site.','error',4000);
+        return;
+      }
+      // no-speech / aborted (non-intentional) / audio-capture / network / unknown
+      // → silent retry matching voice chat cadence, capped at 5 consecutive.
+      if(cameraActive&&!isMikeSpeaking&&cameraEmptyRetries<5){
+        cameraEmptyRetries++;
+        var delay=(err==='no-speech'||err==='aborted')?(isSafari?1000:500):(isSafari?1500:800);
+        setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},delay);
+      }
     };
     try{cameraSpeechRec.start();}
     catch(e){
       cameraListening=false;
       updateCameraMicState('idle');
-      if(typeof showToast==='function')showToast('Mic failed to start: '+(e.message||'unknown')+'. Tap mic to retry.','error',4000);
+      // Silent — matches voice chat behaviour. Retry loop picks it up.
+      if(cameraActive&&!isMikeSpeaking&&cameraEmptyRetries<5){
+        cameraEmptyRetries++;
+        setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},isSafari?1500:800);
+      }
     }
   };
   // Try to preflight mic permission. On iOS, this is what actually shows the permission prompt.

@@ -6273,6 +6273,10 @@ function startCameraListen(){
     };
     cameraSpeechRec.onend=function(){
       cameraListening=false;
+      // If we just deliberately aborted to send a transcript, Mike is analyzing
+      // and his mikeSayCamera.onended will re-arm the mic when he finishes.
+      // Skip the auto-retry so the mic doesn't pick up the user mid-analysis.
+      if(sentToAnalyze)return;
       if(camAccumulated&&!isMikeSpeaking){
         var text=camAccumulated;
         camAccumulated='';
@@ -6284,7 +6288,7 @@ function startCameraListen(){
         // to prevent runaway loops; counter resets on real transcript text.
         if(cameraEmptyRetries<5){
           cameraEmptyRetries++;
-          setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},isSafari?1200:600);
+          setTimeout(function(){if(cameraActive&&!isMikeSpeaking&&!cameraAnalysisLock)startCameraListen();},isSafari?1200:600);
         } else {
           updateCameraMicState('idle');
         }
@@ -6310,7 +6314,7 @@ function startCameraListen(){
       if(cameraActive&&!isMikeSpeaking&&cameraEmptyRetries<5){
         cameraEmptyRetries++;
         var delay=(err==='no-speech'||err==='aborted')?(isSafari?1000:500):(isSafari?1500:800);
-        setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},delay);
+        setTimeout(function(){if(cameraActive&&!isMikeSpeaking&&!cameraAnalysisLock)startCameraListen();},delay);
       }
     };
     try{cameraSpeechRec.start();}
@@ -6320,7 +6324,7 @@ function startCameraListen(){
       // Silent — matches voice chat behaviour. Retry loop picks it up.
       if(cameraActive&&!isMikeSpeaking&&cameraEmptyRetries<5){
         cameraEmptyRetries++;
-        setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},isSafari?1500:800);
+        setTimeout(function(){if(cameraActive&&!isMikeSpeaking&&!cameraAnalysisLock)startCameraListen();},isSafari?1500:800);
       }
     }
   };

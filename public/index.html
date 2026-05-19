@@ -2240,6 +2240,11 @@ function authSignUp(){
       updateProfileUI();checkTrial();loadUserHistory();applyModeFromRole();
       showPersonalizedWelcome();
       if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
+      // Immediately mark onboarded on this device so the flow never replays
+      // even if pagehide/visibilitychange listeners don't fire (iOS app kill,
+      // PWA storage eviction race, etc.). Onboarding still shows once because
+      // the gate above already scheduled it before this line ran.
+      try{localStorage.setItem('trazer_onboarded','1');}catch(e){}
       setTimeout(requestTechLocation,2000);
     })
     .catch(function(err){showAuthErr('Connection error — '+( err&&err.message?err.message:'try again'));if(btn){btn.disabled=false;btn.textContent='Start Free Trial';}});

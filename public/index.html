@@ -6059,8 +6059,15 @@ async function analyzeCameraFrame(userInitiated,userText){
   try{
     var langNote=LANG_MIKE[currentLang]||LANG_MIKE.en;
     var verifiedPtBlock=userText?buildVerifiedPtBlock(extractRefrigerantTemps(userText)):'';
-    var sysPrompt=AGENT_SYSTEM+'\n\nLANGUAGE: '+langNote+buildKnowledgeContext()+verifiedPtBlock+'\n\nYou are on a LIVE CAMERA SESSION. Analyze what you see. Identify the unit, brand, model, condition, issues. If a part: identify it, read part numbers, search pricing. You have full web search, parts lookup, and all your regular capabilities. If asked about temperature or weather -- search current conditions for the tech location in the TECH PROFILE above. Keep auto-analysis to 2-3 sentences. For direct questions: answer fully.';
-    var userMsg=userText||'What do you see? Analyze this.';
+    // LANGUAGE directive moved to the END of the system prompt with explicit
+    // image-content override. The English camera-session block above otherwise
+    // overpowers the earlier directive and Claude mirrors the English text on
+    // the nameplate. Last-in-system-prompt wins for Claude's response language.
+    var sysPrompt=AGENT_SYSTEM+buildKnowledgeContext()+verifiedPtBlock+'\n\nYou are on a LIVE CAMERA SESSION. Analyze what you see. Identify the unit, brand, model, condition, issues. If a part: identify it, read part numbers, search pricing. You have full web search, parts lookup, and all your regular capabilities. If asked about temperature or weather -- search current conditions for the tech location in the TECH PROFILE above. Keep auto-analysis to 2-3 sentences. For direct questions: answer fully.\n\nLANGUAGE — CRITICAL: '+langNote+' Even if the image contains English text (nameplates, labels, manuals), respond ENTIRELY in this language. Do NOT mix languages or switch to English mid-response.';
+    // Default snap-and-analyze prompt — localized so the 📸 button doesn't
+    // inject English into a Spanish/etc. session and bias Claude back to English.
+    var SNAP_DEFAULT={en:'What do you see? Analyze this.',es:'¿Qué ves? Analiza esto.',zh:'你看到了什么？分析一下这个。',vi:'Bạn thấy gì? Phân tích cái này.',fr:'Que vois-tu? Analyse ceci.',pt:'O que você vê? Analise isto.'};
+    var userMsg=userText||(SNAP_DEFAULT[currentLang]||SNAP_DEFAULT.en);
     var needsSearch=!!(userText&&userText.match(/warrant|recall|price|cost|part|parts|supplier|where to buy|how much|availability|spec|manual|error code|fault code|model|serial|refrigerant|phase.?out|regulation|grainger|johnstone|carrier|trane|lennox|goodman|rheem|york|daikin|local|near me|supply house|capacitor|contactor|motor|valve|board|sensor|compressor/i));
     var messages=chatHistory.slice(-4).concat([{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:frame}},{type:'text',text:userMsg}]}]);
     var maxTok=userInitiated?4096:200;

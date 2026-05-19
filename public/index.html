@@ -1607,8 +1607,9 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
             <span style="font-size:16px;">&#x1F4F7;</span>
             <span class="icon-label">Camera</span>
           </button>
-          <button onclick="clearChat()" class="chat-icon-btn" title="Clear chat">
-            <span style="font-size:14px;color:rgba(255,255,255,.35);">&#x2715;</span>
+          <button onclick="newChat()" class="chat-icon-btn" title="Start new chat">
+            <span style="font-size:16px;color:rgba(255,255,255,.55);">&#x21BB;</span>
+            <span class="icon-label">New</span>
           </button>
         </div>
       </div>
@@ -1878,6 +1879,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <div style="width:8px;height:8px;border-radius:50%;background:#00C2B2;box-shadow:0 0 8px rgba(0,194,178,.8);flex-shrink:0;"></div>
       <span style="font-size:12px;font-weight:700;color:#00C2B2;">Mike Online</span>
     </div>
+    <!-- Refresh / new chat -->
+    <button onclick="newChat()" style="width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.2);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;line-height:1;" title="Start new chat">&#x21BB;</button>
     <!-- Close -->
     <button onclick="stopLiveCamera()" style="width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.2);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;line-height:1;">✕</button>
   </div>
@@ -5543,6 +5546,38 @@ function clearChat(){
   // Speak the greeting in Mike's voice if voice mode is on (matches live chat behavior).
   if(voiceMode&&typeof mikeSay==='function'){
     setTimeout(function(){if(voiceMode)mikeSay(msg);},150);
+  }
+}
+
+// User-facing wrapper around clearChat that adds a per-language confirm dialog
+// and also refreshes the camera response bubble + greeting when camera is active.
+// Signout still calls clearChat() directly (no confirm — already implicit in signout).
+function newChat(){
+  var confirmText={
+    en:'Start a new chat in English? Current conversation will be cleared.',
+    es:'¿Iniciar una nueva conversación en español? La conversación actual se borrará.',
+    zh:'用中文开始新的对话？当前对话将被清除。',
+    vi:'Bắt đầu cuộc trò chuyện mới bằng tiếng Việt? Cuộc trò chuyện hiện tại sẽ bị xóa.',
+    fr:'Démarrer une nouvelle conversation en français ? La conversation actuelle sera effacée.',
+    pt:'Iniciar uma nova conversa em português? A conversa atual será apagada.'
+  };
+  if(!confirm(confirmText[currentLang]||confirmText.en))return;
+  clearChat();
+  var cm=document.getElementById('chatMessages');
+  if(cm)cm.scrollTop=0;
+  if(typeof cameraActive!=='undefined'&&cameraActive){
+    var firstName=(currentUser&&currentUser.name)?currentUser.name.split(' ')[0]:'there';
+    var greetings={
+      en:"Hey "+firstName+", it's Mike. What are you working on?",
+      es:"Hola "+firstName+", soy Mike. ¿En qué estás trabajando?",
+      zh:"嘿 "+firstName+"，我是Mike。你在做什么？",
+      vi:"Chào "+firstName+", Mike đây. Bạn đang làm gì?",
+      fr:"Salut "+firstName+", c'est Mike. Sur quoi travaillez-vous?",
+      pt:"Olá "+firstName+", é o Mike. No que está trabalhando?"
+    };
+    var msg=greetings[currentLang]||greetings.en;
+    if(typeof setCameraResponse==='function')setCameraResponse(msg);
+    if(typeof mikeSayCamera==='function')mikeSayCamera(msg);
   }
 }
 

@@ -87,7 +87,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--black);min-height:
 .fi{animation:fadeIn .25s ease both;}
 .pulsing{animation:pulse 1.4s ease infinite;}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,0,0,.1);border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite;}
-.nav{background:var(--white);border-bottom:1px solid var(--gray-200);position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);}
+.nav{background:var(--white);border-bottom:1px solid var(--gray-200);position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);padding-top:env(safe-area-inset-top,0px);}
 .nav-inner{max-width:720px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:56px;}
 .nav-logo{display:flex;align-items:center;gap:10px;}
 .nav-logo-icon{width:34px;height:34px;background:var(--teal);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(0,194,178,.35);}

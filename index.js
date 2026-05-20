@@ -401,6 +401,14 @@ app.use(helmet({
   hsts: { maxAge: 31536000, includeSubDomains: true },
 }));
 
+// Serve manifest with the correct MIME — iOS silently ignores manifests served as
+// application/json. Registered before express.static so this route wins precedence.
+app.get('/manifest.json', (req, res) => {
+  res.set('Content-Type', 'application/manifest+json');
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.sendFile(path.join(__dirname, 'public', 'manifest.json'));
+});
+
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '1h',
   etag: true,

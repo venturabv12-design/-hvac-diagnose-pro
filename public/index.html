@@ -14,8 +14,11 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Trazer Intelligence">
-<link rel="manifest" href="data:application/json,{%22name%22:%22Trazer%20Intelligence%22,%22short_name%22:%22Trazer%20Intelligence%22,%22start_url%22:%22/%22,%22display%22:%22standalone%22,%22background_color%22:%22%230F0F0F%22,%22theme_color%22:%22%2300C2B2%22}">
+<meta name="apple-mobile-web-app-title" content="Trazer">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800&family=DM+Mono:wght@500&display=swap&subset=latin" rel="stylesheet" media="print" onload="this.media='all'"/>
@@ -1232,6 +1235,11 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 .pw-plan.sel .pw-feat-no{color:rgba(255,255,255,.25);}
 </style>
 <div id="offlineBanner"></div>
+<div id="pwaInstallBanner" style="display:none;background:linear-gradient(135deg,#00C2B2,#009E90);color:#fff;padding:10px 14px;font-size:13px;line-height:1.4;text-align:center;position:relative;z-index:9990;">
+  <span id="pwaInstallText"></span>
+  <button id="pwaInstallBtn" onclick="triggerPwaInstall()" style="display:none;margin-left:8px;background:#fff;color:#009E90;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:800;cursor:pointer;font-family:var(--font);">Install App</button>
+  <button onclick="dismissPwaHint()" aria-label="Dismiss" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:18px;font-weight:300;cursor:pointer;line-height:1;padding:0 6px;">&times;</button>
+</div>
 <div id="toastContainer"></div>
 <div id="jobTimer" onclick="toggleJobTimer()" title="Tap to stop timer"></div>
 
@@ -6437,6 +6445,64 @@ function setLang(lang){
   if(dd)dd.style.display='none';
   if(isListening){stopListening();setTimeout(startListening,200);}
 }
+
+// PWA install hint — shown to iOS Safari (not standalone) and Android Chrome
+// (after beforeinstallprompt fires). Single banner element with two modes.
+var _pwaDeferredPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  _pwaDeferredPrompt=e;
+  showPwaInstallBanner('android');
+});
+function triggerPwaInstall(){
+  if(!_pwaDeferredPrompt)return;
+  _pwaDeferredPrompt.prompt();
+  _pwaDeferredPrompt.userChoice.then(function(){
+    _pwaDeferredPrompt=null;
+    dismissPwaHint();
+  });
+}
+function dismissPwaHint(){
+  try{localStorage.setItem('trazer_pwa_hint_dismissed','1');}catch(e){}
+  var b=document.getElementById('pwaInstallBanner');
+  if(b)b.style.display='none';
+}
+function showPwaInstallBanner(kind){
+  try{if(localStorage.getItem('trazer_pwa_hint_dismissed')==='1')return;}catch(e){}
+  var iosText={
+    en:"Add Mike to your home screen — tap Share then Add to Home Screen for the full app experience.",
+    es:"Añade Mike a tu pantalla de inicio — toca Compartir y luego Añadir a pantalla de inicio.",
+    zh:"将Mike添加到主屏幕 — 点击分享，然后选择添加到主屏幕。",
+    vi:"Thêm Mike vào màn hình chính — chạm Chia sẻ rồi Thêm vào màn hình chính.",
+    fr:"Ajoutez Mike à votre écran d'accueil — touchez Partager puis Ajouter à l'écran d'accueil.",
+    pt:"Adicione Mike à sua tela inicial — toque Compartilhar e depois Adicionar à tela inicial."
+  };
+  var androidText={
+    en:"Install Mike as an app for the full-screen experience.",
+    es:"Instala Mike como una aplicación para la experiencia a pantalla completa.",
+    zh:"将Mike安装为应用，体验全屏使用。",
+    vi:"Cài đặt Mike như một ứng dụng để có trải nghiệm toàn màn hình.",
+    fr:"Installez Mike comme une app pour l'expérience plein écran.",
+    pt:"Instale o Mike como aplicativo para a experiência em tela cheia."
+  };
+  var lang=(typeof currentLang!=='undefined')?currentLang:'en';
+  var msg=(kind==='android'?androidText:iosText)[lang]||(kind==='android'?androidText:iosText).en;
+  var t=document.getElementById('pwaInstallText');
+  var btn=document.getElementById('pwaInstallBtn');
+  var b=document.getElementById('pwaInstallBanner');
+  if(!b||!t)return;
+  t.textContent=msg;
+  if(btn)btn.style.display=(kind==='android'?'inline-block':'none');
+  b.style.display='block';
+}
+// On load: show iOS hint if iOS Safari and not standalone.
+// navigator.standalone is true (standalone), false (iOS Safari browser), or undefined
+// (other browsers). Strict === false check targets only iOS Safari in browser mode.
+window.addEventListener('load',function(){
+  if(window.navigator.standalone===false){
+    showPwaInstallBanner('ios');
+  }
+});
 
 // Close lang dropdown when clicking outside
 document.addEventListener('click',function(e){

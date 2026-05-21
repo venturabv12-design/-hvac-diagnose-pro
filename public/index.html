@@ -6291,7 +6291,7 @@ function startCameraListen(){
   var go=function(){
     cameraSpeechRec=new SR();
     cameraSpeechRec.continuous=false;
-    cameraSpeechRec.interimResults=true;
+    cameraSpeechRec.interimResults=!isSafari;
     cameraSpeechRec.lang=currentLang==='es'?'es-MX':currentLang==='zh'?'zh-CN':currentLang==='vi'?'vi-VN':currentLang==='fr'?'fr-FR':currentLang==='pt'?'pt-BR':'en-US';
     cameraListening=true;
     updateCameraMicState('listening');

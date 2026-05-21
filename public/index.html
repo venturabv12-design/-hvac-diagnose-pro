@@ -5569,7 +5569,23 @@ function newChat(){
     fr:'Démarrer une nouvelle conversation en français ? La conversation actuelle sera effacée.',
     pt:'Iniciar uma nova conversa em português? A conversa atual será apagada.'
   };
-  if(!confirm(confirmText[currentLang]||confirmText.en))return;
+  var userConfirmed=confirm(confirmText[currentLang]||confirmText.en);
+  // iOS Safari pauses <video> when a JS modal opens and provides no dismiss
+  // event to hook. Defer to next tick so iOS finishes its own teardown, then
+  // restore camera state without racing the recognizer's existing onerror
+  // retry loop (which already handles mic resurrection at +500-1000ms).
+  // Previous attempt at commit 0c875a3 called startCameraListen() here, which
+  // raced the scheduled retry and bricked the mic; reverted as 248adb8.
+  setTimeout(function(){
+    if(typeof cameraActive==='undefined'||!cameraActive)return;
+    var vid=document.getElementById('liveCameraFeed');
+    if(vid&&vid.paused){try{vid.play().catch(function(){});}catch(e){}}
+    // Reset the retry counter — any retries that fired while the modal was
+    // open were doomed by iOS to fail. Give the next natural retry a clean
+    // slate so the cap of 5 isn't already burned out.
+    if(typeof cameraEmptyRetries!=='undefined')cameraEmptyRetries=0;
+  },0);
+  if(!userConfirmed)return;
   clearChat();
   var cm=document.getElementById('chatMessages');
   if(cm)cm.scrollTop=0;

@@ -5569,20 +5569,7 @@ function newChat(){
     fr:'Démarrer une nouvelle conversation en français ? La conversation actuelle sera effacée.',
     pt:'Iniciar uma nova conversa em português? A conversa atual será apagada.'
   };
-  var userConfirmed=confirm(confirmText[currentLang]||confirmText.en);
-  // iOS Safari pauses <video> and may abort SpeechRecognition when a JS modal
-  // opens, with no event we can hook on dismiss. Explicitly restore camera
-  // state so the cancel path doesn't leave the user staring at a frozen feed.
-  if(typeof cameraActive!=='undefined'&&cameraActive){
-    var vid=document.getElementById('liveCameraFeed');
-    if(vid&&vid.paused){try{vid.play().catch(function(){});}catch(e){}}
-    // On cancel: re-arm mic if it died. On confirm, the upcoming mikeSayCamera
-    // call will manage mic state via its onended path.
-    if(!userConfirmed&&!cameraListening&&!isMikeSpeaking&&typeof startCameraListen==='function'){
-      startCameraListen();
-    }
-  }
-  if(!userConfirmed)return;
+  if(!confirm(confirmText[currentLang]||confirmText.en))return;
   clearChat();
   var cm=document.getElementById('chatMessages');
   if(cm)cm.scrollTop=0;

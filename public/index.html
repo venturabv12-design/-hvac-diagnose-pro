@@ -6383,24 +6383,27 @@ function startCameraListen(){
       }
     }
   };
-  // Try to preflight mic permission. On iOS, this is what actually shows the permission prompt.
-  // Only do this once per session (cached after first successful call).
-  if(window._micPermissionOk||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
-    go();return;
+  // iOS Safari has WebKit Bug #218815 ("silent mute") — SpeechRecognition.start()
+  // returns silence unless getUserMedia({audio:true}) is called immediately before
+  // EVERY start, not just the first one. Cache removed; warm-up runs every call.
+  // Voice mode uses the same pattern at L5674 with the same rationale at L5604.
+  // On non-iOS browsers the warm-up is unnecessary, so we skip it directly.
+  if(isSafari&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+      // Release the warm-up stream immediately — the recognizer creates its own.
+      try{stream.getTracks().forEach(function(t){t.stop();});}catch(e){}
+      go();
+    }).catch(function(err){
+      var msg='Microphone permission is required for voice.';
+      if(err&&err.name==='NotAllowedError')msg='Mic blocked. Tap the camera permission icon in the address bar to allow microphone access.';
+      else if(err&&err.name==='NotFoundError')msg='No microphone found on this device.';
+      else if(err&&err.name==='NotReadableError')msg='Mic is in use by another app. Close it and try again.';
+      if(typeof showToast==='function')showToast(msg,'error',5000);
+      updateCameraMicState('idle');
+    });
+    return;
   }
-  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
-    // Got permission — release the stream immediately, the recognizer makes its own.
-    try{stream.getTracks().forEach(function(t){t.stop();});}catch(e){}
-    window._micPermissionOk=true;
-    go();
-  }).catch(function(err){
-    var msg='Microphone permission is required for voice.';
-    if(err&&err.name==='NotAllowedError')msg='Mic blocked. Tap the camera permission icon in the address bar to allow microphone access.';
-    else if(err&&err.name==='NotFoundError')msg='No microphone found on this device.';
-    else if(err&&err.name==='NotReadableError')msg='Mic is in use by another app. Close it and try again.';
-    if(typeof showToast==='function')showToast(msg,'error',5000);
-    updateCameraMicState('idle');
-  });
+  go();
 }
 
 function stopCameraListen(){

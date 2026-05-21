@@ -6221,6 +6221,10 @@ function mikeSayCamera(text){
         clearTimeout(ttsFailsafe);
         URL.revokeObjectURL(url);
         isMikeSpeaking=false;updateCameraMicState('idle');
+        // Release the HTMLAudioElement audio session so iOS doesn't keep it in
+        // playback mode — that prevents the next SpeechRecognition.start() from
+        // getting a working mic stream. Same pattern stopMikeSpeaking uses at :5907.
+        try{el.pause();el.removeAttribute('src');el.load();}catch(e){}
         // Only resume listening if we are still in camera mode AND nothing else is talking.
         if(cameraActive&&!window._vsStopped)setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},1200);
       };
@@ -6228,6 +6232,7 @@ function mikeSayCamera(text){
         clearTimeout(ttsFailsafe);
         URL.revokeObjectURL(url);
         isMikeSpeaking=false;updateCameraMicState('idle');
+        try{el.pause();el.removeAttribute('src');el.load();}catch(e){}
         if(cameraActive)setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},1200);
       };
       el.muted=false;
@@ -6236,6 +6241,7 @@ function mikeSayCamera(text){
       el.play().catch(function(){
         clearTimeout(ttsFailsafe);
         URL.revokeObjectURL(url);
+        try{el.removeAttribute('src');el.load();}catch(e){}
         // Autoplay blocked. DO NOT fall back to robot speechSynthesis — Kaizen wants Mike's voice only.
         // Just go silent and let the next user gesture re-unlock audio.
         isMikeSpeaking=false;updateCameraMicState('idle');

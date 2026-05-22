@@ -5715,11 +5715,64 @@ function newChat(){
 }
 
 function wipeChat(){
+  // Kill any in-flight Mike audio / open mic from the prior turn so the wipe is clean.
+  if(typeof stopMikeSpeaking==='function')stopMikeSpeaking();
+  if(typeof stopListening==='function')stopListening();
+
+  // Reset conversation state
   if(typeof chatHistory!=='undefined')chatHistory=[];
   var cm=document.getElementById('chatMessages');
   if(!cm)return;
-  var cleared={en:'Chat cleared.',es:'Conversación borrada.',zh:'对话已清除。',vi:'Cuộc trò chuyện đã được xóa.',fr:'Conversation effacée.',pt:'Conversa apagada.'};
-  cm.innerHTML='<div style="text-align:center;color:var(--gray-400);font-size:12px;padding:14px 0;">'+(cleared[currentLang]||cleared.en)+'</div>';
+  cm.innerHTML='';
+
+  // Resolve first name — profile > currentUser > per-language fallback alias
+  var _profile=(typeof getUserMemoryProfile==='function')?getUserMemoryProfile():{};
+  var _fallback={en:'man',es:'amigo',zh:'兄弟',vi:'bro',fr:'mec',pt:'mano'};
+  var name=_profile.firstName
+    || (currentUser && currentUser.name && currentUser.name.split(' ')[0])
+    || (_fallback[currentLang]||_fallback.en);
+
+  // Warm, short returning-user variations — random per call, localized
+  var pools={
+    en:[
+      "Hey "+name+"! What are we working on now?",
+      "Back at it "+name+" — what you got for me?",
+      "What's the next one, "+name+"? Let's roll.",
+      "Alright "+name+", hit me — what's the situation?",
+      "Ready when you are, "+name+". What are we tackling?"
+    ],
+    es:[
+      "¡Hey "+name+"! ¿Qué estamos trabajando ahora?",
+      "Volvimos "+name+" — ¿qué tienes para mí?",
+      "¿Cuál es la siguiente, "+name+"? A darle.",
+      "Listo cuando quieras, "+name+". ¿Qué hay?"
+    ],
+    zh:[
+      "嘿 "+name+"！我们现在搞什么？",
+      name+"，又来了——给我说说？",
+      name+"，下一个是啥？开干。"
+    ],
+    vi:[
+      "Chào "+name+"! Đang làm gì đây?",
+      name+" quay lại rồi — có gì cho tôi không?",
+      "Tiếp theo là gì, "+name+"? Bắt đầu thôi."
+    ],
+    fr:[
+      "Salut "+name+" ! On bosse sur quoi maintenant ?",
+      "De retour "+name+" — qu'est-ce que t'as pour moi ?",
+      "Prêt quand tu veux, "+name+". C'est quoi le truc ?"
+    ],
+    pt:[
+      "E aí "+name+"! No que estamos trabalhando agora?",
+      "Voltou, "+name+" — o que você tem pra mim?",
+      "Pronto quando quiser, "+name+". Qual a situação?"
+    ]
+  };
+  var pool=pools[currentLang]||pools.en;
+  var greeting=pool[Math.floor(Math.random()*pool.length)];
+
+  // appendMessage renders the agent bubble AND auto-calls mikeSay when voiceMode is on
+  if(typeof appendMessage==='function')appendMessage('agent',greeting);
 }
 
 function loadMikeVoice(){

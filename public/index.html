@@ -2088,7 +2088,14 @@ function tracerInit(){
         loadUserHistory();
         applyModeFromRole();
         showPersonalizedWelcome();
-        if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
+        // Resume Mike's signup conversation if a tech reloaded mid-flow.
+        // Otherwise fall back to the legacy carousel gate for users without the flag.
+        var _obResume=(typeof getUserMemoryProfile==='function')?getUserMemoryProfile():{};
+        if(_obResume.onboardingStep>0&&_obResume.onboardingStep<10){
+          setTimeout(startOnboarding,800);
+        } else if(!localStorage.getItem('trazer_onboarded')){
+          setTimeout(showOnboarding,800);
+        }
         setTimeout(requestTechLocation,2000);
       }
     }catch(e){localStorage.removeItem('trazer_user');}
@@ -2206,7 +2213,14 @@ function authSignIn(){
       document.getElementById('authOverlay').classList.add('hidden');
       updateProfileUI();checkTrial();loadUserHistory();applyModeFromRole();
       showPersonalizedWelcome();
-      if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
+      // Resume Mike's signup conversation if a tech signed in mid-flow on a device with their profile.
+      // Otherwise fall back to the legacy carousel gate for users without the flag.
+      var _obResume=(typeof getUserMemoryProfile==='function')?getUserMemoryProfile():{};
+      if(_obResume.onboardingStep>0&&_obResume.onboardingStep<10){
+        setTimeout(startOnboarding,800);
+      } else if(!localStorage.getItem('trazer_onboarded')){
+        setTimeout(showOnboarding,800);
+      }
       setTimeout(requestTechLocation,2000);
     })
     .catch(function(){showAuthErr('Connection error. Try again.');if(btn){btn.disabled=false;btn.textContent='Sign In';}});
@@ -2254,12 +2268,21 @@ function authSignUp(){
       document.getElementById('authOverlay').classList.add('hidden');
       updateProfileUI();checkTrial();loadUserHistory();applyModeFromRole();
       showPersonalizedWelcome();
-      if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
-      // Immediately mark onboarded on this device so the flow never replays
-      // even if pagehide/visibilitychange listeners don't fire (iOS app kill,
-      // PWA storage eviction race, etc.). Onboarding still shows once because
-      // the gate above already scheduled it before this line ran.
-      try{localStorage.setItem('trazer_onboarded','1');}catch(e){}
+      var _suRole=(user.role||'').toLowerCase();
+      if(_suRole==='contractor'||_suRole==='technician'){
+        // Techs get Mike's conversational onboarding. The trazer_onboarded flag
+        // is intentionally NOT set here — it's set when the conversation completes
+        // (completeOnboarding) or the tech skips (skipOnboarding).
+        setTimeout(startOnboarding,800);
+      } else {
+        // Homeowners (and any non-tech role) keep the existing 5-slide carousel.
+        if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
+        // Immediately mark onboarded on this device so the flow never replays
+        // even if pagehide/visibilitychange listeners don't fire (iOS app kill,
+        // PWA storage eviction race, etc.). Onboarding still shows once because
+        // the gate above already scheduled it before this line ran.
+        try{localStorage.setItem('trazer_onboarded','1');}catch(e){}
+      }
       setTimeout(requestTechLocation,2000);
     })
     .catch(function(err){showAuthErr('Connection error — '+( err&&err.message?err.message:'try again'));if(btn){btn.disabled=false;btn.textContent='Start Free Trial';}});
@@ -3903,6 +3926,84 @@ var LANG_MIKE={
   pt:'Responda SEMPRE em português. Fale como Mike -- real, casual, confiante. Como uma mensagem do seu melhor amigo técnico. Frases curtas. Reações reais.'
 };
 
+// Mike's signup conversation flow — warm onboarding for new techs.
+// State lives on profile.onboardingStep (0=not started, 1-8=pending question N, 10=complete).
+// Strings keyed by currentLang so a mid-flow language switch picks up the next question in the new language.
+var LANG_ONBOARD={
+  en:{
+    q1:"Hey, I'm Mike. Your AI master tech. I'll be working alongside you on every job. Quick question — what should I call you?",
+    q2:"Cool. How long you been doing HVAC?",
+    q3:"Got it. Would you say you're just starting out, got a solid feel for it, or you're a master tech?",
+    q4:"What's your bread and butter — residential, commercial, refrigeration, mini-splits, or you do it all?",
+    q5:"EPA 608 cert? Type 1, 2, 3, Universal, or none?",
+    q6:"NATE certified? If yes, which?",
+    q7:"What zip code you mostly work out of?",
+    q8:"Last one — what's usually on your truck? Capacitors, contactors, refrigerant, board diagnostics — just give me the gist.",
+    closer:"We're set, {name}. Let's get to work. What you got for me?",
+    skip:"No problem, ask me anything anytime. What you got for me?"
+  },
+  es:{
+    q1:"Oye, soy Mike. Tu técnico maestro de IA. Voy a trabajar contigo en cada trabajo. Pregunta rápida — ¿cómo te llamo?",
+    q2:"Bien. ¿Cuánto tiempo llevas en HVAC?",
+    q3:"Entendido. ¿Dirías que apenas empiezas, ya le agarraste bien la onda, o eres un técnico maestro?",
+    q4:"¿En qué te especializas — residencial, comercial, refrigeración, mini-splits, o haces de todo?",
+    q5:"¿Certificación EPA 608? ¿Tipo 1, 2, 3, Universal, o ninguna?",
+    q6:"¿Certificación NATE? Si sí, ¿cuál?",
+    q7:"¿En qué código postal trabajas más?",
+    q8:"Última — ¿qué traes siempre en el camión? Capacitores, contactores, refrigerante, diagnóstico de tarjetas — dame la idea general.",
+    closer:"Listo, {name}. Manos a la obra. ¿Qué tienes para mí?",
+    skip:"Sin problema, pregúntame lo que sea cuando quieras. ¿Qué tienes para mí?"
+  },
+  zh:{
+    q1:"嘿，我是 Mike。你的 AI 主技师。每个活儿我都会和你一起干。先问个问题 — 怎么称呼你？",
+    q2:"好。你做 HVAC 多久了？",
+    q3:"明白。你算是刚起步、有一定经验，还是已经是大师级技师？",
+    q4:"你的强项是什么 — 住宅、商业、制冷、变频空调，还是全都做？",
+    q5:"EPA 608 认证？Type 1、2、3、Universal，还是没有？",
+    q6:"有 NATE 认证吗？有的话是哪一种？",
+    q7:"你主要在哪个邮编区域干活？",
+    q8:"最后一个 — 你车上一般带什么？电容、接触器、冷媒、控制板诊断仪 — 大概说一下就行。",
+    closer:"搞定了，{name}。开干吧。有什么需要我帮忙的？",
+    skip:"没问题，随时都可以问我。有什么需要我帮忙的？"
+  },
+  vi:{
+    q1:"Chào, tôi là Mike. Kỹ thuật viên AI bậc thầy của bạn. Tôi sẽ làm việc cùng bạn trong mọi công việc. Hỏi nhanh — tôi nên gọi bạn là gì?",
+    q2:"Được. Bạn đã làm HVAC bao lâu rồi?",
+    q3:"Hiểu rồi. Bạn nói mình mới bắt đầu, đã nắm vững nghề, hay là kỹ thuật viên bậc thầy?",
+    q4:"Chuyên môn chính của bạn là gì — dân dụng, thương mại, điện lạnh, máy lạnh mini-split, hay làm tất cả?",
+    q5:"Có chứng chỉ EPA 608 không? Loại 1, 2, 3, Universal, hay không có?",
+    q6:"Có chứng chỉ NATE không? Nếu có thì loại nào?",
+    q7:"Bạn chủ yếu làm việc ở mã ZIP nào?",
+    q8:"Câu cuối — trên xe bạn thường có gì? Tụ điện, công tắc tơ, gas, máy chẩn đoán board — kể đại khái cho tôi nghe.",
+    closer:"Xong rồi, {name}. Vào việc thôi. Bạn cần tôi giúp gì?",
+    skip:"Không sao, có gì hỏi tôi bất cứ lúc nào. Bạn cần tôi giúp gì?"
+  },
+  fr:{
+    q1:"Salut, je suis Mike. Ton technicien IA expert. Je vais bosser à tes côtés sur chaque job. Question rapide — comment je t'appelle ?",
+    q2:"Cool. Ça fait combien de temps que tu fais du HVAC ?",
+    q3:"OK. Tu dirais que tu débutes, que tu maîtrises bien, ou que t'es un tech expert ?",
+    q4:"C'est quoi ton domaine principal — résidentiel, commercial, froid, mini-splits, ou tu fais de tout ?",
+    q5:"Certif EPA 608 ? Type 1, 2, 3, Universal, ou aucun ?",
+    q6:"Certifié NATE ? Si oui, laquelle ?",
+    q7:"Dans quel code postal tu bosses surtout ?",
+    q8:"Dernière — qu'est-ce que t'as d'habitude dans ton camion ? Condensateurs, contacteurs, fluide frigorigène, diagnostic de cartes — donne-moi une idée.",
+    closer:"C'est bon, {name}. Au boulot. Qu'est-ce que t'as pour moi ?",
+    skip:"Pas de souci, demande-moi quand tu veux. Qu'est-ce que t'as pour moi ?"
+  },
+  pt:{
+    q1:"Opa, eu sou o Mike. Seu técnico mestre de IA. Vou trabalhar do seu lado em cada serviço. Pergunta rápida — como posso te chamar?",
+    q2:"Beleza. Há quanto tempo você trabalha com HVAC?",
+    q3:"Entendido. Você diria que tá começando, já pegou bem a manha, ou é um técnico mestre?",
+    q4:"Qual é a sua especialidade — residencial, comercial, refrigeração, splits, ou faz de tudo?",
+    q5:"Certificação EPA 608? Tipo 1, 2, 3, Universal, ou nenhuma?",
+    q6:"Tem certificação NATE? Se sim, qual?",
+    q7:"Em qual CEP/código postal você mais trabalha?",
+    q8:"Última — o que costuma ter no seu caminhão? Capacitores, contactores, refrigerante, diagnóstico de placa — me dá uma ideia geral.",
+    closer:"Tudo certo, {name}. Bora trabalhar. O que você tem pra mim?",
+    skip:"Sem problema, pergunta o que quiser quando precisar. O que você tem pra mim?"
+  }
+};
+
 
 // ════════════════════════════════════════════════════════════════
 // MIKE MEMORY SYSTEM — Per-user persistent memory
@@ -4060,6 +4161,148 @@ function extractMemoryCues(userText, mikeResponse){
   saveUserMemoryProfile(profile);
 }
 
+// ════════════════════════════════════════════════════════════════
+// MIKE SIGNUP CONVERSATION FLOW
+// New techs get a warm 1:1 onboarding from Mike instead of the generic
+// modal carousel. 8 questions, one at a time, in the chat. Skip cue at
+// any step. Client-side only — zero /api/ai calls during onboarding.
+// State on profile.onboardingStep: 0=not started, 1-8=pending question N, 10=complete.
+// ════════════════════════════════════════════════════════════════
+
+var ONBOARDING_SKIP_RE = /\b(skip|nah|not now|later|maybe later)\b|let.?s.+(work|go|do this|get to it)|just.+help|i.?ll.+tell.+you.+later|don.?t.+want.+to.+answer|move on|next time/i;
+
+function getOnboardingPack(){
+  return (typeof LANG_ONBOARD!=='undefined' && LANG_ONBOARD[currentLang]) ? LANG_ONBOARD[currentLang] : LANG_ONBOARD.en;
+}
+
+function postOnboardingQuestion(step){
+  var pack = getOnboardingPack();
+  var text = pack['q'+step];
+  if(text) appendMessage('agent', text);
+}
+
+function startOnboarding(){
+  if(!currentUser) return;
+  var role = (currentUser.role||'').toLowerCase();
+  // Only run for techs — homeowners keep the existing carousel.
+  if(role !== 'contractor' && role !== 'technician') return;
+  var prof = getUserMemoryProfile();
+  // Resume mid-flow if step is already 1-8; otherwise start fresh at 1.
+  if(!(prof.onboardingStep > 0 && prof.onboardingStep < 10)){
+    prof.onboardingStep = 1;
+    saveUserMemoryProfile(prof);
+  }
+  postOnboardingQuestion(prof.onboardingStep);
+}
+
+function skipOnboarding(){
+  var pack = getOnboardingPack();
+  appendMessage('agent', pack.skip);
+  var prof = getUserMemoryProfile();
+  prof.onboardingStep = 10;
+  saveUserMemoryProfile(prof);
+  try{localStorage.setItem('trazer_onboarded','1');}catch(e){}
+}
+
+function completeOnboarding(){
+  var prof = getUserMemoryProfile();
+  var name = prof.firstName || (currentUser && currentUser.name ? currentUser.name.split(' ')[0] : 'tech');
+  var pack = getOnboardingPack();
+  appendMessage('agent', pack.closer.replace('{name}', name));
+  prof.onboardingStep = 10;
+  saveUserMemoryProfile(prof);
+  try{localStorage.setItem('trazer_onboarded','1');}catch(e){}
+}
+
+// Parse one onboarding answer, save the right field, advance the step, post next question.
+// Returns true if handled (caller should NOT call /api/ai).
+function handleOnboardingResponse(text){
+  if(!currentUser) return false;
+  var prof = getUserMemoryProfile();
+  var step = prof.onboardingStep;
+  if(!(step > 0 && step < 10)) return false;
+
+  var raw = (text||'').trim();
+
+  // Skip cue at any step → graceful exit.
+  if(ONBOARDING_SKIP_RE.test(raw)){
+    skipOnboarding();
+    return true;
+  }
+
+  if(step === 1){
+    // First name — take first token, strip trailing punctuation, capitalize.
+    var first = raw.split(/\s+/)[0] || (currentUser.name ? currentUser.name.split(' ')[0] : 'tech');
+    first = first.replace(/[.,!?;:'"]+$/g, '');
+    if(first) first = first.charAt(0).toUpperCase() + first.slice(1);
+    prof.firstName = first || 'tech';
+  } else if(step === 2){
+    // Years — extract leading number if present; else save trimmed text.
+    var ym = raw.match(/(\d{1,2})/);
+    prof.yearsExperience = ym ? parseInt(ym[1],10) : raw;
+  } else if(step === 3){
+    // Experience level. Multilingual keyword match; fall back to yearsExperience inference.
+    if(/\b(master|own.+compan|train|senior|teach|expert|veteran|maestro|propi|大师|maître|mestre|chuyên gia)\b/i.test(raw)){
+      prof.experienceLevel = 'master';
+    } else if(/\b(start|new|begin|apprent|fresh|rookie|learn|empez|nuevo|aprend|刚|新手|mới|débutant|principiant|começ)\b/i.test(raw)){
+      prof.experienceLevel = 'beginner';
+    } else if(/\b(solid|experienced|journeyman|few years|several years|veterano|expérimenté|experiente|有经验|kinh nghiệm)\b/i.test(raw)){
+      prof.experienceLevel = 'experienced';
+    } else {
+      var y = prof.yearsExperience;
+      if(typeof y === 'number') prof.experienceLevel = y < 2 ? 'beginner' : (y >= 10 ? 'master' : 'experienced');
+      else prof.experienceLevel = 'experienced';
+    }
+    prof.experienceCue = raw.substring(0,80);
+  } else if(step === 4){
+    // Specialty — auto-tag with same patterns as extractMemoryCues; else save free text.
+    if(/commercial|rooftop|rtu|chiller|vrf|vrv/i.test(raw)) prof.specialty = 'commercial';
+    else if(/refrigeration|walk.in|cooler|freezer/i.test(raw)) prof.specialty = 'refrigeration';
+    else if(/mini.?split|ductless/i.test(raw)) prof.specialty = 'mini-splits';
+    else if(/residential|house|home|apartment/i.test(raw)) prof.specialty = 'residential';
+    else if(/\b(all|every|everything|do it all|todo|tudo|tout|tất cả|全部)\b/i.test(raw)) prof.specialty = 'all';
+    else prof.specialty = raw;
+  } else if(step === 5){
+    // EPA 608 — none / Type 1/2/3 / Universal / free text.
+    if(/universal/i.test(raw)){
+      prof.epaCert = 'Universal';
+    } else if(/\b(none|no|nope|don.?t|never|nothing|ninguno|ninguna|没|không|aucun|nenhum)\b/i.test(raw)){
+      prof.epaCert = null;
+    } else {
+      var tm = raw.match(/type\s*([123])|\b([123])\b/i);
+      if(tm){
+        var t = tm[1]||tm[2];
+        prof.epaCert = 'Type ' + t;
+      } else {
+        prof.epaCert = raw;
+      }
+    }
+  } else if(step === 6){
+    // NATE — none / save free text.
+    if(/^\s*(no|none|nope|nah|not|negative|ninguno|ninguna|没|không|aucun|nenhum)\b/i.test(raw)) prof.nateCert = null;
+    else prof.nateCert = raw;
+  } else if(step === 7){
+    // Service zip — first 5-digit run; else save trimmed text.
+    var zm = raw.match(/\d{5}/);
+    prof.serviceZip = zm ? zm[0] : raw;
+  } else if(step === 8){
+    // Truck stock — save free text as-is.
+    prof.truckStock = raw;
+  }
+
+  // Persist field changes, then either advance or complete.
+  saveUserMemoryProfile(prof);
+  var nextStep = step + 1;
+  if(nextStep > 8){
+    completeOnboarding();
+  } else {
+    prof.onboardingStep = nextStep;
+    saveUserMemoryProfile(prof);
+    postOnboardingQuestion(nextStep);
+  }
+  return true;
+}
+
 // Build the personalized context for Mike
 function buildPersonalizedContext(){
   var _now=new Date();
@@ -4167,7 +4410,7 @@ function buildMemoryDebugReport(){
   L.push('Generated: '+new Date().toISOString());
   L.push('');
   L.push('-- localStorage profile --');
-  ['firstName','experienceLevel','experienceCue','specialty','preferredBrand','epaCert','nateCert','yearsExperience','phone','serviceZip','truckStock','totalMessages','lastSeen','lastUpdated'].forEach(function(k){
+  ['firstName','experienceLevel','experienceCue','specialty','preferredBrand','epaCert','nateCert','yearsExperience','phone','serviceZip','truckStock','totalMessages','lastSeen','lastUpdated','onboardingStep'].forEach(function(k){
     var v=profile[k];
     if((k==='lastSeen'||k==='lastUpdated')&&v)v=new Date(v).toISOString();
     row(k,v);
@@ -4770,6 +5013,18 @@ async function sendChat(){
   var input=document.getElementById('chatInput'),text=input.value.trim();
   if(text.length>8000){showToast('Message too long — please shorten it.','error',3000);return;}
   if(!text&&!chatAttachment)return;
+  // Mike signup conversation intercept — when a tech is mid-onboarding (step 1-8),
+  // route their reply through the local handler instead of /api/ai. Saves the field,
+  // posts the next question, returns early. No API call, no chatHistory push.
+  if(currentUser&&text){
+    var _obProf=getUserMemoryProfile();
+    if(_obProf.onboardingStep>0&&_obProf.onboardingStep<10){
+      input.value='';input.style.height='auto';
+      appendMessage('user',escapeHtml(text));
+      handleOnboardingResponse(text);
+      return;
+    }
+  }
   // Mark state and switch button to Stop mode (so user can abort a long response)
   chatSending=true;
   stopMikeSpeaking();

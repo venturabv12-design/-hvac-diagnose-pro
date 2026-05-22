@@ -4136,6 +4136,99 @@ function buildPersonalizedContext(){
   return ctx;
 }
 
+// Temporary in-app inspector so we can verify what Mike remembers without
+// Safari Web Inspector. Wired into Quick Actions → "🧠 Show Memory".
+function buildMemoryDebugReport(){
+  var L=[];
+  function row(k,v){var has=(v!==undefined&&v!==null&&v!=='');L.push((has?'✓ ':'✗ ')+k+': '+(has?String(v):'(empty)'));}
+  function count(k){try{var raw=localStorage.getItem(k);if(!raw)return 0;var arr=JSON.parse(raw);return Array.isArray(arr)?arr.length:1;}catch(e){return '?';}}
+  function present(k){return localStorage.getItem(k)===null?'no':'yes';}
+  var email=currentUser?currentUser.email:'(not signed in)';
+  var profile=(typeof getUserMemoryProfile==='function')?getUserMemoryProfile():{};
+  var slug=(typeof getUserMemoryKey==='function'&&currentUser)?getUserMemoryKey('profile'):'(no slug — not signed in)';
+  L.push('=== Mike Memory Debug ===');
+  L.push('Signed in as: '+email);
+  L.push('Profile slug: '+slug);
+  L.push('Generated: '+new Date().toISOString());
+  L.push('');
+  L.push('-- localStorage profile --');
+  ['firstName','experienceLevel','experienceCue','specialty','preferredBrand','epaCert','nateCert','yearsExperience','phone','serviceZip','truckStock','totalMessages','lastSeen','lastUpdated'].forEach(function(k){
+    var v=profile[k];
+    if((k==='lastSeen'||k==='lastUpdated')&&v)v=new Date(v).toISOString();
+    row(k,v);
+  });
+  L.push('');
+  L.push('-- currentUser (from server signin) --');
+  if(currentUser){
+    ['name','email','company','role','plan','epaCert','nateCert','yearsExperience','serviceZip','truckStock','phone','usageCount'].forEach(function(k){row(k,currentUser[k]);});
+    L.push('  features: '+(currentUser.features?(Object.keys(currentUser.features).join(', ')||'(none)'):'(none)'));
+  } else { L.push('(not signed in)'); }
+  L.push('');
+  L.push('-- gap: server has, localStorage profile missing --');
+  if(currentUser){
+    var srvFields=['epaCert','nateCert','yearsExperience','serviceZip','truckStock','phone'];
+    var missing=srvFields.filter(function(k){return currentUser[k]&&!profile[k];});
+    L.push(missing.length?missing.join(', '):'(none — local profile is in sync)');
+  } else { L.push('(skip — not signed in)'); }
+  L.push('');
+  L.push('-- collection counts (localStorage) --');
+  if(currentUser){
+    function ck(s){return getUserMemoryKey(s);}
+    L.push('jobs:        '+count(ck('jobs')));
+    L.push('knowledge:   '+count(ck('knowledge')));
+    L.push('customers:   '+count(ck('customers')));
+    L.push('parts:       '+count(ck('parts')));
+    L.push('signoffs:    '+count(ck('signoffs')));
+    L.push('reminders:   '+count(ck('reminders')));
+    L.push('reflog:      '+count(ck('reflog')));
+    L.push('history:     '+count(ck('history'))+' (in-memory chatHistory: '+((typeof chatHistory!=='undefined'&&chatHistory)?chatHistory.length:0)+')');
+  }
+  L.push('');
+  L.push('-- keys present --');
+  L.push('trazer_user: '+present('trazer_user'));
+  L.push('trazer_users: '+present('trazer_users'));
+  L.push('trazer_lang: '+present('trazer_lang'));
+  L.push('trazer_onboarded: '+present('trazer_onboarded'));
+  if(currentUser){
+    ['profile','history','jobs','knowledge','customers','parts','signoffs','reminders','reflog','upsell_total','invoice_seq'].forEach(function(s){
+      var k=getUserMemoryKey(s);
+      L.push(k+': '+present(k));
+    });
+  }
+  return L.join('\n');
+}
+function showMemoryDebug(){
+  var prev=document.getElementById('memDebugModal');if(prev&&prev.parentNode)prev.parentNode.removeChild(prev);
+  var report=buildMemoryDebugReport();
+  var safe=report.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  var html='<div class="tz-modal-overlay show" id="memDebugModal">'
+    +'<div class="tz-modal">'
+    +'<div class="tz-modal-header"><div class="tz-modal-title">&#x1F9E0; Memory Debug</div>'
+    +'<button class="tz-modal-close" onclick="closeMemoryDebug()">&#x2715;</button></div>'
+    +'<div class="tz-modal-body">'
+    +'<pre id="memDebugReport" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#d1d5db;white-space:pre-wrap;line-height:1.55;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:12px;margin:0 0 12px;max-height:55vh;overflow-y:auto;">'+safe+'</pre>'
+    +'<button class="tz-modal-btn" onclick="copyMemoryDebug()">&#x1F4CB; Copy to Clipboard</button>'
+    +'<button class="tz-modal-btn-outline" onclick="closeMemoryDebug()">Close</button>'
+    +'</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+function closeMemoryDebug(){var m=document.getElementById('memDebugModal');if(m&&m.parentNode)m.parentNode.removeChild(m);}
+function copyMemoryDebug(){
+  var pre=document.getElementById('memDebugReport');if(!pre)return;
+  var txt=pre.textContent||'';
+  function done(){if(typeof showToast==='function')showToast('Copied to clipboard','success',1800);}
+  function fail(){if(typeof showToast==='function')showToast('Copy failed — long-press the text to select','error',2400);}
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done,fail);
+    } else {
+      var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();
+      try{document.execCommand('copy');done();}catch(e){fail();}
+      document.body.removeChild(ta);
+    }
+  }catch(e){fail();}
+}
+
 // Override clearChat to NOT clear history — just clear the visual
 // Mike keeps ALL memory across sessions, days, and conversations
 // History is only cleared when tech explicitly deletes it
@@ -4444,7 +4537,7 @@ function toggleQuickActions(){
     menu=document.createElement('div');
     menu.id='quickActionsMenu';
     menu.style.cssText='position:fixed;background:#fff;border:1.5px solid #e2e4ed;border-radius:12px;box-shadow:0 4px 32px rgba(0,0,0,.18);z-index:99999;overflow-y:auto;max-height:360px;min-width:240px;';
-    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF0F2;color:#E8354A;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){document.getElementById(\'chatInput\').value=\'I need a part: \';document.getElementById(\'chatInput\').focus();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#E8354A;font-weight:800;" onclick="qaClick(function(){var b=document.getElementById(\'fullDiagBody\');var a=document.getElementById(\'fullDiagArrow\');if(b&&b.style.display===\'none\'){b.style.display=\'block\';if(a)a.textContent=\'&#x25B2;\';}if(b)b.scrollIntoView({behavior:\'smooth\'});})">&#x26A1; Full Diagnostic</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick(\'What are the correct R-410A pressures for current outdoor temperature?\');})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:#009E90;" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F0FDF4;color:#059669;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick(\'I just finished the repair — what else should I check for upsell opportunities?\');})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF7ED;color:#ea580c;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick(\'Give me a job summary — problem, fix, and what to put on the invoice.\');})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#EFF6FF;color:#2563eb;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick(\'The homeowner said the price seems too high. How do I overcome that?\');})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick(\'Help me pitch a maintenance agreement. System is about 10 years old.\');})">&#x1F4CB; Pitch Maintenance</button>            </div>          ';
+    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF0F2;color:#E8354A;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){document.getElementById(\'chatInput\').value=\'I need a part: \';document.getElementById(\'chatInput\').focus();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#E8354A;font-weight:800;" onclick="qaClick(function(){var b=document.getElementById(\'fullDiagBody\');var a=document.getElementById(\'fullDiagArrow\');if(b&&b.style.display===\'none\'){b.style.display=\'block\';if(a)a.textContent=\'&#x25B2;\';}if(b)b.scrollIntoView({behavior:\'smooth\'});})">&#x26A1; Full Diagnostic</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick(\'What are the correct R-410A pressures for current outdoor temperature?\');})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:#009E90;" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F0FDF4;color:#059669;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick(\'I just finished the repair — what else should I check for upsell opportunities?\');})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF7ED;color:#ea580c;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick(\'Give me a job summary — problem, fix, and what to put on the invoice.\');})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#EFF6FF;color:#2563eb;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick(\'The homeowner said the price seems too high. How do I overcome that?\');})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick(\'Help me pitch a maintenance agreement. System is about 10 years old.\');})">&#x1F4CB; Pitch Maintenance</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F3F4F6;color:#6B7280;border-radius:6px;margin:4px 4px 2px;">&#x1F9EA; DEBUG</div>              <button class="qa-item" style="color:#6B7280;" onclick="qaClick(function(){showMemoryDebug();})">&#x1F9E0; Show Memory</button>            </div>          ';
     document.body.appendChild(menu);
     // Tap outside closes
     setTimeout(function(){

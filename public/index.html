@@ -6253,6 +6253,12 @@ function mikeSay(text){
   try{if(window._voiceTTSAbort)window._voiceTTSAbort.abort();}catch(e){}
   window._voiceTTSAbort=voiceCtrl;
   var stale=function(){return myToken!==window._voiceTTSToken||!voiceMode;};
+  // Release iOS audio session after TTS ends so the next SpeechRecognition.start()
+  // can acquire the mic. Web Audio equivalent of the el.pause()/el.removeAttribute('src')/el.load()
+  // cleanup that commit 0ded2f8 established for the old HTMLAudioElement path.
+  var _releaseSession=function(){
+    try{if(sharedAudioCtx&&sharedAudioCtx.state==='running')sharedAudioCtx.suspend().catch(function(){});}catch(e){}
+  };
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean}),signal:voiceCtrl?voiceCtrl.signal:undefined})
     .then(function(res){
       if(!res.ok)throw new Error('TTS '+res.status);
@@ -6264,6 +6270,7 @@ function mikeSay(text){
         // ElevenLabs returned nothing — go silent rather than fall back to robot voice.
         // Robot speechSynthesis was causing "two Mikes talking" when it overlapped real Mike.
         isMikeSpeaking=false;
+        _releaseSession();
         if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
         if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
         if(stopBtn)stopBtn.style.display='none';
@@ -6273,6 +6280,7 @@ function mikeSay(text){
       var AudioCtx=window.AudioContext||window.webkitAudioContext;
       if(!AudioCtx){
         isMikeSpeaking=false;
+        _releaseSession();
         if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
         if(stopBtn)stopBtn.style.display='none';
         return;
@@ -6290,6 +6298,7 @@ function mikeSay(text){
           gainNode.connect(ctx.destination);
           src.onended=function(){
             isMikeSpeaking=false;
+            _releaseSession();
             if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
             if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
             if(stopBtn)stopBtn.style.display='none';
@@ -6303,18 +6312,20 @@ function mikeSay(text){
         },function(){
           // Decode failed — go silent, don't fall back to robot voice.
           isMikeSpeaking=false;
+          _releaseSession();
           if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
           if(stopBtn)stopBtn.style.display='none';
         });
       };
-      if(ctx.state==='suspended'||ctx.state==='interrupted'){ctx.resume().then(play).catch(function(){isMikeSpeaking=false;});}
+      if(ctx.state==='suspended'||ctx.state==='interrupted'){ctx.resume().then(play).catch(function(){isMikeSpeaking=false;_releaseSession();});}
       else play();
     })
     .catch(function(err){
       // AbortError = user pressed stop / camera opened. Silent exit.
-      if(err&&err.name==='AbortError'){isMikeSpeaking=false;return;}
+      if(err&&err.name==='AbortError'){isMikeSpeaking=false;_releaseSession();return;}
       // Network/TTS error — go silent. Do NOT call mikeSayBrowser (it's the robot-voice double-Mike).
       isMikeSpeaking=false;
+      _releaseSession();
       if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
       if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
       if(stopBtn)stopBtn.style.display='none';
@@ -6626,12 +6637,19 @@ function mikeSayCamera(text){
   isMikeSpeaking=true;
   updateCameraMicState('speaking');
   setCameraResponse(clean);
+  // Release iOS audio session after TTS ends so the next SpeechRecognition.start()
+  // can acquire the mic. Web Audio equivalent of the el.pause()/el.removeAttribute('src')/el.load()
+  // cleanup that commit 0ded2f8 established for the old HTMLAudioElement path.
+  var _releaseSession=function(){
+    try{if(sharedAudioCtx&&sharedAudioCtx.state==='running')sharedAudioCtx.suspend().catch(function(){});}catch(e){}
+  };
   // 6s failsafe: if TTS never actually starts playing, reset state so the mic
   // can recover rather than hanging in 'speaking'. Cleared when playback begins.
   var ttsFailsafe=setTimeout(function(){
     if(!isMikeSpeaking)return;
     isMikeSpeaking=false;
     updateCameraMicState('idle');
+    _releaseSession();
     if(cameraActive&&!window._vsStopped)startCameraListen();
   },6000);
   // Abortable fetch so closing the camera mid-download stops Mike from ever speaking.
@@ -6649,16 +6667,18 @@ function mikeSayCamera(text){
       if(!buf||buf.byteLength<500){
         clearTimeout(ttsFailsafe);
         isMikeSpeaking=false;updateCameraMicState('idle');
+        _releaseSession();
         if(cameraActive)setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},1200);return;
       }
       // Web Audio API playback — same path as voice mode mikeSay. HTMLAudioElement
       // playback locks iOS's AVAudioSession in playback-only mode, breaking the
-      // next SpeechRecognition.start() mic capture. AudioContext uses a
-      // record-friendly category and avoids the lock entirely.
+      // next SpeechRecognition.start() mic capture. AudioContext is record-friendly
+      // ONLY if we explicitly suspend it after each utterance — see _releaseSession.
       var AudioCtx=window.AudioContext||window.webkitAudioContext;
       if(!AudioCtx){
         clearTimeout(ttsFailsafe);
         isMikeSpeaking=false;updateCameraMicState('idle');
+        _releaseSession();
         if(cameraActive)setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},1200);return;
       }
       var ctx=sharedAudioCtx||(sharedAudioCtx=new AudioCtx());
@@ -6675,6 +6695,7 @@ function mikeSayCamera(text){
           gainNode.connect(ctx.destination);
           src.onended=function(){
             isMikeSpeaking=false;updateCameraMicState('idle');
+            _releaseSession();
             if(cameraActive&&!window._vsStopped)setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},1200);
           };
           src.start(0);
@@ -6682,6 +6703,7 @@ function mikeSayCamera(text){
         },function(){
           clearTimeout(ttsFailsafe);
           isMikeSpeaking=false;updateCameraMicState('idle');
+          _releaseSession();
           if(cameraActive)setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},1200);
         });
       };
@@ -6689,6 +6711,7 @@ function mikeSayCamera(text){
         ctx.resume().then(play).catch(function(){
           clearTimeout(ttsFailsafe);
           isMikeSpeaking=false;updateCameraMicState('idle');
+          _releaseSession();
           if(cameraActive)setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},1200);
         });
       } else {
@@ -6698,8 +6721,9 @@ function mikeSayCamera(text){
     .catch(function(err){
       clearTimeout(ttsFailsafe);
       // AbortError when user closes camera → silent exit, no listener restart.
-      if(err&&err.name==='AbortError'){isMikeSpeaking=false;updateCameraMicState('idle');return;}
+      if(err&&err.name==='AbortError'){isMikeSpeaking=false;updateCameraMicState('idle');_releaseSession();return;}
       isMikeSpeaking=false;updateCameraMicState('idle');
+      _releaseSession();
       if(cameraActive)setTimeout(function(){if(cameraActive&&!isMikeSpeaking)startCameraListen();},1200);
     });
 }

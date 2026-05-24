@@ -973,120 +973,119 @@ app.get('/api/weather', async (req, res) => {
 
 
 // ── CUSTOMERS ─────────────────────────────────────────────────────────────────
-app.get('/api/customers', async (req, res) => {
-  const { user_id } = req.query;
-  if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
+// All five data endpoints (customers/jobs/refrigerant-log/reminders/knowledge)
+// derive user_id from req.user.id (verified JWT) — never from client input.
+// Row-targeted mutations use a compound WHERE so cross-user attempts match 0 rows
+// and return 404 instead of silently mutating someone else's data.
+app.get('/api/customers', authenticateToken, async (req, res) => {
+  const user_id = req.user.id;
   const rows = await supabase('GET', 'customers', null,
     `?user_id=eq.${encodeURIComponent(user_id)}&order=name`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
   res.json({ customers: rows });
 });
 
-app.post('/api/customers', async (req, res) => {
-  const { user_id, id, ...fields } = req.body;
-  if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
+app.post('/api/customers', authenticateToken, async (req, res) => {
+  const { id, ...fields } = req.body;
+  delete fields.user_id; // strip any client-supplied user_id from the body
+  const user_id = req.user.id;
   if (id && !isValidUUID(id)) return res.status(400).json({ error: 'Invalid id' });
   const payload = { ...fields, updated_at: new Date() };
   const rows = id
-    ? await supabase('PATCH', 'customers', payload, `?id=eq.${encodeURIComponent(id)}`)
+    ? await supabase('PATCH', 'customers', payload, `?id=eq.${encodeURIComponent(id)}&user_id=eq.${encodeURIComponent(user_id)}`)
     : await supabase('POST', 'customers', { user_id, ...payload });
-  if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save customer' });
+  if (!rows || !rows[0]) return res.status(id ? 404 : 500).json({ error: id ? 'Customer not found' : 'Failed to save customer' });
   res.json({ customer: rows[0] });
 });
 
-app.delete('/api/customers/:id', async (req, res) => {
+app.delete('/api/customers/:id', authenticateToken, async (req, res) => {
   if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
+  const user_id = req.user.id;
   const result = await supabase('DELETE', 'customers', null,
-    `?id=eq.${encodeURIComponent(req.params.id)}`);
+    `?id=eq.${encodeURIComponent(req.params.id)}&user_id=eq.${encodeURIComponent(user_id)}`);
   if (result === null) return res.status(500).json({ error: 'Database error' });
+  if (Array.isArray(result) && result.length === 0) return res.status(404).json({ error: 'Customer not found' });
   res.json({ success: true });
 });
 
 // ── JOBS ──────────────────────────────────────────────────────────────────────
-app.get('/api/jobs', async (req, res) => {
-  const { user_id } = req.query;
-  if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
+app.get('/api/jobs', authenticateToken, async (req, res) => {
+  const user_id = req.user.id;
   const rows = await supabase('GET', 'jobs', null,
     `?user_id=eq.${encodeURIComponent(user_id)}&order=date.desc`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
   res.json({ jobs: rows });
 });
 
-app.post('/api/jobs', async (req, res) => {
-  const { user_id, ...fields } = req.body;
-  if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
+app.post('/api/jobs', authenticateToken, async (req, res) => {
+  const fields = { ...req.body };
+  delete fields.user_id; // strip any client-supplied user_id from the body
+  const user_id = req.user.id;
   const rows = await supabase('POST', 'jobs', { user_id, ...fields });
   if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save job' });
   res.json({ job: rows[0] });
 });
 
 // ── REFRIGERANT LOG ───────────────────────────────────────────────────────────
-app.get('/api/refrigerant-log', async (req, res) => {
-  const { user_id } = req.query;
-  if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
+app.get('/api/refrigerant-log', authenticateToken, async (req, res) => {
+  const user_id = req.user.id;
   const rows = await supabase('GET', 'refrigerant_log', null,
     `?user_id=eq.${encodeURIComponent(user_id)}&order=date.desc`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
   res.json({ logs: rows });
 });
 
-app.post('/api/refrigerant-log', async (req, res) => {
-  const { user_id, ...fields } = req.body;
-  if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
+app.post('/api/refrigerant-log', authenticateToken, async (req, res) => {
+  const fields = { ...req.body };
+  delete fields.user_id; // strip any client-supplied user_id from the body
+  const user_id = req.user.id;
   const rows = await supabase('POST', 'refrigerant_log', { user_id, ...fields });
   if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save log' });
   res.json({ log: rows[0] });
 });
 
 // ── REMINDERS ─────────────────────────────────────────────────────────────────
-app.get('/api/reminders', async (req, res) => {
-  const { user_id } = req.query;
-  if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
+app.get('/api/reminders', authenticateToken, async (req, res) => {
+  const user_id = req.user.id;
   const rows = await supabase('GET', 'reminders', null,
     `?user_id=eq.${encodeURIComponent(user_id)}&order=due_date`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
   res.json({ reminders: rows });
 });
 
-app.post('/api/reminders', async (req, res) => {
-  const { user_id, ...fields } = req.body;
-  if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
+app.post('/api/reminders', authenticateToken, async (req, res) => {
+  const fields = { ...req.body };
+  delete fields.user_id; // strip any client-supplied user_id from the body
+  const user_id = req.user.id;
   const rows = await supabase('POST', 'reminders', { user_id, ...fields });
   if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save reminder' });
   res.json({ reminder: rows[0] });
 });
 
-app.patch('/api/reminders/:id', async (req, res) => {
+app.patch('/api/reminders/:id', authenticateToken, async (req, res) => {
   if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
-  const rows = await supabase('PATCH', 'reminders', req.body,
-    `?id=eq.${encodeURIComponent(req.params.id)}`);
-  if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to update reminder' });
+  const user_id = req.user.id;
+  const body = { ...req.body };
+  delete body.user_id; // never let the client move a row to a different owner
+  const rows = await supabase('PATCH', 'reminders', body,
+    `?id=eq.${encodeURIComponent(req.params.id)}&user_id=eq.${encodeURIComponent(user_id)}`);
+  if (!rows || !rows[0]) return res.status(404).json({ error: 'Reminder not found' });
   res.json({ reminder: rows[0] });
 });
 
 // ── MIKE KNOWLEDGE ────────────────────────────────────────────────────────────
-app.get('/api/knowledge', async (req, res) => {
-  const { user_id } = req.query;
-  if (!user_id) return res.status(400).json({ error: 'user_id required' });
-  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
+app.get('/api/knowledge', authenticateToken, async (req, res) => {
+  const user_id = req.user.id;
   const rows = await supabase('GET', 'mike_knowledge', null,
     `?user_id=eq.${encodeURIComponent(user_id)}&order=created_at.desc&limit=100`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
   res.json({ knowledge: rows });
 });
 
-app.post('/api/knowledge', async (req, res) => {
-  const { user_id, fact, topic } = req.body;
-  if (!user_id || !fact) return res.status(400).json({ error: 'user_id and fact required' });
-  if (!isValidUUID(user_id)) return res.status(400).json({ error: 'Invalid user_id' });
+app.post('/api/knowledge', authenticateToken, async (req, res) => {
+  const { fact, topic } = req.body;
+  if (!fact) return res.status(400).json({ error: 'fact required' });
+  const user_id = req.user.id;
   const rows = await supabase('POST', 'mike_knowledge', { user_id, fact, topic });
   if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save knowledge' });
   res.json({ knowledge: rows[0] });

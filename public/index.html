@@ -6142,7 +6142,11 @@ function _doStartListening(SR){
     speechRecognition=new SR();
     speechRecognition.continuous=false;
     speechRecognition.interimResults=!isSafari;
-    speechRecognition.lang=currentLang==='es'?'es-MX':currentLang==='zh'?'zh-CN':currentLang==='vi'?'vi-VN':currentLang==='fr'?'fr-FR':currentLang==='pt'?'pt-BR':'en-US';
+    // Intentionally NOT setting .lang — iOS Speech.framework silently fails to
+    // capture audio for locales whose dictation packs aren't installed on the
+    // device. Letting SR default to the device's preferred locale is what
+    // already works in English UI mode; this makes every other UI language
+    // behave identically instead of going silent.
     var micBtn=document.getElementById('micBtn');
     speechRecognition.onstart=function(){
       isListening=true;
@@ -6745,7 +6749,7 @@ function startCameraListen(){
     cameraSpeechRec=new SR();
     cameraSpeechRec.continuous=false;
     cameraSpeechRec.interimResults=!isSafari;
-    cameraSpeechRec.lang=currentLang==='es'?'es-MX':currentLang==='zh'?'zh-CN':currentLang==='vi'?'vi-VN':currentLang==='fr'?'fr-FR':currentLang==='pt'?'pt-BR':'en-US';
+    // No .lang — see _doStartListening for the iOS dictation-pack rationale.
     cameraListening=true;
     updateCameraMicState('listening');
     document.getElementById('cameraTranscript').textContent='Listening…';

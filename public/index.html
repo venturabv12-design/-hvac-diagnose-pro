@@ -22,6 +22,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800&family=DM+Mono:wght@500&display=swap&subset=latin" rel="stylesheet" media="print" onload="this.media='all'"/>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+<script src="/lucide.min.js" defer></script>
 <noscript></noscript>
 <style>
 
@@ -29,8 +31,17 @@
   /* Brand */
   --teal:#00C2B2;--teal-dark:#009E90;--teal-mid:#B2F0EA;--teal-lt:#E6FAF8;
   --teal-glow:rgba(0,194,178,.35);
-  /* Neutrals */
-  --bg:#F4F5F9;--white:#FFFFFF;--black:#0A0A0F;
+  /* Trade-tool palette (new — Mike redesign) — used with var() fallbacks */
+  --ink:#0E0F0D;--ink-2:#15171A;--ink-3:#1D2024;
+  --paper:#F4EFE6;
+  --safety:#FFB400;--safety-deep:#E69E00;
+  --rust:#C7553B;
+  --teal-deep:#008C81;
+  --moss:#5B7B5A;
+  --brass:#C9A961;
+  --line:rgba(255,255,255,.06);
+  /* Neutrals (--bg → --paper, --black → --ink — backward-compat aliases) */
+  --bg:var(--paper,#F4EFE6);--white:#FFFFFF;--black:var(--ink,#0E0F0D);
   --gray-50:#F8F9FC;--gray-100:#F0F1F6;--gray-200:#E2E4ED;
   --gray-300:#C8CBD8;--gray-400:#9499B0;--gray-500:#6B7190;--gray-600:#4A5070;
   /* Semantic */
@@ -1535,7 +1546,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <input type="file" id="homeFileInputCam" accept="image/*,video/*" capture="environment" style="display:none" onchange="handleHomeFileSelect(event)"/>
       <div class="drop-zone" id="homeDropZone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleHomeDrop(event)" onclick="document.getElementById('homeFileInput').click()">
         <div id="homeDropPrompt" style="padding:28px 20px 20px;text-align:center;">
-          <div style="width:64px;height:64px;background:#F5F6FA;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:2px solid #e0e0e0;"><span style="font-size:28px;">📷</span></div>
+          <div style="width:64px;height:64px;background:#F5F6FA;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:2px solid #e0e0e0;"><i data-lucide="camera" style="width:28px;height:28px;color:#9499B0;"></i></div>
           <div style="font-size:16px;font-weight:700;color:#0F0F0F;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Take or Upload a Photo</div>
           <div style="font-size:12px;color:#9499B0;margin-bottom:18px;">Photo · Video · JPG · PNG · up to 50MB</div>
           <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;" onclick="event.stopPropagation()">
@@ -1580,7 +1591,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <div class="card" id="homeResultCard" style="margin-bottom:16px;"><div class="result-body" id="homeResultText"></div></div>
       <!-- CTA: Call a tech -->
       <div style="background:linear-gradient(135deg,#00C2B2,#009E90);border-radius:12px;padding:20px;margin-top:4px;text-align:center;">
-        <div style="font-size:24px;margin-bottom:8px;">🔧</div>
+        <div style="margin-bottom:8px;line-height:1;"><i data-lucide="wrench" style="width:24px;height:24px;color:#fff;display:inline-block;"></i></div>
         <div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:6px;">Ready to get this fixed?</div>
         <div style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.5;margin-bottom:16px;">A licensed HVAC technician can diagnose and repair this properly. Always use a certified pro for HVAC work.</div>
         <button class="btn" onclick="findLocalTech()" style="background:#fff;color:#009E90;font-size:15px;font-weight:800;padding:14px 24px;border:none;border-radius:8px;cursor:pointer;width:100%;font-family:var(--font);">📞 Find a Local Technician</button>
@@ -1892,7 +1903,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <span style="font-size:12px;font-weight:700;color:#00C2B2;">Mike Online</span>
     </div>
     <!-- Close -->
-    <button onclick="stopLiveCamera()" style="width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.2);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;line-height:1;">✕</button>
+    <button onclick="stopLiveCamera()" style="width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.2);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;line-height:1;"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
   </div>
 
   <!-- MIKE RESPONSE PANEL — slides up from bottom like iMessage -->
@@ -5586,7 +5597,7 @@ function showCustomerDB(){
       html+='</div>';
       html+='<div style="display:flex;gap:6px;flex-shrink:0;">';
 
-      html+='<button onclick="deleteCustomer('+c.id+')" style="background:rgba(232,53,74,.08);border:1px solid rgba(232,53,74,.2);color:#E8354A;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">✕</button>';
+      html+='<button onclick="deleteCustomer('+c.id+')" style="background:rgba(232,53,74,.08);border:1px solid rgba(232,53,74,.2);color:#E8354A;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>';
       html+='</div></div>';
       if(c.notes)html+='<div style="font-size:12px;color:#555;margin-top:6px;font-style:italic;">'+escapeHtml(c.notes)+'</div>';
       if(custReminders.length)html+='<div style="font-size:11px;color:#F59E0B;margin-top:4px;">⏰ '+custReminders.length+' reminder'+(custReminders.length>1?'s':'')+' set</div>';
@@ -5594,6 +5605,7 @@ function showCustomerDB(){
     });
   }
   document.getElementById('customerDBBody').innerHTML=html;
+  if(window.lucide)lucide.createIcons();
   openModal('customerDBModal');
 }
 function addReminderForCustomer(name){
@@ -7372,7 +7384,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="tz-modal">
   <div class="tz-modal-header">
     <div class="tz-modal-title">👤 Profile Settings</div>
-    <button class="tz-modal-close" onclick="closeModal('profileModal')">✕</button>
+    <button class="tz-modal-close" onclick="closeModal('profileModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
   </div>
   <div class="tz-modal-body">
     <div class="tz-modal-field">
@@ -7469,7 +7481,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="tz-modal">
   <div class="tz-modal-header">
     <div class="tz-modal-title">💳 Billing &amp; Plan</div>
-    <button class="tz-modal-close" onclick="closeModal('billingModal')">✕</button>
+    <button class="tz-modal-close" onclick="closeModal('billingModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
   </div>
   <div class="tz-modal-body">
     <span class="tz-modal-back" onclick="closeModal('billingModal')">← Back</span>
@@ -7517,7 +7529,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="tz-modal">
   <div class="tz-modal-header">
     <div class="tz-modal-title" id="whatsNewTitle">🔔 Meet Mike</div>
-    <button class="tz-modal-close" onclick="closeModal('whatsNewModal')">✕</button>
+    <button class="tz-modal-close" onclick="closeModal('whatsNewModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
   </div>
   <div class="tz-modal-body">
     <div style="font-size:13px;color:#666;margin-bottom:16px;" id="whatsNewSub">5 things every tech needs to know about Mike</div>
@@ -7557,7 +7569,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="tz-modal">
   <div class="tz-modal-header">
     <div class="tz-modal-title">📄 Terms of Service</div>
-    <button class="tz-modal-close" onclick="closeModal('termsModal')">✕</button>
+    <button class="tz-modal-close" onclick="closeModal('termsModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
   </div>
   <div class="tz-modal-body" style="font-size:13px;color:#aaa;line-height:1.7;">
     <p style="font-size:11px;color:#555;margin-bottom:14px;">Last updated: January 2025 &nbsp;·&nbsp; Effective immediately upon use</p>
@@ -7609,7 +7621,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="tz-modal">
   <div class="tz-modal-header">
     <div class="tz-modal-title">🔒 Privacy Policy</div>
-    <button class="tz-modal-close" onclick="closeModal('privacyModal')">✕</button>
+    <button class="tz-modal-close" onclick="closeModal('privacyModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
   </div>
   <div class="tz-modal-body" style="font-size:13px;color:#aaa;line-height:1.7;">
     <p style="font-size:11px;color:#555;margin-bottom:14px;">Last updated: January 2025 &nbsp;·&nbsp; Applies to all Trazer Intelligence users</p>
@@ -7659,7 +7671,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="tz-modal">
   <div class="tz-modal-header">
     <div class="tz-modal-title">🧪 Refrigerant Log</div>
-    <button class="tz-modal-close" onclick="closeModal('refLogModal')">✕</button>
+    <button class="tz-modal-close" onclick="closeModal('refLogModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
   </div>
   <div class="tz-modal-body" id="refLogBody"></div>
 </div>
@@ -7672,7 +7684,7 @@ document.addEventListener('DOMContentLoaded',function(){
     <div class="tz-modal-title">👥 Customer Database</div>
     <div style="display:flex;gap:8px;align-items:center;">
       <button onclick="saveCurrentJobAsCustomer()" style="background:var(--teal);border:none;color:#000;font-size:12px;font-weight:700;padding:5px 12px;border-radius:6px;cursor:pointer;">+ Add</button>
-      <button class="tz-modal-close" onclick="closeModal('customerDBModal')">✕</button>
+      <button class="tz-modal-close" onclick="closeModal('customerDBModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
     </div>
   </div>
   <div class="tz-modal-body" id="customerDBBody"></div>
@@ -7684,7 +7696,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="tz-modal">
   <div class="tz-modal-header">
     <div class="tz-modal-title">💾 Save Customer</div>
-    <button class="tz-modal-close" onclick="closeModal('saveCustomerModal')">✕</button>
+    <button class="tz-modal-close" onclick="closeModal('saveCustomerModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
   </div>
   <div class="tz-modal-body">
     <div class="tz-modal-field">
@@ -7714,7 +7726,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="tz-modal">
   <div class="tz-modal-header">
     <div class="tz-modal-title">⚖️ Repair vs Replace</div>
-    <button class="tz-modal-close" onclick="closeModal('repairReplaceModal')">✕</button>
+    <button class="tz-modal-close" onclick="closeModal('repairReplaceModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
   </div>
   <div class="tz-modal-body">
     <div style="font-size:13px;color:#555;margin-bottom:14px;">Uses the industry 5000 Rule to give a clear recommendation with the exact numbers.</div>
@@ -7737,7 +7749,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="tz-modal">
   <div class="tz-modal-header">
     <div class="tz-modal-title">✍️ Job Sign-Off</div>
-    <button class="tz-modal-close" onclick="closeModal('signOffModal')">✕</button>
+    <button class="tz-modal-close" onclick="closeModal('signOffModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
   </div>
   <div class="tz-modal-body">
     <div class="tz-modal-field">
@@ -7767,7 +7779,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="tz-modal">
   <div class="tz-modal-header">
     <div class="tz-modal-title">📊 My Performance</div>
-    <button class="tz-modal-close" onclick="closeModal('perfDashModal')">✕</button>
+    <button class="tz-modal-close" onclick="closeModal('perfDashModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
   </div>
   <div class="tz-modal-body" id="perfDashBody"></div>
 </div>
@@ -7779,7 +7791,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="tz-modal">
   <div class="tz-modal-header">
     <div class="tz-modal-title">❓ Help & Support</div>
-    <button class="tz-modal-close" onclick="closeModal('helpModal')">✕</button>
+    <button class="tz-modal-close" onclick="closeModal('helpModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
   </div>
   <div class="tz-modal-body">
     <div class="tz-help-option" onclick="showHelpFeedback()">
@@ -7813,7 +7825,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="tz-modal">
   <div class="tz-modal-header">
     <div class="tz-modal-title">🧾 Invoice Generator</div>
-    <button class="tz-modal-close" onclick="closeModal('invoiceModal')">✕</button>
+    <button class="tz-modal-close" onclick="closeModal('invoiceModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
   </div>
   <div class="tz-modal-body">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding:10px 14px;background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;">
@@ -7847,5 +7859,11 @@ document.addEventListener('DOMContentLoaded',function(){
 </div>
 </div>
 
+<!-- Lucide icon renderer — boots SVGs from <i data-lucide> placeholders -->
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  if(window.lucide)lucide.createIcons();
+});
+</script>
 </body>
 </html>

@@ -51,8 +51,13 @@
   --blue:#2563EB;--blue-lt:#EFF6FF;
   --purple:#7C3AED;--purple-lt:#F5F3FF;
   /* Typography */
-  --font:'Plus Jakarta Sans',-apple-system,sans-serif;
-  --mono:'DM Mono',monospace;
+  --font-display:'Anton',Impact,sans-serif;
+  --font-ui:'Archivo','Plus Jakarta Sans',-apple-system,sans-serif;
+  --font-code:'JetBrains Mono','DM Mono',ui-monospace,monospace;
+  --font-script:'Caveat',cursive;
+  /* Backward-compat aliases (deprecated — kept so existing var(--font) callsites resolve) */
+  --font:var(--font-ui);
+  --mono:var(--font-code);
   /* Type scale */
   --text-xs:11px;--text-sm:13px;--text-base:15px;--text-lg:17px;--text-xl:20px;--text-2xl:26px;--text-3xl:34px;
   /* Spacing */
@@ -69,7 +74,7 @@
 button,a,label,[onclick]{-webkit-tap-highlight-color:transparent;touch-action:manipulation;cursor:pointer;}
 *{-webkit-tap-highlight-color:transparent;}
 html{font-size:16px;-webkit-text-size-adjust:100%;}
-body{background:var(--bg);font-family:var(--font);color:var(--black);min-height:100vh;-webkit-font-smoothing:antialiased;}
+body{background:var(--bg);font-family:var(--font-ui);color:var(--black);min-height:100vh;-webkit-font-smoothing:antialiased;}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:4px;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}

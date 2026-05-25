@@ -10,7 +10,7 @@
 <meta http-equiv="Expires" content="0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Trazer Intelligence</title>
-<meta name="theme-color" content="#00C2B2">
+<meta name="theme-color" content="#C7553B">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -29,16 +29,19 @@
 
 :root{
   /* Brand */
-  --teal:#00C2B2;--teal-dark:#009E90;--teal-mid:#B2F0EA;--teal-lt:#E6FAF8;
-  --teal-glow:rgba(0,194,178,.35);
+  --teal:var(--rust);--teal-dark:var(--rust-deep);--teal-mid:var(--brass-mid);--teal-lt:var(--brass-lt);
+  --teal-glow:rgba(199,85,59,.35);
   /* Trade-tool palette (new — Mike redesign) — used with var() fallbacks */
   --ink:#0E0F0D;--ink-2:#15171A;--ink-3:#1D2024;
   --paper:#F4EFE6;
   --safety:#FFB400;--safety-deep:#E69E00;
   --rust:#C7553B;
-  --teal-deep:#008C81;
+  --teal-deep:var(--rust-deep);
   --moss:#5B7B5A;
   --brass:#C9A961;
+  --rust-deep:#A8472F;
+  --brass-mid:#E8C5A0;
+  --brass-lt:#F4E4D1;
   --line:rgba(255,255,255,.06);
   /* Neutrals (--bg → --paper, --black → --ink — backward-compat aliases) */
   --bg:var(--paper,#F4EFE6);--white:#FFFFFF;--black:var(--ink,#0E0F0D);
@@ -51,8 +54,13 @@
   --blue:#2563EB;--blue-lt:#EFF6FF;
   --purple:#7C3AED;--purple-lt:#F5F3FF;
   /* Typography */
-  --font:'Plus Jakarta Sans',-apple-system,sans-serif;
-  --mono:'DM Mono',monospace;
+  --font-display:'Anton',Impact,sans-serif;
+  --font-ui:'Archivo','Plus Jakarta Sans',-apple-system,sans-serif;
+  --font-code:'JetBrains Mono','DM Mono',ui-monospace,monospace;
+  --font-script:'Caveat',cursive;
+  /* Backward-compat aliases (deprecated — kept so existing var(--font) callsites resolve) */
+  --font:var(--font-ui);
+  --mono:var(--font-code);
   /* Type scale */
   --text-xs:11px;--text-sm:13px;--text-base:15px;--text-lg:17px;--text-xl:20px;--text-2xl:26px;--text-3xl:34px;
   /* Spacing */
@@ -63,13 +71,13 @@
   --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
   --shadow:0 4px 16px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);
   --shadow-lg:0 16px 48px rgba(0,0,0,.12),0 4px 12px rgba(0,0,0,.06);
-  --shadow-teal:0 8px 32px rgba(0,194,178,.25);
+  --shadow-teal:0 8px 32px rgba(199,85,59,.25);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 button,a,label,[onclick]{-webkit-tap-highlight-color:transparent;touch-action:manipulation;cursor:pointer;}
 *{-webkit-tap-highlight-color:transparent;}
 html{font-size:16px;-webkit-text-size-adjust:100%;}
-body{background:var(--bg);font-family:var(--font);color:var(--black);min-height:100vh;-webkit-font-smoothing:antialiased;}
+body{background:var(--bg);font-family:var(--font-ui);color:var(--black);min-height:100vh;-webkit-font-smoothing:antialiased;}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:4px;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -80,7 +88,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--black);min-height:
 @keyframes ripple{0%{transform:scale(1);opacity:.5}100%{transform:scale(2.4);opacity:0}}
 @keyframes scanline{0%{top:0%}100%{top:96%}}
 @keyframes typing-bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
-@keyframes micPulse{0%,100%{box-shadow:0 4px 20px rgba(0,194,178,.4),0 0 0 0 rgba(0,194,178,.4)}50%{box-shadow:0 4px 20px rgba(0,194,178,.4),0 0 0 16px rgba(0,194,178,0)}}
+@keyframes micPulse{0%,100%{box-shadow:0 4px 20px rgba(199,85,59,.4),0 0 0 0 rgba(199,85,59,.4)}50%{box-shadow:0 4px 20px rgba(199,85,59,.4),0 0 0 16px rgba(199,85,59,0)}}
 @keyframes speakPulse{0%,100%{box-shadow:0 4px 20px rgba(232,53,74,.4),0 0 0 0 rgba(232,53,74,.4)}50%{box-shadow:0 4px 20px rgba(232,53,74,.4),0 0 0 16px rgba(232,53,74,0)}}
 /* Camera overlay cross-browser */
 #liveCameraOverlay{-webkit-user-select:none;user-select:none;}
@@ -101,8 +109,8 @@ body{background:var(--bg);font-family:var(--font);color:var(--black);min-height:
 .nav{background:var(--white);border-bottom:1px solid var(--gray-200);position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);padding-top:env(safe-area-inset-top,0px);}
 .nav-inner{max-width:720px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:56px;}
 .nav-logo{display:flex;align-items:center;gap:10px;}
-.nav-logo-icon{width:34px;height:34px;background:var(--teal);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(0,194,178,.35);}
-.nav-logo-text{font-size:15px;font-weight:800;color:var(--black);line-height:1;letter-spacing:-.3px;}
+.nav-logo-icon{width:34px;height:34px;background:var(--teal);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(199,85,59,.35);}
+.nav-logo-text{font-family:var(--font-display);font-size:15px;font-weight:800;color:var(--black);line-height:1;letter-spacing:-.3px;}
 .nav-logo-sub{font-size:10px;color:var(--gray-400);margin-top:1px;letter-spacing:.2px;}
 .nav-status{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:99px;}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px rgba(16,185,129,.2);}
@@ -113,7 +121,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--black);min-height:
 .field-label{display:block;font-size:11px;font-weight:700;color:var(--gray-400);margin-bottom:6px;letter-spacing:.6px;text-transform:uppercase;}
 .field-sub{font-size:13px;color:var(--gray-500);margin-bottom:10px;line-height:1.5;}
 input,textarea,select{width:100%;background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:12px 14px;font-size:15px;font-family:var(--font);color:var(--black);outline:none;transition:border-color .15s,box-shadow .15s,background .15s;-webkit-appearance:none;}
-input:focus,textarea:focus,select:focus{border-color:var(--teal);background:var(--white);box-shadow:0 0 0 3px rgba(0,194,178,.12);}
+input:focus,textarea:focus,select:focus{border-color:var(--teal);background:var(--white);box-shadow:0 0 0 3px rgba(199,85,59,.12);}
 input::placeholder,textarea::placeholder{color:var(--gray-300);}
 select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239499B0' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;background-color:var(--gray-50);}
 select option{background:var(--white);color:var(--black);}
@@ -124,7 +132,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .btn-blue{background:var(--black);color:#fff;}
 .btn-green{background:var(--green);color:#fff;}
 .btn-purple{background:var(--purple);color:#fff;}
-.btn-teal{background:var(--teal);color:#fff;box-shadow:0 2px 8px rgba(0,194,178,.3);}
+.btn-teal{background:var(--teal);color:#fff;box-shadow:0 2px 8px rgba(199,85,59,.3);}
 .btn-outline{background:var(--white);color:var(--gray-600);border:1.5px solid var(--gray-200);}
 .btn-outline:hover{background:var(--gray-50);border-color:var(--gray-300);color:var(--black);}
 .btn-full{width:100%;padding:14px;font-size:15px;}
@@ -138,12 +146,12 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .sub-tab{padding:12px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-family:var(--font);font-weight:700;font-size:11px;cursor:pointer;transition:all .15s;border-radius:var(--radius-sm);color:rgba(255,255,255,.5);text-align:center;line-height:1.3;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:5px;-webkit-tap-highlight-color:transparent;}
 .sub-tab .tab-icon{font-size:20px;display:block;}
 .sub-tab:active{transform:scale(.95);}
-.sub-tab.active{color:var(--teal);background:rgba(0,194,178,.15);border-color:rgba(0,194,178,.25);}
+.sub-tab.active{color:var(--teal);background:rgba(199,85,59,.15);border-color:rgba(199,85,59,.25);}
 .symptoms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;}
 .chip{border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:12px 13px;background:var(--white);color:var(--gray-600);font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;transition:all .12s;display:flex;align-items:center;gap:9px;text-align:left;line-height:1.3;box-shadow:var(--shadow-sm);-webkit-tap-highlight-color:transparent;}
 .chip:active{transform:scale(.97);}
 .chip:hover{border-color:var(--teal-mid);background:var(--teal-lt);color:var(--black);}
-.chip.selected{border-color:var(--teal);background:var(--teal-lt);color:var(--teal-dark);font-weight:700;box-shadow:0 0 0 3px rgba(0,194,178,.12);}
+.chip.selected{border-color:var(--teal);background:var(--teal-lt);color:var(--teal-dark);font-weight:700;box-shadow:0 0 0 3px rgba(199,85,59,.12);}
 .chip-icon{font-size:20px;flex-shrink:0;}
 .drop-zone{border-radius:var(--radius);overflow:hidden;position:relative;cursor:pointer;transition:all .15s;background:var(--white);border:1.5px dashed var(--gray-300);}
 .drop-zone:hover,.drop-zone.drag{border-color:var(--teal);background:var(--teal-lt);}
@@ -193,7 +201,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .typing-dots span:nth-child(3){animation-delay:.3s;}
 .mic-listening{background:#E8354A!important;animation:micPulse 1.2s ease infinite!important;}
 .mic-speaking{background:#F59E0B!important;animation:speakPulse 1.2s ease infinite!important;}
-.voice-mode-active{border-color:#00C2B2!important;background:rgba(0,194,178,.2)!important;}
+.voice-mode-active{border-color:var(--rust)!important;background:rgba(199,85,59,.2)!important;}
 .lang-toggle{position:relative;}
 .lang-btn{display:flex;align-items:center;gap:5px;background:var(--gray-100);border:1.5px solid var(--gray-200);border-radius:8px;padding:5px 10px;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:700;color:var(--gray-600);transition:all .15s;-webkit-tap-highlight-color:transparent;}
 .nav-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--gray-100);border:1.5px solid var(--gray-200);color:var(--gray-600);font-size:16px;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;font-family:var(--font);font-weight:700;}
@@ -223,8 +231,8 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 #authOverlay.hidden{display:none;}
 .auth-wrap{width:100%;max-width:400px;}
 .auth-logo-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:26px;}
-.auth-logo-icon{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#00C2B2,#009E91);display:flex;align-items:center;justify-content:center;font-size:23px;}
-.auth-logo-name{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.auth-logo-icon{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));display:flex;align-items:center;justify-content:center;font-size:23px;}
+.auth-logo-name{font-family:var(--font-display);font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px;}
 .auth-card{background:#161616;border:1px solid #2a2a2a;border-radius:18px;padding:26px 22px;box-shadow:0 24px 60px rgba(0,0,0,.7);}
 .auth-trial-pill{display:flex;align-items:center;gap:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;color:#F59E0B;margin-bottom:18px;}
 .auth-tabs{display:flex;gap:2px;background:#0d0d0d;border-radius:9px;padding:3px;margin-bottom:18px;}
@@ -235,15 +243,15 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .auth-field{margin-bottom:14px;}
 .auth-lbl{display:block;font-size:11px;font-weight:700;color:#666;letter-spacing:.4px;text-transform:uppercase;margin-bottom:5px;}
 .auth-inp{display:block;width:100%;padding:12px 14px;background:#0a0a0a !important;border:1.5px solid #2a2a2a;border-radius:9px;color:#fff !important;-webkit-text-fill-color:#fff !important;font-size:15px;font-family:inherit;outline:none;transition:border-color .2s;box-sizing:border-box;}
-.auth-inp:focus{border-color:#00C2B2 !important;}
+.auth-inp:focus{border-color:var(--rust) !important;}
 .auth-inp::placeholder{color:#444 !important;-webkit-text-fill-color:#444 !important;}
 .auth-inp:-webkit-autofill,.auth-inp:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px #0a0a0a inset !important;-webkit-text-fill-color:#fff !important;caret-color:#fff;}
-.auth-forgot{display:block;text-align:right;font-size:12px;color:#00C2B2;cursor:pointer;margin-top:-8px;margin-bottom:14px;}
-.auth-btn{width:100%;padding:12px;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(0,194,178,.25);touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.auth-forgot{display:block;text-align:right;font-size:12px;color:var(--rust);cursor:pointer;margin-top:-8px;margin-bottom:14px;}
+.auth-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(199,85,59,.25);touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .auth-btn:hover{filter:brightness(1.08);}
 .auth-btn:disabled{opacity:.6;cursor:not-allowed;}
 .auth-terms{font-size:11px;color:#444;text-align:center;margin-top:12px;line-height:1.7;}
-.auth-terms a{color:#00C2B2;text-decoration:none;}
+.auth-terms a{color:var(--rust);text-decoration:none;}
 
 /* Trial banner */
 #trialBanner{display:none;background:rgba(245,158,11,.09);border-bottom:1px solid rgba(245,158,11,.2);padding:7px 16px;align-items:center;justify-content:center;gap:12px;font-size:13px;color:#F59E0B;}
@@ -251,7 +259,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .trial-up-btn{background:#F59E0B;color:#000;border:none;border-radius:6px;padding:4px 13px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;}
 
 /* Nav profile */
-.nav-profile-btn{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+.nav-profile-btn{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
 
 /* Profile dropdown */
 .profile-dd{position:fixed;top:58px;right:12px;width:268px;background:#161616;border:1px solid #2a2a2a;border-radius:15px;box-shadow:0 20px 60px rgba(0,0,0,.8);z-index:500;display:none;overflow:hidden;}
@@ -259,12 +267,12 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .pdd-head{padding:15px;border-bottom:1px solid #222;}
 .pdd-name{font-size:15px;font-weight:700;color:#fff;}
 .pdd-email{font-size:12px;color:#555;margin-top:2px;}
-.pdd-plan{display:inline-flex;align-items:center;gap:5px;background:rgba(0,194,178,.1);border:1px solid rgba(0,194,178,.2);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:#00C2B2;margin-top:7px;}
+.pdd-plan{display:inline-flex;align-items:center;gap:5px;background:rgba(199,85,59,.1);border:1px solid rgba(199,85,59,.2);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--rust);margin-top:7px;}
 .pdd-trial{padding:9px 15px;background:rgba(245,158,11,.07);border-bottom:1px solid rgba(245,158,11,.12);font-size:12px;color:#F59E0B;display:flex;align-items:center;gap:8px;}
 .pdd-usage{padding:11px 15px;border-bottom:1px solid #1a1a1a;}
 .pdd-usage-lbl{font-size:10px;color:#555;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
 .pdd-bar{background:#1a1a1a;border-radius:3px;height:4px;overflow:hidden;}
-.pdd-bar-fill{height:100%;background:linear-gradient(90deg,#00C2B2,#009E91);border-radius:3px;transition:width .5s;}
+.pdd-bar-fill{height:100%;background:linear-gradient(90deg,var(--rust),var(--rust-deep));border-radius:3px;transition:width .5s;}
 .pdd-usage-count{font-size:11px;color:#555;margin-top:3px;}
 .pdd-menu{padding:7px;}
 .pdd-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:13px;color:#999;transition:background .15s;}
@@ -283,16 +291,16 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .ob-bg{position:absolute;inset:0;transition:background 1s;}
 .ob-skip-btn{position:absolute;top:max(env(safe-area-inset-top,16px),16px);right:16px;z-index:10;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;color:#fff;font-size:13px;font-weight:600;padding:7px 16px;cursor:pointer;}
 .ob-content{position:relative;z-index:2;text-align:center;padding:0 28px;margin-bottom:24px;}
-.ob-emoji-big{font-size:72px;margin-bottom:18px;display:block;filter:drop-shadow(0 0 24px rgba(0,194,178,.6));}
-.ob-title{font-size:28px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:12px;letter-spacing:-.5px;}
-.ob-title span{color:#00C2B2;}
+.ob-emoji-big{font-size:72px;margin-bottom:18px;display:block;filter:drop-shadow(0 0 24px rgba(199,85,59,.6));}
+.ob-title{font-family:var(--font-display);font-size:28px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:12px;letter-spacing:-.5px;}
+.ob-title span{color:var(--rust);}
 .ob-body{font-size:15px;color:rgba(255,255,255,.75);line-height:1.7;}
 .ob-body strong{color:#fff;}
 .ob-dots{position:relative;z-index:2;display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
 .ob-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.25);transition:all .3s;}
-.ob-dot.on{background:#00C2B2;width:24px;border-radius:4px;}
-.ob-next-btn{position:relative;z-index:2;width:calc(100% - 56px);max-width:320px;padding:17px;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 8px 28px rgba(0,194,178,.45);}
-.ob-wave{position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#00C2B2,transparent);animation:obw 2s infinite;}
+.ob-dot.on{background:var(--rust);width:24px;border-radius:4px;}
+.ob-next-btn{position:relative;z-index:2;width:calc(100% - 56px);max-width:320px;padding:17px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 8px 28px rgba(199,85,59,.45);}
+.ob-wave{position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--rust),transparent);animation:obw 2s infinite;}
 @keyframes obw{0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
 
 /* Paywall */
@@ -300,31 +308,31 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 #paywallOverlay.show{display:flex;}
 .pw-card{width:100%;max-width:480px;background:#161616;border:1px solid #2a2a2a;border-radius:18px;padding:30px 26px;text-align:center;}
 .pw-icon{font-size:40px;margin-bottom:10px;}
-.pw-title{font-size:23px;font-weight:800;color:#fff;margin-bottom:7px;}
+.pw-title{font-family:var(--font-display);font-size:23px;font-weight:800;color:#fff;margin-bottom:7px;}
 .pw-sub{font-size:14px;color:#888;margin-bottom:22px;line-height:1.6;}
 .pw-plans{display:flex;gap:9px;margin-bottom:20px;}
 .pw-plan{flex:1;background:#0d0d0d;border:1.5px solid #2a2a2a;border-radius:11px;padding:15px 10px;cursor:pointer;position:relative;transition:all .2s;}
 .pw-plan:hover{border-color:#444;}
-.pw-plan.sel{border-color:#00C2B2;background:rgba(0,194,178,.05);}
-.pw-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#00C2B2;color:#000;font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.pw-plan.sel{border-color:var(--rust);background:rgba(199,85,59,.05);}
+.pw-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--rust);color:#000;font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;}
 .pw-name{font-size:12px;font-weight:700;color:#888;margin-bottom:3px;}
 .pw-price{font-size:25px;font-weight:900;color:#fff;}
 .pw-period{font-size:11px;color:#555;}
 .pw-save{font-size:11px;color:#10B981;margin-top:2px;font-weight:600;}
-.pw-btn{width:100%;padding:13px;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;border-radius:11px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;}
+.pw-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border:none;border-radius:11px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;}
 .pw-note{font-size:12px;color:#444;}
-.pw-note a{color:#00C2B2;text-decoration:none;}
+.pw-note a{color:var(--rust);text-decoration:none;}
 
 /* Admin dashboard */
 #adminOverlay{position:fixed;inset:0;z-index:9990;background:#060a0f;display:none;overflow-y:auto;}
 #adminOverlay.show{display:block;}
 .adm-wrap{max-width:960px;margin:0 auto;padding:20px 16px;}
 .adm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid #1a1a2a;}
-.adm-title{font-size:22px;font-weight:800;color:#fff;}.adm-title span{color:#00C2B2;}
+.adm-title{font-family:var(--font-display);font-size:22px;font-weight:800;color:#fff;}.adm-title span{color:var(--rust);}
 .adm-close{background:rgba(255,255,255,.07);border:1px solid #2a2a3a;border-radius:9px;color:#aaa;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
 .adm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
 .adm-stat{background:#0d1117;border:1px solid #1a1a2a;border-radius:13px;padding:18px 16px;}
-.adm-val{font-size:30px;font-weight:900;color:#00C2B2;margin-bottom:4px;}
+.adm-val{font-size:30px;font-weight:900;color:var(--rust);margin-bottom:4px;}
 .adm-lbl{font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
 .adm-sec{background:#0d1117;border:1px solid #1a1a2a;border-radius:13px;padding:18px;margin-bottom:14px;}
 .adm-sec-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:14px;}
@@ -346,53 +354,53 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .tz-modal-field{margin-bottom:18px;}
 .tz-modal-label{display:block;font-size:11px;font-weight:700;color:#666;letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px;}
 .tz-modal-input{display:block;width:100%;padding:12px 14px;background:#0a0a0a;border:1.5px solid #2a2a2a;border-radius:9px;color:#fff;font-size:15px;font-family:inherit;outline:none;transition:border-color .2s;box-sizing:border-box;}
-.tz-modal-input:focus{border-color:#00C2B2;}
+.tz-modal-input:focus{border-color:var(--rust);}
 .tz-modal-input::placeholder{color:#444;}
-.tz-modal-btn{width:100%;padding:13px;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;}
+.tz-modal-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;}
 .tz-modal-btn:hover{filter:brightness(1.08);}
 .tz-modal-btn-outline{width:100%;padding:12px;background:transparent;border:1.5px solid #2a2a2a;border-radius:9px;color:#aaa;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;}
 .tz-modal-btn-outline:hover{border-color:#444;color:#fff;}
-.tz-modal-back{display:flex;align-items:center;gap:6px;font-size:13px;color:#00C2B2;cursor:pointer;margin-bottom:16px;}
+.tz-modal-back{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--rust);cursor:pointer;margin-bottom:16px;}
 .tz-modal-back:hover{color:#fff;}
 .tz-fact{background:#0d0d0d;border:1px solid #1a1a1a;border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;}
-.tz-fact-num{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#00C2B2,#009E91);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#000;flex-shrink:0;margin-top:1px;}
+.tz-fact-num{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--rust),var(--rust-deep));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#000;flex-shrink:0;margin-top:1px;}
 .tz-fact-text{font-size:14px;color:#ccc;line-height:1.6;}
 .tz-fact-text strong{color:#fff;}
 .tz-help-option{background:#0d0d0d;border:1.5px solid #1a1a1a;border-radius:12px;padding:16px;margin-bottom:10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:14px;}
-.tz-help-option:hover{border-color:#00C2B2;background:rgba(0,194,178,.05);}
+.tz-help-option:hover{border-color:var(--rust);background:rgba(199,85,59,.05);}
 .tz-help-icon{font-size:28px;flex-shrink:0;}
 .tz-help-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:3px;}
 .tz-help-sub{font-size:12px;color:#666;}
 .tz-feedback-box{width:100%;min-height:100px;padding:12px 14px;background:#0a0a0a;border:1.5px solid #2a2a2a;border-radius:9px;color:#fff;font-size:14px;font-family:inherit;outline:none;resize:vertical;transition:border-color .2s;box-sizing:border-box;}
-.tz-feedback-box:focus{border-color:#00C2B2;}
+.tz-feedback-box:focus{border-color:var(--rust);}
 .tz-feedback-box::placeholder{color:#444;}
 .plan-card-grid{display:flex;gap:10px;margin-bottom:18px;}
 .plan-card{flex:1;background:#0d0d0d;border:1.5px solid #1a1a1a;border-radius:12px;padding:16px 12px;cursor:pointer;transition:all .2s;position:relative;text-align:center;}
 .plan-card:hover{border-color:#444;}
-.plan-card.active{border-color:#00C2B2;background:rgba(0,194,178,.05);}
-.plan-card-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#00C2B2;color:#000;font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.plan-card.active{border-color:var(--rust);background:rgba(199,85,59,.05);}
+.plan-card-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--rust);color:#000;font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;}
 .plan-card-name{font-size:12px;font-weight:700;color:#888;margin-bottom:4px;}
 .plan-card-price{font-size:26px;font-weight:900;color:#fff;}
 .plan-card-period{font-size:11px;color:#555;}
 .plan-card-save{font-size:11px;color:#10B981;margin-top:3px;font-weight:600;}
-.plan-coming-soon{text-align:center;padding:16px;background:rgba(0,194,178,.05);border:1px solid rgba(0,194,178,.2);border-radius:10px;font-size:13px;color:#00C2B2;margin-bottom:16px;}
+.plan-coming-soon{text-align:center;padding:16px;background:rgba(199,85,59,.05);border:1px solid rgba(199,85,59,.2);border-radius:10px;font-size:13px;color:var(--rust);margin-bottom:16px;}
 .feedback-badge{position:absolute;top:-4px;right:-4px;width:8px;height:8px;border-radius:50%;background:#E8354A;}
 
 
 /* ── ROLE SELECTOR ──────────────────────────────────── */
 .role-select-wrap{display:none;}
 .role-select-wrap.show{display:block;}
-.role-card{background:#0d0d0d;border:2px solid #2a2a2a;border-radius:16px;padding:22px 18px;cursor:pointer;transition:all .25s;margin-bottom:12px;display:flex;align-items:center;gap:16px;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,194,178,.15);}
+.role-card{background:#0d0d0d;border:2px solid #2a2a2a;border-radius:16px;padding:22px 18px;cursor:pointer;transition:all .25s;margin-bottom:12px;display:flex;align-items:center;gap:16px;touch-action:manipulation;-webkit-tap-highlight-color:rgba(199,85,59,.15);}
 .role-card:hover{border-color:#444;background:#111;}
-.role-card.selected{border-color:#00C2B2;background:rgba(0,194,178,.07);}
+.role-card.selected{border-color:var(--rust);background:rgba(199,85,59,.07);}
 .role-card-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
 .role-card-icon.homeowner{background:linear-gradient(135deg,#2563eb20,#2563eb10);border:1px solid #2563eb40;}
-.role-card-icon.contractor{background:linear-gradient(135deg,#00C2B220,#00C2B210);border:1px solid #00C2B240;}
+.role-card-icon.contractor{background:linear-gradient(135deg,var(--rust)20,var(--rust)10);border:1px solid var(--rust)40;}
 .role-card-title{font-size:16px;font-weight:800;color:#fff;margin-bottom:3px;}
 .role-card-sub{font-size:13px;color:#666;line-height:1.4;}
-.role-continue-btn{width:100%;padding:13px;background:linear-gradient(135deg,#00C2B2,#009E91);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px;box-shadow:0 4px 14px rgba(0,194,178,.25);}
+.role-continue-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px;box-shadow:0 4px 14px rgba(199,85,59,.25);}
 .role-continue-btn:hover{filter:brightness(1.08);}
-.auth-back-link{display:flex;align-items:center;gap:6px;font-size:13px;color:#00C2B2;cursor:pointer;margin-bottom:18px;}
+.auth-back-link{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--rust);cursor:pointer;margin-bottom:18px;}
 
 
 /* ── ADMIN DELETE BUTTON ─────────────────────────────── */
@@ -400,7 +408,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .adm-del-btn:hover{background:rgba(232,53,74,.25);border-color:#E8354A;}
 .adm-plan-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
 .adm-plan-trial{background:rgba(245,158,11,.12);color:#F59E0B;border:1px solid rgba(245,158,11,.25);}
-.adm-plan-pro{background:rgba(0,194,178,.12);color:#00C2B2;border:1px solid rgba(0,194,178,.25);}
+.adm-plan-pro{background:rgba(199,85,59,.12);color:var(--rust);border:1px solid rgba(199,85,59,.25);}
 .adm-plan-starter{background:rgba(59,130,246,.12);color:#3b82f6;border:1px solid rgba(59,130,246,.25);}
 .adm-plan-enterprise{background:rgba(139,92,246,.12);color:#8b5cf6;border:1px solid rgba(139,92,246,.25);}
 .adm-plan-admin{background:rgba(255,215,0,.12);color:#ffd700;border:1px solid rgba(255,215,0,.25);}
@@ -409,7 +417,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 /* ── EXPERIENCE LEVEL BUTTONS ──────────────────────────── */
 .exp-btn{padding:10px 8px;background:#0d0d0d;border:1.5px solid #2a2a2a;border-radius:9px;color:#666;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;text-align:center;}
 .exp-btn:hover{border-color:#444;color:#ccc;}
-.exp-btn.active{background:rgba(0,194,178,.1);border-color:#00C2B2;color:#00C2B2;}
+.exp-btn.active{background:rgba(199,85,59,.1);border-color:var(--rust);color:var(--rust);}
 
 
 /* ── ENHANCED UI ─────────────────────────────────────────── */
@@ -419,7 +427,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 #offlineBanner.show{display:block;}
 
 /* Job timer */
-#jobTimer{display:none;position:fixed;bottom:0;right:0;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px 0 0 0;padding:6px 14px;font-size:12px;font-weight:700;color:#00C2B2;z-index:400;cursor:pointer;}
+#jobTimer{display:none;position:fixed;bottom:0;right:0;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px 0 0 0;padding:6px 14px;font-size:12px;font-weight:700;color:var(--rust);z-index:400;cursor:pointer;}
 #jobTimer.show{display:block;}
 
 /* Char counter on chat input */
@@ -427,7 +435,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .chat-input-wrap{position:relative;}
 
 /* Typing indicator enhanced */
-.typing-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#00C2B2;margin:0 2px;animation:tdot .8s infinite;}
+.typing-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--rust);margin:0 2px;animation:tdot .8s infinite;}
 .typing-dot:nth-child(2){animation-delay:.15s;}
 .typing-dot:nth-child(3){animation-delay:.3s;}
 @keyframes tdot{0%,80%,100%{transform:translateY(0);opacity:.4;}40%{transform:translateY(-6px);opacity:1;}}
@@ -438,7 +446,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 
 /* Send button pulse when active */
 #chatSendBtn.sending{animation:btnPulse 1s infinite;}
-@keyframes btnPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,194,178,.4);}50%{box-shadow:0 0 0 6px rgba(0,194,178,0);}}
+@keyframes btnPulse{0%,100%{box-shadow:0 0 0 0 rgba(199,85,59,.4);}50%{box-shadow:0 0 0 6px rgba(199,85,59,0);}}
 
 /* Connection status dot */
 .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
@@ -472,18 +480,18 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .msg-actions{display:none;gap:4px;margin-top:4px;padding-left:4px;}
 .msg-agent:hover .msg-actions,.msg-agent:active .msg-actions{display:flex;}
 .msg-action-btn{background:rgba(0,0,0,.05);border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;color:#6B7190;font-family:var(--font);transition:all .15s;display:flex;align-items:center;gap:3px;}
-.msg-action-btn:hover{background:rgba(0,194,178,.1);color:#00C2B2;}
+.msg-action-btn:hover{background:rgba(199,85,59,.1);color:var(--rust);}
 .msg-action-btn.reacted{color:#E8354A;}
 #voiceWaveform{display:none;align-items:center;justify-content:center;gap:3px;height:32px;}
 #voiceWaveform.active{display:flex;}
-.wave-bar{width:3px;border-radius:3px;background:#00C2B2;animation:waveAnim 1s ease-in-out infinite;}
+.wave-bar{width:3px;border-radius:3px;background:var(--rust);animation:waveAnim 1s ease-in-out infinite;}
 .wave-bar:nth-child(1){animation-delay:0s;height:8px;}.wave-bar:nth-child(2){animation-delay:.1s;height:16px;}.wave-bar:nth-child(3){animation-delay:.2s;height:24px;}.wave-bar:nth-child(4){animation-delay:.3s;height:16px;}.wave-bar:nth-child(5){animation-delay:.4s;height:8px;}.wave-bar:nth-child(6){animation-delay:.3s;height:16px;}.wave-bar:nth-child(7){animation-delay:.2s;height:24px;}.wave-bar:nth-child(8){animation-delay:.1s;height:16px;}.wave-bar:nth-child(9){animation-delay:0s;height:8px;}
 @keyframes waveAnim{0%,100%{transform:scaleY(.4);opacity:.6;}50%{transform:scaleY(1);opacity:1;}}
 .haptic-tap{transition:transform .08s;}.haptic-tap:active{transform:scale(.96);}
 #chatSearchBar{display:none;background:#fff;border-bottom:1px solid #E2E4ED;padding:8px 12px;align-items:center;gap:8px;}
 #chatSearchBar.show{display:flex;}
 #chatSearchInput{flex:1;border:1.5px solid #E2E4ED;border-radius:8px;padding:7px 12px;font-size:13px;font-family:var(--font);outline:none;}
-#chatSearchInput:focus{border-color:#00C2B2;}
+#chatSearchInput:focus{border-color:var(--rust);}
 #chatSearchClose{background:none;border:none;font-size:18px;cursor:pointer;color:#9499B0;padding:0 4px;}
 #searchResultCount{font-size:12px;color:#9499B0;white-space:nowrap;}
 #shareSheet{position:fixed;inset:0;z-index:9985;background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;}
@@ -500,10 +508,10 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 #quickReplies::-webkit-scrollbar{display:none;}
 #quickReplies.show{display:block;}
 .qr-chip{display:inline-block;background:#fff;border:1.5px solid #E2E4ED;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;margin-right:6px;white-space:nowrap;transition:all .15s;}
-.qr-chip:hover{background:#E6FAF8;border-color:#00C2B2;color:#00C2B2;}
+.qr-chip:hover{background:var(--brass-lt);border-color:var(--rust);color:var(--rust);}
 #pullRefreshIndicator{height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:height .2s;font-size:13px;color:#9499B0;gap:8px;}
 #pullRefreshIndicator.visible{height:44px;}
-.ptr-spinner{width:18px;height:18px;border:2px solid #E2E4ED;border-top-color:#00C2B2;border-radius:50%;animation:ptrSpin .7s linear infinite;}
+.ptr-spinner{width:18px;height:18px;border:2px solid #E2E4ED;border-top-color:var(--rust);border-radius:50%;animation:ptrSpin .7s linear infinite;}
 @keyframes ptrSpin{to{transform:rotate(360deg);}}
 [data-theme="dark"]{color-scheme:dark;}
 [data-theme="dark"] body{background:#0a0a0a;color:#e5e7eb;}
@@ -529,16 +537,16 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 [data-theme="dark"] .quick-chip{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;}
 [data-theme="dark"] #quickReplies{background:#0f0f0f;border-top-color:#1f1f1f;}
 [data-theme="dark"] .qr-chip{background:#1a1a1a;border-color:#2a2a2a;color:#9ca3af;}
-[data-theme="dark"] .qr-chip:hover{background:#1e2e2e;border-color:#00C2B2;color:#00C2B2;}
+[data-theme="dark"] .qr-chip:hover{background:#1e2e2e;border-color:var(--rust);color:var(--rust);}
 [data-theme="dark"] #trialBanner{background:rgba(245,158,11,.12);border-bottom-color:rgba(245,158,11,.25);}
 [data-theme="dark"] #offlineBanner{background:#1a0a0a;border-bottom-color:#E8354A;}
 [data-theme="dark"] #voiceModeBar{background:#0f0f0f;border-color:#1f1f1f;}
-[data-theme="dark"] #correctionAlert{background:rgba(0,194,178,.12);border-color:rgba(0,194,178,.3);color:#00C2B2;}
+[data-theme="dark"] #correctionAlert{background:rgba(199,85,59,.12);border-color:rgba(199,85,59,.3);color:var(--rust);}
 [data-theme="dark"] #chatSearchBar{background:#111111;border-bottom-color:#1f1f1f;}
 [data-theme="dark"] #chatSearchInput{background:#1a1a1a;border-color:#2a2a2a;color:#e5e7eb;}
 [data-theme="dark"] .search-highlight{background:#854d0e;color:#fef3c7;}
 [data-theme="dark"] .msg-action-btn{background:rgba(255,255,255,.06);color:#6b7280;}
-[data-theme="dark"] .msg-action-btn:hover{background:rgba(0,194,178,.15);color:#00C2B2;}
+[data-theme="dark"] .msg-action-btn:hover{background:rgba(199,85,59,.15);color:var(--rust);}
 [data-theme="dark"] #scrollBottomBtn{background:#1a1a1a;border-color:#2a2a2a;}
 [data-theme="dark"] .profile-dd{background:#161616;border-color:#2a2a2a;}
 [data-theme="dark"] .pdd-head{border-bottom-color:#222;}
@@ -551,7 +559,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 [data-theme="dark"] .mode-tab{color:#6b7280;border-color:#1f1f1f;}
 [data-theme="dark"] .mode-tab.active{background:#1e1e1e;color:#fff;}
 [data-theme="dark"] .symptom-chip{background:#1a1a1a;border-color:#2a2a2a;color:#9ca3af;}
-[data-theme="dark"] .symptom-chip.selected{background:rgba(0,194,178,.15);border-color:#00C2B2;color:#00C2B2;}
+[data-theme="dark"] .symptom-chip.selected{background:rgba(199,85,59,.15);border-color:var(--rust);color:var(--rust);}
 [data-theme="dark"] .tz-modal{background:#161616;border-color:#2a2a2a;}
 [data-theme="dark"] .tz-modal-header{border-bottom-color:#222;}
 [data-theme="dark"] .tz-modal-title{color:#fff;}
@@ -563,14 +571,14 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 [data-theme="dark"] .tz-fact-text{color:#9ca3af;}
 [data-theme="dark"] .tz-fact-text strong{color:#e5e7eb;}
 [data-theme="dark"] .tz-help-option{background:#111;border-color:#1f1f1f;}
-[data-theme="dark"] .tz-help-option:hover{border-color:#00C2B2;}
+[data-theme="dark"] .tz-help-option:hover{border-color:var(--rust);}
 [data-theme="dark"] .tz-help-title{color:#fff;}
 [data-theme="dark"] .tz-help-sub{color:#6b7280;}
 [data-theme="dark"] .tz-feedback-box{background:#0a0a0a;border-color:#2a2a2a;color:#fff;}
 [data-theme="dark"] .plan-card{background:#0a0a0a;border-color:#1f1f1f;}
 [data-theme="dark"] .plan-card-price{color:#fff;}
 [data-theme="dark"] .exp-btn{background:#1a1a1a;border-color:#2a2a2a;color:#6b7280;}
-[data-theme="dark"] .exp-btn.active{background:rgba(0,194,178,.12);border-color:#00C2B2;color:#00C2B2;}
+[data-theme="dark"] .exp-btn.active{background:rgba(199,85,59,.12);border-color:var(--rust);color:var(--rust);}
 [data-theme="dark"] .share-card{background:#161616;}
 [data-theme="dark"] .share-title{color:#fff;}
 [data-theme="dark"] .share-option:hover{background:#222;}
@@ -600,14 +608,14 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 [data-theme="dark"] .auth-logo-name{color:#fff;}
 [data-theme="dark"] .auth-label{color:#9ca3af;}
 [data-theme="dark"] .auth-inp{background:#0a0a0a !important;border-color:#2a2a2a !important;color:#fff !important;-webkit-text-fill-color:#fff !important;}
-[data-theme="dark"] .auth-trial-pill{background:rgba(0,194,178,.1);border-color:rgba(0,194,178,.3);color:#00C2B2;}
+[data-theme="dark"] .auth-trial-pill{background:rgba(199,85,59,.1);border-color:rgba(199,85,59,.3);color:var(--rust);}
 [data-theme="dark"] .auth-tab{background:#0a0a0a;border-color:#2a2a2a;color:#6b7280;}
-[data-theme="dark"] .auth-tab.active{background:#00C2B2;color:#fff;border-color:#00C2B2;}
-[data-theme="dark"] .auth-btn{background:linear-gradient(135deg,#00C2B2,#009E90);}
-[data-theme="dark"] .auth-link{color:#00C2B2;}
+[data-theme="dark"] .auth-tab.active{background:var(--rust);color:#fff;border-color:var(--rust);}
+[data-theme="dark"] .auth-btn{background:linear-gradient(135deg,var(--rust),var(--rust-deep));}
+[data-theme="dark"] .auth-link{color:var(--rust);}
 [data-theme="dark"] .role-card{background:#1a1a1a;border-color:#2a2a2a;}
 [data-theme="dark"] .role-card:hover{background:#222;border-color:#3a3a3a;}
-[data-theme="dark"] .role-card.selected{background:rgba(0,194,178,.08);border-color:#00C2B2;}
+[data-theme="dark"] .role-card.selected{background:rgba(199,85,59,.08);border-color:var(--rust);}
 [data-theme="dark"] .role-card-title{color:#fff;}
 [data-theme="dark"] .role-card-sub{color:#6b7280;}
 [data-theme="dark"] #authOverlay{background:rgba(10,10,10,.98);}
@@ -660,7 +668,7 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 
 /* Share/New Diagnosis buttons in result */
 [data-theme="dark"] #homeResultPanel .btn-outline{border-color:#2a2a2a;color:#9ca3af;}
-[data-theme="dark"] #homeResultPanel .btn-outline:hover{border-color:#00C2B2;color:#00C2B2;}
+[data-theme="dark"] #homeResultPanel .btn-outline:hover{border-color:var(--rust);color:var(--rust);}
 
 /* Contractor result edu panel */
 [data-theme="dark"] #eduContent{background:#1a1a1a !important;}
@@ -671,7 +679,7 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 
 /* Drop zone dark mode */
 [data-theme="dark"] .drop-zone{background:#161616;border-color:#2a2a2a;}
-[data-theme="dark"] .drop-zone:hover{border-color:#00C2B2;}
+[data-theme="dark"] .drop-zone:hover{border-color:var(--rust);}
 [data-theme="dark"] #dropPrompt div,
 [data-theme="dark"] #homeDropPrompt div{color:#e5e7eb;}
 [data-theme="dark"] .photo-tip{color:#6b7280;}
@@ -691,28 +699,28 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 
 [data-theme="dark"] .result-title{color:#e5e7eb !important;}
 
-[data-theme="dark"] #homeResultPanel .btn{color:#009E90 !important;}
+[data-theme="dark"] #homeResultPanel .btn{color:var(--rust-deep) !important;}
 [data-theme="dark"] #homeResultPanel [style*="background:#F5F6F
 /* ── AUTH VALUE PROP ───────────────────────────────────────── */
 .auth-value-prop{padding:0 0 28px;text-align:center;}
 .avp-logo-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:20px;}
-.avp-headline{font-size:28px;font-weight:800;color:#fff;letter-spacing:-.6px;line-height:1.15;margin-bottom:10px;}
+.avp-headline{font-family:var(--font-display);font-size:28px;font-weight:800;color:#fff;letter-spacing:-.6px;line-height:1.15;margin-bottom:10px;}
 .avp-sub{font-size:15px;color:rgba(255,255,255,.6);line-height:1.6;margin-bottom:20px;max-width:320px;margin-left:auto;margin-right:auto;}
 .avp-stats{display:flex;align-items:center;justify-content:center;gap:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 20px;margin-bottom:18px;}
 .avp-stat{flex:1;text-align:center;}
-.avp-stat-num{font-size:22px;font-weight:800;color:#00C2B2;line-height:1;}
+.avp-stat-num{font-size:22px;font-weight:800;color:var(--rust);line-height:1;}
 .avp-stat-lbl{font-size:11px;color:rgba(255,255,255,.45);margin-top:3px;line-height:1.3;}
 .avp-stat-divider{width:1px;height:36px;background:rgba(255,255,255,.1);}
 .avp-features{text-align:left;margin-bottom:20px;display:flex;flex-direction:column;gap:8px;}
 .avp-feature{display:flex;align-items:flex-start;gap:8px;font-size:14px;color:rgba(255,255,255,.75);line-height:1.4;}
 .avp-feature span{color:rgba(255,255,255,.8);}
-.avp-cta{width:100%;padding:16px;background:linear-gradient(135deg,#00C2B2,#009E90);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:var(--font);letter-spacing:-.2px;box-shadow:0 8px 32px rgba(0,194,178,.35);transition:all .2s;}
+.avp-cta{width:100%;padding:16px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:var(--font);letter-spacing:-.2px;box-shadow:0 8px 32px rgba(199,85,59,.35);transition:all .2s;}
 .avp-cta:active{transform:scale(.98);}
 
 /* ── UPGRADED NAV ──────────────────────────────────────────── */
 .nav{background:rgba(255,255,255,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.06);position:sticky;top:0;z-index:100;box-shadow:0 1px 0 rgba(0,0,0,.05);}
 .nav-inner{max-width:720px;margin:0 auto;padding:0 14px;height:56px;display:flex;align-items:center;justify-content:space-between;}
-.nav-logo-text{font-size:15px;font-weight:800;color:var(--black);letter-spacing:-.3px;}
+.nav-logo-text{font-family:var(--font-display);font-size:15px;font-weight:800;color:var(--black);letter-spacing:-.3px;}
 .nav-logo-sub{font-size:10px;color:var(--gray-400);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
 
 /* ── UPGRADED CARDS ────────────────────────────────────────── */
@@ -721,11 +729,11 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 /* ── UPGRADED MODE TABS ────────────────────────────────────── */
 .mode-tabs{display:flex;background:#0A0A0F;border-radius:var(--radius) var(--radius) 0 0;overflow:hidden;}
 .mode-tab{flex:1;padding:15px 12px;background:transparent;border:none;font-family:var(--font);font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;border-bottom:2px solid transparent;color:rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;gap:7px;-webkit-tap-highlight-color:transparent;}
-.mode-tab.active{color:#fff;border-bottom-color:var(--teal);background:rgba(0,194,178,.08);}
+.mode-tab.active{color:#fff;border-bottom-color:var(--teal);background:rgba(199,85,59,.08);}
 .mode-tab:not(.active):active{background:rgba(255,255,255,.05);}
 
 /* ── MIKE BAR ──────────────────────────────────────────────── */
-.mike-bar{background:linear-gradient(135deg,#0A0A0F 0%,#111827 100%);border-radius:16px 16px 0 0;padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(0,194,178,.15);}
+.mike-bar{background:linear-gradient(135deg,#0A0A0F 0%,#111827 100%);border-radius:16px 16px 0 0;padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(199,85,59,.15);}
 
 /* ── QUICK CHIPS ───────────────────────────────────────────── */
 .quick-chip{background:var(--white);border:1.5px solid var(--gray-200);border-radius:99px;padding:7px 14px;font-size:12px;font-family:var(--font);font-weight:700;color:var(--gray-600);cursor:pointer;transition:all .15s;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
@@ -735,27 +743,27 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 #chatInput{font-size:15px;line-height:1.5;padding:11px 14px;}
 
 /* ── SEND BUTTON ───────────────────────────────────────────── */
-#chatSendBtn{background:linear-gradient(135deg,#00C2B2,#009E90);border-radius:10px;width:42px;height:42px;box-shadow:0 4px 12px rgba(0,194,178,.3);transition:all .15s;}
+#chatSendBtn{background:linear-gradient(135deg,var(--rust),var(--rust-deep));border-radius:10px;width:42px;height:42px;box-shadow:0 4px 12px rgba(199,85,59,.3);transition:all .15s;}
 #chatSendBtn:active{transform:scale(.93);box-shadow:none;}
 
 /* ── SCROLL BOTTOM BTN ─────────────────────────────────────── */
 #scrollBottomBtn{position:absolute;bottom:10px;right:10px;width:34px;height:34px;border-radius:50%;background:var(--white);border:1.5px solid var(--gray-200);box-shadow:var(--shadow);display:none;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--gray-500);transition:all .15s;z-index:10;}
 
 /* ── HOMEOWNER RUN BTN ─────────────────────────────────────── */
-#homeRunBtn{background:linear-gradient(135deg,#00C2B2,#009E90);box-shadow:0 8px 24px rgba(0,194,178,.35);border-radius:14px;transition:all .2s;}
-#homeRunBtn:active{transform:scale(.97);box-shadow:0 4px 12px rgba(0,194,178,.25);}
+#homeRunBtn{background:linear-gradient(135deg,var(--rust),var(--rust-deep));box-shadow:0 8px 24px rgba(199,85,59,.35);border-radius:14px;transition:all .2s;}
+#homeRunBtn:active{transform:scale(.97);box-shadow:0 4px 12px rgba(199,85,59,.25);}
 
 /* ── CONTRACTOR RUN BTN ────────────────────────────────────── */
-#runBtn{background:linear-gradient(135deg,#00C2B2,#009E90) !important;box-shadow:0 8px 24px rgba(0,194,178,.3);border-radius:14px;transition:all .2s;}
+#runBtn{background:linear-gradient(135deg,var(--rust),var(--rust-deep)) !important;box-shadow:0 8px 24px rgba(199,85,59,.3);border-radius:14px;transition:all .2s;}
 #runBtn:active{transform:scale(.97);}
 
 /* ── ONBOARDING NEXT BTN ───────────────────────────────────── */
-.ob-next-btn{background:linear-gradient(135deg,#00C2B2,#009E90);border:none;border-radius:14px;padding:16px 40px;font-size:16px;font-weight:800;color:#fff;cursor:pointer;font-family:var(--font);box-shadow:0 8px 32px rgba(0,194,178,.4);transition:all .2s;letter-spacing:-.2px;}
+.ob-next-btn{background:linear-gradient(135deg,var(--rust),var(--rust-deep));border:none;border-radius:14px;padding:16px 40px;font-size:16px;font-weight:800;color:#fff;cursor:pointer;font-family:var(--font);box-shadow:0 8px 32px rgba(199,85,59,.4);transition:all .2s;letter-spacing:-.2px;}
 .ob-next-btn:active{transform:scale(.96);}
 
 /* ── MSG BUBBLES ───────────────────────────────────────────── */
 .msg-bubble-agent{border-radius:4px 16px 16px 16px;background:var(--white);border:1px solid var(--gray-200);box-shadow:var(--shadow-sm);}
-.msg-bubble-user{border-radius:16px 4px 16px 16px;background:linear-gradient(135deg,#00C2B2,#009E90);color:#fff;box-shadow:0 4px 12px rgba(0,194,178,.25);}
+.msg-bubble-user{border-radius:16px 4px 16px 16px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));color:#fff;box-shadow:0 4px 12px rgba(199,85,59,.25);}
 
 /* ── TYPING DOTS ───────────────────────────────────────────── */
 .typing-dots span{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block;animation:typingBounce 1.2s infinite ease-in-out;}
@@ -767,26 +775,26 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 /* ── PAYWALL UPGRADE ───────────────────────────────────────── */
 .pw-card{background:linear-gradient(160deg,#0A0A0F,#111827);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:28px 22px;max-width:420px;width:90%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.6);}
 .pw-plan{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px 12px;cursor:pointer;transition:all .2s;text-align:center;}
-.pw-plan.sel,.pw-plan:hover{border-color:var(--teal);background:rgba(0,194,178,.08);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,194,178,.2);}
-.pw-btn{width:100%;padding:16px;background:linear-gradient(135deg,#00C2B2,#009E90);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:800;cursor:pointer;font-family:var(--font);box-shadow:0 8px 32px rgba(0,194,178,.35);margin-top:16px;transition:all .2s;letter-spacing:-.2px;}
+.pw-plan.sel,.pw-plan:hover{border-color:var(--teal);background:rgba(199,85,59,.08);transform:translateY(-2px);box-shadow:0 8px 24px rgba(199,85,59,.2);}
+.pw-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:800;cursor:pointer;font-family:var(--font);box-shadow:0 8px 32px rgba(199,85,59,.35);margin-top:16px;transition:all .2s;letter-spacing:-.2px;}
 .pw-btn:active{transform:scale(.97);}
 
 /* ── CAMERA CARD ───────────────────────────────────────────── */
-.camera-card{background:linear-gradient(135deg,#060f1a 0%,#0a1a2e 100%);border:1.5px solid rgba(0,194,178,.4);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:0;transition:all .2s;}
-.camera-card:active{border-color:rgba(0,194,178,.8);}
+.camera-card{background:linear-gradient(135deg,#060f1a 0%,#0a1a2e 100%);border:1.5px solid rgba(199,85,59,.4);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:0;transition:all .2s;}
+.camera-card:active{border-color:rgba(199,85,59,.8);}
 
 /* ── DARK MODE UPGRADES ────────────────────────────────────── */
 [data-theme="dark"] .nav{background:rgba(17,17,17,.95);border-bottom-color:#1f1f1f;}
 [data-theme="dark"] .auth-value-prop .avp-headline{color:#fff;}
-[data-theme="dark"] #chatSendBtn{box-shadow:0 4px 12px rgba(0,194,178,.2);}
+[data-theme="dark"] #chatSendBtn{box-shadow:0 4px 12px rgba(199,85,59,.2);}
 [data-theme="dark"] .msg-bubble-agent{background:#1e1e1e;border-color:#2a2a2a;}
 [data-theme="dark"] .pw-plan{background:rgba(255,255,255,.03);}
-[data-theme="dark"] .avp-cta{box-shadow:0 8px 24px rgba(0,194,178,.2);}
+[data-theme="dark"] .avp-cta{box-shadow:0 8px 24px rgba(199,85,59,.2);}
 
 /* ── MICRO ANIMATIONS ──────────────────────────────────────── */
 @keyframes fadeInUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
 .fi{animation:fadeInUp .3s ease both;}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,194,178,.5);}50%{box-shadow:0 0 0 6px rgba(0,194,178,0);}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(199,85,59,.5);}50%{box-shadow:0 0 0 6px rgba(199,85,59,0);}}
 A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;}
 
 [data-theme="dark"] #termsModal .tz-modal-body p{color:#9ca3af;}
@@ -800,12 +808,12 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 </head>
 <body>
 <div id="appLoader" style="position:fixed;inset:0;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s ease;pointer-events:none;">
-  <svg width="52" height="52" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="9" fill="url(#ll)"/><path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/><defs><linearGradient id="ll" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#00C2B2"/><stop offset="100%" stop-color="#007A6E"/></linearGradient></defs></svg>
+  <svg width="52" height="52" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="9" fill="url(#ll)"/><path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/><defs><linearGradient id="ll" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#C7553B"/><stop offset="100%" stop-color="#A8472F"/></linearGradient></defs></svg>
   <div style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-.3px;">Trazer Intelligence</div>
   <div style="display:flex;gap:6px;align-items:center;">
-    <div style="width:6px;height:6px;border-radius:50%;background:#00C2B2;animation:ld .8s infinite ease-in-out both;"></div>
-    <div style="width:6px;height:6px;border-radius:50%;background:#00C2B2;animation:ld .8s .15s infinite ease-in-out both;"></div>
-    <div style="width:6px;height:6px;border-radius:50%;background:#00C2B2;animation:ld .8s .3s infinite ease-in-out both;"></div>
+    <div style="width:6px;height:6px;border-radius:50%;background:var(--rust);animation:ld .8s infinite ease-in-out both;"></div>
+    <div style="width:6px;height:6px;border-radius:50%;background:var(--rust);animation:ld .8s .15s infinite ease-in-out both;"></div>
+    <div style="width:6px;height:6px;border-radius:50%;background:var(--rust);animation:ld .8s .3s infinite ease-in-out both;"></div>
   </div>
 </div>
 <style>@keyframes ld{0%,80%,100%{transform:scale(0.5);opacity:.4;}40%{transform:scale(1);opacity:1;}}
@@ -819,8 +827,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 }
 
 /* Chat input container (white box holding textarea + send btn) */
-[data-theme="dark"] #panelDiag [style*="background:#FFFFFF;border:1px solid #E2E4ED;border-top:2px solid #00C2B2"]{
-  background:#111111 !important;border-color:#1f1f1f !important;border-top-color:#00C2B2 !important;
+[data-theme="dark"] #panelDiag [style*="background:#FFFFFF;border:1px solid #E2E4ED;border-top:2px solid var(--rust)"]{
+  background:#111111 !important;border-color:#1f1f1f !important;border-top-color:var(--rust) !important;
 }
 
 /* Chat attach preview */
@@ -835,8 +843,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 [data-theme="dark"] #panelDiag [style*="background:#F5F3FF;border:1px solid #DDD6FE"]{
   background:#1a0a30 !important;border-color:#4c1d95 !important;color:#a78bfa !important;
 }
-[data-theme="dark"] #panelDiag [style*="background:#E6FAF8;border:1px solid #B2F0EA"]{
-  background:#002a26 !important;border-color:#00C2B2 !important;color:#00C2B2 !important;
+[data-theme="dark"] #panelDiag [style*="background:var(--brass-lt);border:1px solid var(--brass-mid)"]{
+  background:#002a26 !important;border-color:var(--rust) !important;color:var(--rust) !important;
 }
 
 /* Mike knowledge bar — already dark bg (#0F0F0F) but text color #666 is invisible */
@@ -870,10 +878,10 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 [data-theme="dark"] #fullDiagBody [style*="background:#ECFDF5"]{background:#052e16 !important;}
 [data-theme="dark"] #fullDiagBody [style*="background:#EFF6FF"]{background:#0a1628 !important;}
 [data-theme="dark"] #fullDiagBody [style*="background:#F5F3FF"]{background:#1a0a30 !important;}
-[data-theme="dark"] #fullDiagBody [style*="background:#E6FAF8"]{background:#002a26 !important;}
+[data-theme="dark"] #fullDiagBody [style*="background:var(--brass-lt)"]{background:#002a26 !important;}
 [data-theme="dark"] #fullDiagBody [style*="color:#7C3AED"]{color:#a78bfa !important;}
 [data-theme="dark"] #fullDiagBody [style*="color:#2563EB"]{color:#93c5fd !important;}
-[data-theme="dark"] #fullDiagBody [style*="color:#00C2B2"]{color:#00C2B2 !important;}
+[data-theme="dark"] #fullDiagBody [style*="color:var(--rust)"]{color:var(--rust) !important;}
 
 /* Nameplate scan area in full diag */
 [data-theme="dark"] #fullDiagBody [style*="background:#F5F6FA;border-radius:8px;border:1px solid #E2E4ED"]{
@@ -920,7 +928,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 }
 
 /* Voice waveform bars */
-[data-theme="dark"] .wave-bar{background:rgba(0,194,178,.7);}
+[data-theme="dark"] .wave-bar{background:rgba(199,85,59,.7);}
 
 /* Job timer */
 [data-theme="dark"] #jobTimer{color:#e5e7eb !important;}
@@ -1020,7 +1028,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
   display:flex;
   align-items:center;
   gap:10px;
-  border-bottom:1px solid rgba(0,194,178,.12);
+  border-bottom:1px solid rgba(199,85,59,.12);
 }
 .chat-icon-btn{
   display:flex;
@@ -1037,14 +1045,14 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
   min-width:46px;
   -webkit-tap-highlight-color:transparent;
 }
-.chat-icon-btn:active{background:rgba(0,194,178,.15);border-color:rgba(0,194,178,.3);}
+.chat-icon-btn:active{background:rgba(199,85,59,.15);border-color:rgba(199,85,59,.3);}
 .icon-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:rgba(255,255,255,.4);}
 
 /* Voice bar */
 .voice-bar{
   background:#0a0a0a;
   padding:10px 14px;
-  border-bottom:1px solid rgba(0,194,178,.1);
+  border-bottom:1px solid rgba(199,85,59,.1);
   animation:slideDown .2s ease;
 }
 @keyframes slideDown{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
@@ -1055,7 +1063,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 }
 .voice-mic-btn{
   width:38px;height:38px;border-radius:50%;
-  background:#00C2B2;border:none;cursor:pointer;
+  background:var(--rust);border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   font-size:16px;flex-shrink:0;transition:all .2s;
   -webkit-tap-highlight-color:transparent;
@@ -1104,12 +1112,12 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 
 /* Capability tags in welcome */
 .cap-tag{
-  background:rgba(0,194,178,.1);
-  border:1px solid rgba(0,194,178,.25);
+  background:rgba(199,85,59,.1);
+  border:1px solid rgba(199,85,59,.25);
   border-radius:99px;
   padding:3px 9px;
   font-size:11px;
-  color:#00C2B2;
+  color:var(--rust);
   font-weight:600;
 }
 
@@ -1132,7 +1140,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
   -webkit-tap-highlight-color:transparent;
 }
 .example-prompt:last-child{margin-bottom:0;}
-.example-prompt:active{background:rgba(0,194,178,.1);border-color:rgba(0,194,178,.3);color:#fff;}
+.example-prompt:active{background:rgba(199,85,59,.1);border-color:rgba(199,85,59,.3);color:#fff;}
 
 /* Typing indicator */
 .typing-row{
@@ -1179,12 +1187,12 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 }
 #chatInput::placeholder{color:#4b5563 !important;}
 .send-btn{
-  background:linear-gradient(135deg,#00C2B2,#009E90);
+  background:linear-gradient(135deg,var(--rust),var(--rust-deep));
   color:#fff;border:none;border-radius:10px;
   width:40px;height:40px;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;flex-shrink:0;font-size:17px;
-  box-shadow:0 4px 12px rgba(0,194,178,.35);
+  box-shadow:0 4px 12px rgba(199,85,59,.35);
   transition:all .15s;
   -webkit-tap-highlight-color:transparent;
 }
@@ -1218,7 +1226,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 }
 .toolbar-btn:active{background:#222;color:#fff;}
 .toolbar-btn-purple{background:rgba(124,58,237,.1);border-color:rgba(124,58,237,.3);color:#a78bfa;}
-.toolbar-btn-teal{background:rgba(0,194,178,.08);border-color:rgba(0,194,178,.2);color:#00C2B2;}
+.toolbar-btn-teal{background:rgba(199,85,59,.08);border-color:rgba(199,85,59,.2);color:var(--rust);}
 
 /* Scroll bottom button */
 #scrollBottomBtn{
@@ -1238,7 +1246,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 [data-theme="dark"] .typing-row{background:#0a0a0a;}
 [data-theme="dark"] .chat-input-area{background:#0a0a0a;border-top-color:rgba(255,255,255,.04);}
 [data-theme="dark"] .example-prompt{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.06);}
-[data-theme="dark"] #examplePrompts{background:rgba(0,194,178,.04);border-color:rgba(0,194,178,.12);}
+[data-theme="dark"] #examplePrompts{background:rgba(199,85,59,.04);border-color:rgba(199,85,59,.12);}
 [data-theme="dark"] .chips-bar{background:#080808;}
 
 /* Plan feature list in paywall */
@@ -1249,9 +1257,9 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 .pw-plan.sel .pw-feat-no{color:rgba(255,255,255,.25);}
 </style>
 <div id="offlineBanner"></div>
-<div id="pwaInstallBanner" style="display:none;background:linear-gradient(135deg,#00C2B2,#009E90);color:#fff;padding:10px 14px;font-size:13px;line-height:1.4;text-align:center;position:relative;z-index:9990;">
+<div id="pwaInstallBanner" style="display:none;background:linear-gradient(135deg,var(--rust),var(--rust-deep));color:#fff;padding:10px 14px;font-size:13px;line-height:1.4;text-align:center;position:relative;z-index:9990;">
   <span id="pwaInstallText"></span>
-  <button id="pwaInstallBtn" onclick="triggerPwaInstall()" style="display:none;margin-left:8px;background:#fff;color:#009E90;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:800;cursor:pointer;font-family:var(--font);">Install App</button>
+  <button id="pwaInstallBtn" onclick="triggerPwaInstall()" style="display:none;margin-left:8px;background:#fff;color:var(--rust-deep);border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:800;cursor:pointer;font-family:var(--font);">Install App</button>
   <button onclick="dismissPwaHint()" aria-label="Dismiss" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:18px;font-weight:300;cursor:pointer;line-height:1;padding:0 6px;">&times;</button>
 </div>
 <div id="toastContainer"></div>
@@ -1260,7 +1268,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 <div id="authOverlay">
 <div class="auth-wrap">
   <div class="auth-logo-row">
-    <div class="auth-logo-icon"><svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="9" fill="url(#lgauth)"/><path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/><defs><linearGradient id="lgauth" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#00C2B2"/><stop offset="100%" stop-color="#007A6E"/></linearGradient></defs></svg></div>
+    <div class="auth-logo-icon"><svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="9" fill="url(#lgauth)"/><path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/><defs><linearGradient id="lgauth" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#C7553B"/><stop offset="100%" stop-color="#A8472F"/></linearGradient></defs></svg></div>
     <div class="auth-logo-name">Trazer Intelligence</div>
   </div>
   <div class="auth-card">
@@ -1315,7 +1323,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <button class="auth-btn" id="suBtn" type="button" onclick="authSignUp()">Start Free Trial</button>
     </div>
 
-    <p class="auth-terms">By continuing you agree to our <a href="#" onclick="showTermsModal();return false;" style="color:#00C2B2;">Terms</a> and <a href="#" onclick="showPrivacyModal();return false;" style="color:#00C2B2;">Privacy Policy</a></p>
+    <p class="auth-terms">By continuing you agree to our <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Terms</a> and <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Privacy Policy</a></p>
   </div>
 </div>
 </div>
@@ -1335,8 +1343,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
   <rect width="32" height="32" rx="9" fill="url(#lg3)"/>
   <path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/>
   <defs><linearGradient id="lg3" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#00C2B2"/>
-    <stop offset="100%" stop-color="#007A6E"/>
+    <stop offset="0%" stop-color="#C7553B"/>
+    <stop offset="100%" stop-color="#A8472F"/>
   </linearGradient></defs>
 </svg></span>
       <div class="ob-title" id="obTitle">Trazer <span>Intelligence</span></div>
@@ -1410,8 +1418,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
   </div>
   <button class="pw-btn" onclick="goCheckout()">Subscribe Now — Cancel Anytime</button>
   <div class="pw-note">Annual billing saves 20%</div>
-  <div style="margin-top:16px;padding:14px 16px;background:rgba(0,194,178,.08);border:1px solid rgba(0,194,178,.2);border-radius:10px;text-align:left;">
-    <div style="font-size:12px;font-weight:700;color:#00C2B2;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why techs pay for Pro</div>
+  <div style="margin-top:16px;padding:14px 16px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:10px;text-align:left;">
+    <div style="font-size:12px;font-weight:700;color:var(--rust);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why techs pay for Pro</div>
     <div style="font-size:13px;color:#9ca3af;line-height:1.7;">
       "I found 2 upsells on my first job using Mike. Paid for 6 months." — HVAC contractor, TX<br>
       "I diagnosed a heat exchanger crack I would have missed." — Tech, FL
@@ -1472,7 +1480,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 <nav class="nav">
   <div class="nav-inner">
     <div class="nav-logo">
-      <div class="nav-logo-icon" style="flex-shrink:0;"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="9" fill="url(#lgnav)"/><path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/><defs><linearGradient id="lgnav" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#00C2B2"/><stop offset="100%" stop-color="#007A6E"/></linearGradient></defs></svg></div>
+      <div class="nav-logo-icon" style="flex-shrink:0;"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="9" fill="url(#lgnav)"/><path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/><defs><linearGradient id="lgnav" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#C7553B"/><stop offset="100%" stop-color="#A8472F"/></linearGradient></defs></svg></div>
       <div><div class="nav-logo-text">Trazer Intelligence</div><div class="nav-logo-sub">Field Intelligence Platform</div></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
@@ -1499,10 +1507,10 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
   <!-- HERO -->
   <div class="fu" style="margin-bottom:16px;">
     <div style="background:linear-gradient(135deg,#0F0F0F 0%,#1a2232 100%);border-radius:12px;padding:14px 16px 12px;text-align:center;position:relative;overflow:hidden;">
-      <div style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;height:120px;background:radial-gradient(ellipse,rgba(0,194,178,.2) 0%,transparent 70%);pointer-events:none;"></div>
-      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,194,178,.15);border:1px solid rgba(0,194,178,.3);border-radius:99px;padding:5px 13px;margin-bottom:14px;">
-        <span style="width:6px;height:6px;background:#00C2B2;border-radius:50%;display:inline-block;box-shadow:0 0 8px rgba(0,194,178,.6);"></span>
-        <span style="font-size:11px;font-weight:700;color:#00C2B2;letter-spacing:.5px;text-transform:uppercase;">● Mike is Online</span>
+      <div style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;height:120px;background:radial-gradient(ellipse,rgba(199,85,59,.2) 0%,transparent 70%);pointer-events:none;"></div>
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(199,85,59,.15);border:1px solid rgba(199,85,59,.3);border-radius:99px;padding:5px 13px;margin-bottom:14px;">
+        <span style="width:6px;height:6px;background:var(--rust);border-radius:50%;display:inline-block;box-shadow:0 0 8px rgba(199,85,59,.6);"></span>
+        <span style="font-size:11px;font-weight:700;color:var(--rust);letter-spacing:.5px;text-transform:uppercase;">● Mike is Online</span>
       </div>
       <h1 style="font-size:clamp(16px,3.5vw,22px);font-weight:700;color:#FFFFFF;letter-spacing:-.3px;line-height:1.2;margin-bottom:6px;" id="heroTitle">Is Your AC or Heat Not Working?</h1>
       <p style="font-size:15px;color:rgba(255,255,255,.55);line-height:1.65;max-width:400px;margin:0 auto;" id="heroSub">Take a photo, describe what's happening, and get a clear answer in seconds. No HVAC knowledge needed.</p>
@@ -1523,18 +1531,18 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
   <div id="panelHome">
     <!-- HOW IT WORKS strip — visible to new users -->
     <div style="background:linear-gradient(135deg,#0F0F0F,#1a2232);border-radius:12px;padding:16px 18px;margin-bottom:12px;">
-      <div style="font-size:13px;font-weight:700;color:#00C2B2;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;">How it works</div>
+      <div style="font-size:13px;font-weight:700;color:var(--rust);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;">How it works</div>
       <div style="display:flex;gap:0;flex-direction:column;gap:10px;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:28px;height:28px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">1</div>
+          <div style="width:28px;height:28px;background:var(--rust);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">1</div>
           <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;">Take a photo of your system or describe what's happening</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:28px;height:28px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">2</div>
+          <div style="width:28px;height:28px;background:var(--rust);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">2</div>
           <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;">Get a plain-English explanation — no technical jargon</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:28px;height:28px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">3</div>
+          <div style="width:28px;height:28px;background:var(--rust);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">3</div>
           <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;">Know exactly what to tell your technician when you call</span>
         </div>
       </div>
@@ -1583,18 +1591,18 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <select id="homeSysAge"><option value="">Select age…</option></select>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:16px;">
-      <button id="homeRunBtn" onclick="runHomeownerDiagnostic()" style="flex:1;padding:18px;border:none;border-radius:6px;cursor:pointer;background:#00C2B2;color:#fff;font-family:var(--font);font-size:18px;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(0,181,181,.4);transition:all .15s;">🔍 Analyze My System</button>
+      <button id="homeRunBtn" onclick="runHomeownerDiagnostic()" style="flex:1;padding:18px;border:none;border-radius:6px;cursor:pointer;background:var(--rust);color:#fff;font-family:var(--font);font-size:18px;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(0,181,181,.4);transition:all .15s;">🔍 Analyze My System</button>
       <button onclick="resetHomeownerDiagnostic()" style="padding:18px 16px;border:2px solid #d0d0d0;border-radius:6px;cursor:pointer;background:#FFFFFF;color:#6B7190;font-family:var(--font);font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;">🔄 New</button>
     </div>
     <div id="homeResultPanel" style="display:none;margin-top:8px;" class="fi">
       <div style="margin-bottom:14px;"><span style="font-size:18px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;" class="result-title">Your Diagnostic Report</span></div>
       <div class="card" id="homeResultCard" style="margin-bottom:16px;"><div class="result-body" id="homeResultText"></div></div>
       <!-- CTA: Call a tech -->
-      <div style="background:linear-gradient(135deg,#00C2B2,#009E90);border-radius:12px;padding:20px;margin-top:4px;text-align:center;">
+      <div style="background:linear-gradient(135deg,var(--rust),var(--rust-deep));border-radius:12px;padding:20px;margin-top:4px;text-align:center;">
         <div style="margin-bottom:8px;line-height:1;"><i data-lucide="wrench" style="width:24px;height:24px;color:#fff;display:inline-block;"></i></div>
         <div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:6px;">Ready to get this fixed?</div>
         <div style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.5;margin-bottom:16px;">A licensed HVAC technician can diagnose and repair this properly. Always use a certified pro for HVAC work.</div>
-        <button class="btn" onclick="findLocalTech()" style="background:#fff;color:#009E90;font-size:15px;font-weight:800;padding:14px 24px;border:none;border-radius:8px;cursor:pointer;width:100%;font-family:var(--font);">📞 Find a Local Technician</button>
+        <button class="btn" onclick="findLocalTech()" style="background:#fff;color:var(--rust-deep);font-size:15px;font-weight:800;padding:14px 24px;border:none;border-radius:8px;cursor:pointer;width:100%;font-family:var(--font);">📞 Find a Local Technician</button>
       </div>
       <div style="display:flex;gap:8px;margin-top:10px;">
         <button onclick="shareHomeDiagnosis()" style="flex:1;padding:12px;background:#F5F6FA;border:1.5px solid #E2E4ED;border-radius:8px;color:#6B7190;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);">↗️ Share Report</button>
@@ -1613,12 +1621,12 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <div class="chat-header">
         <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
           <div style="position:relative;flex-shrink:0;">
-            <div style="width:38px;height:38px;background:linear-gradient(135deg,#00C2B2,#009E90);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;">&#x1F9D1;&#x200D;&#x1F527;</div>
+            <div style="width:38px;height:38px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;">&#x1F9D1;&#x200D;&#x1F527;</div>
             <div style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:#4caf50;border-radius:50%;border:2px solid #111;"></div>
           </div>
           <div style="min-width:0;">
             <div style="font-size:14px;font-weight:800;color:#fff;letter-spacing:-.2px;">Mike — Master Tech</div>
-            <div style="font-size:11px;color:#00C2B2;font-weight:500;">&#x25CF; Live &middot; EPA 608 &middot; NATE</div>
+            <div style="font-size:11px;color:var(--rust);font-weight:500;">&#x25CF; Live &middot; EPA 608 &middot; NATE</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
@@ -1684,7 +1692,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
             <div class="msg-time">Just now</div>
           </div>
           <!-- DISMISSIBLE EXAMPLE PROMPTS -->
-          <div id="examplePrompts" style="margin-top:6px;padding:10px 12px;background:rgba(0,194,178,.05);border:1px solid rgba(0,194,178,.15);border-radius:10px;">
+          <div id="examplePrompts" style="margin-top:6px;padding:10px 12px;background:rgba(199,85,59,.05);border:1px solid rgba(199,85,59,.15);border-radius:10px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
               <span style="font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Try asking</span>
               <button onclick="document.getElementById('examplePrompts').style.display='none';" style="background:none;border:none;font-size:11px;color:#9ca3af;cursor:pointer;font-family:var(--font);font-weight:600;padding:2px 6px;border-radius:4px;">&#x2715; Dismiss</button>
@@ -1699,14 +1707,14 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 
       <!-- TYPING INDICATOR -->
       <div id="typingIndicator" style="display:none;" class="typing-row">
-        <div style="width:26px;height:26px;background:#00C2B2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">&#x1F9D1;&#x200D;&#x1F527;</div>
+        <div style="width:26px;height:26px;background:var(--rust);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">&#x1F9D1;&#x200D;&#x1F527;</div>
         <div class="typing-dots"><span></span><span></span><span></span></div>
       </div>
 
       <!-- CHAT INPUT -->
       <div class="chat-input-area">
         <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none" onchange="handleChatFile(event)"/>
-        <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:rgba(0,194,178,.08);border:1px solid rgba(0,194,178,.2);border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:#00C2B2;"></div>
+        <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--rust);"></div>
         <div style="display:flex;gap:8px;align-items:flex-end;">
           <label for="chatFileInput" class="chat-attach-btn" title="Attach">&#x1F4CE;</label>
           <textarea id="chatInput" placeholder="Ask Mike anything&hellip;" rows="1" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
@@ -1726,7 +1734,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       </div>
 
       <!-- CORRECTION ALERT -->
-      <div id="correctionAlert" style="display:none;padding:8px 14px;background:rgba(0,194,178,.1);border-top:1px solid rgba(0,194,178,.2);font-size:12px;color:#00C2B2;font-weight:600;border-radius:0 0 16px 16px;"></div>
+      <div id="correctionAlert" style="display:none;padding:8px 14px;background:rgba(199,85,59,.1);border-top:1px solid rgba(199,85,59,.2);font-size:12px;color:var(--rust);font-weight:600;border-radius:0 0 16px 16px;"></div>
 
     </div><!-- /chat-card -->
 
@@ -1741,10 +1749,10 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
     </div>
 
     <!-- FULL DIAGNOSTIC FORM -->
-    <div class="card" style="border-top:3px solid #00C2B2;margin-top:12px;">
+    <div class="card" style="border-top:3px solid var(--rust);margin-top:12px;">
       <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;" onclick="var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b.style.display==='none'){b.style.display='block';a.textContent='&#x25B2;';}else{b.style.display='none';a.textContent='&#x25BC; Expand';}">
         <label class="field-label" style="margin:0;cursor:pointer;">&#x26A1; Full Diagnostic</label>
-        <span id="fullDiagArrow" style="font-size:12px;color:#00C2B2;font-weight:700;white-space:nowrap;">&#x25BC; Expand</span>
+        <span id="fullDiagArrow" style="font-size:12px;color:var(--rust);font-weight:700;white-space:nowrap;">&#x25BC; Expand</span>
       </div>
       <div id="fullDiagBody" style="display:none;margin-top:14px;">
       <input type="file" id="fileInput" accept="video/*,image/*" style="display:none" onchange="handleFileSelect(event)"/>
@@ -1770,13 +1778,13 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <div style="background:#F5F6FA;border-radius:8px;border:1px solid #E2E4ED;padding:12px;margin-top:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <span style="font-size:11px;font-weight:700;color:#6B7190;text-transform:uppercase;letter-spacing:.6px;">&#x1F3F7; Nameplate Scan</span>
-          <span style="font-size:10px;background:#00C2B2;color:#fff;padding:2px 7px;border-radius:99px;font-weight:700;">Auto-fills fields</span>
+          <span style="font-size:10px;background:var(--rust);color:#fff;padding:2px 7px;border-radius:99px;font-weight:700;">Auto-fills fields</span>
         </div>
         <div style="display:flex;gap:6px;margin-bottom:8px;">
           <label for="diagNameplateInput" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">&#x1F4F8; Camera</label>
           <label for="diagNameplateLib" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#fff;color:#6B7190;border:1.5px solid #E2E4ED;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;">&#x1F5BC; Library</label>
         </div>
-        <div id="diagScanStatus" style="display:none;padding:8px 10px;background:#E6FAF8;border:1px solid #B2F0EA;border-radius:6px;margin-bottom:8px;font-size:12px;color:#009E90;font-weight:600;align-items:center;gap:6px;"><span class="spinner" style="border-color:rgba(0,181,181,.2);border-top-color:#00C2B2;"></span><span id="diagScanStatusText">Reading nameplate&hellip;</span></div>
+        <div id="diagScanStatus" style="display:none;padding:8px 10px;background:var(--brass-lt);border:1px solid var(--brass-mid);border-radius:6px;margin-bottom:8px;font-size:12px;color:var(--rust-deep);font-weight:600;align-items:center;gap:6px;"><span class="spinner" style="border-color:rgba(0,181,181,.2);border-top-color:var(--rust);"></span><span id="diagScanStatusText">Reading nameplate&hellip;</span></div>
         <div id="diagScanSuccess" style="display:none;padding:8px 10px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:6px;margin-bottom:8px;font-size:12px;color:#059669;font-weight:600;">&#x2705; <span id="diagScanSuccessText">Nameplate read successfully</span></div>
         <div class="grid2" style="gap:6px;">
           <div><label class="field-label" style="font-size:10px;margin-bottom:3px;">Model Number</label><input type="text" id="modelNumber" placeholder="e.g. 4TTX6048J" style="font-size:13px;padding:8px 10px;text-transform:uppercase;" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/></div>
@@ -1821,7 +1829,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
         <span id="tagSymps" style="display:none;padding:4px 10px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:99px;font-size:12px;color:#059669;font-weight:600;"></span>
       </div>
       <div style="display:flex;gap:8px;margin-top:12px;">
-        <button id="runBtn" onclick="checkDiagAccess()" style="flex:1;padding:16px;border:none;border-radius:12px;cursor:pointer;background:linear-gradient(135deg,#00C2B2,#009E90);box-shadow:0 4px 16px rgba(0,194,178,.4);color:#fff;font-family:var(--font);font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;">&#x26A1; Run Diagnostic</button>
+        <button id="runBtn" onclick="checkDiagAccess()" style="flex:1;padding:16px;border:none;border-radius:12px;cursor:pointer;background:linear-gradient(135deg,var(--rust),var(--rust-deep));box-shadow:0 4px 16px rgba(199,85,59,.4);color:#fff;font-family:var(--font);font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;">&#x26A1; Run Diagnostic</button>
         <button onclick="resetDiagnostic()" style="padding:16px 14px;border:2px solid #d0d0d0;border-radius:12px;cursor:pointer;background:#fff;color:#6B7190;font-family:var(--font);font-size:12px;font-weight:700;text-transform:uppercase;white-space:nowrap;">&#x1F504; New</button>
       </div>
     </div>
@@ -1862,7 +1870,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
   <!-- FOOTER -->
   <div class="footer">
     <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">
-      <div style="width:36px;height:36px;background:linear-gradient(135deg,#00C2B2,#009E90);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">❄️</div>
+      <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">❄️</div>
       <div>
         <div style="font-size:17px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;">Trazer Intelligence</div>
         <div style="font-size:11px;color:#9499B0;font-weight:500;">Field Intelligence Platform</div>
@@ -1898,9 +1906,9 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <span style="font-size:12px;font-weight:700;color:#fff;letter-spacing:.3px;">LIVE</span>
     </div>
     <!-- Mike status -->
-    <div style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(0,194,178,.3);border-radius:99px;padding:6px 14px;" class="cam-glass">
-      <div style="width:8px;height:8px;border-radius:50%;background:#00C2B2;box-shadow:0 0 8px rgba(0,194,178,.8);flex-shrink:0;"></div>
-      <span style="font-size:12px;font-weight:700;color:#00C2B2;">Mike Online</span>
+    <div style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(199,85,59,.3);border-radius:99px;padding:6px 14px;" class="cam-glass">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--rust);box-shadow:0 0 8px rgba(199,85,59,.8);flex-shrink:0;"></div>
+      <span style="font-size:12px;font-weight:700;color:var(--rust);">Mike Online</span>
     </div>
     <!-- Close -->
     <button onclick="stopLiveCamera()" style="width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.2);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;line-height:1;"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
@@ -1911,8 +1919,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
     <div style="background:rgba(0,0,0,.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:14px 16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:28px;height:28px;background:linear-gradient(135deg,#00C2B2,#0096A0);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🧑‍🔧</div>
-          <span style="font-size:12px;font-weight:800;color:#00C2B2;letter-spacing:.5px;">MIKE</span>
+          <div style="width:28px;height:28px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🧑‍🔧</div>
+          <span style="font-size:12px;font-weight:800;color:var(--rust);letter-spacing:.5px;">MIKE</span>
           <span id="cameraAnalyzing" style="display:none;font-size:10px;color:rgba(255,255,255,.5);" class="pulsing">Analyzing…</span>
         </div>
         <!-- Interrupt button — always visible while Mike is talking -->
@@ -1937,7 +1945,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       </button>
 
       <!-- Main mic button — large center -->
-      <button id="cameraMicBtn" onclick="toggleCameraMic()" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#00C2B2,#0096A0);border:none;color:#fff;font-size:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(0,194,178,.6),0 0 0 0 rgba(0,194,178,.3);transition:all .2s;-webkit-tap-highlight-color:transparent;">🎙️</button>
+      <button id="cameraMicBtn" onclick="toggleCameraMic()" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border:none;color:#fff;font-size:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(199,85,59,.6),0 0 0 0 rgba(199,85,59,.3);transition:all .2s;-webkit-tap-highlight-color:transparent;">🎙️</button>
 
       <!-- Snap & analyze -->
       <button onclick="snapAndAnalyze()" style="width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;-webkit-tap-highlight-color:transparent;">
@@ -1977,7 +1985,7 @@ function selectRoleInline(role) {
   pendingRole = role;
   var homeBtn = document.getElementById('roleHomeBtn');
   var proBtn = document.getElementById('roleProBtn');
-  var active = 'border:2px solid #00C2B2;background:#0a1f1d;color:#00C2B2;';
+  var active = 'border:2px solid var(--rust);background:#0a1f1d;color:var(--rust);';
   var inactive = 'border:2px solid #2a2a2a;background:#0d0d0d;color:#888;';
   if (homeBtn) homeBtn.setAttribute('style', homeBtn.getAttribute('style').replace(/border:[^;]+;background:[^;]+;color:[^;]+;/, '') + (role==='homeowner' ? active : inactive));
   if (proBtn) proBtn.setAttribute('style', proBtn.getAttribute('style').replace(/border:[^;]+;background:[^;]+;color:[^;]+;/, '') + (role==='contractor' ? active : inactive));
@@ -2206,7 +2214,7 @@ function authSignIn(){
           // Show a "Create Account" helper link below the error
           var e=document.getElementById('authErr');
           if(e){
-            e.innerHTML=errMsg+' <a href="#" onclick="authTab(\'up\');return false;" style="color:#00C2B2;text-decoration:underline;font-weight:600;">Create Account →</a>';
+            e.innerHTML=errMsg+' <a href="#" onclick="authTab(\'up\');return false;" style="color:var(--rust);text-decoration:underline;font-weight:600;">Create Account →</a>';
             e.classList.add('show');
             if(btn){btn.disabled=false;btn.textContent='Sign In';}
             return;
@@ -2466,7 +2474,7 @@ function pddProfile(){
     if(memDiv)memDiv.style.display='block';
     var memHtml=memItems.map(function(m){return '<div style="padding:3px 0;color:#aaa;font-size:12px;">'+m+'</div>';}).join('');
     if(knowledge.length){
-      memHtml+='<div style="font-size:11px;font-weight:700;color:#00C2B2;margin:8px 0 4px;">🧠 Facts Mike Learned ('+knowledge.length+')</div>';
+      memHtml+='<div style="font-size:11px;font-weight:700;color:var(--rust);margin:8px 0 4px;">🧠 Facts Mike Learned ('+knowledge.length+')</div>';
       memHtml+=knowledge.slice(-20).map(function(item,i){
         var realIdx=Math.max(0,knowledge.length-20)+i;
         return '<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 0;border-bottom:1px solid #1a1a1a;">'+
@@ -2907,7 +2915,7 @@ function showAdminDashboard(){
         +'<td><span class="adm-plan-badge '+planClass+'">'+planLabel+'</span></td>'
         +'<td style="font-size:12px;color:#888">'+roleLabel+'</td>'
         +'<td style="font-size:12px;color:#666">'+u.company+'</td>'
-        +'<td style="color:#00C2B2;font-weight:700;text-align:center">'+(u.usageCount||0)+'</td>'
+        +'<td style="color:var(--rust);font-weight:700;text-align:center">'+(u.usageCount||0)+'</td>'
         +'<td style="color:#555;font-size:11px">'+new Date(u.createdAt||Date.now()).toLocaleDateString()+'</td>'
         +'<td>'+(canDelete?'<button class="adm-del-btn" onclick="deleteAdminUser(\''+safeEmail+'\')">Delete</button>':'<span style="font-size:11px;color:#333">Admin</span>')+'</td>'
         +'</tr>';
@@ -2921,7 +2929,7 @@ function showAdminDashboard(){
   if(fbody){
     fbody.innerHTML=featList.map(function(f){
       var pct=Math.round(f[1]/maxF*100);
-      return '<tr><td style="font-weight:600">'+f[0]+'</td><td style="color:#00C2B2;font-weight:700">'+f[1]+'</td><td><div style="height:5px;background:#1a1a2a;border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:#00C2B2;border-radius:3px"></div></div></td></tr>';
+      return '<tr><td style="font-weight:600">'+f[0]+'</td><td style="color:var(--rust);font-weight:700">'+f[1]+'</td><td><div style="height:5px;background:#1a1a2a;border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--rust);border-radius:3px"></div></div></td></tr>';
     }).join('')||'<tr><td colspan="3" style="color:#555;text-align:center">No data yet</td></tr>';
   }
   // Show feedback
@@ -3228,7 +3236,7 @@ async function handleDiagNameplateScan(e){
       {label:"Age",value:data.ageYears?data.ageYears+" years":"—",color:ageColor}
     ].filter(function(r){return r.value&&r.value!=="—";});
     var html='<div id="diagNameplateResultCard" style="margin-top:10px;background:#fff;border:1px solid #E2E4ED;border-radius:10px;overflow:hidden;">';
-    html+='<div style="padding:10px 14px;background:#0F0F0F;display:flex;align-items:center;gap:8px;"><span style="font-size:14px;font-weight:700;color:#fff;">🏷️ Nameplate Decoded</span><span style="margin-left:auto;font-size:11px;background:rgba(0,194,178,.2);color:#00C2B2;padding:2px 8px;border-radius:99px;font-weight:700;">Auto-filled ✓</span></div>';
+    html+='<div style="padding:10px 14px;background:#0F0F0F;display:flex;align-items:center;gap:8px;"><span style="font-size:14px;font-weight:700;color:#fff;">🏷️ Nameplate Decoded</span><span style="margin-left:auto;font-size:11px;background:rgba(199,85,59,.2);color:var(--rust);padding:2px 8px;border-radius:99px;font-weight:700;">Auto-filled ✓</span></div>';
     html+='<div style="padding:12px 14px;background:'+wBg+';border-bottom:1px solid #E2E4ED;">';
     html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">';
     html+='<div><div style="font-size:10px;font-weight:700;color:'+wColor+';text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">WARRANTY STATUS</div>';
@@ -3400,7 +3408,7 @@ async function runHomeownerDiagnostic(){
     return;
   }
   var btn=document.getElementById("homeRunBtn");
-  btn.disabled=true;btn.style.background="#009E90";
+  btn.disabled=true;btn.style.background="#A8472F";
   btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing" style="font-size:18px;">Analyzing…</span>';
   try{
     var syms=selectedHomeSymptoms.length?selectedHomeSymptoms.join(", "):"None selected";
@@ -3466,7 +3474,7 @@ async function runHomeownerDiagnostic(){
   }catch(e){
     appendMessage('agent','Something went wrong — please try again.');
   }finally{
-    btn.disabled=false;btn.style.background="#00C2B2";btn.innerHTML="⚡ Run Diagnostic";
+    btn.disabled=false;btn.style.background="#C7553B";btn.innerHTML="⚡ Run Diagnostic";
   }
 }
 function resetHomeownerDiagnostic(){
@@ -3495,7 +3503,7 @@ async function runDiagnostic(){
   var desc=document.getElementById("desc").value;
   if(!sysType&&!selectedSymptoms.length&&!desc&&!uploadedFile&&!audioTranscript){appendMessage('agent','Please add at least one detail — select a system type or describe the problem.');return;}
   var btn=document.getElementById("runBtn");
-  btn.disabled=true;btn.style.background="#009E90";
+  btn.disabled=true;btn.style.background="#A8472F";
   btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing" style="font-size:18px;">Analyzing…</span>';
   try{
     var symsText=selectedSymptoms.length?selectedSymptoms.join(", "):"None selected";
@@ -3524,7 +3532,7 @@ async function runDiagnostic(){
     else if(msg.includes("API key"))appendMessage('agent','Connection issue — please try again.');
     else appendMessage('agent','Request failed — please try again.');
   }finally{
-    btn.disabled=false;btn.style.background="#00C2B2";btn.innerHTML="⚡ Run Diagnostic";
+    btn.disabled=false;btn.style.background="#C7553B";btn.innerHTML="⚡ Run Diagnostic";
   }
 }
 
@@ -3568,7 +3576,7 @@ function renderDiagCards(data,c){
         var clean=String(step).trim().replace(/^"+|"+$/g,"").replace(/,\s*$/,"");
         var colonIdx=clean.indexOf(":");
         var stepHtml=(colonIdx>0&&colonIdx<60)?"<strong>"+clean.substring(0,colonIdx).trim()+"</strong> — "+clean.substring(colonIdx+1).trim():clean;
-        html+="<div style='display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;'><div style='width:22px;height:22px;min-width:22px;background:#00C2B2;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;'>"+(n+1)+"</div><div style='font-size:15px;line-height:1.75;color:#0F0F0F;flex:1;'>"+stepHtml+"</div></div>";
+        html+="<div style='display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;'><div style='width:22px;height:22px;min-width:22px;background:var(--rust);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;'>"+(n+1)+"</div><div style='font-size:15px;line-height:1.75;color:#0F0F0F;flex:1;'>"+stepHtml+"</div></div>";
       }
       html+="</div>";
     }
@@ -4696,8 +4704,8 @@ function appendMessage(role,text){
     .replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+\.pdf(?:[^)]*)?)\)/gi,function(m,alt,url){
       return '<a href="'+url+'" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;color:#2563EB;text-decoration:none;margin:6px 0;">📄 '+alt+' — Tap to open PDF</a>';
     })
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,'<a href="$2" target="_blank" style="color:#00C2B2;text-decoration:underline;">$1</a>')
-    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/(https?:\/\/[^\s<>"')]+)/g,'<a href="$1" target="_blank" rel="noopener" style="color:#00C2B2;text-decoration:underline;word-break:break-all;">$1<\/a>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,'<a href="$2" target="_blank" style="color:var(--rust);text-decoration:underline;">$1</a>')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/(https?:\/\/[^\s<>"')]+)/g,'<a href="$1" target="_blank" rel="noopener" style="color:var(--rust);text-decoration:underline;word-break:break-all;">$1<\/a>')
     .replace(/\*([^*]+)\*/g,'<em>$1</em>')
     .replace(/^- (.+)$/gm,'<div style="display:flex;gap:6px;margin:3px 0;"><span>•</span><span>$1</span></div>')
     .replace(/\n{2,}/g,'<br/><br/>')
@@ -4804,7 +4812,7 @@ function toggleQuickActions(){
     menu=document.createElement('div');
     menu.id='quickActionsMenu';
     menu.style.cssText='position:fixed;background:#fff;border:1.5px solid #e2e4ed;border-radius:12px;box-shadow:0 4px 32px rgba(0,0,0,.18);z-index:99999;overflow-y:auto;max-height:360px;min-width:240px;';
-    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF0F2;color:#E8354A;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){document.getElementById(\'chatInput\').value=\'I need a part: \';document.getElementById(\'chatInput\').focus();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#E8354A;font-weight:800;" onclick="qaClick(function(){var b=document.getElementById(\'fullDiagBody\');var a=document.getElementById(\'fullDiagArrow\');if(b&&b.style.display===\'none\'){b.style.display=\'block\';if(a)a.textContent=\'&#x25B2;\';}if(b)b.scrollIntoView({behavior:\'smooth\'});})">&#x26A1; Full Diagnostic</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick(\'What are the correct R-410A pressures for current outdoor temperature?\');})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:#009E90;" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F0FDF4;color:#059669;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick(\'I just finished the repair — what else should I check for upsell opportunities?\');})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF7ED;color:#ea580c;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick(\'Give me a job summary — problem, fix, and what to put on the invoice.\');})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#EFF6FF;color:#2563eb;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick(\'The homeowner said the price seems too high. How do I overcome that?\');})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick(\'Help me pitch a maintenance agreement. System is about 10 years old.\');})">&#x1F4CB; Pitch Maintenance</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F3F4F6;color:#6B7280;border-radius:6px;margin:4px 4px 2px;">&#x1F9EA; DEBUG</div>              <button class="qa-item" style="color:#6B7280;" onclick="qaClick(function(){showMemoryDebug();})">&#x1F9E0; Show Memory</button>            </div>          ';
+    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF0F2;color:#E8354A;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){document.getElementById(\'chatInput\').value=\'I need a part: \';document.getElementById(\'chatInput\').focus();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#E8354A;font-weight:800;" onclick="qaClick(function(){var b=document.getElementById(\'fullDiagBody\');var a=document.getElementById(\'fullDiagArrow\');if(b&&b.style.display===\'none\'){b.style.display=\'block\';if(a)a.textContent=\'&#x25B2;\';}if(b)b.scrollIntoView({behavior:\'smooth\'});})">&#x26A1; Full Diagnostic</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick(\'What are the correct R-410A pressures for current outdoor temperature?\');})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:var(--rust-deep);" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F0FDF4;color:#059669;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick(\'I just finished the repair — what else should I check for upsell opportunities?\');})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF7ED;color:#ea580c;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick(\'Give me a job summary — problem, fix, and what to put on the invoice.\');})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#EFF6FF;color:#2563eb;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick(\'The homeowner said the price seems too high. How do I overcome that?\');})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick(\'Help me pitch a maintenance agreement. System is about 10 years old.\');})">&#x1F4CB; Pitch Maintenance</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F3F4F6;color:#6B7280;border-radius:6px;margin:4px 4px 2px;">&#x1F9EA; DEBUG</div>              <button class="qa-item" style="color:#6B7280;" onclick="qaClick(function(){showMemoryDebug();})">&#x1F9E0; Show Memory</button>            </div>          ';
     document.body.appendChild(menu);
     // Tap outside closes
     setTimeout(function(){
@@ -5209,7 +5217,7 @@ function showRefrigerantLog(){
   var html='<div style="max-height:400px;overflow-y:auto;">';
   if(!log.length){html+='<div style="color:#555;font-size:13px;padding:12px 0;">No refrigerant logged yet.<br>Use the log button after any refrigerant work.</div>';}
   else{
-    html+='<div style="font-size:11px;font-weight:700;color:#00C2B2;letter-spacing:1px;margin-bottom:8px;">'+log.length+' ENTRIES — EPA COMPLIANT LOG</div>';
+    html+='<div style="font-size:11px;font-weight:700;color:var(--rust);letter-spacing:1px;margin-bottom:8px;">'+log.length+' ENTRIES — EPA COMPLIANT LOG</div>';
     log.slice().reverse().forEach(function(e){
       var d=new Date(e.date);
       html+='<div style="padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:12px;">';
@@ -5219,7 +5227,7 @@ function showRefrigerantLog(){
     });
   }
   html+='</div>';
-  html+='<button onclick="exportRefrigerantLog()" style="margin-top:12px;width:100%;background:rgba(0,194,178,.1);border:1px solid rgba(0,194,178,.25);color:#00C2B2;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;">📋 Export Log (CSV)</button>';
+  html+='<button onclick="exportRefrigerantLog()" style="margin-top:12px;width:100%;background:rgba(199,85,59,.1);border:1px solid rgba(199,85,59,.25);color:var(--rust);padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;">📋 Export Log (CSV)</button>';
   document.getElementById('refLogBody').innerHTML=html;
   openModal('refLogModal');
 }
@@ -5317,7 +5325,7 @@ function runRepairReplaceCalc(){
     recommendation='BORDERLINE';color='#FFB020';
     msg='This is close. The system has ~'+remainingLife+' years left. Repair now but start planning for replacement. Total cost of ownership favors replacement within 2-3 years.';
   } else {
-    recommendation='REPAIR';color='#00C2B2';
+    recommendation='REPAIR';color='#C7553B';
     msg='Repair makes sense. System has ~'+remainingLife+' years of life left and the repair cost is reasonable relative to replacement cost (~$4,500-$8,000 installed).';
   }
   
@@ -5333,7 +5341,7 @@ function runRepairReplaceCalc(){
   html+='</div>';
   document.getElementById('rrcResult').innerHTML=html;
   var _b=document.createElement('button');
-  _b.style.cssText='margin-top:12px;width:100%;background:rgba(0,194,178,.1);border:1px solid rgba(0,194,178,.25);color:#00C2B2;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;';
+  _b.style.cssText='margin-top:12px;width:100%;background:rgba(199,85,59,.1);border:1px solid rgba(199,85,59,.25);color:var(--rust);padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;';
   _b.textContent='Ask Mike for the exact sales script →';
   (function(r,c,a){_b.onclick=function(){sendRepairReplaceToChat(r,c,a);};})(recommendation,repairCost,systemAge);
   document.getElementById('rrcResult').appendChild(_b);
@@ -5366,7 +5374,7 @@ function initSignOffCanvas(){
   if(!canvas)return;
   signOffCanvas=canvas;
   signOffCtx=canvas.getContext('2d');
-  signOffCtx.strokeStyle='#00C2B2';
+  signOffCtx.strokeStyle='#C7553B';
   signOffCtx.lineWidth=2.5;
   signOffCtx.lineCap='round';
   canvas.addEventListener('mousedown',startSign);
@@ -5422,18 +5430,18 @@ function showPerformanceDashboard(){
     '</div>';
   }
   
-  html+=statCard('⚡','Total Jobs',totalJobs,'#00C2B2');
-  html+=statCard('📅','This Month',thisMonth,'#00C2B2');
+  html+=statCard('⚡','Total Jobs',totalJobs,'#C7553B');
+  html+=statCard('📅','This Month',thisMonth,'#C7553B');
   html+=statCard('💰','Revenue Found','$'+upsellTotal.toFixed(0),'#FFB020');
-  html+=statCard('👥','Customers',customers.length,'#00C2B2');
-  html+=statCard('🧠','Mike Learned',knowledge.length+' facts','#00C2B2');
-  html+=statCard('🧪','Refrigerant Log',refLog.length+' entries','#00C2B2');
+  html+=statCard('👥','Customers',customers.length,'#C7553B');
+  html+=statCard('🧠','Mike Learned',knowledge.length+' facts','#C7553B');
+  html+=statCard('🧪','Refrigerant Log',refLog.length+' entries','#C7553B');
   html+='</div>';
   
   // Experience level and streak
   if(profile.experienceLevel){
     html+='<div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:10px;padding:14px;margin-bottom:10px;">';
-    html+='<div style="font-size:12px;font-weight:700;color:#00C2B2;margin-bottom:6px;">YOUR PROFILE</div>';
+    html+='<div style="font-size:12px;font-weight:700;color:var(--rust);margin-bottom:6px;">YOUR PROFILE</div>';
     html+='<div style="font-size:13px;color:#aaa;">Level: <span style="color:#fff;font-weight:700;">'+profile.experienceLevel.charAt(0).toUpperCase()+profile.experienceLevel.slice(1)+'</span>';
     if(profile.yearsExperience)html+=' · <span style="color:#fff;">'+profile.yearsExperience+' years</span>';
     if(profile.epaCert)html+=' · <span style="color:#fff;">EPA '+profile.epaCert+'</span>';
@@ -5577,14 +5585,14 @@ function showCustomerDB(){
     reminderData.overdue.forEach(function(r){
       html+='<div style="font-size:12px;color:#aaa;padding:3px 0;display:flex;justify-content:space-between;">';
       html+='<span>'+escapeHtml(r.customer)+' — '+escapeHtml(r.note)+'</span>';
-      html+='<button onclick="markReminderDone('+r.id+')" style="background:none;border:none;color:#00C2B2;cursor:pointer;font-size:11px;padding:0 4px;">Done ✓</button>';
+      html+='<button onclick="markReminderDone('+r.id+')" style="background:none;border:none;color:var(--rust);cursor:pointer;font-size:11px;padding:0 4px;">Done ✓</button>';
       html+='</div>';
     });
     html+='</div>';
   }
 
   if(!customers.length){
-    html+='<div style="color:#555;font-size:13px;padding:16px 0;text-align:center;">No customers saved yet.<br><br>After a job, tap <strong style="color:#00C2B2">Save Customer</strong> to build your database.</div>';
+    html+='<div style="color:#555;font-size:13px;padding:16px 0;text-align:center;">No customers saved yet.<br><br>After a job, tap <strong style="color:var(--rust)">Save Customer</strong> to build your database.</div>';
   } else {
     customers.slice().reverse().forEach(function(c){
       var custReminders=reminderData.all.filter(function(r){return r.customer===c.name;});
@@ -5593,7 +5601,7 @@ function showCustomerDB(){
       html+='<div style="flex:1;cursor:pointer;" onclick="loadCustomerToChat('+c.id+')">';
       html+='<div style="font-weight:700;color:#fff;font-size:14px;">'+escapeHtml(c.name||'No name')+'</div>';
       html+='<div style="font-size:12px;color:#555;margin-top:2px;">'+escapeHtml(c.address||'No address')+'</div>';
-      if(c.equipment)html+='<div style="font-size:11px;color:#00C2B2;margin-top:3px;">'+escapeHtml(c.equipment)+'</div>';
+      if(c.equipment)html+='<div style="font-size:11px;color:var(--rust);margin-top:3px;">'+escapeHtml(c.equipment)+'</div>';
       html+='</div>';
       html+='<div style="display:flex;gap:6px;flex-shrink:0;">';
 
@@ -5789,7 +5797,7 @@ async function generateAndShowSVG(prompt, caption, isIllustration){
 }
 
 function buildDiagramPrompt(prompt){
-  return prompt+'\n\nGenerate a professional, contractor-grade SVG wiring diagram. This must look like something out of an OEM service manual — clean, readable, accurate.\n\nMANDATORY structure:\n- viewBox="0 0 600 500" so there is room for proper labels\n- FIRST child element must be a full background: <rect x="0" y="0" width="600" height="500" fill="#0f172a"/>\n- Title at top center: white text, font-size 16-18, font-weight bold, y=28\n- Components: <rect> elements with EXPLICIT x, y, width, height attributes (never omit width/height), rounded corners rx="6", fill="#1e293b" with teal #00C2B2 stroke 2px\n- Component labels: white text centered inside each rect, font-size 12-13\n- Terminal labels: small circles (r=5) with letter codes (R, C, Y, G, W, O, B) — place ON the component edge where wires connect\n- Wires: <line> or <path> with color matching the terminal (R=#ef4444, C=#3b82f6, Y=#eab308, G=#22c55e, W=white stroke 2.5px, O=#f97316, B=#8b5cf6) — make wires thick (stroke-width 2.5-3) and clearly traceable\n- Wire labels: small text next to each wire showing voltage or function (e.g. "24V", "common", "fan")\n- All text: font-family="Arial,sans-serif", proper text-anchor, no overlapping labels\n- Include a SHORT legend at the bottom if there are 3+ wire colors\n- Show every connection the tech needs to make in the field — no placeholder labels like "wire here"\n- Be specific to the exact equipment mentioned (board model, transformer specs, etc.)\n\nNEVER use <rect> without width and height attributes. Every shape must have explicit dimensions.';
+  return prompt+'\n\nGenerate a professional, contractor-grade SVG wiring diagram. This must look like something out of an OEM service manual — clean, readable, accurate.\n\nMANDATORY structure:\n- viewBox="0 0 600 500" so there is room for proper labels\n- FIRST child element must be a full background: <rect x="0" y="0" width="600" height="500" fill="#0f172a"/>\n- Title at top center: white text, font-size 16-18, font-weight bold, y=28\n- Components: <rect> elements with EXPLICIT x, y, width, height attributes (never omit width/height), rounded corners rx="6", fill="#1e293b" with teal var(--rust) stroke 2px\n- Component labels: white text centered inside each rect, font-size 12-13\n- Terminal labels: small circles (r=5) with letter codes (R, C, Y, G, W, O, B) — place ON the component edge where wires connect\n- Wires: <line> or <path> with color matching the terminal (R=#ef4444, C=#3b82f6, Y=#eab308, G=#22c55e, W=white stroke 2.5px, O=#f97316, B=#8b5cf6) — make wires thick (stroke-width 2.5-3) and clearly traceable\n- Wire labels: small text next to each wire showing voltage or function (e.g. "24V", "common", "fan")\n- All text: font-family="Arial,sans-serif", proper text-anchor, no overlapping labels\n- Include a SHORT legend at the bottom if there are 3+ wire colors\n- Show every connection the tech needs to make in the field — no placeholder labels like "wire here"\n- Be specific to the exact equipment mentioned (board model, transformer specs, etc.)\n\nNEVER use <rect> without width and height attributes. Every shape must have explicit dimensions.';
 }
 
 function buildIllustrationPrompt(prompt){
@@ -5798,7 +5806,7 @@ function buildIllustrationPrompt(prompt){
 
 function buildFallbackDiagram(caption){
   var t=(caption||'HVAC Diagram').replace(/</g,'&lt;').replace(/>/g,'&gt;').substring(0,40);
-  return '<svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg"><rect width="500" height="300" fill="#111827"/><text x="250" y="35" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="15" font-weight="bold">'+t+'</text><rect x="150" y="60" width="200" height="50" fill="#00C2B2" rx="6"/><text x="250" y="90" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="12">THERMOSTAT</text><line x1="250" y1="110" x2="250" y2="150" stroke="#6B7280" stroke-width="2"/><rect x="50" y="150" width="150" height="50" fill="#1e3a5f" stroke="#00C2B2" stroke-width="1.5" rx="4"/><text x="125" y="180" text-anchor="middle" fill="#00C2B2" font-family="Arial,sans-serif" font-size="11">AIR HANDLER</text><rect x="300" y="150" width="150" height="50" fill="#1e3a5f" stroke="#00C2B2" stroke-width="1.5" rx="4"/><text x="375" y="180" text-anchor="middle" fill="#00C2B2" font-family="Arial,sans-serif" font-size="11">CONDENSER</text><line x1="200" y1="175" x2="300" y2="175" stroke="#ef4444" stroke-width="2"/><text x="250" y="170" text-anchor="middle" fill="#ef4444" font-family="Arial,sans-serif" font-size="10">R</text><text x="250" y="255" text-anchor="middle" fill="#6B7280" font-family="Arial,sans-serif" font-size="12">Be more specific for a detailed diagram</text><text x="250" y="278" text-anchor="middle" fill="#9499B0" font-family="Arial,sans-serif" font-size="11">e.g. "dual run capacitor wiring" or "furnace sequence"</text></svg>';
+  return '<svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg"><rect width="500" height="300" fill="#111827"/><text x="250" y="35" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="15" font-weight="bold">'+t+'</text><rect x="150" y="60" width="200" height="50" fill="#C7553B" rx="6"/><text x="250" y="90" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="12">THERMOSTAT</text><line x1="250" y1="110" x2="250" y2="150" stroke="#6B7280" stroke-width="2"/><rect x="50" y="150" width="150" height="50" fill="#1e3a5f" stroke="#C7553B" stroke-width="1.5" rx="4"/><text x="125" y="180" text-anchor="middle" fill="#C7553B" font-family="Arial,sans-serif" font-size="11">AIR HANDLER</text><rect x="300" y="150" width="150" height="50" fill="#1e3a5f" stroke="#C7553B" stroke-width="1.5" rx="4"/><text x="375" y="180" text-anchor="middle" fill="#C7553B" font-family="Arial,sans-serif" font-size="11">CONDENSER</text><line x1="200" y1="175" x2="300" y2="175" stroke="#ef4444" stroke-width="2"/><text x="250" y="170" text-anchor="middle" fill="#ef4444" font-family="Arial,sans-serif" font-size="10">R</text><text x="250" y="255" text-anchor="middle" fill="#6B7280" font-family="Arial,sans-serif" font-size="12">Be more specific for a detailed diagram</text><text x="250" y="278" text-anchor="middle" fill="#9499B0" font-family="Arial,sans-serif" font-size="11">e.g. "dual run capacitor wiring" or "furnace sequence"</text></svg>';
 }
 
 function buildFallbackIllustration(caption){
@@ -6081,7 +6089,7 @@ function toggleVoiceMode(){
   var vlbl=document.getElementById('voiceModeBtnLabel');
   if(vbar)vbar.style.display='flex';
   if(vbtn)vbtn.classList.add('voice-mode-active');
-  if(vlbl){vlbl.style.color='#00C2B2';vlbl.textContent='Voice ON';}
+  if(vlbl){vlbl.style.color='#C7553B';vlbl.textContent='Voice ON';}
   // Greet on first open. unlockAudioSafe (called above on this gesture) resumed
   // the AudioContext, so mikeSay can play through it. If resuming mid-conversation,
   // auto-engage mic so the user can talk immediately.
@@ -6372,7 +6380,7 @@ function stopMikeSpeaking(){
   }
   if(window.speechSynthesis)window.speechSynthesis.cancel();
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
-  if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';micBtn.style.background='#00C2B2';}
+  if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';micBtn.style.background='#C7553B';}
   if(stopBtn)stopBtn.style.display='none';
   var delay=isSafari?600:300;
   if(voiceMode&&!isListening&&!chatSending){
@@ -6543,7 +6551,7 @@ function stopLiveCamera(){
   var overlay=document.getElementById('liveCameraOverlay');
   if(overlay)overlay.style.display='none';
   var btn=document.getElementById('cameraMicBtn');
-  if(btn){btn.style.background='linear-gradient(135deg,#00C2B2,#0096A0)';}
+  if(btn){btn.style.background='linear-gradient(135deg,var(--rust),var(--rust-deep))';}
 
   // Clear camera mode flag so Mike knows we're back in chat
   window._cameraMode=false;
@@ -6634,8 +6642,8 @@ function updateCameraMicState(state){
     btn.style.boxShadow='0 4px 24px rgba(245,158,11,.6)';
     if(stopBtn)stopBtn.style.display='block';
   } else {
-    btn.style.background='linear-gradient(135deg,#00C2B2,#0096A0)';
-    btn.style.boxShadow='0 4px 24px rgba(0,194,178,.6)';
+    btn.style.background='linear-gradient(135deg,var(--rust),var(--rust-deep))';
+    btn.style.boxShadow='0 4px 24px rgba(199,85,59,.6)';
     if(stopBtn)stopBtn.style.display='none';
   }
 }
@@ -7319,7 +7327,7 @@ document.addEventListener('DOMContentLoaded',function(){
           +'<input id="resetNewPass" type="password" placeholder="New password (8+ characters)" autocomplete="new-password" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:8px;border:1px solid #2a2a2a;background:#0a0a0a;color:#fff;font-size:15px;margin-bottom:10px;"/>'
           +'<input id="resetConfirmPass" type="password" placeholder="Confirm new password" autocomplete="new-password" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:8px;border:1px solid #2a2a2a;background:#0a0a0a;color:#fff;font-size:15px;margin-bottom:18px;"/>'
           +'<div id="resetErr" style="color:#e8354a;font-size:13px;margin-bottom:12px;display:none;"></div>'
-          +'<button onclick="submitPasswordReset(\''+_resetToken+'\')" style="width:100%;padding:13px;background:#00C2B2;color:#000;font-weight:800;font-size:15px;border:none;border-radius:8px;cursor:pointer;">Set Password</button>'
+          +'<button onclick="submitPasswordReset(\''+_resetToken+'\')" style="width:100%;padding:13px;background:var(--rust);color:#000;font-weight:800;font-size:15px;border:none;border-radius:8px;cursor:pointer;">Set Password</button>'
           +'</div></div>';
         document.body.insertAdjacentHTML('beforeend',html);
         setTimeout(function(){var el=document.getElementById('resetNewPass');if(el)el.focus();},100);
@@ -7417,7 +7425,7 @@ document.addEventListener('DOMContentLoaded',function(){
       <input class="tz-modal-input" type="text" id="profileBrandInput" placeholder="e.g. Carrier, Trane, Goodman"/>
     </div>
     <div id="profileMikeMemory" style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;padding:14px;margin-bottom:16px;display:none;">
-      <div style="font-size:11px;font-weight:700;color:#00C2B2;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">🧠 What Mike Remembers About You</div>
+      <div style="font-size:11px;font-weight:700;color:var(--rust);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">🧠 What Mike Remembers About You</div>
       <div id="profileMemoryList" style="font-size:13px;color:#aaa;line-height:1.8;"></div>
       <button onclick="clearMyMemory()" style="margin-top:10px;background:transparent;border:1px solid rgba(232,53,74,.4);border-radius:6px;padding:5px 12px;font-size:12px;color:#E8354A;cursor:pointer;font-family:inherit;">Reset Mike's Memory</button>
     </div>
@@ -7548,7 +7556,7 @@ document.addEventListener('DOMContentLoaded',function(){
       <button class="tz-modal-btn" onclick="submitFeedback()">Send Feedback</button>
     </div>
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid #1a1a1a;font-size:13px;color:#555;text-align:center;">
-      Direct support: <a href="mailto:support@trazerintelligence.ai" style="color:#00C2B2;">support@trazerintelligence.ai</a>
+      Direct support: <a href="mailto:support@trazerintelligence.ai" style="color:var(--rust);">support@trazerintelligence.ai</a>
     </div>
   </div>
 </div>
@@ -7557,7 +7565,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="share-title">Share Mike's Response</div>
 <div class="share-options">
 <div class="share-option haptic-tap" onclick="shareVia('copy')"><div class="share-option-icon" style="background:#F5F6FA;">📋</div><div class="share-option-label">Copy</div></div>
-<div class="share-option haptic-tap" onclick="shareVia('sms')"><div class="share-option-icon" style="background:#E6FAF8;">💬</div><div class="share-option-label">Message</div></div>
+<div class="share-option haptic-tap" onclick="shareVia('sms')"><div class="share-option-icon" style="background:var(--brass-lt);">💬</div><div class="share-option-label">Message</div></div>
 <div class="share-option haptic-tap" onclick="shareVia('email')"><div class="share-option-icon" style="background:#EFF6FF;">📧</div><div class="share-option-label">Email</div></div>
 <div class="share-option haptic-tap" onclick="shareVia('native')"><div class="share-option-icon" style="background:#F5F3FF;">⬆️</div><div class="share-option-label">More</div></div>
 </div>
@@ -7608,7 +7616,7 @@ document.addEventListener('DOMContentLoaded',function(){
     <p style="margin-bottom:14px;">We reserve the right to modify these Terms at any time. Continued use of the Service after changes constitutes acceptance. We will notify users of material changes via the app.</p>
 
     <p style="color:#fff;font-weight:700;margin-bottom:6px;">12. Contact</p>
-    <p style="margin-bottom:4px;">Trazer Intelligence &nbsp;·&nbsp; <a href="mailto:legal@trazerintelligence.ai" style="color:#00C2B2;">legal@trazerintelligence.ai</a></p>
+    <p style="margin-bottom:4px;">Trazer Intelligence &nbsp;·&nbsp; <a href="mailto:legal@trazerintelligence.ai" style="color:var(--rust);">legal@trazerintelligence.ai</a></p>
     <p style="margin-bottom:14px;color:#555;font-size:12px;">For legal notices, use the email above. For support, use support@trazerintelligence.ai</p>
 
     <button class="tz-modal-btn" onclick="closeModal('termsModal')">I Understand &amp; Agree</button>
@@ -7647,19 +7655,19 @@ document.addEventListener('DOMContentLoaded',function(){
     • We do not use your data for advertising. We do not sell your data.</p>
 
     <p style="color:#fff;font-weight:700;margin-bottom:6px;">California Residents (CCPA)</p>
-    <p style="margin-bottom:14px;">Under the California Consumer Privacy Act, California residents have the right to: (1) know what personal information we collect; (2) request deletion of personal information; (3) opt out of the sale of personal information (we do not sell data); (4) non-discrimination for exercising these rights. To exercise these rights, email <a href="mailto:privacy@trazerintelligence.ai" style="color:#00C2B2;">privacy@trazerintelligence.ai</a>.</p>
+    <p style="margin-bottom:14px;">Under the California Consumer Privacy Act, California residents have the right to: (1) know what personal information we collect; (2) request deletion of personal information; (3) opt out of the sale of personal information (we do not sell data); (4) non-discrimination for exercising these rights. To exercise these rights, email <a href="mailto:privacy@trazerintelligence.ai" style="color:var(--rust);">privacy@trazerintelligence.ai</a>.</p>
 
     <p style="color:#fff;font-weight:700;margin-bottom:6px;">International Users (GDPR)</p>
     <p style="margin-bottom:14px;">If you are located in the European Economic Area, you have rights under GDPR including: access, correction, deletion, restriction, portability, and objection. Our lawful basis for processing is legitimate interests and contract performance. Contact us to exercise your rights.</p>
 
     <p style="color:#fff;font-weight:700;margin-bottom:6px;">Data Retention &amp; Deletion</p>
-    <p style="margin-bottom:14px;">Account data is retained until you request deletion or your account is closed. To delete your account and all associated data, email <a href="mailto:support@trazerintelligence.ai" style="color:#00C2B2;">support@trazerintelligence.ai</a>. We will process deletion requests within 30 days.</p>
+    <p style="margin-bottom:14px;">Account data is retained until you request deletion or your account is closed. To delete your account and all associated data, email <a href="mailto:support@trazerintelligence.ai" style="color:var(--rust);">support@trazerintelligence.ai</a>. We will process deletion requests within 30 days.</p>
 
     <p style="color:#fff;font-weight:700;margin-bottom:6px;">Children</p>
     <p style="margin-bottom:14px;">The Service is not directed to persons under 18. We do not knowingly collect data from minors. If you believe a minor has created an account, contact us immediately for deletion.</p>
 
     <p style="color:#fff;font-weight:700;margin-bottom:6px;">Contact</p>
-    <p style="margin-bottom:14px;"><a href="mailto:privacy@trazerintelligence.ai" style="color:#00C2B2;">privacy@trazerintelligence.ai</a> &nbsp;·&nbsp; <a href="mailto:support@trazerintelligence.ai" style="color:#00C2B2;">support@trazerintelligence.ai</a></p>
+    <p style="margin-bottom:14px;"><a href="mailto:privacy@trazerintelligence.ai" style="color:var(--rust);">privacy@trazerintelligence.ai</a> &nbsp;·&nbsp; <a href="mailto:support@trazerintelligence.ai" style="color:var(--rust);">support@trazerintelligence.ai</a></p>
 
     <button class="tz-modal-btn" onclick="closeModal('privacyModal')">Got It</button>
   </div>
@@ -7814,7 +7822,7 @@ document.addEventListener('DOMContentLoaded',function(){
       <button class="tz-modal-btn" onclick="submitHelpFeedback()">Send Feedback</button>
     </div>
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid #1a1a1a;font-size:13px;color:#555;text-align:center;">
-      Support: <a href="mailto:support@trazerintelligence.ai" style="color:#00C2B2;">support@trazerintelligence.ai</a>
+      Support: <a href="mailto:support@trazerintelligence.ai" style="color:var(--rust);">support@trazerintelligence.ai</a>
     </div>
   </div>
 </div>
@@ -7829,7 +7837,7 @@ document.addEventListener('DOMContentLoaded',function(){
   </div>
   <div class="tz-modal-body">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding:10px 14px;background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;">
-      <span style="font-size:13px;font-weight:700;color:#00C2B2;" id="invNum">INV-1001</span>
+      <span style="font-size:13px;font-weight:700;color:var(--rust);" id="invNum">INV-1001</span>
       <span style="font-size:12px;color:#555;" id="invDate"></span>
     </div>
     <div class="tz-modal-field">
@@ -7853,7 +7861,7 @@ document.addEventListener('DOMContentLoaded',function(){
       <input class="tz-modal-input" type="text" id="invNotes" placeholder="e.g. Recommend annual maintenance agreement"/>
     </div>
     <button class="tz-modal-btn" onclick="copyInvoice()" style="margin-bottom:8px;">📋 Copy Invoice Text</button>
-    <button onclick="askMikeForInvoice()" style="width:100%;padding:11px;background:rgba(0,194,178,.1);border:1px solid rgba(0,194,178,.25);border-radius:9px;color:#00C2B2;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Ask Mike to write it →</button>
+    <button onclick="askMikeForInvoice()" style="width:100%;padding:11px;background:rgba(199,85,59,.1);border:1px solid rgba(199,85,59,.25);border-radius:9px;color:var(--rust);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Ask Mike to write it →</button>
     <button class="tz-modal-btn-outline" onclick="closeModal('invoiceModal')">Cancel</button>
   </div>
 </div>

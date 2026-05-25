@@ -10,7 +10,7 @@
 <meta http-equiv="Expires" content="0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Trazer Intelligence</title>
-<meta name="theme-color" content="#00C2B2">
+<meta name="theme-color" content="#C7553B">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -29,8 +29,8 @@
 
 :root{
   /* Brand */
-  --teal:#00C2B2;--teal-dark:#009E90;--teal-mid:#B2F0EA;--teal-lt:#E6FAF8;
-  --teal-glow:rgba(0,194,178,.35);
+  --teal:var(--rust);--teal-dark:var(--rust-deep);--teal-mid:var(--brass-mid);--teal-lt:var(--brass-lt);
+  --teal-glow:rgba(199,85,59,.35);
   /* Trade-tool palette (new — Mike redesign) — used with var() fallbacks */
   --ink:#0E0F0D;--ink-2:#15171A;--ink-3:#1D2024;
   --paper:#F4EFE6;
@@ -39,6 +39,9 @@
   --teal-deep:#008C81;
   --moss:#5B7B5A;
   --brass:#C9A961;
+  --rust-deep:#A8472F;
+  --brass-mid:#E8C5A0;
+  --brass-lt:#F4E4D1;
   --line:rgba(255,255,255,.06);
   /* Neutrals (--bg → --paper, --black → --ink — backward-compat aliases) */
   --bg:var(--paper,#F4EFE6);--white:#FFFFFF;--black:var(--ink,#0E0F0D);
@@ -68,7 +71,7 @@
   --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
   --shadow:0 4px 16px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);
   --shadow-lg:0 16px 48px rgba(0,0,0,.12),0 4px 12px rgba(0,0,0,.06);
-  --shadow-teal:0 8px 32px rgba(0,194,178,.25);
+  --shadow-teal:0 8px 32px rgba(199,85,59,.25);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 button,a,label,[onclick]{-webkit-tap-highlight-color:transparent;touch-action:manipulation;cursor:pointer;}

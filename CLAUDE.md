@@ -72,3 +72,65 @@ Key client-side patterns:
 - `applyModeFromRole()` → `setMode(m)` controls which panel (`panelHome` vs `panelDiag`) is visible.
 - `showAuthErr(m)` shows errors in the auth overlay error box; pass empty string to clear.
 - `submitPasswordReset(token)` handles the `?reset=<token>` URL param reset flow end-to-end.
+
+## Locked files / regions
+
+These regions must NOT be edited without explicit override. The `.claude/` hooks enforce this automatically; this section is the source of truth.
+
+**Whole files:**
+- `index.js` — entire backend. Includes `/api/tts` route (lines 1218–1263), `authenticateToken` middleware, Supabase auth helpers. Never touch from a frontend task.
+- `public/lucide.min.js` — bundled library (~356 KB). Never hand-edit.
+
+**Function bodies inside `public/index.html`:**
+- `parseJSON` — defined at `public/index.html:3387` (`function parseJSON(raw){`)
+- `renderDiagCards` — defined at `public/index.html:3543` (`function renderDiagCards(data,c){`)
+- Any line referencing `JOB_SAVED` — string sentinel for saved-job state. Current occurrence count = 6. Must not change without explicit override.
+- Camera flow (10 functions, lines as of current `main`): `primeCameraAudio` (4629), `checkCameraAccess` (6397), `startLiveCamera` (6417), `startCameraStream` (6467), `stopLiveCamera` (6531), `flipCamera` (6552), `analyzeCameraFrame` (6566), `setCameraResponse` (6615), `updateCameraMicState` (6624), `mikeSayCamera` (6643).
+
+**Override**: set `TRAZER_HOOK_OVERRIDE=1` in the environment for a session to bypass the hook blocks. Intentional friction — only use when you've explicitly decided the locked region must change. Hooks emit a stderr warning on override use.
+
+## Engineering discipline (non-negotiable)
+
+- **Plan Mode** for any change touching ≥3 files or any structural / architectural change. Spec first, approve, then execute.
+- **Feature branch always.** Never push directly to `main` — Hook B blocks `git push origin main` at the bash layer. Merging to main requires explicit approval (PR or `git revert` for rollbacks).
+- **One commit per logical change.** No batched "misc fixes."
+- **Diff before edit.** For edits to `public/index.html`, surface old/new strings before applying; manual approval per edit during active sessions.
+- **Pre-ship audit before every commit** that touches `public/index.html`. Counts must match the snapshot baseline (next section). Hook C reports drift to stderr post-edit.
+
+## Pre-ship audit gates
+
+Seven gates must pass before any commit touching `public/index.html`:
+
+1. `node --check index.js` → OK
+2. `grep -c 'parseJSON' public/index.html` → equal to pre-edit snapshot
+3. `grep -c 'renderDiagCards' public/index.html` → equal to pre-edit snapshot
+4. `grep -c 'JOB_SAVED' public/index.html` → equal to pre-edit snapshot
+5. `grep -c 'data-lucide=' public/index.html` → equal to pre-edit snapshot
+6. **Brace delta unchanged**: `(open − close)` post-edit equals pre-edit delta. Use `awk -F'{' '{c+=NF-1} END{print c}'` and `awk -F'}' '{c+=NF-1} END{print c}'`.
+7. `shasum -a 256 index.js` → equal to pre-edit snapshot. **No backend changes during frontend work, ever.**
+
+Hook C (`scripts/post-edit-audit.sh`) automates gates 2–7 against a snapshot keyed on `git HEAD` (auto-refreshes after each commit). Gate 1 is run manually.
+
+## Rollback recipe
+
+```bash
+git revert HEAD --no-edit && git push origin <branch>
+```
+
+- **Multi-commit rollbacks**: revert in reverse chronological order, one revert commit per source commit.
+- **Merge commits**: `git revert -m 1 <merge-sha>` to specify the mainline parent.
+- **Never `git reset --hard` on a shared branch.** Preserve history. Reverts are the only sanctioned undo on `main`.
+
+## Production verification
+
+- **URL**: `https://nodejs-production-cb99f.up.railway.app`
+- **Health endpoint**: `GET /api/health` returns `{ok, uptime, ...}`. After a deploy, `uptime` resets to <60s — strongest signal the new build is live.
+- **Deploy fingerprinting**: pair the uptime reset with a content fingerprint from `GET /` (a unique string from the new commit). Both signals = deploy confirmed.
+- **Railway**: push to `main` triggers automatic redeploy. Typical end-to-end: 90–180 seconds.
+- **Polling cadence**: 15-second intervals, 10-minute cap. Stop when both signals flip.
+
+## Platform notes
+
+Scripts in `scripts/` assume macOS bash + BSD grep/awk + `shasum -a 256` (not `sha256sum`). Linux contributors need GNU `coreutils` equivalents. Hooks are macOS-tested only.
+
+On first session start after this branch merges, Claude Code may prompt once to approve the new `.claude/settings.json` hooks. Expected behavior — accept to enable enforcement.

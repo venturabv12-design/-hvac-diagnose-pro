@@ -51,7 +51,7 @@
   --blue:#2563EB;--blue-lt:#EFF6FF;
   --purple:#7C3AED;--purple-lt:#F5F3FF;
   /* Typography */
-  --font:'Plus Jakarta Sans',-apple-system,sans-serif;
+  --font:'Archivo',system-ui,-apple-system,sans-serif;
   --mono:'DM Mono',monospace;
   /* Type scale */
   --text-xs:11px;--text-sm:13px;--text-base:15px;--text-lg:17px;--text-xl:20px;--text-2xl:26px;--text-3xl:34px;
@@ -70,6 +70,11 @@ button,a,label,[onclick]{-webkit-tap-highlight-color:transparent;touch-action:ma
 *{-webkit-tap-highlight-color:transparent;}
 html{font-size:16px;-webkit-text-size-adjust:100%;}
 body{background:var(--bg);font-family:var(--font);color:var(--black);min-height:100vh;-webkit-font-smoothing:antialiased;}
+/* Push 2 — Mike identity font-family base rules */
+body { font-family: 'Archivo', system-ui, -apple-system, sans-serif; }
+h1, h2, h3, .display { font-family: 'Anton', 'Archivo', sans-serif; text-transform: uppercase; letter-spacing: .02em; }
+.mono, .num, [data-mono] { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.signed, .mike-signed { font-family: 'Caveat', cursive; font-weight: 600; }
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:4px;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -180,7 +185,8 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .qa-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;background:transparent;border:none;border-radius:8px;font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;text-align:left;transition:background .12s;}
 .qa-item:hover{background:var(--gray-50);}
 .qa-item:active{background:var(--gray-100);}
-.msg-agent{display:flex;flex-direction:column;align-items:flex-start;max-width:94%;}
+.msg-agent{position:relative;padding-left:36px;display:flex;flex-direction:column;align-items:flex-start;max-width:94%;}
+.msg-agent > .mike-badge-sm{position:absolute;top:0;left:0;margin-top:0;}
 .msg-user{display:flex;flex-direction:column;align-items:flex-end;max-width:88%;align-self:flex-end;}
 .msg-bubble{padding:12px 15px;font-size:15px;line-height:1.7;font-family:var(--font);word-break:break-word;}
 .msg-bubble-agent{background:var(--white);color:var(--black);border-radius:4px 14px 14px 14px;border:1px solid var(--gray-200);box-shadow:var(--shadow-sm);}
@@ -796,6 +802,93 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 
 [data-theme="dark"] #mikeWelcomeMsg button{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;}
 [data-theme="dark"] #mikeWelcomeMsg button:active{background:#222 !important;}
+
+/* Push 2 — Mike badge component (md + sm) */
+.mike-badge {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, #3a8b8a 0%, #1f5557 100%);
+  position: relative; overflow: hidden; flex-shrink: 0;
+  border: 2px solid var(--ink);
+  box-shadow: 0 0 0 2px var(--teal);
+}
+.mike-badge::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 50% 38%, #f5d4a5 22%, transparent 23%),
+    radial-gradient(circle at 50% 92%, #2c4f7c 38%, transparent 39%),
+    linear-gradient(180deg, #1f3954 55%, #1f3954 100%);
+}
+.mike-badge::before {
+  content: ''; position: absolute; top: 3px; left: 50%;
+  transform: translateX(-50%);
+  width: 28px; height: 13px; background: var(--teal);
+  border-radius: 14px 14px 4px 4px; z-index: 2;
+}
+.mike-badge .live-dot {
+  position: absolute; bottom: -1px; right: -1px;
+  width: 12px; height: 12px; background: var(--moss);
+  border-radius: 50%; border: 2px solid var(--ink); z-index: 5;
+}
+.mike-badge-sm {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, #3a8b8a 0%, #1f5557 100%);
+  position: relative; overflow: hidden; flex-shrink: 0;
+  margin-top: 4px; border: 1.5px solid var(--ink);
+}
+.mike-badge-sm::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 50% 38%, #f5d4a5 22%, transparent 23%),
+    radial-gradient(circle at 50% 92%, #2c4f7c 38%, transparent 39%),
+    linear-gradient(180deg, #1f3954 55%, #1f3954 100%);
+}
+.mike-badge-sm::before {
+  content: ''; position: absolute; top: 2px; left: 50%;
+  transform: translateX(-50%);
+  width: 20px; height: 10px; background: var(--teal);
+  border-radius: 10px 10px 2px 2px; z-index: 2;
+}
+
+/* Push 2 — Top header (replaces nav; renamed from .chat-header to avoid collision) */
+.top-header {
+  padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(0,0,0,.3) 0%, transparent 100%);
+  flex-shrink: 0;
+}
+.header-back {
+  background: transparent; border: none;
+  color: rgba(255,255,255,.7); cursor: pointer; padding: 4px;
+  display: flex; align-items: center; justify-content: center;
+}
+.header-back svg { width: 18px; height: 18px; }
+.header-mike-info { flex: 1; min-width: 0; }
+.header-mike-name {
+  font-family: 'Archivo', sans-serif;
+  font-size: 15px; font-weight: 800; color: #fff;
+  letter-spacing: -.01em; line-height: 1; margin-bottom: 2px;
+}
+.header-mike-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700; color: var(--moss);
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.header-actions { display: flex; gap: 4px; align-items: center; }
+.header-btn {
+  width: 36px; height: 36px;
+  background: transparent; border: 1px solid var(--line);
+  border-radius: 4px; color: rgba(255,255,255,.7); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.header-btn svg { width: 16px; height: 16px; }
+.tech-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--teal);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Archivo', sans-serif;
+  font-size: 12px; font-weight: 800; color: var(--ink);
+  letter-spacing: .02em; cursor: pointer; border: none; flex-shrink: 0;
+}
 </style>
 </head>
 <body>
@@ -1469,45 +1562,34 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 </div>
 </div>
 <div id="trialBanner"><span>🎯 <strong><span id="trialDaysLeft">7</span> days</strong> left in your free trial</span><button class="trial-up-btn" onclick="showPaywall()">Upgrade</button></div>
-<nav class="nav">
-  <div class="nav-inner">
-    <div class="nav-logo">
-      <div class="nav-logo-icon" style="flex-shrink:0;"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="9" fill="url(#lgnav)"/><path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/><defs><linearGradient id="lgnav" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#00C2B2"/><stop offset="100%" stop-color="#007A6E"/></linearGradient></defs></svg></div>
-      <div><div class="nav-logo-text">Trazer Intelligence</div><div class="nav-logo-sub">Field Intelligence Platform</div></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div class="nav-status"><div class="status-dot red" id="statusDot"></div><span id="statusText" style="font-size:12px;color:var(--gray-500);">Connecting</span></div>
-      <div style="position:relative;">
-        <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn"><span id="langFlag">🇺🇸</span><span id="langCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span></button>
-        <div class="lang-dropdown" id="langDropdown">
-          <button class="lang-option active" onclick="setLang('en')" id="langOpt-en"><span class="lang-flag">🇺🇸</span>English</button>
-          <button class="lang-option" onclick="setLang('es')" id="langOpt-es"><span class="lang-flag">🇲🇽</span>Español</button>
-          <button class="lang-option" onclick="setLang('zh')" id="langOpt-zh"><span class="lang-flag">🇨🇳</span>中文</button>
-          <button class="lang-option" onclick="setLang('vi')" id="langOpt-vi"><span class="lang-flag">🇻🇳</span>Tiếng Việt</button>
-          <button class="lang-option" onclick="setLang('fr')" id="langOpt-fr"><span class="lang-flag">🇫🇷</span>Français</button>
-          <button class="lang-option" onclick="setLang('pt')" id="langOpt-pt"><span class="lang-flag">🇧🇷</span>Português</button>
-        </div>
-      </div>
-      <button onclick="newChat()" class="nav-icon-btn" id="navRefreshBtn" title="New chat — full intro in current language">&#x21BB;</button>
-      <button class="nav-profile-btn" id="navProfileBtn" onclick="toggleProfileDD()">?</button>
-    </div>
+<!-- Push 2 — Top header (Mike-forward; replaces nav) -->
+<div class="top-header">
+  <button class="header-back" aria-label="Back"><i data-lucide="chevron-left"></i></button>
+  <div class="mike-badge"><div class="live-dot"></div></div>
+  <div class="header-mike-info">
+    <div class="header-mike-name">Mike</div>
+    <div class="header-mike-status">● On the line · CH 01</div>
   </div>
-</nav>
+  <div class="header-actions">
+    <div style="position:relative;">
+      <button class="header-btn" id="langBtn" onclick="toggleLangMenu()" aria-label="Language"><i data-lucide="globe"></i></button>
+      <div class="lang-dropdown" id="langDropdown">
+        <button class="lang-option active" onclick="setLang('en')" id="langOpt-en"><span class="lang-flag">🇺🇸</span>English</button>
+        <button class="lang-option" onclick="setLang('es')" id="langOpt-es"><span class="lang-flag">🇲🇽</span>Español</button>
+        <button class="lang-option" onclick="setLang('zh')" id="langOpt-zh"><span class="lang-flag">🇨🇳</span>中文</button>
+        <button class="lang-option" onclick="setLang('vi')" id="langOpt-vi"><span class="lang-flag">🇻🇳</span>Tiếng Việt</button>
+        <button class="lang-option" onclick="setLang('fr')" id="langOpt-fr"><span class="lang-flag">🇫🇷</span>Français</button>
+        <button class="lang-option" onclick="setLang('pt')" id="langOpt-pt"><span class="lang-flag">🇧🇷</span>Português</button>
+      </div>
+    </div>
+    <button class="header-btn" id="navRefreshBtn" onclick="newChat()" aria-label="New chat" title="New chat — full intro in current language"><i data-lucide="refresh-cw"></i></button>
+    <button class="header-btn" id="moreBtn" aria-label="More"><i data-lucide="more-horizontal"></i></button>
+    <button class="tech-avatar" id="techAvatarBtn" onclick="toggleProfileDD()" aria-label="Profile"></button>
+  </div>
+</div>
 <div id="pullRefreshIndicator"><div class="ptr-spinner"></div><span>Refreshing…</span></div>
 
 <div class="page" id="app">
-  <!-- HERO -->
-  <div class="fu" style="margin-bottom:16px;">
-    <div style="background:linear-gradient(135deg,#0F0F0F 0%,#1a2232 100%);border-radius:12px;padding:14px 16px 12px;text-align:center;position:relative;overflow:hidden;">
-      <div style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;height:120px;background:radial-gradient(ellipse,rgba(0,194,178,.2) 0%,transparent 70%);pointer-events:none;"></div>
-      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,194,178,.15);border:1px solid rgba(0,194,178,.3);border-radius:99px;padding:5px 13px;margin-bottom:14px;">
-        <span style="width:6px;height:6px;background:#00C2B2;border-radius:50%;display:inline-block;box-shadow:0 0 8px rgba(0,194,178,.6);"></span>
-        <span style="font-size:11px;font-weight:700;color:#00C2B2;letter-spacing:.5px;text-transform:uppercase;">● Mike is Online</span>
-      </div>
-      <h1 style="font-size:clamp(16px,3.5vw,22px);font-weight:700;color:#FFFFFF;letter-spacing:-.3px;line-height:1.2;margin-bottom:6px;" id="heroTitle">Is Your AC or Heat Not Working?</h1>
-      <p style="font-size:15px;color:rgba(255,255,255,.55);line-height:1.65;max-width:400px;margin:0 auto;" id="heroSub">Take a photo, describe what's happening, and get a clear answer in seconds. No HVAC knowledge needed.</p>
-    </div>
-  </div>
   <!-- MODE TABS -->
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px;">
     <div class="mode-tabs">
@@ -1672,6 +1754,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <div style="position:relative;">
         <div id="chatMessages" class="chat-messages">
           <div class="msg-agent" id="mikeWelcomeMsg">
+            <div class="mike-badge-sm"></div>
             <div class="msg-bubble msg-bubble-agent">
               <p style="margin-bottom:8px;"><strong>Hey, I'm Mike.</strong> 25 years in the field &mdash; every system, every failure, every fix. Ask me anything.</p>
               <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">
@@ -1880,7 +1963,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
     <p style="font-size:11px;color:#C8CBD8;line-height:1.6;max-width:400px;margin:0 auto;text-align:center;">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician. Mike is an AI — not a licensed contractor. Use of this Service constitutes acceptance of our Terms of Service.</p>
   </div>
 <!-- LIVE CAMERA OVERLAY — Premium Quality -->
-<div id="liveCameraOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9998;flex-direction:column;font-family:'Plus Jakarta Sans',-apple-system,sans-serif;">
+<div id="liveCameraOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9998;flex-direction:column;">
 
   <!-- Full-screen camera feed -->
   <video id="liveCameraFeed" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"></video>
@@ -2155,13 +2238,13 @@ function showPersonalizedWelcome(){
     container.innerHTML='';
     var div=document.createElement('div');
     div.className='msg-agent';
-    div.innerHTML='<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
+    div.innerHTML='<div class="mike-badge-sm"></div><div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
     container.appendChild(div);
   }
   // Also update welcome element if present
   var wm=document.getElementById('mikeWelcomeMsg');
   if(wm){
-    wm.innerHTML='<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
+    wm.innerHTML='<div class="mike-badge-sm"></div><div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
   }
   // Store greeting for voice mode to speak when voice turns on
   window._pendingGreeting=msg.replace(/<[^>]+>/g,' ').replace(/  +/g,' ').trim();
@@ -2354,7 +2437,7 @@ function updateProfileUI(){
   if(currentUser.name&&!currentUser.initials){
     currentUser.initials=currentUser.name.split(' ').map(function(x){return x[0]||'';}).join('').toUpperCase().slice(0,2)||'U';
   }
-  var b=document.getElementById('navProfileBtn');if(b)b.textContent=currentUser.initials||'?';
+  var b=document.getElementById('techAvatarBtn');if(b)b.textContent=currentUser.initials||'';
   var pn=document.getElementById('pddName');if(pn)pn.textContent=currentUser.name||'';
   var pe=document.getElementById('pddEmail');if(pe)pe.textContent=currentUser.email||'';
   var pp=document.getElementById('pddPlan');
@@ -2375,7 +2458,7 @@ function toggleProfileDD(){
 function closeProfileDD(){var d=document.getElementById('profileDD');if(d)d.classList.remove('open');}
 
 document.addEventListener('click',function(e){
-  var d=document.getElementById('profileDD'),b=document.getElementById('navProfileBtn');
+  var d=document.getElementById('profileDD'),b=document.getElementById('techAvatarBtn');
   if(d&&b&&!d.contains(e.target)&&!b.contains(e.target))closeProfileDD();
   var ld=document.getElementById('langDropdown'),lb=document.getElementById('langBtn');
   if(ld&&lb&&!ld.contains(e.target)&&!lb.contains(e.target))ld.style.display='none';
@@ -3055,7 +3138,6 @@ function checkHealth(retry){
   if(txt)txt.textContent='Connecting';
   fetch('/api/health').then(function(r){return r.json();}).then(function(d){
     if(dot)dot.className='status-dot green';
-    if(txt)txt.textContent='AI Ready';
   }).catch(function(){
     if(retry<2){setTimeout(function(){checkHealth(retry+1);},3000*(retry+1));return;}
     if(dot)dot.className='status-dot red';
@@ -3080,8 +3162,6 @@ function setMode(m){
   document.getElementById('tabPro').className='mode-tab'+(m==='pro'?' active':'');
   document.getElementById('panelHome').style.display=isPro?'none':'block';
   document.getElementById('panelDiag').style.display=isPro?'block':'none';
-  document.getElementById('heroTitle').textContent=isPro?'Professional HVAC Field Intelligence':'Is Your AC or Heat Not Working?';
-  document.getElementById('heroSub').textContent=isPro?'Mike — your AI master tech. Diagnostics, live camera, parts pricing, revenue coaching.':'Take a photo, describe what\'s happening, and get a clear answer in seconds. No HVAC knowledge needed.';
   document.getElementById('modeDesc').textContent=isPro?'Mike handles diagnostics, revenue, refrigerant, maintenance — everything in one chat.':'Plain English explanations. Know if it\'s safe, how urgent it is, and exactly what to tell your technician.';
 }
 
@@ -4508,7 +4588,7 @@ function clearUserMemory(){
   localStorage.removeItem(getUserMemoryKey('profile'));
   chatHistory = [];
   var container = document.getElementById('chatMessages');
-  if(container) container.innerHTML = '<div class="msg-agent"><div class="msg-bubble msg-bubble-agent"><p>Memory cleared. Starting fresh — what are you working on?</p></div><div class="msg-time">'+getTimeStr()+'</div></div>';
+  if(container) container.innerHTML = '<div class="msg-agent"><div class="mike-badge-sm"></div><div class="msg-bubble msg-bubble-agent"><p>Memory cleared. Starting fresh — what are you working on?</p></div><div class="msg-time">'+getTimeStr()+'</div></div>';
   closeProfileDD();
 }
 
@@ -4703,7 +4783,7 @@ function appendMessage(role,text){
     .replace(/\n{2,}/g,'<br/><br/>')
     .replace(/\n/g,'<br/>');
 
-  div.innerHTML='<div class="msg-bubble '+(isAgent?'msg-bubble-agent':'msg-bubble-user')+'">'+formatted+'</div><div class="msg-time">'+getTimeStr()+'</div>';
+  div.innerHTML=(isAgent?'<div class="mike-badge-sm"></div>':'')+'<div class="msg-bubble '+(isAgent?'msg-bubble-agent':'msg-bubble-user')+'">'+formatted+'</div><div class="msg-time">'+getTimeStr()+'</div>';
   // Show red safety banner ABOVE the message for dangerous situations
   if(isSafetyAlert){
     var alertBanner=document.createElement('div');
@@ -6896,12 +6976,12 @@ function stopCameraListen(){
 
 // ── LANGUAGE SYSTEM ──────────────────────────────────────────
 var TRANSLATIONS={
-  en:{aiReady:'AI Ready',offline:'Offline',listening:'Listening…',sending:'Sending to Mike…'},
-  es:{aiReady:'IA Lista',offline:'Sin conexión',listening:'Escuchando…',sending:'Enviando a Mike…'},
-  zh:{aiReady:'AI就绪',offline:'离线',listening:'正在聆听…',sending:'发送给Mike…'},
-  vi:{aiReady:'AI Sẵn sàng',offline:'Ngoại tuyến',listening:'Đang nghe…',sending:'Gửi cho Mike…'},
-  fr:{aiReady:'IA Prête',offline:'Hors ligne',listening:'Écoute…',sending:'Envoi à Mike…'},
-  pt:{aiReady:'IA Pronta',offline:'Offline',listening:'Ouvindo…',sending:'Enviando para Mike…'}
+  en:{offline:'Offline',listening:'Listening…',sending:'Sending to Mike…'},
+  es:{offline:'Sin conexión',listening:'Escuchando…',sending:'Enviando a Mike…'},
+  zh:{offline:'离线',listening:'正在聆听…',sending:'发送给Mike…'},
+  vi:{offline:'Ngoại tuyến',listening:'Đang nghe…',sending:'Gửi cho Mike…'},
+  fr:{offline:'Hors ligne',listening:'Écoute…',sending:'Envoi à Mike…'},
+  pt:{offline:'Offline',listening:'Ouvindo…',sending:'Enviando para Mike…'}
 };
 
 function toggleLangMenu(){

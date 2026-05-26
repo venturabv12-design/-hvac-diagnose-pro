@@ -108,9 +108,7 @@ body{background:var(--bg);font-family:var(--font-ui);color:var(--black);min-heig
 .fi{animation:fadeIn .25s ease both;}
 .pulsing{animation:pulse 1.4s ease infinite;}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,0,0,.1);border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite;}
-.nav-logo{display:flex;align-items:center;gap:10px;}
-.nav-logo-icon{width:34px;height:34px;background:var(--teal);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(199,85,59,.35);}
-.nav-status{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:99px;}
+.nav-status{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:99px;flex-shrink:0;}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px rgba(16,185,129,.2);}
 .status-dot.red{background:var(--red);box-shadow:0 0 0 2px rgba(232,53,74,.2);}
 .status-text{font-size:12px;color:var(--gray-500);font-weight:600;}
@@ -514,8 +512,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 [data-theme="dark"]{color-scheme:dark;}
 [data-theme="dark"] body{background:#0a0a0a;color:#e5e7eb;}
 [data-theme="dark"] .nav{background:#111111;border-bottom-color:#1f1f1f;}
-[data-theme="dark"] .nav-logo-text{color:#ffffff;}
-[data-theme="dark"] .nav-logo-sub{color:#6b7280;}
+[data-theme="dark"] .nav-mike-name{color:#ffffff;}
 [data-theme="dark"] .lang-btn{background:#1a1a1a;border-color:#2a2a2a;color:#d1d5db;}
 [data-theme="dark"] .nav-icon-btn{background:#1a1a1a;border-color:#2a2a2a;color:#d1d5db;}
 [data-theme="dark"] .lang-dropdown{background:#161616;border-color:#2a2a2a;}
@@ -717,9 +714,14 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 
 /* ── UPGRADED NAV ──────────────────────────────────────────── */
 .nav{background:rgba(255,255,255,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.06);position:sticky;top:0;z-index:100;box-shadow:0 1px 0 rgba(0,0,0,.05);}
-.nav-inner{max-width:720px;margin:0 auto;padding:0 14px;height:56px;display:flex;align-items:center;justify-content:space-between;}
-.nav-logo-text{font-family:var(--font-display);font-size:15px;font-weight:800;color:var(--black);letter-spacing:-.3px;}
-.nav-logo-sub{font-size:10px;color:var(--gray-400);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+.nav-inner{max-width:720px;margin:0 auto;padding:0 14px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:10px;-webkit-transform:translateZ(0);transform:translateZ(0);}
+/* Mike identity slot (Push 5) — replaces logo block; flex:1+min-width:0 lets long names truncate instead of pushing the action cluster off-screen on iPhone */
+.nav-mike{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}
+.nav-mike-text{display:flex;flex-direction:column;min-width:0;}
+.nav-mike-name{font-family:var(--font-display);font-size:15px;font-weight:800;color:var(--ink);line-height:1;letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.nav-mike-status{font-size:10px;color:var(--moss);margin-top:3px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;}
+.nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.nav-actions > *{flex-shrink:0;}
 
 /* ── UPGRADED CARDS ────────────────────────────────────────── */
 .card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gray-200);padding:20px;margin-bottom:12px;box-shadow:var(--shadow-sm);}
@@ -1676,11 +1678,14 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 <div id="trialBanner"><span>🎯 <strong><span id="trialDaysLeft">7</span> days</strong> left in your free trial</span><button class="trial-up-btn" onclick="showPaywall()">Upgrade</button></div>
 <nav class="nav">
   <div class="nav-inner">
-    <div class="nav-logo">
-      <div class="nav-logo-icon" style="flex-shrink:0;"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="9" fill="url(#lgnav)"/><path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/><defs><linearGradient id="lgnav" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#C7553B"/><stop offset="100%" stop-color="#A8472F"/></linearGradient></defs></svg></div>
-      <div><div class="nav-logo-text">Trazer Intelligence</div><div class="nav-logo-sub">Field Intelligence Platform</div></div>
+    <div class="nav-mike">
+      <div class="mike-badge"><div class="live-dot"></div></div>
+      <div class="nav-mike-text">
+        <div class="nav-mike-name">Mike</div>
+        <div class="nav-mike-status">On the line</div>
+      </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
+    <div class="nav-actions">
       <div class="nav-status"><div class="status-dot red" id="statusDot"></div><span id="statusText" style="font-size:12px;color:var(--gray-500);">Connecting</span></div>
       <div style="position:relative;">
         <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn"><span id="langFlag">🇺🇸</span><span id="langCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span></button>

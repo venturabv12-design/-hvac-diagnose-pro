@@ -1402,6 +1402,46 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 .tile-color-amber .tile-icon{background:rgba(0,0,0,.22);color:#1a1a1a;}
 .tile-color-moss{background:linear-gradient(135deg,#86C28B,#4A9B53);}
 
+/* Today's Calls row */
+.call-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 14px;
+  background:rgba(255,255,255,.03);
+  border-left:4px solid var(--rust,#C7553B);
+  border-radius:0 12px 12px 0;
+  -webkit-tap-highlight-color:transparent;
+}
+.call-row[data-call-color="rust"]{border-left-color:var(--rust,#C7553B);}
+.call-row[data-call-color="brass"]{border-left-color:var(--brass,#C9A961);}
+.call-row[data-call-color="moss"]{border-left-color:#4A9B53;}
+.call-num{
+  font-family:var(--font-display,'Anton'),Impact,sans-serif;
+  font-size:26px;
+  font-weight:400;
+  color:rgba(255,255,255,.78);
+  letter-spacing:.04em;
+  min-width:38px;
+  line-height:1;
+}
+.call-meta{flex:1;min-width:0;}
+.call-customer{
+  font-family:var(--font-ui,inherit);
+  font-weight:700;
+  font-size:14px;
+  color:#fff;
+  margin-bottom:2px;
+}
+.call-summary{
+  font-family:var(--font-ui,inherit);
+  font-size:12px;
+  color:rgba(255,255,255,.55);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
 @media (prefers-reduced-motion: reduce){
   #actionDrawer{animation:none;}
   #actionDrawer::backdrop{animation:none;}
@@ -1994,7 +2034,29 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
         </section>
         <section class="drawer-section">
           <div class="drawer-section-label">Today&rsquo;s Calls</div>
-          <div class="drawer-calls"></div>
+          <div class="drawer-calls">
+            <div class="call-row" data-call-color="rust">
+              <span class="call-num">01</span>
+              <div class="call-meta">
+                <div class="call-customer">Smith residence</div>
+                <div class="call-summary">AC down &mdash; 90&deg;F upstairs</div>
+              </div>
+            </div>
+            <div class="call-row" data-call-color="brass">
+              <span class="call-num">02</span>
+              <div class="call-meta">
+                <div class="call-customer">Jefferson HVAC service</div>
+                <div class="call-summary">Annual furnace tune-up</div>
+              </div>
+            </div>
+            <div class="call-row" data-call-color="moss">
+              <span class="call-num">03</span>
+              <div class="call-meta">
+                <div class="call-customer">Lopez heat pump install</div>
+                <div class="call-summary">3-ton system, basement run</div>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </dialog>

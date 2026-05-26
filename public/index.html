@@ -1198,35 +1198,228 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 }
 .send-btn:active{transform:scale(.92);box-shadow:none;}
 
-/* Toolbar under input */
-.chat-toolbar{
-  display:flex;
-  gap:5px;
-  margin-top:8px;
-  flex-wrap:nowrap;
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
+/* ── Peek bar + bottom action drawer (Push 4) ──────────────────── */
+.peek-bar{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:6px;
+  margin-bottom:10px;
+  touch-action:pan-y;
+  -webkit-tap-highlight-color:transparent;
+  transform:translateZ(0);
+  -webkit-transform:translateZ(0);
 }
-.chat-toolbar::-webkit-scrollbar{display:none;}
-.toolbar-btn{
-  font-size:11px;
-  background:#1a1a1a;
-  border:1px solid #2a2a2a;
-  color:#9ca3af;
-  border-radius:8px;
-  padding:6px 10px;
+.peek-tile{
+  height:52px;
+  padding:6px 4px;
+  border:1px solid var(--ink-3,#2a2a2a);
+  background:var(--ink-2,#1a1a1a);
+  border-radius:12px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
   cursor:pointer;
-  font-family:var(--font);
-  font-weight:600;
-  white-space:nowrap;
-  flex-shrink:0;
-  transition:all .15s;
+  color:#9ca3af;
+  font-family:var(--font-ui,var(--font));
+  font-weight:700;
+  font-size:10px;
+  letter-spacing:.04em;
+  transition:transform .12s;
   -webkit-tap-highlight-color:transparent;
 }
-.toolbar-btn:active{background:#222;color:#fff;}
-.toolbar-btn-purple{background:rgba(124,58,237,.1);border-color:rgba(124,58,237,.3);color:#a78bfa;}
-.toolbar-btn-teal{background:rgba(199,85,59,.08);border-color:rgba(199,85,59,.2);color:var(--rust);}
+.peek-tile:active{transform:scale(.96);}
+
+#actionDrawer{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  top:auto;
+  margin:0;
+  width:100%;
+  max-width:100%;
+  border:none;
+  background:var(--ink-2,#15171A);
+  color:#e5e7eb;
+  border-radius:24px 24px 0 0;
+  padding:0;
+  box-shadow:0 -8px 32px rgba(0,0,0,.5);
+  max-height:85vh;
+  overflow:hidden;
+  transform:translateZ(0);
+  will-change:transform;
+  animation:drawerSlideIn .32s cubic-bezier(.2,.7,.2,1);
+}
+#actionDrawer::backdrop{
+  background:rgba(0,0,0,.55);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  animation:drawerBackdropIn .32s ease;
+}
+@keyframes drawerSlideIn{
+  from{transform:translateY(100%);}
+  to{transform:translateY(0);}
+}
+@keyframes drawerBackdropIn{
+  from{opacity:0;}
+  to{opacity:1;}
+}
+.drawer-handle{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:14px 0;
+  cursor:grab;
+  touch-action:pan-y;
+}
+.drawer-handle::before{
+  content:"";
+  width:42px;
+  height:5px;
+  border-radius:3px;
+  background:rgba(255,255,255,.18);
+}
+.drawer-body{
+  overflow-y:auto;
+  scroll-snap-type:y proximity;
+  max-height:calc(85vh - 42px - env(safe-area-inset-bottom));
+  padding:6px 16px calc(20px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling:touch;
+}
+.drawer-section{
+  scroll-snap-align:start;
+  padding:14px 0 6px;
+}
+.drawer-section-label{
+  font-family:var(--font-display,'Anton'),Impact,sans-serif;
+  font-size:15px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--brass,rgba(255,255,255,.65));
+  margin:0 0 10px 2px;
+}
+.drawer-favorites{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.drawer-all-tools{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.drawer-calls{display:flex;flex-direction:column;gap:8px;}
+
+/* Peek tile content (icon + label, tinted bg per color) */
+.peek-tile-icon{display:flex;align-items:center;justify-content:center;line-height:0;}
+.peek-tile-icon svg{width:18px;height:18px;}
+.peek-tile-label{
+  font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+}
+.peek-tile.color-purple{background:linear-gradient(180deg,rgba(124,58,237,.16),rgba(124,58,237,.04));border-color:rgba(124,58,237,.4);color:#c4b5fd;}
+.peek-tile.color-purple .peek-tile-icon{color:#a78bfa;}
+.peek-tile.color-rust{background:linear-gradient(180deg,rgba(199,85,59,.16),rgba(199,85,59,.04));border-color:rgba(199,85,59,.4);color:#E8C5A0;}
+.peek-tile.color-rust .peek-tile-icon{color:var(--rust,#C7553B);}
+.peek-tile.color-red{background:linear-gradient(180deg,rgba(232,53,74,.16),rgba(232,53,74,.04));border-color:rgba(232,53,74,.4);color:#fca5a5;}
+.peek-tile.color-red .peek-tile-icon{color:#f87171;}
+.peek-tile.color-blue{background:linear-gradient(180deg,rgba(37,99,235,.16),rgba(37,99,235,.04));border-color:rgba(37,99,235,.4);color:#93c5fd;}
+.peek-tile.color-blue .peek-tile-icon{color:#60a5fa;}
+
+/* Drawer tile (Whoop-style saturated) — shared by Favorites + All Tools */
+.drawer-tile{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:flex-end;
+  padding:14px;
+  min-height:92px;
+  border:none;
+  border-radius:16px;
+  cursor:pointer;
+  font-family:var(--font-ui,inherit);
+  text-align:left;
+  color:#fff;
+  transition:transform .12s;
+  -webkit-tap-highlight-color:transparent;
+  overflow:hidden;
+  box-shadow:0 4px 12px rgba(0,0,0,.28);
+}
+.drawer-tile:active{transform:scale(.97);}
+.drawer-tile .tile-icon{
+  width:36px;height:36px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.2);
+  color:#fff;
+  align-self:flex-start;
+  margin-bottom:auto;
+}
+.drawer-tile .tile-icon svg{width:18px;height:18px;}
+.drawer-tile .tile-label{
+  font-weight:800;
+  font-size:14px;
+  letter-spacing:.01em;
+  margin-top:6px;
+  text-shadow:0 1px 2px rgba(0,0,0,.22);
+}
+.drawer-all-tools .drawer-tile{
+  min-height:84px;
+  padding:10px 10px 12px;
+  box-shadow:0 2px 6px rgba(0,0,0,.2);
+}
+.drawer-all-tools .drawer-tile .tile-icon{width:30px;height:30px;}
+.drawer-all-tools .drawer-tile .tile-icon svg{width:15px;height:15px;}
+.drawer-all-tools .drawer-tile .tile-label{font-size:11px;margin-top:4px;}
+
+.tile-color-purple{background:linear-gradient(135deg,#A78BFA,var(--purple,#7C3AED));}
+.tile-color-rust{background:linear-gradient(135deg,#D4674E,var(--rust,#C7553B));}
+.tile-color-red{background:linear-gradient(135deg,#F87171,var(--red,#E8354A));}
+.tile-color-blue{background:linear-gradient(135deg,#60A5FA,var(--blue,#2563EB));}
+.tile-color-amber{background:linear-gradient(135deg,#FBBF24,var(--amber,#F59E0B));color:#1a1a1a;}
+.tile-color-amber .tile-icon{background:rgba(0,0,0,.22);color:#1a1a1a;}
+.tile-color-moss{background:linear-gradient(135deg,#86C28B,#4A9B53);}
+
+/* Today's Calls row */
+.call-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 14px;
+  background:rgba(255,255,255,.03);
+  border-left:4px solid var(--rust,#C7553B);
+  border-radius:0 12px 12px 0;
+  -webkit-tap-highlight-color:transparent;
+}
+.call-row[data-call-color="rust"]{border-left-color:var(--rust,#C7553B);}
+.call-row[data-call-color="brass"]{border-left-color:var(--brass,#C9A961);}
+.call-row[data-call-color="moss"]{border-left-color:#4A9B53;}
+.call-num{
+  font-family:var(--font-display,'Anton'),Impact,sans-serif;
+  font-size:26px;
+  font-weight:400;
+  color:var(--brass,#C9A961);
+  letter-spacing:.04em;
+  min-width:38px;
+  line-height:1;
+}
+.call-meta{flex:1;min-width:0;}
+.call-customer{
+  font-family:var(--font-ui,inherit);
+  font-weight:700;
+  font-size:14px;
+  color:#fff;
+  margin-bottom:2px;
+}
+.call-summary{
+  font-family:var(--font-ui,inherit);
+  font-size:12px;
+  color:rgba(255,255,255,.55);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce){
+  #actionDrawer{animation:none;}
+  #actionDrawer::backdrop{animation:none;}
+  .peek-tile:active{transform:none;}
+  .drawer-tile:active{transform:none;}
+}
 
 /* Scroll bottom button */
 #scrollBottomBtn{
@@ -1713,6 +1906,25 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 
       <!-- CHAT INPUT -->
       <div class="chat-input-area">
+        <!-- Peek bar (Push 4) — 4 favorite tool tiles; tap or swipe-up opens action drawer -->
+        <div class="peek-bar" id="peekBar" role="toolbar" aria-label="Tool shortcuts; swipe up to open drawer">
+          <button class="peek-tile color-purple" type="button" data-peek-idx="0" aria-label="Diagram tool" onclick="triggerDiagram()">
+            <span class="peek-tile-icon"><i data-lucide="workflow"></i></span>
+            <span class="peek-tile-label">Diagram</span>
+          </button>
+          <button class="peek-tile color-rust" type="button" data-peek-idx="1" aria-label="Illustrate tool" onclick="triggerIllustration()">
+            <span class="peek-tile-icon"><i data-lucide="palette"></i></span>
+            <span class="peek-tile-label">Illustrate</span>
+          </button>
+          <button class="peek-tile color-red" type="button" data-peek-idx="2" aria-label="Camera tool" onclick="startLiveCamera()">
+            <span class="peek-tile-icon"><i data-lucide="camera"></i></span>
+            <span class="peek-tile-label">Camera</span>
+          </button>
+          <button class="peek-tile color-blue" type="button" data-peek-idx="3" aria-label="Search tool" onclick="openChatSearch()">
+            <span class="peek-tile-icon"><i data-lucide="search"></i></span>
+            <span class="peek-tile-label">Search</span>
+          </button>
+        </div>
         <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none" onchange="handleChatFile(event)"/>
         <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--rust);"></div>
         <div style="display:flex;gap:8px;align-items:flex-end;">
@@ -1720,13 +1932,6 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
           <textarea id="chatInput" placeholder="Ask Mike anything&hellip;" rows="1" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
           <span id="chatCharCount" style="display:none;font-size:10px;color:var(--gray-400);align-self:center;white-space:nowrap;"></span>
           <button onclick="sendChat()" id="chatSendBtn" class="send-btn">&#x279E;</button>
-        </div>
-        <div class="chat-toolbar">
-          <button onclick="openChatSearch()" class="toolbar-btn">&#x1F50D; Search</button>
-          <button onclick="toggleJobTimer()" class="toolbar-btn" id="jobTimerBtn">&#x23F1; Timer</button>
-          <button onclick="triggerDiagram()" class="toolbar-btn toolbar-btn-purple">&#x1F4D0; Diagram</button>
-          <button onclick="triggerIllustration()" class="toolbar-btn toolbar-btn-teal">&#x1F3A8; Illustrate</button>
-          <button onclick="showKnowledge()" class="toolbar-btn" style="margin-left:auto;">&#x1F9E0; Memory</button>
         </div>
         <div id="voiceWaveform" style="display:none;justify-content:center;align-items:center;gap:3px;padding:4px 0;">
           <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
@@ -1737,6 +1942,163 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <div id="correctionAlert" style="display:none;padding:8px 14px;background:rgba(199,85,59,.1);border-top:1px solid rgba(199,85,59,.2);font-size:12px;color:var(--rust);font-weight:600;border-radius:0 0 16px 16px;"></div>
 
     </div><!-- /chat-card -->
+
+    <!-- Bottom action drawer (Push 4) — sibling of .chat-card, child of #panelDiag -->
+    <dialog id="actionDrawer" aria-label="Tools and today's calls">
+      <div class="drawer-handle" id="drawerHandle" role="button" aria-label="Drag down or tap to close"></div>
+      <div class="drawer-body">
+        <section class="drawer-section">
+          <div class="drawer-section-label">Favorites</div>
+          <div class="drawer-favorites">
+            <button class="drawer-tile tile-color-purple" type="button" onclick="triggerDiagram();window.closeActionDrawer();">
+              <span class="tile-icon"><i data-lucide="workflow"></i></span>
+              <span class="tile-label">Diagram</span>
+            </button>
+            <button class="drawer-tile tile-color-rust" type="button" onclick="triggerIllustration();window.closeActionDrawer();">
+              <span class="tile-icon"><i data-lucide="palette"></i></span>
+              <span class="tile-label">Illustrate</span>
+            </button>
+            <button class="drawer-tile tile-color-red" type="button" onclick="startLiveCamera();window.closeActionDrawer();">
+              <span class="tile-icon"><i data-lucide="camera"></i></span>
+              <span class="tile-label">Camera</span>
+            </button>
+            <button class="drawer-tile tile-color-blue" type="button" onclick="openChatSearch();window.closeActionDrawer();">
+              <span class="tile-icon"><i data-lucide="search"></i></span>
+              <span class="tile-label">Search</span>
+            </button>
+          </div>
+        </section>
+        <section class="drawer-section">
+          <div class="drawer-section-label">All Tools</div>
+          <div class="drawer-all-tools">
+            <button class="drawer-tile tile-color-purple" type="button" onclick="triggerDiagram();window.closeActionDrawer();">
+              <span class="tile-icon"><i data-lucide="workflow"></i></span>
+              <span class="tile-label">Diagram</span>
+            </button>
+            <button class="drawer-tile tile-color-rust" type="button" onclick="triggerIllustration();window.closeActionDrawer();">
+              <span class="tile-icon"><i data-lucide="palette"></i></span>
+              <span class="tile-label">Illustrate</span>
+            </button>
+            <button class="drawer-tile tile-color-red" type="button" onclick="startLiveCamera();window.closeActionDrawer();">
+              <span class="tile-icon"><i data-lucide="camera"></i></span>
+              <span class="tile-label">Camera</span>
+            </button>
+            <button class="drawer-tile tile-color-blue" type="button" onclick="openChatSearch();window.closeActionDrawer();">
+              <span class="tile-icon"><i data-lucide="search"></i></span>
+              <span class="tile-label">Search</span>
+            </button>
+            <button class="drawer-tile tile-color-amber" type="button" onclick="toggleJobTimer();window.closeActionDrawer();">
+              <span class="tile-icon"><i data-lucide="timer"></i></span>
+              <span class="tile-label">Timer</span>
+            </button>
+            <button class="drawer-tile tile-color-moss" type="button" onclick="showKnowledge();window.closeActionDrawer();">
+              <span class="tile-icon"><i data-lucide="brain"></i></span>
+              <span class="tile-label">Memory</span>
+            </button>
+          </div>
+        </section>
+        <section class="drawer-section">
+          <div class="drawer-section-label">Today&rsquo;s Calls</div>
+          <div class="drawer-calls">
+            <div class="call-row" data-call-color="rust">
+              <span class="call-num">01</span>
+              <div class="call-meta">
+                <div class="call-customer">Smith residence</div>
+                <div class="call-summary">AC down &mdash; 90&deg;F upstairs</div>
+              </div>
+            </div>
+            <div class="call-row" data-call-color="brass">
+              <span class="call-num">02</span>
+              <div class="call-meta">
+                <div class="call-customer">Jefferson HVAC service</div>
+                <div class="call-summary">Annual furnace tune-up</div>
+              </div>
+            </div>
+            <div class="call-row" data-call-color="moss">
+              <span class="call-num">03</span>
+              <div class="call-meta">
+                <div class="call-customer">Lopez heat pump install</div>
+                <div class="call-summary">3-ton system, basement run</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </dialog>
+    <script>
+    (function(){
+      var drawer=document.getElementById('actionDrawer');
+      var peek=document.getElementById('peekBar');
+      var handle=document.getElementById('drawerHandle');
+      if(!drawer||!peek) return;
+
+      function openDrawer(){
+        if(drawer.open) return;
+        // Native <dialog> uses the top layer above all z-index — guard so the
+        // drawer can't paint over the paywall or live camera overlays.
+        var paywall=document.getElementById('paywallOverlay');
+        var camera=document.getElementById('liveCameraOverlay');
+        if(paywall&&paywall.offsetParent!==null) return;
+        if(camera&&camera.offsetParent!==null) return;
+        if(typeof drawer.showModal==='function'){
+          try{ drawer.showModal(); return; }catch(e){}
+        }
+        drawer.setAttribute('open','');
+      }
+      function closeDrawer(){
+        if(!drawer.open) return;
+        try{ drawer.close(); }catch(e){ drawer.removeAttribute('open'); }
+      }
+      window.openActionDrawer=openDrawer;
+      window.closeActionDrawer=closeDrawer;
+
+      peek.addEventListener('click',function(e){
+        if(e.target.closest('.peek-tile')) return;
+        openDrawer();
+      });
+
+      var startY=null,startX=null;
+      peek.addEventListener('touchstart',function(e){
+        if(!e.touches||!e.touches[0]) return;
+        startY=e.touches[0].clientY;
+        startX=e.touches[0].clientX;
+      },{passive:true});
+      peek.addEventListener('touchmove',function(e){
+        if(startY===null) return;
+        var t=e.touches[0];
+        var dy=startY-t.clientY;
+        var dx=Math.abs(startX-t.clientX);
+        if(dy>40&&dy>dx){
+          startY=null;
+          openDrawer();
+        }
+      },{passive:true});
+      peek.addEventListener('touchend',function(){ startY=null; },{passive:true});
+
+      drawer.addEventListener('click',function(e){
+        if(e.target!==drawer) return;
+        var r=drawer.getBoundingClientRect();
+        if(e.clientY<r.top||e.clientY>r.bottom||e.clientX<r.left||e.clientX>r.right){
+          closeDrawer();
+        }
+      });
+      // Cancel event fires on Esc and on some Safari backdrop-tap paths
+      drawer.addEventListener('cancel',function(e){
+        e.preventDefault();
+        closeDrawer();
+      });
+
+      var hStartY=null;
+      handle.addEventListener('touchstart',function(e){ hStartY=e.touches[0].clientY; },{passive:true});
+      handle.addEventListener('touchmove',function(e){
+        if(hStartY===null) return;
+        var dy=e.touches[0].clientY-hStartY;
+        if(dy>50){ hStartY=null; closeDrawer(); }
+      },{passive:true});
+      handle.addEventListener('touchend',function(){ hStartY=null; },{passive:true});
+      handle.addEventListener('click',closeDrawer);
+    })();
+    </script>
 
     <!-- MIKE'S MEMORY PANEL -->
     <div id="knowledgePanel" style="display:none;background:#161616;border:1px solid #2a2a2a;border-radius:12px;padding:14px;margin-bottom:12px;margin-top:4px;">

@@ -42,6 +42,8 @@
   --rust-deep:#A8472F;
   --brass-mid:#E8C5A0;
   --brass-lt:#F4E4D1;
+  /* Mike identity (Push 5) — distinct from rust/brass family so Mike reads as a person, not a brand accent */
+  --mike-teal:#3A8B8A;--mike-teal-deep:#1F5557;
   --line:rgba(255,255,255,.06);
   /* Neutrals (--bg → --paper, --black → --ink — backward-compat aliases) */
   --bg:var(--paper,#F4EFE6);--white:#FFFFFF;--black:var(--ink,#0E0F0D);
@@ -734,6 +736,13 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 
 /* ── MIKE BAR ──────────────────────────────────────────────── */
 .mike-bar{background:linear-gradient(135deg,#0A0A0F 0%,#111827 100%);border-radius:16px 16px 0 0;padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(199,85,59,.15);}
+
+/* ── MIKE BADGE (Push 5) ───────────────────────────────────── */
+.mike-badge{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--mike-teal),var(--mike-teal-deep));position:relative;overflow:hidden;flex-shrink:0;border:2px solid var(--ink);box-shadow:0 0 0 2px var(--mike-teal);}
+.mike-badge::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 38%,#f5d4a5 22%,transparent 23%),radial-gradient(circle at 50% 92%,#2c4f7c 38%,transparent 39%),linear-gradient(180deg,#1f3954 55%,#1f3954 100%);}
+.mike-badge::before{content:'';position:absolute;top:3px;left:50%;transform:translateX(-50%);width:28px;height:13px;background:var(--safety);border-radius:14px 14px 4px 4px;z-index:2;}
+.mike-badge .live-dot{position:absolute;bottom:-1px;right:-1px;width:12px;height:12px;background:var(--moss);border-radius:50%;border:2px solid var(--ink);z-index:5;}
+.mike-badge-sm{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--mike-teal),var(--mike-teal-deep));position:relative;overflow:hidden;flex-shrink:0;border:1.5px solid var(--ink);}
 
 /* ── QUICK CHIPS ───────────────────────────────────────────── */
 .quick-chip{background:var(--white);border:1.5px solid var(--gray-200);border-radius:99px;padding:7px 14px;font-size:12px;font-family:var(--font);font-weight:700;color:var(--gray-600);cursor:pointer;transition:all .15s;white-space:nowrap;-webkit-tap-highlight-color:transparent;}

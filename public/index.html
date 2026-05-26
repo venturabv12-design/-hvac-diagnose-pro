@@ -713,7 +713,7 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 .avp-cta:active{transform:scale(.98);}
 
 /* ── UPGRADED NAV ──────────────────────────────────────────── */
-.nav{background:rgba(255,255,255,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.06);position:sticky;top:0;z-index:100;box-shadow:0 1px 0 rgba(0,0,0,.05);}
+.nav{background:rgba(255,255,255,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.06);position:sticky;top:0;z-index:100;box-shadow:0 1px 0 rgba(0,0,0,.05);padding-top:env(safe-area-inset-top,0px);}
 .nav-inner{max-width:720px;margin:0 auto;padding:0 14px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:10px;-webkit-transform:translateZ(0);transform:translateZ(0);}
 /* Mike identity slot (Push 5) — replaces logo block; flex:1+min-width:0 lets long names truncate instead of pushing the action cluster off-screen on iPhone */
 .nav-mike{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}

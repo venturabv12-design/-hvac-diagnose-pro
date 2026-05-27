@@ -195,3 +195,56 @@ When a new session starts, read orchestrator-state.md first so you can pick up w
 ## Your first move
 
 After confirming you've absorbed this briefing, ask Brandon what he wants to work on first. He may say "Push 7.1 drawer polish" — if so, take it from there: read drawer.md, dispatch eng-e2e-tester to verify the bugs, plan the commits, execute, run the gauntlet, escalate ship decision.
+
+## Post-push field testing (continuous QA layer)
+
+After every successful push to main (Railway deploy verified live), automatically dispatch field testing. This is the continuous QA layer that catches "unknown unknowns" — bugs that no spec covers because nobody thought to spec them.
+
+### Sequence
+
+1. Wait for Railway deploy to confirm live (you already poll /api/health)
+2. Dispatch eng-tuesday-tech FOUR times in parallel — once per persona (apprentice, veteran, owner, homeowner)
+3. Each Tuesday-Tech run is independent. They explore the live production app in-character for 10-15 minutes and save field reports to .claude/context/field-reports/
+4. After all 4 field reports complete, dispatch eng-field-report ONCE to synthesize them
+5. The synthesis report saves to .claude/context/field-reports/SYNTHESIS-YYYY-MM-DD.md
+6. You DO NOT interrupt Brandon with the synthesis report immediately. It queues.
+7. Update .claude/context/orchestrator-state.md to note: "Field reports for push [X] queued at [path]"
+
+### When Brandon checks back
+
+When Brandon opens Claude Code and asks "what's new" or "field reports" or "what did the techs find" — surface the latest synthesis report.
+
+### When findings warrant escalation
+
+If the synthesis report contains BLOCKER findings tagged as "would cancel" — escalate to Brandon as a Strategic Decision per the existing escalation rules. Format:
+
+"BLOCKER from field testing: [N] of [N] personas hit [issue]. Direct quote: '[quote]'. Recommendation: [hotfix push / queue for next push / strategic decision]. Your call?"
+
+### Weekly digest integration
+
+Friday weekly report includes a "Voice from the field" section summarizing:
+- Total Tuesday-Tech runs that week
+- Top 3 recurring complaints across all syntheses
+- Any "would cancel" signals
+- Any "would recommend" signals
+- New discoveries vs known bugs
+
+### Persona rotation
+
+Each push gets all 4 personas. Don't skip any. Apprentice catches different bugs than Veteran. Owner sees different things than Homeowner. The full bench every time.
+
+### Cost discipline
+
+Tuesday-Tech is Sonnet (already configured). Field Report synthesizer is Sonnet (already configured). Four parallel Tuesday-Tech runs + one synthesis = roughly $3-5 per push. Acceptable for catching bugs before paying customers do.
+
+If a push has trivial scope (docs only, single line fix), you can skip field testing. Use judgment.
+
+### Self-improvement loop integration
+
+When Tuesday-Tech finds a bug:
+1. The synthesis flags it for Brandon
+2. After Brandon confirms it's a real bug, update the relevant feature spec at .claude/context/feature-specs/ to include the regression scenario
+3. Update eng-e2e-tester's targeted scenarios if needed
+4. The next time a related push ships, the spec-driven tests catch the regression BEFORE the field-testing layer
+
+This means: field testing finds new classes of bugs, specs absorb them, structured testing catches them next time. The system gets sharper every push.

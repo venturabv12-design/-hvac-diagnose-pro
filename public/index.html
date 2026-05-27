@@ -44,6 +44,8 @@
   --brass-lt:#F4E4D1;
   /* Mike identity (Push 5) — distinct from rust/brass family so Mike reads as a person, not a brand accent */
   --mike-teal:#3A8B8A;--mike-teal-deep:#1F5557;
+  /* Push 6 contractor palette — bright cyan teal lives mode-scoped (see body[data-mode="contractor"]); copper/violet/moss-deep/ink-4 are global */
+  --ink-4:#292D32;--copper:#B87333;--copper-deep:#8B5226;--violet:#6B5B95;--moss-deep:#3F5A3E;
   --line:rgba(255,255,255,.06);
   /* Neutrals (--bg → --paper, --black → --ink — backward-compat aliases) */
   --bg:var(--paper,#F4EFE6);--white:#FFFFFF;--black:var(--ink,#0E0F0D);
@@ -614,6 +616,182 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 [data-theme="dark"] .role-card-title{color:#fff;}
 [data-theme="dark"] .role-card-sub{color:#6b7280;}
 [data-theme="dark"] #authOverlay{background:rgba(10,10,10,.98);}
+
+/* ── PUSH 6 — CONTRACTOR MODE BASE ──────────────────────────
+   Mode-scoped tokens + base colors. --teal/--teal-deep are bright cyan here;
+   global aliases (line 32) keep pointing to --rust for homeowner/legacy callsites.
+   Subsequent Push 6 commits add surface-specific rules under the same scope. */
+body[data-mode="contractor"]{
+  --teal:#00C2B2;--teal-deep:#008C81;
+  background:var(--ink);color:#fff;
+}
+body[data-mode="contractor"] .page{background:var(--ink);}
+/* Defensive: nav frosted-white over ink is visibly broken until commit 2 restyles it; card text anchors to ink so any future .card descendant without explicit color doesn't render white-on-white. */
+body[data-mode="contractor"] .nav{background:var(--ink-2);border-bottom-color:var(--line);}
+body[data-mode="contractor"] .card{color:var(--ink);}
+
+/* ── PUSH 6 — CONTRACTOR HEADER + MIKE BADGE LAYERED BUILD (commit 2/6) ──
+   Re-introduces Mike badge ::before cap + ::after face per Push 6 mockup
+   directive. Prior strip in commit 01b0f67 was scoped to a brass-ring +
+   washed-color implementation; the mockup re-adds with bright teal ring
+   and crisper navy/tan layer values, so this is a controlled re-add —
+   not a reversal of the prior critique. Mode-scoped so homeowner badge
+   is untouched. */
+body[data-mode="contractor"] .nav-inner{gap:12px;}
+body[data-mode="contractor"] .mike-badge{box-shadow:0 0 0 2px var(--teal);overflow:hidden;}
+body[data-mode="contractor"] .mike-badge::before{width:28px;height:13px;background:var(--teal);border-radius:14px 14px 4px 4px;top:3px;box-shadow:none;}
+body[data-mode="contractor"] .mike-badge::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 38%, #f5d4a5 22%, transparent 23%),radial-gradient(circle at 50% 92%, #2c4f7c 38%, transparent 39%),linear-gradient(180deg, #1f3954 55%, #1f3954 100%);z-index:1;}
+body[data-mode="contractor"] .mike-badge .live-dot{z-index:5;}
+
+/* .msg-mike-badge — 28×28 message-bubble companion badge. Used by commit 3.
+   Layered build always-on (no ring per mockup); cap only renders in contractor. */
+.msg-mike-badge{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--mike-teal),var(--mike-teal-deep));position:relative;overflow:hidden;flex-shrink:0;margin-top:4px;border:1.5px solid var(--ink);}
+.msg-mike-badge::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 38%, #f5d4a5 22%, transparent 23%),radial-gradient(circle at 50% 92%, #2c4f7c 38%, transparent 39%),linear-gradient(180deg, #1f3954 55%, #1f3954 100%);z-index:1;}
+body[data-mode="contractor"] .msg-mike-badge::before{content:'';position:absolute;top:2px;left:50%;transform:translateX(-50%);width:20px;height:10px;background:var(--teal);border-radius:10px 10px 2px 2px;z-index:2;}
+
+/* Contractor nav typography — white name, JetBrains Mono CB-radio status */
+body[data-mode="contractor"] .nav-mike-name{color:#fff;letter-spacing:-.01em;}
+body[data-mode="contractor"] .nav-mike-status{font-family:var(--font-code);font-size:9px;color:var(--moss);letter-spacing:.12em;font-weight:700;}
+
+/* Mode-scoped visibility for nav children — declarative show/hide */
+body[data-mode="contractor"] [data-homeowner-only]{display:none!important;}
+body[data-mode="homeowner"] [data-contractor-only]{display:none!important;}
+
+/* Contractor nav buttons — flat icon buttons per mockup */
+.nav-back,.nav-globe,.nav-more{background:transparent;border:1px solid var(--line);border-radius:4px;width:36px;height:36px;color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
+.nav-back{border:none;padding:4px;}
+.nav-back svg{width:18px;height:18px;}
+.nav-globe svg,.nav-more svg{width:16px;height:16px;}
+body[data-mode="contractor"] .nav-actions{gap:4px;}
+
+/* ── PUSH 6 — CONTRACTOR MESSAGE BUBBLES (commit 3/6) ──
+   Contractor-scoped overrides for existing .msg-agent / .msg-user / bubble classes.
+   DOM classes stay stable (msg-actions, safety-banner, mikeSay etc. all still reach
+   them); only visual styling and the leading .msg-mike-badge sibling are mode-scoped. */
+/* .msg-agent stays flex-column (existing base at line 189), so .msg-time + .msg-actions stack below the bubble. Padding-left + relative positioning are gated on .has-mike-badge so hand-built agent markup sites (typing indicator, localized greetings, SVG/illustration paths) that don't emit a badge also don't get an empty 36px gutter. */
+body[data-mode="contractor"] .msg-agent{max-width:92%;}
+body[data-mode="contractor"] .msg-agent.has-mike-badge{position:relative;padding-left:36px;}
+body[data-mode="contractor"] .msg-agent.has-mike-badge .msg-mike-badge{position:absolute;left:0;top:0;}
+body[data-mode="contractor"] .msg-agent .msg-bubble-agent{background:var(--ink-2);border:1px solid var(--line);color:rgba(255,255,255,.92);border-radius:14px 14px 14px 14px;border-top-left-radius:4px;box-shadow:none;font-size:14px;line-height:1.4;font-weight:500;letter-spacing:-.005em;}
+body[data-mode="contractor"] .msg-user .msg-bubble-user{background:linear-gradient(135deg,var(--teal),var(--teal-deep));color:var(--ink);border-radius:14px 14px 14px 14px;border-top-right-radius:4px;font-size:14px;line-height:1.4;font-weight:600;letter-spacing:-.005em;}
+body[data-mode="contractor"] .msg-time{display:none;}
+
+/* ── PUSH 6 — DRAWER REBUILD (commit 4/6) ──
+   Peek bar restyle, Whoop-style favorite tiles, 4x2 color-coded tool grid,
+   recent-job rows with status-colored left borders. All scoped to contractor.
+   The drawer markup lives inside #panelDiag (contractor-only by parent gate),
+   but explicit scoping keeps the cascade auditable. */
+
+/* Peek bar — mockup spec: dark ink-2 tiles with colored icons */
+body[data-mode="contractor"] .peek-bar{gap:6px;padding:12px 12px 0;}
+body[data-mode="contractor"] .peek-tile{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:10px 6px;color:rgba(255,255,255,.85);position:relative;flex-direction:column;gap:4px;display:flex;align-items:center;justify-content:center;height:auto;min-height:64px;}
+body[data-mode="contractor"] .peek-tile:active{background:var(--ink-3);transform:translateY(-1px);}
+body[data-mode="contractor"] .peek-tile-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+body[data-mode="contractor"] .peek-tile-icon svg{width:22px;height:22px;stroke-width:2;}
+body[data-mode="contractor"] .peek-tile-label{font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1.1;text-align:center;color:rgba(255,255,255,.85);}
+body[data-mode="contractor"] .peek-tile.t-diag .peek-tile-icon{color:var(--safety);}
+body[data-mode="contractor"] .peek-tile.t-cam .peek-tile-icon{color:var(--teal);}
+body[data-mode="contractor"] .peek-tile.t-shield .peek-tile-icon{color:var(--moss);}
+body[data-mode="contractor"] .peek-tile.t-find .peek-tile-icon{color:var(--rust);}
+body[data-mode="contractor"] .peek-tile-pin{position:absolute;top:4px;right:4px;width:4px;height:4px;background:var(--safety);border-radius:50%;}
+
+/* Drawer section heads — Anton title + meta */
+body[data-mode="contractor"] .drawer-section-head{display:flex;justify-content:space-between;align-items:baseline;padding:4px 4px 12px;}
+body[data-mode="contractor"] .drawer-section-title{font-family:var(--font-display);font-size:18px;font-weight:400;color:#fff;letter-spacing:.04em;text-transform:uppercase;}
+body[data-mode="contractor"] .drawer-section-meta{font-family:var(--font-code);font-size:10px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.12em;text-transform:uppercase;}
+body[data-mode="contractor"] .drawer-section-link{font-size:11px;font-weight:700;color:var(--safety);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;}
+
+/* Whoop-style gradient favorite tiles — 2x2 grid */
+body[data-mode="contractor"] .drawer-favorites{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:20px;}
+body[data-mode="contractor"] .fav-tile{border-radius:12px;padding:16px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s ease;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;border:none;text-align:left;font-family:inherit;-webkit-transform:translateZ(0);transform:translateZ(0);}
+body[data-mode="contractor"] .fav-tile:active{transform:translateY(-2px);}
+body[data-mode="contractor"] .fav-tile.t-diag{background:linear-gradient(135deg,var(--safety) 0%,var(--safety-deep) 100%);color:var(--ink);}
+body[data-mode="contractor"] .fav-tile.t-cam{background:linear-gradient(135deg,var(--teal) 0%,var(--teal-deep) 100%);color:var(--ink);}
+body[data-mode="contractor"] .fav-tile.t-shield{background:linear-gradient(135deg,var(--moss) 0%,var(--moss-deep) 100%);color:#fff;}
+body[data-mode="contractor"] .fav-tile.t-sale{background:linear-gradient(135deg,var(--brass) 0%,var(--copper) 100%);color:var(--ink);}
+body[data-mode="contractor"] .fav-tile-top{display:flex;justify-content:space-between;align-items:flex-start;}
+body[data-mode="contractor"] .fav-tile-icon{width:36px;height:36px;background:rgba(0,0,0,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+body[data-mode="contractor"] .fav-tile.t-shield .fav-tile-icon{background:rgba(255,255,255,.15);}
+body[data-mode="contractor"] .fav-tile-icon svg{width:20px;height:20px;stroke-width:2.2;}
+body[data-mode="contractor"] .fav-tile-badge{font-family:var(--font-code);font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 5px;border-radius:2px;background:rgba(0,0,0,.18);}
+body[data-mode="contractor"] .fav-tile.t-shield .fav-tile-badge{background:rgba(255,255,255,.15);color:#fff;}
+body[data-mode="contractor"] .fav-tile.t-shield .fav-tile-sub{opacity:.92;}
+body[data-mode="contractor"] .fav-tile-title{font-family:var(--font-display);font-size:20px;font-weight:400;letter-spacing:.01em;text-transform:uppercase;line-height:1;margin-bottom:4px;}
+body[data-mode="contractor"] .fav-tile-sub{font-size:11px;font-weight:600;opacity:.75;letter-spacing:-.005em;line-height:1.3;}
+
+/* All Tools — 4x2 color-coded grid */
+body[data-mode="contractor"] .drawer-all-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-bottom:20px;}
+body[data-mode="contractor"] .tool-tile{background:var(--ink-3);border:1px solid var(--line);border-radius:8px;padding:14px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:all .15s ease;position:relative;font-family:inherit;color:rgba(255,255,255,.9);-webkit-transform:translateZ(0);transform:translateZ(0);}
+body[data-mode="contractor"] .tool-tile:active{background:var(--ink-4);border-color:rgba(255,180,0,.2);transform:translateY(-1px);}
+body[data-mode="contractor"] .tool-tile-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
+body[data-mode="contractor"] .tool-tile-icon svg{width:24px;height:24px;stroke-width:1.8;}
+body[data-mode="contractor"] .tool-tile.t-find .tool-tile-icon{color:var(--copper);}
+body[data-mode="contractor"] .tool-tile.t-manual .tool-tile-icon{color:var(--violet);}
+body[data-mode="contractor"] .tool-tile.t-history .tool-tile-icon{color:var(--brass);}
+body[data-mode="contractor"] .tool-tile.t-warranty .tool-tile-icon{color:var(--moss);}
+body[data-mode="contractor"] .tool-tile.t-pricing .tool-tile-icon{color:var(--teal);}
+body[data-mode="contractor"] .tool-tile.t-safety .tool-tile-icon{color:var(--rust);}
+body[data-mode="contractor"] .tool-tile.t-recap .tool-tile-icon{color:var(--safety);}
+body[data-mode="contractor"] .tool-tile.t-customize .tool-tile-icon{color:rgba(255,255,255,.6);}
+body[data-mode="contractor"] .tool-tile-label{font-size:9px;font-weight:800;color:rgba(255,255,255,.9);letter-spacing:.04em;text-transform:uppercase;text-align:center;line-height:1.1;}
+body[data-mode="contractor"] .tool-tile-pin{position:absolute;top:5px;right:5px;width:5px;height:5px;background:var(--safety);border-radius:50%;opacity:0;}
+body[data-mode="contractor"] .tool-tile.pinned .tool-tile-pin{opacity:1;}
+
+/* Today's Calls — recent-job rows with status-colored left borders */
+body[data-mode="contractor"] .drawer-calls{display:flex;flex-direction:column;gap:6px;padding-bottom:24px;}
+body[data-mode="contractor"] .recent-job{background:var(--ink-3);border:1px solid var(--line);border-left:3px solid var(--moss);border-radius:0 6px 6px 0;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;}
+body[data-mode="contractor"] .recent-job.open{border-left-color:var(--rust);}
+body[data-mode="contractor"] .recent-job.progress{border-left-color:var(--safety);}
+body[data-mode="contractor"] .recent-job-num{font-family:var(--font-code);font-size:10px;font-weight:700;color:rgba(255,255,255,.4);min-width:20px;}
+body[data-mode="contractor"] .recent-job-info{flex:1;min-width:0;}
+body[data-mode="contractor"] .recent-job-title{font-size:12px;font-weight:700;color:#fff;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body[data-mode="contractor"] .recent-job-meta{font-family:var(--font-code);font-size:9px;color:rgba(255,255,255,.5);}
+body[data-mode="contractor"] .recent-job-tag{font-family:var(--font-code);font-size:8px;font-weight:700;padding:3px 5px;border-radius:2px;letter-spacing:.1em;text-transform:uppercase;flex-shrink:0;}
+body[data-mode="contractor"] .recent-job-tag.done{background:rgba(91,123,90,.18);color:var(--moss);}
+body[data-mode="contractor"] .recent-job-tag.open{background:rgba(199,85,59,.18);color:var(--rust);}
+body[data-mode="contractor"] .recent-job-tag.progress{background:rgba(255,180,0,.18);color:var(--safety);}
+
+/* ── PUSH 6 — INPUT ROW PILL + PTT + VOICE-LISTENING UX (commit 5/6) ──
+   Pill-shaped input row, 44x44 safety-yellow PTT button per mockup. Voice-
+   listening UX (badge pulse + status text swap + waveform) gated on
+   body.ptt-active. Existing speech subsystem (startListening/stopListening
+   at index.html line ~6714) is reused verbatim per user directive — no
+   reinvention of the Safari getUserMedia warmup or onresult handlers. */
+
+/* Base chat-input-row class — replaces the prior inline-style div */
+.chat-input-row{display:flex;gap:8px;align-items:flex-end;}
+
+/* Contractor pill-row override */
+body[data-mode="contractor"] .chat-input-row{background:var(--ink-2);border:1px solid var(--line);border-radius:100px;padding:4px;gap:4px;align-items:center;}
+body[data-mode="contractor"] .chat-input-row .chat-attach-btn{width:38px;height:38px;background:transparent;border:none;color:rgba(255,255,255,.6);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;cursor:pointer;margin:0;}
+body[data-mode="contractor"] .chat-input-row #chatInput{background:transparent !important;border:none !important;color:#fff !important;font-family:'Archivo',sans-serif;font-size:14px;padding:0 8px;font-weight:500;flex:1;min-height:38px;line-height:1.4;box-shadow:none !important;}
+body[data-mode="contractor"] .chat-input-row #chatInput::placeholder{color:rgba(255,255,255,.4) !important;}
+
+/* PTT button — base styling (always rendered, hidden in homeowner via [data-contractor-only]) */
+.input-ptt{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--safety) 0%,var(--safety-deep) 100%);border:none;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 3px rgba(255,180,0,.2),0 2px 0 var(--safety-deep);-webkit-tap-highlight-color:transparent;padding:0;touch-action:none;-webkit-user-select:none;user-select:none;}
+.input-ptt svg{width:20px;height:20px;stroke-width:2.5;}
+.input-ptt:active{transform:scale(.96);}
+
+/* Hide voice-mode bar AND chatSendBtn in contractor — PTT is the only voice/send control */
+body[data-mode="contractor"] #voiceModeBar{display:none !important;}
+body[data-mode="contractor"] #chatSendBtn{display:none !important;}
+body[data-mode="contractor"] #chatCharCount{display:none !important;}
+
+/* Voice-listening state — body.ptt-active triggers badge pulse, status swap, waveform */
+@keyframes mike-pulse-listen{0%,100%{box-shadow:0 0 0 2px var(--teal);}50%{box-shadow:0 0 0 2px var(--teal),0 0 0 8px rgba(0,194,178,.3);}}
+body[data-mode="contractor"].ptt-active .mike-badge{animation:mike-pulse-listen 1.2s ease-in-out infinite;}
+body[data-mode="contractor"].ptt-active #voiceWaveform{display:flex !important;padding:6px 0;}
+body[data-mode="contractor"].ptt-active .input-ptt{box-shadow:0 0 0 3px rgba(255,180,0,.5),0 0 0 8px rgba(255,180,0,.25);}
+
+/* ── PUSH 6 — FIND-A-PRO INLINE CTA (commit 6/6) ──
+   Rendered inside agent .msg-agent wrapper (after the bubble, sibling to .msg-time)
+   when Mike's response contains the [FIND_PRO] sentinel or keyword fallback hits.
+   Contractor-mode only (gated in JS at appendMessage). Safety-yellow gradient pill
+   button. Future referral revenue surface. */
+.find-pro-cta{display:inline-flex;align-items:center;gap:8px;margin:8px 0 0;padding:12px 14px;background:linear-gradient(135deg,var(--safety) 0%,var(--safety-deep) 100%);color:var(--ink);border:none;border-radius:12px;cursor:pointer;font-family:'Archivo',sans-serif;font-size:13px;font-weight:700;letter-spacing:.02em;-webkit-tap-highlight-color:transparent;align-self:flex-start;box-shadow:0 2px 0 var(--safety-deep);transition:transform .12s ease;width:auto;max-width:280px;min-height:44px;}
+.find-pro-cta:active{transform:scale(.98);}
+.find-pro-cta svg{width:16px;height:16px;stroke-width:2;flex-shrink:0;}
+.find-pro-cta .find-pro-arrow{margin-left:auto;font-weight:800;font-size:15px;}
 
 /* ── HOMEOWNER + CONTRACTOR RESULT PANEL DARK MODE ─────────── */
 [data-theme="dark"] #homeResultPanel span,
@@ -1678,16 +1856,17 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 <div id="trialBanner"><span>🎯 <strong><span id="trialDaysLeft">7</span> days</strong> left in your free trial</span><button class="trial-up-btn" onclick="showPaywall()">Upgrade</button></div>
 <nav class="nav">
   <div class="nav-inner">
+    <button class="nav-back" data-contractor-only onclick="navBackTap()" aria-label="Back"><i data-lucide="chevron-left"></i></button>
     <div class="nav-mike">
       <div class="mike-badge"><div class="live-dot"></div></div>
       <div class="nav-mike-text">
         <div class="nav-mike-name">Mike</div>
-        <div class="nav-mike-status">On the line</div>
+        <div class="nav-mike-status" id="navMikeStatus">● On the line · CH 01</div>
       </div>
     </div>
     <div class="nav-actions">
-      <div class="nav-status"><div class="status-dot red" id="statusDot"></div><span id="statusText" style="font-size:12px;color:var(--gray-500);">Connecting</span></div>
-      <div style="position:relative;">
+      <div class="nav-status" data-homeowner-only><div class="status-dot red" id="statusDot"></div><span id="statusText" style="font-size:12px;color:var(--gray-500);">Connecting</span></div>
+      <div style="position:relative;" data-homeowner-only>
         <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn"><span id="langFlag">🇺🇸</span><span id="langCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span></button>
         <div class="lang-dropdown" id="langDropdown">
           <button class="lang-option active" onclick="setLang('en')" id="langOpt-en"><span class="lang-flag">🇺🇸</span>English</button>
@@ -1698,8 +1877,10 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
           <button class="lang-option" onclick="setLang('pt')" id="langOpt-pt"><span class="lang-flag">🇧🇷</span>Português</button>
         </div>
       </div>
-      <button onclick="newChat()" class="nav-icon-btn" id="navRefreshBtn" title="New chat — full intro in current language">&#x21BB;</button>
-      <button class="nav-profile-btn" id="navProfileBtn" onclick="toggleProfileDD()">?</button>
+      <button onclick="newChat()" class="nav-icon-btn" id="navRefreshBtn" data-homeowner-only title="New chat — full intro in current language">&#x21BB;</button>
+      <button class="nav-profile-btn" id="navProfileBtn" data-homeowner-only onclick="toggleProfileDD()">?</button>
+      <button class="nav-globe" data-contractor-only aria-label="Language"><i data-lucide="globe"></i></button>
+      <button class="nav-more" data-contractor-only aria-label="More"><i data-lucide="more-horizontal"></i></button>
     </div>
   </div>
 </nav>
@@ -1881,7 +2062,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <!-- CHAT MESSAGES -->
       <div style="position:relative;">
         <div id="chatMessages" class="chat-messages">
-          <div class="msg-agent" id="mikeWelcomeMsg">
+          <div class="msg-agent has-mike-badge" id="mikeWelcomeMsg">
+            <div class="msg-mike-badge"></div>
             <div class="msg-bubble msg-bubble-agent">
               <p style="margin-bottom:8px;"><strong>Hey, I'm Mike.</strong> 25 years in the field &mdash; every system, every failure, every fix. Ask me anything.</p>
               <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">
@@ -1917,30 +2099,34 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <div class="chat-input-area">
         <!-- Peek bar (Push 4) — 4 favorite tool tiles; tap or swipe-up opens action drawer -->
         <div class="peek-bar" id="peekBar" role="toolbar" aria-label="Tool shortcuts; swipe up to open drawer">
-          <button class="peek-tile color-purple" type="button" data-peek-idx="0" aria-label="Diagram tool" onclick="triggerDiagram()">
-            <span class="peek-tile-icon"><i data-lucide="workflow"></i></span>
-            <span class="peek-tile-label">Diagram</span>
+          <button class="peek-tile t-diag" type="button" data-peek-idx="0" aria-label="Run Diagnostic" onclick="window.openActionDrawer&&window.openActionDrawer()">
+            <span class="peek-tile-icon"><i data-lucide="zap"></i></span>
+            <span class="peek-tile-label">Run<br>Diagnostic</span>
+            <span class="peek-tile-pin"></span>
           </button>
-          <button class="peek-tile color-rust" type="button" data-peek-idx="1" aria-label="Illustrate tool" onclick="triggerIllustration()">
-            <span class="peek-tile-icon"><i data-lucide="palette"></i></span>
-            <span class="peek-tile-label">Illustrate</span>
+          <button class="peek-tile t-cam" type="button" data-peek-idx="1" aria-label="Live Camera" onclick="startLiveCamera()">
+            <span class="peek-tile-icon"><i data-lucide="video"></i></span>
+            <span class="peek-tile-label">Live<br>Camera</span>
+            <span class="peek-tile-pin"></span>
           </button>
-          <button class="peek-tile color-red" type="button" data-peek-idx="2" aria-label="Camera tool" onclick="startLiveCamera()">
-            <span class="peek-tile-icon"><i data-lucide="camera"></i></span>
-            <span class="peek-tile-label">Camera</span>
+          <button class="peek-tile t-shield" type="button" data-peek-idx="2" aria-label="Callback Shield" onclick="window.openActionDrawer&&window.openActionDrawer()">
+            <span class="peek-tile-icon"><i data-lucide="shield-check"></i></span>
+            <span class="peek-tile-label">Callback<br>Shield</span>
+            <span class="peek-tile-pin"></span>
           </button>
-          <button class="peek-tile color-blue" type="button" data-peek-idx="3" aria-label="Search tool" onclick="openChatSearch()">
+          <button class="peek-tile t-find" type="button" data-peek-idx="3" aria-label="Find Part" onclick="openChatSearch()">
             <span class="peek-tile-icon"><i data-lucide="search"></i></span>
-            <span class="peek-tile-label">Search</span>
+            <span class="peek-tile-label">Find<br>Part</span>
           </button>
         </div>
         <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none" onchange="handleChatFile(event)"/>
         <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--rust);"></div>
-        <div style="display:flex;gap:8px;align-items:flex-end;">
+        <div class="chat-input-row">
           <label for="chatFileInput" class="chat-attach-btn" title="Attach">&#x1F4CE;</label>
           <textarea id="chatInput" placeholder="Ask Mike anything&hellip;" rows="1" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
           <span id="chatCharCount" style="display:none;font-size:10px;color:var(--gray-400);align-self:center;white-space:nowrap;"></span>
           <button onclick="sendChat()" id="chatSendBtn" class="send-btn">&#x279E;</button>
+          <button id="pttBtn" class="input-ptt" data-contractor-only aria-label="Push to talk — hold to speak"><i data-lucide="mic"></i></button>
         </div>
         <div id="voiceWaveform" style="display:none;justify-content:center;align-items:center;gap:3px;padding:4px 0;">
           <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
@@ -1957,78 +2143,130 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <div class="drawer-handle" id="drawerHandle" role="button" aria-label="Drag down or tap to close"></div>
       <div class="drawer-body">
         <section class="drawer-section">
-          <div class="drawer-section-label">Favorites</div>
+          <div class="drawer-section-head">
+            <div class="drawer-section-title">Your Favorites</div>
+            <div class="drawer-section-link" onclick="pushFeatureSoon('Customize')">Customize</div>
+          </div>
           <div class="drawer-favorites">
-            <button class="drawer-tile tile-color-purple" type="button" onclick="triggerDiagram();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="workflow"></i></span>
-              <span class="tile-label">Diagram</span>
+            <button class="fav-tile t-diag" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Run Diagnostic');">
+              <div class="fav-tile-top">
+                <div class="fav-tile-icon"><i data-lucide="zap"></i></div>
+                <div class="fav-tile-badge">Most Used</div>
+              </div>
+              <div>
+                <div class="fav-tile-title">Run<br>Diagnostic</div>
+                <div class="fav-tile-sub">Full system check, 5 min</div>
+              </div>
             </button>
-            <button class="drawer-tile tile-color-rust" type="button" onclick="triggerIllustration();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="palette"></i></span>
-              <span class="tile-label">Illustrate</span>
+            <button class="fav-tile t-cam" type="button" onclick="window.closeActionDrawer();startLiveCamera();">
+              <div class="fav-tile-top">
+                <div class="fav-tile-icon"><i data-lucide="video"></i></div>
+                <div class="fav-tile-badge">Live</div>
+              </div>
+              <div>
+                <div class="fav-tile-title">Live<br>Camera</div>
+                <div class="fav-tile-sub">Mike sees what you see</div>
+              </div>
             </button>
-            <button class="drawer-tile tile-color-red" type="button" onclick="startLiveCamera();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="camera"></i></span>
-              <span class="tile-label">Camera</span>
+            <button class="fav-tile t-shield" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Callback Shield');">
+              <div class="fav-tile-top">
+                <div class="fav-tile-icon"><i data-lucide="shield-check"></i></div>
+                <div class="fav-tile-badge">$312 saved</div>
+              </div>
+              <div>
+                <div class="fav-tile-title">Callback<br>Shield</div>
+                <div class="fav-tile-sub">Pre-close 5-pt check</div>
+              </div>
             </button>
-            <button class="drawer-tile tile-color-blue" type="button" onclick="openChatSearch();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="search"></i></span>
-              <span class="tile-label">Search</span>
+            <button class="fav-tile t-sale" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Close The Sale');">
+              <div class="fav-tile-top">
+                <div class="fav-tile-icon"><i data-lucide="trending-up"></i></div>
+                <div class="fav-tile-badge">Revenue</div>
+              </div>
+              <div>
+                <div class="fav-tile-title">Close<br>The Sale</div>
+                <div class="fav-tile-sub">Repair vs. replace math</div>
+              </div>
             </button>
           </div>
         </section>
         <section class="drawer-section">
-          <div class="drawer-section-label">All Tools</div>
+          <div class="drawer-section-head">
+            <div class="drawer-section-title">All Tools</div>
+            <div class="drawer-section-meta">tap pin to favorite</div>
+          </div>
           <div class="drawer-all-tools">
-            <button class="drawer-tile tile-color-purple" type="button" onclick="triggerDiagram();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="workflow"></i></span>
-              <span class="tile-label">Diagram</span>
+            <button class="tool-tile t-find pinned" type="button" onclick="window.closeActionDrawer();openChatSearch();">
+              <div class="tool-tile-icon"><i data-lucide="search"></i></div>
+              <div class="tool-tile-label">Find<br>Part</div>
+              <div class="tool-tile-pin"></div>
             </button>
-            <button class="drawer-tile tile-color-rust" type="button" onclick="triggerIllustration();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="palette"></i></span>
-              <span class="tile-label">Illustrate</span>
+            <button class="tool-tile t-manual" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Manual Lookup')">
+              <div class="tool-tile-icon"><i data-lucide="book-open"></i></div>
+              <div class="tool-tile-label">Manual<br>Lookup</div>
+              <div class="tool-tile-pin"></div>
             </button>
-            <button class="drawer-tile tile-color-red" type="button" onclick="startLiveCamera();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="camera"></i></span>
-              <span class="tile-label">Camera</span>
+            <button class="tool-tile t-history" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Job History')">
+              <div class="tool-tile-icon"><i data-lucide="clipboard-list"></i></div>
+              <div class="tool-tile-label">Job<br>History</div>
+              <div class="tool-tile-pin"></div>
             </button>
-            <button class="drawer-tile tile-color-blue" type="button" onclick="openChatSearch();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="search"></i></span>
-              <span class="tile-label">Search</span>
+            <button class="tool-tile t-warranty" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Warranty Claim')">
+              <div class="tool-tile-icon"><i data-lucide="file-check"></i></div>
+              <div class="tool-tile-label">Warranty<br>Claim</div>
+              <div class="tool-tile-pin"></div>
             </button>
-            <button class="drawer-tile tile-color-amber" type="button" onclick="toggleJobTimer();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="timer"></i></span>
-              <span class="tile-label">Timer</span>
+            <button class="tool-tile t-pricing" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Price Book')">
+              <div class="tool-tile-icon"><i data-lucide="dollar-sign"></i></div>
+              <div class="tool-tile-label">Price<br>Book</div>
+              <div class="tool-tile-pin"></div>
             </button>
-            <button class="drawer-tile tile-color-moss" type="button" onclick="showKnowledge();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="brain"></i></span>
-              <span class="tile-label">Memory</span>
+            <button class="tool-tile t-safety" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Safety Check')">
+              <div class="tool-tile-icon"><i data-lucide="shield-alert"></i></div>
+              <div class="tool-tile-label">Safety<br>Check</div>
+              <div class="tool-tile-pin"></div>
+            </button>
+            <button class="tool-tile t-recap" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Recap Video')">
+              <div class="tool-tile-icon"><i data-lucide="film"></i></div>
+              <div class="tool-tile-label">Recap<br>Video</div>
+              <div class="tool-tile-pin"></div>
+            </button>
+            <button class="tool-tile t-customize" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Customize')">
+              <div class="tool-tile-icon"><i data-lucide="settings"></i></div>
+              <div class="tool-tile-label">Customize</div>
+              <div class="tool-tile-pin"></div>
             </button>
           </div>
         </section>
         <section class="drawer-section">
-          <div class="drawer-section-label">Today&rsquo;s Calls</div>
+          <div class="drawer-section-head">
+            <div class="drawer-section-title">Today&rsquo;s Calls</div>
+            <div class="drawer-section-meta">3 calls &middot; $892</div>
+          </div>
           <div class="drawer-calls">
-            <div class="call-row" data-call-color="rust">
-              <span class="call-num">01</span>
-              <div class="call-meta">
-                <div class="call-customer">Smith residence</div>
-                <div class="call-summary">AC down &mdash; 90&deg;F upstairs</div>
+            <div class="recent-job">
+              <div class="recent-job-num">01</div>
+              <div class="recent-job-info">
+                <div class="recent-job-title">Trane XR16 &middot; Capacitor</div>
+                <div class="recent-job-meta">9:14 AM &middot; 4TTX6048J &middot; $312</div>
               </div>
+              <div class="recent-job-tag done">Done</div>
             </div>
-            <div class="call-row" data-call-color="brass">
-              <span class="call-num">02</span>
-              <div class="call-meta">
-                <div class="call-customer">Jefferson HVAC service</div>
-                <div class="call-summary">Annual furnace tune-up</div>
+            <div class="recent-job open">
+              <div class="recent-job-num">02</div>
+              <div class="recent-job-info">
+                <div class="recent-job-title">Carrier 25HCB6 &middot; Leak</div>
+                <div class="recent-job-meta">7:42 AM &middot; Awaiting parts</div>
               </div>
+              <div class="recent-job-tag open">Open</div>
             </div>
-            <div class="call-row" data-call-color="moss">
-              <span class="call-num">03</span>
-              <div class="call-meta">
-                <div class="call-customer">Lopez heat pump install</div>
-                <div class="call-summary">3-ton system, basement run</div>
+            <div class="recent-job progress">
+              <div class="recent-job-num">03</div>
+              <div class="recent-job-info">
+                <div class="recent-job-title">Lennox &middot; Inducer Motor</div>
+                <div class="recent-job-meta">Yesterday &middot; Warranty filed</div>
               </div>
+              <div class="recent-job-tag progress">In Prog</div>
             </div>
           </div>
         </section>
@@ -2528,19 +2766,23 @@ function showPersonalizedWelcome(){
     msg+="<br/><br/>Tap Voice for hands-free, camera for live visual diagnosis.";
   }
 
+  // Contractor mode emits the Mike badge sibling + has-mike-badge class so the contractor padding-left CSS gate fires.
+  var ctrBadge=(document.body.dataset.mode==='contractor')?'<div class="msg-mike-badge"></div>':'';
+  var ctrAgentClass=(document.body.dataset.mode==='contractor')?'msg-agent has-mike-badge':'msg-agent';
   // Always show in chat as first message
   var container=document.getElementById('chatMessages');
   if(container){
     container.innerHTML='';
     var div=document.createElement('div');
-    div.className='msg-agent';
-    div.innerHTML='<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
+    div.className=ctrAgentClass;
+    div.innerHTML=ctrBadge+'<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
     container.appendChild(div);
   }
   // Also update welcome element if present
   var wm=document.getElementById('mikeWelcomeMsg');
   if(wm){
-    wm.innerHTML='<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
+    wm.className=ctrAgentClass;
+    wm.innerHTML=ctrBadge+'<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
   }
   // Store greeting for voice mode to speak when voice turns on
   window._pendingGreeting=msg.replace(/<[^>]+>/g,' ').replace(/  +/g,' ').trim();
@@ -3336,6 +3578,11 @@ var mediaRecorder=null,audioChunks=[],recTimer=null,recSeconds=0;
 var chatHistory=[],chatSending=false;
 var currentLang='en';
 var voiceMode=false,mikeVoice=null,mikeAudio=null,isMikeSpeaking=false,isListening=false,speechRecognition=null,autoListenAfterSpeak=false;
+// Push 6 commit 7: pttExchangePending tracks whether the current AI exchange originated from a PTT hold.
+// Used by shouldMikeSpeak() so Mike's TTS auto-speak fires for voice/camera engagement (field tech phone/FaceTime model)
+// without auto-speaking text-typed exchanges. Cleared by appendMessage after Mike is queued to speak, by handleChatKey
+// on Enter (user clearly switched to typing), or by a 30s belt-and-suspenders timeout for network-failure cases.
+var pttExchangePending=false,_pttExchangeTimer=null;
 var audioUnlocked=false,sharedAudioCtx=null,micGreetingPending=null;
 var techLocation=null,wakeLock=null;
 
@@ -3455,6 +3702,8 @@ function populateSelects(){
 function setMode(m){
   mode=m;
   var isPro=m==='pro';
+  document.body.dataset.mode=isPro?'contractor':'homeowner';
+  if(isPro)try{bindPTT();}catch(_){} // Push 6 commit 5: attach hold-to-talk handlers (idempotent via _pttBound flag).
   document.getElementById('tabHome').className='mode-tab'+(m==='home'?' active':'');
   document.getElementById('tabPro').className='mode-tab'+(m==='pro'?' active':'');
   document.getElementById('panelHome').style.display=isPro?'none':'block';
@@ -5033,6 +5282,19 @@ function escapeHtml(s){
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 function appendMessage(role,text){
+  // Push 6 commit 6: Find-a-Pro sentinel + keyword fallback detection.
+  // [FIND_PRO] is the deterministic primary signal (system prompt update pending in
+  // index.js — locked file, so ships in a future push). Keyword regex is the
+  // interim fallback for "needs a licensed tech" phrasing.
+  var needsPro=false;
+  if(role==='agent'){
+    if(/\[FIND_PRO\]/.test(text)){
+      needsPro=true;
+      text=text.replace(/\[FIND_PRO\]/g,'').trim();
+    } else if(/\b(licensed (?:technician|hvac|professional)|needs? a professional|call a (?:pro|licensed)|hvac contractor|certified tech)\b/i.test(text)){
+      needsPro=true;
+    }
+  }
   // Strip any SVG or code blocks Mike accidentally includes — never show raw SVG as text
   if(role==='agent'){
     text=text
@@ -5052,7 +5314,21 @@ function appendMessage(role,text){
     .replace(/\*\*([^*]+)\*\*/g,'$1')
     .replace(/\*([^*]+)\*/g,'$1')
     .replace(/  +/g,' ').trim();
-  if(role==='agent'&&voiceMode)setTimeout(function(){mikeSay(voiceText);},200);
+  // Push 6 commit 7: context-aware TTS gate (replaces voiceMode-only check that left
+  // contractor's PTT/camera-engaged Mike silent). Speaks during voice/camera engagement;
+  // stays silent during text-only typing. shouldMikeSpeak defined just before startPTT.
+  // Camera flow has its own TTS via mikeSayCamera (called from analyzeCameraFrame,
+  // LOCKED) — skip mikeSay here when cameraActive to avoid the double-speak race.
+  // pttExchangePending is INTENTIONALLY NOT cleared here — mikeSay's stale-guard
+  // (now also shouldMikeSpeak-based) checks the same flag during async fetch/decode,
+  // so clearing it synchronously would silently drop the audio. Clearing happens via
+  // handleChatKey on Enter, by startPTT re-set on next hold, or by the 30s timeout.
+  if(role==='agent'&&shouldMikeSpeak()){
+    var _ctrCamSkip=(typeof cameraActive!=='undefined'&&cameraActive);
+    if(!_ctrCamSkip){
+      setTimeout(function(){mikeSay(voiceText);},200);
+    }
+  }
   var container=document.getElementById('chatMessages');
   var isAgent=role==='agent';
   var div=document.createElement('div');
@@ -5082,7 +5358,11 @@ function appendMessage(role,text){
     .replace(/\n{2,}/g,'<br/><br/>')
     .replace(/\n/g,'<br/>');
 
-  div.innerHTML='<div class="msg-bubble '+(isAgent?'msg-bubble-agent':'msg-bubble-user')+'">'+formatted+'</div><div class="msg-time">'+getTimeStr()+'</div>';
+  // Contractor mode: prepend layered Mike badge sibling for agent messages (Push 6 commit 3).
+  // .has-mike-badge marker class gates the contractor padding-left CSS so hand-built sites without badge don't get an empty gutter.
+  var ctrBadge=(isAgent&&document.body.dataset.mode==='contractor')?'<div class="msg-mike-badge"></div>':'';
+  if(ctrBadge)div.classList.add('has-mike-badge');
+  div.innerHTML=ctrBadge+'<div class="msg-bubble '+(isAgent?'msg-bubble-agent':'msg-bubble-user')+'">'+formatted+'</div><div class="msg-time">'+getTimeStr()+'</div>';
   // Show red safety banner ABOVE the message for dangerous situations
   if(isSafetyAlert){
     var alertBanner=document.createElement('div');
@@ -5091,6 +5371,19 @@ function appendMessage(role,text){
       +'<div><div style="font-size:14px;font-weight:800;color:#E8354A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">SAFETY ALERT</div>'
       +'<div style="font-size:13px;color:#991B1B;line-height:1.5;">Stop what you are doing. Read Mike\'s full response before proceeding.</div></div>';
     container.appendChild(alertBanner);
+  }
+  // Push 6 commit 6: inline Find-a-Pro CTA when Mike diagnoses pro-needed repair.
+  // Contractor-mode only — the CTA is a referral handoff for the tech, not a homeowner action.
+  if(isAgent&&needsPro&&document.body.dataset.mode==='contractor'){
+    var cta=document.createElement('button');
+    cta.className='find-pro-cta';
+    cta.type='button';
+    cta.setAttribute('onclick',"pushFeatureSoon('Find a Pro referral')");
+    cta.innerHTML='<i data-lucide="users"></i><span>Find a Pro near me</span><span class="find-pro-arrow">&rarr;</span>';
+    div.appendChild(cta);
+    if(window.lucide&&typeof window.lucide.createIcons==='function'){
+      try{window.lucide.createIcons();}catch(_){}
+    }
   }
   if(isAgent&&typeof addMessageActions==="function")addMessageActions(div);
   container.appendChild(div);
@@ -5483,8 +5776,9 @@ async function sendChat(){
     var needsSearch=hadAttachment||!!(text&&text.match(
       /price|cost|how much|availability|where to buy|near me|supply house|warrant|recall|bulletin|tax credit|rebate|current code|regulation|2025|2026|error code|fault code|model number|serial number|part number|cross.?ref|discontinued|latest model|new equipment|current price|in stock|lead time|ship|weather|temperature|temp outside|outdoor temp|ambient|what.?s it|how hot|how cold|degrees|fahrenheit|celsius|climate|forecast|condition|pressure|superheat|subcool|charging|refrigerant|outside|right now|today|tonight|current/i
     ));
-    // Voice uses 200 tokens for speed, text uses 2048
-    var response=await callAI(sysPrompt,apiHistory,voiceMode?800:2048,needsSearch);
+    // Audible exchanges (voice / PTT / camera) cap at 800 tokens for punchy TTS;
+    // text-only goes to 2048 for detailed write-ups. Gate matches mikeSay's gate.
+    var response=await callAI(sysPrompt,apiHistory,shouldMikeSpeak()?800:2048,needsSearch);
     hideTyping();response=checkAndLearn(response);response=checkAndSaveJob(response);appendMessage('agent',response);if(!voiceMode)setTimeout(function(){generateQuickReplies(response);},300);
     chatHistory.push({role:'assistant',content:response});
     saveUserHistory();
@@ -6304,8 +6598,40 @@ function showImageInChat(url,caption){
   container.scrollTop=container.scrollHeight;
 }
 
-function handleChatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
+function handleChatKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();
+    // Push 6 commit 7: user clearly switched to typing — clear any stale PTT-exchange
+    // flag so Mike's response to this text-typed message doesn't get unexpectedly
+    // auto-spoken (would happen if a prior PTT hold ended without a transcript).
+    if(pttExchangePending){pttExchangePending=false;if(_pttExchangeTimer){clearTimeout(_pttExchangeTimer);_pttExchangeTimer=null;}}
+    sendChat();
+  }
+}
+function navBackTap(){
+  var d=document.getElementById('actionDrawer');
+  if(d&&d.open){try{d.close();}catch(_){}}
+}
+// Push 6 commit 4: stub for tool tiles without a backing handler yet (Manual Lookup, Job History, Warranty Claim, Price Book, Safety Check, Recap Video, Customize, Callback Shield, Close The Sale, Run Diagnostic).
+function pushFeatureSoon(name){
+  try{
+    if(typeof showToast==='function'){showToast(name+' — coming soon','info');return;}
+  }catch(_){}
+  try{console.log('[push6] '+name+' — coming soon');}catch(_){}
+}
 function clearChat(){
+  // Push 6 commit 6: archive-not-delete — preserve the current chat to localStorage
+  // before clearing so users can recover prior sessions. Mirrors the chatHistory.slice(-40)
+  // discipline already used for history storage at line ~4647. FIFO eviction at 20 archives.
+  try{
+    if(typeof chatHistory!=='undefined'&&chatHistory&&chatHistory.length>0){
+      var akey=(typeof getUserMemoryKey==='function')?getUserMemoryKey('archives'):'trazer_archives';
+      var archives=JSON.parse(localStorage.getItem(akey)||'[]');
+      archives.unshift({ts:Date.now(),history:chatHistory.slice()});
+      if(archives.length>20)archives=archives.slice(0,20);
+      localStorage.setItem(akey,JSON.stringify(archives));
+    }
+  }catch(_){}
   var firstName=(currentUser&&currentUser.name)?currentUser.name.split(' ')[0]:'there';
   // Greeting tailored per-language so non-English techs still feel addressed by Mike.
   var greetings={
@@ -6317,7 +6643,10 @@ function clearChat(){
     pt:"Olá "+firstName+", é o Mike. No que está trabalhando?"
   };
   var msg=greetings[currentLang]||greetings.en;
-  document.getElementById('chatMessages').innerHTML='<div class="msg-agent"><div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div></div>';
+  // Push 6: contractor mode emits Mike badge + has-mike-badge class so the CSS padding gate fires.
+  var ctrBadge=(document.body.dataset.mode==='contractor')?'<div class="msg-mike-badge"></div>':'';
+  var ctrClass=(document.body.dataset.mode==='contractor')?'msg-agent has-mike-badge':'msg-agent';
+  document.getElementById('chatMessages').innerHTML='<div class="'+ctrClass+'">'+ctrBadge+'<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div></div>';
   // Reset conversation memory so Mike actually starts fresh on the next message.
   if(typeof chatHistory!=='undefined')chatHistory=[];
   // Speak the greeting in Mike's voice if voice mode is on (matches live chat behavior).
@@ -6434,7 +6763,67 @@ function loadMikeVoice(){
 // getUserMedia warm-up pattern bypasses WebKit Bug #218815 silent mute.
 // (Restored from pre-watchdog architecture.)
 
+// Push 6 commit 5: PTT (hold-to-talk) replaces hands-free voice mode in contractor.
+// Reuses existing startListening / stopListening (Safari quirk handling lives there)
+// — verbatim per user directive. Body.ptt-active gates badge pulse, status swap
+// to "Mike's listening...", and waveform display.
+// Push 6 commit 7: shouldMikeSpeak() — unified TTS context gate. Mike speaks back
+// during voice/camera engagement (phone/FaceTime model) and stays silent during
+// text-only typing. Replaces the commit-5 voiceMode-pinned-false regression that
+// silenced contractor Mike entirely.
+function shouldMikeSpeak(){
+  if(voiceMode)return true; // hands-free voice mode (homeowner, existing behavior)
+  if(pttExchangePending)return true; // PTT-initiated exchange (contractor)
+  if(typeof cameraActive!=='undefined'&&cameraActive)return true; // camera-open session
+  return false;
+}
+function startPTT(){
+  if(document.body.dataset.mode!=='contractor')return;
+  document.body.classList.add('ptt-active');
+  // Push 6 commit 7: mark exchange as PTT-originated so Mike's response auto-speaks
+  // when it arrives (cleared in appendMessage). Belt-and-suspenders 30s timeout
+  // covers network-failure cases where no agent response ever arrives.
+  pttExchangePending=true;
+  if(_pttExchangeTimer)clearTimeout(_pttExchangeTimer);
+  _pttExchangeTimer=setTimeout(function(){pttExchangePending=false;_pttExchangeTimer=null;},30000);
+  var status=document.getElementById('navMikeStatus');
+  if(status){
+    if(!status.dataset.original)status.dataset.original=status.textContent;
+    status.textContent="● Mike's listening...";
+  }
+  var input=document.getElementById('chatInput');
+  if(input)input.value='';
+  try{unlockAudioSafe();}catch(_){}
+  startListening();
+}
+function stopPTT(){
+  document.body.classList.remove('ptt-active');
+  var status=document.getElementById('navMikeStatus');
+  if(status&&status.dataset.original){status.textContent=status.dataset.original;delete status.dataset.original;}
+  // Graceful stop — DO NOT call stopListening() because it abort()s + nulls all handlers,
+  // which kills the release-to-submit path. .stop() lets final onresult fire + onend
+  // dispatches sendChat (existing handler at line ~6776 does this when chatInput has text).
+  if(speechRecognition){
+    try{speechRecognition.stop();}catch(_){}
+  }
+}
+function bindPTT(){
+  var btn=document.getElementById('pttBtn');
+  if(!btn||btn._pttBound)return;
+  btn._pttBound=true;
+  var holding=false;
+  function down(e){if(e&&e.cancelable)e.preventDefault();if(holding)return;holding=true;startPTT();}
+  function up(e){if(e&&e.cancelable)e.preventDefault();if(!holding)return;holding=false;stopPTT();}
+  btn.addEventListener('mousedown',down);
+  btn.addEventListener('touchstart',down,{passive:false});
+  btn.addEventListener('mouseup',up);
+  btn.addEventListener('mouseleave',up);
+  btn.addEventListener('touchend',up,{passive:false});
+  btn.addEventListener('touchcancel',up);
+}
+
 function toggleVoiceMode(){
+  if(document.body.dataset.mode==='contractor')return; // Push 6: contractor uses PTT (hold-to-talk), not hands-free.
   unlockAudioSafe();
   if(voiceMode){
     voiceMode=false;
@@ -6625,7 +7014,12 @@ function toggleMic(){
 }
 
 function mikeSay(text){
-  if(!voiceMode)return;
+  // Push 6 commit 7: gate broadened to shouldMikeSpeak() so PTT/camera-engaged
+  // contexts can speak even when voiceMode is false (contractor never enters
+  // hands-free voiceMode). Other mikeSay callsites (clearChat, toggleVoiceMode
+  // greet, startListening relisten) are already voiceMode-guarded externally,
+  // so this change doesn't widen their behavior — only unblocks contractor PTT.
+  if(!shouldMikeSpeak())return;
   // Kill any other Mike that may be speaking — voice mode, camera mode, or browser fallback.
   // This is the single source of truth: only ONE Mike voice may ever play at a time.
   stopMikeSpeaking();
@@ -6645,7 +7039,11 @@ function mikeSay(text){
   var voiceCtrl=(typeof AbortController!=='undefined')?new AbortController():null;
   try{if(window._voiceTTSAbort)window._voiceTTSAbort.abort();}catch(e){}
   window._voiceTTSAbort=voiceCtrl;
-  var stale=function(){return myToken!==window._voiceTTSToken||!voiceMode;};
+  // Push 6 commit 7: stale-guard broadened to match the entry gate. Without this,
+  // PTT exchanges (voiceMode=false) would have their audio silently dropped at every
+  // checkpoint (lines 7047, 7067, 7069). shouldMikeSpeak stays true through the
+  // exchange via pttExchangePending; cleared by handleChatKey/startPTT/30s timeout.
+  var stale=function(){return myToken!==window._voiceTTSToken||!shouldMikeSpeak();};
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean}),signal:voiceCtrl?voiceCtrl.signal:undefined})
     .then(function(res){
       if(!res.ok)throw new Error('TTS '+res.status);

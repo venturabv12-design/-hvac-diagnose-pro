@@ -2314,6 +2314,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       var pStartY=null,pStartX=null,pLastY=null,pLastT=null,pVel=0,pDragging=false,pRaf=null;
       peek.addEventListener('touchstart',function(e){
         if(!e.touches||!e.touches[0]) return;
+        // Push 7.1.1 — drag-to-open only when finger lands on a tile, not bar margin/chrome
+        if(!e.target.closest('.peek-tile')) return;
         pStartY=e.touches[0].clientY;
         pStartX=e.touches[0].clientX;
         pLastY=pStartY;
@@ -2327,7 +2329,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
         var dy=pStartY-t.clientY;
         var dx=Math.abs(pStartX-t.clientX);
         if(!pDragging){
-          if(dy>10&&dy>dx){
+          // Push 7.1.1 — deadband raised from 10 → 25 so normal vertical scrolls don't trigger drag-to-open
+          if(dy>25&&dy>dx){
             pDragging=true;
             if(!drawer.open) openDrawer();
             drawer.style.animation='none';

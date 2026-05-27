@@ -664,6 +664,18 @@ body[data-mode="homeowner"] [data-contractor-only]{display:none!important;}
 .nav-globe svg,.nav-more svg{width:16px;height:16px;}
 body[data-mode="contractor"] .nav-actions{gap:4px;}
 
+/* ── PUSH 6 — CONTRACTOR MESSAGE BUBBLES (commit 3/6) ──
+   Contractor-scoped overrides for existing .msg-agent / .msg-user / bubble classes.
+   DOM classes stay stable (msg-actions, safety-banner, mikeSay etc. all still reach
+   them); only visual styling and the leading .msg-mike-badge sibling are mode-scoped. */
+/* .msg-agent stays flex-column (existing base at line 189), so .msg-time + .msg-actions stack below the bubble. Padding-left + relative positioning are gated on .has-mike-badge so hand-built agent markup sites (typing indicator, localized greetings, SVG/illustration paths) that don't emit a badge also don't get an empty 36px gutter. */
+body[data-mode="contractor"] .msg-agent{max-width:92%;}
+body[data-mode="contractor"] .msg-agent.has-mike-badge{position:relative;padding-left:36px;}
+body[data-mode="contractor"] .msg-agent.has-mike-badge .msg-mike-badge{position:absolute;left:0;top:0;}
+body[data-mode="contractor"] .msg-agent .msg-bubble-agent{background:var(--ink-2);border:1px solid var(--line);color:rgba(255,255,255,.92);border-radius:14px 14px 14px 14px;border-top-left-radius:4px;box-shadow:none;font-size:14px;line-height:1.4;font-weight:500;letter-spacing:-.005em;}
+body[data-mode="contractor"] .msg-user .msg-bubble-user{background:linear-gradient(135deg,var(--teal),var(--teal-deep));color:var(--ink);border-radius:14px 14px 14px 14px;border-top-right-radius:4px;font-size:14px;line-height:1.4;font-weight:600;letter-spacing:-.005em;}
+body[data-mode="contractor"] .msg-time{display:none;}
+
 /* ── HOMEOWNER + CONTRACTOR RESULT PANEL DARK MODE ─────────── */
 [data-theme="dark"] #homeResultPanel span,
 [data-theme="dark"] #resultPanel span{color:#e5e7eb;}
@@ -1933,7 +1945,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <!-- CHAT MESSAGES -->
       <div style="position:relative;">
         <div id="chatMessages" class="chat-messages">
-          <div class="msg-agent" id="mikeWelcomeMsg">
+          <div class="msg-agent has-mike-badge" id="mikeWelcomeMsg">
+            <div class="msg-mike-badge"></div>
             <div class="msg-bubble msg-bubble-agent">
               <p style="margin-bottom:8px;"><strong>Hey, I'm Mike.</strong> 25 years in the field &mdash; every system, every failure, every fix. Ask me anything.</p>
               <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">
@@ -2580,19 +2593,23 @@ function showPersonalizedWelcome(){
     msg+="<br/><br/>Tap Voice for hands-free, camera for live visual diagnosis.";
   }
 
+  // Contractor mode emits the Mike badge sibling + has-mike-badge class so the contractor padding-left CSS gate fires.
+  var ctrBadge=(document.body.dataset.mode==='contractor')?'<div class="msg-mike-badge"></div>':'';
+  var ctrAgentClass=(document.body.dataset.mode==='contractor')?'msg-agent has-mike-badge':'msg-agent';
   // Always show in chat as first message
   var container=document.getElementById('chatMessages');
   if(container){
     container.innerHTML='';
     var div=document.createElement('div');
-    div.className='msg-agent';
-    div.innerHTML='<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
+    div.className=ctrAgentClass;
+    div.innerHTML=ctrBadge+'<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
     container.appendChild(div);
   }
   // Also update welcome element if present
   var wm=document.getElementById('mikeWelcomeMsg');
   if(wm){
-    wm.innerHTML='<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
+    wm.className=ctrAgentClass;
+    wm.innerHTML=ctrBadge+'<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div>';
   }
   // Store greeting for voice mode to speak when voice turns on
   window._pendingGreeting=msg.replace(/<[^>]+>/g,' ').replace(/  +/g,' ').trim();
@@ -5135,7 +5152,11 @@ function appendMessage(role,text){
     .replace(/\n{2,}/g,'<br/><br/>')
     .replace(/\n/g,'<br/>');
 
-  div.innerHTML='<div class="msg-bubble '+(isAgent?'msg-bubble-agent':'msg-bubble-user')+'">'+formatted+'</div><div class="msg-time">'+getTimeStr()+'</div>';
+  // Contractor mode: prepend layered Mike badge sibling for agent messages (Push 6 commit 3).
+  // .has-mike-badge marker class gates the contractor padding-left CSS so hand-built sites without badge don't get an empty gutter.
+  var ctrBadge=(isAgent&&document.body.dataset.mode==='contractor')?'<div class="msg-mike-badge"></div>':'';
+  if(ctrBadge)div.classList.add('has-mike-badge');
+  div.innerHTML=ctrBadge+'<div class="msg-bubble '+(isAgent?'msg-bubble-agent':'msg-bubble-user')+'">'+formatted+'</div><div class="msg-time">'+getTimeStr()+'</div>';
   // Show red safety banner ABOVE the message for dangerous situations
   if(isSafetyAlert){
     var alertBanner=document.createElement('div');

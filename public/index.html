@@ -783,6 +783,16 @@ body[data-mode="contractor"].ptt-active .mike-badge{animation:mike-pulse-listen 
 body[data-mode="contractor"].ptt-active #voiceWaveform{display:flex !important;padding:6px 0;}
 body[data-mode="contractor"].ptt-active .input-ptt{box-shadow:0 0 0 3px rgba(255,180,0,.5),0 0 0 8px rgba(255,180,0,.25);}
 
+/* ── PUSH 6 — FIND-A-PRO INLINE CTA (commit 6/6) ──
+   Rendered inside agent .msg-agent wrapper (after the bubble, sibling to .msg-time)
+   when Mike's response contains the [FIND_PRO] sentinel or keyword fallback hits.
+   Contractor-mode only (gated in JS at appendMessage). Safety-yellow gradient pill
+   button. Future referral revenue surface. */
+.find-pro-cta{display:inline-flex;align-items:center;gap:8px;margin:8px 0 0;padding:12px 14px;background:linear-gradient(135deg,var(--safety) 0%,var(--safety-deep) 100%);color:var(--ink);border:none;border-radius:12px;cursor:pointer;font-family:'Archivo',sans-serif;font-size:13px;font-weight:700;letter-spacing:.02em;-webkit-tap-highlight-color:transparent;align-self:flex-start;box-shadow:0 2px 0 var(--safety-deep);transition:transform .12s ease;width:auto;max-width:280px;min-height:44px;}
+.find-pro-cta:active{transform:scale(.98);}
+.find-pro-cta svg{width:16px;height:16px;stroke-width:2;flex-shrink:0;}
+.find-pro-cta .find-pro-arrow{margin-left:auto;font-weight:800;font-size:15px;}
+
 /* ── HOMEOWNER + CONTRACTOR RESULT PANEL DARK MODE ─────────── */
 [data-theme="dark"] #homeResultPanel span,
 [data-theme="dark"] #resultPanel span{color:#e5e7eb;}
@@ -5267,6 +5277,19 @@ function escapeHtml(s){
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 function appendMessage(role,text){
+  // Push 6 commit 6: Find-a-Pro sentinel + keyword fallback detection.
+  // [FIND_PRO] is the deterministic primary signal (system prompt update pending in
+  // index.js — locked file, so ships in a future push). Keyword regex is the
+  // interim fallback for "needs a licensed tech" phrasing.
+  var needsPro=false;
+  if(role==='agent'){
+    if(/\[FIND_PRO\]/.test(text)){
+      needsPro=true;
+      text=text.replace(/\[FIND_PRO\]/g,'').trim();
+    } else if(/\b(licensed (?:technician|hvac|professional)|needs? a professional|call a (?:pro|licensed)|hvac contractor|certified tech)\b/i.test(text)){
+      needsPro=true;
+    }
+  }
   // Strip any SVG or code blocks Mike accidentally includes — never show raw SVG as text
   if(role==='agent'){
     text=text
@@ -5329,6 +5352,19 @@ function appendMessage(role,text){
       +'<div><div style="font-size:14px;font-weight:800;color:#E8354A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">SAFETY ALERT</div>'
       +'<div style="font-size:13px;color:#991B1B;line-height:1.5;">Stop what you are doing. Read Mike\'s full response before proceeding.</div></div>';
     container.appendChild(alertBanner);
+  }
+  // Push 6 commit 6: inline Find-a-Pro CTA when Mike diagnoses pro-needed repair.
+  // Contractor-mode only — the CTA is a referral handoff for the tech, not a homeowner action.
+  if(isAgent&&needsPro&&document.body.dataset.mode==='contractor'){
+    var cta=document.createElement('button');
+    cta.className='find-pro-cta';
+    cta.type='button';
+    cta.setAttribute('onclick',"pushFeatureSoon('Find a Pro referral')");
+    cta.innerHTML='<i data-lucide="users"></i><span>Find a Pro near me</span><span class="find-pro-arrow">&rarr;</span>';
+    div.appendChild(cta);
+    if(window.lucide&&typeof window.lucide.createIcons==='function'){
+      try{window.lucide.createIcons();}catch(_){}
+    }
   }
   if(isAgent&&typeof addMessageActions==="function")addMessageActions(div);
   container.appendChild(div);
@@ -6555,6 +6591,18 @@ function pushFeatureSoon(name){
   try{console.log('[push6] '+name+' — coming soon');}catch(_){}
 }
 function clearChat(){
+  // Push 6 commit 6: archive-not-delete — preserve the current chat to localStorage
+  // before clearing so users can recover prior sessions. Mirrors the chatHistory.slice(-40)
+  // discipline already used for history storage at line ~4647. FIFO eviction at 20 archives.
+  try{
+    if(typeof chatHistory!=='undefined'&&chatHistory&&chatHistory.length>0){
+      var akey=(typeof getUserMemoryKey==='function')?getUserMemoryKey('archives'):'trazer_archives';
+      var archives=JSON.parse(localStorage.getItem(akey)||'[]');
+      archives.unshift({ts:Date.now(),history:chatHistory.slice()});
+      if(archives.length>20)archives=archives.slice(0,20);
+      localStorage.setItem(akey,JSON.stringify(archives));
+    }
+  }catch(_){}
   var firstName=(currentUser&&currentUser.name)?currentUser.name.split(' ')[0]:'there';
   // Greeting tailored per-language so non-English techs still feel addressed by Mike.
   var greetings={
@@ -6566,7 +6614,10 @@ function clearChat(){
     pt:"Olá "+firstName+", é o Mike. No que está trabalhando?"
   };
   var msg=greetings[currentLang]||greetings.en;
-  document.getElementById('chatMessages').innerHTML='<div class="msg-agent"><div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div></div>';
+  // Push 6: contractor mode emits Mike badge + has-mike-badge class so the CSS padding gate fires.
+  var ctrBadge=(document.body.dataset.mode==='contractor')?'<div class="msg-mike-badge"></div>':'';
+  var ctrClass=(document.body.dataset.mode==='contractor')?'msg-agent has-mike-badge':'msg-agent';
+  document.getElementById('chatMessages').innerHTML='<div class="'+ctrClass+'">'+ctrBadge+'<div class="msg-bubble msg-bubble-agent"><p>'+msg+'</p></div><div class="msg-time">'+getTimeStr()+'</div></div>';
   // Reset conversation memory so Mike actually starts fresh on the next message.
   if(typeof chatHistory!=='undefined')chatHistory=[];
   // Speak the greeting in Mike's voice if voice mode is on (matches live chat behavior).

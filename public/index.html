@@ -2330,6 +2330,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
           if(dy>10&&dy>dx){
             pDragging=true;
             if(!drawer.open) openDrawer();
+            drawer.style.animation='none';
             drawer.style.transition='none';
           }else{
             return;
@@ -2350,7 +2351,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
         if(pStartY===null) return;
         if(pRaf) cancelAnimationFrame(pRaf);
         if(pDragging){
-          drawer.style.transition='transform .22s cubic-bezier(.2,.7,.2,1)';
+          var pReduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+          drawer.style.transition=pReduce?'none':'transform .22s cubic-bezier(.25,.46,.45,.94)';
           var h=drawer.getBoundingClientRect().height||window.innerHeight*0.85;
           var dy=pStartY-pLastY;
           var openIt=(dy>h*0.4)||(pVel<-0.5);
@@ -2358,8 +2360,9 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
           setTimeout(function(){
             drawer.style.transition='';
             drawer.style.transform='';
+            drawer.style.animation='';
             if(!openIt) closeDrawer();
-          },240);
+          },pReduce?0:240);
         }
         pStartY=null;pStartX=null;pLastY=null;pLastT=null;pVel=0;pDragging=false;
       },{passive:true});
@@ -2403,7 +2406,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       handle.addEventListener('touchend',function(){
         if(hStartY===null) return;
         if(hRaf) cancelAnimationFrame(hRaf);
-        drawer.style.transition='transform .22s cubic-bezier(.2,.7,.2,1)';
+        var hReduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+        drawer.style.transition=hReduce?'none':'transform .22s cubic-bezier(.25,.46,.45,.94)';
         var h=drawer.getBoundingClientRect().height||window.innerHeight*0.85;
         var dy=Math.max(0,hLastY-hStartY);
         var closeIt=(dy>h*0.4)||(hVel>0.5);
@@ -2412,7 +2416,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
           drawer.style.transition='';
           drawer.style.transform='';
           if(closeIt) closeDrawer();
-        },240);
+        },hReduce?0:240);
         hStartY=null;hLastY=null;hLastT=null;hVel=0;
       },{passive:true});
       handle.addEventListener('click',closeDrawer);

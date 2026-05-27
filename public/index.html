@@ -751,6 +751,38 @@ body[data-mode="contractor"] .recent-job-tag.done{background:rgba(91,123,90,.18)
 body[data-mode="contractor"] .recent-job-tag.open{background:rgba(199,85,59,.18);color:var(--rust);}
 body[data-mode="contractor"] .recent-job-tag.progress{background:rgba(255,180,0,.18);color:var(--safety);}
 
+/* ── PUSH 6 — INPUT ROW PILL + PTT + VOICE-LISTENING UX (commit 5/6) ──
+   Pill-shaped input row, 44x44 safety-yellow PTT button per mockup. Voice-
+   listening UX (badge pulse + status text swap + waveform) gated on
+   body.ptt-active. Existing speech subsystem (startListening/stopListening
+   at index.html line ~6714) is reused verbatim per user directive — no
+   reinvention of the Safari getUserMedia warmup or onresult handlers. */
+
+/* Base chat-input-row class — replaces the prior inline-style div */
+.chat-input-row{display:flex;gap:8px;align-items:flex-end;}
+
+/* Contractor pill-row override */
+body[data-mode="contractor"] .chat-input-row{background:var(--ink-2);border:1px solid var(--line);border-radius:100px;padding:4px;gap:4px;align-items:center;}
+body[data-mode="contractor"] .chat-input-row .chat-attach-btn{width:38px;height:38px;background:transparent;border:none;color:rgba(255,255,255,.6);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;cursor:pointer;margin:0;}
+body[data-mode="contractor"] .chat-input-row #chatInput{background:transparent !important;border:none !important;color:#fff !important;font-family:'Archivo',sans-serif;font-size:14px;padding:0 8px;font-weight:500;flex:1;min-height:38px;line-height:1.4;box-shadow:none !important;}
+body[data-mode="contractor"] .chat-input-row #chatInput::placeholder{color:rgba(255,255,255,.4) !important;}
+
+/* PTT button — base styling (always rendered, hidden in homeowner via [data-contractor-only]) */
+.input-ptt{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--safety) 0%,var(--safety-deep) 100%);border:none;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 3px rgba(255,180,0,.2),0 2px 0 var(--safety-deep);-webkit-tap-highlight-color:transparent;padding:0;touch-action:none;-webkit-user-select:none;user-select:none;}
+.input-ptt svg{width:20px;height:20px;stroke-width:2.5;}
+.input-ptt:active{transform:scale(.96);}
+
+/* Hide voice-mode bar AND chatSendBtn in contractor — PTT is the only voice/send control */
+body[data-mode="contractor"] #voiceModeBar{display:none !important;}
+body[data-mode="contractor"] #chatSendBtn{display:none !important;}
+body[data-mode="contractor"] #chatCharCount{display:none !important;}
+
+/* Voice-listening state — body.ptt-active triggers badge pulse, status swap, waveform */
+@keyframes mike-pulse-listen{0%,100%{box-shadow:0 0 0 2px var(--teal);}50%{box-shadow:0 0 0 2px var(--teal),0 0 0 8px rgba(0,194,178,.3);}}
+body[data-mode="contractor"].ptt-active .mike-badge{animation:mike-pulse-listen 1.2s ease-in-out infinite;}
+body[data-mode="contractor"].ptt-active #voiceWaveform{display:flex !important;padding:6px 0;}
+body[data-mode="contractor"].ptt-active .input-ptt{box-shadow:0 0 0 3px rgba(255,180,0,.5),0 0 0 8px rgba(255,180,0,.25);}
+
 /* ── HOMEOWNER + CONTRACTOR RESULT PANEL DARK MODE ─────────── */
 [data-theme="dark"] #homeResultPanel span,
 [data-theme="dark"] #resultPanel span{color:#e5e7eb;}
@@ -1819,7 +1851,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <div class="mike-badge"><div class="live-dot"></div></div>
       <div class="nav-mike-text">
         <div class="nav-mike-name">Mike</div>
-        <div class="nav-mike-status">● On the line · CH 01</div>
+        <div class="nav-mike-status" id="navMikeStatus">● On the line · CH 01</div>
       </div>
     </div>
     <div class="nav-actions">
@@ -2079,11 +2111,12 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
         </div>
         <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none" onchange="handleChatFile(event)"/>
         <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--rust);"></div>
-        <div style="display:flex;gap:8px;align-items:flex-end;">
+        <div class="chat-input-row">
           <label for="chatFileInput" class="chat-attach-btn" title="Attach">&#x1F4CE;</label>
           <textarea id="chatInput" placeholder="Ask Mike anything&hellip;" rows="1" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
           <span id="chatCharCount" style="display:none;font-size:10px;color:var(--gray-400);align-self:center;white-space:nowrap;"></span>
           <button onclick="sendChat()" id="chatSendBtn" class="send-btn">&#x279E;</button>
+          <button id="pttBtn" class="input-ptt" data-contractor-only aria-label="Push to talk — hold to speak"><i data-lucide="mic"></i></button>
         </div>
         <div id="voiceWaveform" style="display:none;justify-content:center;align-items:center;gap:3px;padding:4px 0;">
           <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
@@ -3655,6 +3688,7 @@ function setMode(m){
   mode=m;
   var isPro=m==='pro';
   document.body.dataset.mode=isPro?'contractor':'homeowner';
+  if(isPro)try{bindPTT();}catch(_){} // Push 6 commit 5: attach hold-to-talk handlers (idempotent via _pttBound flag).
   document.getElementById('tabHome').className='mode-tab'+(m==='home'?' active':'');
   document.getElementById('tabPro').className='mode-tab'+(m==='pro'?' active':'');
   document.getElementById('panelHome').style.display=isPro?'none':'block';
@@ -6649,7 +6683,51 @@ function loadMikeVoice(){
 // getUserMedia warm-up pattern bypasses WebKit Bug #218815 silent mute.
 // (Restored from pre-watchdog architecture.)
 
+// Push 6 commit 5: PTT (hold-to-talk) replaces hands-free voice mode in contractor.
+// Reuses existing startListening / stopListening (Safari quirk handling lives there)
+// — verbatim per user directive. Body.ptt-active gates badge pulse, status swap
+// to "Mike's listening...", and waveform display.
+function startPTT(){
+  if(document.body.dataset.mode!=='contractor')return;
+  document.body.classList.add('ptt-active');
+  var status=document.getElementById('navMikeStatus');
+  if(status){
+    if(!status.dataset.original)status.dataset.original=status.textContent;
+    status.textContent="● Mike's listening...";
+  }
+  var input=document.getElementById('chatInput');
+  if(input)input.value='';
+  try{unlockAudioSafe();}catch(_){}
+  startListening();
+}
+function stopPTT(){
+  document.body.classList.remove('ptt-active');
+  var status=document.getElementById('navMikeStatus');
+  if(status&&status.dataset.original){status.textContent=status.dataset.original;delete status.dataset.original;}
+  // Graceful stop — DO NOT call stopListening() because it abort()s + nulls all handlers,
+  // which kills the release-to-submit path. .stop() lets final onresult fire + onend
+  // dispatches sendChat (existing handler at line ~6776 does this when chatInput has text).
+  if(speechRecognition){
+    try{speechRecognition.stop();}catch(_){}
+  }
+}
+function bindPTT(){
+  var btn=document.getElementById('pttBtn');
+  if(!btn||btn._pttBound)return;
+  btn._pttBound=true;
+  var holding=false;
+  function down(e){if(e&&e.cancelable)e.preventDefault();if(holding)return;holding=true;startPTT();}
+  function up(e){if(e&&e.cancelable)e.preventDefault();if(!holding)return;holding=false;stopPTT();}
+  btn.addEventListener('mousedown',down);
+  btn.addEventListener('touchstart',down,{passive:false});
+  btn.addEventListener('mouseup',up);
+  btn.addEventListener('mouseleave',up);
+  btn.addEventListener('touchend',up,{passive:false});
+  btn.addEventListener('touchcancel',up);
+}
+
 function toggleVoiceMode(){
+  if(document.body.dataset.mode==='contractor')return; // Push 6: contractor uses PTT (hold-to-talk), not hands-free.
   unlockAudioSafe();
   if(voiceMode){
     voiceMode=false;

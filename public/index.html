@@ -676,6 +676,81 @@ body[data-mode="contractor"] .msg-agent .msg-bubble-agent{background:var(--ink-2
 body[data-mode="contractor"] .msg-user .msg-bubble-user{background:linear-gradient(135deg,var(--teal),var(--teal-deep));color:var(--ink);border-radius:14px 14px 14px 14px;border-top-right-radius:4px;font-size:14px;line-height:1.4;font-weight:600;letter-spacing:-.005em;}
 body[data-mode="contractor"] .msg-time{display:none;}
 
+/* ── PUSH 6 — DRAWER REBUILD (commit 4/6) ──
+   Peek bar restyle, Whoop-style favorite tiles, 4x2 color-coded tool grid,
+   recent-job rows with status-colored left borders. All scoped to contractor.
+   The drawer markup lives inside #panelDiag (contractor-only by parent gate),
+   but explicit scoping keeps the cascade auditable. */
+
+/* Peek bar — mockup spec: dark ink-2 tiles with colored icons */
+body[data-mode="contractor"] .peek-bar{gap:6px;padding:12px 12px 0;}
+body[data-mode="contractor"] .peek-tile{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:10px 6px;color:rgba(255,255,255,.85);position:relative;flex-direction:column;gap:4px;display:flex;align-items:center;justify-content:center;height:auto;min-height:64px;}
+body[data-mode="contractor"] .peek-tile:active{background:var(--ink-3);transform:translateY(-1px);}
+body[data-mode="contractor"] .peek-tile-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+body[data-mode="contractor"] .peek-tile-icon svg{width:22px;height:22px;stroke-width:2;}
+body[data-mode="contractor"] .peek-tile-label{font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1.1;text-align:center;color:rgba(255,255,255,.85);}
+body[data-mode="contractor"] .peek-tile.t-diag .peek-tile-icon{color:var(--safety);}
+body[data-mode="contractor"] .peek-tile.t-cam .peek-tile-icon{color:var(--teal);}
+body[data-mode="contractor"] .peek-tile.t-shield .peek-tile-icon{color:var(--moss);}
+body[data-mode="contractor"] .peek-tile.t-find .peek-tile-icon{color:var(--rust);}
+body[data-mode="contractor"] .peek-tile-pin{position:absolute;top:4px;right:4px;width:4px;height:4px;background:var(--safety);border-radius:50%;}
+
+/* Drawer section heads — Anton title + meta */
+body[data-mode="contractor"] .drawer-section-head{display:flex;justify-content:space-between;align-items:baseline;padding:4px 4px 12px;}
+body[data-mode="contractor"] .drawer-section-title{font-family:var(--font-display);font-size:18px;font-weight:400;color:#fff;letter-spacing:.04em;text-transform:uppercase;}
+body[data-mode="contractor"] .drawer-section-meta{font-family:var(--font-code);font-size:10px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.12em;text-transform:uppercase;}
+body[data-mode="contractor"] .drawer-section-link{font-size:11px;font-weight:700;color:var(--safety);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;}
+
+/* Whoop-style gradient favorite tiles — 2x2 grid */
+body[data-mode="contractor"] .drawer-favorites{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:20px;}
+body[data-mode="contractor"] .fav-tile{border-radius:12px;padding:16px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s ease;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;border:none;text-align:left;font-family:inherit;-webkit-transform:translateZ(0);transform:translateZ(0);}
+body[data-mode="contractor"] .fav-tile:active{transform:translateY(-2px);}
+body[data-mode="contractor"] .fav-tile.t-diag{background:linear-gradient(135deg,var(--safety) 0%,var(--safety-deep) 100%);color:var(--ink);}
+body[data-mode="contractor"] .fav-tile.t-cam{background:linear-gradient(135deg,var(--teal) 0%,var(--teal-deep) 100%);color:var(--ink);}
+body[data-mode="contractor"] .fav-tile.t-shield{background:linear-gradient(135deg,var(--moss) 0%,var(--moss-deep) 100%);color:#fff;}
+body[data-mode="contractor"] .fav-tile.t-sale{background:linear-gradient(135deg,var(--brass) 0%,var(--copper) 100%);color:var(--ink);}
+body[data-mode="contractor"] .fav-tile-top{display:flex;justify-content:space-between;align-items:flex-start;}
+body[data-mode="contractor"] .fav-tile-icon{width:36px;height:36px;background:rgba(0,0,0,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+body[data-mode="contractor"] .fav-tile.t-shield .fav-tile-icon{background:rgba(255,255,255,.15);}
+body[data-mode="contractor"] .fav-tile-icon svg{width:20px;height:20px;stroke-width:2.2;}
+body[data-mode="contractor"] .fav-tile-badge{font-family:var(--font-code);font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 5px;border-radius:2px;background:rgba(0,0,0,.18);}
+body[data-mode="contractor"] .fav-tile.t-shield .fav-tile-badge{background:rgba(255,255,255,.15);color:#fff;}
+body[data-mode="contractor"] .fav-tile.t-shield .fav-tile-sub{opacity:.92;}
+body[data-mode="contractor"] .fav-tile-title{font-family:var(--font-display);font-size:20px;font-weight:400;letter-spacing:.01em;text-transform:uppercase;line-height:1;margin-bottom:4px;}
+body[data-mode="contractor"] .fav-tile-sub{font-size:11px;font-weight:600;opacity:.75;letter-spacing:-.005em;line-height:1.3;}
+
+/* All Tools — 4x2 color-coded grid */
+body[data-mode="contractor"] .drawer-all-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-bottom:20px;}
+body[data-mode="contractor"] .tool-tile{background:var(--ink-3);border:1px solid var(--line);border-radius:8px;padding:14px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:all .15s ease;position:relative;font-family:inherit;color:rgba(255,255,255,.9);-webkit-transform:translateZ(0);transform:translateZ(0);}
+body[data-mode="contractor"] .tool-tile:active{background:var(--ink-4);border-color:rgba(255,180,0,.2);transform:translateY(-1px);}
+body[data-mode="contractor"] .tool-tile-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
+body[data-mode="contractor"] .tool-tile-icon svg{width:24px;height:24px;stroke-width:1.8;}
+body[data-mode="contractor"] .tool-tile.t-find .tool-tile-icon{color:var(--copper);}
+body[data-mode="contractor"] .tool-tile.t-manual .tool-tile-icon{color:var(--violet);}
+body[data-mode="contractor"] .tool-tile.t-history .tool-tile-icon{color:var(--brass);}
+body[data-mode="contractor"] .tool-tile.t-warranty .tool-tile-icon{color:var(--moss);}
+body[data-mode="contractor"] .tool-tile.t-pricing .tool-tile-icon{color:var(--teal);}
+body[data-mode="contractor"] .tool-tile.t-safety .tool-tile-icon{color:var(--rust);}
+body[data-mode="contractor"] .tool-tile.t-recap .tool-tile-icon{color:var(--safety);}
+body[data-mode="contractor"] .tool-tile.t-customize .tool-tile-icon{color:rgba(255,255,255,.6);}
+body[data-mode="contractor"] .tool-tile-label{font-size:9px;font-weight:800;color:rgba(255,255,255,.9);letter-spacing:.04em;text-transform:uppercase;text-align:center;line-height:1.1;}
+body[data-mode="contractor"] .tool-tile-pin{position:absolute;top:5px;right:5px;width:5px;height:5px;background:var(--safety);border-radius:50%;opacity:0;}
+body[data-mode="contractor"] .tool-tile.pinned .tool-tile-pin{opacity:1;}
+
+/* Today's Calls — recent-job rows with status-colored left borders */
+body[data-mode="contractor"] .drawer-calls{display:flex;flex-direction:column;gap:6px;padding-bottom:24px;}
+body[data-mode="contractor"] .recent-job{background:var(--ink-3);border:1px solid var(--line);border-left:3px solid var(--moss);border-radius:0 6px 6px 0;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;}
+body[data-mode="contractor"] .recent-job.open{border-left-color:var(--rust);}
+body[data-mode="contractor"] .recent-job.progress{border-left-color:var(--safety);}
+body[data-mode="contractor"] .recent-job-num{font-family:var(--font-code);font-size:10px;font-weight:700;color:rgba(255,255,255,.4);min-width:20px;}
+body[data-mode="contractor"] .recent-job-info{flex:1;min-width:0;}
+body[data-mode="contractor"] .recent-job-title{font-size:12px;font-weight:700;color:#fff;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body[data-mode="contractor"] .recent-job-meta{font-family:var(--font-code);font-size:9px;color:rgba(255,255,255,.5);}
+body[data-mode="contractor"] .recent-job-tag{font-family:var(--font-code);font-size:8px;font-weight:700;padding:3px 5px;border-radius:2px;letter-spacing:.1em;text-transform:uppercase;flex-shrink:0;}
+body[data-mode="contractor"] .recent-job-tag.done{background:rgba(91,123,90,.18);color:var(--moss);}
+body[data-mode="contractor"] .recent-job-tag.open{background:rgba(199,85,59,.18);color:var(--rust);}
+body[data-mode="contractor"] .recent-job-tag.progress{background:rgba(255,180,0,.18);color:var(--safety);}
+
 /* ── HOMEOWNER + CONTRACTOR RESULT PANEL DARK MODE ─────────── */
 [data-theme="dark"] #homeResultPanel span,
 [data-theme="dark"] #resultPanel span{color:#e5e7eb;}
@@ -1982,21 +2057,24 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <div class="chat-input-area">
         <!-- Peek bar (Push 4) — 4 favorite tool tiles; tap or swipe-up opens action drawer -->
         <div class="peek-bar" id="peekBar" role="toolbar" aria-label="Tool shortcuts; swipe up to open drawer">
-          <button class="peek-tile color-purple" type="button" data-peek-idx="0" aria-label="Diagram tool" onclick="triggerDiagram()">
-            <span class="peek-tile-icon"><i data-lucide="workflow"></i></span>
-            <span class="peek-tile-label">Diagram</span>
+          <button class="peek-tile t-diag" type="button" data-peek-idx="0" aria-label="Run Diagnostic" onclick="window.openActionDrawer&&window.openActionDrawer()">
+            <span class="peek-tile-icon"><i data-lucide="zap"></i></span>
+            <span class="peek-tile-label">Run<br>Diagnostic</span>
+            <span class="peek-tile-pin"></span>
           </button>
-          <button class="peek-tile color-rust" type="button" data-peek-idx="1" aria-label="Illustrate tool" onclick="triggerIllustration()">
-            <span class="peek-tile-icon"><i data-lucide="palette"></i></span>
-            <span class="peek-tile-label">Illustrate</span>
+          <button class="peek-tile t-cam" type="button" data-peek-idx="1" aria-label="Live Camera" onclick="startLiveCamera()">
+            <span class="peek-tile-icon"><i data-lucide="video"></i></span>
+            <span class="peek-tile-label">Live<br>Camera</span>
+            <span class="peek-tile-pin"></span>
           </button>
-          <button class="peek-tile color-red" type="button" data-peek-idx="2" aria-label="Camera tool" onclick="startLiveCamera()">
-            <span class="peek-tile-icon"><i data-lucide="camera"></i></span>
-            <span class="peek-tile-label">Camera</span>
+          <button class="peek-tile t-shield" type="button" data-peek-idx="2" aria-label="Callback Shield" onclick="window.openActionDrawer&&window.openActionDrawer()">
+            <span class="peek-tile-icon"><i data-lucide="shield-check"></i></span>
+            <span class="peek-tile-label">Callback<br>Shield</span>
+            <span class="peek-tile-pin"></span>
           </button>
-          <button class="peek-tile color-blue" type="button" data-peek-idx="3" aria-label="Search tool" onclick="openChatSearch()">
+          <button class="peek-tile t-find" type="button" data-peek-idx="3" aria-label="Find Part" onclick="openChatSearch()">
             <span class="peek-tile-icon"><i data-lucide="search"></i></span>
-            <span class="peek-tile-label">Search</span>
+            <span class="peek-tile-label">Find<br>Part</span>
           </button>
         </div>
         <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none" onchange="handleChatFile(event)"/>
@@ -2022,78 +2100,130 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <div class="drawer-handle" id="drawerHandle" role="button" aria-label="Drag down or tap to close"></div>
       <div class="drawer-body">
         <section class="drawer-section">
-          <div class="drawer-section-label">Favorites</div>
+          <div class="drawer-section-head">
+            <div class="drawer-section-title">Your Favorites</div>
+            <div class="drawer-section-link" onclick="pushFeatureSoon('Customize')">Customize</div>
+          </div>
           <div class="drawer-favorites">
-            <button class="drawer-tile tile-color-purple" type="button" onclick="triggerDiagram();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="workflow"></i></span>
-              <span class="tile-label">Diagram</span>
+            <button class="fav-tile t-diag" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Run Diagnostic');">
+              <div class="fav-tile-top">
+                <div class="fav-tile-icon"><i data-lucide="zap"></i></div>
+                <div class="fav-tile-badge">Most Used</div>
+              </div>
+              <div>
+                <div class="fav-tile-title">Run<br>Diagnostic</div>
+                <div class="fav-tile-sub">Full system check, 5 min</div>
+              </div>
             </button>
-            <button class="drawer-tile tile-color-rust" type="button" onclick="triggerIllustration();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="palette"></i></span>
-              <span class="tile-label">Illustrate</span>
+            <button class="fav-tile t-cam" type="button" onclick="window.closeActionDrawer();startLiveCamera();">
+              <div class="fav-tile-top">
+                <div class="fav-tile-icon"><i data-lucide="video"></i></div>
+                <div class="fav-tile-badge">Live</div>
+              </div>
+              <div>
+                <div class="fav-tile-title">Live<br>Camera</div>
+                <div class="fav-tile-sub">Mike sees what you see</div>
+              </div>
             </button>
-            <button class="drawer-tile tile-color-red" type="button" onclick="startLiveCamera();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="camera"></i></span>
-              <span class="tile-label">Camera</span>
+            <button class="fav-tile t-shield" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Callback Shield');">
+              <div class="fav-tile-top">
+                <div class="fav-tile-icon"><i data-lucide="shield-check"></i></div>
+                <div class="fav-tile-badge">$312 saved</div>
+              </div>
+              <div>
+                <div class="fav-tile-title">Callback<br>Shield</div>
+                <div class="fav-tile-sub">Pre-close 5-pt check</div>
+              </div>
             </button>
-            <button class="drawer-tile tile-color-blue" type="button" onclick="openChatSearch();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="search"></i></span>
-              <span class="tile-label">Search</span>
+            <button class="fav-tile t-sale" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Close The Sale');">
+              <div class="fav-tile-top">
+                <div class="fav-tile-icon"><i data-lucide="trending-up"></i></div>
+                <div class="fav-tile-badge">Revenue</div>
+              </div>
+              <div>
+                <div class="fav-tile-title">Close<br>The Sale</div>
+                <div class="fav-tile-sub">Repair vs. replace math</div>
+              </div>
             </button>
           </div>
         </section>
         <section class="drawer-section">
-          <div class="drawer-section-label">All Tools</div>
+          <div class="drawer-section-head">
+            <div class="drawer-section-title">All Tools</div>
+            <div class="drawer-section-meta">tap pin to favorite</div>
+          </div>
           <div class="drawer-all-tools">
-            <button class="drawer-tile tile-color-purple" type="button" onclick="triggerDiagram();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="workflow"></i></span>
-              <span class="tile-label">Diagram</span>
+            <button class="tool-tile t-find pinned" type="button" onclick="window.closeActionDrawer();openChatSearch();">
+              <div class="tool-tile-icon"><i data-lucide="search"></i></div>
+              <div class="tool-tile-label">Find<br>Part</div>
+              <div class="tool-tile-pin"></div>
             </button>
-            <button class="drawer-tile tile-color-rust" type="button" onclick="triggerIllustration();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="palette"></i></span>
-              <span class="tile-label">Illustrate</span>
+            <button class="tool-tile t-manual" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Manual Lookup')">
+              <div class="tool-tile-icon"><i data-lucide="book-open"></i></div>
+              <div class="tool-tile-label">Manual<br>Lookup</div>
+              <div class="tool-tile-pin"></div>
             </button>
-            <button class="drawer-tile tile-color-red" type="button" onclick="startLiveCamera();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="camera"></i></span>
-              <span class="tile-label">Camera</span>
+            <button class="tool-tile t-history" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Job History')">
+              <div class="tool-tile-icon"><i data-lucide="clipboard-list"></i></div>
+              <div class="tool-tile-label">Job<br>History</div>
+              <div class="tool-tile-pin"></div>
             </button>
-            <button class="drawer-tile tile-color-blue" type="button" onclick="openChatSearch();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="search"></i></span>
-              <span class="tile-label">Search</span>
+            <button class="tool-tile t-warranty" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Warranty Claim')">
+              <div class="tool-tile-icon"><i data-lucide="file-check"></i></div>
+              <div class="tool-tile-label">Warranty<br>Claim</div>
+              <div class="tool-tile-pin"></div>
             </button>
-            <button class="drawer-tile tile-color-amber" type="button" onclick="toggleJobTimer();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="timer"></i></span>
-              <span class="tile-label">Timer</span>
+            <button class="tool-tile t-pricing" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Price Book')">
+              <div class="tool-tile-icon"><i data-lucide="dollar-sign"></i></div>
+              <div class="tool-tile-label">Price<br>Book</div>
+              <div class="tool-tile-pin"></div>
             </button>
-            <button class="drawer-tile tile-color-moss" type="button" onclick="showKnowledge();window.closeActionDrawer();">
-              <span class="tile-icon"><i data-lucide="brain"></i></span>
-              <span class="tile-label">Memory</span>
+            <button class="tool-tile t-safety" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Safety Check')">
+              <div class="tool-tile-icon"><i data-lucide="shield-alert"></i></div>
+              <div class="tool-tile-label">Safety<br>Check</div>
+              <div class="tool-tile-pin"></div>
+            </button>
+            <button class="tool-tile t-recap" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Recap Video')">
+              <div class="tool-tile-icon"><i data-lucide="film"></i></div>
+              <div class="tool-tile-label">Recap<br>Video</div>
+              <div class="tool-tile-pin"></div>
+            </button>
+            <button class="tool-tile t-customize" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Customize')">
+              <div class="tool-tile-icon"><i data-lucide="settings"></i></div>
+              <div class="tool-tile-label">Customize</div>
+              <div class="tool-tile-pin"></div>
             </button>
           </div>
         </section>
         <section class="drawer-section">
-          <div class="drawer-section-label">Today&rsquo;s Calls</div>
+          <div class="drawer-section-head">
+            <div class="drawer-section-title">Today&rsquo;s Calls</div>
+            <div class="drawer-section-meta">3 calls &middot; $892</div>
+          </div>
           <div class="drawer-calls">
-            <div class="call-row" data-call-color="rust">
-              <span class="call-num">01</span>
-              <div class="call-meta">
-                <div class="call-customer">Smith residence</div>
-                <div class="call-summary">AC down &mdash; 90&deg;F upstairs</div>
+            <div class="recent-job">
+              <div class="recent-job-num">01</div>
+              <div class="recent-job-info">
+                <div class="recent-job-title">Trane XR16 &middot; Capacitor</div>
+                <div class="recent-job-meta">9:14 AM &middot; 4TTX6048J &middot; $312</div>
               </div>
+              <div class="recent-job-tag done">Done</div>
             </div>
-            <div class="call-row" data-call-color="brass">
-              <span class="call-num">02</span>
-              <div class="call-meta">
-                <div class="call-customer">Jefferson HVAC service</div>
-                <div class="call-summary">Annual furnace tune-up</div>
+            <div class="recent-job open">
+              <div class="recent-job-num">02</div>
+              <div class="recent-job-info">
+                <div class="recent-job-title">Carrier 25HCB6 &middot; Leak</div>
+                <div class="recent-job-meta">7:42 AM &middot; Awaiting parts</div>
               </div>
+              <div class="recent-job-tag open">Open</div>
             </div>
-            <div class="call-row" data-call-color="moss">
-              <span class="call-num">03</span>
-              <div class="call-meta">
-                <div class="call-customer">Lopez heat pump install</div>
-                <div class="call-summary">3-ton system, basement run</div>
+            <div class="recent-job progress">
+              <div class="recent-job-num">03</div>
+              <div class="recent-job-info">
+                <div class="recent-job-title">Lennox &middot; Inducer Motor</div>
+                <div class="recent-job-meta">Yesterday &middot; Warranty filed</div>
               </div>
+              <div class="recent-job-tag progress">In Prog</div>
             </div>
           </div>
         </section>
@@ -6382,6 +6512,13 @@ function handleChatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();se
 function navBackTap(){
   var d=document.getElementById('actionDrawer');
   if(d&&d.open){try{d.close();}catch(_){}}
+}
+// Push 6 commit 4: stub for tool tiles without a backing handler yet (Manual Lookup, Job History, Warranty Claim, Price Book, Safety Check, Recap Video, Customize, Callback Shield, Close The Sale, Run Diagnostic).
+function pushFeatureSoon(name){
+  try{
+    if(typeof showToast==='function'){showToast(name+' — coming soon','info');return;}
+  }catch(_){}
+  try{console.log('[push6] '+name+' — coming soon');}catch(_){}
 }
 function clearChat(){
   var firstName=(currentUser&&currentUser.name)?currentUser.name.split(' ')[0]:'there';

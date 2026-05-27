@@ -44,6 +44,8 @@
   --brass-lt:#F4E4D1;
   /* Mike identity (Push 5) — distinct from rust/brass family so Mike reads as a person, not a brand accent */
   --mike-teal:#3A8B8A;--mike-teal-deep:#1F5557;
+  /* Push 6 contractor palette — bright cyan teal lives mode-scoped (see body[data-mode="contractor"]); copper/violet/moss-deep/ink-4 are global */
+  --ink-4:#292D32;--copper:#B87333;--copper-deep:#8B5226;--violet:#6B5B95;--moss-deep:#3F5A3E;
   --line:rgba(255,255,255,.06);
   /* Neutrals (--bg → --paper, --black → --ink — backward-compat aliases) */
   --bg:var(--paper,#F4EFE6);--white:#FFFFFF;--black:var(--ink,#0E0F0D);
@@ -614,6 +616,19 @@ html{scroll-behavior:smooth;}*{-webkit-tap-highlight-color:transparent;}
 [data-theme="dark"] .role-card-title{color:#fff;}
 [data-theme="dark"] .role-card-sub{color:#6b7280;}
 [data-theme="dark"] #authOverlay{background:rgba(10,10,10,.98);}
+
+/* ── PUSH 6 — CONTRACTOR MODE BASE ──────────────────────────
+   Mode-scoped tokens + base colors. --teal/--teal-deep are bright cyan here;
+   global aliases (line 32) keep pointing to --rust for homeowner/legacy callsites.
+   Subsequent Push 6 commits add surface-specific rules under the same scope. */
+body[data-mode="contractor"]{
+  --teal:#00C2B2;--teal-deep:#008C81;
+  background:var(--ink);color:#fff;
+}
+body[data-mode="contractor"] .page{background:var(--ink);}
+/* Defensive: nav frosted-white over ink is visibly broken until commit 2 restyles it; card text anchors to ink so any future .card descendant without explicit color doesn't render white-on-white. */
+body[data-mode="contractor"] .nav{background:var(--ink-2);border-bottom-color:var(--line);}
+body[data-mode="contractor"] .card{color:var(--ink);}
 
 /* ── HOMEOWNER + CONTRACTOR RESULT PANEL DARK MODE ─────────── */
 [data-theme="dark"] #homeResultPanel span,
@@ -3455,6 +3470,7 @@ function populateSelects(){
 function setMode(m){
   mode=m;
   var isPro=m==='pro';
+  document.body.dataset.mode=isPro?'contractor':'homeowner';
   document.getElementById('tabHome').className='mode-tab'+(m==='home'?' active':'');
   document.getElementById('tabPro').className='mode-tab'+(m==='pro'?' active':'');
   document.getElementById('panelHome').style.display=isPro?'none':'block';

@@ -3578,6 +3578,11 @@ var mediaRecorder=null,audioChunks=[],recTimer=null,recSeconds=0;
 var chatHistory=[],chatSending=false;
 var currentLang='en';
 var voiceMode=false,mikeVoice=null,mikeAudio=null,isMikeSpeaking=false,isListening=false,speechRecognition=null,autoListenAfterSpeak=false;
+// Push 6 commit 7: pttExchangePending tracks whether the current AI exchange originated from a PTT hold.
+// Used by shouldMikeSpeak() so Mike's TTS auto-speak fires for voice/camera engagement (field tech phone/FaceTime model)
+// without auto-speaking text-typed exchanges. Cleared by appendMessage after Mike is queued to speak, by handleChatKey
+// on Enter (user clearly switched to typing), or by a 30s belt-and-suspenders timeout for network-failure cases.
+var pttExchangePending=false,_pttExchangeTimer=null;
 var audioUnlocked=false,sharedAudioCtx=null,micGreetingPending=null;
 var techLocation=null,wakeLock=null;
 
@@ -5309,7 +5314,21 @@ function appendMessage(role,text){
     .replace(/\*\*([^*]+)\*\*/g,'$1')
     .replace(/\*([^*]+)\*/g,'$1')
     .replace(/  +/g,' ').trim();
-  if(role==='agent'&&voiceMode)setTimeout(function(){mikeSay(voiceText);},200);
+  // Push 6 commit 7: context-aware TTS gate (replaces voiceMode-only check that left
+  // contractor's PTT/camera-engaged Mike silent). Speaks during voice/camera engagement;
+  // stays silent during text-only typing. shouldMikeSpeak defined just before startPTT.
+  // Camera flow has its own TTS via mikeSayCamera (called from analyzeCameraFrame,
+  // LOCKED) — skip mikeSay here when cameraActive to avoid the double-speak race.
+  // pttExchangePending is INTENTIONALLY NOT cleared here — mikeSay's stale-guard
+  // (now also shouldMikeSpeak-based) checks the same flag during async fetch/decode,
+  // so clearing it synchronously would silently drop the audio. Clearing happens via
+  // handleChatKey on Enter, by startPTT re-set on next hold, or by the 30s timeout.
+  if(role==='agent'&&shouldMikeSpeak()){
+    var _ctrCamSkip=(typeof cameraActive!=='undefined'&&cameraActive);
+    if(!_ctrCamSkip){
+      setTimeout(function(){mikeSay(voiceText);},200);
+    }
+  }
   var container=document.getElementById('chatMessages');
   var isAgent=role==='agent';
   var div=document.createElement('div');
@@ -5757,8 +5776,9 @@ async function sendChat(){
     var needsSearch=hadAttachment||!!(text&&text.match(
       /price|cost|how much|availability|where to buy|near me|supply house|warrant|recall|bulletin|tax credit|rebate|current code|regulation|2025|2026|error code|fault code|model number|serial number|part number|cross.?ref|discontinued|latest model|new equipment|current price|in stock|lead time|ship|weather|temperature|temp outside|outdoor temp|ambient|what.?s it|how hot|how cold|degrees|fahrenheit|celsius|climate|forecast|condition|pressure|superheat|subcool|charging|refrigerant|outside|right now|today|tonight|current/i
     ));
-    // Voice uses 200 tokens for speed, text uses 2048
-    var response=await callAI(sysPrompt,apiHistory,voiceMode?800:2048,needsSearch);
+    // Audible exchanges (voice / PTT / camera) cap at 800 tokens for punchy TTS;
+    // text-only goes to 2048 for detailed write-ups. Gate matches mikeSay's gate.
+    var response=await callAI(sysPrompt,apiHistory,shouldMikeSpeak()?800:2048,needsSearch);
     hideTyping();response=checkAndLearn(response);response=checkAndSaveJob(response);appendMessage('agent',response);if(!voiceMode)setTimeout(function(){generateQuickReplies(response);},300);
     chatHistory.push({role:'assistant',content:response});
     saveUserHistory();
@@ -6578,7 +6598,16 @@ function showImageInChat(url,caption){
   container.scrollTop=container.scrollHeight;
 }
 
-function handleChatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
+function handleChatKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();
+    // Push 6 commit 7: user clearly switched to typing — clear any stale PTT-exchange
+    // flag so Mike's response to this text-typed message doesn't get unexpectedly
+    // auto-spoken (would happen if a prior PTT hold ended without a transcript).
+    if(pttExchangePending){pttExchangePending=false;if(_pttExchangeTimer){clearTimeout(_pttExchangeTimer);_pttExchangeTimer=null;}}
+    sendChat();
+  }
+}
 function navBackTap(){
   var d=document.getElementById('actionDrawer');
   if(d&&d.open){try{d.close();}catch(_){}}
@@ -6738,9 +6767,25 @@ function loadMikeVoice(){
 // Reuses existing startListening / stopListening (Safari quirk handling lives there)
 // — verbatim per user directive. Body.ptt-active gates badge pulse, status swap
 // to "Mike's listening...", and waveform display.
+// Push 6 commit 7: shouldMikeSpeak() — unified TTS context gate. Mike speaks back
+// during voice/camera engagement (phone/FaceTime model) and stays silent during
+// text-only typing. Replaces the commit-5 voiceMode-pinned-false regression that
+// silenced contractor Mike entirely.
+function shouldMikeSpeak(){
+  if(voiceMode)return true; // hands-free voice mode (homeowner, existing behavior)
+  if(pttExchangePending)return true; // PTT-initiated exchange (contractor)
+  if(typeof cameraActive!=='undefined'&&cameraActive)return true; // camera-open session
+  return false;
+}
 function startPTT(){
   if(document.body.dataset.mode!=='contractor')return;
   document.body.classList.add('ptt-active');
+  // Push 6 commit 7: mark exchange as PTT-originated so Mike's response auto-speaks
+  // when it arrives (cleared in appendMessage). Belt-and-suspenders 30s timeout
+  // covers network-failure cases where no agent response ever arrives.
+  pttExchangePending=true;
+  if(_pttExchangeTimer)clearTimeout(_pttExchangeTimer);
+  _pttExchangeTimer=setTimeout(function(){pttExchangePending=false;_pttExchangeTimer=null;},30000);
   var status=document.getElementById('navMikeStatus');
   if(status){
     if(!status.dataset.original)status.dataset.original=status.textContent;
@@ -6969,7 +7014,12 @@ function toggleMic(){
 }
 
 function mikeSay(text){
-  if(!voiceMode)return;
+  // Push 6 commit 7: gate broadened to shouldMikeSpeak() so PTT/camera-engaged
+  // contexts can speak even when voiceMode is false (contractor never enters
+  // hands-free voiceMode). Other mikeSay callsites (clearChat, toggleVoiceMode
+  // greet, startListening relisten) are already voiceMode-guarded externally,
+  // so this change doesn't widen their behavior — only unblocks contractor PTT.
+  if(!shouldMikeSpeak())return;
   // Kill any other Mike that may be speaking — voice mode, camera mode, or browser fallback.
   // This is the single source of truth: only ONE Mike voice may ever play at a time.
   stopMikeSpeaking();
@@ -6989,7 +7039,11 @@ function mikeSay(text){
   var voiceCtrl=(typeof AbortController!=='undefined')?new AbortController():null;
   try{if(window._voiceTTSAbort)window._voiceTTSAbort.abort();}catch(e){}
   window._voiceTTSAbort=voiceCtrl;
-  var stale=function(){return myToken!==window._voiceTTSToken||!voiceMode;};
+  // Push 6 commit 7: stale-guard broadened to match the entry gate. Without this,
+  // PTT exchanges (voiceMode=false) would have their audio silently dropped at every
+  // checkpoint (lines 7047, 7067, 7069). shouldMikeSpeak stays true through the
+  // exchange via pttExchangePending; cleared by handleChatKey/startPTT/30s timeout.
+  var stale=function(){return myToken!==window._voiceTTSToken||!shouldMikeSpeak();};
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean}),signal:voiceCtrl?voiceCtrl.signal:undefined})
     .then(function(res){
       if(!res.ok)throw new Error('TTS '+res.status);

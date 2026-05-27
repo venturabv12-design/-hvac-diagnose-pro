@@ -204,7 +204,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .lang-btn{display:flex;align-items:center;gap:5px;background:var(--gray-100);border:1.5px solid var(--gray-200);border-radius:8px;padding:5px 10px;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:700;color:var(--gray-600);transition:all .15s;-webkit-tap-highlight-color:transparent;}
 .nav-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--gray-100);border:1.5px solid var(--gray-200);color:var(--gray-600);font-size:16px;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;font-family:var(--font);font-weight:700;}
 .nav-icon-btn:hover{background:var(--gray-200);}
-.lang-dropdown{position:absolute;top:calc(100% + 6px);right:0;background:var(--white);border:1.5px solid var(--gray-200);border-radius:10px;box-shadow:var(--shadow-lg);overflow:hidden;z-index:200;min-width:160px;display:none;}
+.lang-dropdown{position:fixed;top:calc(env(safe-area-inset-top,0px) + 58px);right:12px;background:var(--white);border:1.5px solid var(--gray-200);border-radius:10px;box-shadow:var(--shadow-lg);overflow:hidden;z-index:500;min-width:160px;display:none;}
 .lang-dropdown.open{display:block;animation:fadeUp .2s ease;}
 .lang-option{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;font-family:var(--font);font-size:14px;font-weight:500;color:var(--gray-600);transition:background .12s;border:none;background:transparent;width:100%;text-align:left;}
 .lang-option:hover{background:var(--gray-50);color:var(--black);}
@@ -520,6 +520,12 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 [data-theme="dark"] .lang-dropdown{background:#161616;border-color:#2a2a2a;}
 [data-theme="dark"] .lang-option{color:#9ca3af;}
 [data-theme="dark"] .lang-option:hover{background:#222;color:#fff;}
+/* Contractor mode runs dark by default — mirror the dark-theme lang dropdown overlay so it matches .profile-dd (line 263) and Push 6 visual language. */
+body[data-mode="contractor"] .lang-dropdown{background:#161616;border-color:#2a2a2a;}
+body[data-mode="contractor"] .lang-option{color:#d1d5db;}
+body[data-mode="contractor"] .lang-option:hover{background:#222;color:#fff;}
+/* Active-language pill: type-selector specificity (0,2,1) requires re-asserting teal here, else the .lang-option override above wins over .lang-option.active and the cream var(--teal-lt) bg from line 211 leaves text near-invisible. */
+body[data-mode="contractor"] .lang-option.active{color:var(--teal);background:rgba(0,194,178,.12);}
 [data-theme="dark"] .card{background:#161616;border-color:#2a2a2a;color:#e5e7eb;}
 [data-theme="dark"] .field-label{color:#9ca3af;}
 [data-theme="dark"] .field-sub{color:#6b7280;}
@@ -1867,24 +1873,23 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
     </div>
     <div class="nav-actions">
       <div class="nav-status" data-homeowner-only><div class="status-dot red" id="statusDot"></div><span id="statusText" style="font-size:12px;color:var(--gray-500);">Connecting</span></div>
-      <div style="position:relative;" data-homeowner-only>
-        <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn"><span id="langFlag">🇺🇸</span><span id="langCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span></button>
-        <div class="lang-dropdown" id="langDropdown">
-          <button class="lang-option active" onclick="setLang('en')" id="langOpt-en"><span class="lang-flag">🇺🇸</span>English</button>
-          <button class="lang-option" onclick="setLang('es')" id="langOpt-es"><span class="lang-flag">🇲🇽</span>Español</button>
-          <button class="lang-option" onclick="setLang('zh')" id="langOpt-zh"><span class="lang-flag">🇨🇳</span>中文</button>
-          <button class="lang-option" onclick="setLang('vi')" id="langOpt-vi"><span class="lang-flag">🇻🇳</span>Tiếng Việt</button>
-          <button class="lang-option" onclick="setLang('fr')" id="langOpt-fr"><span class="lang-flag">🇫🇷</span>Français</button>
-          <button class="lang-option" onclick="setLang('pt')" id="langOpt-pt"><span class="lang-flag">🇧🇷</span>Português</button>
-        </div>
-      </div>
+      <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn" data-homeowner-only><span id="langFlag">🇺🇸</span><span id="langCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span></button>
       <button onclick="newChat()" class="nav-icon-btn" id="navRefreshBtn" data-homeowner-only title="New chat — full intro in current language">&#x21BB;</button>
       <button class="nav-profile-btn" id="navProfileBtn" data-homeowner-only onclick="toggleProfileDD()">?</button>
-      <button class="nav-globe" data-contractor-only aria-label="Language"><i data-lucide="globe"></i></button>
-      <button class="nav-more" data-contractor-only aria-label="More"><i data-lucide="more-horizontal"></i></button>
+      <button class="nav-globe" data-contractor-only aria-label="Language" onclick="toggleLangMenu()"><i data-lucide="globe"></i></button>
+      <button class="nav-more" data-contractor-only aria-label="More" onclick="toggleProfileDD()"><i data-lucide="more-horizontal"></i></button>
     </div>
   </div>
 </nav>
+<!-- Lang dropdown lifted out of .nav-actions: position:fixed (mirrors .profile-dd) so it anchors viewport-right and is reachable from both homeowner #langBtn and contractor .nav-globe triggers. -->
+<div class="lang-dropdown" id="langDropdown">
+  <button class="lang-option active" onclick="setLang('en')" id="langOpt-en"><span class="lang-flag">🇺🇸</span>English</button>
+  <button class="lang-option" onclick="setLang('es')" id="langOpt-es"><span class="lang-flag">🇲🇽</span>Español</button>
+  <button class="lang-option" onclick="setLang('zh')" id="langOpt-zh"><span class="lang-flag">🇨🇳</span>中文</button>
+  <button class="lang-option" onclick="setLang('vi')" id="langOpt-vi"><span class="lang-flag">🇻🇳</span>Tiếng Việt</button>
+  <button class="lang-option" onclick="setLang('fr')" id="langOpt-fr"><span class="lang-flag">🇫🇷</span>Français</button>
+  <button class="lang-option" onclick="setLang('pt')" id="langOpt-pt"><span class="lang-flag">🇧🇷</span>Português</button>
+</div>
 <div id="pullRefreshIndicator"><div class="ptr-spinner"></div><span>Refreshing…</span></div>
 
 <div class="page" id="app">
@@ -2997,10 +3002,11 @@ function toggleProfileDD(){
 function closeProfileDD(){var d=document.getElementById('profileDD');if(d)d.classList.remove('open');}
 
 document.addEventListener('click',function(e){
+  // Contractor triggers (.nav-globe / .nav-more) are whitelisted alongside the homeowner triggers (#langBtn / #navProfileBtn) so the same tap that opens a dropdown isn't immediately treated as an outside-click that closes it.
   var d=document.getElementById('profileDD'),b=document.getElementById('navProfileBtn');
-  if(d&&b&&!d.contains(e.target)&&!b.contains(e.target))closeProfileDD();
+  if(d&&b&&!d.contains(e.target)&&!b.contains(e.target)&&!e.target.closest('.nav-more'))closeProfileDD();
   var ld=document.getElementById('langDropdown'),lb=document.getElementById('langBtn');
-  if(ld&&lb&&!ld.contains(e.target)&&!lb.contains(e.target))ld.style.display='none';
+  if(ld&&lb&&!ld.contains(e.target)&&!lb.contains(e.target)&&!e.target.closest('.nav-globe'))ld.style.display='none';
 });
 
 function checkTrial(){
@@ -7763,15 +7769,7 @@ window.addEventListener('load',function(){
   }
 });
 
-// Close lang dropdown when clicking outside
-document.addEventListener('click',function(e){
-  var toggle=document.getElementById('langBtn');
-  var dd=document.getElementById('langDropdown');
-  if(toggle&&dd&&!toggle.contains(e.target)&&!dd.contains(e.target)){
-    dd.style.display='none';
-  }
-});
-
+// langDropdown outside-click is handled by the unified document handler near profileDD (line ~3002) — that handler whitelists both homeowner (#langBtn) and contractor (.nav-globe) triggers. Keeping a single source of truth so contractor wiring can't be silently broken by an unpatched duplicate.
 
 // ── OFFLINE DETECTION ─────────────────────────────────────────
 // ── OFFLINE MESSAGE QUEUE ───────────────────────────────────

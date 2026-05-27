@@ -772,10 +772,11 @@ body[data-mode="contractor"] .chat-input-row #chatInput::placeholder{color:rgba(
 .input-ptt svg{width:20px;height:20px;stroke-width:2.5;}
 .input-ptt:active{transform:scale(.96);}
 
-/* Hide voice-mode bar AND chatSendBtn in contractor — PTT is the only voice/send control */
+/* Hide voice-mode bar in contractor — PTT is the hold-to-talk control; send button stays visible for typed messages. */
 body[data-mode="contractor"] #voiceModeBar{display:none !important;}
-body[data-mode="contractor"] #chatSendBtn{display:none !important;}
 body[data-mode="contractor"] #chatCharCount{display:none !important;}
+/* Contractor pill-row: send button 44x44 + circular to match PTT/attach siblings and meet Apple HIG touch target. */
+body[data-mode="contractor"] #chatSendBtn{width:44px;height:44px;border-radius:50%;}
 
 /* Voice-listening state — body.ptt-active triggers badge pulse, status swap, waveform */
 @keyframes mike-pulse-listen{0%,100%{box-shadow:0 0 0 2px var(--teal);}50%{box-shadow:0 0 0 2px var(--teal),0 0 0 8px rgba(0,194,178,.3);}}

@@ -87,3 +87,31 @@ For Tuesday-Tech: cleanup looked clean at protocol completion, then the session 
 Bake the test-harness fix into `.claude/agents/eng-tuesday-tech.md` alongside the Gap #005 fix once both are verified clean across a full dispatch.
 
 ---
+
+## Gap #012 — Agents drafting corrections can themselves hallucinate
+
+**Status:** OPEN
+**Discovered:** 2026-05-28 (Mike quality build, Track A patch draft for AGENT_SYSTEM)
+**Reported by:** Brandon — spot-checked the orchestrator's proposed Mike-brain patch against source documents and caught the orchestrator inventing fault-code values that did not exist in any raw report
+
+### Root cause
+The orchestrator (this assistant) consolidated 359 quality-test scenarios into a proposed system-prompt patch for Mike. While drafting Insertion 3 (verified brand fault codes), the orchestrator wrote specific values from its own model knowledge rather than copying them verbatim from the raw quality-test reports' "Documented correct" lines. Result: 1 outright wrong fault-code translation (Carrier 25VNA fault 45 = "thermistor" when the source said "Lost Inverter Communications"), 3 fabricated entries for Carrier 25VNA faults 69/72/77 that appeared in no raw report, and 2 paraphrased-incorrectly entries (Lennox 180 and 417, where the orchestrator substituted plausible-sounding sensor names for the actual ones in the manual).
+
+The orchestrator was trying to fix Mike's hallucination problem by writing a patch that itself hallucinated. The orchestrator did NOT notice the error until Brandon explicitly asked for a spot-check against sources.
+
+### Impact
+If Brandon had approved the patch as drafted, four false fault-code interpretations would have been planted in Mike's system prompt and shipped to staging (and possibly production). Mike would then have *confidently* repeated those false interpretations to real techs working on real units, sending them down wrong diagnostic paths. The whole point of the quality-build effort — proving Mike is the master tech — would have been undermined at the patch-application step by the same failure mode the patch was meant to fix.
+
+The deeper concern: agents writing corrections to other agents are not automatically more trustworthy than the agent being corrected. Both are language models. Both can hallucinate. A correction-agent's draft must be treated as raw output to be verified, not as authoritative.
+
+### Fix
+1. **Mandatory line-by-line source citation on every Mike-brain edit.** Each line of any AGENT_SYSTEM patch that states a fact (a fault code meaning, a regulation threshold, a spec value, a technical claim) must include a citation to a manufacturer service manual, an EPA document, or another primary source. No claims sourced only to the orchestrator's prior knowledge.
+2. **Spot-check is mandatory, not optional.** Before any AGENT_SYSTEM patch is applied, surface 3+ randomly-chosen claims from different sections of the patch with the verbatim text from the cited source. Brandon (or any reviewer) reads the source quotes and compares to the patch text. If any claim cannot be verified against the cited source, the patch does not apply.
+3. **Force-search rule replaces embedded lookup tables where possible.** Instead of embedding hand-curated fault-code interpretations into Mike's prompt (where the orchestrator and Mike can both hallucinate), embed the *behavior*: search the manufacturer's manual on every brand+code lookup, quote the source, never interpret from training data. This is structurally safer than any hand-curated list because it pushes Mike to a verifiable primary source every time.
+4. **Bake into orchestrator doctrine.** Any patch to a system prompt that affects safety-critical or technical-fact behavior must:
+   - List each new factual claim
+   - Cite each claim to a primary source (URL preferred)
+   - Surface to the reviewer with verbatim quotes from the cited sources for spot-check
+   - Default to behavior-rules ("search and cite") over embedded facts ("here is the answer") when the fact space is large or fast-changing.
+
+---

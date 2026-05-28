@@ -1494,6 +1494,10 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 .drawer-favorites{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
 .drawer-all-tools{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .drawer-calls{display:flex;flex-direction:column;gap:8px;}
+/* Push 7.2 — hide drawer tiles whose onclick still routes to pushFeatureSoon (Sarah: "this is a demo, not a product"). Auto-unhides when the onclick is wired to a real feature, so no follow-up cleanup needed when the tools ship. */
+.fav-tile[onclick*="pushFeatureSoon"],
+.tool-tile[onclick*="pushFeatureSoon"],
+.drawer-section-link[onclick*="pushFeatureSoon"]{display:none!important;}
 
 /* Peek tile content (icon + label, tinted bg per color) */
 .peek-tile-icon{display:flex;align-items:center;justify-content:center;line-height:0;}

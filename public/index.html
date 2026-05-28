@@ -3645,7 +3645,8 @@ function showAdminDashboard(){
   var fbody=document.getElementById('admFeedback');
   if(fbody){
     fbody.innerHTML=allFeedback.length?allFeedback.sort(function(a,b){return b.timestamp-a.timestamp;}).map(function(f){
-      return '<tr><td style="font-weight:600">'+f.user+'</td><td style="color:#555;font-size:12px">'+f.email+'</td><td style="color:#ccc">'+f.text.substring(0,120)+(f.text.length>120?'...':'')+'</td><td style="color:#555;font-size:12px">'+new Date(f.timestamp).toLocaleDateString()+'</td></tr>';
+      // breaker-fix Pass 3 — escape every user-supplied field (name, email, feedback body). Without escape, an attacker who submits feedback with `<img onerror>` payload in their name/email/text gets it rendered as raw HTML when the admin opens the dashboard → potential admin session hijack.
+      return '<tr><td style="font-weight:600">'+escapeHtml(f.user||'')+'</td><td style="color:#555;font-size:12px">'+escapeHtml(f.email||'')+'</td><td style="color:#ccc">'+escapeHtml((f.text||'').substring(0,120))+(f.text&&f.text.length>120?'...':'')+'</td><td style="color:#555;font-size:12px">'+new Date(f.timestamp).toLocaleDateString()+'</td></tr>';
     }).join(''):'<tr><td colspan="4" style="color:#555;text-align:center">No feedback yet</td></tr>';
   }
   el.classList.add('show');
@@ -7898,6 +7899,14 @@ function queueOfflineMessage(text){
 }
 function flushOfflineQueue(){
   if(!offlineQueue.length)return;
+  // breaker-fix Pass 3 — preserve the queue if the user is logged out at flush time.
+  // sendChat() bails on isAccessAllowed() and never sends, but the old code had already
+  // cleared offlineQueue → messages were permanently lost. Now we keep the queue intact
+  // until the user signs back in; the next online event (or manual retry) will drain it.
+  if(typeof currentUser==='undefined'||!currentUser){
+    showToast('Sign in to send your queued messages.','info',3000);
+    return;
+  }
   var q=offlineQueue.slice();offlineQueue=[];
   q.forEach(function(msg){
     document.getElementById('chatInput').value=msg.text;

@@ -7423,8 +7423,12 @@ function stopLiveCamera(){
 async function flipCamera(){
   var prev=cameraFacing;
   cameraFacing=cameraFacing==='environment'?'user':'environment';
-  await startCameraStream();
-  if(!cameraActive)cameraFacing=prev; // Push 7.3 — revert if flip failed (no front cam, permission denied, in-use)
+  try{
+    await startCameraStream();
+  }catch(e){
+    cameraFacing=prev; // Push 7.3 — revert if flip failed (no front cam, permission denied, in-use)
+    throw e;           // preserve upstream signal — startCameraStream already showed toast + called stopLiveCamera
+  }
 }
 
 function captureFrame(){

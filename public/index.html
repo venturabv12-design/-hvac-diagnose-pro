@@ -4171,9 +4171,11 @@ async function runHomeownerDiagnostic(){
     document.getElementById("homeResultText").innerHTML=out;
     document.getElementById("homeResultPanel").style.display="block";
     document.getElementById("homeResultPanel").scrollIntoView({behavior:"smooth",block:"start"});
+    setMode('home'); // Push 7.5 — anchor mode after scrollIntoView so cascade doesn't flip to contractor
 
   }catch(e){
     appendMessage('agent','Something went wrong — please try again.');
+    setMode('home'); // Push 7.5 — same anchor on the failure path
   }finally{
     btn.disabled=false;btn.style.background="#C7553B";btn.innerHTML="⚡ Run Diagnostic";
   }

@@ -1645,7 +1645,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 .pw-plan.sel .pw-feat-no{color:rgba(255,255,255,.25);}
 </style>
 <div id="offlineBanner"></div>
-<div id="pwaInstallBanner" style="display:none;background:linear-gradient(135deg,var(--rust),var(--rust-deep));color:#fff;padding:10px 14px;font-size:13px;line-height:1.4;text-align:center;position:relative;z-index:9990;">
+<div id="pwaInstallBanner" style="display:none;background:linear-gradient(135deg,var(--rust),var(--rust-deep));color:#fff;padding:10px 14px;font-size:13px;line-height:1.4;text-align:center;position:relative;z-index:10000;">
   <span id="pwaInstallText"></span>
   <button id="pwaInstallBtn" onclick="triggerPwaInstall()" style="display:none;margin-left:8px;background:#fff;color:var(--rust-deep);border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:800;cursor:pointer;font-family:var(--font);">Install App</button>
   <button onclick="dismissPwaHint()" aria-label="Dismiss" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:18px;font-weight:300;cursor:pointer;line-height:1;padding:0 6px;">&times;</button>
@@ -2133,7 +2133,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
         <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--rust);"></div>
         <div class="chat-input-row">
           <label for="chatFileInput" class="chat-attach-btn" title="Attach">&#x1F4CE;</label>
-          <textarea id="chatInput" placeholder="Ask Mike anything&hellip;" rows="1" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+          <textarea id="chatInput" placeholder="Ask Mike anything&hellip;" rows="1" maxlength="8000" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
           <span id="chatCharCount" style="display:none;font-size:10px;color:var(--gray-400);align-self:center;white-space:nowrap;"></span>
           <button onclick="sendChat()" id="chatSendBtn" class="send-btn">&#x279E;</button>
           <button id="pttBtn" class="input-ptt" data-contractor-only aria-label="Push to talk — hold to speak"><i data-lucide="mic"></i></button>
@@ -4035,12 +4035,21 @@ async function callAI(system,messages,max_tokens,useSearch){
       // Force a clean re-login so user gets a fresh JWT.
       if(res.status===401||res.status===402){
         if(res.status===401){
-          // Stale token — clear it and show login screen
-          localStorage.removeItem('trazer_user');
-          // Push 7.4 — also clear the multi-user cache so tracerInit on next page-load can't silently rehydrate currentUser from a stale entry (Gap #006). The user explicitly lost their auth here; treat it as a clean signout from the device's perspective.
-          localStorage.removeItem('trazer_users');
-          currentUser=null;
-          document.getElementById('authOverlay').classList.remove('hidden');
+          // breaker-fix Pass 1 — gate the teardown by !cameraActive. The default
+          // teardown-on-401 is appropriate for user-initiated calls (chat send,
+          // homeowner Analyze) because the user is in an auth-gated UI and needs
+          // to sign in again. The CAMERA flow exception: tearing down mid-camera-
+          // session ejects the user from a live overlay (the eng-breaker Pass 1
+          // P0-2). We still throw so the camera's own catch handler can show a
+          // localized "session paused — tap Analyze to retry" UX without losing
+          // the rest of the session state. Push 7.4's trazer_users cleanup is
+          // preserved for the non-camera path.
+          if(typeof cameraActive==='undefined'||!cameraActive){
+            localStorage.removeItem('trazer_user');
+            localStorage.removeItem('trazer_users');
+            currentUser=null;
+            document.getElementById('authOverlay').classList.remove('hidden');
+          }
           throw new Error('Your session expired. Please sign in again.');
         }
         // 402 = paywall (trial expired, no subscription)
@@ -5434,6 +5443,13 @@ function appendMessage(role,text){
     },{passive:true});
   }
 
+  // breaker-fix Pass 1 — XSS hardening. Agent text was rendered as raw HTML via
+  // innerHTML below; an `<img src=x onerror=...>` in Mike's response would execute.
+  // Escape the agent text first; the markdown patterns below (bold, em, links,
+  // images, list bullets) still match on escaped text because they're keyed on
+  // `*`, `[`, `(`, etc. which escapeHtml doesn't touch. User-role text is already
+  // escaped by every caller in sendChat (see escapeHtml calls there).
+  if(role==='agent') text=escapeHtml(text);
   // Process markdown images ![alt](url) — verify and show inline
   var formatted=text
     .replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:[^)]*)?)\)/gi,function(m,alt,url){
@@ -8138,7 +8154,7 @@ function initSendHaptic(){
 function initKeyboardShortcuts(){
   document.addEventListener('keydown',function(e){
     if(e.key==='/'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'){e.preventDefault();var i=document.getElementById('chatInput');if(i)i.focus();}
-    if(e.key==='Escape'){closeShare();closeChatSearch();try{if(typeof stopLiveCamera==='function')stopLiveCamera();}catch(_){}var o=document.querySelector('.tz-modal-overlay.show');if(o)o.classList.remove('show');}
+    if(e.key==='Escape'){closeShare();closeChatSearch();try{if(typeof stopLiveCamera==='function')stopLiveCamera();}catch(_){}try{if(typeof closeActionDrawer==='function')closeActionDrawer();}catch(_){}var o=document.querySelector('.tz-modal-overlay.show');if(o)o.classList.remove('show');}
     if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();openChatSearch();}
   });
 }

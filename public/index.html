@@ -905,9 +905,16 @@ body[data-mode="contractor"].ptt-active .input-ptt{box-shadow:0 0 0 3px rgba(255
 .nav-mike-text{display:flex;flex-direction:column;min-width:0;}
 .nav-mike-name{font-family:var(--font-display);font-size:15px;font-weight:800;color:var(--ink);line-height:1;letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .nav-mike-status{font-size:10px;color:var(--moss);margin-top:3px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-/* breaker-fix Pass 5 — .nav-actions had flex-shrink:0 which forced its 336px content out past the viewport on signed-out 320px and 390px screens (89px and 19px horizontal overflow respectively). Allow the container to shrink; individual children keep their own non-shrink so the icon buttons stay legible. */
+/* breaker-fix Pass 5 + 6 — .nav-actions had flex-shrink:0 which forced its 336px content out past the viewport on signed-out 320px and 390px screens. Pass 5's shrink-parent-only fix moved the overflow to children. Pass 6 final fix: parent shrinks (already), nav-inner clips any residual overflow (safety net), and a narrow-viewport media query tightens gaps and icon button padding so the children actually fit on small screens without losing tap targets. Result: zero horizontal overflow at 320×568, 390×844, and 768×1024. */
 .nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:1;min-width:0;}
 .nav-actions > *{flex-shrink:0;}
+.nav-inner{overflow:hidden;}
+@media (max-width: 400px){
+  .nav-inner{padding:0 8px;gap:6px;}
+  .nav-actions{gap:4px;}
+  .nav-actions > button,
+  .nav-actions > a{padding-left:6px;padding-right:6px;}
+}
 
 /* ── UPGRADED CARDS ────────────────────────────────────────── */
 .card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gray-200);padding:20px;margin-bottom:12px;box-shadow:var(--shadow-sm);}
@@ -4285,13 +4292,14 @@ function showResult(sev,body,data){
 }
 
 function renderDiagCards(data,c){
+  // breaker-fix Pass 6 — escape every AI-supplied field before HTML concatenation. Contractor-side counterpart of the homeowner-diag fix in breaker Pass 2. Same pattern: every value from the parsed AI JSON (summary, urgency, cost, confidence, section icon/label/body, step text) is wrapped with escapeHtml so an XSS payload returned by the model (or injected via prompt injection upstream) renders as text instead of executing.
   var el=document.getElementById("resultText"),html="";
   html+="<div style='background:"+c.bg+";border-left:4px solid "+c.border+";border-radius:6px;padding:14px 16px;margin-bottom:20px;'>";
-  if(data.summary)html+="<p style='font-size:16px;font-weight:700;color:#0F0F0F;line-height:1.6;margin-bottom:10px;'>"+data.summary+"</p>";
+  if(data.summary)html+="<p style='font-size:16px;font-weight:700;color:#0F0F0F;line-height:1.6;margin-bottom:10px;'>"+escapeHtml(data.summary)+"</p>";
   var stats=[];
-  if(data.urgency)stats.push("🕐 "+data.urgency);
-  if(data.estimatedCost)stats.push("💰 "+data.estimatedCost);
-  if(data.confidence)stats.push("🎯 "+data.confidence+" confidence");
+  if(data.urgency)stats.push("🕐 "+escapeHtml(data.urgency));
+  if(data.estimatedCost)stats.push("💰 "+escapeHtml(data.estimatedCost));
+  if(data.confidence)stats.push("🎯 "+escapeHtml(data.confidence)+" confidence");
   if(stats.length)html+="<p style='font-size:13px;color:"+c.text+";font-weight:600;line-height:1.8;'>"+stats.join("  ·  ")+"</p>";
   html+="</div>";
   var sections=data.sections||[],stepNum=0;
@@ -4301,9 +4309,9 @@ function renderDiagCards(data,c){
     var hasSteps=sec.steps&&Array.isArray(sec.steps)&&sec.steps.length>0;
     if(!hasBody&&!hasSteps)continue;stepNum++;
     html+="<div style='margin-bottom:20px;'>";
-    html+="<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px;'><div style='width:32px;height:32px;min-width:32px;background:#0F0F0F;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;'>"+stepNum+"</div><span style='font-size:17px;font-weight:700;color:#0F0F0F;'>"+(sec.icon||"")+" "+(sec.label||"")+"</span></div>";
+    html+="<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px;'><div style='width:32px;height:32px;min-width:32px;background:#0F0F0F;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;'>"+stepNum+"</div><span style='font-size:17px;font-weight:700;color:#0F0F0F;'>"+escapeHtml(sec.icon||"")+" "+escapeHtml(sec.label||"")+"</span></div>";
     if(hasBody){
-      html+="<div style='padding-left:42px;'><p style='font-size:15px;line-height:1.8;color:#0F0F0F;'>"+sec.body+"</p></div>";
+      html+="<div style='padding-left:42px;'><p style='font-size:15px;line-height:1.8;color:#0F0F0F;'>"+escapeHtml(sec.body)+"</p></div>";
     }
     if(hasSteps){
       html+="<div style='padding-left:42px;'>";
@@ -4311,7 +4319,7 @@ function renderDiagCards(data,c){
         var step=sec.steps[n];if(!step||step==="null")continue;
         var clean=String(step).trim().replace(/^"+|"+$/g,"").replace(/,\s*$/,"");
         var colonIdx=clean.indexOf(":");
-        var stepHtml=(colonIdx>0&&colonIdx<60)?"<strong>"+clean.substring(0,colonIdx).trim()+"</strong> — "+clean.substring(colonIdx+1).trim():clean;
+        var stepHtml=(colonIdx>0&&colonIdx<60)?"<strong>"+escapeHtml(clean.substring(0,colonIdx).trim())+"</strong> — "+escapeHtml(clean.substring(colonIdx+1).trim()):escapeHtml(clean);
         html+="<div style='display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;'><div style='width:22px;height:22px;min-width:22px;background:var(--rust);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;'>"+(n+1)+"</div><div style='font-size:15px;line-height:1.75;color:#0F0F0F;flex:1;'>"+stepHtml+"</div></div>";
       }
       html+="</div>";

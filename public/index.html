@@ -905,7 +905,8 @@ body[data-mode="contractor"].ptt-active .input-ptt{box-shadow:0 0 0 3px rgba(255
 .nav-mike-text{display:flex;flex-direction:column;min-width:0;}
 .nav-mike-name{font-family:var(--font-display);font-size:15px;font-weight:800;color:var(--ink);line-height:1;letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .nav-mike-status{font-size:10px;color:var(--moss);margin-top:3px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+/* breaker-fix Pass 5 — .nav-actions had flex-shrink:0 which forced its 336px content out past the viewport on signed-out 320px and 390px screens (89px and 19px horizontal overflow respectively). Allow the container to shrink; individual children keep their own non-shrink so the icon buttons stay legible. */
+.nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:1;min-width:0;}
 .nav-actions > *{flex-shrink:0;}
 
 /* ── UPGRADED CARDS ────────────────────────────────────────── */

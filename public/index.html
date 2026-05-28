@@ -2749,7 +2749,7 @@ function applyRoleToUser() {
   var users = JSON.parse(localStorage.getItem('trazer_users') || '{}');
   if (users[currentUser.email]) {
     users[currentUser.email].role = pendingRole;
-    localStorage.setItem('trazer_users', JSON.stringify(users));
+    localStorage.setItem('trazer_users', JSON.stringify(users,function(k,v){return k==='token'?undefined:v;}));
     localStorage.setItem('trazer_user', JSON.stringify(currentUser));
   }
 }
@@ -2925,7 +2925,7 @@ function authSignIn(){
       }
       var user=result.data.user;user.token=result.data.token;
       var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
-      users[email]=user;localStorage.setItem('trazer_users',JSON.stringify(users));
+      users[email]=user;localStorage.setItem('trazer_users',JSON.stringify(users,function(k,v){return k==='token'?undefined:v;}));
       localStorage.setItem('trazer_user',JSON.stringify(user));
       currentUser=user;
       document.getElementById('authOverlay').classList.add('hidden');
@@ -2980,7 +2980,7 @@ function authSignUp(){
       if(!result.ok){showAuthErr(result.data.error||'Sign up failed.');if(btn){btn.disabled=false;btn.textContent='Start Free Trial';}return;}
       var user=result.data.user;user.token=result.data.token;
       var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
-      users[email]=user;localStorage.setItem('trazer_users',JSON.stringify(users));
+      users[email]=user;localStorage.setItem('trazer_users',JSON.stringify(users,function(k,v){return k==='token'?undefined:v;}));
       localStorage.setItem('trazer_user',JSON.stringify(user));
       currentUser=user;
       document.getElementById('authOverlay').classList.add('hidden');
@@ -3111,7 +3111,7 @@ function trackUsage(feature){
   currentUser.usageCount=(currentUser.usageCount||0)+1;
   if(feature){currentUser.features=currentUser.features||{};currentUser.features[feature]=(currentUser.features[feature]||0)+1;}
   var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
-  if(users[currentUser.email]){users[currentUser.email]=currentUser;localStorage.setItem('trazer_users',JSON.stringify(users));}
+  if(users[currentUser.email]){users[currentUser.email]=currentUser;localStorage.setItem('trazer_users',JSON.stringify(users,function(k,v){return k==='token'?undefined:v;}));}
   localStorage.setItem('trazer_user',JSON.stringify(currentUser));
   updateProfileUI();
 }
@@ -3238,7 +3238,7 @@ function saveProfileSettings(){
     currentUser.company=company;
     currentUser.initials=name.split(' ').map(function(x){return x[0]||'';}).join('').toUpperCase().slice(0,2)||'U';
     var u=JSON.parse(localStorage.getItem('trazer_users')||'{}');
-    if(u[currentUser.email]){u[currentUser.email]=currentUser;localStorage.setItem('trazer_users',JSON.stringify(u));}
+    if(u[currentUser.email]){u[currentUser.email]=currentUser;localStorage.setItem('trazer_users',JSON.stringify(u,function(k,v){return k==='token'?undefined:v;}));}
     localStorage.setItem('trazer_user',JSON.stringify(currentUser));
     updateProfileUI();
   }
@@ -3371,7 +3371,7 @@ function notifyWhenBillingLive(){
   if(currentUser){
     currentUser.wantsBillingNotify=true;
     var u=JSON.parse(localStorage.getItem('trazer_users')||'{}');
-    if(u[currentUser.email]){u[currentUser.email]=currentUser;localStorage.setItem('trazer_users',JSON.stringify(u));}
+    if(u[currentUser.email]){u[currentUser.email]=currentUser;localStorage.setItem('trazer_users',JSON.stringify(u,function(k,v){return k==='token'?undefined:v;}));}
     localStorage.setItem('trazer_user',JSON.stringify(currentUser));
   }
   alert('Got it! We will notify you at '+((currentUser&&currentUser.email)||'your email')+' when billing goes live.');
@@ -3586,7 +3586,7 @@ function deleteAdminUser(email){
   var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
   if(users[email]){
     delete users[email];
-    localStorage.setItem('trazer_users',JSON.stringify(users));
+    localStorage.setItem('trazer_users',JSON.stringify(users,function(k,v){return k==='token'?undefined:v;}));
   }
   // Refresh the dashboard
   showAdminDashboard();

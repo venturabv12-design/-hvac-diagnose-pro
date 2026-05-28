@@ -2114,7 +2114,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
             <span class="peek-tile-label">Run<br>Diagnostic</span>
             <span class="peek-tile-pin"></span>
           </button>
-          <button class="peek-tile t-cam" type="button" data-peek-idx="1" aria-label="Live Camera" onclick="startLiveCamera()">
+          <button class="peek-tile t-cam" type="button" data-peek-idx="1" aria-label="Live Camera" onclick="checkCameraAccess()">
             <span class="peek-tile-icon"><i data-lucide="video"></i></span>
             <span class="peek-tile-label">Live<br>Camera</span>
             <span class="peek-tile-pin"></span>
@@ -2583,7 +2583,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 <div id="liveCameraOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9998;flex-direction:column;font-family:'Plus Jakarta Sans',-apple-system,sans-serif;">
 
   <!-- Full-screen camera feed -->
-  <video id="liveCameraFeed" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"></video>
+  <video id="liveCameraFeed" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;background:#000;"></video>
 
   <!-- Top gradient -->
   <div style="position:absolute;top:0;left:0;right:0;height:180px;background:linear-gradient(to bottom,rgba(0,0,0,.8) 0%,transparent 100%);pointer-events:none;z-index:1;"></div>
@@ -7421,8 +7421,10 @@ function stopLiveCamera(){
 }
 
 async function flipCamera(){
+  var prev=cameraFacing;
   cameraFacing=cameraFacing==='environment'?'user':'environment';
   await startCameraStream();
+  if(!cameraActive)cameraFacing=prev; // Push 7.3 — revert if flip failed (no front cam, permission denied, in-use)
 }
 
 function captureFrame(){
@@ -7466,14 +7468,12 @@ async function analyzeCameraFrame(userInitiated,userText){
     document.getElementById('cameraAnalyzing').style.display='none';
     response=checkAndSaveJob(response);
     setCameraResponse(response);
-    // Also show Mike's analysis in main chat
-    if(typeof appendMessage==='function')appendMessage('agent',response);
     mikeSayCamera(response);
     chatHistory.push({role:'user',content:userMsg});
     chatHistory.push({role:'assistant',content:response});
     if(chatHistory.length>40)chatHistory=chatHistory.slice(-40); // Keep 40 in memory
-  var apiHistory=chatHistory.slice(-10); // Send only last 10 to API for speed
-    appendMessage('agent','📷 '+response);
+    // Push 7.3 — single append with 📷 prefix; before this fix Mike's response posted twice (plain at line 7459 + prefixed at 7465) with a dangling var apiHistory between them
+    if(typeof appendMessage==='function')appendMessage('agent','📷 '+response);
     if(userInitiated&&userText&&needsDiagram(userText))generateAndShowDiagram(userText,response);
   }catch(e){
     document.getElementById('cameraAnalyzing').style.display='none';
@@ -8134,7 +8134,7 @@ function initSendHaptic(){
 function initKeyboardShortcuts(){
   document.addEventListener('keydown',function(e){
     if(e.key==='/'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'){e.preventDefault();var i=document.getElementById('chatInput');if(i)i.focus();}
-    if(e.key==='Escape'){closeShare();closeChatSearch();var o=document.querySelector('.tz-modal-overlay.show');if(o)o.classList.remove('show');}
+    if(e.key==='Escape'){closeShare();closeChatSearch();try{if(typeof stopLiveCamera==='function')stopLiveCamera();}catch(_){}var o=document.querySelector('.tz-modal-overlay.show');if(o)o.classList.remove('show');}
     if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();openChatSearch();}
   });
 }

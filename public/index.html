@@ -2902,7 +2902,12 @@ function authSignIn(){
     .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
     .then(function(result){
       if(!result.ok){
-        var errMsg=result.data.error||'Sign in failed.';
+        // breaker-fix Pass 2 — defense-in-depth: escape raw server error text before any
+        // path that might use it. showAuthErr at line 2887 uses textContent (safe), but
+        // line 2913 below uses innerHTML for the "Create Account" link path. Even though
+        // that path overrides errMsg to a hardcoded safe string, escaping at the source
+        // prevents any future regression from re-introducing XSS through this surface.
+        var errMsg=escapeHtml(result.data.error||'Sign in failed.');
         // 404 = account doesn't exist in current database — likely a system migration issue.
         // Give the user a clear, actionable message with a link to create a new account.
         if(result.data.error&&result.data.error.indexOf('No account found')>=0){
@@ -4170,10 +4175,16 @@ async function runHomeownerDiagnostic(){
     var out="";
 
     // Top summary banner — simple, no price
+    // breaker-fix Pass 2 — escape every AI-supplied field before HTML concatenation.
+    // The homeowner diagnostic JSON comes from the response parser and can contain
+    // anything Mike (or a prompt-injected user) feeds back. Without escape, an XSS
+    // payload in summary/urgency/body/label/icon executes via innerHTML at line 4193.
+    // (The contractor-side card-renderer has the same vector but is a locked function;
+    // surfaced as a separate finding requiring TRAZER_HOOK_OVERRIDE.)
     out+="<div style='background:"+c.bg+";border-left:4px solid "+c.border+";border-radius:8px;padding:14px 16px;margin-bottom:20px;'>";
-    out+="<div style='font-size:11px;font-weight:700;color:"+c.border+";text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;'>"+c.label+"</div>";
-    if(data&&data.summary)out+="<p style='font-size:16px;font-weight:600;color:#0F0F0F;line-height:1.5;margin-bottom:8px;'>"+data.summary+"</p>";
-    if(data&&data.urgency)out+="<div style='font-size:13px;font-weight:700;color:"+c.border+";'>🕐 "+data.urgency+"</div>";
+    out+="<div style='font-size:11px;font-weight:700;color:"+c.border+";text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;'>"+escapeHtml(c.label)+"</div>";
+    if(data&&data.summary)out+="<p style='font-size:16px;font-weight:600;color:#0F0F0F;line-height:1.5;margin-bottom:8px;'>"+escapeHtml(data.summary)+"</p>";
+    if(data&&data.urgency)out+="<div style='font-size:13px;font-weight:700;color:"+c.border+";'>🕐 "+escapeHtml(data.urgency)+"</div>";
     out+="</div>";
 
     // Sections — short, simple
@@ -4181,9 +4192,9 @@ async function runHomeownerDiagnostic(){
       data.sections.forEach(function(sec,i){
         if(!sec||!sec.body||sec.body.trim().length<2)return;
         out+="<div style='display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #F0F1F6;'>";
-        out+="<div style='font-size:22px;flex-shrink:0;margin-top:1px;'>"+( sec.icon||"•")+"</div>";
-        out+="<div><div style='font-size:13px;font-weight:700;color:#6B7190;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;'>"+sec.label+"</div>";
-        out+="<p style='font-size:15px;line-height:1.6;color:#0F0F0F;margin:0;'>"+sec.body+"</p></div>";
+        out+="<div style='font-size:22px;flex-shrink:0;margin-top:1px;'>"+escapeHtml(sec.icon||"•")+"</div>";
+        out+="<div><div style='font-size:13px;font-weight:700;color:#6B7190;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;'>"+escapeHtml(sec.label)+"</div>";
+        out+="<p style='font-size:15px;line-height:1.6;color:#0F0F0F;margin:0;'>"+escapeHtml(sec.body)+"</p></div>";
         out+="</div>";
       });
     }
@@ -7902,6 +7913,11 @@ function initOfflineDetection(){
       banner.classList.add('show');
     } else {
       banner.classList.remove('show');
+      // breaker-fix Pass 2 — drain queued offline messages when connection returns.
+      // queueOfflineMessage promises "will send when back online" but flushOfflineQueue
+      // was never wired to the online event, so messages sat in offlineQueue until the
+      // tab was closed. Now they actually send.
+      if(typeof flushOfflineQueue==='function')try{flushOfflineQueue();}catch(_){}
     }
   }
   window.addEventListener('online',updateOnline);

@@ -5840,7 +5840,8 @@ async function sendChat(){
   if(hadAttachment&&chatAttachment.type.startsWith('image/')){
     try{
       var b64Disp=await blobToBase64Display(chatAttachment);
-      var userHtml=(text?'<p style="margin-bottom:8px;">'+text+'</p>':'')
+      // breaker-fix Pass 4 — escape image-attachment caption text. The text-only path at line 5848 already escapes via escapeHtml(text); this path was inconsistent and let user-typed payloads execute via innerHTML in appendMessage.
+      var userHtml=(text?'<p style="margin-bottom:8px;">'+escapeHtml(text)+'</p>':'')
         +'<img src="'+b64Disp+'" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;cursor:pointer;" onclick="openImgOverlay(\''+b64Disp+'\')"/>';
       appendMessage('user',userHtml);
     }catch(ie){appendMessage('user',(text||'')+'\n[Photo attached]');}
@@ -6008,8 +6009,9 @@ function showRefrigerantLog(){
     log.slice().reverse().forEach(function(e){
       var d=new Date(e.date);
       html+='<div style="padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:12px;">';
-      html+='<div style="color:#fff;font-weight:600;">'+e.type+' — '+e.amount+' lbs '+e.action+'</div>';
-      html+='<div style="color:#555;margin-top:2px;">'+d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+(e.unit?' · '+e.unit:'')+'</div>';
+      // breaker-fix Pass 4 — escape every localStorage-supplied field. Self-XSS only (attacker controls their own browser) but the right pattern is to consistently escape any user-supplied data before innerHTML.
+      html+='<div style="color:#fff;font-weight:600;">'+escapeHtml(e.type||'')+' — '+escapeHtml(String(e.amount||''))+' lbs '+escapeHtml(e.action||'')+'</div>';
+      html+='<div style="color:#555;margin-top:2px;">'+d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+(e.unit?' · '+escapeHtml(e.unit):'')+'</div>';
       html+='</div>';
     });
   }

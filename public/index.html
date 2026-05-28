@@ -3047,6 +3047,11 @@ function authForgot(){
 function authSignOut(){
   // clearChat archives chatHistory to localStorage under getUserMemoryKey('archives'), which falls back to the 'guest' namespace when currentUser is null. Must run BEFORE both currentUser=null AND chatHistory=[] or the archive either lands in the wrong key (unreachable on sign-back-in) or silently skips entirely. Push 6 commit 6 shipped the archive logic but the prior signout sequence defeated both halves of it.
   if(typeof clearChat==='function')clearChat();
+  // Push 7.4 — clear per-user `trazer_*_<email-slug>` localStorage keys for the signing-out user (Gap #006). Matches the slug format produced by getUserMemoryKey(). Closes the "saw my coworker's chat history on the shop tablet" UX hazard on shared devices. Runs AFTER clearChat() so the archive that clearChat just wrote also gets cleared — accepted tradeoff per Brandon's Option A directive (no history carry-over on the same device after signout).
+  if(currentUser&&currentUser.email){
+    var sl7_4=currentUser.email.replace(/[^a-z0-9]/gi,'_');
+    Object.keys(localStorage).filter(function(k){return k.indexOf('trazer_')===0&&k!=='trazer_user'&&k!=='trazer_users'&&k.indexOf('_'+sl7_4)>-1;}).forEach(function(k){localStorage.removeItem(k);});
+  }
   currentUser=null;localStorage.removeItem('trazer_user');
   closeProfileDD();
   document.getElementById('authOverlay').classList.remove('hidden');
@@ -4032,6 +4037,8 @@ async function callAI(system,messages,max_tokens,useSearch){
         if(res.status===401){
           // Stale token — clear it and show login screen
           localStorage.removeItem('trazer_user');
+          // Push 7.4 — also clear the multi-user cache so tracerInit on next page-load can't silently rehydrate currentUser from a stale entry (Gap #006). The user explicitly lost their auth here; treat it as a clean signout from the device's perspective.
+          localStorage.removeItem('trazer_users');
           currentUser=null;
           document.getElementById('authOverlay').classList.remove('hidden');
           throw new Error('Your session expired. Please sign in again.');

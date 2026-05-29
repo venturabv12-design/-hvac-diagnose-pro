@@ -2031,10 +2031,6 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
-          <button id="voiceModeBtn" data-homeowner-only onclick="toggleVoiceMode()" class="chat-icon-btn" title="Hands-free voice">
-            <span style="font-size:16px;">&#x1F399;</span>
-            <span id="voiceModeBtnLabel" class="icon-label">Voice</span>
-          </button>
           <button onclick="wipeChat()" class="chat-icon-btn" title="Clear chat (no greeting)">
             <span style="font-size:14px;color:rgba(255,255,255,.55);">&#x2715;</span>
             <span class="icon-label">Clear</span>
@@ -2044,19 +2040,6 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
             <span class="icon-label">Camera</span>
           </button>
           <button id="pttBtn" class="input-ptt" data-contractor-only aria-label="Push to talk — hold to speak"><i data-lucide="mic"></i></button>
-        </div>
-      </div>
-
-      <!-- VOICE BAR -->
-      <div id="voiceModeBar" style="display:none;" class="voice-bar">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div id="voiceStatusDot" class="voice-dot"></div>
-          <div style="flex:1;">
-            <div id="voiceStatusText" style="font-size:13px;font-weight:700;color:#fff;">Listening&hellip;</div>
-            <div id="voiceTranscript" style="font-size:11px;color:#9499B0;min-height:14px;"></div>
-          </div>
-          <button id="micBtn" onclick="toggleMic()" class="voice-mic-btn">&#x1F399;</button>
-          <button id="stopSpeakBtn" onclick="stopMikeSpeaking()" class="voice-stop-btn" style="display:none;">&#x23F9;</button>
         </div>
       </div>
 
@@ -3807,7 +3790,7 @@ function setMode(m){
   mode=m;
   var isPro=m==='pro';
   document.body.dataset.mode=isPro?'contractor':'homeowner';
-  if(isPro)try{bindPTT();}catch(_){} // Push 6 commit 5: attach hold-to-talk handlers (idempotent via _pttBound flag).
+  try{bindPTT();}catch(_){} // Unconditional — idempotent via _pttBound; ensures handler is bound on every setMode call regardless of mode-init order.
   document.getElementById('tabHome').className='mode-tab'+(m==='home'?' active':'');
   document.getElementById('tabPro').className='mode-tab'+(m==='pro'?' active':'');
   document.getElementById('panelHome').style.display=isPro?'none':'block';

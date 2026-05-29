@@ -2043,6 +2043,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
             <span style="font-size:16px;">&#x1F4F7;</span>
             <span class="icon-label">Camera</span>
           </button>
+          <button id="pttBtn" class="input-ptt" data-contractor-only aria-label="Push to talk — hold to speak"><i data-lucide="mic"></i></button>
         </div>
       </div>
 
@@ -2144,7 +2145,6 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
           <textarea id="chatInput" placeholder="Ask Mike anything&hellip;" rows="1" maxlength="8000" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
           <span id="chatCharCount" style="display:none;font-size:10px;color:var(--gray-400);align-self:center;white-space:nowrap;"></span>
           <button onclick="sendChat()" id="chatSendBtn" class="send-btn">&#x279E;</button>
-          <button id="pttBtn" class="input-ptt" data-contractor-only aria-label="Push to talk — hold to speak"><i data-lucide="mic"></i></button>
         </div>
         <div id="voiceWaveform" style="display:none;justify-content:center;align-items:center;gap:3px;padding:4px 0;">
           <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>

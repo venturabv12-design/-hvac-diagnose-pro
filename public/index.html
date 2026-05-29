@@ -757,38 +757,16 @@ body[data-mode="contractor"] .recent-job-tag.done{background:rgba(91,123,90,.18)
 body[data-mode="contractor"] .recent-job-tag.open{background:rgba(199,85,59,.18);color:var(--rust);}
 body[data-mode="contractor"] .recent-job-tag.progress{background:rgba(255,180,0,.18);color:var(--safety);}
 
-/* ── PUSH 6 — INPUT ROW PILL + PTT + VOICE-LISTENING UX (commit 5/6) ──
-   Pill-shaped input row, 44x44 safety-yellow PTT button per mockup. Voice-
-   listening UX (badge pulse + status text swap + waveform) gated on
-   body.ptt-active. Existing speech subsystem (startListening/stopListening
-   at index.html line ~6714) is reused verbatim per user directive — no
-   reinvention of the Safari getUserMedia warmup or onresult handlers. */
-
-/* Base chat-input-row class — replaces the prior inline-style div */
+/* ── CHAT INPUT ROW — contractor pill ── */
 .chat-input-row{display:flex;gap:8px;align-items:flex-end;}
 
-/* Contractor pill-row override */
 body[data-mode="contractor"] .chat-input-row{background:var(--ink-2);border:1px solid var(--line);border-radius:100px;padding:4px;gap:4px;align-items:center;}
 body[data-mode="contractor"] .chat-input-row .chat-attach-btn{width:38px;height:38px;background:transparent;border:none;color:rgba(255,255,255,.6);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;cursor:pointer;margin:0;}
 body[data-mode="contractor"] .chat-input-row #chatInput{background:transparent !important;border:none !important;color:#fff !important;font-family:'Archivo',sans-serif;font-size:14px;padding:0 8px;font-weight:500;flex:1;min-height:38px;line-height:1.4;box-shadow:none !important;}
 body[data-mode="contractor"] .chat-input-row #chatInput::placeholder{color:rgba(255,255,255,.4) !important;}
 
-/* PTT button — base styling (always rendered, hidden in homeowner via [data-contractor-only]) */
-.input-ptt{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--safety) 0%,var(--safety-deep) 100%);border:none;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 3px rgba(255,180,0,.2),0 2px 0 var(--safety-deep);-webkit-tap-highlight-color:transparent;padding:0;touch-action:none;-webkit-user-select:none;user-select:none;}
-.input-ptt svg{width:20px;height:20px;stroke-width:2.5;}
-.input-ptt:active{transform:scale(.96);}
-
-/* Hide voice-mode bar in contractor — PTT is the hold-to-talk control; send button stays visible for typed messages. */
-body[data-mode="contractor"] #voiceModeBar{display:none !important;}
 body[data-mode="contractor"] #chatCharCount{display:none !important;}
-/* Contractor pill-row: send button 44x44 + circular to match PTT/attach siblings and meet Apple HIG touch target. */
 body[data-mode="contractor"] #chatSendBtn{width:44px;height:44px;border-radius:50%;}
-
-/* Voice-listening state — body.ptt-active triggers badge pulse, status swap, waveform */
-@keyframes mike-pulse-listen{0%,100%{box-shadow:0 0 0 2px var(--teal);}50%{box-shadow:0 0 0 2px var(--teal),0 0 0 8px rgba(0,194,178,.3);}}
-body[data-mode="contractor"].ptt-active .mike-badge{animation:mike-pulse-listen 1.2s ease-in-out infinite;}
-body[data-mode="contractor"].ptt-active #voiceWaveform{display:flex !important;padding:6px 0;}
-body[data-mode="contractor"].ptt-active .input-ptt{box-shadow:0 0 0 3px rgba(255,180,0,.5),0 0 0 8px rgba(255,180,0,.25);}
 
 /* ── PUSH 6 — FIND-A-PRO INLINE CTA (commit 6/6) ──
    Rendered inside agent .msg-agent wrapper (after the bubble, sibling to .msg-time)
@@ -2043,7 +2021,6 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
             <span class="icon-glyph"><i data-lucide="phone"></i></span>
             <span id="voiceModeBtnLabel" class="icon-label">Call</span>
           </button>
-          <button id="pttBtn" class="input-ptt" data-contractor-only aria-label="Push to talk — hold to speak"><i data-lucide="mic"></i></button>
         </div>
       </div>
 
@@ -3683,11 +3660,6 @@ var mediaRecorder=null,audioChunks=[],recTimer=null,recSeconds=0;
 var chatHistory=[],chatSending=false;
 var currentLang='en';
 var voiceMode=false,mikeVoice=null,mikeAudio=null,isMikeSpeaking=false,isListening=false,speechRecognition=null,autoListenAfterSpeak=false;
-// Push 6 commit 7: pttExchangePending tracks whether the current AI exchange originated from a PTT hold.
-// Used by shouldMikeSpeak() so Mike's TTS auto-speak fires for voice/camera engagement (field tech phone/FaceTime model)
-// without auto-speaking text-typed exchanges. Cleared by appendMessage after Mike is queued to speak, by handleChatKey
-// on Enter (user clearly switched to typing), or by a 30s belt-and-suspenders timeout for network-failure cases.
-var pttExchangePending=false,_pttExchangeTimer=null;
 var audioUnlocked=false,sharedAudioCtx=null,micGreetingPending=null;
 var techLocation=null,wakeLock=null;
 
@@ -3808,7 +3780,6 @@ function setMode(m){
   mode=m;
   var isPro=m==='pro';
   document.body.dataset.mode=isPro?'contractor':'homeowner';
-  try{bindPTT();}catch(_){} // Unconditional — idempotent via _pttBound; ensures handler is bound on every setMode call regardless of mode-init order.
   document.getElementById('tabHome').className='mode-tab'+(m==='home'?' active':'');
   document.getElementById('tabPro').className='mode-tab'+(m==='pro'?' active':'');
   document.getElementById('panelHome').style.display=isPro?'none':'block';
@@ -5439,15 +5410,10 @@ function appendMessage(role,text){
     .replace(/\*\*([^*]+)\*\*/g,'$1')
     .replace(/\*([^*]+)\*/g,'$1')
     .replace(/  +/g,' ').trim();
-  // Push 6 commit 7: context-aware TTS gate (replaces voiceMode-only check that left
-  // contractor's PTT/camera-engaged Mike silent). Speaks during voice/camera engagement;
-  // stays silent during text-only typing. shouldMikeSpeak defined just before startPTT.
-  // Camera flow has its own TTS via mikeSayCamera (called from analyzeCameraFrame,
-  // LOCKED) — skip mikeSay here when cameraActive to avoid the double-speak race.
-  // pttExchangePending is INTENTIONALLY NOT cleared here — mikeSay's stale-guard
-  // (now also shouldMikeSpeak-based) checks the same flag during async fetch/decode,
-  // so clearing it synchronously would silently drop the audio. Clearing happens via
-  // handleChatKey on Enter, by startPTT re-set on next hold, or by the 30s timeout.
+  // Context-aware TTS gate: Mike speaks during voice/camera engagement, stays
+  // silent during text-only typing. Camera flow has its own TTS via mikeSayCamera
+  // (called from analyzeCameraFrame, LOCKED) — skip mikeSay here when cameraActive
+  // to avoid the double-speak race.
   if(role==='agent'&&shouldMikeSpeak()){
     var _ctrCamSkip=(typeof cameraActive!=='undefined'&&cameraActive);
     if(!_ctrCamSkip){
@@ -6735,10 +6701,6 @@ function showImageInChat(url,caption){
 function handleChatKey(e){
   if(e.key==='Enter'&&!e.shiftKey){
     e.preventDefault();
-    // Push 6 commit 7: user clearly switched to typing — clear any stale PTT-exchange
-    // flag so Mike's response to this text-typed message doesn't get unexpectedly
-    // auto-spoken (would happen if a prior PTT hold ended without a transcript).
-    if(pttExchangePending){pttExchangePending=false;if(_pttExchangeTimer){clearTimeout(_pttExchangeTimer);_pttExchangeTimer=null;}}
     sendChat();
   }
 }
@@ -6897,63 +6859,12 @@ function loadMikeVoice(){
 // getUserMedia warm-up pattern bypasses WebKit Bug #218815 silent mute.
 // (Restored from pre-watchdog architecture.)
 
-// Push 6 commit 5: PTT (hold-to-talk) replaces hands-free voice mode in contractor.
-// Reuses existing startListening / stopListening (Safari quirk handling lives there)
-// — verbatim per user directive. Body.ptt-active gates badge pulse, status swap
-// to "Mike's listening...", and waveform display.
-// Push 6 commit 7: shouldMikeSpeak() — unified TTS context gate. Mike speaks back
-// during voice/camera engagement (phone/FaceTime model) and stays silent during
-// text-only typing. Replaces the commit-5 voiceMode-pinned-false regression that
-// silenced contractor Mike entirely.
+// Unified TTS context gate: Mike speaks back during hands-free Call mode
+// (voiceMode) or live camera (cameraActive), stays silent during text-only typing.
 function shouldMikeSpeak(){
-  if(voiceMode)return true; // hands-free voice mode (homeowner, existing behavior)
-  if(pttExchangePending)return true; // PTT-initiated exchange (contractor)
-  if(typeof cameraActive!=='undefined'&&cameraActive)return true; // camera-open session
+  if(voiceMode)return true;
+  if(typeof cameraActive!=='undefined'&&cameraActive)return true;
   return false;
-}
-function startPTT(){
-  if(document.body.dataset.mode!=='contractor')return;
-  document.body.classList.add('ptt-active');
-  // Push 6 commit 7: mark exchange as PTT-originated so Mike's response auto-speaks
-  // when it arrives (cleared in appendMessage). Belt-and-suspenders 30s timeout
-  // covers network-failure cases where no agent response ever arrives.
-  pttExchangePending=true;
-  if(_pttExchangeTimer)clearTimeout(_pttExchangeTimer);
-  _pttExchangeTimer=setTimeout(function(){pttExchangePending=false;_pttExchangeTimer=null;},30000);
-  var status=document.getElementById('navMikeStatus');
-  if(status){
-    if(!status.dataset.original)status.dataset.original=status.textContent;
-    status.textContent="● Mike's listening...";
-  }
-  var input=document.getElementById('chatInput');
-  if(input)input.value='';
-  try{unlockAudioSafe();}catch(_){}
-  startListening();
-}
-function stopPTT(){
-  document.body.classList.remove('ptt-active');
-  var status=document.getElementById('navMikeStatus');
-  if(status&&status.dataset.original){status.textContent=status.dataset.original;delete status.dataset.original;}
-  // Graceful stop — DO NOT call stopListening() because it abort()s + nulls all handlers,
-  // which kills the release-to-submit path. .stop() lets final onresult fire + onend
-  // dispatches sendChat (existing handler at line ~6776 does this when chatInput has text).
-  if(speechRecognition){
-    try{speechRecognition.stop();}catch(_){}
-  }
-}
-function bindPTT(){
-  var btn=document.getElementById('pttBtn');
-  if(!btn||btn._pttBound)return;
-  btn._pttBound=true;
-  var holding=false;
-  function down(e){if(e&&e.cancelable)e.preventDefault();if(holding)return;holding=true;startPTT();}
-  function up(e){if(e&&e.cancelable)e.preventDefault();if(!holding)return;holding=false;stopPTT();}
-  btn.addEventListener('mousedown',down);
-  btn.addEventListener('touchstart',down,{passive:false});
-  btn.addEventListener('mouseup',up);
-  btn.addEventListener('mouseleave',up);
-  btn.addEventListener('touchend',up,{passive:false});
-  btn.addEventListener('touchcancel',up);
 }
 
 function toggleVoiceMode(){
@@ -7242,10 +7153,8 @@ function mikeSay(text){
   var voiceCtrl=(typeof AbortController!=='undefined')?new AbortController():null;
   try{if(window._voiceTTSAbort)window._voiceTTSAbort.abort();}catch(e){}
   window._voiceTTSAbort=voiceCtrl;
-  // Push 6 commit 7: stale-guard broadened to match the entry gate. Without this,
-  // PTT exchanges (voiceMode=false) would have their audio silently dropped at every
-  // checkpoint (lines 7047, 7067, 7069). shouldMikeSpeak stays true through the
-  // exchange via pttExchangePending; cleared by handleChatKey/startPTT/30s timeout.
+  // Stale-guard: drops audio if user pressed stop, opened camera, or the gate flipped
+  // (e.g. call ended) between fetch start and decode.
   var stale=function(){return myToken!==window._voiceTTSToken||!shouldMikeSpeak();};
   fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean}),signal:voiceCtrl?voiceCtrl.signal:undefined})
     .then(function(res){

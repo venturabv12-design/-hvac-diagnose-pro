@@ -2039,7 +2039,25 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
             <span style="font-size:16px;">&#x1F4F7;</span>
             <span class="icon-label">Camera</span>
           </button>
+          <button id="voiceModeBtn" onclick="toggleVoiceMode()" class="chat-icon-btn" title="Hands-free call with Mike" aria-label="Call Mike — hands-free voice conversation">
+            <span class="icon-glyph"><i data-lucide="phone"></i></span>
+            <span id="voiceModeBtnLabel" class="icon-label">Call</span>
+          </button>
           <button id="pttBtn" class="input-ptt" data-contractor-only aria-label="Push to talk — hold to speak"><i data-lucide="mic"></i></button>
+        </div>
+      </div>
+
+      <!-- VOICE CALL BAR — shown while a Call is active -->
+      <div id="voiceModeBar" style="display:none;" class="voice-bar">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div id="voiceStatusDot" class="voice-dot"></div>
+          <div style="flex:1;min-width:0;">
+            <div id="voiceStatusText" style="font-size:13px;font-weight:700;color:#fff;">Connecting&hellip;</div>
+            <div id="voiceTranscript" style="font-size:11px;color:#9499B0;min-height:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+          </div>
+          <button id="micBtn" onclick="toggleMic()" class="voice-mic-btn" aria-label="Mic on/off">&#x1F399;</button>
+          <button id="stopSpeakBtn" onclick="stopMikeSpeaking()" class="voice-stop-btn" style="display:none;" aria-label="Stop Mike from speaking">&#x23F9;</button>
+          <button onclick="toggleVoiceMode()" class="voice-end-btn" title="End call" aria-label="End call" style="width:44px;height:44px;border-radius:50%;background:#E8354A;border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;">&#x2715;</button>
         </div>
       </div>
 
@@ -6939,19 +6957,24 @@ function bindPTT(){
 }
 
 function toggleVoiceMode(){
-  if(document.body.dataset.mode==='contractor')return; // Push 6: contractor uses PTT (hold-to-talk), not hands-free.
   unlockAudioSafe();
   if(voiceMode){
     voiceMode=false;
     stopListening();
     stopMikeSpeaking();
     micGreetingPending=null;
+    // Release wakeLock and tear down idle-timeout machinery
+    if(wakeLock){try{wakeLock.release();}catch(e){}wakeLock=null;}
+    try{clearTimeout(window._idleCheck);}catch(e){}
+    try{clearTimeout(window._idleGoodbye);}catch(e){}
+    window._idleCheckFiring=false;
+    if(window._visListener){document.removeEventListener('visibilitychange',window._visListener);window._visListener=null;}
     var vbar=document.getElementById('voiceModeBar');
     var vbtn=document.getElementById('voiceModeBtn');
     var vlbl=document.getElementById('voiceModeBtnLabel');
     if(vbar)vbar.style.display='none';
     if(vbtn)vbtn.classList.remove('voice-mode-active');
-    if(vlbl){vlbl.style.color='rgba(255,255,255,.5)';vlbl.textContent='Voice';}
+    if(vlbl){vlbl.style.color='rgba(255,255,255,.5)';vlbl.textContent='Call';}
     setVoiceStatus('','');
     return;
   }
@@ -6960,12 +6983,65 @@ function toggleVoiceMode(){
     return;
   }
   voiceMode=true;
+  // iOS Safari: pre-create and unlock an Audio element during this user gesture
+  // so any HTMLAudioElement fallback path can play. WebAudio in mikeSay() is primary.
+  try{
+    if(!window._iosAudioEl){
+      window._iosAudioEl=new Audio();
+      window._iosAudioEl.setAttribute('playsinline','');
+      window._iosAudioEl.setAttribute('webkit-playsinline','');
+      window._iosAudioEl.src='data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZw';
+      window._iosAudioEl.volume=0;
+      window._iosAudioEl.play().catch(function(){});
+    }
+  }catch(e){}
+  // Keep screen alive for the duration of the call.
+  if(navigator.wakeLock){
+    navigator.wakeLock.request('screen').then(function(wl){wakeLock=wl;}).catch(function(){});
+  }
+  // Idle-timeout state machine — silence-based, not duration-based.
+  // 45s of silence → Mike asks "You still with me?"; 15s more → goodbye + end call.
+  // Any user speech (onspeechstart/onresult-final) or Mike utterance (mikeSay) resets the timer.
+  window._idleCheckFiring=false;
+  window._idleResetTimer=function(){
+    if(!voiceMode)return;
+    try{clearTimeout(window._idleCheck);}catch(e){}
+    try{clearTimeout(window._idleGoodbye);}catch(e){}
+    window._idleCheck=setTimeout(function(){
+      if(!voiceMode)return;
+      window._idleCheckFiring=true;
+      var checkMsg={en:"You still with me?",es:"¿Sigues conmigo?",zh:"你还在吗？",vi:"Bạn còn đó không?",fr:"Vous êtes encore là?",pt:"Ainda está aí?"};
+      mikeSay(checkMsg[currentLang]||checkMsg.en);
+      window._idleGoodbye=setTimeout(function(){
+        if(!voiceMode)return;
+        var byeMsg={en:"Talk soon — tap me when you need me.",es:"Hablamos pronto — tócame cuando me necesites.",zh:"回头见 — 需要时点我。",vi:"Nói chuyện sau — chạm vào tôi khi cần.",fr:"À bientôt — touchez-moi quand vous avez besoin.",pt:"Falamos em breve — toque quando precisar."};
+        mikeSay(byeMsg[currentLang]||byeMsg.en);
+        setTimeout(function(){if(voiceMode)toggleVoiceMode();},3500);
+      },15000);
+    },45000);
+  };
+  window._idleResetTimer();
+  // Backgrounding probe: if Safari is backgrounded with no live audio route
+  // (no AirPods/CarPlay), iOS will interrupt the AudioContext. We end the call
+  // in that case. With a live route, the context stays running and we continue.
+  window._visListener=function(){
+    if(document.hidden&&voiceMode){
+      setTimeout(function(){
+        if(!voiceMode||!document.hidden)return;
+        var ctx=sharedAudioCtx;
+        if(!ctx||ctx.state==='interrupted'||ctx.state==='suspended'){
+          toggleVoiceMode();
+        }
+      },500);
+    }
+  };
+  document.addEventListener('visibilitychange',window._visListener);
   var vbar=document.getElementById('voiceModeBar');
   var vbtn=document.getElementById('voiceModeBtn');
   var vlbl=document.getElementById('voiceModeBtnLabel');
   if(vbar)vbar.style.display='flex';
   if(vbtn)vbtn.classList.add('voice-mode-active');
-  if(vlbl){vlbl.style.color='#C7553B';vlbl.textContent='Voice ON';}
+  if(vlbl){vlbl.style.color='#C7553B';vlbl.textContent='On Call';}
   // Greet on first open. unlockAudioSafe (called above on this gesture) resumed
   // the AudioContext, so mikeSay can play through it. If resuming mid-conversation,
   // auto-engage mic so the user can talk immediately.
@@ -7054,6 +7130,11 @@ function _doStartListening(SR){
         },300);
       }
     };
+    speechRecognition.onspeechstart=function(){
+      // User started talking — clear any pending idle-check and reset the silence timer
+      if(window._idleCheckFiring)window._idleCheckFiring=false;
+      if(window._idleResetTimer)window._idleResetTimer();
+    };
     speechRecognition.onresult=function(e){
       var transcript='';
       for(var i=e.resultIndex;i<e.results.length;i++)transcript+=e.results[i][0].transcript;
@@ -7061,6 +7142,7 @@ function _doStartListening(SR){
       if(e.results[e.results.length-1].isFinal){
         document.getElementById('chatInput').value=transcript;
         if(isSafari)setVoiceStatus('Got it…',transcript);
+        if(window._idleResetTimer)window._idleResetTimer();
       }
     };
     speechRecognition.onend=function(){
@@ -7136,6 +7218,11 @@ function mikeSay(text){
   // greet, startListening relisten) are already voiceMode-guarded externally,
   // so this change doesn't widen their behavior — only unblocks contractor PTT.
   if(!shouldMikeSpeak())return;
+  // Idle-timeout reset: any genuine Mike utterance resets the silence timer.
+  // EXCEPT when Mike is firing the 45s "you still with me?" idle-check itself —
+  // _idleCheckFiring is set true just before that mikeSay call so we skip the
+  // reset here, letting the 60s goodbye timer continue ticking down.
+  if(!window._idleCheckFiring&&window._idleResetTimer)window._idleResetTimer();
   // Kill any other Mike that may be speaking — voice mode, camera mode, or browser fallback.
   // This is the single source of truth: only ONE Mike voice may ever play at a time.
   stopMikeSpeaking();

@@ -465,7 +465,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 
 
 /* ════ WORLD CLASS CSS ═══════════════════════════════════ */
-#toastContainer{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
+#toastContainer{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:10000;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
 .toast{background:#1a1a1a;color:#fff;border-radius:24px;padding:10px 20px;font-size:13px;font-weight:600;box-shadow:0 4px 24px rgba(0,0,0,.4);animation:toastIn .25s cubic-bezier(.34,1.56,.64,1);max-width:280px;text-align:center;}
 .toast.success{background:linear-gradient(135deg,#065f46,#047857);border:1px solid #10B981;}
 .toast.error{background:linear-gradient(135deg,#7f1d1d,#991b1b);border:1px solid #E8354A;}
@@ -1654,7 +1654,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
     <div class="auth-err" id="authErr"></div>
 
     <!-- SIGN IN FORM -->
-    <div id="authInForm">
+    <form id="authInForm" name="trazer-signin" onsubmit="event.preventDefault();authSignIn();return false;" autocomplete="on">
       <div class="auth-field">
         <label class="auth-lbl">Email</label>
         <input class="auth-inp" type="email" id="siEmail" placeholder="you@company.com" autocomplete="email" inputmode="email"/>
@@ -1666,11 +1666,11 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
       <div style="text-align:right;margin-bottom:14px;">
         <span class="auth-forgot" onclick="authForgot()" style="cursor:pointer;">Forgot password?</span>
       </div>
-      <button class="auth-btn" id="siBtn" type="button" onclick="authSignIn()">Sign In</button>
-    </div>
+      <button class="auth-btn" id="siBtn" type="submit" onclick="authSignIn()">Sign In</button>
+    </form>
 
     <!-- SIGN UP FORM -->
-    <div id="authUpForm" style="display:none">
+    <form id="authUpForm" name="trazer-signup" onsubmit="event.preventDefault();authSignUp();return false;" autocomplete="on" style="display:none">
       <div class="auth-field">
         <label class="auth-lbl">I am a...</label>
         <div style="display:flex;gap:8px;margin-top:6px;">
@@ -1694,8 +1694,8 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
         <label class="auth-lbl">Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
         <input class="auth-inp" type="text" id="suCompany" placeholder="Your HVAC company" autocomplete="organization"/>
       </div>
-      <button class="auth-btn" id="suBtn" type="button" onclick="authSignUp()">Start Free Trial</button>
-    </div>
+      <button class="auth-btn" id="suBtn" type="submit" onclick="authSignUp()">Start Free Trial</button>
+    </form>
 
     <p class="auth-terms">By continuing you agree to our <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Terms</a> and <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Privacy Policy</a></p>
   </div>
@@ -3044,8 +3044,17 @@ function authSignOut(){
     Object.keys(localStorage).filter(function(k){return k.indexOf('trazer_')===0&&k!=='trazer_user'&&k!=='trazer_users'&&k.indexOf('_'+sl7_4)>-1;}).forEach(function(k){localStorage.removeItem(k);});
   }
   currentUser=null;localStorage.removeItem('trazer_user');
+  // Bug 5 fix (Owner persona / Gap #007): clear DOM remnants of prior user.
+  // clearChat() above wrote a Mike-greeting using the prior user's first name;
+  // also #navProfileBtn still shows prior initials. Blank both so the next
+  // user / signed-out state has no trace of the previous session on shared devices.
+  var _chatMsgs=document.getElementById('chatMessages');
+  if(_chatMsgs)_chatMsgs.innerHTML='';
+  var _navProf=document.getElementById('navProfileBtn');
+  if(_navProf)_navProf.textContent='';
   closeProfileDD();
   document.getElementById('authOverlay').classList.remove('hidden');
+  showAuthErr(''); // Fix D: clear any stale error from prior signin attempt
   authTab('in');
   chatHistory=[];techLocation=null;
 }

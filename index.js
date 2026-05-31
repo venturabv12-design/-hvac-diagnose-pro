@@ -61,22 +61,37 @@ async function fetchWithRetry(url, options, retries = 2) {
 async function supabase(method, table, body, query = '') {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return null;
   const url = `${SUPABASE_URL}/rest/v1/${table}${query}`;
-  const res = await fetch(url, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': SUPABASE_SERVICE_KEY,
-      'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-      'Prefer': method === 'POST' ? 'return=representation' : 'return=representation',
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) {
-    const err = await res.text().catch(()=>'');
-    console.error(`Supabase ${method} ${table} error:`, res.status, err.substring(0,200));
+  // 10s timeout — matches the AbortController pattern used by the AI (1167) and TTS
+  // (1223) routes. Without this, a stalled/paused Supabase makes fetch hang forever,
+  // which freezes the calling route (e.g. /api/auth/signin stuck on "Signing in…").
+  // On timeout we abort → fetch rejects → caught below → return null, so callers get
+  // the same clean failure they already handle for any null result.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_SERVICE_KEY,
+        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+        'Prefer': method === 'POST' ? 'return=representation' : 'return=representation',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const err = await res.text().catch(()=>'');
+      console.error(`Supabase ${method} ${table} error:`, res.status, err.substring(0,200));
+      return null;
+    }
+    return res.json().catch(()=>null);
+  } catch (e) {
+    console.error(`Supabase ${method} ${table} timeout/abort:`, e.name === 'AbortError' ? 'timed out after 10s' : e.message);
     return null;
+  } finally {
+    clearTimeout(timeout);
   }
-  return res.json().catch(()=>null);
 }
 
 // ── PASSWORD HASHING ──────────────────────────────────────────────────────────
@@ -538,7 +553,14 @@ app.post('/api/auth/signin', authLimiter, async (req, res) => {
     const users = await supabase('GET', 'users', null, 
       `?email=eq.${encodeURIComponent(email.toLowerCase().trim())}&select=*`);
     
-    if (!users || users.length === 0)
+    // supabase() returns null on a non-OK response OR a 10s timeout/abort (paused or
+    // stalled DB). Distinguish that from a genuine empty result: null => upstream is
+    // unavailable, so return 503 'try again' instead of a misleading 'No account found'
+    // (which would make a tech think their account vanished). An empty array is the
+    // real no-such-user case and keeps the 404.
+    if (users === null)
+      return res.status(503).json({ error: 'Service temporarily unavailable — please try again in a moment' });
+    if (users.length === 0)
       return res.status(404).json({ error: 'No account found with this email' });
 
     const user = users[0];

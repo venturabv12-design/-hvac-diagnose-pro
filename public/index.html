@@ -1216,14 +1216,18 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
   background:rgba(255,255,255,.07);
   border:1px solid rgba(255,255,255,.1);
   border-radius:10px;
-  padding:7px 12px;
+  padding:6px 4px;
   cursor:pointer;
   transition:all .15s;
-  min-width:46px;
+  width:54px;
+  height:52px;
+  box-sizing:border-box;
   -webkit-tap-highlight-color:transparent;
 }
-.chat-icon-btn:active{background:rgba(199,85,59,.15);border-color:rgba(199,85,59,.3);}
-.icon-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:rgba(255,255,255,.4);}
+.chat-icon-btn:active{background:rgba(199,85,59,.15);border-color:rgba(199,85,59,.3);transform:scale(.96);}
+.icon-glyph{height:20px;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;}
+.icon-glyph svg{width:18px;height:18px;}
+.icon-label{font-family:var(--font-code);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:rgba(255,255,255,.85);}
 
 /* Voice bar */
 .voice-bar{
@@ -2010,11 +2014,11 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <button onclick="wipeChat()" class="chat-icon-btn" title="Clear chat (no greeting)">
-            <span style="font-size:14px;color:rgba(255,255,255,.55);">&#x2715;</span>
+            <span class="icon-glyph" style="color:rgba(255,255,255,.55);">&#x2715;</span>
             <span class="icon-label">Clear</span>
           </button>
           <button onclick="checkCameraAccess()" class="chat-icon-btn" title="Live camera — Pro feature">
-            <span style="font-size:16px;">&#x1F4F7;</span>
+            <span class="icon-glyph">&#x1F4F7;</span>
             <span class="icon-label">Camera</span>
           </button>
           <button id="voiceModeBtn" onclick="toggleVoiceMode()" class="chat-icon-btn" title="Hands-free call with Mike" aria-label="Call Mike — hands-free voice conversation">
@@ -6894,7 +6898,7 @@ function toggleVoiceMode(){
     var vlbl=document.getElementById('voiceModeBtnLabel');
     if(vbar)vbar.style.display='none';
     if(vbtn)vbtn.classList.remove('voice-mode-active');
-    if(vlbl){vlbl.style.color='rgba(255,255,255,.5)';vlbl.textContent='Call';}
+    if(vlbl){vlbl.style.color='rgba(255,255,255,.5)';}
     setVoiceStatus('','');
     return;
   }
@@ -6961,7 +6965,7 @@ function toggleVoiceMode(){
   var vlbl=document.getElementById('voiceModeBtnLabel');
   if(vbar)vbar.style.display='flex';
   if(vbtn)vbtn.classList.add('voice-mode-active');
-  if(vlbl){vlbl.style.color='#C7553B';vlbl.textContent='On Call';}
+  if(vlbl){vlbl.style.color='#C7553B';}
   // Greet on first open. unlockAudioSafe (called above on this gesture) resumed
   // the AudioContext, so mikeSay can play through it. If resuming mid-conversation,
   // auto-engage mic so the user can talk immediately.
@@ -7017,7 +7021,7 @@ function startListening(){
           var lbl=document.getElementById('voiceModeBtnLabel');
           if(bar)bar.style.display='none';
           if(btn)btn.classList.remove('voice-mode-active');
-          if(lbl){lbl.style.color='rgba(255,255,255,.5)';lbl.textContent='Voice';}
+          if(lbl){lbl.style.color='rgba(255,255,255,.5)';}
         } else {
           _doStartListening(SR);
         }
@@ -7089,7 +7093,7 @@ function _doStartListening(SR){
         var vlbl=document.getElementById('voiceModeBtnLabel');
         if(vbar)vbar.style.display='none';
         if(vbtn)vbtn.classList.remove('voice-mode-active');
-        if(vlbl){vlbl.style.color='rgba(255,255,255,.5)';vlbl.textContent='Voice';}
+        if(vlbl){vlbl.style.color='rgba(255,255,255,.5)';}
       } else if(ev.error==='no-speech'||ev.error==='aborted'){
         if(voiceMode&&!isMikeSpeaking){
           setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1000:500);

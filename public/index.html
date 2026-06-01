@@ -1771,9 +1771,21 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 .v2-msg-mike .label .mt{font-family:var(--font-code);font-size:var(--v2-type-data-xs);letter-spacing:.1em;color:var(--v2-mute2);}
 .v2-msg-mike .text{font-family:var(--font-ui);font-size:var(--v2-type-body-lg);line-height:1.5;color:var(--v2-read);font-weight:500;letter-spacing:-.002em;}
 .v2-msg-mike .text + .text{margin-top:9px;}
-.v2-msg-mike .text b{font-weight:800;color:#fff;}
+.v2-msg-mike .text b,.v2-msg-mike .text strong{font-weight:800;color:#fff;}
+.v2-msg-mike .text em{font-style:normal;color:var(--teal);font-weight:700;}
 .v2-msg-mike .text .hl{color:var(--teal);font-weight:700;}
 .v2-msg-mike .time{font-family:var(--font-code);font-size:var(--v2-type-body-sm);letter-spacing:.1em;color:var(--v2-mute2);margin-top:9px;}
+/* Neutralize V1 bubble visuals — the .msg-bubble hook classes are kept on V2
+   content ONLY so search/copy/actions JS still finds the message text. Strip the
+   old white card / padding / border so the V2 typography (Mike) and warm bubble
+   (user) win, in light + dark + contractor mode. */
+.v2-msg-mike .text.msg-bubble{background:transparent !important;border:none !important;box-shadow:none !important;padding:0 !important;border-radius:0 !important;color:var(--v2-read) !important;font-family:var(--font-ui) !important;}
+.v2-msg-user{align-self:flex-end;}
+.v2-msg-user .bub.msg-bubble{display:inline-block;max-width:100%;background:linear-gradient(180deg,#211d14,#191610) !important;border:1px solid rgba(201,169,97,.22) !important;border-radius:16px 16px 5px 16px !important;padding:10px 13px !important;color:var(--v2-read) !important;font-family:var(--font-ui) !important;font-size:var(--v2-type-body-lg) !important;font-weight:500;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 8px 18px -14px #000 !important;}
+.v2-msg-user .bub.msg-bubble img{border-radius:10px;}
+body[data-mode="contractor"] .v2-msg-mike .text.msg-bubble,body[data-mode="contractor"] .v2-msg-user .bub.msg-bubble{font-size:var(--v2-type-body-lg) !important;letter-spacing:-.002em;}
+/* contractor mode hides .msg-time globally (line 683); V2 keeps its own .time/.mt visible */
+body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2-msg-mike .mt,body[data-mode="contractor"] .v2-msg-user .time{display:block;}
 /* mentor beat — teal-ruled aside, Caveat signature ONLY */
 .v2-mentor{margin-top:12px;border-left:2px solid rgba(0,194,178,.5);padding:2px 0 2px 12px;}
 .v2-mentor .q{font-family:var(--font-ui);font-size:14.5px;line-height:1.46;color:var(--v2-read);font-weight:600;}
@@ -1798,6 +1810,36 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 .v2-reach-mode.call .t{color:var(--safety);}   /* CTA color — Call */
 .v2-reach-mode.face .t{color:var(--teal);}      /* Mike color — FaceTime */
 .v2-reach-mode.text .t{color:var(--paper);}
+
+/* ===== V2 CHAT HEADER — instrument bar, no Mike face, teal presence + Call/FaceTime ===== */
+.v2-chat-header{background:linear-gradient(180deg,#121611,#0C0D0A);border-bottom:1px solid var(--v2-line);position:relative;}
+.v2-chat-header::after{content:"";position:absolute;left:0;bottom:-1px;height:1px;width:100%;
+  background:linear-gradient(90deg,transparent,rgba(0,194,178,.35),transparent);}
+.v2-hpres{position:relative;width:38px;height:38px;flex:none;}
+.v2-hpres .ring{position:absolute;inset:0;border-radius:10px;
+  background:radial-gradient(circle at 50% 40%,#18302d,#0f1d1b);
+  border:1px solid rgba(0,194,178,.45);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:400;font-size:17px;color:var(--teal);letter-spacing:.02em;
+  box-shadow:0 0 16px -5px rgba(0,194,178,.6) inset;}
+.v2-hpres .pd{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border:2px solid #0C0D0A;}
+.v2-hname{font-family:var(--font-display);font-weight:400;font-size:18px;letter-spacing:.02em;line-height:1;color:#fff;}
+.v2-hsub{font-family:var(--font-code);font-size:9.5px;letter-spacing:.1em;color:var(--teal);margin-top:4px;}
+.v2-hsub .lt{color:var(--v2-mute2);}
+.v2-hbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  width:50px;height:50px;border-radius:11px;border:1px solid var(--v2-line);
+  background:linear-gradient(180deg,#16140E,#100F0B);cursor:pointer;
+  box-shadow:0 1px 0 rgba(255,255,255,.04) inset;transition:transform var(--v2-dur-fast) var(--v2-ease-snap),border-color var(--v2-dur-fast) var(--v2-ease-snap);
+  -webkit-tap-highlight-color:transparent;}
+.v2-hbtn:active{transform:scale(.95);}
+.v2-hbtn-ic{height:18px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;}
+.v2-hbtn-ic svg{width:17px;height:17px;}
+.v2-hbtn-label{font-family:var(--font-code);font-size:8px;font-weight:700;letter-spacing:.06em;color:rgba(244,239,230,.7);}
+.v2-hbtn.call .v2-hbtn-ic,.v2-hbtn.call .v2-hbtn-label{color:var(--safety);}
+.v2-hbtn.call{border-color:rgba(255,180,0,.32);}
+.v2-hbtn.face .v2-hbtn-ic,.v2-hbtn.face .v2-hbtn-label{color:var(--teal);}
+.v2-hbtn.face{border-color:rgba(0,194,178,.32);}
+.v2-hbtn.clear .v2-hbtn-ic{color:rgba(244,239,230,.5);}
 /* ===== END V2 DESIGN SYSTEM (foundation) ===== */
 </style>
 <div id="offlineBanner"></div>
@@ -2166,30 +2208,30 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
     <!-- ── MIKE CHAT CARD ─────────────────────────────────────── -->
     <div class="chat-card">
 
-      <!-- MIKE HEADER -->
-      <div class="chat-header">
-        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
-          <div style="position:relative;flex-shrink:0;">
-            <div style="width:38px;height:38px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;">&#x1F9D1;&#x200D;&#x1F527;</div>
-            <div style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:#4caf50;border-radius:50%;border:2px solid #111;"></div>
+      <!-- MIKE HEADER — V2 treatment: no face/avatar, teal presence pulse, Call + FaceTime one tap -->
+      <div class="chat-header v2-chat-header">
+        <div style="display:flex;align-items:center;gap:11px;flex:1;min-width:0;">
+          <div class="v2-hpres">
+            <div class="ring">M</div>
+            <div class="v2-dot pd"></div>
           </div>
           <div style="min-width:0;">
-            <div style="font-size:14px;font-weight:800;color:#fff;letter-spacing:-.2px;">Mike — Master Tech</div>
-            <div style="font-size:11px;color:var(--rust);font-weight:500;">&#x25CF; Live &middot; EPA 608 &middot; NATE</div>
+            <div id="v2HeadName" class="v2-hname">MIKE</div>
+            <div class="v2-hsub"><span id="v2HeadRole">MASTER TECH</span><span class="lt"> &middot; <span id="v2HeadStatus">ALWAYS ON</span></span></div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
-          <button onclick="wipeChat()" class="chat-icon-btn" title="Clear chat (no greeting)">
-            <span class="icon-glyph" style="color:rgba(255,255,255,.55);">&#x2715;</span>
-            <span class="icon-label">Clear</span>
+          <button id="voiceModeBtn" onclick="toggleVoiceMode()" class="v2-hbtn call" title="Call Mike" aria-label="Call Mike — hands-free voice conversation">
+            <span class="v2-hbtn-ic"><i data-lucide="phone"></i></span>
+            <span id="voiceModeBtnLabel" class="v2-hbtn-label" data-v2i18n="reachCall">CALL</span>
           </button>
-          <button onclick="checkCameraAccess()" class="chat-icon-btn" title="Live camera — Pro feature">
-            <span class="icon-glyph">&#x1F4F7;</span>
-            <span class="icon-label">Camera</span>
+          <button onclick="checkCameraAccess()" class="v2-hbtn face" title="FaceTime Mike — live visual diagnostics" aria-label="FaceTime Mike — live visual diagnostics">
+            <span class="v2-hbtn-ic">&#x1F4F9;</span>
+            <span class="v2-hbtn-label" data-v2i18n="reachFace">FACETIME</span>
           </button>
-          <button id="voiceModeBtn" onclick="toggleVoiceMode()" class="chat-icon-btn" title="Hands-free call with Mike" aria-label="Call Mike — hands-free voice conversation">
-            <span class="icon-glyph"><i data-lucide="phone"></i></span>
-            <span id="voiceModeBtnLabel" class="icon-label">Call</span>
+          <button onclick="wipeChat()" class="v2-hbtn clear" title="Clear chat" aria-label="Clear chat">
+            <span class="v2-hbtn-ic">&#x2715;</span>
+            <span class="v2-hbtn-label" data-v2i18n="clear">CLEAR</span>
           </button>
         </div>
       </div>
@@ -2933,6 +2975,8 @@ function tracerInit(){
     var savedLang=localStorage.getItem('trazer_lang');
     if(savedLang&&['en','es','zh','vi','fr','pt'].indexOf(savedLang)>=0){
       setLang(savedLang);
+    }else if(typeof applyV2Lang==='function'){
+      applyV2Lang(); // default (en) — paint V2 header/composer labels on first load
     }
   }catch(e){}
   var s=localStorage.getItem('trazer_user');
@@ -5591,6 +5635,148 @@ function escapeHtml(s){
   if(typeof s!=='string')return '';
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
+
+// ── V2 CHAT i18n ─────────────────────────────────────────────────────────
+// Every new V2-chat string lives here in all 6 languages (en/es/zh/vi/fr/pt).
+// applyV2Lang() paints the static header labels (data-v2i18n="<key>") and is
+// called from setLang and on load. Dynamic strings (Mike's label, the diagnosis
+// card header, the mentor signature) read from V2_I18N[currentLang] at render time.
+var V2_I18N={
+  en:{reachCall:'CALL',reachFace:'FACETIME',clear:'CLEAR',mikeName:'MIKE',headRole:'MASTER TECH',headStatus:'ALWAYS ON',diagHead:'FAULT IDENTIFIED',mentorSig:'— Mike',composer:'Ask Mike anything…'},
+  es:{reachCall:'LLAMAR',reachFace:'FACETIME',clear:'BORRAR',mikeName:'MIKE',headRole:'TÉCNICO MAESTRO',headStatus:'SIEMPRE DISPONIBLE',diagHead:'FALLA IDENTIFICADA',mentorSig:'— Mike',composer:'Pregúntale a Mike…'},
+  zh:{reachCall:'通话',reachFace:'视频',clear:'清除',mikeName:'MIKE',headRole:'高级技师',headStatus:'随时在线',diagHead:'已识别故障',mentorSig:'— Mike',composer:'问 Mike 任何问题…'},
+  vi:{reachCall:'GỌI',reachFace:'FACETIME',clear:'XÓA',mikeName:'MIKE',headRole:'THỢ CẢ',headStatus:'LUÔN SẴN SÀNG',diagHead:'ĐÃ XÁC ĐỊNH LỖI',mentorSig:'— Mike',composer:'Hỏi Mike bất kỳ điều gì…'},
+  fr:{reachCall:'APPELER',reachFace:'FACETIME',clear:'EFFACER',mikeName:'MIKE',headRole:'MAÎTRE TECH',headStatus:'TOUJOURS DISPO',diagHead:'PANNE IDENTIFIÉE',mentorSig:'— Mike',composer:'Demandez à Mike…'},
+  pt:{reachCall:'LIGAR',reachFace:'FACETIME',clear:'LIMPAR',mikeName:'MIKE',headRole:'TÉCNICO MESTRE',headStatus:'SEMPRE ATIVO',diagHead:'FALHA IDENTIFICADA',mentorSig:'— Mike',composer:'Pergunte ao Mike…'}
+};
+function v2t(key){
+  var lang=(typeof currentLang!=='undefined')?currentLang:'en';
+  var tbl=V2_I18N[lang]||V2_I18N.en;
+  return tbl[key]!=null?tbl[key]:(V2_I18N.en[key]||'');
+}
+// Paint the static, translatable V2 header labels for the active language.
+function applyV2Lang(){
+  document.querySelectorAll('[data-v2i18n]').forEach(function(el){
+    var k=el.getAttribute('data-v2i18n');
+    if(k)el.textContent=v2t(k);
+  });
+  var nm=document.getElementById('v2HeadName');if(nm)nm.textContent=v2t('mikeName');
+  var rl=document.getElementById('v2HeadRole');if(rl)rl.textContent=v2t('headRole');
+  var st=document.getElementById('v2HeadStatus');if(st)st.textContent=v2t('headStatus');
+  var ci=document.getElementById('chatInput');if(ci)ci.setAttribute('placeholder',v2t('composer'));
+}
+// Mike's message label, localized ("MIKE"). escapeHtml-safe by construction.
+function labelV2(){return escapeHtml(v2t('mikeName'));}
+
+// ── V2 diagnosis-card detection ──────────────────────────────────────────
+// Two gears, one thread: when Mike's free-form reply contains a real structured
+// diagnosis (a named fault PLUS at least two measured readings), we render the
+// engineered Direction-I card; otherwise we render Direction-H prose. This is a
+// best-effort heuristic over Mike's prose — it does NOT touch the locked JSON
+// parser path and never surfaces raw JSON. On ANY uncertainty it returns null → prose.
+function detectV2Diagnosis(raw){
+  if(typeof raw!=='string'||!raw)return null;
+  var t=raw.replace(/```[\s\S]*?```/g,' ');
+  // A reading = a labelled measurement, e.g. "static 0.91\" wc", "plenum 198°F",
+  // "suction 55 psi", "superheat 22°", "blower 8.4A". Capture label + value+unit.
+  var readings=[];
+  var seen={};
+  var re=/([A-Za-z][A-Za-z \-\/]{1,22}?)\s*(?:is|was|at|reads?|of|=|:|@)?\s*(-?\d{1,4}(?:\.\d{1,2})?)\s*(?:°\s?[FC]\b|°|psi(?:g)?\b|" ?wc\b|"wc\b|"\b|wc\b|amps?\b|a\b|volts?\b|v\b|cfm\b|micron(?:s)?\b|hz\b)/gi;
+  var m;
+  while((m=re.exec(t))!==null&&readings.length<6){
+    var label=m[1].replace(/\b(the|a|an|is|was|at|of|and|but|so|your|my|i|its|it)\b/gi,' ').replace(/\s+/g,' ').trim();
+    if(!label||label.length<2)continue;
+    var full=m[0].replace(/\s+/g,' ').trim();
+    // Value+unit only — take from the captured number (group 2) to the end of the
+    // match, so connector words ("is", "at", "of") never leak into the gauge value.
+    var numIdx=full.indexOf(m[2]);
+    var valunit=(numIdx>=0?full.slice(numIdx):full).trim();
+    var key=label.toLowerCase();
+    if(seen[key])continue;seen[key]=1;
+    readings.push({label:label.toUpperCase(),value:valunit});
+  }
+  if(readings.length<2)return null; // not enough measured data → prose
+  // A fault headline = a recognized failure phrase in the reply.
+  var faultPats=[
+    /high[- ]limit lockout/i,/lockout/i,/cracked heat exchanger/i,/failed (?:capacitor|cap|contactor|compressor|board|igniter|inducer|blower motor|limit|sensor)/i,
+    /(?:bad|weak|shorted|open|grounded) (?:capacitor|contactor|compressor|winding|igniter|sensor|limit|transformer)/i,
+    /low (?:charge|refrigerant)/i,/(?:over|under)charged?/i,/restricted (?:airflow|metering|filter|txv|orifice)/i,
+    /flame (?:rollout|sensor fault)/i,/ignition (?:fault|failure|lockout)/i,/pressure switch (?:open|stuck)/i,
+    /short cycl/i,/no heat/i,/no cool/i,/frozen (?:coil|evaporator)/i,/airflow restriction/i,/condenser fan (?:motor )?fail/i
+  ];
+  var fault=null;
+  for(var i=0;i<faultPats.length;i++){var fm=t.match(faultPats[i]);if(fm){fault=fm[0];break;}}
+  if(!fault)return null; // readings but no named fault → prose (uncertain)
+  // Optional: a part number Mike cited (e.g. "LH33ZS003", "CAP-45/5").
+  var part=null;
+  var pm=t.match(/\b([A-Z]{2,4}\d{2,}[A-Z0-9\-]{2,}|[A-Z]{2,}-?\d{1,3}\/?\d{0,2}(?:\/?\d{1,2})?)\b/);
+  if(pm&&!/^\d/.test(pm[1]))part=pm[1];
+  // Optional: a unit / model line ("Carrier 58STA070").
+  var unit=null;
+  var um=t.match(/\b(Carrier|Trane|Lennox|Goodman|Rheem|Ruud|York|Amana|Bryant|Payne|Heil|Daikin|Mitsubishi|Bosch|Coleman|Nordyne|Comfortmaker)\b[^.,\n]{0,18}/i);
+  if(um)unit=um[0].replace(/\s+/g,' ').trim();
+  return {fault:fault,readings:readings.slice(0,3),part:part,unit:unit};
+}
+// Render the engineered diagnosis card. Every field is escaped — XSS-safe.
+function buildV2DiagCard(d){
+  if(!d)return '';
+  // Classify a reading as warn/good for the gauge value color (purely visual).
+  function cls(v){
+    var n=parseFloat(v);
+    if(/°|psi|wc|amp|\bv\b|micron/i.test(v)){
+      if(/lockout|trip|high|restrict|fail/i.test(d.fault)&&n>=0)return 'warn';
+    }
+    return '';
+  }
+  var head='<div class="v2-card-head"><div class="l"><span class="rd"></span>'+escapeHtml(v2t('diagHead'))+'</div>'
+    +(d.unit?'<div class="r">'+escapeHtml(d.unit.toUpperCase())+'</div>':'')+'</div>';
+  var faultTxt=escapeHtml(d.fault.toUpperCase());
+  var faultHtml='<div class="v2-card-fault">'+faultTxt.replace(/(LOCKOUT|FAIL(?:ED|URE)?|CRACKED|RESTRICT(?:ED|ION)?|FROZEN|NO HEAT|NO COOL|SHORT CYCL\w*)/,'<span class="bad">$1</span>')+'</div>';
+  var gauges='<div class="v2-gauges">';
+  d.readings.forEach(function(r){
+    var c=cls(r.value);
+    var meterColor=c==='warn'?'linear-gradient(90deg,var(--brass),var(--rust))':'var(--teal)';
+    var w=c==='warn'?'88%':'52%';
+    gauges+='<div class="v2-gauge"><div class="v2-gauge-val '+c+'">'+escapeHtml(r.value)+'</div>'
+      +'<div class="v2-gauge-label">'+escapeHtml(r.label)+'</div>'
+      +'<div class="v2-gauge-meter"><i style="width:'+w+';background:'+meterColor+'"></i></div></div>';
+  });
+  gauges+='</div>';
+  var specs='';
+  if(d.part){
+    specs='<div class="v2-card-specs"><div class="v2-card-row"><span class="v2-card-k">PART</span>'
+      +'<span class="v2-card-v part">'+escapeHtml(d.part)+'</span></div></div>';
+  }
+  return '<div class="v2-card">'+head+'<div class="v2-card-body">'+faultHtml+gauges+specs+'</div></div>';
+}
+
+// ── V2 mentor beat ───────────────────────────────────────────────────────
+// A teaching / money-growth nudge becomes the teal-ruled aside. We peel a trailing
+// mentor sentence off the prose when Mike coaches the tech toward growth/revenue,
+// so the body stays clean Archivo and the Caveat shows ONLY on the signature.
+function extractV2Mentor(raw){
+  if(typeof raw!=='string'||!raw)return null;
+  var cue=/(upsell|maintenance agreement|iaq|media cabinet|earn the|charge (?:more|what)|grow into|senior tech|that's how you|this is your moment|next problem|recurring revenue|build the relationship|premium|stop being a parts-changer)/i;
+  if(!cue.test(raw))return null;
+  // Find the last paragraph that carries the coaching cue; lift it out as the beat.
+  var paras=raw.split(/\n{2,}/).map(function(p){return p.trim();}).filter(Boolean);
+  if(paras.length<2)return null; // need a body to keep + a beat to lift
+  var last=paras[paras.length-1];
+  if(!cue.test(last))return null; // only lift when the coaching lives in the tail
+  if(last.length>360)return null; // too long to be a clean aside → leave as prose
+  var rest=paras.slice(0,-1).join('\n\n');
+  return {beat:last,rest:rest};
+}
+// Render the mentor aside. Body escaped; $ figures get the brass "money" accent;
+// Caveat appears ONLY on the "— Mike" signature.
+function buildV2Mentor(mb){
+  if(!mb||!mb.beat)return '';
+  var q=escapeHtml(mb.beat)
+    .replace(/(upsell|maintenance agreement|IAQ media cabinet|media cabinet|recurring revenue|premium)/gi,'<span class="money">$1</span>');
+  return '<div class="v2-mentor"><div class="q">'+q+'</div>'
+    +'<span class="sig">'+escapeHtml(v2t('mentorSig'))+'</span></div>';
+}
+
 function appendMessage(role,text){
   // Push 6 commit 6: Find-a-Pro sentinel + keyword fallback detection.
   // [FIND_PRO] is the deterministic primary signal (system prompt update pending in
@@ -5636,8 +5822,18 @@ function appendMessage(role,text){
   }
   var container=document.getElementById('chatMessages');
   var isAgent=role==='agent';
+  // V2 re-skin: detect a structured diagnosis (fault + readings) in Mike's reply.
+  // Runs on the raw agent text BEFORE escaping so the regexes see the original
+  // numbers/labels; every extracted field is escaped again when rendered (see
+  // buildV2DiagCard). If detection is uncertain this returns null and we fall back
+  // to clean prose — we NEVER show raw JSON (that fix already shipped at f2d9698).
+  var v2Diag=isAgent?detectV2Diagnosis(text):null;
+  // Mentor beat — a teaching / money-growth nudge rendered as the teal-ruled aside.
+  var v2Mentor=isAgent?extractV2Mentor(text):null;
+  // If a mentor beat was peeled off the end of the message, render the prose without it.
+  if(v2Mentor&&v2Mentor.rest!=null)text=v2Mentor.rest;
   var div=document.createElement('div');
-  div.className=isAgent?'msg-agent':'msg-user';
+  div.className=isAgent?'msg-agent v2-msg-mike':'msg-user v2-msg-user';
   if(isAgent){
     div.addEventListener('touchstart',function(){
       document.querySelectorAll('.msg-agent.touched').forEach(function(el){el.classList.remove('touched');});
@@ -5670,11 +5866,29 @@ function appendMessage(role,text){
     .replace(/\n{2,}/g,'<br/><br/>')
     .replace(/\n/g,'<br/>');
 
-  // Contractor mode: prepend layered Mike badge sibling for agent messages (Push 6 commit 3).
-  // .has-mike-badge marker class gates the contractor padding-left CSS so hand-built sites without badge don't get an empty gutter.
-  var ctrBadge=(isAgent&&document.body.dataset.mode==='contractor')?'<div class="msg-mike-badge"></div>':'';
-  if(ctrBadge)div.classList.add('has-mike-badge');
-  div.innerHTML=ctrBadge+'<div class="msg-bubble '+(isAgent?'msg-bubble-agent':'msg-bubble-user')+'">'+formatted+'</div><div class="msg-time">'+getTimeStr()+'</div>';
+  // V2: no Mike face/avatar — the teal presence dot in .v2-msg-mike .label is the
+  // only Mike "mark", per founder vision (no face in the thread). The legacy
+  // .msg-mike-badge gutter is intentionally NOT emitted here.
+  if(isAgent){
+    // MIKE — clean Archivo typography, NO bubble. Label row (teal MIKE + time),
+    // prose body in high-contrast --v2-read (NOT dim, NOT Caveat), then the
+    // engineered diagnosis card when a fault+readings landed, then the mentor beat
+    // (Caveat used ONLY on the "— Mike" signature inside .v2-mentor).
+    // The .text element keeps the legacy `.msg-bubble msg-bubble-agent` hook
+    // classes so search / copy / message-actions JS still finds the message body;
+    // the V1 bubble visuals are neutralized under .v2-msg-mike in CSS.
+    var mikeLabel=labelV2();
+    var prose=formatted?('<div class="text msg-bubble msg-bubble-agent">'+formatted+'</div>'):'';
+    div.innerHTML='<div class="label"><span class="md"></span><span class="mn">'+mikeLabel
+      +'</span><span class="mt">'+getTimeStr()+'</span></div>'
+      +prose
+      +(v2Diag?buildV2DiagCard(v2Diag):'')
+      +(v2Mentor?buildV2Mentor(v2Mentor):'');
+  } else {
+    // USER — warm right-aligned bubble. `formatted` is already escaped by callers.
+    // .bub keeps the legacy `.msg-bubble msg-bubble-user` hook classes for search.
+    div.innerHTML='<div class="bub msg-bubble msg-bubble-user">'+formatted+'</div><div class="time">'+getTimeStr()+'</div>';
+  }
   // Show red safety banner ABOVE the message for dangerous situations
   if(isSafetyAlert){
     var alertBanner=document.createElement('div');
@@ -8031,6 +8245,7 @@ function setLang(lang){
   });
   var dd=document.getElementById('langDropdown');
   if(dd)dd.style.display='none';
+  if(typeof applyV2Lang==='function')applyV2Lang(); // V2 chat header + composer in 6 langs
   if(isListening){stopListening();setTimeout(startListening,200);}
 }
 

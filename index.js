@@ -210,6 +210,17 @@ const aiLimiter = rateLimit({
   message: { error: 'AI rate limit exceeded — please wait a moment' },
 });
 
+// TTS endpoint: per-IP cap to protect the ElevenLabs quota from drain.
+// Mike speaks in short bursts during chat/onboarding/camera; 40/min/IP is generous
+// for a single active user while still blocking abuse. (Security fix C3.)
+const ttsLimiter = rateLimit({
+  windowMs: 60 * 1000,          // 1 minute
+  max: 40,                       // 40 TTS requests per IP per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Voice rate limit exceeded — please wait a moment' },
+});
+
 // Global fallback — catches anything that slips through endpoint-specific limits.
 const globalLimiter = rateLimit({
   windowMs: 60 * 1000,          // 1 minute
@@ -472,8 +483,10 @@ app.post('/api/auth/signup', authLimiter, async (req, res) => {
   if (!isValidEmail(email))
     return res.status(400).json({ error: 'Invalid email address' });
 
-  // Validate optional fields — role must be a known value
-  const validRoles = ['contractor', 'homeowner', 'technician', 'admin'];
+  // Validate optional fields — role must be a known value.
+  // 'admin' is intentionally NOT self-assignable: admins are promoted directly in the DB.
+  // (Security fix C2 — prevents stranger self-registering as admin.)
+  const validRoles = ['contractor', 'homeowner', 'technician'];
   const userRole = validRoles.includes(role) ? role : 'contractor';
 
   if (!SUPABASE_URL) {
@@ -1237,7 +1250,9 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
 });
 
 // ── TTS ───────────────────────────────────────────────────────────────────────
-app.post('/api/tts', async (req, res) => {
+// Auth + rate-limited: token comes from body (existing frontend pattern, same as /api/ai)
+// or Authorization: Bearer header. authenticateToken reads both. (Security fix C3.)
+app.post('/api/tts', ttsLimiter, authenticateToken, async (req, res) => {
   const { text } = req.body;
   if (!text || typeof text !== 'string') return res.status(400).json({ error: 'text required' });
   if (!ELEVENLABS_API_KEY) return res.status(503).json({ error: 'TTS not configured' });

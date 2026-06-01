@@ -2130,6 +2130,10 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 .is-fault{font-family:var(--font-display);font-weight:400;font-size:17px;letter-spacing:.01em;text-transform:uppercase;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--paper);}
 .is-fault .bad{color:var(--rust);} .is-fault .ok{color:var(--moss);} .is-fault .is-ready{color:var(--v2-mute);}
 .is-center{flex:none;width:120px;padding:0 12px;border-right:1px solid var(--v2-line);display:flex;flex-direction:column;gap:6px;}
+/* Idle (no diagnosis yet): hide the empty gauge column so it reads as an intentional
+   "ready" status bar, not broken "--" placeholders. updateConsoleStrip() drops .is-idle
+   the moment a real diagnosis lands, revealing the gauges. */
+#instrStrip.is-idle .is-center{display:none;}
 .is-gauge{display:flex;align-items:baseline;justify-content:space-between;gap:6px;}
 .is-gv{font-family:var(--font-code);font-weight:700;font-size:15px;line-height:1;color:var(--paper);white-space:nowrap;}
 .is-gv.warn{color:var(--rust);} .is-gv.ok{color:var(--moss);} .is-gv.brass{color:var(--brass);}
@@ -2403,7 +2407,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div class="mike-badge"><div class="live-dot"></div></div>
       <div class="nav-mike-text">
         <div class="nav-mike-name">Mike</div>
-        <div class="nav-mike-status" id="navMikeStatus" title="Mike is on the line — your direct channel to him, like a CB radio.">● On the line · CH 01</div>
+        <div class="nav-mike-status" id="navMikeStatus" title="Mike is on the line — your direct line to him.">● On the line</div>
       </div>
     </div>
     <div class="nav-actions">
@@ -2523,7 +2527,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   </div>
 
   <!-- INSTRUMENT STRIP (Option B) — shown POST-AUTH only (setMode/syncAuthSurface hide #v2Landing, show this). Always-on 80px scan-tool bezel so the chat sits at the fold. Default state localizes via data-v2i18n; updateConsoleStrip() overwrites it when Mike returns a diagnosis. -->
-  <div id="instrStrip" style="display:none;" aria-label="Last diagnosis summary">
+  <div id="instrStrip" class="is-idle" style="display:none;" aria-label="Last diagnosis summary">
     <div class="is-strip">
       <div class="is-left">
         <div class="is-unit" id="isUnit" data-v2i18n="isReady">READY · NEW SESSION</div>
@@ -4764,7 +4768,7 @@ function setMode(m){
   // H5 — nav Mike status: techs get the dispatch/CB-radio framing; homeowners get
   // plain-English consumer copy (no "CH 01" channel jargon).
   var nms=document.getElementById('navMikeStatus');
-  if(nms)nms.textContent=isPro?'● On the line · CH 01':'● Online · ready to help';
+  if(nms)nms.textContent=isPro?'● On the line':'● Online · ready to help';
   // Keep the V2 landing (Frame G) toggle + console in lock-step with the one router.
   syncV2Landing(isPro?'tech':'home');
   // Option B chat-forward: pre-auth shows the tall #v2Landing front door; post-auth
@@ -4797,6 +4801,7 @@ function updateConsoleStrip(d,danger){
   var code=document.getElementById('isFaultCode'),homeStat=document.getElementById('isHomeStatus');
   var sesh=document.getElementById('isSeshState');
   if(!d){return;} // keep the localized default (set by applyV2Lang)
+  strip.classList.remove('is-idle'); // real diagnosis landed → reveal the gauges
   var rd=d.readings||[];
   function setGauge(gv,gl,gm,r){
     if(!gv)return;

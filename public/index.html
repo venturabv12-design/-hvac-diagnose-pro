@@ -4168,7 +4168,7 @@ async function runHomeownerDiagnostic(){
       messages=[{role:"user",content:prompt}];
     }
 
-    var raw=await callAI(SYSTEM,messages,500,true); // always search for homeowner diag
+    var raw=await callAI(SYSTEM,messages,1200,true); // always search for homeowner diag; 1200 tokens so a full result never truncates mid-JSON
     var data=parseJSON(raw);
     var sev=(data&&data.severity)||"MEDIUM";
 
@@ -4210,6 +4210,14 @@ async function runHomeownerDiagnostic(){
       });
     }
 
+    // If the response didn't parse into anything usable, never show an empty/broken
+    // card — give a clean Mike-voice retry instead (homeowner-friendly tone).
+    if(!data||!data.summary){
+      out="<div style=\"background:#eff6ff;border:1px solid #dbeafe;border-radius:10px;padding:18px 16px;text-align:center;\">"+
+        "<p style=\"font-size:15px;line-height:1.5;color:#0F0F0F;font-weight:600;margin:0 0 14px;\">Hmm — that didn't come through clean. Tap the button and I'll take another look.</p>"+
+        "<button onclick=\"runHomeownerDiagnostic()\" style=\"background:#C7553B;color:#fff;border:none;border-radius:8px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;\">Try Again</button>"+
+        "</div>";
+    }
     document.getElementById("homeResultText").innerHTML=out;
     document.getElementById("homeResultPanel").style.display="block";
     document.getElementById("homeResultPanel").scrollIntoView({behavior:"smooth",block:"start"});
@@ -4267,7 +4275,7 @@ async function runDiagnostic(){
       messages=[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:prompt}]}];
     }else{messages=[{role:"user",content:prompt}];}
     btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing">Analyzing your system…</span>';
-    var raw=await callAI(SYSTEM,messages,700,true); // always search for pro diag
+    var raw=await callAI(SYSTEM,messages,1500,true); // always search for pro diag; 1500 tokens so a full 5-section diagnostic never truncates mid-JSON
     lastDiagResult=raw;
     var data=parseJSON(raw),sev=(data&&data.severity)||"MEDIUM";
     showResult(sev,raw,data);
@@ -4286,7 +4294,17 @@ function showResult(sev,body,data){
   var c=COLORS[sev]||COLORS.MEDIUM;
   document.getElementById("resultCard").style.borderLeft="4px solid "+c.border;
   if(data&&data.sections&&data.sections.length){renderDiagCards(data,c);}
-  else{document.getElementById("resultText").innerHTML="<div style='font-size:15px;line-height:1.8;white-space:pre-wrap;'>"+body+"</div>";}
+  else{
+    // Parse failed or no sections (e.g. a truncated/garbled AI response). NEVER dump
+    // raw JSON or raw text to the screen — that reads "broken/AI-made". Show a clean
+    // Mike-voice retry card in the trade-tool style instead.
+    document.getElementById("resultText").innerHTML=
+      "<div style=\"background:var(--ink-2,#15171A);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:10px;padding:18px 16px;text-align:center;\">"+
+      "<div style=\"font-family:var(--font-code,'JetBrains Mono',monospace);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--safety,#FFB400);margin-bottom:8px;\">SIGNAL DROPPED</div>"+
+      "<p style=\"font-size:15px;line-height:1.5;color:rgba(255,255,255,.9);font-weight:600;margin:0 0 14px;\">That one came back scrambled on my end. Tap Run Diagnostic again and I'll tighten it up.</p>"+
+      "<button onclick=\"runDiagnostic()\" style=\"background:var(--safety,#FFB400);color:#0E0F0D;border:none;border-radius:8px;padding:11px 22px;font-family:var(--font-code,'JetBrains Mono',monospace);font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;\">Run It Again</button>"+
+      "</div>";
+  }
   document.getElementById("contractorNudge").style.display="block";
   document.getElementById("eduPanel").style.display="block";
   document.getElementById("resultPanel").style.display="block";

@@ -204,7 +204,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .lang-btn{display:flex;align-items:center;gap:5px;background:var(--gray-100);border:1.5px solid var(--gray-200);border-radius:8px;padding:5px 10px;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:700;color:var(--gray-600);transition:all .15s;-webkit-tap-highlight-color:transparent;}
 .nav-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--gray-100);border:1.5px solid var(--gray-200);color:var(--gray-600);font-size:16px;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;font-family:var(--font);font-weight:700;}
 .nav-icon-btn:hover{background:var(--gray-200);}
-.lang-dropdown{position:fixed;top:calc(env(safe-area-inset-top,0px) + 58px);right:12px;background:var(--white);border:1.5px solid var(--gray-200);border-radius:10px;box-shadow:var(--shadow-lg);overflow:hidden;z-index:500;min-width:160px;display:none;}
+.lang-dropdown{position:fixed;top:calc(env(safe-area-inset-top,0px) + 58px);right:12px;background:var(--white);border:1.5px solid var(--gray-200);border-radius:10px;box-shadow:var(--shadow-lg);overflow:hidden;z-index:10002;min-width:160px;display:none;}
 .lang-dropdown.open{display:block;animation:fadeUp .2s ease;}
 .lang-option{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;font-family:var(--font);font-size:14px;font-weight:500;color:var(--gray-600);transition:background .12s;border:none;background:transparent;width:100%;text-align:left;}
 .lang-option:hover{background:var(--gray-50);color:var(--black);}
@@ -1908,6 +1908,14 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 <div id="jobTimer" onclick="toggleJobTimer()" title="Tap to stop timer"></div>
 
 <div id="authOverlay">
+<!-- C-BUG1/3 — pre-login language chooser. Without a trigger inside the auth overlay
+     (z-index 9999), the nav lang switcher sits behind the overlay and is unreachable,
+     so a non-English visitor can't pick a language before signing in. This globe opens
+     the SAME #langDropdown (z-index lifted above the overlay) so it's a real chooser. -->
+<button id="authLangBtn" type="button" aria-label="Language" onclick="toggleLangMenu()"
+  style="position:fixed;top:max(14px,env(safe-area-inset-top,14px));right:14px;z-index:10001;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 12px;color:#fff;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+  <span id="authLangFlag">🇺🇸</span><span id="authLangCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span>
+</button>
 <div class="auth-wrap">
   <div class="auth-logo-row">
     <div class="auth-logo-icon"><svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="9" fill="url(#lgauth)"/><path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/><defs><linearGradient id="lgauth" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#C7553B"/><stop offset="100%" stop-color="#A8472F"/></linearGradient></defs></svg></div>
@@ -1921,11 +1929,14 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     </div>
     <div class="auth-err" id="authErr"></div>
 
-    <!-- SIGN IN FORM -->
-    <div id="authInForm">
+    <!-- SIGN IN FORM — wrapped in <form> so the browser recognizes the password field
+         (silences the "not in a form" warning + enables autofill). Buttons STAY
+         type="button" + onclick — never type=submit — to avoid the double-fire that
+         broke signin in 7114234 (reverted in 91e70d1). onsubmit is a hard no-op. -->
+    <form id="authInForm" onsubmit="event.preventDefault();return false;">
       <div class="auth-field">
         <label class="auth-lbl">Email</label>
-        <input class="auth-inp" type="email" id="siEmail" placeholder="you@company.com" autocomplete="email" inputmode="email"/>
+        <input class="auth-inp" type="email" id="siEmail" placeholder="you@company.com" autocomplete="username email" inputmode="email"/>
       </div>
       <div class="auth-field">
         <label class="auth-lbl">Password</label>
@@ -1935,10 +1946,10 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         <span class="auth-forgot" onclick="authForgot()" style="cursor:pointer;">Forgot password?</span>
       </div>
       <button class="auth-btn" id="siBtn" type="button" onclick="authSignIn()">Sign In</button>
-    </div>
+    </form>
 
-    <!-- SIGN UP FORM -->
-    <div id="authUpForm" style="display:none">
+    <!-- SIGN UP FORM — same safe form-wrap; buttons stay type="button". -->
+    <form id="authUpForm" onsubmit="event.preventDefault();return false;" style="display:none">
       <div class="auth-field">
         <label class="auth-lbl">I am a...</label>
         <div style="display:flex;gap:8px;margin-top:6px;">
@@ -1963,7 +1974,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         <input class="auth-inp" type="text" id="suCompany" placeholder="Your HVAC company" autocomplete="organization"/>
       </div>
       <button class="auth-btn" id="suBtn" type="button" onclick="authSignUp()">Start Free Trial</button>
-    </div>
+    </form>
 
     <p class="auth-terms">By continuing you agree to our <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Terms</a> and <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Privacy Policy</a></p>
   </div>
@@ -2103,6 +2114,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 <div class="pdd-trial" id="pddTrial" style="display:none">🎯 <strong><span id="pddTrialDays">7</span> days</strong> left in free trial</div>
 <div class="pdd-usage"><div class="pdd-usage-lbl">Usage</div><div class="pdd-bar"><div class="pdd-bar-fill" id="pddBarFill" style="width:0%"></div></div><div class="pdd-usage-count" id="pddUsageCount">0 AI calls</div></div>
 <div class="pdd-menu">
+  <div class="pdd-item" onclick="closeProfileDD();toggleLangMenu();"><span class="pdd-ic">🌐</span><span data-v2i18n="qaLanguage">Language</span></div>
   <div class="pdd-item" onclick="pddProfile()"><span class="pdd-ic">👤</span>Profile Settings</div>
   <div class="pdd-item" onclick="pddBilling()"><span class="pdd-ic">💳</span>Billing &amp; Plan</div>
   <div class="pdd-item" id="adminMenuItem" style="display:none" onclick="pddStats()"><span class="pdd-ic">📊</span>Check Stats</div>
@@ -2392,7 +2404,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         <div id="quickReplies"></div>
         <div style="position:relative;z-index:50;">
           <button id="quickActionsBtn" onclick="toggleQuickActions()" style="display:flex;align-items:center;gap:6px;background:var(--white);border:1.5px solid var(--gray-200);border-radius:99px;padding:7px 14px;font-size:12px;font-family:var(--font);font-weight:700;color:var(--gray-600);cursor:pointer;transition:all .15s;width:100%;">
-            <span>&#x26A1;</span><span>Quick Actions</span>
+            <span>&#x26A1;</span><span data-v2i18n="qaBtn">Quick Actions</span>
             <span id="qaArrow" style="margin-left:auto;font-size:10px;transition:transform .2s;">&#x25BC;</span>
           </button>
           <div id="quickActionsMenuPlaceholder"></div>
@@ -2447,22 +2459,22 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         <div class="peek-bar" id="peekBar" role="toolbar" aria-label="Tool shortcuts; swipe up to open drawer">
           <button class="peek-tile t-diag" type="button" data-peek-idx="0" aria-label="Run Diagnostic" onclick="window.openActionDrawer&&window.openActionDrawer()">
             <span class="peek-tile-icon"><i data-lucide="zap"></i></span>
-            <span class="peek-tile-label">Run<br>Diagnostic</span>
+            <span class="peek-tile-label" data-v2i18n="tbDiag">Run<br>Diagnostic</span>
             <span class="peek-tile-pin"></span>
           </button>
           <button class="peek-tile t-cam" type="button" data-peek-idx="1" aria-label="Live Camera" onclick="checkCameraAccess()">
             <span class="peek-tile-icon"><i data-lucide="video"></i></span>
-            <span class="peek-tile-label">Live<br>Camera</span>
+            <span class="peek-tile-label" data-v2i18n="tbCamera">Live<br>Camera</span>
             <span class="peek-tile-pin"></span>
           </button>
-          <button class="peek-tile t-shield" type="button" data-peek-idx="2" aria-label="Callback Shield" onclick="window.openActionDrawer&&window.openActionDrawer()">
+          <button class="peek-tile t-shield" type="button" data-peek-idx="2" aria-label="Callback Shield" onclick="askCallbackShield()">
             <span class="peek-tile-icon"><i data-lucide="shield-check"></i></span>
-            <span class="peek-tile-label">Callback<br>Shield</span>
+            <span class="peek-tile-label" data-v2i18n="tbShield">Callback<br>Shield</span>
             <span class="peek-tile-pin"></span>
           </button>
           <button class="peek-tile t-find" type="button" data-peek-idx="3" aria-label="Find Part" onclick="openChatSearch()">
             <span class="peek-tile-icon"><i data-lucide="search"></i></span>
-            <span class="peek-tile-label">Find<br>Part</span>
+            <span class="peek-tile-label" data-v2i18n="tbFind">Find<br>Part</span>
           </button>
         </div>
         <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none" onchange="handleChatFile(event)"/>
@@ -2489,129 +2501,129 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div class="drawer-body">
         <section class="drawer-section">
           <div class="drawer-section-head">
-            <div class="drawer-section-title">Your Favorites</div>
-            <div class="drawer-section-link" onclick="pushFeatureSoon('Customize')">Customize</div>
+            <div class="drawer-section-title" data-v2i18n="qaFavs">Your Favorites</div>
+            <div class="drawer-section-link" data-v2i18n="qaCustomize" onclick="pushFeatureSoon('Customize')">Customize</div>
           </div>
           <div class="drawer-favorites">
             <button class="fav-tile t-diag" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Run Diagnostic');">
               <div class="fav-tile-top">
                 <div class="fav-tile-icon"><i data-lucide="zap"></i></div>
-                <div class="fav-tile-badge">Most Used</div>
+                <div class="fav-tile-badge" data-v2i18n="qaMostUsed">Most Used</div>
               </div>
               <div>
-                <div class="fav-tile-title">Run<br>Diagnostic</div>
-                <div class="fav-tile-sub">Full system check, 5 min</div>
+                <div class="fav-tile-title" data-v2i18n="tbDiag">Run<br>Diagnostic</div>
+                <div class="fav-tile-sub" data-v2i18n="qaDiagSub">Full system check, 5 min</div>
               </div>
             </button>
             <button class="fav-tile t-cam" type="button" onclick="window.closeActionDrawer();startLiveCamera();">
               <div class="fav-tile-top">
                 <div class="fav-tile-icon"><i data-lucide="video"></i></div>
-                <div class="fav-tile-badge">Live</div>
+                <div class="fav-tile-badge" data-v2i18n="qaLive">Live</div>
               </div>
               <div>
-                <div class="fav-tile-title">Live<br>Camera</div>
-                <div class="fav-tile-sub">Mike sees what you see</div>
+                <div class="fav-tile-title" data-v2i18n="tbCamera">Live<br>Camera</div>
+                <div class="fav-tile-sub" data-v2i18n="qaCamSub">Mike sees what you see</div>
               </div>
             </button>
-            <button class="fav-tile t-shield" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Callback Shield');">
+            <button class="fav-tile t-shield" type="button" onclick="askCallbackShield();">
               <div class="fav-tile-top">
                 <div class="fav-tile-icon"><i data-lucide="shield-check"></i></div>
                 <div class="fav-tile-badge">$312 saved</div>
               </div>
               <div>
-                <div class="fav-tile-title">Callback<br>Shield</div>
-                <div class="fav-tile-sub">Pre-close 5-pt check</div>
+                <div class="fav-tile-title" data-v2i18n="tbShield">Callback<br>Shield</div>
+                <div class="fav-tile-sub" data-v2i18n="qaShieldSub">Pre-close 5-pt check</div>
               </div>
             </button>
             <button class="fav-tile t-sale" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Close The Sale');">
               <div class="fav-tile-top">
                 <div class="fav-tile-icon"><i data-lucide="trending-up"></i></div>
-                <div class="fav-tile-badge">Revenue</div>
+                <div class="fav-tile-badge" data-v2i18n="qaRevenue">Revenue</div>
               </div>
               <div>
-                <div class="fav-tile-title">Close<br>The Sale</div>
-                <div class="fav-tile-sub">Repair vs. replace math</div>
+                <div class="fav-tile-title" data-v2i18n="qaCloseSale">Close<br>The Sale</div>
+                <div class="fav-tile-sub" data-v2i18n="qaCloseSaleSub">Repair vs. replace math</div>
               </div>
             </button>
           </div>
         </section>
         <section class="drawer-section">
           <div class="drawer-section-head">
-            <div class="drawer-section-title">All Tools</div>
-            <div class="drawer-section-meta">tap pin to favorite</div>
+            <div class="drawer-section-title" data-v2i18n="qaAllTools">All Tools</div>
+            <div class="drawer-section-meta" data-v2i18n="qaPinHint">tap pin to favorite</div>
           </div>
           <div class="drawer-all-tools">
             <button class="tool-tile t-find pinned" type="button" onclick="window.closeActionDrawer();openChatSearch();">
               <div class="tool-tile-icon"><i data-lucide="search"></i></div>
-              <div class="tool-tile-label">Find<br>Part</div>
+              <div class="tool-tile-label" data-v2i18n="tbFind">Find<br>Part</div>
               <div class="tool-tile-pin"></div>
             </button>
             <button class="tool-tile t-manual" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Manual Lookup')">
               <div class="tool-tile-icon"><i data-lucide="book-open"></i></div>
-              <div class="tool-tile-label">Manual<br>Lookup</div>
+              <div class="tool-tile-label" data-v2i18n="qaManual">Manual<br>Lookup</div>
               <div class="tool-tile-pin"></div>
             </button>
             <button class="tool-tile t-history" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Job History')">
               <div class="tool-tile-icon"><i data-lucide="clipboard-list"></i></div>
-              <div class="tool-tile-label">Job<br>History</div>
+              <div class="tool-tile-label" data-v2i18n="qaHistory">Job<br>History</div>
               <div class="tool-tile-pin"></div>
             </button>
             <button class="tool-tile t-warranty" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Warranty Claim')">
               <div class="tool-tile-icon"><i data-lucide="file-check"></i></div>
-              <div class="tool-tile-label">Warranty<br>Claim</div>
+              <div class="tool-tile-label" data-v2i18n="qaWarranty">Warranty<br>Claim</div>
               <div class="tool-tile-pin"></div>
             </button>
             <button class="tool-tile t-pricing" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Price Book')">
               <div class="tool-tile-icon"><i data-lucide="dollar-sign"></i></div>
-              <div class="tool-tile-label">Price<br>Book</div>
+              <div class="tool-tile-label" data-v2i18n="qaPriceBook">Price<br>Book</div>
               <div class="tool-tile-pin"></div>
             </button>
             <button class="tool-tile t-safety" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Safety Check')">
               <div class="tool-tile-icon"><i data-lucide="shield-alert"></i></div>
-              <div class="tool-tile-label">Safety<br>Check</div>
+              <div class="tool-tile-label" data-v2i18n="qaSafety">Safety<br>Check</div>
               <div class="tool-tile-pin"></div>
             </button>
             <button class="tool-tile t-recap" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Recap Video')">
               <div class="tool-tile-icon"><i data-lucide="film"></i></div>
-              <div class="tool-tile-label">Recap<br>Video</div>
+              <div class="tool-tile-label" data-v2i18n="qaRecap">Recap<br>Video</div>
               <div class="tool-tile-pin"></div>
             </button>
             <button class="tool-tile t-customize" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Customize')">
               <div class="tool-tile-icon"><i data-lucide="settings"></i></div>
-              <div class="tool-tile-label">Customize</div>
+              <div class="tool-tile-label" data-v2i18n="qaCustomize">Customize</div>
               <div class="tool-tile-pin"></div>
             </button>
           </div>
         </section>
         <section class="drawer-section">
           <div class="drawer-section-head">
-            <div class="drawer-section-title">Today&rsquo;s Calls</div>
+            <div class="drawer-section-title" data-v2i18n="qaTodaysCalls">Today&rsquo;s Calls</div>
             <div class="drawer-section-meta">3 calls &middot; $892</div>
           </div>
           <div class="drawer-calls">
-            <div class="recent-job">
+            <div class="recent-job" role="button" tabindex="0" onclick="openTodaysCall('Trane XR16','Capacitor','4TTX6048J')">
               <div class="recent-job-num">01</div>
               <div class="recent-job-info">
                 <div class="recent-job-title">Trane XR16 &middot; Capacitor</div>
                 <div class="recent-job-meta">9:14 AM &middot; 4TTX6048J &middot; $312</div>
               </div>
-              <div class="recent-job-tag done">Done</div>
+              <div class="recent-job-tag done" data-v2i18n="qaJobDone">Done</div>
             </div>
-            <div class="recent-job open">
+            <div class="recent-job open" role="button" tabindex="0" onclick="openTodaysCall('Carrier 25HCB6','Leak','')">
               <div class="recent-job-num">02</div>
               <div class="recent-job-info">
                 <div class="recent-job-title">Carrier 25HCB6 &middot; Leak</div>
                 <div class="recent-job-meta">7:42 AM &middot; Awaiting parts</div>
               </div>
-              <div class="recent-job-tag open">Open</div>
+              <div class="recent-job-tag open" data-v2i18n="qaJobOpen">Open</div>
             </div>
-            <div class="recent-job progress">
+            <div class="recent-job progress" role="button" tabindex="0" onclick="openTodaysCall('Lennox','Inducer Motor','')">
               <div class="recent-job-num">03</div>
               <div class="recent-job-info">
                 <div class="recent-job-title">Lennox &middot; Inducer Motor</div>
                 <div class="recent-job-meta">Yesterday &middot; Warranty filed</div>
               </div>
-              <div class="recent-job-tag progress">In Prog</div>
+              <div class="recent-job-tag progress" data-v2i18n="qaJobProg">In Prog</div>
             </div>
           </div>
         </section>
@@ -3167,35 +3179,41 @@ function showPersonalizedWelcome(){
   var isReturning=(totalMsg>0)||(serverUsage>0);
   var msg='';
 
+  // P1-3 — greet in the tech's language. Keep the exact returning-vs-new branching
+  // (driven by isReturning / daysSince / totalMsg, all unchanged); only the wording
+  // is now pulled from WELCOME_I18N. {n} = first name with leading separator, {sp} =
+  // specialty fragment. Caveat: only the English copy is Mike's signed voice; the
+  // others are clear, readable translations of the same partner cadence.
+  var WL=WELCOME_I18N[(typeof currentLang!=='undefined')?currentLang:'en']||WELCOME_I18N.en;
+  var nm=name?(", "+name):"";        // for "Welcome back, Name."
+  var nmEx=name?(" "+name):"";       // for "Hey Name!"
+  var sp=profile.specialty?WL.specialtyFrag.replace('{sp}',profile.specialty):"";
+
   if(!isReturning){
     // Brand new tech — first time ever. Mike introduces himself.
-    msg="<strong>Hey"+( name?" "+name:"")+"! I'm Mike.</strong> 25 years in the field — every system, every failure, every fix. I'm here for you on every job. Snap a photo, describe what's happening, or just ask me anything. Let's get to work.";
+    msg=WL.newTech.replace('{n}',nmEx);
   } else if(daysSince===0){
     // Same-day return — partner picking right back up
-    msg="<strong>Welcome back"+( name?", "+name:"")+".</strong> What are we working on?";
+    msg=WL.sameDay.replace('{n}',nm);
   } else if(daysSince===1){
-    msg="<strong>Good to see you again"+( name?", "+name:"")+".</strong> "+
-      "Ready to tackle whatever you've got today.";
+    msg=WL.oneDay.replace('{n}',nm);
   } else if(daysSince!==null&&daysSince>1&&totalMsg>0){
     // Multi-day return WITH real local history present — the "I remember" claim is
     // only made when totalMsg>0 proves genuine prior sessions exist. Mike must never
     // claim memory he doesn't have; if history isn't present this branch is skipped
     // and we fall to the honest "Welcome back" partner line below.
-    msg="<strong>Hey"+( name?", "+name:"")+"! You're back.</strong> "+
-      "I remember everything from our last session — "+
-      (profile.specialty?"your "+profile.specialty+" work, ":"")+
-      "pick up right where we left off. What's on your plate?";
+    msg=WL.multiDay.replace('{n}',nm).replace('{sp}',sp);
   } else {
     // Returning tech, but no usable local session history (e.g. the signout→signin
     // profile wipe). Greet like a partner, NEVER re-introduce, never claim memory.
-    msg="<strong>Welcome back"+( name?", "+name:"")+".</strong> What are we working on?";
+    msg=WL.sameDay.replace('{n}',nm);
   }
 
   // Add experience-based note for first few sessions
   if(totalMsg>0&&totalMsg<5&&expLevel==='beginner'){
-    msg+="<br/><br/>Remember — no question is too basic. Ask me anything and I'll walk you through it step by step.";
+    msg+="<br/><br/>"+WL.noteBeginner;
   } else if(totalMsg>0&&totalMsg<3&&expLevel==='master'){
-    msg+="<br/><br/>Tap Voice for hands-free, camera for live visual diagnosis.";
+    msg+="<br/><br/>"+WL.noteMaster;
   }
 
   // Contractor mode emits the Mike badge sibling + has-mike-badge class so the contractor padding-left CSS gate fires.
@@ -3459,8 +3477,10 @@ document.addEventListener('click',function(e){
   // Contractor triggers (.nav-globe / .nav-more) are whitelisted alongside the homeowner triggers (#langBtn / #navProfileBtn) so the same tap that opens a dropdown isn't immediately treated as an outside-click that closes it.
   var d=document.getElementById('profileDD'),b=document.getElementById('navProfileBtn');
   if(d&&b&&!d.contains(e.target)&&!b.contains(e.target)&&!e.target.closest('.nav-more'))closeProfileDD();
-  var ld=document.getElementById('langDropdown'),lb=document.getElementById('langBtn');
-  if(ld&&lb&&!ld.contains(e.target)&&!lb.contains(e.target)&&!e.target.closest('.nav-globe'))ld.style.display='none';
+  var ld=document.getElementById('langDropdown'),lb=document.getElementById('langBtn'),alb=document.getElementById('authLangBtn');
+  // Whitelist every trigger that opens #langDropdown: homeowner #langBtn, contractor
+  // .nav-globe, pre-login #authLangBtn, and the contractor profile "Language" item.
+  if(ld&&!ld.contains(e.target)&&!(lb&&lb.contains(e.target))&&!(alb&&alb.contains(e.target))&&!e.target.closest('.nav-globe')&&!e.target.closest('[onclick*="toggleLangMenu"]'))ld.style.display='none';
 });
 
 function checkTrial(){
@@ -3721,7 +3741,13 @@ function submitHelpFeedback(){
 
 function pddHelp(){closeProfileDD();document.getElementById('feedbackSection').style.display='none';openModal('helpModal');}
 
-function openModal(id){var el=document.getElementById(id);if(el)el.classList.add('show');}
+function openModal(id){
+  // Item 12 — the Quick Actions menu sits at z-index 99999 (above modal overlays).
+  // Close it before opening any modal so the menu never paints over the modal content
+  // (e.g. Repair vs Replace launched from Quick Actions).
+  try{if(typeof closeQuickActions==='function')closeQuickActions();}catch(_){}
+  var el=document.getElementById(id);if(el)el.classList.add('show');
+}
 function closeModal(id){
   var el=document.getElementById(id);if(el)el.classList.remove('show');
   // Reset pending experience level if profile modal closed without saving
@@ -4164,9 +4190,11 @@ function setMode(m){
   document.getElementById('tabPro').className='mode-tab'+(m==='pro'?' active':'');
   document.getElementById('panelHome').style.display=isPro?'none':'block';
   document.getElementById('panelDiag').style.display=isPro?'block':'none';
-  document.getElementById('heroTitle').textContent=isPro?'Professional HVAC Field Intelligence':'Is Your AC or Heat Not Working?';
-  document.getElementById('heroSub').textContent=isPro?'Mike — your AI master tech. Diagnostics, live camera, parts pricing, revenue coaching.':'Take a photo, describe what\'s happening, and get a clear answer in seconds. No HVAC knowledge needed.';
-  document.getElementById('modeDesc').textContent=isPro?'Mike handles diagnostics, revenue, refrigerant, maintenance — everything in one chat.':'Plain English explanations. Know if it\'s safe, how urgent it is, and exactly what to tell your technician.';
+  // P0-2 — keep these in the user's language. setMode() runs on every login + toggle,
+  // so it must read from i18n (v2t) instead of overwriting with hardcoded English.
+  document.getElementById('heroTitle').textContent=isPro?v2t('heroPro'):v2t('heroHome');
+  document.getElementById('heroSub').textContent=isPro?v2t('heroSubPro'):v2t('heroSubHome');
+  document.getElementById('modeDesc').textContent=isPro?v2t('descPro'):v2t('descHome');
   // Keep the V2 landing (Frame G) toggle + console in lock-step with the one router.
   syncV2Landing(isPro?'tech':'home');
 }
@@ -5834,8 +5862,72 @@ function escapeHtml(s){
 // applyV2Lang() paints the static header labels (data-v2i18n="<key>") and is
 // called from setLang and on load. Dynamic strings (Mike's label, the diagnosis
 // card header, the mentor signature) read from V2_I18N[currentLang] at render time.
+// P1-3 — Mike's first-chat greeting in 6 languages. {n} = ", Name" / " Name" (already
+// prefixed with separator); {sp} = specialty fragment. English keeps Mike's exact signed
+// voice; other languages mirror the same partner cadence in readable translation.
+var WELCOME_I18N={
+  en:{newTech:"<strong>Hey{n}! I'm Mike.</strong> 25 years in the field — every system, every failure, every fix. I'm here for you on every job. Snap a photo, describe what's happening, or just ask me anything. Let's get to work.",
+    sameDay:"<strong>Welcome back{n}.</strong> What are we working on?",
+    oneDay:"<strong>Good to see you again{n}.</strong> Ready to tackle whatever you've got today.",
+    multiDay:"<strong>Hey{n}! You're back.</strong> I remember everything from our last session — {sp}pick up right where we left off. What's on your plate?",
+    specialtyFrag:"your {sp} work, ",
+    noteBeginner:"Remember — no question is too basic. Ask me anything and I'll walk you through it step by step.",
+    noteMaster:"Tap Voice for hands-free, camera for live visual diagnosis."},
+  es:{newTech:"<strong>¡Hola{n}! Soy Mike.</strong> 25 años en el campo — cada sistema, cada falla, cada arreglo. Estoy contigo en cada trabajo. Manda una foto, describe lo que pasa, o pregúntame lo que sea. Manos a la obra.",
+    sameDay:"<strong>Bienvenido de nuevo{n}.</strong> ¿En qué estamos trabajando?",
+    oneDay:"<strong>Qué bueno verte otra vez{n}.</strong> Listo para lo que traigas hoy.",
+    multiDay:"<strong>¡Hola{n}! Volviste.</strong> Recuerdo todo de nuestra última sesión — {sp}seguimos justo donde lo dejamos. ¿Qué tienes en la mano?",
+    specialtyFrag:"tu trabajo de {sp}, ",
+    noteBeginner:"Recuerda — ninguna pregunta es demasiado básica. Pregúntame lo que sea y te guío paso a paso.",
+    noteMaster:"Toca Voz para manos libres, cámara para diagnóstico visual en vivo."},
+  zh:{newTech:"<strong>嘿{n}！我是 Mike。</strong>在现场摸爬滚打 25 年 — 每种系统、每种故障、每种修法我都见过。每一单我都陪着你。拍张照、说说情况，或者直接问我任何问题。开干吧。",
+    sameDay:"<strong>欢迎回来{n}。</strong>我们在忙什么？",
+    oneDay:"<strong>又见到你了{n}。</strong>今天有什么活儿尽管来。",
+    multiDay:"<strong>嘿{n}！你回来了。</strong>上次的内容我都记得 — {sp}咱们接着上回继续。手头有什么活儿？",
+    specialtyFrag:"你的{sp}工作，",
+    noteBeginner:"记住 — 没有问题太基础。尽管问我，我一步步带你做。",
+    noteMaster:"点语音可免提，点摄像可实时可视诊断。"},
+  vi:{newTech:"<strong>Chào{n}! Tôi là Mike.</strong> 25 năm ngoài hiện trường — mọi hệ thống, mọi sự cố, mọi cách sửa. Tôi bên bạn ở mỗi ca. Chụp ảnh, mô tả tình hình, hoặc cứ hỏi tôi bất kỳ điều gì. Bắt tay vào việc thôi.",
+    sameDay:"<strong>Chào mừng trở lại{n}.</strong> Chúng ta đang làm gì đây?",
+    oneDay:"<strong>Vui được gặp lại{n}.</strong> Sẵn sàng cho bất cứ việc gì hôm nay bạn có.",
+    multiDay:"<strong>Chào{n}! Bạn đã quay lại.</strong> Tôi nhớ hết phiên trước — {sp}mình tiếp tục ngay chỗ đã dừng. Bạn đang có việc gì?",
+    specialtyFrag:"công việc {sp} của bạn, ",
+    noteBeginner:"Nhớ nhé — không câu hỏi nào là quá cơ bản. Cứ hỏi tôi, tôi hướng dẫn từng bước.",
+    noteMaster:"Chạm Giọng nói để rảnh tay, camera để chẩn đoán hình ảnh trực tiếp."},
+  fr:{newTech:"<strong>Salut{n} ! C'est Mike.</strong> 25 ans sur le terrain — chaque système, chaque panne, chaque réparation. Je suis là pour chaque intervention. Envoyez une photo, décrivez le problème, ou demandez-moi n'importe quoi. Au boulot.",
+    sameDay:"<strong>Content de vous revoir{n}.</strong> Sur quoi on travaille ?",
+    oneDay:"<strong>Ravi de vous revoir{n}.</strong> Prêt pour tout ce que vous avez aujourd'hui.",
+    multiDay:"<strong>Salut{n} ! Vous voilà de retour.</strong> Je me souviens de toute notre dernière session — {sp}on reprend là où on s'était arrêtés. Qu'est-ce qui vous attend ?",
+    specialtyFrag:"votre travail de {sp}, ",
+    noteBeginner:"Rappelez-vous — aucune question n'est trop basique. Demandez-moi n'importe quoi et je vous guide étape par étape.",
+    noteMaster:"Touchez Voix pour les mains libres, caméra pour le diagnostic visuel en direct."},
+  pt:{newTech:"<strong>E aí{n}! Sou o Mike.</strong> 25 anos de campo — cada sistema, cada falha, cada conserto. Estou com você em cada serviço. Manda uma foto, descreve o que está rolando, ou pergunta o que quiser. Bora trabalhar.",
+    sameDay:"<strong>Bem-vindo de volta{n}.</strong> No que estamos trabalhando?",
+    oneDay:"<strong>Que bom te ver de novo{n}.</strong> Pronto pra encarar o que você tiver hoje.",
+    multiDay:"<strong>E aí{n}! Você voltou.</strong> Lembro de tudo da nossa última sessão — {sp}seguimos de onde paramos. O que está na sua mão?",
+    specialtyFrag:"seu trabalho de {sp}, ",
+    noteBeginner:"Lembre — nenhuma pergunta é básica demais. Pergunta o que quiser que eu te guio passo a passo.",
+    noteMaster:"Toque em Voz para mãos livres, câmera para diagnóstico visual ao vivo."}
+};
+// P1-4 — localized suggested follow-up chips, keyed by detected topic category.
+var QR_I18N={
+  en:{pressure:['What are normal pressures for this temp?','Should I add refrigerant?','What is my subcooling?'],capacitor:['How much does replacement cost?','Show me how to wire it','What brand do you recommend?'],warranty:['How do I find the serial number?','Is labor covered?','What if it is expired?'],furnace:['Walk me through the sequence','How do I test the flame sensor?','What causes limit trips?'],compressor:['How do I test it?','What does a new one cost?','Could it be the capacitor?'],upsell:['Give me the exact words to say','What is a fair price?','Help me close this sale'],objection:['What if they say no?','Give me a value anchor','How do I close this?']},
+  es:{pressure:['¿Cuáles son las presiones normales para esta temperatura?','¿Debo agregar refrigerante?','¿Cuál es mi subenfriamiento?'],capacitor:['¿Cuánto cuesta el reemplazo?','Muéstrame cómo conectarlo','¿Qué marca recomiendas?'],warranty:['¿Cómo encuentro el número de serie?','¿Cubre la mano de obra?','¿Y si ya expiró?'],furnace:['Explícame la secuencia','¿Cómo pruebo el sensor de llama?','¿Qué causa los cortes por límite?'],compressor:['¿Cómo lo pruebo?','¿Cuánto cuesta uno nuevo?','¿Podría ser el capacitor?'],upsell:['Dame las palabras exactas','¿Cuál es un precio justo?','Ayúdame a cerrar la venta'],objection:['¿Y si dicen que no?','Dame un anclaje de valor','¿Cómo cierro esto?']},
+  zh:{pressure:['这个温度下正常压力是多少？','需要加制冷剂吗？','我的过冷度是多少？'],capacitor:['更换要多少钱？','教我怎么接线','你推荐什么牌子？'],warranty:['怎么找序列号？','工时费包含吗？','过保了怎么办？'],furnace:['带我走一遍时序','怎么测火焰传感器？','什么导致限位跳闸？'],compressor:['怎么测试它？','换新的多少钱？','会不会是电容？'],upsell:['给我具体怎么说','合理价格是多少？','帮我促成这单'],objection:['他们拒绝怎么办？','给我一个价值锚点','我怎么成交？']},
+  vi:{pressure:['Áp suất bình thường ở nhiệt độ này là bao nhiêu?','Tôi có nên thêm gas không?','Độ quá lạnh của tôi là bao nhiêu?'],capacitor:['Thay thế tốn bao nhiêu?','Chỉ tôi cách đấu dây','Bạn khuyên hãng nào?'],warranty:['Tìm số sê-ri ở đâu?','Có bao công không?','Nếu hết hạn thì sao?'],furnace:['Hướng dẫn tôi trình tự','Kiểm tra cảm biến lửa thế nào?','Cái gì gây nhảy giới hạn?'],compressor:['Kiểm tra nó thế nào?','Cái mới giá bao nhiêu?','Có thể là tụ điện không?'],upsell:['Cho tôi lời nói chính xác','Giá hợp lý là bao nhiêu?','Giúp tôi chốt đơn này'],objection:['Nếu họ từ chối thì sao?','Cho tôi một mức neo giá trị','Tôi chốt thế nào?']},
+  fr:{pressure:['Quelles sont les pressions normales à cette température ?','Dois-je ajouter du fluide ?','Quel est mon sous-refroidissement ?'],capacitor:['Combien coûte le remplacement ?','Montrez-moi comment le câbler','Quelle marque recommandez-vous ?'],warranty:['Où trouver le numéro de série ?','La main-d’œuvre est-elle couverte ?','Et si c’est expiré ?'],furnace:['Expliquez-moi la séquence','Comment tester le capteur de flamme ?','Qu’est-ce qui cause les coupures de limiteur ?'],compressor:['Comment le tester ?','Combien coûte un neuf ?','Serait-ce le condensateur ?'],upsell:['Donnez-moi les mots exacts','Quel est un prix juste ?','Aidez-moi à conclure'],objection:['Et s’ils disent non ?','Donnez-moi un ancrage de valeur','Comment conclure ?']},
+  pt:{pressure:['Quais são as pressões normais para esta temperatura?','Devo adicionar gás?','Qual é o meu sub-resfriamento?'],capacitor:['Quanto custa a troca?','Mostra como ligar os fios','Qual marca você recomenda?'],warranty:['Como acho o número de série?','Cobre mão de obra?','E se já venceu?'],furnace:['Me explica a sequência','Como testo o sensor de chama?','O que causa o corte por limite?'],compressor:['Como testo ele?','Quanto custa um novo?','Será que é o capacitor?'],upsell:['Me dá as palavras exatas','Qual é um preço justo?','Me ajuda a fechar a venda'],objection:['E se disserem não?','Me dá uma âncora de valor','Como fecho isso?']}
+};
 var V2_I18N={
   en:{reachCall:'CALL',reachFace:'FACETIME',clear:'CLEAR',mikeName:'MIKE',headRole:'MASTER TECH',headStatus:'ALWAYS ON',diagHead:'FAULT IDENTIFIED',mentorSig:'— Mike',composer:'Ask Mike anything…',
+    heroPro:'Professional HVAC Field Intelligence',heroHome:'Is Your AC or Heat Not Working?',
+    heroSubPro:'Mike — your AI master tech. Diagnostics, live camera, parts pricing, revenue coaching.',heroSubHome:'Take a photo, describe what\'s happening, and get a clear answer in seconds. No HVAC knowledge needed.',
+    descPro:'Mike handles diagnostics, revenue, refrigerant, maintenance — everything in one chat.',descHome:'Plain English explanations. Know if it\'s safe, how urgent it is, and exactly what to tell your technician.',
+    tbDiag:'Run<br>Diagnostic',tbCamera:'Live<br>Camera',tbShield:'Callback<br>Shield',tbFind:'Find<br>Part',
+    qaBtn:'Quick Actions',qaFavs:'Your Favorites',qaCustomize:'Customize',qaMostUsed:'Most Used',qaLive:'Live',qaRevenue:'Revenue',
+    qaDiagSub:'Full system check, 5 min',qaCamSub:'Mike sees what you see',qaShieldSub:'Pre-close 5-pt check',qaCloseSale:'Close<br>The Sale',qaCloseSaleSub:'Repair vs. replace math',
+    qaAllTools:'All Tools',qaPinHint:'tap pin to favorite',qaManual:'Manual<br>Lookup',qaHistory:'Job<br>History',qaWarranty:'Warranty<br>Claim',qaPriceBook:'Price<br>Book',qaSafety:'Safety<br>Check',qaRecap:'Recap<br>Video',
+    qaTodaysCalls:'Today’s Calls',qaJobDone:'Done',qaJobOpen:'Open',qaJobProg:'In Prog',qaLanguage:'Language',
     lndLive:'MIKE · LIVE',lndImTech:"I'M A TECH",lndImHome:"I'M A HOMEOWNER",lndReachText:'TEXT',lndMentorSig:'— Mike · 25 yrs',
     lndTechH1a:'WATCH MIKE',lndTechH1b:'WORK',lndTechH1c:'A CALL',lndTechH1d:'IN REAL TIME.',
     lndTechLede:'<b>25 years of master-tech instinct, running live:</b> he reads the system, calls the fault, pulls the part, quotes the price — then makes you sharper for the next one.',
@@ -5855,6 +5947,14 @@ var V2_I18N={
     lndHomeReachCall:'Talk it through',lndHomeReachFace:'Show him the unit',lndHomeReachText:'Snap a photo',
     lndHomeCtaPrime:'Ask Mike anything →',lndHomeCtaGhost:'Find a trusted local tech',lndHomeFoot:'HONEST READ · NO GUESSWORK · NEVER IN THE DARK'},
   es:{reachCall:'LLAMAR',reachFace:'FACETIME',clear:'BORRAR',mikeName:'MIKE',headRole:'TÉCNICO MAESTRO',headStatus:'SIEMPRE DISPONIBLE',diagHead:'FALLA IDENTIFICADA',mentorSig:'— Mike',composer:'Pregúntale a Mike…',
+    heroPro:'Inteligencia Profesional de Campo HVAC',heroHome:'¿Tu aire o calefacción no funciona?',
+    heroSubPro:'Mike — tu técnico maestro con IA. Diagnósticos, cámara en vivo, precios de piezas, asesoría de ingresos.',heroSubHome:'Toma una foto, describe lo que pasa y recibe una respuesta clara en segundos. Sin conocimientos de HVAC.',
+    descPro:'Mike maneja diagnósticos, ingresos, refrigerante, mantenimiento — todo en un solo chat.',descHome:'Explicaciones en palabras claras. Sabe si es seguro, qué tan urgente y exactamente qué decirle a tu técnico.',
+    tbDiag:'Ejecutar<br>Diagnóstico',tbCamera:'Cámara<br>en Vivo',tbShield:'Escudo<br>Anti-Retorno',tbFind:'Buscar<br>Pieza',
+    qaBtn:'Acciones Rápidas',qaFavs:'Tus Favoritos',qaCustomize:'Personalizar',qaMostUsed:'Más Usado',qaLive:'En Vivo',qaRevenue:'Ingresos',
+    qaDiagSub:'Chequeo completo, 5 min',qaCamSub:'Mike ve lo que tú ves',qaShieldSub:'Chequeo de 5 puntos',qaCloseSale:'Cerrar<br>la Venta',qaCloseSaleSub:'Reparar vs. reemplazar',
+    qaAllTools:'Todas las Herramientas',qaPinHint:'toca el pin para favorito',qaManual:'Buscar<br>Manual',qaHistory:'Historial<br>de Trabajos',qaWarranty:'Reclamo de<br>Garantía',qaPriceBook:'Lista de<br>Precios',qaSafety:'Chequeo de<br>Seguridad',qaRecap:'Video<br>Resumen',
+    qaTodaysCalls:'Llamadas de Hoy',qaJobDone:'Hecho',qaJobOpen:'Abierto',qaJobProg:'En Curso',qaLanguage:'Idioma',
     lndLive:'MIKE · EN VIVO',lndImTech:'SOY TÉCNICO',lndImHome:'SOY PROPIETARIO',lndReachText:'TEXTO',lndMentorSig:'— Mike · 25 años',
     lndTechH1a:'MIRA A MIKE',lndTechH1b:'TRABAJAR',lndTechH1c:'UNA LLAMADA',lndTechH1d:'EN TIEMPO REAL.',
     lndTechLede:'<b>25 años de instinto de técnico maestro, en vivo:</b> lee el sistema, identifica la falla, encuentra la pieza, da el precio — y te hace mejor para la próxima.',
@@ -5874,6 +5974,14 @@ var V2_I18N={
     lndHomeReachCall:'Conversarlo',lndHomeReachFace:'Muéstrale la unidad',lndHomeReachText:'Manda una foto',
     lndHomeCtaPrime:'Pregúntale a Mike →',lndHomeCtaGhost:'Encontrar un técnico de confianza',lndHomeFoot:'LECTURA HONESTA · SIN ADIVINANZAS · NUNCA A OSCURAS'},
   zh:{reachCall:'通话',reachFace:'视频',clear:'清除',mikeName:'MIKE',headRole:'高级技师',headStatus:'随时在线',diagHead:'已识别故障',mentorSig:'— Mike',composer:'问 Mike 任何问题…',
+    heroPro:'专业暖通现场智能',heroHome:'您的空调或暖气坏了吗？',
+    heroSubPro:'Mike — 您的 AI 高级技师。诊断、实时摄像、配件报价、营收指导。',heroSubHome:'拍张照片，描述情况，几秒内得到清晰答案。无需任何暖通知识。',
+    descPro:'Mike 处理诊断、营收、制冷剂、保养 — 全部在一个对话里。',descHome:'用大白话解释。知道是否安全、有多紧急，以及该跟技师说什么。',
+    tbDiag:'运行<br>诊断',tbCamera:'实时<br>摄像',tbShield:'回访<br>防护',tbFind:'查找<br>配件',
+    qaBtn:'快捷操作',qaFavs:'你的收藏',qaCustomize:'自定义',qaMostUsed:'最常用',qaLive:'实时',qaRevenue:'营收',
+    qaDiagSub:'系统全检，5 分钟',qaCamSub:'Mike 看到你看到的',qaShieldSub:'收尾前 5 项检查',qaCloseSale:'促成<br>成交',qaCloseSaleSub:'维修对比更换',
+    qaAllTools:'所有工具',qaPinHint:'点图钉以收藏',qaManual:'手册<br>查询',qaHistory:'工单<br>记录',qaWarranty:'保修<br>理赔',qaPriceBook:'价目<br>表',qaSafety:'安全<br>检查',qaRecap:'回顾<br>视频',
+    qaTodaysCalls:'今日工单',qaJobDone:'完成',qaJobOpen:'待处理',qaJobProg:'进行中',qaLanguage:'语言',
     lndLive:'MIKE · 在线',lndImTech:'我是技师',lndImHome:'我是业主',lndReachText:'文字',lndMentorSig:'— Mike · 25 年',
     lndTechH1a:'看 MIKE',lndTechH1b:'实时',lndTechH1c:'处理',lndTechH1d:'一次维修。',
     lndTechLede:'<b>25 年高级技师的直觉，实时运行：</b>他读取系统、判定故障、找到配件、给出报价 — 还让你为下一次更精进。',
@@ -5893,6 +6001,14 @@ var V2_I18N={
     lndHomeReachCall:'聊一聊',lndHomeReachFace:'给他看设备',lndHomeReachText:'拍张照片',
     lndHomeCtaPrime:'问 Mike 任何问题 →',lndHomeCtaGhost:'寻找信赖的本地技师',lndHomeFoot:'诚实判断 · 不靠猜测 · 永不蒙在鼓里'},
   vi:{reachCall:'GỌI',reachFace:'FACETIME',clear:'XÓA',mikeName:'MIKE',headRole:'THỢ CẢ',headStatus:'LUÔN SẴN SÀNG',diagHead:'ĐÃ XÁC ĐỊNH LỖI',mentorSig:'— Mike',composer:'Hỏi Mike bất kỳ điều gì…',
+    heroPro:'Trí Tuệ Hiện Trường HVAC Chuyên Nghiệp',heroHome:'Máy lạnh hay lò sưởi của bạn không chạy?',
+    heroSubPro:'Mike — thợ cả AI của bạn. Chẩn đoán, camera trực tiếp, giá linh kiện, cố vấn doanh thu.',heroSubHome:'Chụp một tấm ảnh, mô tả tình hình, và nhận câu trả lời rõ ràng trong vài giây. Không cần biết về HVAC.',
+    descPro:'Mike lo chẩn đoán, doanh thu, gas, bảo trì — tất cả trong một cuộc trò chuyện.',descHome:'Giải thích dễ hiểu. Biết có an toàn không, gấp đến đâu, và chính xác phải nói gì với thợ.',
+    tbDiag:'Chạy<br>Chẩn Đoán',tbCamera:'Camera<br>Trực Tiếp',tbShield:'Lá Chắn<br>Quay Lại',tbFind:'Tìm<br>Linh Kiện',
+    qaBtn:'Thao Tác Nhanh',qaFavs:'Yêu Thích',qaCustomize:'Tùy Chỉnh',qaMostUsed:'Dùng Nhiều',qaLive:'Trực Tiếp',qaRevenue:'Doanh Thu',
+    qaDiagSub:'Kiểm tra toàn hệ, 5 phút',qaCamSub:'Mike thấy điều bạn thấy',qaShieldSub:'Kiểm tra 5 điểm trước khi xong',qaCloseSale:'Chốt<br>Đơn',qaCloseSaleSub:'Sửa hay thay máy',
+    qaAllTools:'Tất Cả Công Cụ',qaPinHint:'chạm ghim để yêu thích',qaManual:'Tra<br>Tài Liệu',qaHistory:'Lịch Sử<br>Công Việc',qaWarranty:'Yêu Cầu<br>Bảo Hành',qaPriceBook:'Bảng<br>Giá',qaSafety:'Kiểm Tra<br>An Toàn',qaRecap:'Video<br>Tóm Tắt',
+    qaTodaysCalls:'Ca Hôm Nay',qaJobDone:'Xong',qaJobOpen:'Đang Mở',qaJobProg:'Đang Làm',qaLanguage:'Ngôn Ngữ',
     lndLive:'MIKE · TRỰC TIẾP',lndImTech:'TÔI LÀ THỢ',lndImHome:'TÔI LÀ CHỦ NHÀ',lndReachText:'NHẮN',lndMentorSig:'— Mike · 25 năm',
     lndTechH1a:'XEM MIKE',lndTechH1b:'XỬ LÝ',lndTechH1c:'MỘT CA',lndTechH1d:'NGAY TỨC THÌ.',
     lndTechLede:'<b>25 năm bản năng thợ cả, chạy trực tiếp:</b> anh đọc hệ thống, gọi tên lỗi, tìm linh kiện, báo giá — rồi giúp bạn giỏi hơn cho lần sau.',
@@ -5912,6 +6028,14 @@ var V2_I18N={
     lndHomeReachCall:'Trò chuyện',lndHomeReachFace:'Cho anh xem máy',lndHomeReachText:'Gửi ảnh',
     lndHomeCtaPrime:'Hỏi Mike bất kỳ điều gì →',lndHomeCtaGhost:'Tìm thợ địa phương đáng tin',lndHomeFoot:'NHẬN ĐỊNH THẬT · KHÔNG ĐOÁN MÒ · KHÔNG MƠ HỒ'},
   fr:{reachCall:'APPELER',reachFace:'FACETIME',clear:'EFFACER',mikeName:'MIKE',headRole:'MAÎTRE TECH',headStatus:'TOUJOURS DISPO',diagHead:'PANNE IDENTIFIÉE',mentorSig:'— Mike',composer:'Demandez à Mike…',
+    heroPro:'Intelligence de Terrain CVC Professionnelle',heroHome:'Votre clim ou chauffage ne marche pas ?',
+    heroSubPro:'Mike — votre maître technicien IA. Diagnostics, caméra en direct, prix des pièces, coaching de revenus.',heroSubHome:'Prenez une photo, décrivez le problème et obtenez une réponse claire en quelques secondes. Aucune connaissance CVC requise.',
+    descPro:'Mike gère diagnostics, revenus, fluide frigorigène, entretien — tout dans une seule conversation.',descHome:'Des explications en clair. Savoir si c’est sûr, l’urgence, et exactement quoi dire à votre technicien.',
+    tbDiag:'Lancer le<br>Diagnostic',tbCamera:'Caméra<br>en Direct',tbShield:'Bouclier<br>Anti-Retour',tbFind:'Trouver<br>une Pièce',
+    qaBtn:'Actions Rapides',qaFavs:'Vos Favoris',qaCustomize:'Personnaliser',qaMostUsed:'Plus Utilisé',qaLive:'En Direct',qaRevenue:'Revenus',
+    qaDiagSub:'Contrôle complet, 5 min',qaCamSub:'Mike voit ce que vous voyez',qaShieldSub:'Contrôle 5 points avant clôture',qaCloseSale:'Conclure<br>la Vente',qaCloseSaleSub:'Réparer ou remplacer',
+    qaAllTools:'Tous les Outils',qaPinHint:'touchez l’épingle pour favori',qaManual:'Recherche<br>Manuel',qaHistory:'Historique<br>des Jobs',qaWarranty:'Demande de<br>Garantie',qaPriceBook:'Grille de<br>Prix',qaSafety:'Contrôle<br>Sécurité',qaRecap:'Vidéo<br>Récap',
+    qaTodaysCalls:'Appels du Jour',qaJobDone:'Terminé',qaJobOpen:'Ouvert',qaJobProg:'En Cours',qaLanguage:'Langue',
     lndLive:'MIKE · EN DIRECT',lndImTech:'JE SUIS TECH',lndImHome:'JE SUIS PROPRIÉTAIRE',lndReachText:'TEXTO',lndMentorSig:'— Mike · 25 ans',
     lndTechH1a:'REGARDEZ MIKE',lndTechH1b:'TRAITER',lndTechH1c:'UN APPEL',lndTechH1d:'EN TEMPS RÉEL.',
     lndTechLede:'<b>25 ans d’instinct de maître technicien, en direct :</b> il lit le système, identifie la panne, trouve la pièce, donne le prix — puis vous rend meilleur pour la suivante.',
@@ -5931,6 +6055,14 @@ var V2_I18N={
     lndHomeReachCall:'En parler',lndHomeReachFace:'Montrez-lui l’unité',lndHomeReachText:'Envoyez une photo',
     lndHomeCtaPrime:'Demandez à Mike →',lndHomeCtaGhost:'Trouver un technicien de confiance',lndHomeFoot:'AVIS HONNÊTE · SANS DEVINETTE · JAMAIS DANS LE FLOU'},
   pt:{reachCall:'LIGAR',reachFace:'FACETIME',clear:'LIMPAR',mikeName:'MIKE',headRole:'TÉCNICO MESTRE',headStatus:'SEMPRE ATIVO',diagHead:'FALHA IDENTIFICADA',mentorSig:'— Mike',composer:'Pergunte ao Mike…',
+    heroPro:'Inteligência Profissional de Campo HVAC',heroHome:'Seu ar ou aquecimento não funciona?',
+    heroSubPro:'Mike — seu técnico mestre com IA. Diagnósticos, câmera ao vivo, preço de peças, treino de receita.',heroSubHome:'Tire uma foto, descreva o que está acontecendo e receba uma resposta clara em segundos. Sem precisar entender de HVAC.',
+    descPro:'Mike cuida de diagnósticos, receita, gás, manutenção — tudo em uma conversa.',descHome:'Explicações em bom português. Saiba se é seguro, quão urgente e exatamente o que dizer ao seu técnico.',
+    tbDiag:'Rodar<br>Diagnóstico',tbCamera:'Câmera<br>ao Vivo',tbShield:'Escudo<br>Anti-Retorno',tbFind:'Achar<br>Peça',
+    qaBtn:'Ações Rápidas',qaFavs:'Seus Favoritos',qaCustomize:'Personalizar',qaMostUsed:'Mais Usado',qaLive:'Ao Vivo',qaRevenue:'Receita',
+    qaDiagSub:'Checagem completa, 5 min',qaCamSub:'Mike vê o que você vê',qaShieldSub:'Checagem de 5 pontos',qaCloseSale:'Fechar<br>a Venda',qaCloseSaleSub:'Consertar vs. trocar',
+    qaAllTools:'Todas as Ferramentas',qaPinHint:'toque no pino para favoritar',qaManual:'Buscar<br>Manual',qaHistory:'Histórico<br>de Serviços',qaWarranty:'Pedido de<br>Garantia',qaPriceBook:'Tabela de<br>Preços',qaSafety:'Checagem de<br>Segurança',qaRecap:'Vídeo<br>Resumo',
+    qaTodaysCalls:'Chamados de Hoje',qaJobDone:'Concluído',qaJobOpen:'Aberto',qaJobProg:'Em Andamento',qaLanguage:'Idioma',
     lndLive:'MIKE · AO VIVO',lndImTech:'SOU TÉCNICO',lndImHome:'SOU PROPRIETÁRIO',lndReachText:'TEXTO',lndMentorSig:'— Mike · 25 anos',
     lndTechH1a:'VEJA O MIKE',lndTechH1b:'RESOLVER',lndTechH1c:'UMA CHAMADA',lndTechH1d:'EM TEMPO REAL.',
     lndTechLede:'<b>25 anos de instinto de técnico mestre, ao vivo:</b> ele lê o sistema, identifica a falha, acha a peça, dá o preço — e te deixa mais afiado para a próxima.',
@@ -6970,6 +7102,15 @@ function askMikeSafetyChecklist(){
   document.getElementById('chatInput').value='Give me the pre-job safety checklist for this job. Ask me the job type (residential, commercial, rooftop, gas, electrical, refrigerant) and generate the appropriate OSHA-aligned safety checklist.';
   sendChat();
 }
+// Item 10 — "Callback Shield" now points at a REAL surface instead of opening the
+// generic drawer: a pre-close verification run with Mike so the label matches a working
+// feature. The composer prompt routes into Mike's brain like every other quick action.
+function askCallbackShield(){
+  try{if(window.closeActionDrawer)window.closeActionDrawer();}catch(_){}
+  var inp=document.getElementById('chatInput');
+  if(inp){inp.value='Run my Callback Shield pre-close check. Before I leave this job, walk me through a 5-point verification so I don\'t get a callback — ask me the system type and the work I performed, then give me the checks that prevent the most common comebacks.';}
+  if(typeof sendChat==='function')sendChat();
+}
 function askMikeAHRI(){
   document.getElementById('chatInput').value='I need to look up an AHRI certificate. Ask me the outdoor unit model number and indoor unit model number, then search for the matched system efficiency ratings (SEER2, EER2, HSPF2) and any available utility rebates for this equipment in my area.';
   sendChat();
@@ -7438,8 +7579,45 @@ function handleChatKey(e){
   }
 }
 function navBackTap(){
+  // Close any open action drawer first (the original behavior).
   var d=document.getElementById('actionDrawer');
-  if(d&&d.open){try{d.close();}catch(_){}}
+  if(d&&d.open){try{d.close();}catch(_){}return;}
+  // No drawer open → still do something sensible rather than no-op:
+  // close the Quick Actions menu / any open lang or profile dropdown, else scroll chat to top.
+  if(typeof closeQuickActions==='function')closeQuickActions();
+  var ld=document.getElementById('langDropdown');if(ld&&(ld.style.display==='block'||ld.classList.contains('open'))){ld.style.display='none';ld.classList.remove('open');return;}
+  var pd=document.getElementById('profileDD');if(pd&&pd.classList.contains('open')){pd.classList.remove('open');return;}
+  // Close any visible .show modal overlay.
+  var openMod=document.querySelector('.tz-modal-overlay.show, .modal.show');
+  if(openMod){openMod.classList.remove('show');return;}
+  // Otherwise scroll the chat thread back to the top.
+  var cm=document.getElementById('chatMessages');if(cm)cm.scrollTo({top:0,behavior:'smooth'});
+}
+// C-BUG2 — TODAY'S CALLS rows are real now: tapping a job loads its context into the
+// chat composer (brand · symptom · model) so Mike can pick the job back up. No dead rows.
+function openTodaysCall(brand,symptom,model){
+  try{if(window.closeActionDrawer)window.closeActionDrawer();}catch(_){}
+  var L=(typeof currentLang!=='undefined')?currentLang:'en';
+  var tmpl={
+    en:function(j){return "Pull up my "+j+" job — what's my next step?";},
+    es:function(j){return "Abre mi trabajo de "+j+" — ¿cuál es mi siguiente paso?";},
+    zh:function(j){return "调出我的 "+j+" 工单 — 下一步该怎么做？";},
+    vi:function(j){return "Mở lại ca "+j+" của tôi — bước tiếp theo là gì?";},
+    fr:function(j){return "Reprends mon intervention "+j+" — quelle est la prochaine étape ?";},
+    pt:function(j){return "Abra meu trabalho de "+j+" — qual é o próximo passo?";}
+  };
+  var job=brand+(symptom?(' · '+symptom):'')+(model?(' ('+model+')'):'');
+  var msg=(tmpl[L]||tmpl.en)(job);
+  var inp=document.getElementById('chatInput');
+  if(inp){
+    inp.value=msg;
+    inp.focus();
+    inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,120)+'px';
+    inp.scrollIntoView({behavior:'smooth',block:'center'});
+  }else if(typeof showToast==='function'){
+    showToast(job,'info',2500);
+  }
+  try{if(typeof haptic==='function')haptic('light');}catch(_){}
 }
 // Push 6 commit 4: stub for tool tiles without a backing handler yet (Manual Lookup, Job History, Warranty Claim, Price Book, Safety Check, Recap Video, Customize, Callback Shield, Close The Sale, Run Diagnostic).
 function pushFeatureSoon(name){
@@ -8544,6 +8722,9 @@ function setLang(lang){
   var codeEl=document.getElementById('langCode');
   if(flagEl)flagEl.textContent=flags[lang]||'🇺🇸';
   if(codeEl)codeEl.textContent=codes[lang]||'EN';
+  // Keep the pre-login auth-overlay language switcher (C-BUG1/3) in sync too.
+  var aFlag=document.getElementById('authLangFlag');if(aFlag)aFlag.textContent=flags[lang]||'🇺🇸';
+  var aCode=document.getElementById('authLangCode');if(aCode)aCode.textContent=codes[lang]||'EN';
   // Update active state in dropdown
   document.querySelectorAll('.lang-option').forEach(function(b){
     b.classList.toggle('active', b.getAttribute('onclick')==="setLang('"+lang+"')");
@@ -8551,6 +8732,14 @@ function setLang(lang){
   var dd=document.getElementById('langDropdown');
   if(dd)dd.style.display='none';
   if(typeof applyV2Lang==='function')applyV2Lang(); // V2 chat header + composer in 6 langs
+  // setMode() owns heroTitle/heroSub/modeDesc; those aren't [data-v2i18n] nodes, so a
+  // language switch mid-session must re-paint them too (else they stay in the old lang).
+  if(typeof mode!=='undefined'){
+    var _pro=mode==='pro';
+    var _ht=document.getElementById('heroTitle');if(_ht)_ht.textContent=_pro?v2t('heroPro'):v2t('heroHome');
+    var _hs=document.getElementById('heroSub');if(_hs)_hs.textContent=_pro?v2t('heroSubPro'):v2t('heroSubHome');
+    var _md=document.getElementById('modeDesc');if(_md)_md.textContent=_pro?v2t('descPro'):v2t('descHome');
+  }
   if(isListening){stopListening();setTimeout(startListening,200);}
 }
 
@@ -8849,15 +9038,21 @@ function useQuickReply(el,text){
 }
 function hideQuickReplies(){var qr=document.getElementById('quickReplies');if(qr)qr.classList.remove('show');}
 function generateQuickReplies(resp){
-  var r=resp.toLowerCase(),s=[];
-  if(r.indexOf('pressure')>=0||r.indexOf('psi')>=0)s=['What are normal pressures for this temp?','Should I add refrigerant?','What is my subcooling?'];
-  else if(r.indexOf('capacitor')>=0)s=['How much does replacement cost?','Show me how to wire it','What brand do you recommend?'];
-  else if(r.indexOf('warranty')>=0)s=['How do I find the serial number?','Is labor covered?','What if it is expired?'];
-  else if(r.indexOf('furnace')>=0||r.indexOf('heat exchanger')>=0)s=['Walk me through the sequence','How do I test the flame sensor?','What causes limit trips?'];
-  else if(r.indexOf('compressor')>=0)s=['How do I test it?','What does a new one cost?','Could it be the capacitor?'];
-  else if(r.indexOf('upsell')>=0||r.indexOf('maintenance')>=0)s=['Give me the exact words to say','What is a fair price?','Help me close this sale'];
-  else if(r.indexOf('objection')>=0||r.indexOf('too high')>=0)s=['What if they say no?','Give me a value anchor','How do I close this?'];
-  showQuickReplies(s);
+  // P1-4 — suggested follow-up chips translate with the active language. The detection
+  // keys off Mike's English response text (his brain answers in-language but the trigger
+  // words below stay reliable on the English path); the chip LABELS shown to the tech are
+  // localized via QR_I18N so a non-English tech reads them in their language.
+  var r=resp.toLowerCase(),cat=null;
+  if(r.indexOf('pressure')>=0||r.indexOf('psi')>=0)cat='pressure';
+  else if(r.indexOf('capacitor')>=0)cat='capacitor';
+  else if(r.indexOf('warranty')>=0)cat='warranty';
+  else if(r.indexOf('furnace')>=0||r.indexOf('heat exchanger')>=0)cat='furnace';
+  else if(r.indexOf('compressor')>=0)cat='compressor';
+  else if(r.indexOf('upsell')>=0||r.indexOf('maintenance')>=0)cat='upsell';
+  else if(r.indexOf('objection')>=0||r.indexOf('too high')>=0)cat='objection';
+  var lang=(typeof currentLang!=='undefined')?currentLang:'en';
+  var tbl=(QR_I18N[lang]||QR_I18N.en);
+  showQuickReplies(cat?(tbl[cat]||QR_I18N.en[cat]||[]):[]);
 }
 
 function showVoiceWaveform(on){var w=document.getElementById('voiceWaveform');if(w)w.classList.toggle('active',on);}
@@ -9104,9 +9299,13 @@ document.addEventListener('DOMContentLoaded',function(){
     <!-- Change Password -->
     <div class="tz-modal-field" style="border-top:1px solid #1a1a1a;padding-top:16px;margin-top:8px;">
       <label class="tz-modal-label">Change Password <span style="font-weight:400;text-transform:none;color:#444">(leave blank to keep current)</span></label>
+      <!-- Wrapped in a no-op <form> so the password fields aren't "outside a form".
+           No buttons inside → no submit path → cannot reintroduce the auth double-fire. -->
+      <form onsubmit="event.preventDefault();return false;">
       <input class="tz-modal-input" type="password" id="profileOldPass" placeholder="Current password" autocomplete="current-password"/>
       <input class="tz-modal-input" type="password" id="profileNewPass" placeholder="New password (8+ characters)" autocomplete="new-password" style="margin-top:8px;"/>
       <input class="tz-modal-input" type="password" id="profileConfirmPass" placeholder="Confirm new password" autocomplete="new-password" style="margin-top:8px;"/>
+      </form>
     </div>
     <button class="tz-modal-btn" onclick="saveProfileSettings()">Save Changes</button>
     <button class="tz-modal-btn-outline" onclick="closeModal('profileModal')">Cancel</button>

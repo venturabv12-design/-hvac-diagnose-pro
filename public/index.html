@@ -1633,6 +1633,172 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 .pw-feat-no{color:rgba(255,255,255,.3);}
 .pw-plan.sel .pw-feat{color:rgba(255,255,255,.9);}
 .pw-plan.sel .pw-feat-no{color:rgba(255,255,255,.25);}
+
+/* ===== V2 DESIGN SYSTEM (foundation) =====
+   Phase A — STYLE-ONLY foundation extracted from Frame G/H/I mockups.
+   These classes are NOT yet wired into any screen; Phase B (chat) and
+   Phase C (landing) apply them. All v2- prefixed so they never collide
+   with existing classes. Colors reuse locked :root tokens — no redefines.
+   Tokens: --ink/--paper/--safety(CTA only)/--teal(Mike only)/--rust/--moss/--brass.
+   Fonts: --font-display(Anton) / --font-ui(Archivo) / --font-code(JetBrains Mono) / --font-script(Caveat, signature only). */
+:root{
+  /* --- V2 surface + line tokens (mockup-matched, additive) --- */
+  --v2-line:rgba(244,239,230,.12);
+  --v2-line2:rgba(244,239,230,.06);
+  --v2-mute:rgba(244,239,230,.55);
+  --v2-mute2:rgba(244,239,230,.34);
+  --v2-read:#FAF7F1;            /* high-contrast message text */
+  --v2-panel-top:#15130D;       /* console / card gradient top */
+  --v2-panel-bot:#100F0B;       /* console / card gradient bottom */
+
+  /* --- 3-size type scale --- */
+  /* display (Anton) — faults, headlines */
+  --v2-type-display-lg:30px;    /* landing headline */
+  --v2-type-display-md:23px;    /* console fault */
+  --v2-type-display-sm:18px;    /* header name */
+  /* body (Archivo) — all message + reading text, high-contrast */
+  --v2-type-body-lg:15.5px;     /* message text + user bubble */
+  --v2-type-body-md:12.5px;     /* verdict / lede */
+  --v2-type-body-sm:8px;        /* fine print */
+  /* mono (JetBrains Mono) — data, labels, readouts */
+  --v2-type-data-lg:17px;       /* gauge value */
+  --v2-type-data-md:13px;       /* readout value */
+  --v2-type-data-sm:9px;        /* data label */
+  --v2-type-data-xs:8px;        /* micro label */
+
+  /* --- motion tokens --- */
+  --v2-ease-instrument:cubic-bezier(.22,.61,.36,1);  /* settle / readout reveal */
+  --v2-ease-snap:cubic-bezier(.4,0,.2,1);            /* taps / segment toggle */
+  --v2-ease-sweep:ease-in-out;                       /* live scan sweep */
+  --v2-dur-fast:.16s;
+  --v2-dur-base:.28s;
+  --v2-dur-slow:.6s;
+  --v2-dur-pulse:2.4s;
+  --v2-dur-sweep:4.2s;
+}
+
+/* shared instrument keyframes (v2- namespaced) */
+@keyframes v2-pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes v2-sweep{0%{transform:translateY(-40%)}50%{transform:translateY(220%)}100%{transform:translateY(-40%)}}
+@keyframes v2-blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
+
+/* live status dot — Mike presence (teal only) */
+.v2-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 7px var(--teal);animation:v2-pulse var(--v2-dur-pulse) infinite;}
+
+/* ===== CONSOLE PANEL — the living-console / readout shell (Frame G/H/I) ===== */
+.v2-console{
+  border:1px solid var(--v2-line);border-radius:18px;overflow:hidden;position:relative;
+  background:linear-gradient(180deg,var(--v2-panel-top),var(--v2-panel-bot));
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 24px 50px -28px #000;
+}
+.v2-console::before{ /* live scan sweep */
+  content:"";position:absolute;left:0;right:0;top:0;height:34%;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,194,178,.13),transparent);
+  animation:v2-sweep var(--v2-dur-sweep) var(--v2-ease-sweep) infinite;
+}
+.v2-console-head{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-bottom:1px solid var(--v2-line2);}
+.v2-console-head .l{font-family:var(--font-code);font-size:var(--v2-type-data-sm);letter-spacing:.18em;color:var(--v2-mute);display:flex;align-items:center;gap:7px;}
+.v2-console-head .r{font-family:var(--font-code);font-size:var(--v2-type-data-sm);letter-spacing:.1em;color:var(--v2-mute2);}
+.v2-console-body{padding:13px 13px 12px;position:relative;z-index:1;}
+.v2-console-unit{font-family:var(--font-code);font-size:var(--v2-type-data-sm);letter-spacing:.14em;color:var(--v2-mute2);}
+.v2-console-fault{font-family:var(--font-display);font-weight:400;font-size:var(--v2-type-display-md);letter-spacing:.01em;margin:3px 0 2px;text-transform:uppercase;line-height:.96;}
+.v2-console-fault .bad{color:var(--rust);}
+.v2-console-verdict{font-family:var(--font-ui);font-size:var(--v2-type-body-md);line-height:1.4;color:var(--paper);margin-top:7px;}
+.v2-console-verdict em{font-style:normal;color:var(--teal);font-weight:700;}
+
+/* ===== DIAGNOSIS CARD — engineered inline card (Frame I hero) ===== */
+.v2-card{
+  margin-top:11px;border:1px solid var(--v2-line);border-radius:14px;overflow:hidden;position:relative;
+  background:linear-gradient(180deg,var(--v2-panel-top),#0F0E0A);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 16px 34px -22px #000;
+}
+.v2-card::before{content:"";position:absolute;left:0;right:0;top:0;height:30%;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,194,178,.10),transparent);}
+.v2-card-head{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid var(--v2-line2);position:relative;}
+.v2-card-head .l{font-family:var(--font-code);font-size:8.5px;letter-spacing:.16em;color:var(--v2-mute);display:flex;align-items:center;gap:6px;}
+.v2-card-head .l .rd{width:5px;height:5px;border-radius:50%;background:var(--rust);box-shadow:0 0 6px var(--rust);}
+.v2-card-head .r{font-family:var(--font-code);font-size:8.5px;letter-spacing:.1em;color:var(--v2-mute2);}
+.v2-card-body{padding:11px 12px 12px;position:relative;}
+.v2-card-unit{font-family:var(--font-code);font-size:var(--v2-type-data-xs);letter-spacing:.14em;color:var(--v2-mute2);}
+.v2-card-fault{font-family:var(--font-display);font-weight:400;font-size:21px;letter-spacing:.01em;text-transform:uppercase;margin:3px 0 1px;line-height:1;}
+.v2-card-fault .bad{color:var(--rust);}
+/* spec rows + part line inside the card */
+.v2-card-specs{margin-top:10px;border-top:1px solid var(--v2-line2);padding-top:9px;}
+.v2-card-row{display:flex;align-items:baseline;justify-content:space-between;padding:4px 0;}
+.v2-card-row + .v2-card-row{border-top:1px solid var(--v2-line2);}
+.v2-card-k{font-family:var(--font-code);font-size:var(--v2-type-data-sm);letter-spacing:.1em;color:var(--v2-mute2);}
+.v2-card-v{font-family:var(--font-code);font-size:12px;font-weight:700;color:var(--paper);}
+.v2-card-v.warn{color:var(--rust);}
+.v2-card-v.good{color:var(--teal);}
+.v2-card-v.part{color:var(--brass);}
+
+/* ===== GAUGE READOUT — instrument metric tile ===== */
+.v2-gauges{display:flex;gap:8px;margin-top:12px;}
+.v2-gauge{flex:1;border:1px solid var(--v2-line);border-radius:11px;padding:9px 9px 8px;background:rgba(0,0,0,.28);text-align:left;}
+.v2-gauge-val{font-family:var(--font-code);font-weight:700;font-size:var(--v2-type-data-lg);line-height:1;color:var(--paper);}
+.v2-gauge-val.warn{color:var(--rust);}
+.v2-gauge-val.good{color:var(--teal);}
+.v2-gauge-val.ok{color:var(--moss);}
+.v2-gauge-val.brass{color:var(--brass);}
+.v2-gauge-label{font-family:var(--font-code);font-size:7.5px;letter-spacing:.12em;color:var(--v2-mute2);margin-top:5px;}
+.v2-gauge-meter{height:4px;border-radius:2px;background:rgba(255,255,255,.08);margin-top:6px;overflow:hidden;}
+.v2-gauge-meter i{display:block;height:100%;border-radius:2px;}
+
+/* ===== CAPABILITY CHIP — lights up as Mike works ===== */
+.v2-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+.v2-chip{font-family:var(--font-code);font-size:8.5px;letter-spacing:.06em;color:var(--v2-mute);
+  border:1px solid var(--v2-line);border-radius:20px;padding:5px 9px;display:flex;align-items:center;gap:6px;
+  transition:border-color var(--v2-dur-base) var(--v2-ease-instrument),background var(--v2-dur-base) var(--v2-ease-instrument),color var(--v2-dur-base) var(--v2-ease-instrument);}
+.v2-chip .cd{width:5px;height:5px;border-radius:50%;background:var(--v2-mute2);}
+.v2-chip.live{color:var(--paper);border-color:rgba(0,194,178,.4);background:rgba(0,194,178,.06);}
+.v2-chip.live .cd{background:var(--teal);box-shadow:0 0 7px var(--teal);}
+.v2-chip.parts.live{border-color:rgba(201,169,97,.45);background:rgba(201,169,97,.07);}
+.v2-chip.parts.live .cd{background:var(--brass);box-shadow:0 0 7px var(--brass);}
+
+/* ===== MESSAGE ROW — user bubble (warm) + Mike-as-typography (no bubble) ===== */
+/* user — right-aligned warm bubble */
+.v2-msg-user{display:flex;justify-content:flex-end;}
+.v2-msg-user .bub{max-width:80%;background:linear-gradient(180deg,#211d14,#191610);
+  border:1px solid rgba(201,169,97,.22);border-radius:16px 16px 5px 16px;
+  padding:10px 13px;color:var(--v2-read);font-family:var(--font-ui);font-size:var(--v2-type-body-lg);line-height:1.45;font-weight:500;
+  box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 8px 18px -14px #000;}
+.v2-msg-user .time{font-family:var(--font-code);font-size:var(--v2-type-body-sm);letter-spacing:.1em;color:var(--v2-mute2);margin-top:5px;text-align:right;padding-right:3px;}
+/* Mike — clean Archivo typography, NO bubble; data in mono; signature Caveat only */
+.v2-msg-mike{max-width:92%;}
+.v2-msg-mike .label{display:flex;align-items:center;gap:6px;margin-bottom:7px;}
+.v2-msg-mike .label .md{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 7px var(--teal);}
+.v2-msg-mike .label .mn{font-family:var(--font-code);font-size:var(--v2-type-data-sm);letter-spacing:.16em;color:var(--teal);font-weight:600;}
+.v2-msg-mike .label .mt{font-family:var(--font-code);font-size:var(--v2-type-data-xs);letter-spacing:.1em;color:var(--v2-mute2);}
+.v2-msg-mike .text{font-family:var(--font-ui);font-size:var(--v2-type-body-lg);line-height:1.5;color:var(--v2-read);font-weight:500;letter-spacing:-.002em;}
+.v2-msg-mike .text + .text{margin-top:9px;}
+.v2-msg-mike .text b{font-weight:800;color:#fff;}
+.v2-msg-mike .text .hl{color:var(--teal);font-weight:700;}
+.v2-msg-mike .time{font-family:var(--font-code);font-size:var(--v2-type-body-sm);letter-spacing:.1em;color:var(--v2-mute2);margin-top:9px;}
+/* mentor beat — teal-ruled aside, Caveat signature ONLY */
+.v2-mentor{margin-top:12px;border-left:2px solid rgba(0,194,178,.5);padding:2px 0 2px 12px;}
+.v2-mentor .q{font-family:var(--font-ui);font-size:14.5px;line-height:1.46;color:var(--v2-read);font-weight:600;}
+.v2-mentor .q .money{color:var(--brass);font-weight:800;}
+.v2-mentor .sig{font-family:var(--font-script);font-weight:700;font-size:20px;line-height:1;color:var(--teal);margin-top:8px;display:block;}
+/* typing indicator */
+.v2-typing{display:flex;align-items:center;gap:6px;}
+.v2-typing .md{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 7px var(--teal);}
+.v2-typing .dots{display:flex;gap:4px;}
+.v2-typing .dots i{width:5px;height:5px;border-radius:50%;background:var(--v2-mute);display:block;animation:v2-blink 1.3s infinite;}
+.v2-typing .dots i:nth-child(2){animation-delay:.18s;}
+.v2-typing .dots i:nth-child(3){animation-delay:.36s;}
+.v2-typing .lbl{font-family:var(--font-code);font-size:var(--v2-type-body-sm);letter-spacing:.12em;color:var(--v2-mute2);}
+
+/* ===== REACH-MODE ACTION ROW — Call / FaceTime / Text (three ways to reach Mike) ===== */
+.v2-reach{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:13px;}
+.v2-reach-mode{border:1px solid var(--v2-line);border-radius:13px;padding:10px 6px 9px;text-align:center;position:relative;
+  background:linear-gradient(180deg,#16140E,#100F0B);transition:border-color var(--v2-dur-fast) var(--v2-ease-snap),transform var(--v2-dur-fast) var(--v2-ease-snap);}
+.v2-reach-mode .ic{font-size:17px;display:block;margin-bottom:6px;}
+.v2-reach-mode .t{font-family:var(--font-code);font-weight:700;font-size:9.5px;letter-spacing:.06em;}
+.v2-reach-mode .d{font-family:var(--font-ui);font-size:var(--v2-type-body-sm);line-height:1.2;color:var(--v2-mute2);margin-top:3px;}
+.v2-reach-mode.call .t{color:var(--safety);}   /* CTA color — Call */
+.v2-reach-mode.face .t{color:var(--teal);}      /* Mike color — FaceTime */
+.v2-reach-mode.text .t{color:var(--paper);}
+/* ===== END V2 DESIGN SYSTEM (foundation) ===== */
 </style>
 <div id="offlineBanner"></div>
 <div id="pwaInstallBanner" style="display:none;background:linear-gradient(135deg,var(--rust),var(--rust-deep));color:#fff;padding:10px 14px;font-size:13px;line-height:1.4;text-align:center;position:relative;z-index:10000;">

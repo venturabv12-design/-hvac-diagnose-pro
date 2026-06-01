@@ -643,10 +643,15 @@ app.post('/api/auth/profile', authenticateToken, async (req, res) => {
   try {
     if (!SUPABASE_URL) return res.json({ ok: true });
 
+    // SECURITY: a user may switch their own role between non-privileged types
+    // (homeowner/contractor/technician) but NEVER self-assign 'admin'. The signup
+    // endpoint enforces the same allowlist; the profile path must too, or any
+    // authenticated user can PATCH role:'admin' and reach the admin panel.
+    const safeRoles = ['contractor', 'homeowner', 'technician'];
     const allowed = {
       name: updates.name,
       company: updates.company,
-      role: updates.role,
+      role: safeRoles.includes(updates.role) ? updates.role : undefined,
       epa_cert: updates.epaCert,
       nate_cert: updates.nateCert,
       years_experience: updates.yearsExperience,

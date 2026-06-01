@@ -907,6 +907,10 @@ body[data-mode="contractor"] #chatSendBtn{width:44px;height:44px;border-radius:5
 .mike-bar{background:linear-gradient(135deg,#0A0A0F 0%,#111827 100%);border-radius:16px 16px 0 0;padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(199,85,59,.15);}
 
 /* ── MIKE BADGE (Push 5) ───────────────────────────────────── */
+/* H7 — no Mike face on the V2 landing. While the landing is scrolled to the top
+   (body.landing-atop, set by an IntersectionObserver), suppress the nav Mike-face
+   glyph so it doesn't peek above the landing surface. Reappears on scroll/in-app. */
+body.landing-atop .nav-mike .mike-badge{visibility:hidden;}
 .mike-badge{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--mike-teal),var(--mike-teal-deep));position:relative;flex-shrink:0;border:2px solid var(--ink);box-shadow:0 0 0 2px var(--brass);}
 .mike-badge::before{content:'';position:absolute;top:4px;left:50%;transform:translateX(-50%);width:24px;height:12px;background:var(--safety);border-radius:12px 12px 6px 6px;z-index:2;box-shadow:inset 0 -1px 0 rgba(0,0,0,.18);}
 .mike-badge .live-dot{position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;background:var(--moss);border-radius:50%;border:2px solid var(--ink);z-index:5;}
@@ -2001,7 +2005,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   </linearGradient></defs>
 </svg></span>
       <div class="ob-title" id="obTitle">Trazer <span>Intelligence</span></div>
-      <div class="ob-body" id="obBody">The most advanced HVAC field platform ever built.</div>
+      <div class="ob-body" id="obBody">Meet Mike — your HVAC expert, right in your pocket.</div>
     </div>
     <div class="ob-dots">
       <div class="ob-dot on"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div>
@@ -2119,10 +2123,10 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   <div class="pdd-item" onclick="pddBilling()"><span class="pdd-ic">💳</span>Billing &amp; Plan</div>
   <div class="pdd-item" id="adminMenuItem" style="display:none" onclick="pddStats()"><span class="pdd-ic">📊</span>Check Stats</div>
   <div class="pdd-item" onclick="pddWhatsNew()"><span class="pdd-ic">🔔</span>What's New</div>
-  <div class="pdd-item" onclick="pddPerformance()"><span class="pdd-ic">📊</span>My Performance</div>
-  <div class="pdd-item" onclick="pddInvoice()"><span class="pdd-ic">🧾</span>Invoice Generator</div>
-  <div class="pdd-item" onclick="pddCustomers()"><span class="pdd-ic">👥</span>Customers</div>
-  <div class="pdd-item" onclick="pddRefLog()"><span class="pdd-ic">🧪</span>Refrigerant Log</div>
+  <div class="pdd-item" data-contractor-only onclick="pddPerformance()"><span class="pdd-ic">📊</span>My Performance</div>
+  <div class="pdd-item" data-contractor-only onclick="pddInvoice()"><span class="pdd-ic">🧾</span>Invoice Generator</div>
+  <div class="pdd-item" data-contractor-only onclick="pddCustomers()"><span class="pdd-ic">👥</span>Customers</div>
+  <div class="pdd-item" data-contractor-only onclick="pddRefLog()"><span class="pdd-ic">🧪</span>Refrigerant Log</div>
   <div class="pdd-item" onclick="pddHelp()"><span class="pdd-ic">❓</span>Help</div>
   <div class="pdd-item" onclick="toggleDarkMode()"><span class="pdd-ic">🌙</span>Dark Mode</div>
   <div class="pdd-sep"></div>
@@ -2912,12 +2916,8 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">❄️</div>
       <div>
         <div style="font-size:17px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;">Trazer Intelligence</div>
-        <div style="font-size:11px;color:#9499B0;font-weight:500;">Field Intelligence Platform</div>
+        <div style="font-size:11px;color:#9499B0;font-weight:500;"><span data-contractor-only>Field Intelligence Platform</span><span data-homeowner-only>Know what's wrong before you call.</span></div>
       </div>
-    </div>
-    <div style="display:flex;justify-content:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
-      <span style="font-size:12px;color:#6B7190;">🏠 Homeowner $19.99/mo</span>
-      <span style="font-size:12px;color:#6B7190;">🔧 Contractor from $79/mo</span>
     </div>
     <div style="display:flex;justify-content:center;gap:16px;margin-bottom:12px;">
       <a href="#" onclick="showTermsModal();return false;" style="font-size:12px;color:#9499B0;text-decoration:none;">Terms</a>
@@ -3457,8 +3457,10 @@ function updateProfileUI(){
   var pn=document.getElementById('pddName');if(pn)pn.textContent=currentUser.name||'';
   var pe=document.getElementById('pddEmail');if(pe)pe.textContent=currentUser.email||'';
   var pp=document.getElementById('pddPlan');
-  var pm={trial:'Trial',starter:'Starter',pro:'Pro',enterprise:'Enterprise',admin:'Admin'};
-  if(pp)pp.textContent=(currentUser.isAdmin?'👑 ':'')+( pm[currentUser.plan]||'Pro');
+  var pm={trial:'Trial',starter:'Starter',pro:'Pro',team:'Team',enterprise:'Enterprise',admin:'Admin',homeowner:'Home',home:'Home',beta:'Beta'};
+  // Don't default homeowners to "Pro" — that's a tech-tier label leaking onto consumers.
+  var _planFallback=(currentUser.role==='homeowner')?'Home':'Pro';
+  if(pp)pp.textContent=(currentUser.isAdmin?'👑 ':'')+( pm[currentUser.plan]||_planFallback);
   var u=currentUser.usageCount||0;
   var bf=document.getElementById('pddBarFill');if(bf)bf.style.width=Math.min(u/500*100,100)+'%';
   var uc=document.getElementById('pddUsageCount');if(uc)uc.textContent=u+' AI calls this month';
@@ -3551,6 +3553,15 @@ function pddProfile(){
   if(nateInp)nateInp.value=profile.nateCert||'';
   if(zipInp)zipInp.value=profile.serviceZip||'';
   if(truckInp)truckInp.value=profile.truckStock||'';
+  // Homeowner system-info fields (lead-engine: stored once, reused by Mike + on routed leads)
+  var hZip=document.getElementById('homeZip');
+  var hAge=document.getElementById('homeSysAge');
+  var hBrand=document.getElementById('homeSysBrand');
+  var hModel=document.getElementById('homeSysModel');
+  if(hZip)hZip.value=profile.homeZip||'';
+  if(hAge)hAge.value=profile.homeSysAge||'';
+  if(hBrand)hBrand.value=profile.homeSysBrand||'';
+  if(hModel)hModel.value=profile.homeSysModel||'';
   // Password fields always start empty
   var np=document.getElementById('profileNewPass');var cp=document.getElementById('profileConfirmPass');
   if(np)np.value='';if(cp)cp.value='';
@@ -3654,6 +3665,17 @@ function saveProfileSettings(){
     if(!techLocation)window._serviceZip=profile.serviceZip;
   }
   if(truckVal)profile.truckStock=truckVal.value.trim();
+  // Homeowner system-info fields — persist to the user profile so Mike can reuse them
+  // and a routed lead carries system context (Brandon lead-engine play). Stored on the
+  // same memory profile + Supabase sync path as every other field.
+  var hZipVal=document.getElementById('homeZip');
+  var hAgeVal=document.getElementById('homeSysAge');
+  var hBrandVal=document.getElementById('homeSysBrand');
+  var hModelVal=document.getElementById('homeSysModel');
+  if(hZipVal)profile.homeZip=hZipVal.value.trim();
+  if(hAgeVal)profile.homeSysAge=hAgeVal.value.trim();
+  if(hBrandVal)profile.homeSysBrand=hBrandVal.value.trim();
+  if(hModelVal)profile.homeSysModel=hModelVal.value.trim();
   // Handle password change
   var newPass=document.getElementById('profileNewPass');
   var confPass=document.getElementById('profileConfirmPass');
@@ -4175,7 +4197,7 @@ function checkHealth(retry){
 }
 
 function populateSelects(){
-  var map={sysType:SYS_TYPES,sysAge:SYS_AGES,brand:BRANDS,homeSysAge:SYS_AGES,
+  var map={sysType:SYS_TYPES,sysAge:SYS_AGES,brand:BRANDS,homeSysAge:SYS_AGES,homeSysBrand:BRANDS,
     rSysType:SYS_TYPES,rSysAge:SYS_AGES,rBrand:BRANDS,rHomeSize:HOME_SIZES,
     rBrandRefrig:BRANDS,rTypeRefrig:SYS_TYPES,rAgeRefrig:SYS_AGES,
     mSysType:SYS_TYPES,mSysAge:SYS_AGES,mBrand:BRANDS};
@@ -4195,6 +4217,10 @@ function setMode(m){
   document.getElementById('heroTitle').textContent=isPro?v2t('heroPro'):v2t('heroHome');
   document.getElementById('heroSub').textContent=isPro?v2t('heroSubPro'):v2t('heroSubHome');
   document.getElementById('modeDesc').textContent=isPro?v2t('descPro'):v2t('descHome');
+  // H5 — nav Mike status: techs get the dispatch/CB-radio framing; homeowners get
+  // plain-English consumer copy (no "CH 01" channel jargon).
+  var nms=document.getElementById('navMikeStatus');
+  if(nms)nms.textContent=isPro?'● On the line · CH 01':'● Online · ready to help';
   // Keep the V2 landing (Frame G) toggle + console in lock-step with the one router.
   syncV2Landing(isPro?'tech':'home');
 }
@@ -9129,6 +9155,20 @@ function initReconnectToast(){
 document.addEventListener('DOMContentLoaded',function(){
   (function(){var l=document.getElementById('appLoader');if(l){l.style.opacity='0';setTimeout(function(){if(l&&l.parentNode)l.parentNode.removeChild(l);},450);}})();
   tracerInit();
+  // H7 — toggle body.landing-atop while the V2 landing sits at the top of the viewport,
+  // so CSS can hide the nav Mike-face glyph there (no Mike face on landing).
+  (function(){
+    var lnd=document.getElementById('v2Landing');
+    if(!lnd||typeof IntersectionObserver==='undefined'){return;}
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        // Landing is "atop" while its top edge is near the very top of the viewport.
+        var atTop=e.isIntersecting&&e.boundingClientRect.top>-40;
+        document.body.classList.toggle('landing-atop',atTop);
+      });
+    },{root:null,threshold:0,rootMargin:'-48px 0px 0px 0px'});
+    io.observe(lnd);
+  })();
   // Handle Stripe payment return
   try{
     var _up=new URLSearchParams(window.location.search);
@@ -9224,7 +9264,7 @@ document.addEventListener('DOMContentLoaded',function(){
       <label class="tz-modal-label">Full Name</label>
       <input class="tz-modal-input" type="text" id="profileNameInput" placeholder="Your name"/>
     </div>
-    <div class="tz-modal-field">
+    <div class="tz-modal-field" data-contractor-only>
       <label class="tz-modal-label">Company</label>
       <input class="tz-modal-input" type="text" id="profileCompanyInput" placeholder="Your HVAC company"/>
     </div>
@@ -9232,7 +9272,26 @@ document.addEventListener('DOMContentLoaded',function(){
       <label class="tz-modal-label">Email</label>
       <input class="tz-modal-input" type="text" id="profileEmailDisplay" disabled style="opacity:.5;cursor:not-allowed;"/>
     </div>
-    <div class="tz-modal-field">
+    <!-- ── HOMEOWNER SYSTEM INFO (lead-engine: stored once, reused by Mike + carried on routed leads) ── -->
+    <div data-homeowner-only>
+      <div class="tz-modal-field">
+        <label class="tz-modal-label">Home ZIP Code <span style="font-weight:400;text-transform:none;color:#444">(for local weather &amp; pros)</span></label>
+        <input class="tz-modal-input" type="text" id="homeZip" placeholder="e.g. 77001" maxlength="10" style="width:140px;"/>
+      </div>
+      <div class="tz-modal-field">
+        <label class="tz-modal-label">System Age <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
+        <select class="tz-modal-input" id="homeSysAge" style="cursor:pointer;"><option value="">Select…</option></select>
+      </div>
+      <div class="tz-modal-field">
+        <label class="tz-modal-label">System Brand <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
+        <select class="tz-modal-input" id="homeSysBrand" style="cursor:pointer;"><option value="">Select…</option></select>
+      </div>
+      <div class="tz-modal-field">
+        <label class="tz-modal-label">Model Number <span style="font-weight:400;text-transform:none;color:#444">(optional — on the unit's nameplate)</span></label>
+        <input class="tz-modal-input" type="text" id="homeSysModel" placeholder="e.g. 24ACC636A003"/>
+      </div>
+    </div>
+    <div class="tz-modal-field" data-contractor-only>
       <label class="tz-modal-label">My Experience Level</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;" id="expLevelPicker">
         <button class="exp-btn" id="expBtnBeginner" onclick="setExpLevel('beginner',this)" style="flex:1;min-width:80px;">🌱 Beginner</button>
@@ -9241,11 +9300,11 @@ document.addEventListener('DOMContentLoaded',function(){
       </div>
       <div style="font-size:11px;color:#555;margin-top:6px;" id="expLevelDesc">Mike adapts how he talks to you based on your level.</div>
     </div>
-    <div class="tz-modal-field">
+    <div class="tz-modal-field" data-contractor-only>
       <label class="tz-modal-label">Specialty <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
       <input class="tz-modal-input" type="text" id="profileSpecialtyInput" placeholder="e.g. Commercial, Residential, Mini-splits"/>
     </div>
-    <div class="tz-modal-field">
+    <div class="tz-modal-field" data-contractor-only>
       <label class="tz-modal-label">Primary Brand <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
       <input class="tz-modal-input" type="text" id="profileBrandInput" placeholder="e.g. Carrier, Trane, Goodman"/>
     </div>
@@ -9260,12 +9319,12 @@ document.addEventListener('DOMContentLoaded',function(){
       <input class="tz-modal-input" type="tel" id="profilePhoneInput" placeholder="e.g. 555-867-5309"/>
     </div>
     <!-- Years in Field -->
-    <div class="tz-modal-field">
+    <div class="tz-modal-field" data-contractor-only>
       <label class="tz-modal-label">Years in the Field</label>
       <input class="tz-modal-input" type="number" id="profileYearsInput" placeholder="e.g. 12" min="0" max="60" style="width:120px;"/>
     </div>
     <!-- EPA 608 Cert -->
-    <div class="tz-modal-field">
+    <div class="tz-modal-field" data-contractor-only>
       <label class="tz-modal-label">EPA 608 Certification</label>
       <select class="tz-modal-input" id="profileEPAInput" style="cursor:pointer;">
         <option value="">Select…</option>
@@ -9277,7 +9336,7 @@ document.addEventListener('DOMContentLoaded',function(){
       </select>
     </div>
     <!-- NATE -->
-    <div class="tz-modal-field">
+    <div class="tz-modal-field" data-contractor-only>
       <label class="tz-modal-label">NATE Certified</label>
       <select class="tz-modal-input" id="profileNATEInput" style="cursor:pointer;">
         <option value="">Select…</option>
@@ -9287,12 +9346,12 @@ document.addEventListener('DOMContentLoaded',function(){
       </select>
     </div>
     <!-- Service Area Zip -->
-    <div class="tz-modal-field">
+    <div class="tz-modal-field" data-contractor-only>
       <label class="tz-modal-label">Service Area Zip Code <span style="font-weight:400;text-transform:none;color:#444">(used for parts pricing when GPS is off)</span></label>
       <input class="tz-modal-input" type="text" id="profileZipInput" placeholder="e.g. 77001" maxlength="10" style="width:140px;"/>
     </div>
     <!-- Truck Stock -->
-    <div class="tz-modal-field">
+    <div class="tz-modal-field" data-contractor-only>
       <label class="tz-modal-label">Common Parts on Your Truck <span style="font-weight:400;text-transform:none;color:#444">(Mike will remind you when you have the part)</span></label>
       <textarea class="tz-modal-input" id="profileTruckStockInput" placeholder="e.g. Amrad caps, Titan contactors, Honeywell T6 stats, 40+5 caps, 45+5 caps, common contactors…" style="min-height:72px;resize:vertical;font-family:inherit;font-size:13px;line-height:1.5;"></textarea>
     </div>

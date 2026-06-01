@@ -3059,6 +3059,14 @@ function authSignOut(){
   closeProfileDD();
   document.getElementById('authOverlay').classList.remove('hidden');
   showAuthErr(''); // Fix D: clear any stale error from prior signin attempt
+  // The signin success path hides the overlay without resetting siBtn, so it stays
+  // disabled at "Signing in..." behind the overlay. On signout the overlay reappears
+  // showing that frozen button — and the visibilitychange safety net skips it because
+  // its text still includes "Signing". Reset both auth buttons explicitly here.
+  var _siBtn=document.getElementById('siBtn');
+  if(_siBtn){_siBtn.disabled=false;_siBtn.textContent='Sign In';}
+  var _suBtn=document.getElementById('suBtn');
+  if(_suBtn){_suBtn.disabled=false;_suBtn.textContent='Start Free Trial';}
   authTab('in');
   chatHistory=[];techLocation=null;
 }

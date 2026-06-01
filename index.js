@@ -1128,14 +1128,10 @@ app.post('/api/knowledge', authenticateToken, async (req, res) => {
 
 // ── AI ────────────────────────────────────────────────────────────────────────
 // ── SERVER-SIDE PAYWALL CHECK ─────────────────────────────────────────────────
-// PAYWALL TEMPORARILY DISABLED — Kaizen will say when to turn it on.
-// The full logic is preserved below the early return for the eventual flip.
+// Allow-set: admin/pro/team/starter/homeowner/beta (forever) + trial (≤7 days).
+// No token / invalid / expired / unknown plan → denied (402, paywall flag).
+// DB error → fail-open so an outage never locks out paying users/techs.
 async function checkPaywall(token) {
-  // EMERGENCY DISABLE: allow everyone through. No trial expiry, no plan gate.
-  // Re-enable by deleting this block and the function will resume its 7-day trial enforcement.
-  return { allowed: true };
-
-  // ----- ORIGINAL LOGIC (kept for when paywall is re-enabled) -----
   // No token at all → deny
   if (!token) return { allowed: false, reason: 'Authentication required' };
 

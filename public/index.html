@@ -1981,6 +1981,33 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 body[data-mode="contractor"] .v2-msg-mike .text.msg-bubble,body[data-mode="contractor"] .v2-msg-user .bub.msg-bubble{font-size:var(--v2-type-body-lg) !important;letter-spacing:-.002em;}
 /* contractor mode hides .msg-time globally (line 683); V2 keeps its own .time/.mt visible */
 body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2-msg-mike .mt,body[data-mode="contractor"] .v2-msg-user .time{display:block;}
+/* "See a real diagnosis" canned demo — self-contained overlay, no auth/api/currentUser.
+   Reuses .v2-msg-user / .v2-msg-mike typography so the reveal matches the real chat. */
+#v2DemoOverlay{position:fixed;inset:0;z-index:10000;background:#0A0A0A;display:none;flex-direction:column;
+  padding:max(16px,env(safe-area-inset-top,16px)) 16px max(16px,env(safe-area-inset-bottom,16px));
+  overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+#v2DemoOverlay.show{display:flex;}
+.v2-demo-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex:0 0 auto;}
+.v2-demo-title{font-family:var(--font-code);font-size:var(--v2-type-data-sm);letter-spacing:.18em;color:var(--teal);font-weight:700;}
+.v2-demo-close{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:999px;
+  color:#fff;font-family:var(--font-ui);font-size:13px;font-weight:700;padding:7px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.v2-demo-thread{flex:1 1 auto;display:flex;flex-direction:column;gap:18px;max-width:680px;width:100%;margin:0 auto;}
+.v2-demo-thread .v2-msg-mike .text{font-size:var(--v2-type-body-lg);}
+.v2-demo-thread .v2-msg-mike .text h4{font-family:var(--font-ui);font-size:15px;font-weight:800;color:#fff;letter-spacing:.01em;margin:16px 0 6px;}
+.v2-demo-thread .v2-msg-mike .text h4:first-child{margin-top:0;}
+.v2-demo-thread .v2-msg-mike .text .li{display:flex;gap:8px;margin:5px 0;align-items:flex-start;}
+.v2-demo-thread .v2-msg-mike .text .li .bul{color:var(--teal);font-weight:800;flex:0 0 auto;}
+.v2-demo-thread .v2-msg-mike .text .spec{font-family:var(--font-code);color:var(--teal);font-weight:700;letter-spacing:.01em;}
+.v2-demo-thread .v2-msg-mike .text b,.v2-demo-thread .v2-msg-mike .text strong{font-weight:800;color:#fff;}
+.v2-demo-cta-wrap{flex:0 0 auto;max-width:680px;width:100%;margin:22px auto 0;}
+.v2-demo-cta{width:100%;background:linear-gradient(180deg,#C7553B,#A8472F);border:none;border-radius:14px;
+  color:#fff;font-family:var(--font-ui);font-size:16px;font-weight:800;padding:15px;cursor:pointer;
+  box-shadow:0 10px 24px -12px rgba(199,85,59,.7);-webkit-tap-highlight-color:transparent;}
+.v2-demo-cue{display:flex;align-items:center;gap:7px;margin-top:6px;}
+.v2-demo-cue .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px var(--teal);animation:v2DemoPulse 1.1s ease-in-out infinite;}
+.v2-demo-cue .lbl{font-family:var(--font-code);font-size:var(--v2-type-data-xs);letter-spacing:.12em;color:var(--v2-mute2);}
+@keyframes v2DemoPulse{0%,100%{opacity:.35;}50%{opacity:1;}}
+@media(prefers-reduced-motion:reduce){.v2-demo-cue .dot{animation:none;}}
 /* mentor beat — teal-ruled aside, Caveat signature ONLY */
 .v2-mentor{margin-top:12px;border-left:2px solid rgba(0,194,178,.5);padding:2px 0 2px 12px;}
 .v2-mentor .q{font-family:var(--font-ui);font-size:14.5px;line-height:1.46;color:var(--v2-read);font-weight:600;}
@@ -2207,6 +2234,18 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     </div>
   </div>
 </div>
+</div>
+<!-- "See a real diagnosis" canned reveal — opened by v2LandingDemo(). No auth, no /api/ai,
+     no currentUser. Content injected by JS from trusted V2_I18N + captured-answer constant. -->
+<div id="v2DemoOverlay" role="dialog" aria-modal="true" aria-label="A real diagnosis demo">
+  <div class="v2-demo-top">
+    <div class="v2-demo-title" id="v2DemoTitle" data-v2i18n="demoTitle">A REAL DIAGNOSIS</div>
+    <button type="button" class="v2-demo-close" onclick="closeV2Demo()" data-v2i18n="demoClose">Close</button>
+  </div>
+  <div class="v2-demo-thread" id="v2DemoThread"></div>
+  <div class="v2-demo-cta-wrap">
+    <button type="button" class="v2-demo-cta" id="v2DemoCta" onclick="v2DemoSignup()" data-v2i18n="demoCta">Ask Mike your own →</button>
+  </div>
 </div>
 <div id="paywallOverlay">
 <div class="pw-card">
@@ -4690,17 +4729,120 @@ function v2LandingAsk(){
   }
 }
 
-// Secondary CTA (tech) "See a real diagnosis →" — start a REAL diagnosis flow in the chat.
-// TODO(demo): replace this seeded prompt with a curated canned-call replay once the
-// demo-content asset lands. Until then we kick off a genuine diagnosis (no faked/live-looking data).
+// Secondary CTA (tech) "See a real diagnosis →" — a CANNED reveal of Mike's ACTUAL
+// captured answer to the demo fault. NO login, NO /api/ai call, NO currentUser, NO
+// isAccessAllowed/paywall path — it can never error. The visitor watches Mike work
+// (question → typing beat → real diagnosis rendered clean), then converts via the CTA.
+// The diagnosis prose is a trusted captured string (DEMO_MIKE_ANSWER below), localized
+// chrome via V2_I18N. Captured live from staging — diagnosis content English-only for
+// now (TODO: localize the captured answer body in a later pass).
+var DEMO_MIKE_ANSWER=[
+  "## Diagnosis: Carrier 58STA High-Limit Lockout",
+  "",
+  "### The Clues:",
+  "- High-limit lockout (the safety is tripping)",
+  "- Plenum at 182°F — that's HOT; normal is 120-140°F",
+  "- Static pressure at 3.2\" w.c. — should be 0.5-0.8\" w.c.",
+  "- Blower pulling 11A — higher than the typical 8-10A",
+  "",
+  "### The Fault: Severely Restricted Airflow",
+  "That static pressure tells the whole story — 3.2\" is **4x higher than normal**. The blower is working its tail off (hence the high amperage) but can't move enough air across the heat exchanger.",
+  "",
+  "### Root Cause Chain:",
+  "1. Airflow's restricted, so the heat exchanger can't shed its heat",
+  "2. Plenum temps skyrocket — your 182°F",
+  "3. High-limit opens around 200°F to prevent damage/fire",
+  "4. Blower runs harder fighting the restriction — that 11A draw",
+  "",
+  "### Most Likely Culprits (in order):",
+  "1. **Plugged air filter** — check first, easiest fix",
+  "2. **Dirty blower wheel** — very common when filter maintenance got neglected",
+  "3. **Closed/blocked supply registers** — customer may have shut too many",
+  "4. **Undersized/crushed ductwork** — less common, but check for kinked flex",
+  "",
+  "### The Fix:",
+  "1. Replace the filter immediately",
+  "2. Pull and inspect the blower wheel — if it's caked with dust, clean it thoroughly",
+  "3. Verify enough open supply registers",
+  "4. Recheck static pressure after cleaning",
+  "5. Confirm amp draw drops back to normal range",
+  "6. Reset the high-limit and test a full cycle",
+  "",
+  "**Target goals:** static <0.8\" w.c., plenum 120-140°F, normal cycling with no lockout."
+].join("\n");
+
+// Render the trusted captured answer as clean styled HTML. SAFETY: escapeHtml FIRST,
+// then apply markup over the escaped text (same model as renderV2 message rendering).
+// Input is the DEMO_MIKE_ANSWER constant only — never user input, no XSS path.
+function renderDemoAnswer(raw){
+  var lines=String(raw).split("\n");
+  var out=[],i=0;
+  function inline(s){
+    s=escapeHtml(s);
+    // wrap spec-ish tokens (numbers with units / fault temps) in mono teal for that
+    // "captured reading" feel; **bold** → <b>.
+    s=s.replace(/\*\*([^*]+)\*\*/g,'<b>$1<\/b>');
+    s=s.replace(/(\d[\d.]*\s?(?:&deg;|°)?(?:F\b|A\b)|\d[\d.]*&quot;\s?w\.c\.|\d[\d.]*&quot;|0\.\d|3\.2|11A|182|200)/g,function(m){return '<span class="spec">'+m+'<\/span>';});
+    return s;
+  }
+  while(i<lines.length){
+    var ln=lines[i];
+    if(/^###?\s+/.test(ln)){
+      out.push('<h4>'+inline(ln.replace(/^###?\s+/,''))+'<\/h4>');
+    } else if(/^\s*(?:\d+\.|-)\s+/.test(ln)){
+      var bul=/^\s*\d+\./.test(ln)?'→':'•';
+      out.push('<div class="li"><span class="bul">'+bul+'<\/span><span>'+inline(ln.replace(/^\s*(?:\d+\.|-)\s+/,''))+'<\/span><\/div>');
+    } else if(ln.trim()===''){
+      // skip blank lines — spacing handled by block margins
+    } else {
+      out.push('<p style="margin:7px 0;">'+inline(ln)+'<\/p>');
+    }
+    i++;
+  }
+  return out.join('');
+}
+
 function v2LandingDemo(){
-  setMode('pro');
-  var ci=document.getElementById('chatInput');
-  if(!ci)return;
-  ci.value="Walk me through a real diagnosis: Carrier 58STA, no heat, high-limit lockout. Plenum's running 182°F, static is 3.2\" wc, blower's pulling 11A. What's the fault and the fix?";
-  try{ci.style.height='auto';ci.style.height=Math.min(ci.scrollHeight,100)+'px';}catch(e){}
-  try{ci.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
-  if(typeof sendChat==='function')sendChat();
+  var ov=document.getElementById('v2DemoOverlay');
+  var thread=document.getElementById('v2DemoThread');
+  if(!ov||!thread)return;
+  thread.innerHTML='';
+  // 1) The visitor's question, as a user bubble (localized chrome string).
+  var q=document.createElement('div');
+  q.className='v2-msg-user';
+  q.innerHTML='<div class="bub msg-bubble">'+escapeHtml(v2t('demoQ'))+'<\/div>';
+  thread.appendChild(q);
+  // 2) Mike "reading the system…" typing beat.
+  var typing=document.createElement('div');
+  typing.className='v2-msg-mike';
+  typing.id='v2DemoTyping';
+  typing.innerHTML='<div class="label"><span class="md"><\/span><span class="mn">'+labelV2()
+    +'<\/span><\/div><div class="v2-demo-cue"><span class="dot"><\/span><span class="lbl">'+escapeHtml(v2t('demoTyping'))+'<\/span><\/div>';
+  thread.appendChild(typing);
+  ov.classList.add('show');
+  try{ov.scrollTop=0;}catch(e){}
+  // 3) After the beat, replace typing with Mike's real captured answer rendered clean.
+  setTimeout(function(){
+    var t=document.getElementById('v2DemoTyping');
+    if(!t)return;
+    t.innerHTML='<div class="label"><span class="md"><\/span><span class="mn">'+labelV2()
+      +'<\/span><\/div><div class="text msg-bubble msg-bubble-agent">'+renderDemoAnswer(DEMO_MIKE_ANSWER)+'<\/div>';
+    t.removeAttribute('id');
+    try{document.getElementById('v2DemoCta').scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
+  },1400);
+}
+
+function closeV2Demo(){
+  var ov=document.getElementById('v2DemoOverlay');if(ov)ov.classList.remove('show');
+}
+
+// End-CTA after the wow: route the visitor into the signup flow. Shows the auth overlay
+// (logged-out front door) and flips it to the Create-Account tab.
+function v2DemoSignup(){
+  closeV2Demo();
+  var au=document.getElementById('authOverlay');if(au)au.classList.remove('hidden');
+  if(typeof authTab==='function')authTab('up');
+  try{window.scrollTo(0,0);}catch(e){}
 }
 
 // Reach-mode tiles on the landing → the same three ways to reach Mike used in-chat.
@@ -6420,7 +6562,8 @@ var V2_I18N={
     lndHomeReachCall:'Talk it through',lndHomeReachFace:'Show him the unit',lndHomeReachText:'Snap a photo',
     lndHomeCtaPrime:'Ask Mike anything →',lndHomeCtaGhost:'Find a trusted local tech',lndHomeFoot:'HONEST READ · NO GUESSWORK · NEVER IN THE DARK',
     migHead:'We rebuilt everything. You need a fresh account.',migBody:'You were here from the beginning — that matters. Mike\'s got a whole new home now, and it doesn\'t carry the old one over. Takes 30 seconds to get back in. Same Mike, better everything.',migCta:'Create My Account',
-    obNext:'Next  →',obStart:'Get Started →',seedTech:'Hey Mike — got a nameplate here, what do you make of it?',seedHome:'Tell Mike what\'s going on with your system.'},
+    obNext:'Next  →',obStart:'Get Started →',seedTech:'Hey Mike — got a nameplate here, what do you make of it?',seedHome:'Tell Mike what\'s going on with your system.',
+    demoTitle:'A REAL DIAGNOSIS',demoQ:'Carrier 58STA, no heat, high-limit lockout. Plenum\'s 182°F, static 3.2" wc, blower 11A. What\'s the fault and the fix?',demoTyping:'Mike is reading the system…',demoCta:'Ask Mike your own →',demoClose:'Close'},
   es:{reachCall:'LLAMAR',reachFace:'FACETIME',clear:'BORRAR',mikeName:'MIKE',headRole:'TÉCNICO MAESTRO',headStatus:'SIEMPRE DISPONIBLE',diagHead:'FALLA IDENTIFICADA',mentorSig:'— Mike',composer:'Pregúntale a Mike…',
     heroPro:'Inteligencia Profesional de Campo HVAC',heroHome:'¿Tu aire o calefacción no funciona?',
     heroSubPro:'Mike — tu técnico maestro con IA. Diagnósticos, cámara en vivo, precios de piezas, asesoría de ingresos.',heroSubHome:'Toma una foto, describe lo que pasa y recibe una respuesta clara en segundos. Sin conocimientos de HVAC.',
@@ -6449,7 +6592,8 @@ var V2_I18N={
     lndHomeReachCall:'Conversarlo',lndHomeReachFace:'Muéstrale la unidad',lndHomeReachText:'Manda una foto',
     lndHomeCtaPrime:'Pregúntale a Mike →',lndHomeCtaGhost:'Encontrar un técnico de confianza',lndHomeFoot:'LECTURA HONESTA · SIN ADIVINANZAS · NUNCA A OSCURAS',
     migHead:'Reconstruimos todo. Necesitas una cuenta nueva.',migBody:'Estuviste aquí desde el principio — eso importa. Mike ahora tiene un hogar completamente nuevo, y no traslada el anterior. Toma 30 segundos volver a entrar. El mismo Mike, todo mejor.',migCta:'Crear Mi Cuenta',
-    obNext:'Siguiente  →',obStart:'Empezar →',seedTech:'Oye Mike — tengo una placa aquí, ¿qué opinas?',seedHome:'Cuéntale a Mike qué está pasando con tu sistema.'},
+    obNext:'Siguiente  →',obStart:'Empezar →',seedTech:'Oye Mike — tengo una placa aquí, ¿qué opinas?',seedHome:'Cuéntale a Mike qué está pasando con tu sistema.',
+    demoTitle:'UN DIAGNÓSTICO REAL',demoQ:'Carrier 58STA, sin calor, bloqueo por límite alto. Pleno a 182°F, estática 3.2" wc, motor 11A. ¿Cuál es la falla y el arreglo?',demoTyping:'Mike está leyendo el sistema…',demoCta:'Pregúntale a Mike lo tuyo →',demoClose:'Cerrar'},
   zh:{reachCall:'通话',reachFace:'视频',clear:'清除',mikeName:'MIKE',headRole:'高级技师',headStatus:'随时在线',diagHead:'已识别故障',mentorSig:'— Mike',composer:'问 Mike 任何问题…',
     heroPro:'专业暖通现场智能',heroHome:'您的空调或暖气坏了吗？',
     heroSubPro:'Mike — 您的 AI 高级技师。诊断、实时摄像、配件报价、营收指导。',heroSubHome:'拍张照片，描述情况，几秒内得到清晰答案。无需任何暖通知识。',
@@ -6478,7 +6622,8 @@ var V2_I18N={
     lndHomeReachCall:'聊一聊',lndHomeReachFace:'给他看设备',lndHomeReachText:'拍张照片',
     lndHomeCtaPrime:'问 Mike 任何问题 →',lndHomeCtaGhost:'寻找信赖的本地技师',lndHomeFoot:'诚实判断 · 不靠猜测 · 永不蒙在鼓里',
     migHead:'我们重建了一切。你需要一个全新的账户。',migBody:'你从一开始就在 — 这很重要。Mike 现在有了一个全新的家，不会把旧的带过来。重新登录只需 30 秒。还是那个 Mike，一切都更好。',migCta:'创建我的账户',
-    obNext:'下一步  →',obStart:'开始 →',seedTech:'嘿 Mike — 我这有一张铭牌，你怎么看？',seedHome:'告诉 Mike 你的系统出了什么情况。'},
+    obNext:'下一步  →',obStart:'开始 →',seedTech:'嘿 Mike — 我这有一张铭牌，你怎么看？',seedHome:'告诉 Mike 你的系统出了什么情况。',
+    demoTitle:'真实诊断',demoQ:'Carrier 58STA，不制热，高温限位锁定。风室 182°F，静压 3.2" wc，风机 11A。故障是什么，怎么修？',demoTyping:'Mike 正在读取系统…',demoCta:'问 Mike 你自己的问题 →',demoClose:'关闭'},
   vi:{reachCall:'GỌI',reachFace:'FACETIME',clear:'XÓA',mikeName:'MIKE',headRole:'THỢ CẢ',headStatus:'LUÔN SẴN SÀNG',diagHead:'ĐÃ XÁC ĐỊNH LỖI',mentorSig:'— Mike',composer:'Hỏi Mike bất kỳ điều gì…',
     heroPro:'Trí Tuệ Hiện Trường HVAC Chuyên Nghiệp',heroHome:'Máy lạnh hay lò sưởi của bạn không chạy?',
     heroSubPro:'Mike — thợ cả AI của bạn. Chẩn đoán, camera trực tiếp, giá linh kiện, cố vấn doanh thu.',heroSubHome:'Chụp một tấm ảnh, mô tả tình hình, và nhận câu trả lời rõ ràng trong vài giây. Không cần biết về HVAC.',
@@ -6507,7 +6652,8 @@ var V2_I18N={
     lndHomeReachCall:'Trò chuyện',lndHomeReachFace:'Cho anh xem máy',lndHomeReachText:'Gửi ảnh',
     lndHomeCtaPrime:'Hỏi Mike bất kỳ điều gì →',lndHomeCtaGhost:'Tìm thợ địa phương đáng tin',lndHomeFoot:'NHẬN ĐỊNH THẬT · KHÔNG ĐOÁN MÒ · KHÔNG MƠ HỒ',
     migHead:'Chúng tôi đã xây dựng lại mọi thứ. Bạn cần một tài khoản mới.',migBody:'Bạn đã ở đây từ những ngày đầu — điều đó rất quan trọng. Mike giờ có một ngôi nhà hoàn toàn mới, và nó không mang theo cái cũ. Chỉ mất 30 giây để vào lại. Vẫn là Mike đó, mọi thứ tốt hơn.',migCta:'Tạo Tài Khoản Của Tôi',
-    obNext:'Tiếp  →',obStart:'Bắt Đầu →',seedTech:'Chào Mike — tôi có một tấm nhãn máy ở đây, anh thấy sao?',seedHome:'Hãy kể cho Mike biết hệ thống của bạn đang gặp chuyện gì.'},
+    obNext:'Tiếp  →',obStart:'Bắt Đầu →',seedTech:'Chào Mike — tôi có một tấm nhãn máy ở đây, anh thấy sao?',seedHome:'Hãy kể cho Mike biết hệ thống của bạn đang gặp chuyện gì.',
+    demoTitle:'MỘT CHẨN ĐOÁN THẬT',demoQ:'Carrier 58STA, không nóng, khóa quá nhiệt. Khoang 182°F, tĩnh 3.2" wc, quạt 11A. Lỗi là gì và cách sửa?',demoTyping:'Mike đang đọc hệ thống…',demoCta:'Hỏi Mike chuyện của bạn →',demoClose:'Đóng'},
   fr:{reachCall:'APPELER',reachFace:'FACETIME',clear:'EFFACER',mikeName:'MIKE',headRole:'MAÎTRE TECH',headStatus:'TOUJOURS DISPO',diagHead:'PANNE IDENTIFIÉE',mentorSig:'— Mike',composer:'Demandez à Mike…',
     heroPro:'Intelligence de Terrain CVC Professionnelle',heroHome:'Votre clim ou chauffage ne marche pas ?',
     heroSubPro:'Mike — votre maître technicien IA. Diagnostics, caméra en direct, prix des pièces, coaching de revenus.',heroSubHome:'Prenez une photo, décrivez le problème et obtenez une réponse claire en quelques secondes. Aucune connaissance CVC requise.',
@@ -6536,7 +6682,8 @@ var V2_I18N={
     lndHomeReachCall:'En parler',lndHomeReachFace:'Montrez-lui l’unité',lndHomeReachText:'Envoyez une photo',
     lndHomeCtaPrime:'Demandez à Mike →',lndHomeCtaGhost:'Trouver un technicien de confiance',lndHomeFoot:'AVIS HONNÊTE · SANS DEVINETTE · JAMAIS DANS LE FLOU',
     migHead:'Nous avons tout reconstruit. Il vous faut un nouveau compte.',migBody:'Vous étiez là depuis le début — ça compte. Mike a maintenant une toute nouvelle maison, et elle ne reprend pas l\'ancienne. Il faut 30 secondes pour revenir. Le même Mike, tout en mieux.',migCta:'Créer Mon Compte',
-    obNext:'Suivant  →',obStart:'Commencer →',seedTech:'Salut Mike — j\'ai une plaque ici, qu\'est-ce que t\'en penses ?',seedHome:'Dites à Mike ce qui se passe avec votre système.'},
+    obNext:'Suivant  →',obStart:'Commencer →',seedTech:'Salut Mike — j\'ai une plaque ici, qu\'est-ce que t\'en penses ?',seedHome:'Dites à Mike ce qui se passe avec votre système.',
+    demoTitle:'UN VRAI DIAGNOSTIC',demoQ:'Carrier 58STA, pas de chauffe, verrouillage limite haute. Plénum à 182°F, statique 3.2" wc, soufflante 11A. Quelle est la panne et la réparation ?',demoTyping:'Mike lit le système…',demoCta:'Posez votre propre question à Mike →',demoClose:'Fermer'},
   pt:{reachCall:'LIGAR',reachFace:'FACETIME',clear:'LIMPAR',mikeName:'MIKE',headRole:'TÉCNICO MESTRE',headStatus:'SEMPRE ATIVO',diagHead:'FALHA IDENTIFICADA',mentorSig:'— Mike',composer:'Pergunte ao Mike…',
     heroPro:'Inteligência Profissional de Campo HVAC',heroHome:'Seu ar ou aquecimento não funciona?',
     heroSubPro:'Mike — seu técnico mestre com IA. Diagnósticos, câmera ao vivo, preço de peças, treino de receita.',heroSubHome:'Tire uma foto, descreva o que está acontecendo e receba uma resposta clara em segundos. Sem precisar entender de HVAC.',
@@ -6565,7 +6712,8 @@ var V2_I18N={
     lndHomeReachCall:'Conversar',lndHomeReachFace:'Mostre a unidade',lndHomeReachText:'Envie uma foto',
     lndHomeCtaPrime:'Pergunte ao Mike →',lndHomeCtaGhost:'Encontrar um técnico local de confiança',lndHomeFoot:'PARECER HONESTO · SEM ACHISMO · NUNCA NO ESCURO',
     migHead:'Reconstruímos tudo. Você precisa de uma conta nova.',migBody:'Você esteve aqui desde o começo — isso importa. O Mike agora tem um lar totalmente novo, e ele não traz o antigo junto. Leva 30 segundos para voltar. O mesmo Mike, tudo melhor.',migCta:'Criar Minha Conta',
-    obNext:'Próximo  →',obStart:'Começar →',seedTech:'E aí Mike — tenho uma plaqueta aqui, o que você acha?',seedHome:'Conte ao Mike o que está rolando com o seu sistema.'}
+    obNext:'Próximo  →',obStart:'Começar →',seedTech:'E aí Mike — tenho uma plaqueta aqui, o que você acha?',seedHome:'Conte ao Mike o que está rolando com o seu sistema.',
+    demoTitle:'UM DIAGNÓSTICO REAL',demoQ:'Carrier 58STA, sem aquecer, bloqueio de limite alto. Pleno a 182°F, estática 3.2" wc, soprador 11A. Qual é a falha e o conserto?',demoTyping:'Mike está lendo o sistema…',demoCta:'Pergunte ao Mike o seu caso →',demoClose:'Fechar'}
 };
 function v2t(key){
   var lang=(typeof currentLang!=='undefined')?currentLang:'en';

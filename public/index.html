@@ -285,26 +285,212 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .pdd-danger{color:#E8354A !important;}
 .pdd-danger:hover{background:rgba(232,53,74,.1) !important;}
 
-/* Onboarding */
-#onboardingOverlay{position:fixed;inset:0;z-index:9996;background:#000;display:none;align-items:center;justify-content:center;}
+/* ══ CINEMATIC ONBOARDING (Brandon-approved 2026-06-01) ══════════
+   6-frame tech / 4-frame homeowner movie-title sequence. Ported from
+   Tina's mockups (onboarding-1..5 + onboarding-revenue). All vars are
+   onboarding-local (--ob-*) to avoid colliding with the rust app theme. */
+#onboardingOverlay{
+  --ob-ink:#0E0F0D; --ob-paper:#F4EFE6; --ob-safety:#FFB400; --ob-teal:#00C2B2;
+  --ob-rust:#C7553B; --ob-moss:#5B7B5A; --ob-brass:#C9A961;
+  --ob-line:rgba(244,239,230,.11); --ob-line2:rgba(244,239,230,.055);
+  --ob-mute:rgba(244,239,230,.52); --ob-mute2:rgba(244,239,230,.32);
+  position:fixed;inset:0;z-index:9996;background:#060605;display:none;align-items:center;justify-content:center;
+  -webkit-font-smoothing:antialiased;
+}
 #onboardingOverlay.show{display:flex;}
-.ob-wrap{position:relative;width:100%;max-width:480px;height:100%;max-height:100vh;display:flex;align-items:center;justify-content:center;}
-@media(min-width:520px){.ob-wrap{max-height:90vh;border-radius:20px;overflow:hidden;}}
-.ob-canvas{width:100%;height:100%;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 0 100px;}
-.ob-bg{position:absolute;inset:0;transition:background 1s;}
-.ob-skip-btn{position:absolute;top:max(env(safe-area-inset-top,16px),16px);right:16px;z-index:10;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;color:#fff;font-size:13px;font-weight:600;padding:7px 16px;cursor:pointer;}
-.ob-content{position:relative;z-index:2;text-align:center;padding:0 28px;margin-bottom:24px;}
-.ob-emoji-big{font-size:72px;margin-bottom:18px;display:block;filter:drop-shadow(0 0 24px rgba(199,85,59,.6));}
-.ob-title{font-family:var(--font-display);font-size:28px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:12px;letter-spacing:-.5px;}
-.ob-title span{color:var(--rust);}
-.ob-body{font-size:15px;color:rgba(255,255,255,.75);line-height:1.7;}
-.ob-body strong{color:#fff;}
-.ob-dots{position:relative;z-index:2;display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
-.ob-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.25);transition:all .3s;}
-.ob-dot.on{background:var(--rust);width:24px;border-radius:4px;}
-.ob-next-btn{position:relative;z-index:2;width:calc(100% - 56px);max-width:320px;padding:17px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 8px 28px rgba(199,85,59,.45);}
-.ob-wave{position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--rust),transparent);animation:obw 2s infinite;}
-@keyframes obw{0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
+#onboardingOverlay *{box-sizing:border-box;}
+.ob-wrap{position:relative;width:100%;max-width:480px;height:100%;max-height:100vh;overflow:hidden;color:var(--ob-paper);
+  background:
+    radial-gradient(70% 45% at 50% 38%, rgba(0,194,178,.07), transparent 62%),
+    radial-gradient(80% 50% at 50% 112%, rgba(255,180,0,.04), transparent 60%),
+    linear-gradient(180deg,#0B0B0A 0%, #080807 55%, #050504 100%);}
+@media(min-width:520px){.ob-wrap{max-height:90vh;border-radius:20px;}}
+/* substrate motion — breathing concentric rings + scope sweep (frame 1 only via .ob-cinematic-rings) */
+.ob-rings{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:760px;height:760px;pointer-events:none;opacity:.5;z-index:0;display:none;}
+.ob-rings::before{content:"";position:absolute;inset:0;border-radius:50%;
+  background:
+    radial-gradient(circle, transparent 0 34%, rgba(0,194,178,.10) 34.3%, transparent 35%),
+    radial-gradient(circle, transparent 0 46%, rgba(244,239,230,.055) 46.3%, transparent 47%),
+    radial-gradient(circle, transparent 0 60%, rgba(244,239,230,.04) 60.3%, transparent 61%),
+    radial-gradient(circle, transparent 0 74%, rgba(244,239,230,.03) 74.3%, transparent 75%);
+  -webkit-mask-image:radial-gradient(circle,#000 52%,transparent 72%);mask-image:radial-gradient(circle,#000 52%,transparent 72%);
+  animation:ob-breathe 6s ease-in-out infinite;}
+@keyframes ob-breathe{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.04);opacity:.78}}
+.ob-scope{position:absolute;left:0;right:0;top:0;height:40%;pointer-events:none;z-index:0;display:none;
+  background:linear-gradient(180deg,rgba(0,194,178,.06),transparent);animation:ob-scope 5s ease-in-out infinite;}
+@keyframes ob-scope{0%{transform:translateY(-30%)}50%{transform:translateY(190%)}100%{transform:translateY(-30%)}}
+
+.ob-canvas{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;padding:18px 22px;}
+.ob-top{display:flex;align-items:center;justify-content:space-between;flex:none;}
+.ob-brand{font-family:'Anton','Archivo',var(--font-display),sans-serif;letter-spacing:.05em;font-size:15px;opacity:.9;}
+.ob-brand i{font-style:normal;color:var(--ob-brass);}
+.ob-skip-btn{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--ob-mute2);background:transparent;border:1px solid var(--ob-line);border-radius:18px;padding:6px 12px;cursor:pointer;}
+.ob-back-btn{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--ob-mute2);background:transparent;border:1px solid var(--ob-line);border-radius:18px;padding:6px 12px;cursor:pointer;margin-right:8px;}
+.ob-top-left{display:flex;align-items:center;}
+
+/* frame content host — innerHTML swapped per frame; faded/slid in on change */
+.ob-frame{flex:1;display:flex;flex-direction:column;min-height:0;opacity:0;transform:translateY(10px);}
+.ob-frame.ob-in{animation:ob-framein .5s cubic-bezier(.2,.7,.3,1) forwards;}
+@keyframes ob-framein{to{opacity:1;transform:translateY(0)}}
+
+/* shared frame typography */
+.ob-kicker{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.3em;margin-top:34px;animation:ob-rise .8s .05s both;}
+.ob-h1{font-family:'Anton','Archivo',var(--font-display),sans-serif;font-weight:400;text-transform:uppercase;line-height:.9;letter-spacing:.004em;font-size:42px;margin-top:12px;}
+.ob-h1 .l1{display:block;animation:ob-rise .9s .2s both;}
+.ob-h1 .l2{display:block;animation:ob-rise .9s .36s both;}
+.ob-h1 .l3{display:block;animation:ob-rise 1s .55s both;}
+.ob-line{font-size:13.5px;line-height:1.5;color:var(--ob-mute);margin-top:16px;max-width:312px;animation:ob-rise .9s .55s both;}
+.ob-line b{color:var(--ob-paper);font-weight:700;}
+@keyframes ob-rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ob-glow{0%,100%{text-shadow:0 0 0 transparent}50%{text-shadow:0 0 26px rgba(0,194,178,.45)}}
+@keyframes ob-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* FRAME 1 — COLD OPEN (centered) */
+.ob-cold{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
+.ob-preline{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.34em;color:var(--ob-teal);margin-bottom:20px;opacity:.9;animation:ob-rise .9s .1s both;}
+.ob-preline .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ob-teal);box-shadow:0 0 9px var(--ob-teal);margin-right:8px;vertical-align:middle;animation:ob-pulse 2.2s infinite;}
+.ob-cold .ob-h1{font-size:56px;line-height:.86;}
+.ob-cold .ob-h1 .l3{color:var(--ob-teal);animation:ob-rise 1s .68s both, ob-glow 3.5s 1.4s ease-in-out infinite;}
+.ob-cold .ob-sub{font-size:13px;line-height:1.5;color:var(--ob-mute);margin-top:22px;max-width:280px;animation:ob-rise 1s .95s both;}
+.ob-cold .ob-sub b{color:var(--ob-paper);font-weight:700;}
+
+/* stage host for live-demo cards */
+.ob-stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;}
+.ob-card{width:100%;border:1px solid var(--ob-line);border-radius:20px;position:relative;overflow:hidden;
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 26px 54px -30px #000;animation:ob-rise 1s .7s both;}
+
+/* FRAME 2 — CALL */
+.ob-callcard{padding:20px 18px 18px;background:linear-gradient(180deg,#16140E,#100F0B);}
+.ob-callhead{display:flex;align-items:center;gap:12px;}
+.ob-avatar{width:48px;height:48px;border-radius:14px;flex:none;position:relative;
+  background:radial-gradient(circle at 35% 30%,#1b3a37,#0d1c1b);border:1px solid rgba(0,194,178,.4);display:flex;align-items:center;justify-content:center;}
+.ob-avatar .ini{font-family:'Anton','Archivo',var(--font-display),sans-serif;font-size:22px;color:var(--ob-teal);}
+.ob-avatar::after{content:"";position:absolute;inset:-4px;border-radius:16px;border:1px solid rgba(0,194,178,.35);animation:ob-ripple 2.2s ease-out infinite;}
+@keyframes ob-ripple{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.25);opacity:0}}
+.ob-who .nm{font-family:'Archivo',var(--font-ui),sans-serif;font-weight:800;font-size:16px;}
+.ob-who .st{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--ob-teal);margin-top:3px;display:flex;align-items:center;gap:6px;}
+.ob-who .st .d{width:6px;height:6px;border-radius:50%;background:var(--ob-teal);box-shadow:0 0 8px var(--ob-teal);animation:ob-pulse 1.8s infinite;}
+.ob-timer{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ob-mute);}
+.ob-wbars{display:flex;align-items:center;gap:3px;height:54px;margin:20px 2px 4px;justify-content:center;}
+.ob-wbars i{flex:none;width:3px;border-radius:2px;background:linear-gradient(180deg,var(--ob-teal),rgba(0,194,178,.35));animation:ob-wv 1.1s ease-in-out infinite;}
+@keyframes ob-wv{0%,100%{height:8px}50%{height:var(--h)}}
+.ob-cap{margin-top:14px;border-top:1px solid var(--ob-line2);padding-top:14px;}
+.ob-cap .q{font-family:'Archivo',var(--font-ui),sans-serif;font-weight:600;font-size:15px;line-height:1.4;color:#FAF7F1;}
+.ob-sig{font-family:'Caveat',cursive;font-weight:700;font-size:18px;color:var(--ob-teal);margin-top:8px;display:block;}
+
+/* FRAME 3 — FACETIME */
+.ob-ft{aspect-ratio:1/1.02;
+  background:radial-gradient(120% 80% at 70% 20%,#20211c,#0c0d0b 70%),repeating-linear-gradient(115deg,rgba(255,255,255,.018) 0 2px,transparent 2px 9px);}
+.ob-unit{position:absolute;left:16%;bottom:0;width:66%;height:62%;border-radius:8px 8px 0 0;background:linear-gradient(180deg,#34352e,#1a1b17);border:1px solid rgba(255,255,255,.06);box-shadow:0 0 60px -10px rgba(0,0,0,.7) inset;}
+.ob-unit::before{content:"";position:absolute;left:14%;top:18%;width:72%;height:30%;border-radius:4px;background:repeating-linear-gradient(90deg,#222 0 4px,#2c2d27 4px 8px);}
+.ob-unit::after{content:"";position:absolute;left:22%;top:60%;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#3a3b33,#15160f);border:1px solid rgba(0,0,0,.5);}
+.ob-pin{position:absolute;display:flex;align-items:center;gap:7px;animation:ob-pop .5s both;z-index:3;}
+.ob-pin .ring{width:18px;height:18px;border-radius:50%;border:2px solid var(--ob-teal);position:relative;flex:none;box-shadow:0 0 12px rgba(0,194,178,.6);}
+.ob-pin .ring::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--ob-teal);box-shadow:0 0 8px var(--ob-teal);}
+.ob-pin .lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.06em;color:var(--ob-paper);background:rgba(0,0,0,.66);border:1px solid rgba(0,194,178,.4);border-radius:7px;padding:4px 8px;white-space:nowrap;}
+.ob-pin.p1{left:30%;top:40%;animation-delay:.95s;}
+.ob-pin.p2{left:38%;top:62%;animation-delay:1.3s;}
+.ob-pin.p3{left:22%;top:74%;animation-delay:1.65s;}
+@keyframes ob-pop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+.ob-ftscan{position:absolute;left:0;right:0;top:0;height:30%;background:linear-gradient(180deg,rgba(0,194,178,.16),transparent);animation:ob-ftsweep 3.4s ease-in-out infinite;z-index:2;}
+@keyframes ob-ftsweep{0%{transform:translateY(-30%)}50%{transform:translateY(240%)}100%{transform:translateY(-30%)}}
+.ob-ftbar{position:absolute;left:12px;right:12px;top:12px;display:flex;align-items:center;justify-content:space-between;z-index:3;}
+.ob-ftbar .live{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--ob-paper);display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.5);border:1px solid var(--ob-line);border-radius:14px;padding:4px 9px;}
+.ob-ftbar .live .d{width:6px;height:6px;border-radius:50%;background:var(--ob-rust);box-shadow:0 0 8px var(--ob-rust);animation:ob-pulse 1.6s infinite;}
+.ob-pip{position:absolute;right:12px;top:42px;width:58px;height:74px;border-radius:10px;z-index:3;background:radial-gradient(circle at 40% 30%,#262722,#101109);border:1px solid var(--ob-line);}
+.ob-ftcap{position:absolute;left:12px;right:12px;bottom:12px;z-index:3;background:rgba(0,0,0,.62);border:1px solid rgba(0,194,178,.3);border-radius:12px;padding:11px 13px;animation:ob-rise .8s 1.9s both;}
+.ob-ftcap .q{font-family:'Archivo',var(--font-ui),sans-serif;font-weight:600;font-size:13px;line-height:1.35;color:#FAF7F1;}
+.ob-ftcap .sig{font-family:'Caveat',cursive;font-weight:700;font-size:16px;color:var(--ob-teal);margin-top:5px;display:block;}
+
+/* FRAME 4 — TEXT / MENTOR */
+.ob-thread{padding:16px 14px;background:linear-gradient(180deg,#14130D,#0F0E0A);}
+.ob-bubble{max-width:84%;padding:11px 13px;border-radius:14px;font-size:13.5px;line-height:1.4;margin-bottom:10px;}
+.ob-me{margin-left:auto;background:linear-gradient(180deg,#1d1b14,#171510);border:1px solid var(--ob-line);color:var(--ob-paper);border-bottom-right-radius:5px;animation:ob-rise .5s .9s both;}
+.ob-mike{margin-right:auto;background:rgba(0,194,178,.07);border:1px solid rgba(0,194,178,.3);color:#FAF7F1;border-bottom-left-radius:5px;animation:ob-rise .5s 1.5s both;}
+.ob-mike .who{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;color:var(--ob-teal);margin-bottom:5px;}
+.ob-grow{margin-top:6px;display:flex;align-items:center;gap:9px;border:1px solid rgba(201,169,97,.4);background:rgba(201,169,97,.07);border-radius:12px;padding:10px 12px;animation:ob-rise .6s 2.1s both;}
+.ob-grow .ic{font-size:16px;}
+.ob-grow .tx{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.04em;line-height:1.4;color:var(--ob-brass);}
+.ob-grow .tx b{color:#FAF7F1;font-weight:700;}
+
+/* FRAME 5 — THE MONEY (tech only) */
+.ob-money-stage{flex:1;display:flex;flex-direction:column;justify-content:center;gap:11px;padding-top:6px;min-height:0;}
+.ob-money{padding:14px 15px 15px;animation:ob-rise 1s .7s both;border:1px solid rgba(201,169,97,.32);background:linear-gradient(180deg,#15140D,#100F0B);}
+.ob-mhd{display:flex;align-items:center;justify-content:space-between;}
+.ob-mhd .tag{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.16em;color:var(--ob-brass);display:flex;align-items:center;gap:6px;}
+.ob-mhd .tag .d{width:5px;height:5px;border-radius:50%;background:var(--ob-brass);box-shadow:0 0 8px var(--ob-brass);animation:ob-pulse 1.9s infinite;}
+.ob-mhd .ctx{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.06em;color:var(--ob-mute2);}
+.ob-catch{margin-top:11px;font-family:'Archivo',var(--font-ui),sans-serif;font-weight:600;font-size:13px;line-height:1.38;color:#FAF7F1;}
+.ob-catch b{color:var(--ob-brass);}
+.ob-lift{margin-top:13px;display:flex;align-items:flex-end;gap:12px;}
+.ob-lift .col{display:flex;flex-direction:column;gap:3px;}
+.ob-lift .cl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.14em;color:var(--ob-mute2);}
+.ob-lift .v{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--ob-mute);}
+.ob-lift .arr{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--ob-brass);padding-bottom:1px;}
+.ob-lift .now{font-family:'Anton','Archivo',var(--font-display),sans-serif;font-size:28px;line-height:.85;color:var(--ob-brass);letter-spacing:.01em;}
+.ob-lift .gain{margin-left:auto;text-align:right;}
+.ob-lift .gain .g{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;color:var(--ob-moss);}
+.ob-lift .gain .gl{font-family:'JetBrains Mono',monospace;font-size:7.5px;letter-spacing:.14em;color:var(--ob-mute2);}
+.ob-bar{margin-top:12px;height:7px;border-radius:4px;background:rgba(255,255,255,.05);overflow:hidden;position:relative;}
+.ob-bar .fill{position:absolute;left:0;top:0;bottom:0;width:74%;border-radius:4px;background:linear-gradient(90deg,rgba(201,169,97,.55),var(--ob-brass));box-shadow:0 0 12px rgba(201,169,97,.5);animation:ob-grow 1.4s 1s both;}
+@keyframes ob-grow{from{width:38%}to{width:74%}}
+.ob-honest{margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.05em;line-height:1.4;color:var(--ob-moss);}
+.ob-honest b{color:#FAF7F1;font-weight:700;}
+.ob-obj{padding:13px 15px 14px;animation:ob-rise 1s 1.25s both;border:1px solid rgba(0,194,178,.28);background:rgba(0,194,178,.05);}
+.ob-obj .hd{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;color:var(--ob-teal);margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+.ob-obj .hd .ic{font-size:11px;}
+.ob-cust{font-family:'Archivo',var(--font-ui),sans-serif;font-style:italic;font-weight:500;font-size:12.5px;color:var(--ob-mute);border-left:2px solid var(--ob-rust);padding-left:9px;line-height:1.35;}
+.ob-say{margin-top:11px;font-family:'Archivo',var(--font-ui),sans-serif;font-weight:600;font-size:13px;line-height:1.4;color:#FAF7F1;}
+.ob-say b{color:#fff;}
+
+/* FRAME 6 — DROP INTO THE MAGIC */
+.ob-magic-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px;}
+.ob-magic-who{display:flex;align-items:center;gap:10px;}
+.ob-magic-who .av{width:38px;height:38px;border-radius:11px;flex:none;position:relative;background:radial-gradient(circle at 35% 30%,#1b3a37,#0d1c1b);border:1px solid rgba(0,194,178,.4);display:flex;align-items:center;justify-content:center;}
+.ob-magic-who .av .ini{font-family:'Anton','Archivo',var(--font-display),sans-serif;font-size:18px;color:var(--ob-teal);}
+.ob-magic-who .nm{font-family:'Archivo',var(--font-ui),sans-serif;font-weight:800;font-size:15px;line-height:1;}
+.ob-magic-who .st{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.14em;color:var(--ob-teal);margin-top:4px;display:flex;align-items:center;gap:5px;}
+.ob-magic-who .st .d{width:5px;height:5px;border-radius:50%;background:var(--ob-teal);box-shadow:0 0 7px var(--ob-teal);animation:ob-pulse 1.8s infinite;}
+.ob-free{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.12em;color:var(--ob-brass);border:1px solid rgba(201,169,97,.4);border-radius:14px;padding:5px 10px;}
+.ob-magic-head{margin:22px 4px 6px;}
+.ob-magic-head .k{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.28em;color:var(--ob-teal);animation:ob-rise .7s .05s both;}
+.ob-magic-head h1{font-family:'Anton','Archivo',var(--font-display),sans-serif;font-weight:400;text-transform:uppercase;line-height:.9;letter-spacing:.004em;font-size:34px;margin-top:9px;animation:ob-rise .8s .18s both;}
+.ob-magic-head h1 .t{color:var(--ob-teal);}
+.ob-chat{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;padding:12px 4px 6px;min-height:0;}
+.ob-chat .bubble{max-width:86%;padding:11px 13px;border-radius:14px;font-size:13.5px;line-height:1.42;}
+.ob-chat .me{margin-left:auto;background:linear-gradient(180deg,#1d1b14,#171510);border:1px solid var(--ob-line);color:var(--ob-paper);border-bottom-right-radius:5px;animation:ob-rise .5s .5s both;}
+.ob-chat .mike{margin-right:auto;background:rgba(0,194,178,.07);border:1px solid rgba(0,194,178,.3);color:#FAF7F1;border-bottom-left-radius:5px;animation:ob-rise .5s 1.0s both;}
+.ob-chat .mike .who2{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;color:var(--ob-teal);margin-bottom:5px;}
+.ob-chat .mike b{color:#fff;}
+.ob-chips{display:flex;flex-wrap:wrap;gap:7px;margin:4px 4px 0;animation:ob-rise .6s 1.6s both;}
+.ob-chip{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.02em;color:var(--ob-paper);border:1px solid var(--ob-line);border-radius:18px;padding:8px 12px;background:rgba(255,255,255,.025);display:flex;align-items:center;gap:6px;}
+.ob-chip .a{color:var(--ob-teal);}
+.ob-composer{margin-top:12px;border:1px solid var(--ob-line);border-radius:16px;padding:10px 10px 10px 14px;display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,#15140E,#100F0B);animation:ob-rise .6s 1.8s both;}
+.ob-composer .ph{flex:1;font-size:13px;color:var(--ob-mute);}
+.ob-composer .send{width:38px;height:38px;border-radius:11px;flex:none;background:linear-gradient(180deg,#FFC02E,var(--ob-safety));display:flex;align-items:center;justify-content:center;color:#1a1300;font-size:17px;font-weight:900;}
+.ob-gate{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;color:var(--ob-mute2);text-align:center;animation:ob-rise .6s 2s both;}
+.ob-gate b{color:var(--ob-brass);font-weight:700;}
+.ob-gate .lock{opacity:.7;}
+.ob-find-tech{margin-top:10px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(0,194,178,.4);background:rgba(0,194,178,.06);border-radius:14px;padding:13px;font-family:'Archivo',var(--font-ui),sans-serif;font-weight:700;font-size:14px;color:var(--ob-teal);cursor:pointer;animation:ob-rise .6s 1.9s both;}
+
+/* dock — CTA + progress dots (shared) */
+.ob-dock{flex:none;padding-bottom:6px;animation:ob-rise 1s 1s both;}
+.ob-next-btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:54px;border-radius:14px;
+  font-family:'Archivo',var(--font-ui),sans-serif;font-weight:800;font-size:15px;border:none;cursor:pointer;
+  background:linear-gradient(180deg,#FFC02E,var(--ob-safety));color:#1a1300;
+  box-shadow:0 10px 26px -8px rgba(255,180,0,.55),0 1px 0 rgba(255,255,255,.45) inset;}
+.ob-dots{display:flex;gap:5px;justify-content:center;margin-top:16px;}
+.ob-dot{height:3px;width:22px;border-radius:2px;background:var(--ob-line);transition:background .3s;}
+.ob-dot.on{background:var(--ob-teal);box-shadow:0 0 8px rgba(0,194,178,.6);}
+
+/* reduced motion — kill animated substrate + motion, show final state */
+@media(prefers-reduced-motion:reduce){
+  #onboardingOverlay .ob-rings,#onboardingOverlay .ob-scope,#onboardingOverlay .ob-ftscan,#onboardingOverlay .ob-wbars i,#onboardingOverlay .ob-avatar::after,#onboardingOverlay .ob-bar .fill,#onboardingOverlay .ob-mhd .tag .d,#onboardingOverlay .ob-who .st .d,#onboardingOverlay .ob-ftbar .live .d,#onboardingOverlay .ob-preline .dot{animation:none !important;}
+  #onboardingOverlay .ob-frame,#onboardingOverlay .ob-frame.ob-in,#onboardingOverlay [class*="ob-"]{animation:none !important;}
+  #onboardingOverlay .ob-frame{opacity:1 !important;transform:none !important;}
+  #onboardingOverlay .ob-cold .ob-h1 .l3{text-shadow:0 0 18px rgba(0,194,178,.35);}
+  #onboardingOverlay .ob-bar .fill{width:74%;}
+}
 
 /* Paywall */
 #paywallOverlay{position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,.97);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px;}
@@ -943,8 +1129,8 @@ body.landing-atop .nav-mike .mike-badge{visibility:hidden;}
 #runBtn{background:linear-gradient(135deg,var(--rust),var(--rust-deep)) !important;box-shadow:0 8px 24px rgba(199,85,59,.3);border-radius:14px;transition:all .2s;}
 #runBtn:active{transform:scale(.97);}
 
-/* ── ONBOARDING NEXT BTN ───────────────────────────────────── */
-.ob-next-btn{background:linear-gradient(135deg,var(--rust),var(--rust-deep));border:none;border-radius:14px;padding:16px 40px;font-size:16px;font-weight:800;color:#fff;cursor:pointer;font-family:var(--font);box-shadow:0 8px 32px rgba(199,85,59,.4);transition:all .2s;letter-spacing:-.2px;}
+/* ── ONBOARDING NEXT BTN — tactile press only; visual styling owned by the
+   cinematic .ob-next-btn rule above (safety-yellow CTA). No rust override here. */
 .ob-next-btn:active{transform:scale(.96);}
 
 /* ── MSG BUBBLES ───────────────────────────────────────────── */
@@ -2004,27 +2190,21 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 
 <div id="onboardingOverlay">
 <div class="ob-wrap">
-  <button id="obBackBtn" onclick="obBack()" style="position:absolute;top:max(env(safe-area-inset-top),18px);left:16px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;color:rgba(255,255,255,.8);cursor:pointer;display:none;">← Back</button>
-  <button class="ob-skip-btn" onclick="stopObSpeaking();obFinish()">Skip</button>
+  <div class="ob-rings" id="obRings"></div>
+  <div class="ob-scope" id="obScope"></div>
   <div class="ob-canvas">
-    <div class="ob-bg" id="obBg"></div>
-    <div class="ob-wave"></div>
-    <div class="ob-content">
-      <span class="ob-emoji-big" id="obEmoji" style="display:flex;justify-content:center;"><svg width="64" height="64" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="9" fill="url(#lg3)"/>
-  <path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/>
-  <defs><linearGradient id="lg3" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#C7553B"/>
-    <stop offset="100%" stop-color="#A8472F"/>
-  </linearGradient></defs>
-</svg></span>
-      <div class="ob-title" id="obTitle">Trazer <span>Intelligence</span></div>
-      <div class="ob-body" id="obBody">Meet Mike — your HVAC expert, right in your pocket.</div>
+    <div class="ob-top">
+      <div class="ob-top-left">
+        <button class="ob-back-btn" id="obBackBtn" onclick="obBack()" style="display:none;">← BACK</button>
+        <div class="ob-brand">TRAZER <i>INTELLIGENCE</i></div>
+      </div>
+      <button class="ob-skip-btn" onclick="stopObSpeaking();obFinish()">SKIP</button>
     </div>
-    <div class="ob-dots">
-      <div class="ob-dot on"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div>
+    <div class="ob-frame" id="obFrame"></div>
+    <div class="ob-dock" id="obDock">
+      <button class="ob-next-btn" id="obNextBtn" onclick="obNext()">Meet Mike →</button>
+      <div class="ob-dots" id="obDots"></div>
     </div>
-    <button class="ob-next-btn" id="obNextBtn" onclick="obNext()">Next →</button>
   </div>
 </div>
 </div>
@@ -3163,12 +3343,10 @@ function tracerInit(){
         loadUserHistory();
         applyModeFromRole();
         showPersonalizedWelcome();
-        // Resume Mike's signup conversation if a tech reloaded mid-flow.
-        // Otherwise fall back to the legacy carousel gate for users without the flag.
-        var _obResume=(typeof getUserMemoryProfile==='function')?getUserMemoryProfile():{};
-        if(_obResume.onboardingStep>0&&_obResume.onboardingStep<10){
-          setTimeout(startOnboarding,800);
-        } else if(!localStorage.getItem('trazer_onboarded')){
+        // 8-question conversational intake (startOnboarding) is RETIRED from routing.
+        // On reload, only show the cinematic first-run if it hasn't been seen on this
+        // device. Mike learns the tech naturally in chat now (no forced Q&A on resume).
+        if(!localStorage.getItem('trazer_onboarded')){
           setTimeout(showOnboarding,800);
         }
         setTimeout(requestTechLocation,2000);
@@ -3312,12 +3490,10 @@ function authSignIn(){
       document.getElementById('authOverlay').classList.add('hidden');
       updateProfileUI();checkTrial();loadUserHistory();applyModeFromRole();
       showPersonalizedWelcome();
-      // Resume Mike's signup conversation if a tech signed in mid-flow on a device with their profile.
-      // Otherwise fall back to the legacy carousel gate for users without the flag.
-      var _obResume=(typeof getUserMemoryProfile==='function')?getUserMemoryProfile():{};
-      if(_obResume.onboardingStep>0&&_obResume.onboardingStep<10){
-        setTimeout(startOnboarding,800);
-      } else if(!localStorage.getItem('trazer_onboarded')){
+      // 8-question conversational intake (startOnboarding) is RETIRED from routing. New
+      // and returning techs get the cinematic first-run only if they haven't seen it on
+      // this device. Mike learns the tech naturally in chat now (no forced Q&A).
+      if(!localStorage.getItem('trazer_onboarded')){
         setTimeout(showOnboarding,800);
       }
       setTimeout(requestTechLocation,2000);
@@ -3367,21 +3543,16 @@ function authSignUp(){
       document.getElementById('authOverlay').classList.add('hidden');
       updateProfileUI();checkTrial();loadUserHistory();applyModeFromRole();
       showPersonalizedWelcome();
-      var _suRole=(user.role||'').toLowerCase();
-      if(_suRole==='contractor'||_suRole==='technician'){
-        // Techs get Mike's conversational onboarding. The trazer_onboarded flag
-        // is intentionally NOT set here — it's set when the conversation completes
-        // (completeOnboarding) or the tech skips (skipOnboarding).
-        setTimeout(startOnboarding,800);
-      } else {
-        // Homeowners (and any non-tech role) keep the existing 5-slide carousel.
-        if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
-        // Immediately mark onboarded on this device so the flow never replays
-        // even if pagehide/visibilitychange listeners don't fire (iOS app kill,
-        // PWA storage eviction race, etc.). Onboarding still shows once because
-        // the gate above already scheduled it before this line ran.
-        try{localStorage.setItem('trazer_onboarded','1');}catch(e){}
-      }
+      // CINEMATIC ONBOARDING (Brandon-approved 2026-06-01): every new account — tech
+      // OR homeowner — gets the cinematic first-run. showOnboarding() reads currentUser
+      // .role internally (techs: 6 frames incl. the money frame; homeowners: 4 frames,
+      // no prices). The old 8-question conversational tech intake (startOnboarding) is
+      // RETIRED from routing — Mike now learns the tech naturally in chat (he has memory).
+      if(!localStorage.getItem('trazer_onboarded'))setTimeout(showOnboarding,800);
+      // Mark onboarded on this device immediately so the flow never replays even if the
+      // pagehide/visibilitychange listeners don't fire (iOS app kill, PWA eviction race).
+      // Onboarding still shows once because the line above already scheduled it.
+      try{localStorage.setItem('trazer_onboarded','1');}catch(e){}
       setTimeout(requestTechLocation,2000);
     })
     .catch(function(err){showAuthErr('Connection error — '+( err&&err.message?err.message:'try again'));if(btn){btn.disabled=false;btn.textContent='Start Free Trial';}});
@@ -3867,150 +4038,135 @@ async function goCheckout(){
   closeModal('billingModal');
 }
 
-// ── ONBOARDING ─────────────────────────────────────────────────
-// OB_I18N — Edwin-approved first-run copy (Brandon-approved 2026-06-01), 6 languages.
-// TECH = 5 value-prop slides; HOME = 4 slides. Structural data (bg/emoji) lives on the
-// slide objects below; title/body/voice are pulled from here by currentLang so the
-// carousel translates with the language switch. NO homeowner repair prices anywhere.
+// ── CINEMATIC ONBOARDING ────────────────────────────────────────
+// Brandon-APPROVED full cinematic build (2026-06-01). Movie-title sequence ported from
+// Tina's mockups (onboarding-1-coldopen / 2-call / 3-facetime / 4-text-mentor /
+// onboarding-revenue[THE MONEY] / 5-drop-into-magic). Replaces the interim Edwin carousel.
+//
+//   TECH  = 6 frames: coldopen → call(01) → facetime(02) → text(03) → money(04) → magic
+//   HOME  = 4 frames: coldopen → talkedaround → facetime → magic   (NO money/revenue frame)
+//
+// GUARDRAIL (binding): the MONEY/revenue/objection frame is TECH-ONLY. It is not present
+// in the OB_FRAMES_HOME sequence at all — it cannot render for homeowners. No homeowner
+// prices anywhere. OB_I18N below holds ALL translatable natural-language prose in 6 langs.
+// Technical specimens (part numbers, $ figures, model strings, the "M" monogram, timer,
+// "FACETIME · MIKE") are language-neutral constants and live in the frame renderer.
 var OB_I18N={
   en:{
-    tech:[
-      {title:'Meet your <span>new best guy</span> on the job.',body:"25 years in the field. He's not a search engine — he's the master tech you call when you're stuck, and he picks up every time.",voice:"Meet your new best guy on the job. 25 years in the field. I'm not a search engine — I'm the master tech you call when you're stuck, and I pick up every time."},
-      {title:'<span>Hands-free</span> on the roof.',body:"Hit Call and talk to Mike like you're on the phone. He hears you, answers back. No typing, no squinting at a screen mid-job.",voice:"Hands-free on the roof. Hit Call and talk to me like you're on the phone. I hear you, I answer back. No typing, no squinting at a screen mid-job."},
-      {title:'<span>Show him</span> what you\'re looking at.',body:"Pull up FaceTime and point your phone at the unit. Mike sees it live — he'll diagnose it, help you walk the customer through it, and close the job.",voice:"Show me what you're looking at. Pull up FaceTime and point your phone at the unit. I see it live — I'll diagnose it, help you walk the customer through it, and close the job."},
-      {title:'The best friend who <span>always texts back.</span>',body:"Snap a nameplate, describe a weird noise, vent about a bad call. Mike's here for all of it — and he'll help you get better every time you ask.",voice:"The best friend who always texts back. Snap a nameplate, describe a weird noise, vent about a bad call. I'm here for all of it — and I'll help you get better every time you ask."},
-      {title:'Mike helps you <span>grow.</span>',body:"The more you work with him, the better you get. He'll tell you what he knows, why, and how to make more money doing it right.",voice:"I help you grow. The more you work with me, the better you get. I'll tell you what I know, why, and how to make more money doing it right."}
-    ],
-    home:[
-      {title:'An honest HVAC expert, <span>right in your pocket.</span>',body:"25 years in the field. He'll tell you what's actually wrong, whether it's urgent, and what to do next — in plain English.",voice:"An honest HVAC expert, right in your pocket. 25 years in the field. I'll tell you what's actually wrong, whether it's urgent, and what to do next — in plain English."},
-      {title:'No more guessing, <span>no more getting talked around.</span>',body:"Mike tells you what's wrong with your system, if it's safe to run, and what questions to ask whoever comes out. You show up informed.",voice:"No more guessing, no more getting talked around. I tell you what's wrong with your system, if it's safe to run, and what questions to ask whoever comes out. You show up informed."},
-      {title:'<span>Show him</span> your unit.',body:"Point your phone at your system and Mike sees it. He'll walk you through what he's looking at, right there on the call.",voice:"Show me your unit. Point your phone at your system and I see it. I'll walk you through what I'm looking at, right there on the call."},
-      {title:'When you need <span>a pro.</span>',body:"If your system needs a real hand, Mike will help you find a local tech — and make sure they know exactly what they're walking into.",voice:"When you need a pro. If your system needs a real hand, I'll help you find a local tech — and make sure they know exactly what they're walking into."}
-    ]
+    cold:{pre:'CONNECTING YOU TO',l1:'25 YEARS',l2:'ON EVERY',l3:'SYSTEM.',sub:'A master tech who picks up every time — <b>call him, FaceTime him, text him.</b> Watch what he does before you sign anything.',cta:'Meet Mike →',voice:"25 years on every system. A master tech who picks up every time — call him, FaceTime him, text him. Watch what I do before you sign anything."},
+    call:{k:'01 · CALL',l1:'HANDS FULL?',l2:'JUST CALL HIM.',line:"On the roof, in the truck, gloves on — <b>talk it through out loud.</b> He answers like the guy in the next bay.",st:'ON THE LINE',q:'“Before you condemn the board — what\'s your 24 volts at R to C? Read it to me.”',sig:'— Mike, hands-free',voice:"Hands full? Just call me. On the roof, in the truck, gloves on — talk it through out loud. Before you condemn the board, what's your 24 volts at R to C? Read it to me."},
+    facetime:{k:'02 · FACETIME',l1:'POINT YOUR',l2:'PHONE AT IT.',line:"FaceTime him and <b>he sees what you see</b> — reads the nameplate, calls the part, helps you close it in front of the customer.",q:'“There it is — see the hairline on the igniter? Show the homeowner that. That\'s your sale.”',sig:'— Mike, on FaceTime',voice:"Point your phone at it. FaceTime me and I see what you see. There it is — see the hairline on the igniter? Show the homeowner that. That's your sale."},
+    text:{k:'03 · TEXT · EVERY DAY',l1:'THE GUY WHO',l2:'MAKES YOU BETTER.',line:"Quick questions, nameplate photos, the tough calls — <b>he remembers you</b> and grows you toward senior-tech money.",me:"Customer says it's short cycling. 3 ton Goodman. Worth replacing the cap or am I chasing it?",mike:"Check the cap first — read it with a meter, don't eyeball it. If it's in spec, you're looking at the contactor or a dirty condenser stacking head pressure. Don't part-swap on a guess.",grow:'<b>You\'ve logged 14 calls with Mike.</b><br>You\'re diagnosing 2× faster than week one.',voice:"The guy who makes you better. Quick questions, nameplate photos, the tough calls — I remember you and grow you toward senior-tech money."},
+    money:{k:'04 · THE MONEY',l1:'HE PAYS FOR',l2:'HIMSELF. TWICE.',line:"Any tool diagnoses. Mike catches the money you'd leave on the table — and hands you the words when they push back on price. <b>Done honest.</b>",mtag:'MIKE CAUGHT THIS',mctx:'JOB · CARRIER 80K · BLOWER REPAIR',catch:'“While you\'re in there — that filter rack\'s wide open and they\'ve got a kid with asthma. <b>Offer the media cabinet. That\'s an honest add, not a sell.</b>”',cl1:'YOUR TICKET',cl2:'WITH THE CATCH',gl:'SAME TRUCK ROLL',honest:'▲ <b>Real fix the customer actually needs</b> — not a part-swap on a guess.',ohd:'THEY PUSHED BACK · MIKE HAS YOUR LINE',cust:'“That price seems high — let me get another quote.”',say:'“Fair. Get your other quotes — I\'d want you to. Ask each of \'em if a <b>licensed tech is doing the work</b> and if the part\'s <b>OEM with a warranty</b>. Mine is, in writing, today. Cheaper usually means one of those is missing.”',osig:'— Mike, in your corner',voice:"He pays for himself, twice. Mike catches the money you'd leave on the table — and hands you the words when they push back on price. Done honest."},
+    magic:{k:'YOUR FIRST CALL',h1a:'ASK MIKE',h1b:'ONE THING.',st:'READY · 25 YRS ON EVERY SYSTEM',free:'FREE TASTE',me:'R-410A system, 12° subcool, low suction. What am I looking at?',mike:'12° subcool with low suction? You\'re likely <b>overcharged with a restriction</b> downstream — check the TXV bulb and your liquid line temp first. Tell me the line temps and I\'ll walk you to it…',chip1:'What part do I need?',chip2:'Read me the fault code',chip3:'Send a nameplate photo',ph:'Tell Mike what you\'re working on…',gate:'First answer\'s on the house · <b>Create your account to keep Mike on speed-dial</b>',cta:'Start →',voice:"Ask me one thing. First answer's on the house — tell me what you're working on."}
+  },
+  homeEn:{
+    cold:{pre:'IN YOUR CORNER',l1:'AN HONEST EXPERT',l2:'IN YOUR',l3:'POCKET.',sub:'A master tech who picks up every time — <b>call him, FaceTime him, text him.</b> He tells you the truth before anyone sells you anything.',cta:'Meet Mike →',voice:"An honest expert in your pocket. A master tech who picks up every time — call him, FaceTime him, text him. I tell you the truth before anyone sells you anything."},
+    talkedaround:{k:'01 · ASK HIM',l1:'NO MORE GETTING',l2:'TALKED AROUND.',line:"Mike tells you in plain English — <b>what\'s wrong, if it\'s safe, how urgent it is, and what to ask</b> whoever comes out.",st:'ON THE LINE',q:'“It\'ll run, but that\'s a cracked heat exchanger — don\'t sleep in the house tonight. Ask whoever comes out to show you the crack.”',sig:'— Mike, in plain English',voice:"No more getting talked around. I tell you what's wrong, if it's safe, how urgent it is, and what to ask whoever comes out."},
+    facetime:{k:'02 · FACETIME',l1:'SHOW HIM',l2:'YOUR UNIT.',line:"FaceTime him and point your phone at the system. <b>He sees what you see</b> and tells you straight what he\'s looking at.",q:'“That\'s your blower motor — and it\'s safe to run for now. Not an emergency. Get a couple quotes, no rush.”',sig:'— Mike, on FaceTime',voice:"Show me your unit. FaceTime me and point your phone at the system. I see what you see and tell you straight what I'm looking at."},
+    magic:{k:'TELL HIM WHAT\'S GOING ON',h1a:'TELL MIKE',h1b:'WHAT\'S GOING ON.',st:'READY · 25 YRS ON EVERY SYSTEM',free:'FREE TASTE',me:'AC stopped cooling last night. It\'s 95 out. Is this an emergency?',mike:'Let\'s find out fast. <b>First — is the outdoor fan spinning?</b> If it\'s humming but not turning, shut it off so you don\'t cook the compressor. Tell me what you see and I\'ll walk you through it…',chip1:'Is it safe to run?',chip2:'How urgent is this?',chip3:'Send a photo of my unit',ph:'Tell Mike what\'s going on…',gate:'First answer\'s on the house · <b>Create your account to keep Mike in your corner</b>',findtech:'Connect to a trusted local tech →',cta:'Start →',voice:"Tell me what's going on. First answer's on the house."}
   },
   es:{
-    tech:[
-      {title:'Conoce a tu <span>nuevo mejor aliado</span> en el trabajo.',body:"25 años en el campo. No es un buscador — es el técnico maestro al que llamas cuando te atascas, y siempre contesta.",voice:"Conoce a tu nuevo mejor aliado en el trabajo. 25 años en el campo. No soy un buscador — soy el técnico maestro al que llamas cuando te atascas, y siempre contesto."},
-      {title:'<span>Manos libres</span> en el techo.',body:"Toca Llamar y habla con Mike como por teléfono. Te escucha, te responde. Sin escribir, sin forzar la vista en plena chamba.",voice:"Manos libres en el techo. Toca Llamar y háblame como por teléfono. Te escucho, te respondo. Sin escribir, sin forzar la vista en plena chamba."},
-      {title:'<span>Muéstrale</span> lo que estás viendo.',body:"Abre FaceTime y apunta tu teléfono a la unidad. Mike lo ve en vivo — lo diagnostica, te ayuda a explicárselo al cliente y a cerrar el trabajo.",voice:"Muéstrame lo que estás viendo. Abre FaceTime y apunta tu teléfono a la unidad. Lo veo en vivo — lo diagnostico, te ayudo a explicárselo al cliente y a cerrar el trabajo."},
-      {title:'El mejor amigo que <span>siempre responde.</span>',body:"Foto de una placa, describe un ruido raro, desahógate de un mal trabajo. Mike está para todo — y te ayuda a mejorar cada vez que preguntas.",voice:"El mejor amigo que siempre responde. Foto de una placa, describe un ruido raro, desahógate de un mal trabajo. Estoy para todo — y te ayudo a mejorar cada vez que preguntas."},
-      {title:'Mike te ayuda a <span>crecer.</span>',body:"Mientras más trabajas con él, mejor te vuelves. Te dice lo que sabe, por qué, y cómo ganar más haciéndolo bien.",voice:"Te ayudo a crecer. Mientras más trabajas conmigo, mejor te vuelves. Te digo lo que sé, por qué, y cómo ganar más haciéndolo bien."}
-    ],
-    home:[
-      {title:'Un experto honesto en HVAC, <span>en tu bolsillo.</span>',body:"25 años en el campo. Te dice qué está realmente mal, si es urgente y qué hacer después — en palabras claras.",voice:"Un experto honesto en HVAC, en tu bolsillo. 25 años en el campo. Te digo qué está realmente mal, si es urgente y qué hacer después — en palabras claras."},
-      {title:'Sin adivinar, <span>sin que te enreden.</span>',body:"Mike te dice qué está mal en tu sistema, si es seguro usarlo y qué preguntar a quien venga. Llegas informado.",voice:"Sin adivinar, sin que te enreden. Te digo qué está mal en tu sistema, si es seguro usarlo y qué preguntar a quien venga. Llegas informado."},
-      {title:'<span>Muéstrale</span> tu unidad.',body:"Apunta tu teléfono a tu sistema y Mike lo ve. Te explica lo que está mirando, ahí mismo en la llamada.",voice:"Muéstrame tu unidad. Apunta tu teléfono a tu sistema y lo veo. Te explico lo que estoy mirando, ahí mismo en la llamada."},
-      {title:'Cuando necesitas <span>un profesional.</span>',body:"Si tu sistema necesita una mano de verdad, Mike te ayuda a encontrar un técnico local — y se asegura de que sepa exactamente con qué se va a encontrar.",voice:"Cuando necesitas un profesional. Si tu sistema necesita una mano de verdad, te ayudo a encontrar un técnico local — y me aseguro de que sepa exactamente con qué se va a encontrar."}
-    ]
+    cold:{pre:'TE CONECTAMOS CON',l1:'25 AÑOS',l2:'EN CADA',l3:'SISTEMA.',sub:'Un técnico maestro que siempre contesta — <b>llámalo, hazle FaceTime, escríbele.</b> Mira lo que hace antes de que firmes nada.',cta:'Conoce a Mike →',voice:"25 años en cada sistema. Un técnico maestro que siempre contesta — llámalo, hazle FaceTime, escríbele. Mira lo que hago antes de que firmes nada."},
+    call:{k:'01 · LLAMAR',l1:'¿MANOS LLENAS?',l2:'SOLO LLÁMALO.',line:"En el techo, en la troca, con guantes — <b>háblalo en voz alta.</b> Responde como el compa del taller de al lado.",st:'EN LÍNEA',q:'“Antes de condenar la tarjeta — ¿cuántos 24 voltios tienes de R a C? Léemelo.”',sig:'— Mike, manos libres',voice:"¿Manos llenas? Solo llámame. En el techo, en la troca, con guantes — háblalo en voz alta. Antes de condenar la tarjeta, ¿cuántos 24 voltios tienes de R a C? Léemelo."},
+    facetime:{k:'02 · FACETIME',l1:'APUNTA TU',l2:'TELÉFONO AHÍ.',line:"Hazle FaceTime y <b>ve lo que tú ves</b> — lee la placa, identifica la pieza, te ayuda a cerrar frente al cliente.",q:'“Ahí está — ¿ves la grieta fina en el encendedor? Muéstrasela al cliente. Esa es tu venta.”',sig:'— Mike, en FaceTime',voice:"Apunta tu teléfono ahí. Hazme FaceTime y veo lo que tú ves. Ahí está — ¿ves la grieta fina en el encendedor? Muéstrasela al cliente. Esa es tu venta."},
+    text:{k:'03 · TEXTO · A DIARIO',l1:'EL TIPO QUE',l2:'TE HACE MEJOR.',line:"Preguntas rápidas, fotos de placas, las decisiones difíciles — <b>te recuerda</b> y te lleva hacia el sueldo de técnico senior.",me:"El cliente dice que prende y apaga. Goodman de 3 toneladas. ¿Cambio el capacitor o lo estoy persiguiendo?",mike:"Revisa el capacitor primero — mídelo con multímetro, no a ojo. Si está en rango, mira el contactor o un condensador sucio que sube la presión de alta. No cambies piezas adivinando.",grow:'<b>Llevas 14 llamadas con Mike.</b><br>Diagnosticas 2× más rápido que la primera semana.',voice:"El tipo que te hace mejor. Preguntas rápidas, fotos de placas, las decisiones difíciles — te recuerdo y te llevo hacia el sueldo de técnico senior."},
+    money:{k:'04 · EL DINERO',l1:'SE PAGA SOLO.',l2:'DOS VECES.',line:"Cualquier herramienta diagnostica. Mike atrapa el dinero que dejarías sobre la mesa — y te da las palabras cuando objetan el precio. <b>Hecho con honestidad.</b>",mtag:'MIKE ATRAPÓ ESTO',mctx:'TRABAJO · CARRIER 80K · REPARAR SOPLADOR',catch:'“Ya que estás ahí — el rack del filtro está abierto y tienen un niño con asma. <b>Ofrece el gabinete de filtro. Es un extra honesto, no una venta.</b>”',cl1:'TU TICKET',cl2:'CON EL HALLAZGO',gl:'MISMA VISITA',honest:'▲ <b>Arreglo real que el cliente sí necesita</b> — no cambiar piezas adivinando.',ohd:'OBJETARON · MIKE TIENE TU RESPUESTA',cust:'“Ese precio parece alto — déjame pedir otra cotización.”',say:'“Justo. Pide tus otras cotizaciones — yo querría que lo hicieras. Pregúntale a cada uno si un <b>técnico con licencia hace el trabajo</b> y si la pieza es <b>OEM con garantía</b>. La mía sí, por escrito, hoy. Más barato suele significar que falta una de esas dos.”',osig:'— Mike, de tu lado',voice:"Se paga solo, dos veces. Mike atrapa el dinero que dejarías sobre la mesa — y te da las palabras cuando objetan el precio. Hecho con honestidad."},
+    magic:{k:'TU PRIMERA LLAMADA',h1a:'PREGÚNTALE A MIKE',h1b:'UNA COSA.',st:'LISTO · 25 AÑOS EN CADA SISTEMA',free:'PRUEBA GRATIS',me:'Sistema R-410A, 12° de subenfriamiento, baja succión. ¿Qué estoy viendo?',mike:'¿12° de subenfriamiento con baja succión? Probablemente estés <b>sobrecargado con una restricción</b> aguas abajo — revisa el bulbo del TXV y la temperatura de la línea de líquido primero. Dime las temperaturas de línea y te llevo a ello…',chip1:'¿Qué pieza necesito?',chip2:'Léeme el código de falla',chip3:'Enviar foto de placa',ph:'Dile a Mike en qué estás trabajando…',gate:'La primera respuesta va por la casa · <b>Crea tu cuenta para tener a Mike a la mano</b>',cta:'Empezar →',voice:"Pregúntame una cosa. La primera respuesta va por la casa — dime en qué estás trabajando."}
+  },
+  homeEs:{
+    cold:{pre:'DE TU LADO',l1:'UN EXPERTO HONESTO',l2:'EN TU',l3:'BOLSILLO.',sub:'Un técnico maestro que siempre contesta — <b>llámalo, hazle FaceTime, escríbele.</b> Te dice la verdad antes de que alguien te venda algo.',cta:'Conoce a Mike →',voice:"Un experto honesto en tu bolsillo. Un técnico maestro que siempre contesta — llámalo, hazle FaceTime, escríbele. Te digo la verdad antes de que alguien te venda algo."},
+    talkedaround:{k:'01 · PREGÚNTALE',l1:'YA NO TE',l2:'ENREDAN MÁS.',line:"Mike te dice en palabras claras — <b>qué está mal, si es seguro, qué tan urgente es, y qué preguntar</b> a quien venga.",st:'EN LÍNEA',q:'“Sí prende, pero ese intercambiador está agrietado — no duermas en la casa esta noche. Pídele a quien venga que te muestre la grieta.”',sig:'— Mike, en palabras claras',voice:"Ya no te enredan más. Te digo qué está mal, si es seguro, qué tan urgente es, y qué preguntar a quien venga."},
+    facetime:{k:'02 · FACETIME',l1:'MUÉSTRALE',l2:'TU UNIDAD.',line:"Hazle FaceTime y apunta tu teléfono al sistema. <b>Ve lo que tú ves</b> y te dice claro qué está mirando.",q:'“Es el motor del soplador — y es seguro usarlo por ahora. No es emergencia. Pide un par de cotizaciones, sin prisa.”',sig:'— Mike, en FaceTime',voice:"Muéstrale tu unidad. Hazme FaceTime y apunta tu teléfono al sistema. Veo lo que tú ves y te digo claro qué estoy mirando."},
+    magic:{k:'CUÉNTALE QUÉ PASA',h1a:'CUÉNTALE A MIKE',h1b:'QUÉ PASA.',st:'LISTO · 25 AÑOS EN CADA SISTEMA',free:'PRUEBA GRATIS',me:'El aire dejó de enfriar anoche. Hace 35°C afuera. ¿Es una emergencia?',mike:'Vamos a averiguarlo rápido. <b>Primero — ¿el ventilador de afuera está girando?</b> Si zumba pero no gira, apágalo para no quemar el compresor. Dime qué ves y te guío…',chip1:'¿Es seguro usarlo?',chip2:'¿Qué tan urgente es?',chip3:'Enviar foto de mi unidad',ph:'Cuéntale a Mike qué pasa…',gate:'La primera respuesta va por la casa · <b>Crea tu cuenta para tener a Mike de tu lado</b>',findtech:'Conéctate con un técnico local de confianza →',cta:'Empezar →',voice:"Cuéntame qué pasa. La primera respuesta va por la casa."}
   },
   zh:{
-    tech:[
-      {title:'认识你工作中的<span>新搭档。</span>',body:"25 年现场经验。他不是搜索引擎 — 他是你卡住时打电话求助的大师级技师，而且每次都接。",voice:"认识你工作中的新搭档。我有 25 年现场经验。我不是搜索引擎 — 我是你卡住时打电话求助的大师级技师，而且每次都接。"},
-      {title:'在屋顶上<span>解放双手。</span>',body:"按下通话，像打电话一样跟 Mike 说话。他听得到你，也会回答。不用打字，不用在干活时眯着眼看屏幕。",voice:"在屋顶上解放双手。按下通话，像打电话一样跟我说话。我听得到你，也会回答。不用打字，不用在干活时眯着眼看屏幕。"},
-      {title:'把你看到的<span>给他看。</span>',body:"打开 FaceTime，把手机对准设备。Mike 实时看到 — 他会做诊断，帮你向客户讲解，并促成这单。",voice:"把你看到的给我看。打开 FaceTime，把手机对准设备。我实时看到 — 我会做诊断，帮你向客户讲解，并促成这单。"},
-      {title:'<span>随叫随回</span>的好兄弟。',body:"拍张铭牌、描述一个奇怪的噪音、吐槽一单糟心活。Mike 全都奉陪 — 而且你每次问，他都帮你变得更强。",voice:"随叫随回的好兄弟。拍张铭牌、描述一个奇怪的噪音、吐槽一单糟心活。我全都奉陪 — 而且你每次问，我都帮你变得更强。"},
-      {title:'Mike 帮你<span>成长。</span>',body:"你和他合作越多，你就越厉害。他会告诉你他知道什么、为什么，以及怎样把活干对、多赚钱。",voice:"我帮你成长。你和我合作越多，你就越厉害。我会告诉你我知道什么、为什么，以及怎样把活干对、多赚钱。"}
-    ],
-    home:[
-      {title:'一位诚实的暖通专家，<span>就在你口袋里。</span>',body:"25 年现场经验。他会用大白话告诉你到底哪里出了问题、是否紧急、下一步该怎么办。",voice:"一位诚实的暖通专家，就在你口袋里。我有 25 年现场经验。我会用大白话告诉你到底哪里出了问题、是否紧急、下一步该怎么办。"},
-      {title:'不再瞎猜，<span>不再被绕进去。</span>',body:"Mike 告诉你系统哪里出了问题、是否能安全运行，以及该问上门的人什么。你做到心里有数。",voice:"不再瞎猜，不再被绕进去。我告诉你系统哪里出了问题、是否能安全运行，以及该问上门的人什么。你做到心里有数。"},
-      {title:'把你的设备<span>给他看。</span>',body:"把手机对准你的系统，Mike 就能看到。他会在通话里当场带你了解他看到的情况。",voice:"把你的设备给我看。把手机对准你的系统，我就能看到。我会在通话里当场带你了解我看到的情况。"},
-      {title:'当你需要<span>专业人士时。</span>',body:"如果你的系统确实需要专业人手，Mike 会帮你找一位本地技师 — 并确保对方清楚知道要面对什么。",voice:"当你需要专业人士时。如果你的系统确实需要专业人手，我会帮你找一位本地技师 — 并确保对方清楚知道要面对什么。"}
-    ]
+    cold:{pre:'为你接通',l1:'25 年',l2:'每一种',l3:'系统。',sub:'一位每次都接的大师级技师 — <b>给他打电话、FaceTime、发短信。</b>在你签字之前，先看看他怎么做。',cta:'认识 Mike →',voice:"25 年，每一种系统。一位每次都接的大师级技师 — 给我打电话、FaceTime、发短信。在你签字之前，先看看我怎么做。"},
+    call:{k:'01 · 通话',l1:'手忙不开？',l2:'直接打给他。',line:"在屋顶、在车上、戴着手套 — <b>把问题说出来。</b>他回答得就像隔壁工位的老师傅。",st:'通话中',q:'“别急着判板子坏 — R 到 C 之间多少 24 伏？读给我听。”',sig:'— Mike，免提',voice:"手忙不开？直接打给我。在屋顶、在车上、戴着手套 — 把问题说出来。别急着判板子坏，R 到 C 之间多少 24 伏？读给我听。"},
+    facetime:{k:'02 · FACETIME',l1:'把手机',l2:'对准它。',line:"给他 FaceTime，<b>他看到你看到的</b> — 读铭牌、点出零件、帮你当着客户的面把单子拿下。",q:'“就是这儿 — 看到点火器上的细裂纹了吗？给业主看那个。那就是你的单子。”',sig:'— Mike，FaceTime 上',voice:"把手机对准它。给我 FaceTime，我看到你看到的。就是这儿 — 看到点火器上的细裂纹了吗？给业主看那个。那就是你的单子。"},
+    text:{k:'03 · 短信 · 每一天',l1:'让你',l2:'越来越强的人。',line:"小问题、铭牌照片、难判的活 — <b>他记得你</b>，带你走向高级技师的收入。",me:"客户说频繁启停。3 吨 Goodman。该换电容还是我在白折腾？",mike:"先查电容 — 用表测，别用眼估。如果在范围内，那就看接触器，或者脏的冷凝器把高压顶起来了。别凭猜换件。",grow:'<b>你已经和 Mike 通了 14 次。</b><br>你的诊断速度是第一周的 2 倍。',voice:"让你越来越强的人。小问题、铭牌照片、难判的活 — 我记得你，带你走向高级技师的收入。"},
+    money:{k:'04 · 钱',l1:'他自己',l2:'赚回两倍。',line:"任何工具都能诊断。Mike 抓住你本会漏掉的钱 — 客户嫌贵时还把话递到你手上。<b>都干得正派。</b>",mtag:'MIKE 抓到了这个',mctx:'工单 · CARRIER 80K · 风机维修',catch:'“既然进去了 — 那个滤网架敞着，他们家有个哮喘的孩子。<b>推荐媒体过滤柜。这是诚实的加项，不是硬卖。</b>”',cl1:'你的单价',cl2:'抓到之后',gl:'同一趟出车',honest:'▲ <b>客户真正需要的实在维修</b> — 不是凭猜换件。',ohd:'他们提出异议 · MIKE 给你台词',cust:'“这价格好像偏高 — 让我再问一家。”',say:'“合理。去问别家吧 — 我也希望你问。问每一家：<b>是不是持证技师在干活</b>，零件是不是<b>原厂带保修</b>。我的都是，白纸黑字，今天就给。更便宜通常意味着这两样里少了一样。”',osig:'— Mike，站在你这边',voice:"他自己赚回两倍。Mike 抓住你本会漏掉的钱 — 客户嫌贵时还把话递到你手上。都干得正派。"},
+    magic:{k:'你的第一通',h1a:'问 Mike',h1b:'一件事。',st:'就绪 · 25 年每一种系统',free:'免费体验',me:'R-410A 系统，过冷 12 度，吸气压力低。我这是什么情况？',mike:'过冷 12 度还吸气压力低？你很可能是<b>充注过量且下游有堵</b> — 先查 TXV 感温包和液管温度。把管温告诉我，我带你定位…',chip1:'我需要什么零件？',chip2:'帮我读故障码',chip3:'发一张铭牌照片',ph:'告诉 Mike 你在修什么…',gate:'第一个回答免费 · <b>创建账号，把 Mike 留在快捷拨号里</b>',cta:'开始 →',voice:"问我一件事。第一个回答免费 — 告诉我你在修什么。"}
+  },
+  homeZh:{
+    cold:{pre:'站在你这边',l1:'一位诚实的专家',l2:'就在你',l3:'口袋里。',sub:'一位每次都接的大师级技师 — <b>给他打电话、FaceTime、发短信。</b>在别人向你推销之前，他先告诉你实话。',cta:'认识 Mike →',voice:"一位诚实的专家，就在你口袋里。一位每次都接的大师级技师 — 给我打电话、FaceTime、发短信。在别人向你推销之前，我先告诉你实话。"},
+    talkedaround:{k:'01 · 问他',l1:'再也不会',l2:'被绕进去。',line:"Mike 用大白话告诉你 — <b>哪里坏了、是否安全、有多紧急、该问什么</b>，问上门的人。",st:'通话中',q:'“能运行，但那是换热器裂了 — 今晚别在屋里睡。让上门的人把裂缝指给你看。”',sig:'— Mike，大白话',voice:"再也不会被绕进去。我告诉你哪里坏了、是否安全、有多紧急、该问什么，问上门的人。"},
+    facetime:{k:'02 · FACETIME',l1:'把你的设备',l2:'给他看。',line:"给他 FaceTime，把手机对准系统。<b>他看到你看到的</b>，直截了当告诉你他在看什么。",q:'“那是你的鼓风机电机 — 暂时可以安全运行。不是急事。多问几家报价，不用急。”',sig:'— Mike，FaceTime 上',voice:"把你的设备给他看。给我 FaceTime，把手机对准系统。我看到你看到的，直截了当告诉你我在看什么。"},
+    magic:{k:'告诉他出了什么事',h1a:'告诉 Mike',h1b:'出了什么事。',st:'就绪 · 25 年每一种系统',free:'免费体验',me:'空调昨晚不制冷了。外面 35 度。这算紧急吗？',mike:'我们快点查清楚。<b>先看 — 外机风扇在转吗？</b>如果嗡嗡响但不转，先关掉，别把压缩机烧了。告诉我你看到什么，我带你一步步来…',chip1:'现在能安全用吗？',chip2:'这有多紧急？',chip3:'发一张我的设备照片',ph:'告诉 Mike 出了什么事…',gate:'第一个回答免费 · <b>创建账号，让 Mike 一直站在你这边</b>',findtech:'联系一位可信赖的本地技师 →',cta:'开始 →',voice:"告诉我出了什么事。第一个回答免费。"}
   },
   vi:{
-    tech:[
-      {title:'Gặp <span>người anh em mới</span> trên công việc.',body:"25 năm trong nghề. Anh không phải công cụ tìm kiếm — anh là thợ cả bạn gọi khi bí, và lúc nào cũng bắt máy.",voice:"Gặp người anh em mới trên công việc. 25 năm trong nghề. Tôi không phải công cụ tìm kiếm — tôi là thợ cả bạn gọi khi bí, và lúc nào cũng bắt máy."},
-      {title:'<span>Rảnh tay</span> trên mái nhà.',body:"Nhấn Gọi và nói chuyện với Mike như đang gọi điện. Anh nghe bạn, trả lời lại. Không gõ phím, không nheo mắt nhìn màn hình giữa lúc làm.",voice:"Rảnh tay trên mái nhà. Nhấn Gọi và nói chuyện với tôi như đang gọi điện. Tôi nghe bạn, trả lời lại. Không gõ phím, không nheo mắt nhìn màn hình giữa lúc làm."},
-      {title:'<span>Cho anh xem</span> thứ bạn đang nhìn.',body:"Mở FaceTime và chĩa điện thoại vào thiết bị. Mike thấy trực tiếp — anh chẩn đoán, giúp bạn giải thích cho khách và chốt việc.",voice:"Cho tôi xem thứ bạn đang nhìn. Mở FaceTime và chĩa điện thoại vào thiết bị. Tôi thấy trực tiếp — tôi chẩn đoán, giúp bạn giải thích cho khách và chốt việc."},
-      {title:'Người bạn <span>luôn nhắn lại.</span>',body:"Chụp một tấm nhãn máy, mô tả một tiếng ồn lạ, xả về một ca khó. Mike có mặt cho tất cả — và giúp bạn giỏi hơn mỗi lần bạn hỏi.",voice:"Người bạn luôn nhắn lại. Chụp một tấm nhãn máy, mô tả một tiếng ồn lạ, xả về một ca khó. Tôi có mặt cho tất cả — và giúp bạn giỏi hơn mỗi lần bạn hỏi."},
-      {title:'Mike giúp bạn <span>tiến bộ.</span>',body:"Càng làm việc với anh, bạn càng giỏi. Anh nói cho bạn biết anh biết gì, tại sao, và làm sao kiếm được nhiều hơn khi làm đúng.",voice:"Tôi giúp bạn tiến bộ. Càng làm việc với tôi, bạn càng giỏi. Tôi nói cho bạn biết tôi biết gì, tại sao, và làm sao kiếm được nhiều hơn khi làm đúng."}
-    ],
-    home:[
-      {title:'Một chuyên gia HVAC trung thực, <span>ngay trong túi bạn.</span>',body:"25 năm trong nghề. Anh sẽ nói cho bạn biết thật sự hỏng gì, có gấp không, và làm gì tiếp theo — bằng lời dễ hiểu.",voice:"Một chuyên gia HVAC trung thực, ngay trong túi bạn. 25 năm trong nghề. Tôi sẽ nói cho bạn biết thật sự hỏng gì, có gấp không, và làm gì tiếp theo — bằng lời dễ hiểu."},
-      {title:'Hết đoán mò, <span>hết bị nói vòng vo.</span>',body:"Mike cho bạn biết hệ thống hỏng gì, có chạy an toàn không, và nên hỏi gì người tới sửa. Bạn xuất hiện với đầy đủ thông tin.",voice:"Hết đoán mò, hết bị nói vòng vo. Tôi cho bạn biết hệ thống hỏng gì, có chạy an toàn không, và nên hỏi gì người tới sửa. Bạn xuất hiện với đầy đủ thông tin."},
-      {title:'<span>Cho anh xem</span> thiết bị của bạn.',body:"Chĩa điện thoại vào hệ thống và Mike thấy được. Anh sẽ dẫn bạn qua những gì anh đang nhìn, ngay trong cuộc gọi.",voice:"Cho tôi xem thiết bị của bạn. Chĩa điện thoại vào hệ thống và tôi thấy được. Tôi sẽ dẫn bạn qua những gì tôi đang nhìn, ngay trong cuộc gọi."},
-      {title:'Khi bạn cần <span>một thợ chuyên nghiệp.</span>',body:"Nếu hệ thống của bạn cần một bàn tay thật sự, Mike sẽ giúp bạn tìm một thợ địa phương — và đảm bảo họ biết chính xác sẽ phải đối mặt với gì.",voice:"Khi bạn cần một thợ chuyên nghiệp. Nếu hệ thống của bạn cần một bàn tay thật sự, tôi sẽ giúp bạn tìm một thợ địa phương — và đảm bảo họ biết chính xác sẽ phải đối mặt với gì."}
-    ]
+    cold:{pre:'KẾT NỐI BẠN VỚI',l1:'25 NĂM',l2:'TRÊN MỌI',l3:'HỆ THỐNG.',sub:'Một thợ cả lúc nào cũng bắt máy — <b>gọi anh, FaceTime anh, nhắn anh.</b> Xem anh làm gì trước khi bạn ký bất cứ thứ gì.',cta:'Gặp Mike →',voice:"25 năm trên mọi hệ thống. Một thợ cả lúc nào cũng bắt máy — gọi tôi, FaceTime tôi, nhắn tôi. Xem tôi làm gì trước khi bạn ký bất cứ thứ gì."},
+    call:{k:'01 · GỌI',l1:'BẬN TAY?',l2:'CỨ GỌI ANH.',line:"Trên mái, trong xe, đeo găng — <b>nói thẳng ra cho rõ.</b> Anh trả lời như ông thợ ở khoang bên cạnh.",st:'ĐANG TRÊN ĐƯỜNG DÂY',q:'“Đừng vội kết tội bo mạch — bạn đo được bao nhiêu 24 vôn từ R tới C? Đọc cho tôi nghe.”',sig:'— Mike, rảnh tay',voice:"Bận tay? Cứ gọi tôi. Trên mái, trong xe, đeo găng — nói thẳng ra cho rõ. Đừng vội kết tội bo mạch, bạn đo được bao nhiêu 24 vôn từ R tới C? Đọc cho tôi nghe."},
+    facetime:{k:'02 · FACETIME',l1:'CHĨA ĐIỆN THOẠI',l2:'VÀO NÓ.',line:"FaceTime anh và <b>anh thấy thứ bạn thấy</b> — đọc nhãn máy, gọi tên linh kiện, giúp bạn chốt ngay trước mặt khách.",q:'“Đó kìa — thấy vết nứt tóc trên bộ đánh lửa không? Cho chủ nhà xem cái đó. Đó là đơn của bạn.”',sig:'— Mike, trên FaceTime',voice:"Chĩa điện thoại vào nó. FaceTime tôi và tôi thấy thứ bạn thấy. Đó kìa — thấy vết nứt tóc trên bộ đánh lửa không? Cho chủ nhà xem cái đó. Đó là đơn của bạn."},
+    text:{k:'03 · NHẮN TIN · MỖI NGÀY',l1:'NGƯỜI LÀM',l2:'BẠN GIỎI LÊN.',line:"Câu hỏi nhanh, ảnh nhãn máy, những ca khó — <b>anh nhớ bạn</b> và nâng bạn lên mức lương thợ cả.",me:"Khách nói máy chạy ngắt liên tục. Goodman 3 tấn. Thay tụ hay tôi đang đoán mò?",mike:"Kiểm tra tụ trước — đo bằng đồng hồ, đừng nhìn bằng mắt. Nếu trong khoảng cho phép thì xem công tắc tơ hoặc dàn nóng bẩn làm dội áp cao. Đừng thay linh kiện theo phỏng đoán.",grow:'<b>Bạn đã có 14 cuộc với Mike.</b><br>Bạn chẩn đoán nhanh gấp 2 lần tuần đầu.',voice:"Người làm bạn giỏi lên. Câu hỏi nhanh, ảnh nhãn máy, những ca khó — tôi nhớ bạn và nâng bạn lên mức lương thợ cả."},
+    money:{k:'04 · TIỀN',l1:'ANH TỰ',l2:'GẤP ĐÔI LẠI.',line:"Công cụ nào cũng chẩn đoán. Mike bắt được khoản tiền bạn sẽ bỏ lại — và đưa bạn lời nói khi khách kêu giá cao. <b>Làm tử tế.</b>",mtag:'MIKE BẮT ĐƯỢC CÁI NÀY',mctx:'CA · CARRIER 80K · SỬA QUẠT GIÓ',catch:'“Đã vào tới đây rồi — giá lọc đang hở toang mà nhà có đứa nhỏ bị hen. <b>Mời gắn tủ lọc. Đó là thêm tử tế, không phải bán ép.</b>”',cl1:'ĐƠN CỦA BẠN',cl2:'SAU KHI BẮT ĐƯỢC',gl:'CÙNG MỘT CHUYẾN',honest:'▲ <b>Sửa thật mà khách thực sự cần</b> — không phải thay linh kiện theo phỏng đoán.',ohd:'KHÁCH PHẢN ĐỐI · MIKE CÓ LỜI CHO BẠN',cust:'“Giá đó hơi cao — để tôi lấy báo giá khác.”',say:'“Hợp lý. Cứ lấy báo giá khác — tôi cũng muốn bạn làm vậy. Hỏi từng nơi xem <b>có thợ có giấy phép làm không</b> và linh kiện có <b>chính hãng kèm bảo hành không</b>. Của tôi thì có, bằng văn bản, ngay hôm nay. Rẻ hơn thường nghĩa là thiếu một trong hai cái đó.”',osig:'— Mike, đứng về phía bạn',voice:"Anh tự gấp đôi lại. Mike bắt được khoản tiền bạn sẽ bỏ lại — và đưa bạn lời nói khi khách kêu giá cao. Làm tử tế."},
+    magic:{k:'CUỘC GỌI ĐẦU TIÊN',h1a:'HỎI MIKE',h1b:'MỘT ĐIỀU.',st:'SẴN SÀNG · 25 NĂM TRÊN MỌI HỆ THỐNG',free:'DÙNG THỬ MIỄN PHÍ',me:'Hệ thống R-410A, quá lạnh 12°, hút thấp. Tôi đang gặp gì đây?',mike:'Quá lạnh 12° mà hút thấp? Khả năng bạn <b>nạp dư kèm tắc nghẽn</b> phía sau — kiểm tra bầu cảm biến TXV và nhiệt độ ống lỏng trước. Cho tôi nhiệt độ các ống, tôi dẫn bạn tới nó…',chip1:'Tôi cần linh kiện gì?',chip2:'Đọc giúp mã lỗi',chip3:'Gửi ảnh nhãn máy',ph:'Cho Mike biết bạn đang làm gì…',gate:'Câu trả lời đầu miễn phí · <b>Tạo tài khoản để giữ Mike trong danh bạ nhanh</b>',cta:'Bắt Đầu →',voice:"Hỏi tôi một điều. Câu trả lời đầu miễn phí — cho tôi biết bạn đang làm gì."}
+  },
+  homeVi:{
+    cold:{pre:'ĐỨNG VỀ PHÍA BẠN',l1:'MỘT CHUYÊN GIA THẬT THÀ',l2:'TRONG TÚI',l3:'CỦA BẠN.',sub:'Một thợ cả lúc nào cũng bắt máy — <b>gọi anh, FaceTime anh, nhắn anh.</b> Anh nói thật trước khi có ai bán cho bạn thứ gì.',cta:'Gặp Mike →',voice:"Một chuyên gia thật thà trong túi bạn. Một thợ cả lúc nào cũng bắt máy — gọi tôi, FaceTime tôi, nhắn tôi. Tôi nói thật trước khi có ai bán cho bạn thứ gì."},
+    talkedaround:{k:'01 · HỎI ANH',l1:'HẾT BỊ',l2:'NÓI VÒNG VO.',line:"Mike nói bằng lời dễ hiểu — <b>hỏng gì, có an toàn không, gấp tới đâu, và nên hỏi gì</b> người tới sửa.",st:'ĐANG TRÊN ĐƯỜNG DÂY',q:'“Nó chạy được, nhưng bộ trao đổi nhiệt nứt rồi — tối nay đừng ngủ trong nhà. Bảo người tới sửa chỉ cho bạn xem vết nứt.”',sig:'— Mike, lời dễ hiểu',voice:"Hết bị nói vòng vo. Tôi nói cho bạn biết hỏng gì, có an toàn không, gấp tới đâu, và nên hỏi gì người tới sửa."},
+    facetime:{k:'02 · FACETIME',l1:'CHO ANH XEM',l2:'THIẾT BỊ CỦA BẠN.',line:"FaceTime anh và chĩa điện thoại vào hệ thống. <b>Anh thấy thứ bạn thấy</b> và nói thẳng anh đang nhìn gì.",q:'“Đó là mô-tơ quạt gió — và giờ chạy vẫn an toàn. Không phải khẩn cấp. Lấy vài báo giá, không vội.”',sig:'— Mike, trên FaceTime',voice:"Cho anh xem thiết bị của bạn. FaceTime tôi và chĩa điện thoại vào hệ thống. Tôi thấy thứ bạn thấy và nói thẳng tôi đang nhìn gì."},
+    magic:{k:'KỂ ANH NGHE CHUYỆN GÌ',h1a:'KỂ MIKE NGHE',h1b:'CHUYỆN GÌ.',st:'SẴN SÀNG · 25 NĂM TRÊN MỌI HỆ THỐNG',free:'DÙNG THỬ MIỄN PHÍ',me:'Máy lạnh tối qua hết lạnh. Ngoài trời 35°. Có phải khẩn cấp không?',mike:'Tìm ra nhanh thôi. <b>Trước hết — quạt ngoài trời có quay không?</b> Nếu kêu ù ù mà không quay, tắt đi kẻo cháy máy nén. Cho tôi biết bạn thấy gì, tôi dẫn bạn qua…',chip1:'Chạy có an toàn không?',chip2:'Việc này gấp tới đâu?',chip3:'Gửi ảnh thiết bị của tôi',ph:'Kể Mike nghe chuyện gì…',gate:'Câu trả lời đầu miễn phí · <b>Tạo tài khoản để Mike luôn đứng về phía bạn</b>',findtech:'Kết nối với một thợ địa phương đáng tin →',cta:'Bắt Đầu →',voice:"Kể tôi nghe chuyện gì. Câu trả lời đầu miễn phí."}
   },
   fr:{
-    tech:[
-      {title:'Voici votre <span>nouveau meilleur allié</span> sur le terrain.',body:"25 ans de métier. Ce n'est pas un moteur de recherche — c'est le maître technicien que vous appelez quand vous êtes coincé, et il répond à chaque fois.",voice:"Voici votre nouveau meilleur allié sur le terrain. 25 ans de métier. Je ne suis pas un moteur de recherche — je suis le maître technicien que vous appelez quand vous êtes coincé, et je réponds à chaque fois."},
-      {title:'<span>Mains libres</span> sur le toit.',body:"Touchez Appeler et parlez à Mike comme au téléphone. Il vous entend, il vous répond. Pas de saisie, pas à plisser les yeux sur un écran en plein boulot.",voice:"Mains libres sur le toit. Touchez Appeler et parlez-moi comme au téléphone. Je vous entends, je vous réponds. Pas de saisie, pas à plisser les yeux sur un écran en plein boulot."},
-      {title:'<span>Montrez-lui</span> ce que vous regardez.',body:"Lancez FaceTime et pointez votre téléphone vers l'unité. Mike la voit en direct — il diagnostique, vous aide à l'expliquer au client et à conclure le job.",voice:"Montrez-moi ce que vous regardez. Lancez FaceTime et pointez votre téléphone vers l'unité. Je la vois en direct — je diagnostique, je vous aide à l'expliquer au client et à conclure le job."},
-      {title:'Le meilleur ami qui <span>répond toujours.</span>',body:"Photographiez une plaque, décrivez un bruit bizarre, défoulez-vous après un mauvais job. Mike est là pour tout — et il vous fait progresser à chaque question.",voice:"Le meilleur ami qui répond toujours. Photographiez une plaque, décrivez un bruit bizarre, défoulez-vous après un mauvais job. Je suis là pour tout — et je vous fais progresser à chaque question."},
-      {title:'Mike vous fait <span>progresser.</span>',body:"Plus vous travaillez avec lui, meilleur vous devenez. Il vous dit ce qu'il sait, pourquoi, et comment gagner plus en le faisant bien.",voice:"Je vous fais progresser. Plus vous travaillez avec moi, meilleur vous devenez. Je vous dis ce que je sais, pourquoi, et comment gagner plus en le faisant bien."}
-    ],
-    home:[
-      {title:'Un expert CVC honnête, <span>dans votre poche.</span>',body:"25 ans de métier. Il vous dit ce qui ne va vraiment pas, si c'est urgent, et quoi faire ensuite — en clair.",voice:"Un expert CVC honnête, dans votre poche. 25 ans de métier. Je vous dis ce qui ne va vraiment pas, si c'est urgent, et quoi faire ensuite — en clair."},
-      {title:'Fini de deviner, <span>fini de se faire embobiner.</span>',body:"Mike vous dit ce qui ne va pas dans votre système, s'il est sûr de le faire tourner, et quelles questions poser à celui qui vient. Vous arrivez informé.",voice:"Fini de deviner, fini de se faire embobiner. Je vous dis ce qui ne va pas dans votre système, s'il est sûr de le faire tourner, et quelles questions poser à celui qui vient. Vous arrivez informé."},
-      {title:'<span>Montrez-lui</span> votre unité.',body:"Pointez votre téléphone vers votre système et Mike le voit. Il vous explique ce qu'il regarde, en direct pendant l'appel.",voice:"Montrez-moi votre unité. Pointez votre téléphone vers votre système et je le vois. Je vous explique ce que je regarde, en direct pendant l'appel."},
-      {title:'Quand vous avez besoin <span>d\'un pro.</span>',body:"Si votre système a besoin d'une vraie main, Mike vous aide à trouver un technicien local — et s'assure qu'il sait exactement ce qui l'attend.",voice:"Quand vous avez besoin d'un pro. Si votre système a besoin d'une vraie main, je vous aide à trouver un technicien local — et je m'assure qu'il sait exactement ce qui l'attend."}
-    ]
+    cold:{pre:'ON VOUS CONNECTE À',l1:'25 ANS',l2:'SUR CHAQUE',l3:'SYSTÈME.',sub:'Un maître technicien qui répond à chaque fois — <b>appelez-le, FaceTime-le, écrivez-lui.</b> Regardez ce qu\'il fait avant de signer quoi que ce soit.',cta:'Rencontrez Mike →',voice:"25 ans sur chaque système. Un maître technicien qui répond à chaque fois — appelez-moi, FaceTime-moi, écrivez-moi. Regardez ce que je fais avant de signer quoi que ce soit."},
+    call:{k:'01 · APPELER',l1:'MAINS PRISES ?',l2:'APPELEZ-LE.',line:"Sur le toit, dans le camion, gants aux mains — <b>dites le problème à voix haute.</b> Il répond comme le gars de la baie d\'à côté.",st:'EN LIGNE',q:'“Avant de condamner la carte — quel est votre 24 volts entre R et C ? Lisez-le-moi.”',sig:'— Mike, mains libres',voice:"Mains prises ? Appelez-moi. Sur le toit, dans le camion, gants aux mains — dites le problème à voix haute. Avant de condamner la carte, quel est votre 24 volts entre R et C ? Lisez-le-moi."},
+    facetime:{k:'02 · FACETIME',l1:'POINTEZ VOTRE',l2:'TÉLÉPHONE DESSUS.',line:"Lancez FaceTime et <b>il voit ce que vous voyez</b> — il lit la plaque, nomme la pièce, vous aide à conclure devant le client.",q:'“La voilà — vous voyez la microfissure sur l\'allumeur ? Montrez ça au client. C\'est votre vente.”',sig:'— Mike, en FaceTime',voice:"Pointez votre téléphone dessus. FaceTime-moi et je vois ce que vous voyez. La voilà — vous voyez la microfissure sur l'allumeur ? Montrez ça au client. C'est votre vente."},
+    text:{k:'03 · SMS · TOUS LES JOURS',l1:'CELUI QUI VOUS',l2:'REND MEILLEUR.',line:"Questions rapides, photos de plaques, les cas difficiles — <b>il se souvient de vous</b> et vous mène vers le salaire de technicien senior.",me:"Le client dit que ça cycle court. Goodman 3 tonnes. Je remplace le condensateur ou je cours après ?",mike:"Vérifiez le condensateur d\'abord — au multimètre, pas à l\'œil. S\'il est dans les specs, regardez le contacteur ou un condenseur sale qui fait monter la haute pression. Ne changez pas une pièce au pif.",grow:'<b>Vous avez 14 appels avec Mike.</b><br>Vous diagnostiquez 2× plus vite que la première semaine.',voice:"Celui qui vous rend meilleur. Questions rapides, photos de plaques, les cas difficiles — je me souviens de vous et je vous mène vers le salaire de technicien senior."},
+    money:{k:'04 · L\'ARGENT',l1:'IL SE PAIE.',l2:'DEUX FOIS.',line:"N\'importe quel outil diagnostique. Mike attrape l\'argent que vous laisseriez sur la table — et vous donne les mots quand on conteste le prix. <b>Fait honnêtement.</b>",mtag:'MIKE A REPÉRÉ ÇA',mctx:'JOB · CARRIER 80K · RÉPARATION SOUFFLEUR',catch:'“Tant que vous y êtes — le rack du filtre est grand ouvert et ils ont un enfant asthmatique. <b>Proposez le caisson média. C\'est un ajout honnête, pas une vente.</b>”',cl1:'VOTRE TICKET',cl2:'AVEC LA TROUVAILLE',gl:'MÊME DÉPLACEMENT',honest:'▲ <b>Vraie réparation dont le client a besoin</b> — pas un changement de pièce au pif.',ohd:'ILS ONT CONTESTÉ · MIKE A VOTRE RÉPONSE',cust:'“Ce prix paraît élevé — laissez-moi un autre devis.”',say:'“Juste. Prenez vos autres devis — je le voudrais aussi. Demandez à chacun si un <b>technicien agréé fait le travail</b> et si la pièce est <b>d\'origine avec garantie</b>. La mienne l\'est, par écrit, aujourd\'hui. Moins cher veut souvent dire qu\'il manque l\'un des deux.”',osig:'— Mike, dans votre coin',voice:"Il se paie, deux fois. Mike attrape l'argent que vous laisseriez sur la table — et vous donne les mots quand on conteste le prix. Fait honnêtement."},
+    magic:{k:'VOTRE PREMIER APPEL',h1a:'DEMANDEZ À MIKE',h1b:'UNE CHOSE.',st:'PRÊT · 25 ANS SUR CHAQUE SYSTÈME',free:'ESSAI GRATUIT',me:'Système R-410A, 12° de sous-refroidissement, basse aspiration. Qu\'est-ce que je regarde ?',mike:'12° de sous-refroidissement avec basse aspiration ? Vous êtes probablement <b>en surcharge avec une restriction</b> en aval — vérifiez le bulbe du détendeur et la température de la ligne liquide d\'abord. Donnez-moi les temps de ligne et je vous y mène…',chip1:'Quelle pièce me faut-il ?',chip2:'Lis-moi le code défaut',chip3:'Envoyer une photo de plaque',ph:'Dites à Mike sur quoi vous travaillez…',gate:'La première réponse est offerte · <b>Créez votre compte pour garder Mike à portée</b>',cta:'Commencer →',voice:"Demandez-moi une chose. La première réponse est offerte — dites-moi sur quoi vous travaillez."}
+  },
+  homeFr:{
+    cold:{pre:'DANS VOTRE COIN',l1:'UN EXPERT HONNÊTE',l2:'DANS VOTRE',l3:'POCHE.',sub:'Un maître technicien qui répond à chaque fois — <b>appelez-le, FaceTime-le, écrivez-lui.</b> Il vous dit la vérité avant qu\'on vous vende quoi que ce soit.',cta:'Rencontrez Mike →',voice:"Un expert honnête dans votre poche. Un maître technicien qui répond à chaque fois — appelez-moi, FaceTime-moi, écrivez-moi. Je vous dis la vérité avant qu'on vous vende quoi que ce soit."},
+    talkedaround:{k:'01 · DEMANDEZ-LUI',l1:'FINI DE SE FAIRE',l2:'EMBOBINER.',line:"Mike vous dit en clair — <b>ce qui ne va pas, si c\'est sûr, l\'urgence, et quoi demander</b> à celui qui vient.",st:'EN LIGNE',q:'“Ça tourne, mais l\'échangeur est fissuré — ne dormez pas dans la maison ce soir. Demandez à celui qui vient de vous montrer la fissure.”',sig:'— Mike, en clair',voice:"Fini de se faire embobiner. Je vous dis ce qui ne va pas, si c'est sûr, l'urgence, et quoi demander à celui qui vient."},
+    facetime:{k:'02 · FACETIME',l1:'MONTREZ-LUI',l2:'VOTRE UNITÉ.',line:"FaceTime-le et pointez votre téléphone vers le système. <b>Il voit ce que vous voyez</b> et vous dit franchement ce qu\'il regarde.",q:'“C\'est votre moteur de soufflerie — et c\'est sûr de le faire tourner pour l\'instant. Pas une urgence. Prenez quelques devis, sans presse.”',sig:'— Mike, en FaceTime',voice:"Montrez-lui votre unité. FaceTime-moi et pointez votre téléphone vers le système. Je vois ce que vous voyez et je vous dis franchement ce que je regarde."},
+    magic:{k:'DITES-LUI CE QUI SE PASSE',h1a:'DITES À MIKE',h1b:'CE QUI SE PASSE.',st:'PRÊT · 25 ANS SUR CHAQUE SYSTÈME',free:'ESSAI GRATUIT',me:'La clim a arrêté de refroidir cette nuit. Il fait 35° dehors. C\'est une urgence ?',mike:'On va vite le savoir. <b>D\'abord — le ventilateur extérieur tourne-t-il ?</b> S\'il bourdonne sans tourner, coupez-le pour ne pas cuire le compresseur. Dites-moi ce que vous voyez et je vous guide…',chip1:'C\'est sûr de le faire tourner ?',chip2:'C\'est urgent à quel point ?',chip3:'Envoyer une photo de mon unité',ph:'Dites à Mike ce qui se passe…',gate:'La première réponse est offerte · <b>Créez votre compte pour garder Mike dans votre coin</b>',findtech:'Trouver un technicien local de confiance →',cta:'Commencer →',voice:"Dites-moi ce qui se passe. La première réponse est offerte."}
   },
   pt:{
-    tech:[
-      {title:'Conheça seu <span>novo melhor parceiro</span> no serviço.',body:"25 anos de campo. Ele não é um buscador — é o técnico mestre que você chama quando trava, e ele atende toda vez.",voice:"Conheça seu novo melhor parceiro no serviço. 25 anos de campo. Eu não sou um buscador — sou o técnico mestre que você chama quando trava, e atendo toda vez."},
-      {title:'<span>Mãos livres</span> no telhado.',body:"Toque em Ligar e fale com o Mike como no telefone. Ele te ouve, te responde. Sem digitar, sem apertar os olhos na tela no meio do serviço.",voice:"Mãos livres no telhado. Toque em Ligar e fale comigo como no telefone. Eu te ouço, te respondo. Sem digitar, sem apertar os olhos na tela no meio do serviço."},
-      {title:'<span>Mostre a ele</span> o que você está vendo.',body:"Abra o FaceTime e aponte o celular para a unidade. O Mike vê ao vivo — ele diagnostica, ajuda você a explicar pro cliente e a fechar o serviço.",voice:"Mostre a mim o que você está vendo. Abra o FaceTime e aponte o celular para a unidade. Eu vejo ao vivo — diagnostico, ajudo você a explicar pro cliente e a fechar o serviço."},
-      {title:'O melhor amigo que <span>sempre responde.</span>',body:"Tire foto de uma plaqueta, descreva um barulho estranho, desabafe sobre um serviço ruim. O Mike está aí pra tudo — e te ajuda a melhorar toda vez que você pergunta.",voice:"O melhor amigo que sempre responde. Tire foto de uma plaqueta, descreva um barulho estranho, desabafe sobre um serviço ruim. Eu estou aí pra tudo — e te ajudo a melhorar toda vez que você pergunta."},
-      {title:'O Mike te ajuda a <span>crescer.</span>',body:"Quanto mais você trabalha com ele, melhor você fica. Ele te diz o que sabe, por quê, e como ganhar mais fazendo certo.",voice:"Eu te ajudo a crescer. Quanto mais você trabalha comigo, melhor você fica. Eu te digo o que sei, por quê, e como ganhar mais fazendo certo."}
-    ],
-    home:[
-      {title:'Um especialista honesto em HVAC, <span>no seu bolso.</span>',body:"25 anos de campo. Ele te diz o que está realmente errado, se é urgente e o que fazer em seguida — em bom português.",voice:"Um especialista honesto em HVAC, no seu bolso. 25 anos de campo. Eu te digo o que está realmente errado, se é urgente e o que fazer em seguida — em bom português."},
-      {title:'Sem mais achismo, <span>sem mais ser enrolado.</span>',body:"O Mike te diz o que está errado no seu sistema, se é seguro ligar, e o que perguntar pra quem aparecer. Você chega informado.",voice:"Sem mais achismo, sem mais ser enrolado. Eu te digo o que está errado no seu sistema, se é seguro ligar, e o que perguntar pra quem aparecer. Você chega informado."},
-      {title:'<span>Mostre a ele</span> a sua unidade.',body:"Aponte o celular pro seu sistema e o Mike vê. Ele te explica o que está olhando, ali mesmo na chamada.",voice:"Mostre a mim a sua unidade. Aponte o celular pro seu sistema e eu vejo. Eu te explico o que estou olhando, ali mesmo na chamada."},
-      {title:'Quando você precisa <span>de um profissional.</span>',body:"Se o seu sistema precisa de uma mão de verdade, o Mike te ajuda a achar um técnico local — e garante que ele saiba exatamente com o que vai lidar.",voice:"Quando você precisa de um profissional. Se o seu sistema precisa de uma mão de verdade, eu te ajudo a achar um técnico local — e garanto que ele saiba exatamente com o que vai lidar."}
-    ]
+    cold:{pre:'CONECTANDO VOCÊ A',l1:'25 ANOS',l2:'EM TODO',l3:'SISTEMA.',sub:'Um técnico mestre que atende toda vez — <b>ligue pra ele, faça FaceTime, mande mensagem.</b> Veja o que ele faz antes de você assinar qualquer coisa.',cta:'Conheça o Mike →',voice:"25 anos em todo sistema. Um técnico mestre que atende toda vez — ligue pra mim, faça FaceTime, mande mensagem. Veja o que eu faço antes de você assinar qualquer coisa."},
+    call:{k:'01 · LIGAR',l1:'MÃOS OCUPADAS?',l2:'SÓ LIGAR PRA ELE.',line:"No telhado, na van, de luva — <b>fala o problema em voz alta.</b> Ele responde como o cara da bancada do lado.",st:'NA LINHA',q:'“Antes de condenar a placa — quantos 24 volts você tem de R pra C? Lê pra mim.”',sig:'— Mike, mãos livres',voice:"Mãos ocupadas? Só ligar pra mim. No telhado, na van, de luva — fala o problema em voz alta. Antes de condenar a placa, quantos 24 volts você tem de R pra C? Lê pra mim."},
+    facetime:{k:'02 · FACETIME',l1:'APONTE SEU',l2:'CELULAR PRA ELE.',line:"Faça FaceTime e <b>ele vê o que você vê</b> — lê a plaqueta, aponta a peça, te ajuda a fechar na frente do cliente.",q:'“Achei — viu a trinca fina no ignitor? Mostra isso pro cliente. Essa é a sua venda.”',sig:'— Mike, no FaceTime',voice:"Aponte seu celular pra ele. Faça FaceTime e eu vejo o que você vê. Achei — viu a trinca fina no ignitor? Mostra isso pro cliente. Essa é a sua venda."},
+    text:{k:'03 · MENSAGEM · TODO DIA',l1:'O CARA QUE TE',l2:'FAZ MELHOR.',line:"Dúvidas rápidas, fotos de plaqueta, as decisões difíceis — <b>ele lembra de você</b> e te leva pro salário de técnico sênior.",me:"Cliente diz que tá ligando e desligando direto. Goodman de 3 toneladas. Troco o capacitor ou tô caçando à toa?",mike:"Confere o capacitor primeiro — mede com o multímetro, não no olho. Se tiver na faixa, olha o contator ou um condensador sujo subindo a pressão de alta. Não troca peça no chute.",grow:'<b>Você já tem 14 chamadas com o Mike.</b><br>Você diagnostica 2× mais rápido que na primeira semana.',voice:"O cara que te faz melhor. Dúvidas rápidas, fotos de plaqueta, as decisões difíceis — eu lembro de você e te levo pro salário de técnico sênior."},
+    money:{k:'04 · O DINHEIRO',l1:'ELE SE PAGA.',l2:'DUAS VEZES.',line:"Qualquer ferramenta diagnostica. O Mike pega o dinheiro que você deixaria na mesa — e te dá as palavras quando reclamam do preço. <b>Feito com honestidade.</b>",mtag:'MIKE PEGOU ISSO',mctx:'SERVIÇO · CARRIER 80K · REPARO DO SOPRADOR',catch:'“Já que você tá aí — o suporte do filtro tá escancarado e eles têm uma criança com asma. <b>Ofereça o gabinete de filtro. É um extra honesto, não venda forçada.</b>”',cl1:'SEU TICKET',cl2:'COM O ACHADO',gl:'MESMA VISITA',honest:'▲ <b>Conserto real que o cliente precisa mesmo</b> — não troca de peça no chute.',ohd:'RECLAMARAM · MIKE TEM SUA RESPOSTA',cust:'“Esse preço parece alto — deixa eu pegar outro orçamento.”',say:'“Justo. Pega seus outros orçamentos — eu ia querer que você pegasse. Pergunta a cada um se é um <b>técnico licenciado fazendo o serviço</b> e se a peça é <b>original com garantia</b>. A minha é, por escrito, hoje. Mais barato costuma significar que falta uma dessas duas.”',osig:'— Mike, do seu lado',voice:"Ele se paga, duas vezes. O Mike pega o dinheiro que você deixaria na mesa — e te dá as palavras quando reclamam do preço. Feito com honestidade."},
+    magic:{k:'SUA PRIMEIRA CHAMADA',h1a:'PERGUNTE AO MIKE',h1b:'UMA COISA.',st:'PRONTO · 25 ANOS EM TODO SISTEMA',free:'TESTE GRÁTIS',me:'Sistema R-410A, 12° de sub-resfriamento, sucção baixa. O que eu tô vendo?',mike:'12° de sub-resfriamento com sucção baixa? Provável que esteja <b>sobrecarregado com uma restrição</b> à jusante — confere o bulbo da válvula de expansão e a temperatura da linha de líquido primeiro. Me passa as temperaturas de linha que eu te levo até lá…',chip1:'Que peça eu preciso?',chip2:'Lê o código de falha pra mim',chip3:'Enviar foto da plaqueta',ph:'Conta pro Mike no que você tá trabalhando…',gate:'A primeira resposta é por conta da casa · <b>Crie sua conta pra deixar o Mike na discagem rápida</b>',cta:'Começar →',voice:"Me pergunta uma coisa. A primeira resposta é por conta da casa — conta no que você tá trabalhando."}
+  },
+  homePt:{
+    cold:{pre:'DO SEU LADO',l1:'UM ESPECIALISTA HONESTO',l2:'NO SEU',l3:'BOLSO.',sub:'Um técnico mestre que atende toda vez — <b>ligue pra ele, faça FaceTime, mande mensagem.</b> Ele te diz a verdade antes de alguém te vender qualquer coisa.',cta:'Conheça o Mike →',voice:"Um especialista honesto no seu bolso. Um técnico mestre que atende toda vez — ligue pra mim, faça FaceTime, mande mensagem. Eu te digo a verdade antes de alguém te vender qualquer coisa."},
+    talkedaround:{k:'01 · PERGUNTE A ELE',l1:'CHEGA DE SER',l2:'ENROLADO.',line:"O Mike te diz em bom português — <b>o que tá errado, se é seguro, o quão urgente é, e o que perguntar</b> pra quem aparecer.",st:'NA LINHA',q:'“Ele liga, mas esse trocador de calor tá rachado — não durma na casa hoje. Pede pra quem aparecer te mostrar a rachadura.”',sig:'— Mike, em bom português',voice:"Chega de ser enrolado. Eu te digo o que tá errado, se é seguro, o quão urgente é, e o que perguntar pra quem aparecer."},
+    facetime:{k:'02 · FACETIME',l1:'MOSTRE A ELE',l2:'SUA UNIDADE.',line:"Faça FaceTime e aponte o celular pro sistema. <b>Ele vê o que você vê</b> e te diz na lata o que tá olhando.",q:'“Esse é o motor do soprador — e é seguro ligar por enquanto. Não é emergência. Pega uns dois orçamentos, sem pressa.”',sig:'— Mike, no FaceTime',voice:"Mostre a ele sua unidade. Faça FaceTime e aponte o celular pro sistema. Eu vejo o que você vê e te digo na lata o que tô olhando."},
+    magic:{k:'CONTA O QUE TÁ ROLANDO',h1a:'CONTA PRO MIKE',h1b:'O QUE TÁ ROLANDO.',st:'PRONTO · 25 ANOS EM TODO SISTEMA',free:'TESTE GRÁTIS',me:'O ar parou de gelar ontem à noite. Tá fazendo 35° lá fora. Isso é emergência?',mike:'Vamos descobrir rápido. <b>Primeiro — o ventilador de fora tá girando?</b> Se tá zunindo mas não gira, desliga pra não queimar o compressor. Me conta o que você vê que eu te guio…',chip1:'É seguro ligar?',chip2:'O quão urgente é isso?',chip3:'Enviar foto da minha unidade',ph:'Conta pro Mike o que tá rolando…',gate:'A primeira resposta é por conta da casa · <b>Crie sua conta pra manter o Mike do seu lado</b>',findtech:'Conectar com um técnico local de confiança →',cta:'Começar →',voice:"Conta o que tá rolando. A primeira resposta é por conta da casa."}
   }
 };
+// Resolve the right per-language pack. Homeowners get the homeXX pack (no money frame);
+// techs get the base lang pack. Falls back to EN packs if a language is missing.
 function getObPack(){
   var lang=(typeof currentLang!=='undefined')?currentLang:'en';
+  var isHome=!!(currentUser&&currentUser.role==='homeowner');
+  if(isHome){
+    var hk='home'+lang.charAt(0).toUpperCase()+lang.slice(1);
+    return OB_I18N[hk]||OB_I18N.homeEn;
+  }
   return OB_I18N[lang]||OB_I18N.en;
 }
-// Structural slide data (bg gradient + emoji) only. Title/body/voice are pulled from
-// OB_I18N per currentLang at render time, so the carousel translates with the language
-// switch. TECH = 5 slides (best-guy / hands-free Call / FaceTime / text best-friend /
-// mentor-grows-you); HOME = 4 (honest expert / no getting talked around / show your
-// unit / when you need a pro). NO homeowner repair prices anywhere.
-var OB_STRUCT_TECH=[
-  {bg:'linear-gradient(160deg,#010a14 0%,#031828 60%,#061f38 100%)',emoji:'🤝'},
-  {bg:'linear-gradient(160deg,#010a14 0%,#03180f 60%,#062016 100%)',emoji:'📞'},
-  {bg:'linear-gradient(160deg,#010a14 0%,#180303 60%,#200607 100%)',emoji:'📹'},
-  {bg:'linear-gradient(160deg,#010a14 0%,#0d0d03 60%,#1a1803 100%)',emoji:'💬'},
-  {bg:'linear-gradient(160deg,#010a14 0%,#030318 60%,#060a25 100%)',emoji:'📈'},
-];
-var OB_STRUCT_HOME=[
-  {bg:'linear-gradient(160deg,#010a14 0%,#031428 60%,#041f38 100%)',emoji:'🧰'},
-  {bg:'linear-gradient(160deg,#010a14 0%,#030f18 60%,#051828 100%)',emoji:'🛡️'},
-  {bg:'linear-gradient(160deg,#010a14 0%,#030f18 60%,#051828 100%)',emoji:'📷'},
-  {bg:'linear-gradient(160deg,#010a14 0%,#030318 60%,#060a25 100%)',emoji:'🤝'},
-];
-// Merge structural data with the active language's copy into the render array.
-function buildObSlides(){
-  var pack=getObPack();
-  var isHome=!!(currentUser&&currentUser.role==='homeowner');
-  var struct=isHome?OB_STRUCT_HOME:OB_STRUCT_TECH;
-  var copy=isHome?pack.home:pack.tech;
-  return struct.map(function(s,i){
-    var c=copy[i]||{title:'',body:'',voice:''};
-    return {bg:s.bg,emoji:s.emoji,title:c.title,body:c.body,voice:c.voice};
-  });
+// Frame SEQUENCES — order = render order. TECH has the money frame; HOME never does
+// (guardrail: revenue/objection coaching is tech-only). Each entry names the pack key
+// the renderer reads its prose from.
+var OB_FRAMES_TECH=['cold','call','facetime','text','money','magic'];
+var OB_FRAMES_HOME=['cold','talkedaround','facetime','magic'];
+function obFrames(){
+  return (currentUser&&currentUser.role==='homeowner')?OB_FRAMES_HOME:OB_FRAMES_TECH;
 }
-var OB_SLIDES=buildObSlides();
 var obStep=0;
 
 function showOnboarding(){
   obStep=0;
-  // Rebuild slides for the current role + language every time the carousel opens.
-  OB_SLIDES=buildObSlides();
   var el=document.getElementById('onboardingOverlay');
   if(!el)return;
   el.classList.add('show');
   renderOb();
   window._obSpeakTimer=setTimeout(speakOb,700);
   // Mark onboarded on ANY exit, not just Skip / Get Started — users often close the
-  // tab or background the app mid-slides; pagehide alone is unreliable on iOS PWA.
+  // tab or background the app mid-flow; pagehide alone is unreliable on iOS PWA.
   if(!window._obExitMarkInstalled){
     window._obExitMarkInstalled=true;
     var markObDone=function(){try{localStorage.setItem('trazer_onboarded','1');}catch(e){}};
@@ -4021,33 +4177,169 @@ function showOnboarding(){
   }
 }
 
-function renderOb(){
-  var s=OB_SLIDES[obStep];
-  if(!s)return;
-  var obContent=document.querySelector('.ob-content');if(obContent){obContent.classList.remove('slide-in');void obContent.offsetWidth;obContent.classList.add('slide-in');}
-  var bg=document.getElementById('obBg');if(bg)bg.style.background=s.bg;
-  var em=document.getElementById('obEmoji');if(em)em.textContent=s.emoji;
-  var ti=document.getElementById('obTitle');if(ti)ti.innerHTML=s.title;
-  var bo=document.getElementById('obBody');if(bo)bo.innerHTML=s.body;
-  var lastStep=obStep>=OB_SLIDES.length-1;
-  var nb=document.getElementById('obNextBtn');if(nb)nb.textContent=(lastStep?v2t('obStart'):v2t('obNext'));
-  // Dots match the active slide count (5 tech / 4 home), rebuilt to avoid a stray
-  // 5th dot leaking onto the 4-slide homeowner flow from the static markup.
-  var dotsWrap=document.querySelector('.ob-dots');
-  if(dotsWrap){
-    if(dotsWrap.children.length!==OB_SLIDES.length){
-      dotsWrap.innerHTML='';
-      for(var i=0;i<OB_SLIDES.length;i++){var d=document.createElement('div');d.className='ob-dot';dotsWrap.appendChild(d);}
-    }
-    Array.prototype.forEach.call(dotsWrap.children,function(d,i){d.classList.toggle('on',i<=obStep);});
+// Tiny escape so any prose that could carry a stray angle bracket can't break markup.
+// (Our i18n prose intentionally contains <b>/<br> — those are trusted authored tags,
+//  so the frame builders below insert pack strings as innerHTML by design.)
+function obEsc(s){return String(s==null?'':s);}
+
+// Build the inner HTML for one cinematic frame. `type` is the frame key from the
+// sequence; `p` is the resolved per-language pack. Technical specimens (part #s, $,
+// model strings, monogram, timer) are language-neutral constants right here.
+function obFrameHTML(type,p){
+  if(type==='cold'){
+    var c=p.cold;
+    return '<div class="ob-cold">'
+      +'<div class="ob-preline"><span class="dot"></span>'+obEsc(c.pre)+'</div>'
+      +'<h1 class="ob-h1"><span class="l1">'+obEsc(c.l1)+'</span><span class="l2">'+obEsc(c.l2)+'</span><span class="l3">'+obEsc(c.l3)+'</span></h1>'
+      +'<p class="ob-sub">'+obEsc(c.sub)+'</p>'
+    +'</div>';
   }
-  var bb=document.getElementById('obBackBtn');if(bb)bb.style.display=obStep>0?'block':'none';
+  if(type==='call'||type==='talkedaround'){
+    // Frame 2 — live call card (tech: CALL; homeowner: ASK HIM, plain-English). Same engine.
+    var c=p[type];var accent=(type==='call')?'var(--ob-safety)':'var(--ob-teal)';
+    var bars='';var hs=[40,22,52,30,46,18,54,34,26,48,20,44,50,28,38];var ds=[0,.1,.05,.18,.12,.22,.02,.15,.28,.08,.2,.11,.04,.24,.16];
+    for(var i=0;i<hs.length;i++){bars+='<i style="--h:'+hs[i]+'px;animation-delay:'+ds[i]+'s"></i>';}
+    return '<div class="ob-kicker" style="color:'+accent+'">'+obEsc(c.k)+'</div>'
+      +'<h1 class="ob-h1"><span class="l1" style="color:'+accent+'">'+obEsc(c.l1)+'</span><span class="l2">'+obEsc(c.l2)+'</span></h1>'
+      +'<p class="ob-line">'+obEsc(c.line)+'</p>'
+      +'<div class="ob-stage"><div class="ob-card ob-callcard">'
+        +'<div class="ob-callhead"><div class="ob-avatar"><span class="ini">M</span></div>'
+          +'<div class="ob-who"><div class="nm">Mike</div><div class="st"><span class="d"></span>'+obEsc(c.st)+'</div></div>'
+          +'<div class="ob-timer">0:38</div></div>'
+        +'<div class="ob-wbars">'+bars+'</div>'
+        +'<div class="ob-cap"><div class="q">'+obEsc(c.q)+'</div><span class="ob-sig">'+obEsc(c.sig)+'</span></div>'
+      +'</div></div>';
+  }
+  if(type==='facetime'){
+    var c=p.facetime;var isHome=!!(currentUser&&currentUser.role==='homeowner');
+    // AR callout pins — tech sees part-call specimens; homeowner sees what-it-is / safe / urgency (NO price ever).
+    var pins=isHome
+      ? '<div class="ob-pin p1"><span class="ring"></span><span class="lbl">BLOWER MOTOR</span></div>'
+        +'<div class="ob-pin p2"><span class="ring"></span><span class="lbl">SAFE TO RUN</span></div>'
+        +'<div class="ob-pin p3"><span class="ring"></span><span class="lbl">NOT URGENT</span></div>'
+      : '<div class="ob-pin p1"><span class="ring"></span><span class="lbl">CARRIER 58STA · 80K BTU</span></div>'
+        +'<div class="ob-pin p2"><span class="ring"></span><span class="lbl">IGNITER · LH33WZ511</span></div>'
+        +'<div class="ob-pin p3"><span class="ring"></span><span class="lbl">CRACKED — REPLACE</span></div>';
+    return '<div class="ob-kicker" style="color:var(--ob-teal)">'+obEsc(c.k)+'</div>'
+      +'<h1 class="ob-h1"><span class="l1" style="color:var(--ob-teal)">'+obEsc(c.l1)+'</span><span class="l2">'+obEsc(c.l2)+'</span></h1>'
+      +'<p class="ob-line">'+obEsc(c.line)+'</p>'
+      +'<div class="ob-stage"><div class="ob-card ob-ft">'
+        +'<div class="ob-ftscan"></div>'
+        +'<div class="ob-ftbar"><div class="live"><span class="d"></span>FACETIME · MIKE</div></div>'
+        +'<div class="ob-pip"></div><div class="ob-unit"></div>'
+        +pins
+        +'<div class="ob-ftcap"><div class="q">'+obEsc(c.q)+'</div><span class="sig">'+obEsc(c.sig)+'</span></div>'
+      +'</div></div>';
+  }
+  if(type==='text'){
+    var c=p.text;
+    return '<div class="ob-kicker" style="color:var(--ob-brass)">'+obEsc(c.k)+'</div>'
+      +'<h1 class="ob-h1"><span class="l1">'+obEsc(c.l1)+'</span><span class="l2" style="color:var(--ob-brass)">'+obEsc(c.l2)+'</span></h1>'
+      +'<p class="ob-line">'+obEsc(c.line)+'</p>'
+      +'<div class="ob-stage"><div class="ob-card ob-thread">'
+        +'<div class="ob-bubble ob-me">'+obEsc(c.me)+'</div>'
+        +'<div class="ob-bubble ob-mike"><div class="who">MIKE · 25 YRS</div>'+obEsc(c.mike)+'</div>'
+        +'<div class="ob-grow"><span class="ic">📈</span><span class="tx">'+obEsc(c.grow)+'</span></div>'
+      +'</div></div>';
+  }
+  if(type==='money'){
+    // TECH-ONLY frame (guardrail). $ figures are language-neutral constants here.
+    var c=p.money;
+    return '<div class="ob-kicker" style="color:var(--ob-brass)">'+obEsc(c.k)+'</div>'
+      +'<h1 class="ob-h1"><span class="l1">'+obEsc(c.l1)+'</span><span class="l2" style="color:var(--ob-brass)">'+obEsc(c.l2)+'</span></h1>'
+      +'<p class="ob-line">'+obEsc(c.line)+'</p>'
+      +'<div class="ob-money-stage">'
+        +'<div class="ob-card ob-money">'
+          +'<div class="ob-mhd"><span class="tag"><span class="d"></span>'+obEsc(c.mtag)+'</span><span class="ctx">'+obEsc(c.mctx)+'</span></div>'
+          +'<div class="ob-catch">'+obEsc(c.catch)+'</div>'
+          +'<div class="ob-lift"><div class="col"><span class="cl">'+obEsc(c.cl1)+'</span><span class="v">$340</span></div>'
+            +'<span class="arr">→</span><div class="col"><span class="cl">'+obEsc(c.cl2)+'</span><span class="now">$915</span></div>'
+            +'<div class="gain"><div class="g">+$575</div><div class="gl">'+obEsc(c.gl)+'</div></div></div>'
+          +'<div class="ob-bar"><div class="fill"></div></div>'
+          +'<div class="ob-honest">'+obEsc(c.honest)+'</div>'
+        +'</div>'
+        +'<div class="ob-card ob-obj">'
+          +'<div class="hd"><span class="ic">🛡</span>'+obEsc(c.ohd)+'</div>'
+          +'<div class="ob-cust">'+obEsc(c.cust)+'</div>'
+          +'<div class="ob-say">'+obEsc(c.say)+'</div>'
+          +'<span class="ob-sig">'+obEsc(c.osig)+'</span>'
+        +'</div>'
+      +'</div>';
+  }
+  if(type==='magic'){
+    var c=p.magic;var isHome=!!(currentUser&&currentUser.role==='homeowner');
+    var findTech=(isHome&&c.findtech)?'<div class="ob-find-tech">'+obEsc(c.findtech)+'</div>':'';
+    return '<div class="ob-magic-top">'
+        +'<div class="ob-magic-who"><div class="av"><span class="ini">M</span></div>'
+          +'<div><div class="nm">Mike</div><div class="st"><span class="d"></span>'+obEsc(c.st)+'</div></div></div>'
+        +'<div class="ob-free">'+obEsc(c.free)+'</div></div>'
+      +'<div class="ob-magic-head"><div class="k">'+obEsc(c.k)+'</div>'
+        +'<h1>'+obEsc(c.h1a)+' <span class="t">'+obEsc(c.h1b)+'</span></h1></div>'
+      +'<div class="ob-chat"><div class="bubble me">'+obEsc(c.me)+'</div>'
+        +'<div class="bubble mike"><div class="who2">MIKE · 25 YRS</div>'+obEsc(c.mike)+'</div></div>'
+      +'<div class="ob-chips"><span class="ob-chip"><span class="a">↳</span> '+obEsc(c.chip1)+'</span>'
+        +'<span class="ob-chip"><span class="a">↳</span> '+obEsc(c.chip2)+'</span>'
+        +'<span class="ob-chip"><span class="a">📷</span> '+obEsc(c.chip3)+'</span></div>'
+      +'<div class="ob-composer"><div class="ph">'+obEsc(c.ph)+'</div><div class="send">↑</div></div>'
+      +findTech
+      +'<div class="ob-gate"><span class="lock">🔒</span> '+obEsc(c.gate)+'</div>';
+  }
+  return '';
+}
+
+function renderOb(){
+  var frames=obFrames();
+  var type=frames[obStep];
+  if(!type)return;
+  var pack=getObPack();
+  // Cold-open frame gets the breathing rings + scope-sweep substrate; other frames don't.
+  var isCold=(type==='cold');
+  var rings=document.getElementById('obRings');if(rings)rings.style.display=isCold?'block':'none';
+  var scope=document.getElementById('obScope');if(scope)scope.style.display=isCold?'block':'none';
+  // The magic frame is the chat surface itself — it hides the standard dock CTA/dots
+  // because its own composer + gate carry the action. Other frames keep the dock.
+  var isMagic=(type==='magic');
+  var dock=document.getElementById('obDock');if(dock)dock.style.display=isMagic?'none':'block';
+  var host=document.getElementById('obFrame');
+  if(host){
+    host.classList.remove('ob-in');void host.offsetWidth;
+    host.innerHTML=obFrameHTML(type,pack);
+    host.classList.add('ob-in');
+    // Wire the magic-frame chips + composer + find-tech to drop straight into chat.
+    if(isMagic){
+      Array.prototype.forEach.call(host.querySelectorAll('.ob-chip,.ob-composer,.ob-find-tech'),function(n){
+        n.style.cursor='pointer';
+        n.addEventListener('click',function(){obFinish();});
+      });
+    }
+  }
+  // Dock CTA label: cold/magic use their own cta; middle frames say Next.
+  var cur=pack[type]||{};
+  var nb=document.getElementById('obNextBtn');
+  if(nb){
+    // Cold/magic frames carry their own localized cta; middle frames use the
+    // existing localized obNext key so the dock label translates with the language.
+    nb.textContent=cur.cta?cur.cta:v2t('obNext');
+  }
+  // Progress dots — rebuilt to match active frame count (6 tech / 4 home).
+  var dotsWrap=document.getElementById('obDots');
+  if(dotsWrap){
+    if(dotsWrap.children.length!==frames.length){
+      dotsWrap.innerHTML='';
+      for(var i=0;i<frames.length;i++){var d=document.createElement('div');d.className='ob-dot';dotsWrap.appendChild(d);}
+    }
+    Array.prototype.forEach.call(dotsWrap.children,function(d,i){d.classList.toggle('on',i===obStep);});
+  }
+  var bb=document.getElementById('obBackBtn');if(bb)bb.style.display=obStep>0?'inline-block':'none';
 }
 
 function speakOb(){
-  var s=OB_SLIDES[obStep];
-  if(!s||!s.voice)return;
-  var text=s.voice;
+  var frames=obFrames();
+  var type=frames[obStep];
+  var pack=getObPack();
+  var cur=(type&&pack[type])||{};
+  if(!cur.voice)return;
+  var text=cur.voice;
   var gen=window._obGen=(window._obGen||0)+1;
   try{if(window._obFetchController)window._obFetchController.abort();}catch(e){}
   var ctrl=window._obFetchController=(typeof AbortController!=='undefined')?new AbortController():null;
@@ -4108,7 +4400,7 @@ function obBack(){
 }
 function obNext(){
   stopObSpeaking();
-  if(obStep<OB_SLIDES.length-1){obStep++;renderOb();window._obSpeakTimer=setTimeout(speakOb,400);}
+  if(obStep<obFrames().length-1){obStep++;renderOb();window._obSpeakTimer=setTimeout(speakOb,400);}
   else{obFinish();}
 }
 
@@ -8934,6 +9226,10 @@ function setLang(lang){
     var _md=document.getElementById('modeDesc');if(_md)_md.textContent=_pro?v2t('descPro'):v2t('descHome');
   }
   if(isListening){stopListening();setTimeout(startListening,200);}
+  // Cinematic onboarding: if the overlay is open, repaint the current frame in the new
+  // language (getObPack() reads currentLang, which we just updated above).
+  var _obOv=document.getElementById('onboardingOverlay');
+  if(_obOv&&_obOv.classList.contains('show')&&typeof renderOb==='function'){try{renderOb();}catch(e){}}
 }
 
 // PWA install hint — shown to iOS Safari (not standalone) and Android Chrome

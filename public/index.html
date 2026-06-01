@@ -1840,6 +1840,62 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 .v2-hbtn.face .v2-hbtn-ic,.v2-hbtn.face .v2-hbtn-label{color:var(--teal);}
 .v2-hbtn.face{border-color:rgba(0,194,178,.32);}
 .v2-hbtn.clear .v2-hbtn-ic{color:rgba(244,239,230,.5);}
+
+/* ===== V2 LANDING (Frame G) — the living-console front door, both audiences ===== */
+.v2-landing{position:relative;border-radius:18px;overflow:hidden;padding:15px 15px 16px;margin-bottom:14px;
+  font-family:var(--font-ui);color:var(--paper);
+  background:
+    radial-gradient(95% 55% at 50% 22%, rgba(0,194,178,.11), transparent 60%),
+    radial-gradient(80% 50% at 50% 112%, rgba(255,180,0,.07), transparent 60%),
+    linear-gradient(180deg,#0E0E0D 0%, #0A0A09 55%, #070706 100%);
+  border:1px solid var(--v2-line);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 26px 54px -30px #000;}
+/* concentric instrument rings behind the console */
+.v2-landing::before{content:"";position:absolute;left:50%;top:230px;transform:translateX(-50%);
+  width:560px;height:560px;border-radius:50%;pointer-events:none;opacity:.5;z-index:0;
+  background:
+    radial-gradient(circle, transparent 0 38%, rgba(0,194,178,.07) 38.4%, transparent 39%),
+    radial-gradient(circle, transparent 0 52%, rgba(244,239,230,.05) 52.4%, transparent 53%),
+    radial-gradient(circle, transparent 0 67%, rgba(244,239,230,.04) 67.4%, transparent 68%);
+  -webkit-mask-image:radial-gradient(circle,#000 60%,transparent 75%);mask-image:radial-gradient(circle,#000 60%,transparent 75%);}
+.v2-landing > *{position:relative;z-index:1;}
+.v2-lnd-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+.v2-lnd-brand{font-family:var(--font-display);font-weight:400;letter-spacing:.05em;font-size:17px;color:var(--paper);}
+.v2-lnd-brand i{font-style:normal;color:var(--brass);}
+.v2-lnd-pill{display:flex;align-items:center;gap:6px;font-family:var(--font-code);font-size:9px;letter-spacing:.14em;color:var(--v2-mute);
+  border:1px solid var(--v2-line);border-radius:20px;padding:5px 10px;}
+/* audience segment toggle */
+.v2-seg{display:flex;border:1px solid var(--v2-line);border-radius:11px;padding:3px;background:rgba(0,0,0,.3);margin-bottom:13px;}
+.v2-seg button{flex:1;border:none;background:transparent;cursor:pointer;padding:9px 0;border-radius:8px;
+  font-family:var(--font-code);font-weight:700;font-size:10px;letter-spacing:.12em;color:var(--v2-mute2);
+  -webkit-tap-highlight-color:transparent;transition:color var(--v2-dur-fast) var(--v2-ease-snap),background var(--v2-dur-fast) var(--v2-ease-snap);}
+.v2-seg button.on{background:linear-gradient(180deg,#211e16,#181610);color:var(--paper);box-shadow:0 1px 0 rgba(255,255,255,.05) inset;}
+.v2-seg button .tk{color:var(--v2-mute2);}
+.v2-seg button.on .tk{color:var(--teal);}
+.v2-lnd-h1{font-family:var(--font-display);font-weight:400;text-transform:uppercase;line-height:.9;letter-spacing:.005em;
+  font-size:var(--v2-type-display-lg);margin:0 0 9px;color:var(--paper);}
+.v2-lnd-h1 .y{color:var(--safety);} .v2-lnd-h1 .t{color:var(--teal);}
+.v2-lnd-lede{font-family:var(--font-ui);font-size:var(--v2-type-body-md);line-height:1.34;color:var(--v2-mute);margin-bottom:14px;}
+.v2-lnd-lede b{color:var(--paper);font-weight:700;}
+/* CTA dock */
+.v2-lnd-dock{margin-top:13px;}
+.v2-cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:50px;
+  border-radius:13px;font-family:var(--font-ui);font-weight:800;font-size:14.5px;border:none;cursor:pointer;text-decoration:none;
+  -webkit-tap-highlight-color:transparent;transition:transform var(--v2-dur-fast) var(--v2-ease-snap);}
+.v2-cta:active{transform:scale(.985);}
+.v2-cta.prime{background:linear-gradient(180deg,#FFC02E,var(--safety));color:#1a1300;
+  box-shadow:0 8px 22px -8px rgba(255,180,0,.55),0 1px 0 rgba(255,255,255,.45) inset;}
+.v2-cta.ghost{margin-top:8px;height:44px;background:transparent;color:var(--teal);
+  border:1px solid rgba(0,194,178,.45);font-weight:700;font-size:12.5px;}
+.v2-lnd-foot{text-align:center;font-family:var(--font-code);font-size:8px;letter-spacing:.1em;color:var(--v2-mute2);margin-top:9px;}
+/* audience visibility — driven by data-aud on .v2-landing.
+   Default state (data-aud="tech") hides .v2-aud-home; "home" hides .v2-aud-tech.
+   Hidden side is forced display:none; visible side reverts to its natural display. */
+.v2-landing[data-aud="tech"] .v2-aud-home{display:none !important;}
+.v2-landing[data-aud="home"] .v2-aud-tech{display:none !important;}
+/* landing console fault sizing parity with mockup */
+.v2-landing .v2-console-fault{font-size:var(--v2-type-display-md);}
+.v2-landing .v2-gauge-val{font-size:15px;}
+.v2-landing .v2-gauge-val.stack{font-size:13px;line-height:1.04;}
 /* ===== END V2 DESIGN SYSTEM (foundation) ===== */
 </style>
 <div id="offlineBanner"></div>
@@ -2095,16 +2151,97 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 <div id="pullRefreshIndicator"><div class="ptr-spinner"></div><span>Refreshing…</span></div>
 
 <div class="page" id="app">
-  <!-- HERO -->
-  <div class="fu" style="margin-bottom:16px;">
-    <div style="background:linear-gradient(135deg,#0F0F0F 0%,#1a2232 100%);border-radius:12px;padding:14px 16px 12px;text-align:center;position:relative;overflow:hidden;">
-      <div style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;height:120px;background:radial-gradient(ellipse,rgba(199,85,59,.2) 0%,transparent 70%);pointer-events:none;"></div>
-      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(199,85,59,.15);border:1px solid rgba(199,85,59,.3);border-radius:99px;padding:5px 13px;margin-bottom:14px;">
-        <span style="width:6px;height:6px;background:var(--rust);border-radius:50%;display:inline-block;box-shadow:0 0 8px rgba(199,85,59,.6);"></span>
-        <span style="font-size:11px;font-weight:700;color:var(--rust);letter-spacing:.5px;text-transform:uppercase;">● Mike is Online</span>
+  <!-- HERO — legacy nodes kept (hidden) so setMode()'s textContent writes never null. Real headline is the V2 landing below. -->
+  <div style="display:none;" aria-hidden="true"><span id="heroTitle"></span><span id="heroSub"></span></div>
+
+  <!-- V2 LANDING (Frame G) — the living-console front door. TECH/HOMEOWNER toggle drives the existing setMode() router. -->
+  <div class="fu v2-landing" id="v2Landing" data-aud="tech">
+    <div class="v2-lnd-top">
+      <div class="v2-lnd-brand">TRAZER <i>INTELLIGENCE</i></div>
+      <div class="v2-lnd-pill"><span class="v2-dot"></span><span data-v2i18n="lndLive">MIKE · LIVE</span></div>
+    </div>
+
+    <!-- AUDIENCE TOGGLE — drives setMode('pro')/('home') -->
+    <div class="v2-seg" role="tablist" aria-label="Choose your view">
+      <button id="v2SegTech" class="on" role="tab" aria-selected="true" onclick="v2SetAudience('tech')"><span class="tk">●</span> <span data-v2i18n="lndImTech">I'M A TECH</span></button>
+      <button id="v2SegHome" role="tab" aria-selected="false" onclick="v2SetAudience('home')"><span data-v2i18n="lndImHome">I'M A HOMEOWNER</span></button>
+    </div>
+
+    <!-- HEADLINE + LEDE (swap per audience) -->
+    <h1 class="v2-lnd-h1 v2-aud-tech"><span data-v2i18n="lndTechH1a">WATCH MIKE</span> <span class="t" data-v2i18n="lndTechH1b">WORK</span><br><span data-v2i18n="lndTechH1c">A CALL</span> <span class="y" data-v2i18n="lndTechH1d">IN REAL TIME.</span></h1>
+    <p class="v2-lnd-lede v2-aud-tech" data-v2i18n="lndTechLede"></p>
+    <h1 class="v2-lnd-h1 v2-aud-home"><span data-v2i18n="lndHomeH1a">KNOW WHAT'S</span> <span class="t" data-v2i18n="lndHomeH1b">WRONG</span><br><span data-v2i18n="lndHomeH1c">BEFORE THEY</span> <span class="y" data-v2i18n="lndHomeH1d">QUOTE YOU.</span></h1>
+    <p class="v2-lnd-lede v2-aud-home" data-v2i18n="lndHomeLede"></p>
+
+    <!-- THE LIVING CONSOLE — TECH variant -->
+    <div class="v2-console v2-aud-tech">
+      <div class="v2-console-head">
+        <div class="l"><span class="v2-dot"></span><span data-v2i18n="lndTechCHL">LIVE DIAGNOSIS</span></div>
+        <div class="r" data-v2i18n="lndTechCHR">CARRIER 58STA · NO HEAT</div>
       </div>
-      <h1 style="font-size:clamp(16px,3.5vw,22px);font-weight:700;color:#FFFFFF;letter-spacing:-.3px;line-height:1.2;margin-bottom:6px;" id="heroTitle">Is Your AC or Heat Not Working?</h1>
-      <p style="font-size:15px;color:rgba(255,255,255,.55);line-height:1.65;max-width:400px;margin:0 auto;" id="heroSub">Take a photo, describe what's happening, and get a clear answer in seconds. No HVAC knowledge needed.</p>
+      <div class="v2-console-body">
+        <div class="v2-console-unit" data-v2i18n="lndTechUnit">FAULT IDENTIFIED</div>
+        <div class="v2-console-fault" data-v2i18n="lndTechFault">HIGH-LIMIT <span class="bad">LOCKOUT</span></div>
+        <p class="v2-console-verdict" data-v2i18n="lndTechVerdict"></p>
+        <div class="v2-gauges">
+          <div class="v2-gauge"><div class="v2-gauge-val warn">182&deg;</div><div class="v2-gauge-label" data-v2i18n="lndTechG1L">PLENUM F</div><div class="v2-gauge-meter"><i style="width:90%;background:linear-gradient(90deg,var(--brass),var(--rust))"></i></div></div>
+          <div class="v2-gauge"><div class="v2-gauge-val">3.2"</div><div class="v2-gauge-label" data-v2i18n="lndTechG2L">STATIC WC</div><div class="v2-gauge-meter"><i style="width:78%;background:linear-gradient(90deg,var(--moss),var(--brass))"></i></div></div>
+          <div class="v2-gauge"><div class="v2-gauge-val">11A</div><div class="v2-gauge-label" data-v2i18n="lndTechG3L">BLOWER AMP</div><div class="v2-gauge-meter"><i style="width:55%;background:var(--teal)"></i></div></div>
+        </div>
+        <div class="v2-chips">
+          <span class="v2-chip live"><span class="cd"></span><span data-v2i18n="lndTechC1">FAULT CODE 33·13</span></span>
+          <span class="v2-chip live"><span class="cd"></span><span data-v2i18n="lndTechC2">SPEC DATA</span></span>
+          <span class="v2-chip parts live"><span class="cd"></span><span data-v2i18n="lndTechC3">PART · LH33WZ511 · $34</span></span>
+          <span class="v2-chip"><span class="cd"></span><span data-v2i18n="lndTechC4">WIRING DIAGRAM</span></span>
+        </div>
+        <div class="v2-mentor">
+          <div class="q" data-v2i18n="lndTechMentor"></div>
+          <div class="sig" data-v2i18n="lndMentorSig">— Mike · 25 yrs</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THE LIVING CONSOLE — HOMEOWNER variant (NO repair prices: what's wrong / safe / urgent / what to ask) -->
+    <div class="v2-console v2-aud-home">
+      <div class="v2-console-head">
+        <div class="l"><span class="v2-dot"></span><span data-v2i18n="lndHomeCHL">MIKE'S READ</span></div>
+        <div class="r" data-v2i18n="lndHomeCHR">CENTRAL AC · NOT COOLING</div>
+      </div>
+      <div class="v2-console-body">
+        <div class="v2-console-unit" data-v2i18n="lndHomeUnit">HERE'S WHAT'S GOING ON</div>
+        <div class="v2-console-fault" data-v2i18n="lndHomeFault">YOUR AC ISN'T <span class="bad">COOLING</span></div>
+        <p class="v2-console-verdict" data-v2i18n="lndHomeVerdict"></p>
+        <div class="v2-gauges">
+          <div class="v2-gauge"><div class="v2-gauge-val ok" data-v2i18n="lndHomeG1V">SAFE</div><div class="v2-gauge-label" data-v2i18n="lndHomeG1L">NO FIRE / CO RISK</div><div class="v2-gauge-meter"><i style="width:100%;background:var(--moss)"></i></div></div>
+          <div class="v2-gauge"><div class="v2-gauge-val brass" data-v2i18n="lndHomeG2V">THIS WEEK</div><div class="v2-gauge-label" data-v2i18n="lndHomeG2L">URGENCY</div><div class="v2-gauge-meter"><i style="width:62%;background:linear-gradient(90deg,var(--moss),var(--brass))"></i></div></div>
+          <div class="v2-gauge"><div class="v2-gauge-val good stack" data-v2i18n="lndHomeG3V">GET IT<br>CHECKED</div><div class="v2-gauge-label" data-v2i18n="lndHomeG3L">KNOW WHAT TO ASK</div><div class="v2-gauge-meter"><i style="width:100%;background:var(--teal)"></i></div></div>
+        </div>
+        <div class="v2-chips">
+          <span class="v2-chip live"><span class="cd"></span><span data-v2i18n="lndHomeC1">WHAT'S WRONG</span></span>
+          <span class="v2-chip live"><span class="cd"></span><span data-v2i18n="lndHomeC2">IS IT SAFE?</span></span>
+          <span class="v2-chip parts live"><span class="cd"></span><span data-v2i18n="lndHomeC3">WHAT TO ASK</span></span>
+          <span class="v2-chip"><span class="cd"></span><span data-v2i18n="lndHomeC4">DO YOU NEED A PRO?</span></span>
+        </div>
+        <div class="v2-mentor">
+          <div class="q" data-v2i18n="lndHomeMentor"></div>
+          <div class="sig" data-v2i18n="lndMentorSig">— Mike · 25 yrs</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THREE WAYS TO REACH MIKE -->
+    <div class="v2-reach">
+      <div class="v2-reach-mode call" role="button" tabindex="0" onclick="v2Reach('call')" aria-label="Call Mike"><span class="ic">&#x1F4DE;</span><div class="t" data-v2i18n="reachCall">CALL</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachCall">Hands-free</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachCall">Talk it through</div></div>
+      <div class="v2-reach-mode face" role="button" tabindex="0" onclick="v2Reach('face')" aria-label="FaceTime Mike"><span class="ic">&#x1F4F9;</span><div class="t" data-v2i18n="reachFace">FACETIME</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachFace">See it. Sell it.</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachFace">Show him the unit</div></div>
+      <div class="v2-reach-mode text" role="button" tabindex="0" onclick="v2Reach('text')" aria-label="Text Mike"><span class="ic">&#x1F4AC;</span><div class="t" data-v2i18n="lndReachText">TEXT</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachText">Daily thread</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachText">Snap a photo</div></div>
+    </div>
+
+    <!-- CTA DOCK -->
+    <div class="v2-lnd-dock">
+      <button class="v2-cta prime" onclick="v2LandingAsk()"><span class="v2-aud-tech" data-v2i18n="lndTechCtaPrime">Ask Mike anything →</span><span class="v2-aud-home" data-v2i18n="lndHomeCtaPrime">Ask Mike anything →</span></button>
+      <button class="v2-cta ghost v2-aud-tech" onclick="v2LandingDemo()" data-v2i18n="lndTechCtaGhost">See a real diagnosis →</button>
+      <button class="v2-cta ghost v2-aud-home" onclick="findLocalTech()" data-v2i18n="lndHomeCtaGhost">Find a trusted local tech</button>
+      <div class="v2-lnd-foot"><span class="v2-aud-tech" data-v2i18n="lndTechFoot">EPA 608 · NATE · ASHRAE · 25 YEARS ON EVERY SYSTEM</span><span class="v2-aud-home" data-v2i18n="lndHomeFoot">HONEST READ · NO GUESSWORK · NEVER IN THE DARK</span></div>
     </div>
   </div>
   <!-- MODE TABS -->
@@ -2976,9 +3113,12 @@ function tracerInit(){
     if(savedLang&&['en','es','zh','vi','fr','pt'].indexOf(savedLang)>=0){
       setLang(savedLang);
     }else if(typeof applyV2Lang==='function'){
-      applyV2Lang(); // default (en) — paint V2 header/composer labels on first load
+      applyV2Lang(); // default (en) — paint V2 header/composer + Frame G landing labels on first load
     }
   }catch(e){}
+  // Keep the Frame G landing toggle/console in sync with the app's default mode on load,
+  // before any role is applied — landing, mode-tabs, and panels never disagree.
+  try{if(typeof syncV2Landing==='function')syncV2Landing(mode==='pro'?'tech':'home');}catch(e){}
   var s=localStorage.getItem('trazer_user');
   if(s){
     try{
@@ -4027,6 +4167,59 @@ function setMode(m){
   document.getElementById('heroTitle').textContent=isPro?'Professional HVAC Field Intelligence':'Is Your AC or Heat Not Working?';
   document.getElementById('heroSub').textContent=isPro?'Mike — your AI master tech. Diagnostics, live camera, parts pricing, revenue coaching.':'Take a photo, describe what\'s happening, and get a clear answer in seconds. No HVAC knowledge needed.';
   document.getElementById('modeDesc').textContent=isPro?'Mike handles diagnostics, revenue, refrigerant, maintenance — everything in one chat.':'Plain English explanations. Know if it\'s safe, how urgent it is, and exactly what to tell your technician.';
+  // Keep the V2 landing (Frame G) toggle + console in lock-step with the one router.
+  syncV2Landing(isPro?'tech':'home');
+}
+
+// Reflect the active audience on the Frame G landing. setMode() is the single source
+// of truth; this only mirrors its state onto the landing's toggle + console variant.
+function syncV2Landing(aud){
+  var lnd=document.getElementById('v2Landing');if(lnd)lnd.setAttribute('data-aud',aud);
+  var t=document.getElementById('v2SegTech'),h=document.getElementById('v2SegHome');
+  if(t){t.classList.toggle('on',aud==='tech');t.setAttribute('aria-selected',aud==='tech'?'true':'false');}
+  if(h){h.classList.toggle('on',aud==='home');h.setAttribute('aria-selected',aud==='home'?'true':'false');}
+}
+
+// Frame G audience toggle → drives the EXISTING setMode router (tech=contractor/panelDiag, home=panelHome).
+function v2SetAudience(aud){ setMode(aud==='tech'?'pro':'home'); }
+
+// Primary CTA "Ask Mike anything →" — flow into the Phase-B chat for the active audience.
+function v2LandingAsk(){
+  var lnd=document.getElementById('v2Landing');
+  var aud=lnd?lnd.getAttribute('data-aud'):'tech';
+  if(aud==='home'){
+    setMode('home');
+    var hd=document.getElementById('homeDesc');
+    if(hd){try{hd.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){hd.scrollIntoView();} setTimeout(function(){try{hd.focus();}catch(e){}},250);}
+  } else {
+    setMode('pro');
+    var ci=document.getElementById('chatInput');
+    if(ci){try{ci.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){ci.scrollIntoView();} setTimeout(function(){try{ci.focus();}catch(e){}},250);}
+  }
+}
+
+// Secondary CTA (tech) "See a real diagnosis →" — start a REAL diagnosis flow in the chat.
+// TODO(demo): replace this seeded prompt with a curated canned-call replay once the
+// demo-content asset lands. Until then we kick off a genuine diagnosis (no faked/live-looking data).
+function v2LandingDemo(){
+  setMode('pro');
+  var ci=document.getElementById('chatInput');
+  if(!ci)return;
+  ci.value="Walk me through a real diagnosis: Carrier 58STA, no heat, high-limit lockout. Plenum's running 182°F, static is 3.2\" wc, blower's pulling 11A. What's the fault and the fix?";
+  try{ci.style.height='auto';ci.style.height=Math.min(ci.scrollHeight,100)+'px';}catch(e){}
+  try{ci.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
+  if(typeof sendChat==='function')sendChat();
+}
+
+// Reach-mode tiles on the landing → the same three ways to reach Mike used in-chat.
+// Tech gets the full call/FaceTime/text rig (those live in the contractor chat surface).
+// Homeowner has no voice rig wired, so Call/Text route into their ask flow; FaceTime opens
+// the camera (a shared, app-wide capability) — nothing dead, nothing half-wired.
+function v2Reach(kind){
+  var aud=document.getElementById('v2Landing').getAttribute('data-aud');
+  if(kind==='face'){ if(typeof checkCameraAccess==='function')checkCameraAccess(); return; }
+  if(kind==='call'&&aud==='tech'){ setMode('pro'); if(typeof toggleVoiceMode==='function')toggleVoiceMode(); return; }
+  v2LandingAsk(); // text, or homeowner call → land them in their chat entry
 }
 
 
@@ -5642,12 +5835,120 @@ function escapeHtml(s){
 // called from setLang and on load. Dynamic strings (Mike's label, the diagnosis
 // card header, the mentor signature) read from V2_I18N[currentLang] at render time.
 var V2_I18N={
-  en:{reachCall:'CALL',reachFace:'FACETIME',clear:'CLEAR',mikeName:'MIKE',headRole:'MASTER TECH',headStatus:'ALWAYS ON',diagHead:'FAULT IDENTIFIED',mentorSig:'— Mike',composer:'Ask Mike anything…'},
-  es:{reachCall:'LLAMAR',reachFace:'FACETIME',clear:'BORRAR',mikeName:'MIKE',headRole:'TÉCNICO MAESTRO',headStatus:'SIEMPRE DISPONIBLE',diagHead:'FALLA IDENTIFICADA',mentorSig:'— Mike',composer:'Pregúntale a Mike…'},
-  zh:{reachCall:'通话',reachFace:'视频',clear:'清除',mikeName:'MIKE',headRole:'高级技师',headStatus:'随时在线',diagHead:'已识别故障',mentorSig:'— Mike',composer:'问 Mike 任何问题…'},
-  vi:{reachCall:'GỌI',reachFace:'FACETIME',clear:'XÓA',mikeName:'MIKE',headRole:'THỢ CẢ',headStatus:'LUÔN SẴN SÀNG',diagHead:'ĐÃ XÁC ĐỊNH LỖI',mentorSig:'— Mike',composer:'Hỏi Mike bất kỳ điều gì…'},
-  fr:{reachCall:'APPELER',reachFace:'FACETIME',clear:'EFFACER',mikeName:'MIKE',headRole:'MAÎTRE TECH',headStatus:'TOUJOURS DISPO',diagHead:'PANNE IDENTIFIÉE',mentorSig:'— Mike',composer:'Demandez à Mike…'},
-  pt:{reachCall:'LIGAR',reachFace:'FACETIME',clear:'LIMPAR',mikeName:'MIKE',headRole:'TÉCNICO MESTRE',headStatus:'SEMPRE ATIVO',diagHead:'FALHA IDENTIFICADA',mentorSig:'— Mike',composer:'Pergunte ao Mike…'}
+  en:{reachCall:'CALL',reachFace:'FACETIME',clear:'CLEAR',mikeName:'MIKE',headRole:'MASTER TECH',headStatus:'ALWAYS ON',diagHead:'FAULT IDENTIFIED',mentorSig:'— Mike',composer:'Ask Mike anything…',
+    lndLive:'MIKE · LIVE',lndImTech:"I'M A TECH",lndImHome:"I'M A HOMEOWNER",lndReachText:'TEXT',lndMentorSig:'— Mike · 25 yrs',
+    lndTechH1a:'WATCH MIKE',lndTechH1b:'WORK',lndTechH1c:'A CALL',lndTechH1d:'IN REAL TIME.',
+    lndTechLede:'<b>25 years of master-tech instinct, running live:</b> he reads the system, calls the fault, pulls the part, quotes the price — then makes you sharper for the next one.',
+    lndTechCHL:'LIVE DIAGNOSIS',lndTechCHR:'CARRIER 58STA · NO HEAT',lndTechUnit:'FAULT IDENTIFIED',lndTechFault:'HIGH-LIMIT <span class="bad">LOCKOUT</span>',
+    lndTechVerdict:'Heat’s stacking on a dirty filter. <em>Check airflow before the limit switch</em> — pull the filter, spin the blower wheel.',
+    lndTechG1L:'PLENUM F',lndTechG2L:'STATIC WC',lndTechG3L:'BLOWER AMP',lndTechC1:'FAULT CODE 33·13',lndTechC2:'SPEC DATA',lndTechC3:'PART · LH33WZ511 · $34',lndTechC4:'WIRING DIAGRAM',
+    lndTechMentor:'“Clean call. Next time quote the IAQ filter cabinet — that’s the upsell that gets you to senior-tech money.”',
+    lndTechReachCall:'Hands-free',lndTechReachFace:'See it. Sell it.',lndTechReachText:'Daily thread',
+    lndTechCtaPrime:'Ask Mike anything →',lndTechCtaGhost:'See a real diagnosis →',lndTechFoot:'EPA 608 · NATE · ASHRAE · 25 YEARS ON EVERY SYSTEM',
+    lndHomeH1a:"KNOW WHAT'S",lndHomeH1b:'WRONG',lndHomeH1c:'BEFORE THEY',lndHomeH1d:'QUOTE YOU.',
+    lndHomeLede:'A 25-year master tech, in plain English: <b>he tells you what’s broken, if it’s safe, how urgent, and exactly what to ask</b> — so you walk into the repair knowing more than the salesman.',
+    lndHomeCHL:"MIKE'S READ",lndHomeCHR:'CENTRAL AC · NOT COOLING',lndHomeUnit:"HERE'S WHAT'S GOING ON",lndHomeFault:'YOUR AC ISN’T <span class="bad">COOLING</span>',
+    lndHomeVerdict:'Looks like a low refrigerant charge — usually a small leak, not a new system. <em>Get it leak-tested first.</em> Don’t let anyone sell you a full replacement yet.',
+    lndHomeG1V:'SAFE',lndHomeG1L:'NO FIRE / CO RISK',lndHomeG2V:'THIS WEEK',lndHomeG2L:'URGENCY',lndHomeG3V:'GET IT<br>CHECKED',lndHomeG3L:'KNOW WHAT TO ASK',
+    lndHomeC1:"WHAT'S WRONG",lndHomeC2:'IS IT SAFE?',lndHomeC3:'WHAT TO ASK',lndHomeC4:'DO YOU NEED A PRO?',
+    lndHomeMentor:'“You don’t need a new system. Ask them to leak-test first — if a tech jumps straight to ‘replace,’ get a second opinion.”',
+    lndHomeReachCall:'Talk it through',lndHomeReachFace:'Show him the unit',lndHomeReachText:'Snap a photo',
+    lndHomeCtaPrime:'Ask Mike anything →',lndHomeCtaGhost:'Find a trusted local tech',lndHomeFoot:'HONEST READ · NO GUESSWORK · NEVER IN THE DARK'},
+  es:{reachCall:'LLAMAR',reachFace:'FACETIME',clear:'BORRAR',mikeName:'MIKE',headRole:'TÉCNICO MAESTRO',headStatus:'SIEMPRE DISPONIBLE',diagHead:'FALLA IDENTIFICADA',mentorSig:'— Mike',composer:'Pregúntale a Mike…',
+    lndLive:'MIKE · EN VIVO',lndImTech:'SOY TÉCNICO',lndImHome:'SOY PROPIETARIO',lndReachText:'TEXTO',lndMentorSig:'— Mike · 25 años',
+    lndTechH1a:'MIRA A MIKE',lndTechH1b:'TRABAJAR',lndTechH1c:'UNA LLAMADA',lndTechH1d:'EN TIEMPO REAL.',
+    lndTechLede:'<b>25 años de instinto de técnico maestro, en vivo:</b> lee el sistema, identifica la falla, encuentra la pieza, da el precio — y te hace mejor para la próxima.',
+    lndTechCHL:'DIAGNÓSTICO EN VIVO',lndTechCHR:'CARRIER 58STA · SIN CALOR',lndTechUnit:'FALLA IDENTIFICADA',lndTechFault:'BLOQUEO POR <span class="bad">LÍMITE ALTO</span>',
+    lndTechVerdict:'El calor se acumula por un filtro sucio. <em>Revisa el flujo de aire antes del interruptor de límite</em> — saca el filtro, gira la turbina.',
+    lndTechG1L:'PLENO F',lndTechG2L:'ESTÁTICA WC',lndTechG3L:'AMP MOTOR',lndTechC1:'CÓDIGO 33·13',lndTechC2:'DATOS TÉC.',lndTechC3:'PIEZA · LH33WZ511 · $34',lndTechC4:'DIAGRAMA',
+    lndTechMentor:'“Buena llamada. La próxima cotiza el gabinete de filtro IAQ — ese es el extra que te lleva a sueldo de técnico senior.”',
+    lndTechReachCall:'Manos libres',lndTechReachFace:'Velo. Véndelo.',lndTechReachText:'Hilo diario',
+    lndTechCtaPrime:'Pregúntale a Mike →',lndTechCtaGhost:'Ver un diagnóstico real →',lndTechFoot:'EPA 608 · NATE · ASHRAE · 25 AÑOS EN CADA SISTEMA',
+    lndHomeH1a:'SABE QUÉ ESTÁ',lndHomeH1b:'MAL',lndHomeH1c:'ANTES DE QUE TE',lndHomeH1d:'COTICEN.',
+    lndHomeLede:'Un técnico maestro de 25 años, en palabras claras: <b>te dice qué está dañado, si es seguro, qué tan urgente y qué preguntar</b> — para que entres a la reparación sabiendo más que el vendedor.',
+    lndHomeCHL:'LECTURA DE MIKE',lndHomeCHR:'AC CENTRAL · NO ENFRÍA',lndHomeUnit:'ESTO ES LO QUE PASA',lndHomeFault:'TU AC NO <span class="bad">ENFRÍA</span>',
+    lndHomeVerdict:'Parece carga baja de refrigerante — normalmente una fuga pequeña, no un sistema nuevo. <em>Pide primero una prueba de fugas.</em> No dejes que te vendan un reemplazo completo todavía.',
+    lndHomeG1V:'SEGURO',lndHomeG1L:'SIN FUEGO / CO',lndHomeG2V:'ESTA SEMANA',lndHomeG2L:'URGENCIA',lndHomeG3V:'QUE LO<br>REVISEN',lndHomeG3L:'QUÉ PREGUNTAR',
+    lndHomeC1:'QUÉ ESTÁ MAL',lndHomeC2:'¿ES SEGURO?',lndHomeC3:'QUÉ PREGUNTAR',lndHomeC4:'¿NECESITAS UN PRO?',
+    lndHomeMentor:'“No necesitas un sistema nuevo. Pide que prueben fugas primero — si un técnico salta directo a ‘reemplazar’, busca una segunda opinión.”',
+    lndHomeReachCall:'Conversarlo',lndHomeReachFace:'Muéstrale la unidad',lndHomeReachText:'Manda una foto',
+    lndHomeCtaPrime:'Pregúntale a Mike →',lndHomeCtaGhost:'Encontrar un técnico de confianza',lndHomeFoot:'LECTURA HONESTA · SIN ADIVINANZAS · NUNCA A OSCURAS'},
+  zh:{reachCall:'通话',reachFace:'视频',clear:'清除',mikeName:'MIKE',headRole:'高级技师',headStatus:'随时在线',diagHead:'已识别故障',mentorSig:'— Mike',composer:'问 Mike 任何问题…',
+    lndLive:'MIKE · 在线',lndImTech:'我是技师',lndImHome:'我是业主',lndReachText:'文字',lndMentorSig:'— Mike · 25 年',
+    lndTechH1a:'看 MIKE',lndTechH1b:'实时',lndTechH1c:'处理',lndTechH1d:'一次维修。',
+    lndTechLede:'<b>25 年高级技师的直觉，实时运行：</b>他读取系统、判定故障、找到配件、给出报价 — 还让你为下一次更精进。',
+    lndTechCHL:'实时诊断',lndTechCHR:'CARRIER 58STA · 不制热',lndTechUnit:'已识别故障',lndTechFault:'高温限位 <span class="bad">锁定</span>',
+    lndTechVerdict:'脏滤网导致热量堆积。<em>在限位开关前先检查风量</em> — 取出滤网，转动风轮。',
+    lndTechG1L:'风室 F',lndTechG2L:'静压 WC',lndTechG3L:'风机电流',lndTechC1:'故障码 33·13',lndTechC2:'规格数据',lndTechC3:'配件 · LH33WZ511 · $34',lndTechC4:'接线图',
+    lndTechMentor:'“漂亮的一单。下次报上 IAQ 滤网柜 — 那才是让你赚到高级技师收入的增项。”',
+    lndTechReachCall:'免提',lndTechReachFace:'看到即售出',lndTechReachText:'每日对话',
+    lndTechCtaPrime:'问 Mike 任何问题 →',lndTechCtaGhost:'看真实诊断 →',lndTechFoot:'EPA 608 · NATE · ASHRAE · 25 年覆盖每个系统',
+    lndHomeH1a:'在他们报价前',lndHomeH1b:'知道',lndHomeH1c:'哪里',lndHomeH1d:'出问题。',
+    lndHomeLede:'一位 25 年的高级技师，用大白话告诉你：<b>哪里坏了、是否安全、有多紧急、该问什么</b> — 让你比推销员还懂。',
+    lndHomeCHL:'MIKE 的判断',lndHomeCHR:'中央空调 · 不制冷',lndHomeUnit:'情况是这样的',lndHomeFault:'你的空调不 <span class="bad">制冷</span>',
+    lndHomeVerdict:'看起来是制冷剂偏低 — 通常是小泄漏，而非需要换新机。<em>先做泄漏检测。</em>先别让人卖给你整套更换。',
+    lndHomeG1V:'安全',lndHomeG1L:'无火灾/CO 风险',lndHomeG2V:'本周',lndHomeG2L:'紧急程度',lndHomeG3V:'去做<br>检查',lndHomeG3L:'知道该问什么',
+    lndHomeC1:'哪里出问题',lndHomeC2:'安全吗？',lndHomeC3:'该问什么',lndHomeC4:'需要专业人士吗？',
+    lndHomeMentor:'“你不需要换新系统。先让他们做泄漏检测 — 如果技师直接说‘更换’，再找一个意见。”',
+    lndHomeReachCall:'聊一聊',lndHomeReachFace:'给他看设备',lndHomeReachText:'拍张照片',
+    lndHomeCtaPrime:'问 Mike 任何问题 →',lndHomeCtaGhost:'寻找信赖的本地技师',lndHomeFoot:'诚实判断 · 不靠猜测 · 永不蒙在鼓里'},
+  vi:{reachCall:'GỌI',reachFace:'FACETIME',clear:'XÓA',mikeName:'MIKE',headRole:'THỢ CẢ',headStatus:'LUÔN SẴN SÀNG',diagHead:'ĐÃ XÁC ĐỊNH LỖI',mentorSig:'— Mike',composer:'Hỏi Mike bất kỳ điều gì…',
+    lndLive:'MIKE · TRỰC TIẾP',lndImTech:'TÔI LÀ THỢ',lndImHome:'TÔI LÀ CHỦ NHÀ',lndReachText:'NHẮN',lndMentorSig:'— Mike · 25 năm',
+    lndTechH1a:'XEM MIKE',lndTechH1b:'XỬ LÝ',lndTechH1c:'MỘT CA',lndTechH1d:'NGAY TỨC THÌ.',
+    lndTechLede:'<b>25 năm bản năng thợ cả, chạy trực tiếp:</b> anh đọc hệ thống, gọi tên lỗi, tìm linh kiện, báo giá — rồi giúp bạn giỏi hơn cho lần sau.',
+    lndTechCHL:'CHẨN ĐOÁN TRỰC TIẾP',lndTechCHR:'CARRIER 58STA · KHÔNG NÓNG',lndTechUnit:'ĐÃ XÁC ĐỊNH LỖI',lndTechFault:'KHÓA <span class="bad">QUÁ NHIỆT</span>',
+    lndTechVerdict:'Nhiệt dồn lại do lọc gió bẩn. <em>Kiểm tra luồng gió trước công tắc giới hạn</em> — rút lọc ra, quay bánh quạt.',
+    lndTechG1L:'KHOANG F',lndTechG2L:'TĨNH WC',lndTechG3L:'AMP QUẠT',lndTechC1:'MÃ LỖI 33·13',lndTechC2:'THÔNG SỐ',lndTechC3:'LINH KIỆN · LH33WZ511 · $34',lndTechC4:'SƠ ĐỒ DÂY',
+    lndTechMentor:'“Ca sạch đẹp. Lần sau báo thêm tủ lọc IAQ — đó là khoản bán thêm đưa bạn đến thu nhập thợ cả.”',
+    lndTechReachCall:'Rảnh tay',lndTechReachFace:'Thấy là bán',lndTechReachText:'Trò chuyện hằng ngày',
+    lndTechCtaPrime:'Hỏi Mike bất kỳ điều gì →',lndTechCtaGhost:'Xem chẩn đoán thật →',lndTechFoot:'EPA 608 · NATE · ASHRAE · 25 NĂM TRÊN MỌI HỆ THỐNG',
+    lndHomeH1a:'BIẾT ĐANG',lndHomeH1b:'HỎNG GÌ',lndHomeH1c:'TRƯỚC KHI HỌ',lndHomeH1d:'BÁO GIÁ.',
+    lndHomeLede:'Một thợ cả 25 năm, nói dễ hiểu: <b>cho bạn biết hỏng gì, có an toàn không, gấp đến đâu, và phải hỏi gì</b> — để bạn bước vào sửa chữa hiểu hơn cả người bán hàng.',
+    lndHomeCHL:'MIKE NHẬN ĐỊNH',lndHomeCHR:'MÁY LẠNH TRUNG TÂM · KHÔNG MÁT',lndHomeUnit:'ĐÂY LÀ TÌNH HÌNH',lndHomeFault:'MÁY LẠNH KHÔNG <span class="bad">MÁT</span>',
+    lndHomeVerdict:'Có vẻ thiếu gas — thường là rò rỉ nhỏ, không phải thay máy mới. <em>Hãy kiểm tra rò rỉ trước.</em> Đừng để ai bán cho bạn cả bộ thay mới vội.',
+    lndHomeG1V:'AN TOÀN',lndHomeG1L:'KHÔNG CHÁY / CO',lndHomeG2V:'TUẦN NÀY',lndHomeG2L:'MỨC GẤP',lndHomeG3V:'ĐI<br>KIỂM TRA',lndHomeG3L:'BIẾT HỎI GÌ',
+    lndHomeC1:'HỎNG GÌ',lndHomeC2:'CÓ AN TOÀN?',lndHomeC3:'HỎI GÌ',lndHomeC4:'CẦN THỢ KHÔNG?',
+    lndHomeMentor:'“Bạn không cần máy mới. Bảo họ kiểm tra rò rỉ trước — nếu thợ nhảy thẳng sang ‘thay mới’, hãy hỏi ý kiến thứ hai.”',
+    lndHomeReachCall:'Trò chuyện',lndHomeReachFace:'Cho anh xem máy',lndHomeReachText:'Gửi ảnh',
+    lndHomeCtaPrime:'Hỏi Mike bất kỳ điều gì →',lndHomeCtaGhost:'Tìm thợ địa phương đáng tin',lndHomeFoot:'NHẬN ĐỊNH THẬT · KHÔNG ĐOÁN MÒ · KHÔNG MƠ HỒ'},
+  fr:{reachCall:'APPELER',reachFace:'FACETIME',clear:'EFFACER',mikeName:'MIKE',headRole:'MAÎTRE TECH',headStatus:'TOUJOURS DISPO',diagHead:'PANNE IDENTIFIÉE',mentorSig:'— Mike',composer:'Demandez à Mike…',
+    lndLive:'MIKE · EN DIRECT',lndImTech:'JE SUIS TECH',lndImHome:'JE SUIS PROPRIÉTAIRE',lndReachText:'TEXTO',lndMentorSig:'— Mike · 25 ans',
+    lndTechH1a:'REGARDEZ MIKE',lndTechH1b:'TRAITER',lndTechH1c:'UN APPEL',lndTechH1d:'EN TEMPS RÉEL.',
+    lndTechLede:'<b>25 ans d’instinct de maître technicien, en direct :</b> il lit le système, identifie la panne, trouve la pièce, donne le prix — puis vous rend meilleur pour la suivante.',
+    lndTechCHL:'DIAGNOSTIC EN DIRECT',lndTechCHR:'CARRIER 58STA · PAS DE CHAUFFE',lndTechUnit:'PANNE IDENTIFIÉE',lndTechFault:'VERROUILLAGE <span class="bad">LIMITE HAUTE</span>',
+    lndTechVerdict:'La chaleur s’accumule sur un filtre sale. <em>Vérifiez le débit d’air avant le limiteur</em> — retirez le filtre, faites tourner la turbine.',
+    lndTechG1L:'PLÉNUM F',lndTechG2L:'STATIQUE WC',lndTechG3L:'AMP SOUFFL.',lndTechC1:'CODE 33·13',lndTechC2:'DONNÉES TECH',lndTechC3:'PIÈCE · LH33WZ511 · $34',lndTechC4:'SCHÉMA',
+    lndTechMentor:'“Bel appel. La prochaine fois, chiffrez le caisson de filtre IAQ — c’est la vente qui vous mène au salaire de tech senior.”',
+    lndTechReachCall:'Mains libres',lndTechReachFace:'Voir. Vendre.',lndTechReachText:'Fil quotidien',
+    lndTechCtaPrime:'Demandez à Mike →',lndTechCtaGhost:'Voir un vrai diagnostic →',lndTechFoot:'EPA 608 · NATE · ASHRAE · 25 ANS SUR CHAQUE SYSTÈME',
+    lndHomeH1a:'SACHEZ CE QUI',lndHomeH1b:'NE VA PAS',lndHomeH1c:'AVANT QU’ON VOUS',lndHomeH1d:'CHIFFRE.',
+    lndHomeLede:'Un maître technicien de 25 ans, en clair : <b>il vous dit ce qui est cassé, si c’est sûr, l’urgence et quoi demander</b> — pour entrer dans la réparation en sachant plus que le vendeur.',
+    lndHomeCHL:'AVIS DE MIKE',lndHomeCHR:'CLIM CENTRALE · NE REFROIDIT PAS',lndHomeUnit:'VOICI CE QUI SE PASSE',lndHomeFault:'VOTRE CLIM NE <span class="bad">REFROIDIT PAS</span>',
+    lndHomeVerdict:'Cela ressemble à une charge de fluide basse — souvent une petite fuite, pas un système neuf. <em>Faites d’abord un test de fuite.</em> Ne laissez personne vous vendre un remplacement complet tout de suite.',
+    lndHomeG1V:'SÛR',lndHomeG1L:'PAS DE FEU / CO',lndHomeG2V:'CETTE SEMAINE',lndHomeG2L:'URGENCE',lndHomeG3V:'À FAIRE<br>VÉRIFIER',lndHomeG3L:'QUOI DEMANDER',
+    lndHomeC1:'CE QUI NE VA PAS',lndHomeC2:'EST-CE SÛR ?',lndHomeC3:'QUOI DEMANDER',lndHomeC4:'BESOIN D’UN PRO ?',
+    lndHomeMentor:'“Vous n’avez pas besoin d’un système neuf. Demandez un test de fuite d’abord — si un tech passe direct à ‘remplacer’, prenez un deuxième avis.”',
+    lndHomeReachCall:'En parler',lndHomeReachFace:'Montrez-lui l’unité',lndHomeReachText:'Envoyez une photo',
+    lndHomeCtaPrime:'Demandez à Mike →',lndHomeCtaGhost:'Trouver un technicien de confiance',lndHomeFoot:'AVIS HONNÊTE · SANS DEVINETTE · JAMAIS DANS LE FLOU'},
+  pt:{reachCall:'LIGAR',reachFace:'FACETIME',clear:'LIMPAR',mikeName:'MIKE',headRole:'TÉCNICO MESTRE',headStatus:'SEMPRE ATIVO',diagHead:'FALHA IDENTIFICADA',mentorSig:'— Mike',composer:'Pergunte ao Mike…',
+    lndLive:'MIKE · AO VIVO',lndImTech:'SOU TÉCNICO',lndImHome:'SOU PROPRIETÁRIO',lndReachText:'TEXTO',lndMentorSig:'— Mike · 25 anos',
+    lndTechH1a:'VEJA O MIKE',lndTechH1b:'RESOLVER',lndTechH1c:'UMA CHAMADA',lndTechH1d:'EM TEMPO REAL.',
+    lndTechLede:'<b>25 anos de instinto de técnico mestre, ao vivo:</b> ele lê o sistema, identifica a falha, acha a peça, dá o preço — e te deixa mais afiado para a próxima.',
+    lndTechCHL:'DIAGNÓSTICO AO VIVO',lndTechCHR:'CARRIER 58STA · SEM AQUECER',lndTechUnit:'FALHA IDENTIFICADA',lndTechFault:'BLOQUEIO DE <span class="bad">LIMITE ALTO</span>',
+    lndTechVerdict:'O calor se acumula por um filtro sujo. <em>Verifique o fluxo de ar antes do interruptor de limite</em> — tire o filtro, gire a turbina.',
+    lndTechG1L:'PLENO F',lndTechG2L:'ESTÁTICA WC',lndTechG3L:'AMP SOPRADOR',lndTechC1:'CÓDIGO 33·13',lndTechC2:'DADOS TÉC.',lndTechC3:'PEÇA · LH33WZ511 · $34',lndTechC4:'DIAGRAMA',
+    lndTechMentor:'“Chamada limpa. Na próxima cote o gabinete de filtro IAQ — é o upsell que te leva a salário de técnico sênior.”',
+    lndTechReachCall:'Sem usar as mãos',lndTechReachFace:'Veja. Venda.',lndTechReachText:'Conversa diária',
+    lndTechCtaPrime:'Pergunte ao Mike →',lndTechCtaGhost:'Ver um diagnóstico real →',lndTechFoot:'EPA 608 · NATE · ASHRAE · 25 ANOS EM CADA SISTEMA',
+    lndHomeH1a:'SAIBA O QUE ESTÁ',lndHomeH1b:'ERRADO',lndHomeH1c:'ANTES QUE TE',lndHomeH1d:'COTEM.',
+    lndHomeLede:'Um técnico mestre de 25 anos, em bom português: <b>ele diz o que está quebrado, se é seguro, quão urgente e exatamente o que perguntar</b> — para você entrar no conserto sabendo mais que o vendedor.',
+    lndHomeCHL:'PARECER DO MIKE',lndHomeCHR:'AR CENTRAL · NÃO RESFRIA',lndHomeUnit:'É ISSO QUE ESTÁ ROLANDO',lndHomeFault:'SEU AR NÃO <span class="bad">RESFRIA</span>',
+    lndHomeVerdict:'Parece carga baixa de gás — geralmente um pequeno vazamento, não um sistema novo. <em>Faça primeiro um teste de vazamento.</em> Não deixe ninguém te vender uma troca completa ainda.',
+    lndHomeG1V:'SEGURO',lndHomeG1L:'SEM FOGO / CO',lndHomeG2V:'ESTA SEMANA',lndHomeG2L:'URGÊNCIA',lndHomeG3V:'MANDE<br>VERIFICAR',lndHomeG3L:'O QUE PERGUNTAR',
+    lndHomeC1:'O QUE ESTÁ ERRADO',lndHomeC2:'É SEGURO?',lndHomeC3:'O QUE PERGUNTAR',lndHomeC4:'PRECISA DE UM PRO?',
+    lndHomeMentor:'“Você não precisa de um sistema novo. Peça um teste de vazamento primeiro — se um técnico já parte para ‘trocar’, busque uma segunda opinião.”',
+    lndHomeReachCall:'Conversar',lndHomeReachFace:'Mostre a unidade',lndHomeReachText:'Envie uma foto',
+    lndHomeCtaPrime:'Pergunte ao Mike →',lndHomeCtaGhost:'Encontrar um técnico local de confiança',lndHomeFoot:'PARECER HONESTO · SEM ACHISMO · NUNCA NO ESCURO'}
 };
 function v2t(key){
   var lang=(typeof currentLang!=='undefined')?currentLang:'en';
@@ -5658,7 +5959,11 @@ function v2t(key){
 function applyV2Lang(){
   document.querySelectorAll('[data-v2i18n]').forEach(function(el){
     var k=el.getAttribute('data-v2i18n');
-    if(k)el.textContent=v2t(k);
+    if(!k)return;
+    var v=v2t(k);
+    // Landing strings carry trusted, static inline markup (<b>/<em>/<br>/<span class="bad">).
+    // These come only from V2_I18N (no user input), so innerHTML is safe here.
+    if(v.indexOf('<')>=0)el.innerHTML=v; else el.textContent=v;
   });
   var nm=document.getElementById('v2HeadName');if(nm)nm.textContent=v2t('mikeName');
   var rl=document.getElementById('v2HeadRole');if(rl)rl.textContent=v2t('headRole');
@@ -8272,6 +8577,12 @@ function dismissPwaHint(){
 }
 function showPwaInstallBanner(kind){
   try{if(localStorage.getItem('trazer_pwa_hint_dismissed')==='1')return;}catch(e){}
+  // GAP2 — kill the install banner on cold launch. The Frame G landing is the front
+  // door; an install nag must never crowd it. Only surface the hint once the visitor
+  // is signed in (currentUser set / auth overlay dismissed) — never on first load.
+  var _ov=document.getElementById('authOverlay');
+  var _coldLaunch=(typeof currentUser==='undefined'||!currentUser)||(_ov&&!_ov.classList.contains('hidden'));
+  if(_coldLaunch)return;
   var iosText={
     en:"Add Mike to your home screen — tap Share then Add to Home Screen for the full app experience.",
     es:"Añade Mike a tu pantalla de inicio — toca Compartir y luego Añadir a pantalla de inicio.",

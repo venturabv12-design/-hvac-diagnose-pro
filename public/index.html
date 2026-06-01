@@ -233,6 +233,11 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .auth-logo-name{font-family:var(--font-display);font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px;}
 .auth-card{background:#161616;border:1px solid #2a2a2a;border-radius:18px;padding:26px 22px;box-shadow:0 24px 60px rgba(0,0,0,.7);}
 .auth-trial-pill{display:flex;align-items:center;gap:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;color:#F59E0B;margin-bottom:18px;}
+.auth-migration{background:#0d0d0d;border:1px solid #2a2a2a;border-left:3px solid var(--safety);border-radius:12px;padding:18px 16px;margin-bottom:18px;}
+.auth-migration-head{font-family:var(--font-display);font-size:21px;font-weight:400;line-height:1.12;color:#fff;letter-spacing:.005em;margin-bottom:9px;}
+.auth-migration-body{font-family:var(--font-ui);font-size:13.5px;line-height:1.5;color:#c8c2b8;margin-bottom:15px;}
+.auth-migration-cta{display:block;width:100%;padding:12px;border:none;border-radius:9px;background:var(--safety);color:var(--ink);font-family:var(--font-ui);font-size:14px;font-weight:800;letter-spacing:.01em;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:background .2s;}
+.auth-migration-cta:hover{background:var(--safety-deep);}
 .auth-tabs{display:flex;gap:2px;background:#0d0d0d;border-radius:9px;padding:3px;margin-bottom:18px;}
 .auth-tab{flex:1;padding:9px;border:none;border-radius:7px;background:transparent;color:#555;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .auth-tab.active{background:#252525;color:#fff;}
@@ -1926,6 +1931,15 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     <div class="auth-logo-name">Trazer Intelligence</div>
   </div>
   <div class="auth-card">
+    <!-- MIGRATION NOTICE (Variation A, Brandon-approved). V2 is a fresh-DB launch:
+         every returning/beta user must create a new account. Shown as the default
+         auth header on this drop — honest for a clean DB, no fragile "is this an old
+         user" detection that could wedge auth. CTA flips to the Create-Account tab. -->
+    <div class="auth-migration">
+      <div class="auth-migration-head" data-v2i18n="migHead">We rebuilt everything. You need a fresh account.</div>
+      <div class="auth-migration-body" data-v2i18n="migBody">You were here from the beginning — that matters. Mike's got a whole new home now, and it doesn't carry the old one over. Takes 30 seconds to get back in. Same Mike, better everything.</div>
+      <button class="auth-migration-cta" type="button" onclick="authTab('up')" data-v2i18n="migCta">Create My Account</button>
+    </div>
     <div class="auth-trial-pill">🎯 7-day free trial — no credit card required</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tabSignIn" onclick="authTab('in')">Sign In</button>
@@ -3854,41 +3868,142 @@ async function goCheckout(){
 }
 
 // ── ONBOARDING ─────────────────────────────────────────────────
-var OB_SLIDES=[
-  {bg:'linear-gradient(160deg,#010a14 0%,#031828 60%,#061f38 100%)',emoji:'⚡',title:'<span>Trazer Intelligence</span>',body:'The most advanced HVAC field platform ever built. Your senior tech is in your pocket — 24 hours a day, 7 days a week.',voice:"Hey! I am Mike — and I am about to change the way you work forever. 25 years in the field, every system I have ever seen, every repair I have ever made — all of it is right here in your pocket. This is Trazer Intelligence. Let me show you what we can do together."},
-  {bg:'linear-gradient(160deg,#010a14 0%,#03180f 60%,#062016 100%)',emoji:'🎙️',title:'Talk to Me <span>Hands-Free</span>',body:'Tap Voice and just speak. I listen like a senior tech and diagnose in real time. <strong>No typing. No searching. Just answers.</strong>',voice:"You are crawling under a unit, your hands are full, and you need answers right now. Just tap the mic and talk to me. Tell me what you are seeing, what the pressures are, what the customer said — and I will walk you through it step by step. Hands free. Real time. Like your most experienced tech is right there with you on every single job."},
-  {bg:'linear-gradient(160deg,#010a14 0%,#180303 60%,#200607 100%)',emoji:'📷',title:'My <span>Camera Sees</span> Everything',body:'Point at any unit, nameplate, or part. Ask me what I see. <strong>Live diagnosis — like a master tech on every job.</strong>',voice:"Point your camera at anything — a nameplate, a capacitor, a wiring diagram, a unit you have never seen before — and ask me what I see. I will identify it instantly, find the parts you need with live pricing, check the warranty, and tell you exactly what is wrong. It is like having x-ray vision on every job."},
-  {bg:'linear-gradient(160deg,#010a14 0%,#0d0d03 60%,#1a1803 100%)',emoji:'💰',title:'<span>Revenue</span> on Every Job',body:'After every diagnosis I spot add-on opportunities and give you the exact words to say. <strong>Average ticket up 20 to 40 percent.</strong>',voice:"Here is where it gets really exciting. After every diagnosis, I find every dollar you might be leaving on the table — weak capacitor, dirty coils, no surge protection, a drain line waiting to flood a ceiling — and I give you the exact words to say to the homeowner. Not pushy. Just honest. Your average ticket is about to go up on every single job starting today."},
-  {bg:'linear-gradient(160deg,#010a14 0%,#030318 60%,#060a25 100%)',emoji:'🚀',title:'<span>Let us Go Dominate</span>',body:'Warranty lookup. Live parts pricing. Real-time inventory. Sales coaching. Safety alerts. <strong>This is your unfair advantage.</strong>',voice:"Warranty lookup, live parts pricing, real time inventory, sales scripts, safety alerts — everything a master tech needs, right in your hand. The other guys are still guessing. You have me. Now let us go out there, take care of every customer, grow your business, and absolutely dominate the HVAC world. I will be right here every single time you need me. Let us go!"},
+// OB_I18N — Edwin-approved first-run copy (Brandon-approved 2026-06-01), 6 languages.
+// TECH = 5 value-prop slides; HOME = 4 slides. Structural data (bg/emoji) lives on the
+// slide objects below; title/body/voice are pulled from here by currentLang so the
+// carousel translates with the language switch. NO homeowner repair prices anywhere.
+var OB_I18N={
+  en:{
+    tech:[
+      {title:'Meet your <span>new best guy</span> on the job.',body:"25 years in the field. He's not a search engine — he's the master tech you call when you're stuck, and he picks up every time.",voice:"Meet your new best guy on the job. 25 years in the field. I'm not a search engine — I'm the master tech you call when you're stuck, and I pick up every time."},
+      {title:'<span>Hands-free</span> on the roof.',body:"Hit Call and talk to Mike like you're on the phone. He hears you, answers back. No typing, no squinting at a screen mid-job.",voice:"Hands-free on the roof. Hit Call and talk to me like you're on the phone. I hear you, I answer back. No typing, no squinting at a screen mid-job."},
+      {title:'<span>Show him</span> what you\'re looking at.',body:"Pull up FaceTime and point your phone at the unit. Mike sees it live — he'll diagnose it, help you walk the customer through it, and close the job.",voice:"Show me what you're looking at. Pull up FaceTime and point your phone at the unit. I see it live — I'll diagnose it, help you walk the customer through it, and close the job."},
+      {title:'The best friend who <span>always texts back.</span>',body:"Snap a nameplate, describe a weird noise, vent about a bad call. Mike's here for all of it — and he'll help you get better every time you ask.",voice:"The best friend who always texts back. Snap a nameplate, describe a weird noise, vent about a bad call. I'm here for all of it — and I'll help you get better every time you ask."},
+      {title:'Mike helps you <span>grow.</span>',body:"The more you work with him, the better you get. He'll tell you what he knows, why, and how to make more money doing it right.",voice:"I help you grow. The more you work with me, the better you get. I'll tell you what I know, why, and how to make more money doing it right."}
+    ],
+    home:[
+      {title:'An honest HVAC expert, <span>right in your pocket.</span>',body:"25 years in the field. He'll tell you what's actually wrong, whether it's urgent, and what to do next — in plain English.",voice:"An honest HVAC expert, right in your pocket. 25 years in the field. I'll tell you what's actually wrong, whether it's urgent, and what to do next — in plain English."},
+      {title:'No more guessing, <span>no more getting talked around.</span>',body:"Mike tells you what's wrong with your system, if it's safe to run, and what questions to ask whoever comes out. You show up informed.",voice:"No more guessing, no more getting talked around. I tell you what's wrong with your system, if it's safe to run, and what questions to ask whoever comes out. You show up informed."},
+      {title:'<span>Show him</span> your unit.',body:"Point your phone at your system and Mike sees it. He'll walk you through what he's looking at, right there on the call.",voice:"Show me your unit. Point your phone at your system and I see it. I'll walk you through what I'm looking at, right there on the call."},
+      {title:'When you need <span>a pro.</span>',body:"If your system needs a real hand, Mike will help you find a local tech — and make sure they know exactly what they're walking into.",voice:"When you need a pro. If your system needs a real hand, I'll help you find a local tech — and make sure they know exactly what they're walking into."}
+    ]
+  },
+  es:{
+    tech:[
+      {title:'Conoce a tu <span>nuevo mejor aliado</span> en el trabajo.',body:"25 años en el campo. No es un buscador — es el técnico maestro al que llamas cuando te atascas, y siempre contesta.",voice:"Conoce a tu nuevo mejor aliado en el trabajo. 25 años en el campo. No soy un buscador — soy el técnico maestro al que llamas cuando te atascas, y siempre contesto."},
+      {title:'<span>Manos libres</span> en el techo.',body:"Toca Llamar y habla con Mike como por teléfono. Te escucha, te responde. Sin escribir, sin forzar la vista en plena chamba.",voice:"Manos libres en el techo. Toca Llamar y háblame como por teléfono. Te escucho, te respondo. Sin escribir, sin forzar la vista en plena chamba."},
+      {title:'<span>Muéstrale</span> lo que estás viendo.',body:"Abre FaceTime y apunta tu teléfono a la unidad. Mike lo ve en vivo — lo diagnostica, te ayuda a explicárselo al cliente y a cerrar el trabajo.",voice:"Muéstrame lo que estás viendo. Abre FaceTime y apunta tu teléfono a la unidad. Lo veo en vivo — lo diagnostico, te ayudo a explicárselo al cliente y a cerrar el trabajo."},
+      {title:'El mejor amigo que <span>siempre responde.</span>',body:"Foto de una placa, describe un ruido raro, desahógate de un mal trabajo. Mike está para todo — y te ayuda a mejorar cada vez que preguntas.",voice:"El mejor amigo que siempre responde. Foto de una placa, describe un ruido raro, desahógate de un mal trabajo. Estoy para todo — y te ayudo a mejorar cada vez que preguntas."},
+      {title:'Mike te ayuda a <span>crecer.</span>',body:"Mientras más trabajas con él, mejor te vuelves. Te dice lo que sabe, por qué, y cómo ganar más haciéndolo bien.",voice:"Te ayudo a crecer. Mientras más trabajas conmigo, mejor te vuelves. Te digo lo que sé, por qué, y cómo ganar más haciéndolo bien."}
+    ],
+    home:[
+      {title:'Un experto honesto en HVAC, <span>en tu bolsillo.</span>',body:"25 años en el campo. Te dice qué está realmente mal, si es urgente y qué hacer después — en palabras claras.",voice:"Un experto honesto en HVAC, en tu bolsillo. 25 años en el campo. Te digo qué está realmente mal, si es urgente y qué hacer después — en palabras claras."},
+      {title:'Sin adivinar, <span>sin que te enreden.</span>',body:"Mike te dice qué está mal en tu sistema, si es seguro usarlo y qué preguntar a quien venga. Llegas informado.",voice:"Sin adivinar, sin que te enreden. Te digo qué está mal en tu sistema, si es seguro usarlo y qué preguntar a quien venga. Llegas informado."},
+      {title:'<span>Muéstrale</span> tu unidad.',body:"Apunta tu teléfono a tu sistema y Mike lo ve. Te explica lo que está mirando, ahí mismo en la llamada.",voice:"Muéstrame tu unidad. Apunta tu teléfono a tu sistema y lo veo. Te explico lo que estoy mirando, ahí mismo en la llamada."},
+      {title:'Cuando necesitas <span>un profesional.</span>',body:"Si tu sistema necesita una mano de verdad, Mike te ayuda a encontrar un técnico local — y se asegura de que sepa exactamente con qué se va a encontrar.",voice:"Cuando necesitas un profesional. Si tu sistema necesita una mano de verdad, te ayudo a encontrar un técnico local — y me aseguro de que sepa exactamente con qué se va a encontrar."}
+    ]
+  },
+  zh:{
+    tech:[
+      {title:'认识你工作中的<span>新搭档。</span>',body:"25 年现场经验。他不是搜索引擎 — 他是你卡住时打电话求助的大师级技师，而且每次都接。",voice:"认识你工作中的新搭档。我有 25 年现场经验。我不是搜索引擎 — 我是你卡住时打电话求助的大师级技师，而且每次都接。"},
+      {title:'在屋顶上<span>解放双手。</span>',body:"按下通话，像打电话一样跟 Mike 说话。他听得到你，也会回答。不用打字，不用在干活时眯着眼看屏幕。",voice:"在屋顶上解放双手。按下通话，像打电话一样跟我说话。我听得到你，也会回答。不用打字，不用在干活时眯着眼看屏幕。"},
+      {title:'把你看到的<span>给他看。</span>',body:"打开 FaceTime，把手机对准设备。Mike 实时看到 — 他会做诊断，帮你向客户讲解，并促成这单。",voice:"把你看到的给我看。打开 FaceTime，把手机对准设备。我实时看到 — 我会做诊断，帮你向客户讲解，并促成这单。"},
+      {title:'<span>随叫随回</span>的好兄弟。',body:"拍张铭牌、描述一个奇怪的噪音、吐槽一单糟心活。Mike 全都奉陪 — 而且你每次问，他都帮你变得更强。",voice:"随叫随回的好兄弟。拍张铭牌、描述一个奇怪的噪音、吐槽一单糟心活。我全都奉陪 — 而且你每次问，我都帮你变得更强。"},
+      {title:'Mike 帮你<span>成长。</span>',body:"你和他合作越多，你就越厉害。他会告诉你他知道什么、为什么，以及怎样把活干对、多赚钱。",voice:"我帮你成长。你和我合作越多，你就越厉害。我会告诉你我知道什么、为什么，以及怎样把活干对、多赚钱。"}
+    ],
+    home:[
+      {title:'一位诚实的暖通专家，<span>就在你口袋里。</span>',body:"25 年现场经验。他会用大白话告诉你到底哪里出了问题、是否紧急、下一步该怎么办。",voice:"一位诚实的暖通专家，就在你口袋里。我有 25 年现场经验。我会用大白话告诉你到底哪里出了问题、是否紧急、下一步该怎么办。"},
+      {title:'不再瞎猜，<span>不再被绕进去。</span>',body:"Mike 告诉你系统哪里出了问题、是否能安全运行，以及该问上门的人什么。你做到心里有数。",voice:"不再瞎猜，不再被绕进去。我告诉你系统哪里出了问题、是否能安全运行，以及该问上门的人什么。你做到心里有数。"},
+      {title:'把你的设备<span>给他看。</span>',body:"把手机对准你的系统，Mike 就能看到。他会在通话里当场带你了解他看到的情况。",voice:"把你的设备给我看。把手机对准你的系统，我就能看到。我会在通话里当场带你了解我看到的情况。"},
+      {title:'当你需要<span>专业人士时。</span>',body:"如果你的系统确实需要专业人手，Mike 会帮你找一位本地技师 — 并确保对方清楚知道要面对什么。",voice:"当你需要专业人士时。如果你的系统确实需要专业人手，我会帮你找一位本地技师 — 并确保对方清楚知道要面对什么。"}
+    ]
+  },
+  vi:{
+    tech:[
+      {title:'Gặp <span>người anh em mới</span> trên công việc.',body:"25 năm trong nghề. Anh không phải công cụ tìm kiếm — anh là thợ cả bạn gọi khi bí, và lúc nào cũng bắt máy.",voice:"Gặp người anh em mới trên công việc. 25 năm trong nghề. Tôi không phải công cụ tìm kiếm — tôi là thợ cả bạn gọi khi bí, và lúc nào cũng bắt máy."},
+      {title:'<span>Rảnh tay</span> trên mái nhà.',body:"Nhấn Gọi và nói chuyện với Mike như đang gọi điện. Anh nghe bạn, trả lời lại. Không gõ phím, không nheo mắt nhìn màn hình giữa lúc làm.",voice:"Rảnh tay trên mái nhà. Nhấn Gọi và nói chuyện với tôi như đang gọi điện. Tôi nghe bạn, trả lời lại. Không gõ phím, không nheo mắt nhìn màn hình giữa lúc làm."},
+      {title:'<span>Cho anh xem</span> thứ bạn đang nhìn.',body:"Mở FaceTime và chĩa điện thoại vào thiết bị. Mike thấy trực tiếp — anh chẩn đoán, giúp bạn giải thích cho khách và chốt việc.",voice:"Cho tôi xem thứ bạn đang nhìn. Mở FaceTime và chĩa điện thoại vào thiết bị. Tôi thấy trực tiếp — tôi chẩn đoán, giúp bạn giải thích cho khách và chốt việc."},
+      {title:'Người bạn <span>luôn nhắn lại.</span>',body:"Chụp một tấm nhãn máy, mô tả một tiếng ồn lạ, xả về một ca khó. Mike có mặt cho tất cả — và giúp bạn giỏi hơn mỗi lần bạn hỏi.",voice:"Người bạn luôn nhắn lại. Chụp một tấm nhãn máy, mô tả một tiếng ồn lạ, xả về một ca khó. Tôi có mặt cho tất cả — và giúp bạn giỏi hơn mỗi lần bạn hỏi."},
+      {title:'Mike giúp bạn <span>tiến bộ.</span>',body:"Càng làm việc với anh, bạn càng giỏi. Anh nói cho bạn biết anh biết gì, tại sao, và làm sao kiếm được nhiều hơn khi làm đúng.",voice:"Tôi giúp bạn tiến bộ. Càng làm việc với tôi, bạn càng giỏi. Tôi nói cho bạn biết tôi biết gì, tại sao, và làm sao kiếm được nhiều hơn khi làm đúng."}
+    ],
+    home:[
+      {title:'Một chuyên gia HVAC trung thực, <span>ngay trong túi bạn.</span>',body:"25 năm trong nghề. Anh sẽ nói cho bạn biết thật sự hỏng gì, có gấp không, và làm gì tiếp theo — bằng lời dễ hiểu.",voice:"Một chuyên gia HVAC trung thực, ngay trong túi bạn. 25 năm trong nghề. Tôi sẽ nói cho bạn biết thật sự hỏng gì, có gấp không, và làm gì tiếp theo — bằng lời dễ hiểu."},
+      {title:'Hết đoán mò, <span>hết bị nói vòng vo.</span>',body:"Mike cho bạn biết hệ thống hỏng gì, có chạy an toàn không, và nên hỏi gì người tới sửa. Bạn xuất hiện với đầy đủ thông tin.",voice:"Hết đoán mò, hết bị nói vòng vo. Tôi cho bạn biết hệ thống hỏng gì, có chạy an toàn không, và nên hỏi gì người tới sửa. Bạn xuất hiện với đầy đủ thông tin."},
+      {title:'<span>Cho anh xem</span> thiết bị của bạn.',body:"Chĩa điện thoại vào hệ thống và Mike thấy được. Anh sẽ dẫn bạn qua những gì anh đang nhìn, ngay trong cuộc gọi.",voice:"Cho tôi xem thiết bị của bạn. Chĩa điện thoại vào hệ thống và tôi thấy được. Tôi sẽ dẫn bạn qua những gì tôi đang nhìn, ngay trong cuộc gọi."},
+      {title:'Khi bạn cần <span>một thợ chuyên nghiệp.</span>',body:"Nếu hệ thống của bạn cần một bàn tay thật sự, Mike sẽ giúp bạn tìm một thợ địa phương — và đảm bảo họ biết chính xác sẽ phải đối mặt với gì.",voice:"Khi bạn cần một thợ chuyên nghiệp. Nếu hệ thống của bạn cần một bàn tay thật sự, tôi sẽ giúp bạn tìm một thợ địa phương — và đảm bảo họ biết chính xác sẽ phải đối mặt với gì."}
+    ]
+  },
+  fr:{
+    tech:[
+      {title:'Voici votre <span>nouveau meilleur allié</span> sur le terrain.',body:"25 ans de métier. Ce n'est pas un moteur de recherche — c'est le maître technicien que vous appelez quand vous êtes coincé, et il répond à chaque fois.",voice:"Voici votre nouveau meilleur allié sur le terrain. 25 ans de métier. Je ne suis pas un moteur de recherche — je suis le maître technicien que vous appelez quand vous êtes coincé, et je réponds à chaque fois."},
+      {title:'<span>Mains libres</span> sur le toit.',body:"Touchez Appeler et parlez à Mike comme au téléphone. Il vous entend, il vous répond. Pas de saisie, pas à plisser les yeux sur un écran en plein boulot.",voice:"Mains libres sur le toit. Touchez Appeler et parlez-moi comme au téléphone. Je vous entends, je vous réponds. Pas de saisie, pas à plisser les yeux sur un écran en plein boulot."},
+      {title:'<span>Montrez-lui</span> ce que vous regardez.',body:"Lancez FaceTime et pointez votre téléphone vers l'unité. Mike la voit en direct — il diagnostique, vous aide à l'expliquer au client et à conclure le job.",voice:"Montrez-moi ce que vous regardez. Lancez FaceTime et pointez votre téléphone vers l'unité. Je la vois en direct — je diagnostique, je vous aide à l'expliquer au client et à conclure le job."},
+      {title:'Le meilleur ami qui <span>répond toujours.</span>',body:"Photographiez une plaque, décrivez un bruit bizarre, défoulez-vous après un mauvais job. Mike est là pour tout — et il vous fait progresser à chaque question.",voice:"Le meilleur ami qui répond toujours. Photographiez une plaque, décrivez un bruit bizarre, défoulez-vous après un mauvais job. Je suis là pour tout — et je vous fais progresser à chaque question."},
+      {title:'Mike vous fait <span>progresser.</span>',body:"Plus vous travaillez avec lui, meilleur vous devenez. Il vous dit ce qu'il sait, pourquoi, et comment gagner plus en le faisant bien.",voice:"Je vous fais progresser. Plus vous travaillez avec moi, meilleur vous devenez. Je vous dis ce que je sais, pourquoi, et comment gagner plus en le faisant bien."}
+    ],
+    home:[
+      {title:'Un expert CVC honnête, <span>dans votre poche.</span>',body:"25 ans de métier. Il vous dit ce qui ne va vraiment pas, si c'est urgent, et quoi faire ensuite — en clair.",voice:"Un expert CVC honnête, dans votre poche. 25 ans de métier. Je vous dis ce qui ne va vraiment pas, si c'est urgent, et quoi faire ensuite — en clair."},
+      {title:'Fini de deviner, <span>fini de se faire embobiner.</span>',body:"Mike vous dit ce qui ne va pas dans votre système, s'il est sûr de le faire tourner, et quelles questions poser à celui qui vient. Vous arrivez informé.",voice:"Fini de deviner, fini de se faire embobiner. Je vous dis ce qui ne va pas dans votre système, s'il est sûr de le faire tourner, et quelles questions poser à celui qui vient. Vous arrivez informé."},
+      {title:'<span>Montrez-lui</span> votre unité.',body:"Pointez votre téléphone vers votre système et Mike le voit. Il vous explique ce qu'il regarde, en direct pendant l'appel.",voice:"Montrez-moi votre unité. Pointez votre téléphone vers votre système et je le vois. Je vous explique ce que je regarde, en direct pendant l'appel."},
+      {title:'Quand vous avez besoin <span>d\'un pro.</span>',body:"Si votre système a besoin d'une vraie main, Mike vous aide à trouver un technicien local — et s'assure qu'il sait exactement ce qui l'attend.",voice:"Quand vous avez besoin d'un pro. Si votre système a besoin d'une vraie main, je vous aide à trouver un technicien local — et je m'assure qu'il sait exactement ce qui l'attend."}
+    ]
+  },
+  pt:{
+    tech:[
+      {title:'Conheça seu <span>novo melhor parceiro</span> no serviço.',body:"25 anos de campo. Ele não é um buscador — é o técnico mestre que você chama quando trava, e ele atende toda vez.",voice:"Conheça seu novo melhor parceiro no serviço. 25 anos de campo. Eu não sou um buscador — sou o técnico mestre que você chama quando trava, e atendo toda vez."},
+      {title:'<span>Mãos livres</span> no telhado.',body:"Toque em Ligar e fale com o Mike como no telefone. Ele te ouve, te responde. Sem digitar, sem apertar os olhos na tela no meio do serviço.",voice:"Mãos livres no telhado. Toque em Ligar e fale comigo como no telefone. Eu te ouço, te respondo. Sem digitar, sem apertar os olhos na tela no meio do serviço."},
+      {title:'<span>Mostre a ele</span> o que você está vendo.',body:"Abra o FaceTime e aponte o celular para a unidade. O Mike vê ao vivo — ele diagnostica, ajuda você a explicar pro cliente e a fechar o serviço.",voice:"Mostre a mim o que você está vendo. Abra o FaceTime e aponte o celular para a unidade. Eu vejo ao vivo — diagnostico, ajudo você a explicar pro cliente e a fechar o serviço."},
+      {title:'O melhor amigo que <span>sempre responde.</span>',body:"Tire foto de uma plaqueta, descreva um barulho estranho, desabafe sobre um serviço ruim. O Mike está aí pra tudo — e te ajuda a melhorar toda vez que você pergunta.",voice:"O melhor amigo que sempre responde. Tire foto de uma plaqueta, descreva um barulho estranho, desabafe sobre um serviço ruim. Eu estou aí pra tudo — e te ajudo a melhorar toda vez que você pergunta."},
+      {title:'O Mike te ajuda a <span>crescer.</span>',body:"Quanto mais você trabalha com ele, melhor você fica. Ele te diz o que sabe, por quê, e como ganhar mais fazendo certo.",voice:"Eu te ajudo a crescer. Quanto mais você trabalha comigo, melhor você fica. Eu te digo o que sei, por quê, e como ganhar mais fazendo certo."}
+    ],
+    home:[
+      {title:'Um especialista honesto em HVAC, <span>no seu bolso.</span>',body:"25 anos de campo. Ele te diz o que está realmente errado, se é urgente e o que fazer em seguida — em bom português.",voice:"Um especialista honesto em HVAC, no seu bolso. 25 anos de campo. Eu te digo o que está realmente errado, se é urgente e o que fazer em seguida — em bom português."},
+      {title:'Sem mais achismo, <span>sem mais ser enrolado.</span>',body:"O Mike te diz o que está errado no seu sistema, se é seguro ligar, e o que perguntar pra quem aparecer. Você chega informado.",voice:"Sem mais achismo, sem mais ser enrolado. Eu te digo o que está errado no seu sistema, se é seguro ligar, e o que perguntar pra quem aparecer. Você chega informado."},
+      {title:'<span>Mostre a ele</span> a sua unidade.',body:"Aponte o celular pro seu sistema e o Mike vê. Ele te explica o que está olhando, ali mesmo na chamada.",voice:"Mostre a mim a sua unidade. Aponte o celular pro seu sistema e eu vejo. Eu te explico o que estou olhando, ali mesmo na chamada."},
+      {title:'Quando você precisa <span>de um profissional.</span>',body:"Se o seu sistema precisa de uma mão de verdade, o Mike te ajuda a achar um técnico local — e garante que ele saiba exatamente com o que vai lidar.",voice:"Quando você precisa de um profissional. Se o seu sistema precisa de uma mão de verdade, eu te ajudo a achar um técnico local — e garanto que ele saiba exatamente com o que vai lidar."}
+    ]
+  }
+};
+function getObPack(){
+  var lang=(typeof currentLang!=='undefined')?currentLang:'en';
+  return OB_I18N[lang]||OB_I18N.en;
+}
+// Structural slide data (bg gradient + emoji) only. Title/body/voice are pulled from
+// OB_I18N per currentLang at render time, so the carousel translates with the language
+// switch. TECH = 5 slides (best-guy / hands-free Call / FaceTime / text best-friend /
+// mentor-grows-you); HOME = 4 (honest expert / no getting talked around / show your
+// unit / when you need a pro). NO homeowner repair prices anywhere.
+var OB_STRUCT_TECH=[
+  {bg:'linear-gradient(160deg,#010a14 0%,#031828 60%,#061f38 100%)',emoji:'🤝'},
+  {bg:'linear-gradient(160deg,#010a14 0%,#03180f 60%,#062016 100%)',emoji:'📞'},
+  {bg:'linear-gradient(160deg,#010a14 0%,#180303 60%,#200607 100%)',emoji:'📹'},
+  {bg:'linear-gradient(160deg,#010a14 0%,#0d0d03 60%,#1a1803 100%)',emoji:'💬'},
+  {bg:'linear-gradient(160deg,#010a14 0%,#030318 60%,#060a25 100%)',emoji:'📈'},
 ];
+var OB_STRUCT_HOME=[
+  {bg:'linear-gradient(160deg,#010a14 0%,#031428 60%,#041f38 100%)',emoji:'🧰'},
+  {bg:'linear-gradient(160deg,#010a14 0%,#030f18 60%,#051828 100%)',emoji:'🛡️'},
+  {bg:'linear-gradient(160deg,#010a14 0%,#030f18 60%,#051828 100%)',emoji:'📷'},
+  {bg:'linear-gradient(160deg,#010a14 0%,#030318 60%,#060a25 100%)',emoji:'🤝'},
+];
+// Merge structural data with the active language's copy into the render array.
+function buildObSlides(){
+  var pack=getObPack();
+  var isHome=!!(currentUser&&currentUser.role==='homeowner');
+  var struct=isHome?OB_STRUCT_HOME:OB_STRUCT_TECH;
+  var copy=isHome?pack.home:pack.tech;
+  return struct.map(function(s,i){
+    var c=copy[i]||{title:'',body:'',voice:''};
+    return {bg:s.bg,emoji:s.emoji,title:c.title,body:c.body,voice:c.voice};
+  });
+}
+var OB_SLIDES=buildObSlides();
 var obStep=0;
-
-var OB_SLIDES_HOME=[
-  {bg:'linear-gradient(160deg,#010a14 0%,#031428 60%,#041f38 100%)',emoji:'🏠',title:'Welcome to <span>Trazer Intelligence</span>',body:'Finally, a way to understand your HVAC system without needing to be an expert. <strong>We have your back.</strong>',voice:"Welcome! I am Mike, and I am here to help you understand exactly what is going on with your home's heating and cooling system. No technical jargon. No guessing. Just clear, honest answers."},
-  {bg:'linear-gradient(160deg,#010a14 0%,#030f18 60%,#051828 100%)',emoji:'📷',title:'<span>Show Me</span> Your System',body:'Take a photo or video of your unit, the thermostat, or anything that looks off. I will tell you exactly what it is and what is happening.',voice:"Take a photo of your system, your thermostat, or anything that does not look right, and I will tell you exactly what it is, whether there is a problem, and what you should do next. It is that simple."},
-  {bg:'linear-gradient(160deg,#010a14 0%,#030f18 60%,#051828 100%)',emoji:'💡',title:'<span>Understand</span> the Problem',body:'I will explain what is wrong in plain English, how urgent it is, and what a fair repair should cost. <strong>No surprises.</strong>',voice:"I will explain exactly what is wrong with your system in plain English. How urgent it is, whether you can wait, and what a fair repair price looks like in your area. No more wondering if you are being overcharged."},
-  {bg:'linear-gradient(160deg,#010a14 0%,#0d0d03 60%,#181803 100%)',emoji:'🛡️',title:'<span>Stay Safe</span> at Home',body:'I will flag any safety concerns immediately — carbon monoxide risks, gas leaks, electrical hazards. <strong>Your family comes first.</strong>',voice:"Most importantly, if I see anything that could be a safety risk — carbon monoxide, a gas leak, an electrical hazard — I will tell you immediately and clearly. Your family's safety is the number one priority."},
-  {bg:'linear-gradient(160deg,#010a14 0%,#030318 60%,#060a25 100%)',emoji:'✅',title:"You're <span>All Set</span>",body:'Take a photo, describe what is happening, and I will walk you through everything. <strong>Let us get your home comfortable again.</strong>',voice:"You are all set. Take a photo of your system, tell me what is happening, and I will walk you through everything step by step. Let us get your home comfortable again."},
-];
 
 function showOnboarding(){
   obStep=0;
-  // Use homeowner slides if role is homeowner
-  if(currentUser&&currentUser.role==='homeowner'){
-    OB_SLIDES=OB_SLIDES_HOME;
-    // Update dots count
-    var dots=document.getElementById('obBar');
-    if(dots)dots.innerHTML='';
-  } else {
-    // Reset to contractor slides (already defined above)
-    OB_SLIDES=[
-      {bg:'linear-gradient(160deg,#010a14 0%,#031828 60%,#061f38 100%)',emoji:'⚡',title:'<span>Trazer Intelligence</span>',body:'The most advanced HVAC field platform ever built. Your senior tech is in your pocket — 24 hours a day, 7 days a week.',voice:"Hey! I am Mike — and I am about to change the way you work forever. 25 years in the field, every system I have ever seen, every repair I have ever made — all of it is right here in your pocket. This is Trazer Intelligence. Let me show you what we can do together."},
-      {bg:'linear-gradient(160deg,#010a14 0%,#03180f 60%,#062016 100%)',emoji:'🎙️',title:'Talk to Me <span>Hands-Free</span>',body:'Tap Voice and just speak. I listen like a senior tech and diagnose in real time. <strong>No typing. No searching. Just answers.</strong>',voice:"You are crawling under a unit, your hands are full, and you need answers right now. Just tap the mic and talk to me. Tell me what you are seeing, what the pressures are, what the customer said — and I will walk you through it step by step. Hands free. Real time. Like your most experienced tech is right there with you on every single job."},
-      {bg:'linear-gradient(160deg,#010a14 0%,#180303 60%,#200607 100%)',emoji:'📷',title:'My <span>Camera Sees</span> Everything',body:'Point at any unit, nameplate, or part. Ask me what I see. <strong>Live diagnosis — like a master tech on every job.</strong>',voice:"Point your camera at anything — a nameplate, a capacitor, a wiring diagram, a unit you have never seen before — and ask me what I see. I will identify it instantly, find the parts you need with live pricing, check the warranty, and tell you exactly what is wrong. It is like having x-ray vision on every job."},
-      {bg:'linear-gradient(160deg,#010a14 0%,#0d0d03 60%,#1a1803 100%)',emoji:'💰',title:'<span>Revenue</span> on Every Job',body:'After every diagnosis I spot add-on opportunities and give you the exact words to say. <strong>Average ticket up 20 to 40 percent.</strong>',voice:"Here is where it gets really exciting. After every diagnosis, I find every dollar you might be leaving on the table — weak capacitor, dirty coils, no surge protection, a drain line waiting to flood a ceiling — and I give you the exact words to say to the homeowner. Not pushy. Just honest. Your average ticket is about to go up on every single job starting today."},
-      {bg:'linear-gradient(160deg,#010a14 0%,#030318 60%,#060a25 100%)',emoji:'🚀',title:'<span>Let us Go Dominate</span>',body:'Warranty lookup. Live parts pricing. Real-time inventory. Sales coaching. Safety alerts. <strong>This is your unfair advantage.</strong>',voice:"Warranty lookup, live parts pricing, real time inventory, sales scripts, safety alerts — everything a master tech needs, right in your hand. The other guys are still guessing. You have me. Now let us go out there, take care of every customer, grow your business, and absolutely dominate the HVAC world. I will be right here every single time you need me. Let us go!"},
-    ];
-  }
+  // Rebuild slides for the current role + language every time the carousel opens.
+  OB_SLIDES=buildObSlides();
   var el=document.getElementById('onboardingOverlay');
   if(!el)return;
   el.classList.add('show');
@@ -3908,13 +4023,24 @@ function showOnboarding(){
 
 function renderOb(){
   var s=OB_SLIDES[obStep];
+  if(!s)return;
   var obContent=document.querySelector('.ob-content');if(obContent){obContent.classList.remove('slide-in');void obContent.offsetWidth;obContent.classList.add('slide-in');}
   var bg=document.getElementById('obBg');if(bg)bg.style.background=s.bg;
   var em=document.getElementById('obEmoji');if(em)em.textContent=s.emoji;
   var ti=document.getElementById('obTitle');if(ti)ti.innerHTML=s.title;
   var bo=document.getElementById('obBody');if(bo)bo.innerHTML=s.body;
-  var nb=document.getElementById('obNextBtn');if(nb)nb.textContent=obStep<OB_SLIDES.length-1?'Next  →':'Get Started →';
-  document.querySelectorAll('.ob-dot').forEach(function(d,i){d.classList.toggle('on',i<=obStep);});
+  var lastStep=obStep>=OB_SLIDES.length-1;
+  var nb=document.getElementById('obNextBtn');if(nb)nb.textContent=(lastStep?v2t('obStart'):v2t('obNext'));
+  // Dots match the active slide count (5 tech / 4 home), rebuilt to avoid a stray
+  // 5th dot leaking onto the 4-slide homeowner flow from the static markup.
+  var dotsWrap=document.querySelector('.ob-dots');
+  if(dotsWrap){
+    if(dotsWrap.children.length!==OB_SLIDES.length){
+      dotsWrap.innerHTML='';
+      for(var i=0;i<OB_SLIDES.length;i++){var d=document.createElement('div');d.className='ob-dot';dotsWrap.appendChild(d);}
+    }
+    Array.prototype.forEach.call(dotsWrap.children,function(d,i){d.classList.toggle('on',i<=obStep);});
+  }
   var bb=document.getElementById('obBackBtn');if(bb)bb.style.display=obStep>0?'block':'none';
 }
 
@@ -3990,6 +4116,26 @@ function obFinish(){
   stopObSpeaking();
   localStorage.setItem('trazer_onboarded','1');
   var el=document.getElementById('onboardingOverlay');if(el)el.classList.remove('show');
+  // MAGIC MOMENT — land the user in the chat surface with a ready-to-send starter.
+  // We PRE-FILL the composer (do NOT auto-send) so the very first thing the user sees
+  // after onboarding is an open conversation with Mike, one tap from their first reply.
+  // No /api/ai call is fired here — safe, no paywall/cost surprise, no double-send risk.
+  try{seedFirstPrompt();}catch(e){}
+}
+
+// Drop a role-appropriate first-message into the chat composer so the user lands in
+// an active conversation. Tech → nameplate/ask-Mike starter; homeowner → "tell Mike
+// what's going on". Never overwrites text the user already typed. Never auto-sends.
+function seedFirstPrompt(){
+  var ci=document.getElementById('chatInput');
+  if(!ci)return;
+  if((ci.value||'').trim())return; // respect anything the user already started typing
+  var isHome=!!(currentUser&&currentUser.role==='homeowner');
+  var seed=v2t(isHome?'seedHome':'seedTech');
+  if(!seed)return;
+  ci.value=seed;
+  try{ci.style.height='auto';ci.style.height=Math.min(ci.scrollHeight,100)+'px';}catch(e){}
+  try{ci.focus();ci.setSelectionRange(seed.length,seed.length);}catch(e){}
 }
 
 // ── ADMIN DASHBOARD ─────────────────────────────────────────────
@@ -5980,7 +6126,9 @@ var V2_I18N={
     lndHomeC1:"WHAT'S WRONG",lndHomeC2:'IS IT SAFE?',lndHomeC3:'WHAT TO ASK',lndHomeC4:'DO YOU NEED A PRO?',
     lndHomeMentor:'“You don’t need a new system. Ask them to leak-test first — if a tech jumps straight to ‘replace,’ get a second opinion.”',
     lndHomeReachCall:'Talk it through',lndHomeReachFace:'Show him the unit',lndHomeReachText:'Snap a photo',
-    lndHomeCtaPrime:'Ask Mike anything →',lndHomeCtaGhost:'Find a trusted local tech',lndHomeFoot:'HONEST READ · NO GUESSWORK · NEVER IN THE DARK'},
+    lndHomeCtaPrime:'Ask Mike anything →',lndHomeCtaGhost:'Find a trusted local tech',lndHomeFoot:'HONEST READ · NO GUESSWORK · NEVER IN THE DARK',
+    migHead:'We rebuilt everything. You need a fresh account.',migBody:'You were here from the beginning — that matters. Mike\'s got a whole new home now, and it doesn\'t carry the old one over. Takes 30 seconds to get back in. Same Mike, better everything.',migCta:'Create My Account',
+    obNext:'Next  →',obStart:'Get Started →',seedTech:'Hey Mike — got a nameplate here, what do you make of it?',seedHome:'Tell Mike what\'s going on with your system.'},
   es:{reachCall:'LLAMAR',reachFace:'FACETIME',clear:'BORRAR',mikeName:'MIKE',headRole:'TÉCNICO MAESTRO',headStatus:'SIEMPRE DISPONIBLE',diagHead:'FALLA IDENTIFICADA',mentorSig:'— Mike',composer:'Pregúntale a Mike…',
     heroPro:'Inteligencia Profesional de Campo HVAC',heroHome:'¿Tu aire o calefacción no funciona?',
     heroSubPro:'Mike — tu técnico maestro con IA. Diagnósticos, cámara en vivo, precios de piezas, asesoría de ingresos.',heroSubHome:'Toma una foto, describe lo que pasa y recibe una respuesta clara en segundos. Sin conocimientos de HVAC.',
@@ -6007,7 +6155,9 @@ var V2_I18N={
     lndHomeC1:'QUÉ ESTÁ MAL',lndHomeC2:'¿ES SEGURO?',lndHomeC3:'QUÉ PREGUNTAR',lndHomeC4:'¿NECESITAS UN PRO?',
     lndHomeMentor:'“No necesitas un sistema nuevo. Pide que prueben fugas primero — si un técnico salta directo a ‘reemplazar’, busca una segunda opinión.”',
     lndHomeReachCall:'Conversarlo',lndHomeReachFace:'Muéstrale la unidad',lndHomeReachText:'Manda una foto',
-    lndHomeCtaPrime:'Pregúntale a Mike →',lndHomeCtaGhost:'Encontrar un técnico de confianza',lndHomeFoot:'LECTURA HONESTA · SIN ADIVINANZAS · NUNCA A OSCURAS'},
+    lndHomeCtaPrime:'Pregúntale a Mike →',lndHomeCtaGhost:'Encontrar un técnico de confianza',lndHomeFoot:'LECTURA HONESTA · SIN ADIVINANZAS · NUNCA A OSCURAS',
+    migHead:'Reconstruimos todo. Necesitas una cuenta nueva.',migBody:'Estuviste aquí desde el principio — eso importa. Mike ahora tiene un hogar completamente nuevo, y no traslada el anterior. Toma 30 segundos volver a entrar. El mismo Mike, todo mejor.',migCta:'Crear Mi Cuenta',
+    obNext:'Siguiente  →',obStart:'Empezar →',seedTech:'Oye Mike — tengo una placa aquí, ¿qué opinas?',seedHome:'Cuéntale a Mike qué está pasando con tu sistema.'},
   zh:{reachCall:'通话',reachFace:'视频',clear:'清除',mikeName:'MIKE',headRole:'高级技师',headStatus:'随时在线',diagHead:'已识别故障',mentorSig:'— Mike',composer:'问 Mike 任何问题…',
     heroPro:'专业暖通现场智能',heroHome:'您的空调或暖气坏了吗？',
     heroSubPro:'Mike — 您的 AI 高级技师。诊断、实时摄像、配件报价、营收指导。',heroSubHome:'拍张照片，描述情况，几秒内得到清晰答案。无需任何暖通知识。',
@@ -6034,7 +6184,9 @@ var V2_I18N={
     lndHomeC1:'哪里出问题',lndHomeC2:'安全吗？',lndHomeC3:'该问什么',lndHomeC4:'需要专业人士吗？',
     lndHomeMentor:'“你不需要换新系统。先让他们做泄漏检测 — 如果技师直接说‘更换’，再找一个意见。”',
     lndHomeReachCall:'聊一聊',lndHomeReachFace:'给他看设备',lndHomeReachText:'拍张照片',
-    lndHomeCtaPrime:'问 Mike 任何问题 →',lndHomeCtaGhost:'寻找信赖的本地技师',lndHomeFoot:'诚实判断 · 不靠猜测 · 永不蒙在鼓里'},
+    lndHomeCtaPrime:'问 Mike 任何问题 →',lndHomeCtaGhost:'寻找信赖的本地技师',lndHomeFoot:'诚实判断 · 不靠猜测 · 永不蒙在鼓里',
+    migHead:'我们重建了一切。你需要一个全新的账户。',migBody:'你从一开始就在 — 这很重要。Mike 现在有了一个全新的家，不会把旧的带过来。重新登录只需 30 秒。还是那个 Mike，一切都更好。',migCta:'创建我的账户',
+    obNext:'下一步  →',obStart:'开始 →',seedTech:'嘿 Mike — 我这有一张铭牌，你怎么看？',seedHome:'告诉 Mike 你的系统出了什么情况。'},
   vi:{reachCall:'GỌI',reachFace:'FACETIME',clear:'XÓA',mikeName:'MIKE',headRole:'THỢ CẢ',headStatus:'LUÔN SẴN SÀNG',diagHead:'ĐÃ XÁC ĐỊNH LỖI',mentorSig:'— Mike',composer:'Hỏi Mike bất kỳ điều gì…',
     heroPro:'Trí Tuệ Hiện Trường HVAC Chuyên Nghiệp',heroHome:'Máy lạnh hay lò sưởi của bạn không chạy?',
     heroSubPro:'Mike — thợ cả AI của bạn. Chẩn đoán, camera trực tiếp, giá linh kiện, cố vấn doanh thu.',heroSubHome:'Chụp một tấm ảnh, mô tả tình hình, và nhận câu trả lời rõ ràng trong vài giây. Không cần biết về HVAC.',
@@ -6061,7 +6213,9 @@ var V2_I18N={
     lndHomeC1:'HỎNG GÌ',lndHomeC2:'CÓ AN TOÀN?',lndHomeC3:'HỎI GÌ',lndHomeC4:'CẦN THỢ KHÔNG?',
     lndHomeMentor:'“Bạn không cần máy mới. Bảo họ kiểm tra rò rỉ trước — nếu thợ nhảy thẳng sang ‘thay mới’, hãy hỏi ý kiến thứ hai.”',
     lndHomeReachCall:'Trò chuyện',lndHomeReachFace:'Cho anh xem máy',lndHomeReachText:'Gửi ảnh',
-    lndHomeCtaPrime:'Hỏi Mike bất kỳ điều gì →',lndHomeCtaGhost:'Tìm thợ địa phương đáng tin',lndHomeFoot:'NHẬN ĐỊNH THẬT · KHÔNG ĐOÁN MÒ · KHÔNG MƠ HỒ'},
+    lndHomeCtaPrime:'Hỏi Mike bất kỳ điều gì →',lndHomeCtaGhost:'Tìm thợ địa phương đáng tin',lndHomeFoot:'NHẬN ĐỊNH THẬT · KHÔNG ĐOÁN MÒ · KHÔNG MƠ HỒ',
+    migHead:'Chúng tôi đã xây dựng lại mọi thứ. Bạn cần một tài khoản mới.',migBody:'Bạn đã ở đây từ những ngày đầu — điều đó rất quan trọng. Mike giờ có một ngôi nhà hoàn toàn mới, và nó không mang theo cái cũ. Chỉ mất 30 giây để vào lại. Vẫn là Mike đó, mọi thứ tốt hơn.',migCta:'Tạo Tài Khoản Của Tôi',
+    obNext:'Tiếp  →',obStart:'Bắt Đầu →',seedTech:'Chào Mike — tôi có một tấm nhãn máy ở đây, anh thấy sao?',seedHome:'Hãy kể cho Mike biết hệ thống của bạn đang gặp chuyện gì.'},
   fr:{reachCall:'APPELER',reachFace:'FACETIME',clear:'EFFACER',mikeName:'MIKE',headRole:'MAÎTRE TECH',headStatus:'TOUJOURS DISPO',diagHead:'PANNE IDENTIFIÉE',mentorSig:'— Mike',composer:'Demandez à Mike…',
     heroPro:'Intelligence de Terrain CVC Professionnelle',heroHome:'Votre clim ou chauffage ne marche pas ?',
     heroSubPro:'Mike — votre maître technicien IA. Diagnostics, caméra en direct, prix des pièces, coaching de revenus.',heroSubHome:'Prenez une photo, décrivez le problème et obtenez une réponse claire en quelques secondes. Aucune connaissance CVC requise.',
@@ -6088,7 +6242,9 @@ var V2_I18N={
     lndHomeC1:'CE QUI NE VA PAS',lndHomeC2:'EST-CE SÛR ?',lndHomeC3:'QUOI DEMANDER',lndHomeC4:'BESOIN D’UN PRO ?',
     lndHomeMentor:'“Vous n’avez pas besoin d’un système neuf. Demandez un test de fuite d’abord — si un tech passe direct à ‘remplacer’, prenez un deuxième avis.”',
     lndHomeReachCall:'En parler',lndHomeReachFace:'Montrez-lui l’unité',lndHomeReachText:'Envoyez une photo',
-    lndHomeCtaPrime:'Demandez à Mike →',lndHomeCtaGhost:'Trouver un technicien de confiance',lndHomeFoot:'AVIS HONNÊTE · SANS DEVINETTE · JAMAIS DANS LE FLOU'},
+    lndHomeCtaPrime:'Demandez à Mike →',lndHomeCtaGhost:'Trouver un technicien de confiance',lndHomeFoot:'AVIS HONNÊTE · SANS DEVINETTE · JAMAIS DANS LE FLOU',
+    migHead:'Nous avons tout reconstruit. Il vous faut un nouveau compte.',migBody:'Vous étiez là depuis le début — ça compte. Mike a maintenant une toute nouvelle maison, et elle ne reprend pas l\'ancienne. Il faut 30 secondes pour revenir. Le même Mike, tout en mieux.',migCta:'Créer Mon Compte',
+    obNext:'Suivant  →',obStart:'Commencer →',seedTech:'Salut Mike — j\'ai une plaque ici, qu\'est-ce que t\'en penses ?',seedHome:'Dites à Mike ce qui se passe avec votre système.'},
   pt:{reachCall:'LIGAR',reachFace:'FACETIME',clear:'LIMPAR',mikeName:'MIKE',headRole:'TÉCNICO MESTRE',headStatus:'SEMPRE ATIVO',diagHead:'FALHA IDENTIFICADA',mentorSig:'— Mike',composer:'Pergunte ao Mike…',
     heroPro:'Inteligência Profissional de Campo HVAC',heroHome:'Seu ar ou aquecimento não funciona?',
     heroSubPro:'Mike — seu técnico mestre com IA. Diagnósticos, câmera ao vivo, preço de peças, treino de receita.',heroSubHome:'Tire uma foto, descreva o que está acontecendo e receba uma resposta clara em segundos. Sem precisar entender de HVAC.',
@@ -6115,7 +6271,9 @@ var V2_I18N={
     lndHomeC1:'O QUE ESTÁ ERRADO',lndHomeC2:'É SEGURO?',lndHomeC3:'O QUE PERGUNTAR',lndHomeC4:'PRECISA DE UM PRO?',
     lndHomeMentor:'“Você não precisa de um sistema novo. Peça um teste de vazamento primeiro — se um técnico já parte para ‘trocar’, busque uma segunda opinião.”',
     lndHomeReachCall:'Conversar',lndHomeReachFace:'Mostre a unidade',lndHomeReachText:'Envie uma foto',
-    lndHomeCtaPrime:'Pergunte ao Mike →',lndHomeCtaGhost:'Encontrar um técnico local de confiança',lndHomeFoot:'PARECER HONESTO · SEM ACHISMO · NUNCA NO ESCURO'}
+    lndHomeCtaPrime:'Pergunte ao Mike →',lndHomeCtaGhost:'Encontrar um técnico local de confiança',lndHomeFoot:'PARECER HONESTO · SEM ACHISMO · NUNCA NO ESCURO',
+    migHead:'Reconstruímos tudo. Você precisa de uma conta nova.',migBody:'Você esteve aqui desde o começo — isso importa. O Mike agora tem um lar totalmente novo, e ele não traz o antigo junto. Leva 30 segundos para voltar. O mesmo Mike, tudo melhor.',migCta:'Criar Minha Conta',
+    obNext:'Próximo  →',obStart:'Começar →',seedTech:'E aí Mike — tenho uma plaqueta aqui, o que você acha?',seedHome:'Conte ao Mike o que está rolando com o seu sistema.'}
 };
 function v2t(key){
   var lang=(typeof currentLang!=='undefined')?currentLang:'en';

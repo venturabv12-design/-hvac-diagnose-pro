@@ -3904,7 +3904,7 @@ function speakOb(){
   try{if(window._obFetchController)window._obFetchController.abort();}catch(e){}
   var ctrl=window._obFetchController=(typeof AbortController!=='undefined')?new AbortController():null;
   // Try ElevenLabs (same engine as Mike in chat) — fall back to browser TTS
-  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text}),signal:ctrl?ctrl.signal:undefined})
+  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text,token:(currentUser&&currentUser.token)||''}),signal:ctrl?ctrl.signal:undefined})
     .then(function(res){
       if(gen!==window._obGen)throw new Error('cancelled');
       if(!res.ok)throw new Error('tts '+res.status);
@@ -8067,7 +8067,7 @@ function mikeSay(text){
   // Stale-guard: drops audio if user pressed stop, opened camera, or the gate flipped
   // (e.g. call ended) between fetch start and decode.
   var stale=function(){return myToken!==window._voiceTTSToken||!shouldMikeSpeak();};
-  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean}),signal:voiceCtrl?voiceCtrl.signal:undefined})
+  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean,token:(currentUser&&currentUser.token)||''}),signal:voiceCtrl?voiceCtrl.signal:undefined})
     .then(function(res){
       if(!res.ok)throw new Error('TTS '+res.status);
       return res.arrayBuffer();
@@ -8471,7 +8471,7 @@ function mikeSayCamera(text){
   window._cameraTTSAbort=controller;
   var myToken=(window._cameraTTSToken=(window._cameraTTSToken||0)+1);
   var stale=function(){return myToken!==window._cameraTTSToken||!cameraActive;};
-  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean}),signal:controller?controller.signal:undefined})
+  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean,token:(currentUser&&currentUser.token)||''}),signal:controller?controller.signal:undefined})
     .then(function(r){if(!r.ok)throw new Error('tts');return r.arrayBuffer();})
     .then(function(buf){
       if(stale()){clearTimeout(ttsFailsafe);return;}

@@ -2232,7 +2232,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         <label class="auth-lbl">Password</label>
         <input class="auth-inp" type="password" id="suPass" placeholder="Min 8 characters" autocomplete="new-password"/>
       </div>
-      <div class="auth-field">
+      <div class="auth-field" id="suCompanyField" style="display:none">
         <label class="auth-lbl">Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
         <input class="auth-inp" type="text" id="suCompany" placeholder="Your HVAC company" autocomplete="organization"/>
       </div>
@@ -3318,6 +3318,9 @@ function selectRoleInline(role) {
   var inactive = 'border:2px solid #2a2a2a;background:#0d0d0d;color:#888;';
   if (homeBtn) homeBtn.setAttribute('style', homeBtn.getAttribute('style').replace(/border:[^;]+;background:[^;]+;color:[^;]+;/, '') + (role==='homeowner' ? active : inactive));
   if (proBtn) proBtn.setAttribute('style', proBtn.getAttribute('style').replace(/border:[^;]+;background:[^;]+;color:[^;]+;/, '') + (role==='contractor' ? active : inactive));
+  // Homeowners don't have an HVAC company — reveal that field only for contractors.
+  var cf = document.getElementById('suCompanyField');
+  if (cf) cf.style.display = (role === 'contractor') ? '' : 'none';
 }
 
 function showRoleSelector() {

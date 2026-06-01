@@ -2809,27 +2809,36 @@ function showPersonalizedWelcome(){
   var lastSeen=profile.lastSeen?new Date(profile.lastSeen):null;
   var daysSince=lastSeen?Math.floor((Date.now()-lastSeen)/86400000):null;
   var expLevel=profile.experienceLevel||null;
+  // Returning-tech detection must SURVIVE signout. authSignOut() wipes the per-user
+  // localStorage profile, so totalMessages resets to 0 after signout→signin — which
+  // used to drop a returning tech into the brand-new self-intro. currentUser.usageCount
+  // comes from the server (DB usage_count) and persists, so it's the durable signal.
+  var serverUsage=(currentUser&&currentUser.usageCount)||0;
+  var isReturning=(totalMsg>0)||(serverUsage>0);
   var msg='';
 
-  if(totalMsg===0){
-    // Brand new user — first time ever
+  if(!isReturning){
+    // Brand new tech — first time ever. Mike introduces himself.
     msg="<strong>Hey"+( name?" "+name:"")+"! I'm Mike.</strong> 25 years in the field — every system, every failure, every fix. I'm here for you on every job. Snap a photo, describe what's happening, or just ask me anything. Let's get to work.";
   } else if(daysSince===0){
-    // Same day return
-    msg="<strong>Welcome back"+( name?", "+name:"")+".</strong> "+
-      (totalMsg>50?"Still here, still ready. ":"")+
-      "What are you working on now?";
+    // Same-day return — partner picking right back up
+    msg="<strong>Welcome back"+( name?", "+name:"")+".</strong> What are we working on?";
   } else if(daysSince===1){
     msg="<strong>Good to see you again"+( name?", "+name:"")+".</strong> "+
       "Ready to tackle whatever you've got today.";
-  } else if(daysSince!==null&&daysSince>1){
+  } else if(daysSince!==null&&daysSince>1&&totalMsg>0){
+    // Multi-day return WITH real local history present — the "I remember" claim is
+    // only made when totalMsg>0 proves genuine prior sessions exist. Mike must never
+    // claim memory he doesn't have; if history isn't present this branch is skipped
+    // and we fall to the honest "Welcome back" partner line below.
     msg="<strong>Hey"+( name?", "+name:"")+"! You're back.</strong> "+
       "I remember everything from our last session — "+
       (profile.specialty?"your "+profile.specialty+" work, ":"")+
       "pick up right where we left off. What's on your plate?";
   } else {
-    // Has history but no date — returning user
-    msg="<strong>Hey"+( name?", "+name:"")+"!</strong> Good to see you. What are we diagnosing today?";
+    // Returning tech, but no usable local session history (e.g. the signout→signin
+    // profile wipe). Greet like a partner, NEVER re-introduce, never claim memory.
+    msg="<strong>Welcome back"+( name?", "+name:"")+".</strong> What are we working on?";
   }
 
   // Add experience-based note for first few sessions

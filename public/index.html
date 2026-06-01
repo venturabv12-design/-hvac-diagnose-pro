@@ -2118,6 +2118,32 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 .v2-landing .v2-console-fault{font-size:var(--v2-type-display-md);}
 .v2-landing .v2-gauge-val{font-size:15px;}
 .v2-landing .v2-gauge-val.stack{font-size:13px;line-height:1.04;}
+/* ===== INSTRUMENT STRIP (Option B — post-auth chrome; chat-forward) =====
+   Replaces the tall #v2Landing console once a user is signed in. Always-on
+   ~80px scan-tool bezel so the chat sits right at the fold. #v2Landing stays
+   in the DOM for the pre-auth front door; setMode/syncAuthSurface swap them. */
+#instrStrip{flex:none;position:relative;z-index:8;}
+.is-strip{height:80px;display:flex;align-items:center;background:linear-gradient(180deg,#15130D 0%,#0F0E0A 100%);border-bottom:1px solid var(--v2-line);overflow:hidden;position:relative;transform:translateZ(0);}
+.is-strip::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,194,178,.22),transparent);}
+.is-left{flex:1;min-width:0;padding:0 14px;border-right:1px solid var(--v2-line);}
+.is-unit{font-family:var(--font-code);font-size:8px;letter-spacing:.14em;color:var(--v2-mute2);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.is-fault{font-family:var(--font-display);font-weight:400;font-size:17px;letter-spacing:.01em;text-transform:uppercase;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--paper);}
+.is-fault .bad{color:var(--rust);} .is-fault .ok{color:var(--moss);} .is-fault .is-ready{color:var(--v2-mute);}
+.is-center{flex:none;width:120px;padding:0 12px;border-right:1px solid var(--v2-line);display:flex;flex-direction:column;gap:6px;}
+.is-gauge{display:flex;align-items:baseline;justify-content:space-between;gap:6px;}
+.is-gv{font-family:var(--font-code);font-weight:700;font-size:15px;line-height:1;color:var(--paper);white-space:nowrap;}
+.is-gv.warn{color:var(--rust);} .is-gv.ok{color:var(--moss);} .is-gv.brass{color:var(--brass);}
+.is-gl{font-family:var(--font-code);font-size:7px;letter-spacing:.1em;color:var(--v2-mute2);white-space:nowrap;}
+.is-gmtr{height:2px;border-radius:2px;background:rgba(255,255,255,.07);margin-top:2px;overflow:hidden;}
+.is-gmtr i{display:block;height:100%;border-radius:2px;background:var(--teal);transition:width var(--v2-dur,.3s) var(--v2-ease-snap,ease);}
+.is-right{flex:none;width:74px;padding:0 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;}
+.is-status-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 3px rgba(0,194,178,.15),0 0 10px rgba(0,194,178,.8);animation:isPulse 2.4s infinite;}
+@keyframes isPulse{0%,100%{box-shadow:0 0 0 3px rgba(0,194,178,.15),0 0 10px rgba(0,194,178,.8);}50%{box-shadow:0 0 0 3px rgba(0,194,178,.05),0 0 4px rgba(0,194,178,.3);}}
+.is-status-label{font-family:var(--font-code);font-size:7.5px;letter-spacing:.12em;color:var(--teal);text-align:center;line-height:1.25;}
+.is-code{font-family:var(--font-code);font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--rust);text-align:center;}
+.is-home-status{font-family:var(--font-code);font-size:8px;font-weight:700;letter-spacing:.06em;color:var(--teal);text-align:center;line-height:1.3;}
+.is-sesh{padding:5px 14px;background:rgba(0,0,0,.22);border-bottom:1px solid var(--v2-line);font-family:var(--font-code);font-size:7.5px;letter-spacing:.14em;color:var(--v2-mute2);display:flex;align-items:center;justify-content:space-between;}
+.is-sesh .on{color:var(--teal);}
 /* ===== END V2 DESIGN SYSTEM (foundation) ===== */
 </style>
 <div id="offlineBanner"></div>
@@ -2495,6 +2521,31 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div class="v2-lnd-foot"><span class="v2-aud-tech" data-v2i18n="lndTechFoot">EPA 608 · NATE · ASHRAE · 25 YEARS ON EVERY SYSTEM</span><span class="v2-aud-home" data-v2i18n="lndHomeFoot">HONEST READ · NO GUESSWORK · NEVER IN THE DARK</span></div>
     </div>
   </div>
+
+  <!-- INSTRUMENT STRIP (Option B) — shown POST-AUTH only (setMode/syncAuthSurface hide #v2Landing, show this). Always-on 80px scan-tool bezel so the chat sits at the fold. Default state localizes via data-v2i18n; updateConsoleStrip() overwrites it when Mike returns a diagnosis. -->
+  <div id="instrStrip" style="display:none;" aria-label="Last diagnosis summary">
+    <div class="is-strip">
+      <div class="is-left">
+        <div class="is-unit" id="isUnit" data-v2i18n="isReady">READY · NEW SESSION</div>
+        <div class="is-fault" id="isFault"><span class="is-ready" data-v2i18n="isWaiting">WAITING FOR YOU</span></div>
+      </div>
+      <div class="is-center">
+        <div><div class="is-gauge"><span class="is-gv" id="isGv1">--</span><span class="is-gl" id="isGl1"></span></div><div class="is-gmtr"><i id="isGm1" style="width:0%"></i></div></div>
+        <div><div class="is-gauge"><span class="is-gv" id="isGv2">--</span><span class="is-gl" id="isGl2"></span></div><div class="is-gmtr"><i id="isGm2" style="width:0%"></i></div></div>
+      </div>
+      <div class="is-right">
+        <div class="is-status-dot"></div>
+        <div class="is-status-label" id="isStatusLabel" data-v2i18n="isStatusReady">READY</div>
+        <div class="is-code" id="isFaultCode" data-contractor-only style="display:none">--</div>
+        <div class="is-home-status" id="isHomeStatus" data-homeowner-only style="display:none"></div>
+      </div>
+    </div>
+    <div class="is-sesh">
+      <span id="isSeshLabel" data-v2i18n="isSession">SESSION · READY</span>
+      <span id="isSeshState" class="on" data-v2i18n="isIdle">● IDLE</span>
+    </div>
+  </div>
+
   <!-- MODE TABS — legacy switcher; V2 landing audience toggle (v2SetAudience→setMode) is now the real switcher. Hidden (not removed) so setMode() can still write to #tabHome/#tabPro/#modeDesc without a null throw. -->
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px;display:none;">
     <div class="mode-tabs">
@@ -3654,6 +3705,8 @@ function authSignOut(){
     Object.keys(localStorage).filter(function(k){return k.indexOf('trazer_')===0&&k!=='trazer_user'&&k!=='trazer_users'&&k.indexOf('_'+sl7_4)>-1;}).forEach(function(k){localStorage.removeItem(k);});
   }
   currentUser=null;localStorage.removeItem('trazer_user');
+  // Option B: back to signed-out → restore the tall front-door landing, hide the strip.
+  if(typeof syncAuthSurface==='function')syncAuthSurface();
   // Bug 5 fix (Owner persona / Gap #007): clear DOM remnants of prior user.
   // clearChat() above wrote a Mike-greeting using the prior user's first name;
   // also #navProfileBtn still shows prior initials. Blank both so the next
@@ -4714,6 +4767,65 @@ function setMode(m){
   if(nms)nms.textContent=isPro?'● On the line · CH 01':'● Online · ready to help';
   // Keep the V2 landing (Frame G) toggle + console in lock-step with the one router.
   syncV2Landing(isPro?'tech':'home');
+  // Option B chat-forward: pre-auth shows the tall #v2Landing front door; post-auth
+  // collapses it to the 80px #instrStrip so the chat sits at the fold.
+  syncAuthSurface();
+}
+
+// Option B: swap the tall pre-auth landing for the post-auth instrument strip.
+// currentUser set → strip (chat at the fold); null → landing (cold front door).
+// Called from setMode() (covers every login + toggle) and authSignOut().
+function syncAuthSurface(){
+  var _lnd=document.getElementById('v2Landing');
+  var _strip=document.getElementById('instrStrip');
+  if(_lnd)_lnd.style.display=currentUser?'none':'';
+  if(_strip)_strip.style.display=currentUser?'':'none';
+}
+
+// Populate the instrument strip from a parsed diagnosis (same shape detectV2Diagnosis
+// returns: {fault, readings:[{value,label}], unit, code}). Pure consumer of that object —
+// it reads the result only and mutates no locked card-render code. null = reset.
+// `danger` is the caller's authoritative safety signal (same isSafetyAlert flag that
+// drives the red safety banner) — never infer "SAFE" from absent data.
+function updateConsoleStrip(d,danger){
+  var strip=document.getElementById('instrStrip');
+  if(!strip)return;
+  var isHome=document.body.dataset.mode!=='contractor';
+  var unit=document.getElementById('isUnit'),fault=document.getElementById('isFault');
+  var gv1=document.getElementById('isGv1'),gl1=document.getElementById('isGl1'),gm1=document.getElementById('isGm1');
+  var gv2=document.getElementById('isGv2'),gl2=document.getElementById('isGl2'),gm2=document.getElementById('isGm2');
+  var code=document.getElementById('isFaultCode'),homeStat=document.getElementById('isHomeStatus');
+  var sesh=document.getElementById('isSeshState');
+  if(!d){return;} // keep the localized default (set by applyV2Lang)
+  var rd=d.readings||[];
+  function setGauge(gv,gl,gm,r){
+    if(!gv)return;
+    gv.textContent=r&&r.value?String(r.value):'--';
+    if(gl)gl.textContent=r&&r.label?String(r.label):'';
+    if(gm)gm.style.width=(r&&r.value)?'72%':'0%';
+  }
+  if(isHome){
+    // Homeowner: NEVER pipe the technical fault name, codes, or prices into the strip.
+    // Headline is a fixed plain-English phrase (localized, reused from the landing's
+    // homeowner console). Safety uses the caller's `danger` flag — never inferred.
+    if(unit)unit.textContent=(typeof v2t==='function'?v2t('isReady'):'READY');
+    if(fault){fault.innerHTML='';fault.textContent=(typeof v2t==='function'?v2t('lndHomeCHL'):'MIKE’S READ');}
+    setGauge(gv1,gl1,gm1,{value:danger?'CHECK':'SAFE',label:'SAFETY'});
+    setGauge(gv2,gl2,gm2,{value:'THIS WEEK',label:'URGENCY'});
+    if(gv1)gv1.className='is-gv '+(danger?'warn':'ok');
+    if(code)code.style.display='none';
+    if(homeStat){homeStat.style.display='';homeStat.textContent='GET IT CHECKED';}
+  }else{
+    if(unit)unit.textContent=(d.unit?String(d.unit):'FAULT IDENTIFIED').toUpperCase().slice(0,34);
+    if(fault){fault.innerHTML='';fault.textContent=(d.fault||'DIAGNOSIS').toString().toUpperCase().slice(0,26);}
+    setGauge(gv1,gl1,gm1,rd[0]);
+    setGauge(gv2,gl2,gm2,rd[1]);
+    if(gv1)gv1.className='is-gv warn';
+    if(gv2)gv2.className='is-gv';
+    if(homeStat)homeStat.style.display='none';
+    if(code){if(d.part){code.style.display='';code.textContent=String(d.part);}else{code.style.display='none';}}
+  }
+  if(sesh){sesh.textContent='● DIAGNOSING';}
 }
 
 // Reflect the active audience on the Frame G landing. setMode() is the single source
@@ -4867,6 +4979,9 @@ function v2Reach(kind){
   var aud=document.getElementById('v2Landing').getAttribute('data-aud');
   if(kind==='face'){ if(typeof checkCameraAccess==='function')checkCameraAccess(); return; }
   if(kind==='call'&&aud==='tech'){ setMode('pro'); if(typeof toggleVoiceMode==='function')toggleVoiceMode(); return; }
+  // TEXT for a tech must land in the tech chat — never let it fall through to a
+  // homeowner-mode flip. Mirror the call guard so the audience is explicit.
+  if(kind==='text'&&aud==='tech'){ setMode('pro'); }
   v2LandingAsk(); // text, or homeowner call → land them in their chat entry
 }
 
@@ -6618,6 +6733,7 @@ var V2_I18N={
     qaAllTools:'All Tools',qaPinHint:'tap pin to favorite',qaManual:'Manual<br>Lookup',qaHistory:'Job<br>History',qaWarranty:'Warranty<br>Claim',qaPriceBook:'Price<br>Book',qaSafety:'Safety<br>Check',qaRecap:'Recap<br>Video',
     qaTodaysCalls:'Today’s Calls',qaJobDone:'Done',qaJobOpen:'Open',qaJobProg:'In Prog',qaLanguage:'Language',
     lndLive:'MIKE · LIVE',lndImTech:"I'M A TECH",lndImHome:"I'M A HOMEOWNER",lndReachText:'TEXT',lndMentorSig:'— Mike · 25 yrs',
+    isReady:'READY · NEW SESSION',isWaiting:'WAITING FOR YOU',isStatusReady:'READY',isSession:'SESSION · READY',isIdle:'● IDLE',
     lndTechH1a:'WATCH MIKE',lndTechH1b:'WORK',lndTechH1c:'A CALL',lndTechH1d:'IN REAL TIME.',
     lndTechLede:'<b>25 years of master-tech instinct, running live:</b> he reads the system, calls the fault, pulls the part, quotes the price — then makes you sharper for the next one.',
     lndTechCHL:'LIVE DIAGNOSIS',lndTechCHR:'CARRIER 58STA · NO HEAT',lndTechUnit:'FAULT IDENTIFIED',lndTechFault:'HIGH-LIMIT <span class="bad">LOCKOUT</span>',
@@ -6648,6 +6764,7 @@ var V2_I18N={
     qaAllTools:'Todas las Herramientas',qaPinHint:'toca el pin para favorito',qaManual:'Buscar<br>Manual',qaHistory:'Historial<br>de Trabajos',qaWarranty:'Reclamo de<br>Garantía',qaPriceBook:'Lista de<br>Precios',qaSafety:'Chequeo de<br>Seguridad',qaRecap:'Video<br>Resumen',
     qaTodaysCalls:'Llamadas de Hoy',qaJobDone:'Hecho',qaJobOpen:'Abierto',qaJobProg:'En Curso',qaLanguage:'Idioma',
     lndLive:'MIKE · EN VIVO',lndImTech:'SOY TÉCNICO',lndImHome:'SOY PROPIETARIO',lndReachText:'TEXTO',lndMentorSig:'— Mike · 25 años',
+    isReady:'LISTO · NUEVA SESIÓN',isWaiting:'TE ESCUCHO',isStatusReady:'LISTO',isSession:'SESIÓN · LISTO',isIdle:'● INACTIVO',
     lndTechH1a:'MIRA A MIKE',lndTechH1b:'TRABAJAR',lndTechH1c:'UNA LLAMADA',lndTechH1d:'EN TIEMPO REAL.',
     lndTechLede:'<b>25 años de instinto de técnico maestro, en vivo:</b> lee el sistema, identifica la falla, encuentra la pieza, da el precio — y te hace mejor para la próxima.',
     lndTechCHL:'DIAGNÓSTICO EN VIVO',lndTechCHR:'CARRIER 58STA · SIN CALOR',lndTechUnit:'FALLA IDENTIFICADA',lndTechFault:'BLOQUEO POR <span class="bad">LÍMITE ALTO</span>',
@@ -6678,6 +6795,7 @@ var V2_I18N={
     qaAllTools:'所有工具',qaPinHint:'点图钉以收藏',qaManual:'手册<br>查询',qaHistory:'工单<br>记录',qaWarranty:'保修<br>理赔',qaPriceBook:'价目<br>表',qaSafety:'安全<br>检查',qaRecap:'回顾<br>视频',
     qaTodaysCalls:'今日工单',qaJobDone:'完成',qaJobOpen:'待处理',qaJobProg:'进行中',qaLanguage:'语言',
     lndLive:'MIKE · 在线',lndImTech:'我是技师',lndImHome:'我是业主',lndReachText:'文字',lndMentorSig:'— Mike · 25 年',
+    isReady:'就绪 · 新会话',isWaiting:'等待您',isStatusReady:'就绪',isSession:'会话 · 就绪',isIdle:'● 空闲',
     lndTechH1a:'看 MIKE',lndTechH1b:'实时',lndTechH1c:'处理',lndTechH1d:'一次维修。',
     lndTechLede:'<b>25 年高级技师的直觉，实时运行：</b>他读取系统、判定故障、找到配件、给出报价 — 还让你为下一次更精进。',
     lndTechCHL:'实时诊断',lndTechCHR:'CARRIER 58STA · 不制热',lndTechUnit:'已识别故障',lndTechFault:'高温限位 <span class="bad">锁定</span>',
@@ -6708,6 +6826,7 @@ var V2_I18N={
     qaAllTools:'Tất Cả Công Cụ',qaPinHint:'chạm ghim để yêu thích',qaManual:'Tra<br>Tài Liệu',qaHistory:'Lịch Sử<br>Công Việc',qaWarranty:'Yêu Cầu<br>Bảo Hành',qaPriceBook:'Bảng<br>Giá',qaSafety:'Kiểm Tra<br>An Toàn',qaRecap:'Video<br>Tóm Tắt',
     qaTodaysCalls:'Ca Hôm Nay',qaJobDone:'Xong',qaJobOpen:'Đang Mở',qaJobProg:'Đang Làm',qaLanguage:'Ngôn Ngữ',
     lndLive:'MIKE · TRỰC TIẾP',lndImTech:'TÔI LÀ THỢ',lndImHome:'TÔI LÀ CHỦ NHÀ',lndReachText:'NHẮN',lndMentorSig:'— Mike · 25 năm',
+    isReady:'SẴN SÀNG · PHIÊN MỚI',isWaiting:'ĐANG CHỜ BẠN',isStatusReady:'SẴN SÀNG',isSession:'PHIÊN · SẴN SÀNG',isIdle:'● CHỜ',
     lndTechH1a:'XEM MIKE',lndTechH1b:'XỬ LÝ',lndTechH1c:'MỘT CA',lndTechH1d:'NGAY TỨC THÌ.',
     lndTechLede:'<b>25 năm bản năng thợ cả, chạy trực tiếp:</b> anh đọc hệ thống, gọi tên lỗi, tìm linh kiện, báo giá — rồi giúp bạn giỏi hơn cho lần sau.',
     lndTechCHL:'CHẨN ĐOÁN TRỰC TIẾP',lndTechCHR:'CARRIER 58STA · KHÔNG NÓNG',lndTechUnit:'ĐÃ XÁC ĐỊNH LỖI',lndTechFault:'KHÓA <span class="bad">QUÁ NHIỆT</span>',
@@ -6738,6 +6857,7 @@ var V2_I18N={
     qaAllTools:'Tous les Outils',qaPinHint:'touchez l’épingle pour favori',qaManual:'Recherche<br>Manuel',qaHistory:'Historique<br>des Jobs',qaWarranty:'Demande de<br>Garantie',qaPriceBook:'Grille de<br>Prix',qaSafety:'Contrôle<br>Sécurité',qaRecap:'Vidéo<br>Récap',
     qaTodaysCalls:'Appels du Jour',qaJobDone:'Terminé',qaJobOpen:'Ouvert',qaJobProg:'En Cours',qaLanguage:'Langue',
     lndLive:'MIKE · EN DIRECT',lndImTech:'JE SUIS TECH',lndImHome:'JE SUIS PROPRIÉTAIRE',lndReachText:'TEXTO',lndMentorSig:'— Mike · 25 ans',
+    isReady:'PRÊT · NOUVELLE SESSION',isWaiting:'À VOTRE ÉCOUTE',isStatusReady:'PRÊT',isSession:'SESSION · PRÊT',isIdle:'● INACTIF',
     lndTechH1a:'REGARDEZ MIKE',lndTechH1b:'TRAITER',lndTechH1c:'UN APPEL',lndTechH1d:'EN TEMPS RÉEL.',
     lndTechLede:'<b>25 ans d’instinct de maître technicien, en direct :</b> il lit le système, identifie la panne, trouve la pièce, donne le prix — puis vous rend meilleur pour la suivante.',
     lndTechCHL:'DIAGNOSTIC EN DIRECT',lndTechCHR:'CARRIER 58STA · PAS DE CHAUFFE',lndTechUnit:'PANNE IDENTIFIÉE',lndTechFault:'VERROUILLAGE <span class="bad">LIMITE HAUTE</span>',
@@ -6768,6 +6888,7 @@ var V2_I18N={
     qaAllTools:'Todas as Ferramentas',qaPinHint:'toque no pino para favoritar',qaManual:'Buscar<br>Manual',qaHistory:'Histórico<br>de Serviços',qaWarranty:'Pedido de<br>Garantia',qaPriceBook:'Tabela de<br>Preços',qaSafety:'Checagem de<br>Segurança',qaRecap:'Vídeo<br>Resumo',
     qaTodaysCalls:'Chamados de Hoje',qaJobDone:'Concluído',qaJobOpen:'Aberto',qaJobProg:'Em Andamento',qaLanguage:'Idioma',
     lndLive:'MIKE · AO VIVO',lndImTech:'SOU TÉCNICO',lndImHome:'SOU PROPRIETÁRIO',lndReachText:'TEXTO',lndMentorSig:'— Mike · 25 anos',
+    isReady:'PRONTO · NOVA SESSÃO',isWaiting:'À SUA ESPERA',isStatusReady:'PRONTO',isSession:'SESSÃO · PRONTO',isIdle:'● OCIOSO',
     lndTechH1a:'VEJA O MIKE',lndTechH1b:'RESOLVER',lndTechH1c:'UMA CHAMADA',lndTechH1d:'EM TEMPO REAL.',
     lndTechLede:'<b>25 anos de instinto de técnico mestre, ao vivo:</b> ele lê o sistema, identifica a falha, acha a peça, dá o preço — e te deixa mais afiado para a próxima.',
     lndTechCHL:'DIAGNÓSTICO AO VIVO',lndTechCHR:'CARRIER 58STA · SEM AQUECER',lndTechUnit:'FALHA IDENTIFICADA',lndTechFault:'BLOQUEIO DE <span class="bad">LIMITE ALTO</span>',
@@ -7028,6 +7149,8 @@ function appendMessage(role,text){
       +prose
       +(v2Diag?buildV2DiagCard(v2Diag):'')
       +(v2Mentor?buildV2Mentor(v2Mentor):'');
+    // Option B: mirror the latest diagnosis into the always-on instrument strip.
+    if(v2Diag&&typeof updateConsoleStrip==='function'){try{updateConsoleStrip(v2Diag,isSafetyAlert);}catch(_){}}
   } else {
     // USER — warm right-aligned bubble. `formatted` is already escaped by callers.
     // .bub keeps the legacy `.msg-bubble msg-bubble-user` hook classes for search.

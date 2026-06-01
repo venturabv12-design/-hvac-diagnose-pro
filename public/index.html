@@ -2145,10 +2145,12 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   </div>
   <div class="auth-card">
     <!-- MIGRATION NOTICE (Variation A, Brandon-approved). V2 is a fresh-DB launch:
-         every returning/beta user must create a new account. Shown as the default
-         auth header on this drop — honest for a clean DB, no fragile "is this an old
-         user" detection that could wedge auth. CTA flips to the Create-Account tab. -->
-    <div class="auth-migration">
+         returning/beta users must create a new account. B5 fix: this is existing-user
+         copy, so it must NOT greet a brand-new visitor (confused the Homeowner + the PE
+         evaluator). Hidden by default; tracerInit() reveals it ONLY when a stale/old
+         (pre-V2, non-JWT) token is detected in localStorage. A clean first-time visitor
+         (nothing stored) never sees it. CTA flips to the Create-Account tab. -->
+    <div class="auth-migration" id="authMigration" style="display:none;">
       <div class="auth-migration-head" data-v2i18n="migHead">We rebuilt everything. You need a fresh account.</div>
       <div class="auth-migration-body" data-v2i18n="migBody">You were here from the beginning — that matters. Mike's got a whole new home now, and it doesn't carry the old one over. Takes 30 seconds to get back in. Same Mike, better everything.</div>
       <button class="auth-migration-cta" type="button" onclick="authTab('up')" data-v2i18n="migCta">Create My Account</button>
@@ -2375,7 +2377,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div class="mike-badge"><div class="live-dot"></div></div>
       <div class="nav-mike-text">
         <div class="nav-mike-name">Mike</div>
-        <div class="nav-mike-status" id="navMikeStatus">● On the line · CH 01</div>
+        <div class="nav-mike-status" id="navMikeStatus" title="Mike is on the line — your direct channel to him, like a CB radio.">● On the line · CH 01</div>
       </div>
     </div>
     <div class="nav-actions">
@@ -2709,9 +2711,9 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
             <span class="peek-tile-label" data-v2i18n="tbShield">Callback<br>Shield</span>
             <span class="peek-tile-pin"></span>
           </button>
-          <button class="peek-tile t-find" type="button" data-peek-idx="3" aria-label="Find Part" onclick="openChatSearch()">
+          <button class="peek-tile t-find" type="button" data-peek-idx="3" aria-label="Search Chat" onclick="openChatSearch()">
             <span class="peek-tile-icon"><i data-lucide="search"></i></span>
-            <span class="peek-tile-label" data-v2i18n="tbFind">Find<br>Part</span>
+            <span class="peek-tile-label" data-v2i18n="tbFind">Search<br>Chat</span>
           </button>
         </div>
         <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none" onchange="handleChatFile(event)"/>
@@ -2792,7 +2794,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           <div class="drawer-all-tools">
             <button class="tool-tile t-find pinned" type="button" onclick="window.closeActionDrawer();openChatSearch();">
               <div class="tool-tile-icon"><i data-lucide="search"></i></div>
-              <div class="tool-tile-label" data-v2i18n="tbFind">Find<br>Part</div>
+              <div class="tool-tile-label" data-v2i18n="tbFind">Search<br>Chat</div>
               <div class="tool-tile-pin"></div>
             </button>
             <button class="tool-tile t-manual" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Manual Lookup')">
@@ -3375,7 +3377,10 @@ function tracerInit(){
         // Old token — force re-login to get a proper JWT
         localStorage.removeItem('trazer_user');
         currentUser=null;
-        // Auth overlay stays visible — user will sign in fresh
+        // Auth overlay stays visible — user will sign in fresh. B5: a stale/old
+        // (pre-V2) token IS the signal this is a returning user — reveal the
+        // migration card so they understand why they need a fresh account.
+        var _mig=document.getElementById('authMigration');if(_mig)_mig.style.display='';
       } else {
         document.getElementById('authOverlay').classList.add('hidden');
         updateProfileUI();checkTrial();
@@ -3700,13 +3705,22 @@ function toggleProfileDD(){
 function closeProfileDD(){var d=document.getElementById('profileDD');if(d)d.classList.remove('open');}
 
 document.addEventListener('click',function(e){
+  // e.target can be a non-Element node (text node / SVG element in some Safari paths),
+  // which lacks .closest — calling it threw "e.target.closest is not a function" and
+  // broke this whole handler (homeowner field report). Resolve to the nearest Element
+  // so .closest/.contains are always safe; this hardens every gate below.
+  var t=e.target;
+  if(t&&t.nodeType===3)t=t.parentElement;            // text node → parent element
+  if(t&&typeof t.closest!=='function')t=t.parentElement; // SVG/other → climb to an Element
+  if(!t)return;
+  var clo=function(sel){return (t&&typeof t.closest==='function')?t.closest(sel):null;};
   // Contractor triggers (.nav-globe / .nav-more) are whitelisted alongside the homeowner triggers (#langBtn / #navProfileBtn) so the same tap that opens a dropdown isn't immediately treated as an outside-click that closes it.
   var d=document.getElementById('profileDD'),b=document.getElementById('navProfileBtn');
-  if(d&&b&&!d.contains(e.target)&&!b.contains(e.target)&&!e.target.closest('.nav-more'))closeProfileDD();
+  if(d&&b&&!d.contains(t)&&!b.contains(t)&&!clo('.nav-more'))closeProfileDD();
   var ld=document.getElementById('langDropdown'),lb=document.getElementById('langBtn'),alb=document.getElementById('authLangBtn');
   // Whitelist every trigger that opens #langDropdown: homeowner #langBtn, contractor
   // .nav-globe, pre-login #authLangBtn, and the contractor profile "Language" item.
-  if(ld&&!ld.contains(e.target)&&!(lb&&lb.contains(e.target))&&!(alb&&alb.contains(e.target))&&!e.target.closest('.nav-globe')&&!e.target.closest('[onclick*="toggleLangMenu"]'))ld.style.display='none';
+  if(ld&&!ld.contains(t)&&!(lb&&lb.contains(t))&&!(alb&&alb.contains(t))&&!clo('.nav-globe')&&!clo('[onclick*="toggleLangMenu"]'))ld.style.display='none';
 });
 
 function checkTrial(){
@@ -5132,6 +5146,66 @@ async function callAI(system,messages,max_tokens,useSearch){
     }
   }
 }
+// Streaming sibling of callAI(). Opens the SSE transport on /api/ai (stream:true) and
+// invokes onToken(piece) for each text delta as it arrives, so Mike's words render
+// progressively (kills the "silent ~24s gap" that read as broken). Returns the full
+// accumulated text. Throws on transport/auth/paywall errors EXACTLY like callAI so the
+// caller's existing catch handles them; sendChat additionally falls back to non-stream
+// callAI() if streaming fails before any token, so streaming is never a hard dependency.
+// No retry loop here (a half-streamed answer can't be cleanly retried) — that's the
+// caller's fallback job. Honors window.chatAbortController so Stop aborts the stream.
+async function callAIStream(system,messages,max_tokens,onToken){
+  max_tokens=max_tokens||2048;
+  var externalCtrl=window.chatAbortController;
+  var controller=externalCtrl||new AbortController();
+  var tid=setTimeout(function(){try{controller.abort();}catch(e){}},75000);
+  var reqBody={system:system,messages:messages,max_tokens:max_tokens,stream:true};
+  if(currentUser&&currentUser.token)reqBody.token=currentUser.token;
+  var res;
+  try{
+    res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(reqBody),signal:controller.signal});
+  }catch(e){clearTimeout(tid);throw e;}
+  // Non-2xx → the server answered JSON (auth/paywall/error) instead of an SSE stream.
+  // Mirror callAI's status handling so the same UX (re-login / paywall) applies.
+  if(!res.ok){
+    var ed={};try{ed=await res.json();}catch(_e){}
+    clearTimeout(tid);
+    if(res.status===401){
+      if(typeof cameraActive==='undefined'||!cameraActive){
+        localStorage.removeItem('trazer_user');localStorage.removeItem('trazer_users');currentUser=null;
+        document.getElementById('authOverlay').classList.remove('hidden');
+      }
+      throw new Error('Your session expired. Please sign in again.');
+    }
+    if(res.status===402){showPaywall();throw new Error(ed.error||'Subscription required.');}
+    throw new Error(ed.error||('Mike hit an error ('+res.status+'). Tap send again.'));
+  }
+  if(!res.body||!res.body.getReader)throw new Error('NO_STREAM');
+  var reader=res.body.getReader();
+  var dec=new TextDecoder();
+  var buf='';var full='';var streamErr=null;
+  try{
+    while(true){
+      var rd=await reader.read();
+      if(rd.done)break;
+      buf+=dec.decode(rd.value,{stream:true});
+      var idx;
+      while((idx=buf.indexOf('\n\n'))!==-1){
+        var frame=buf.slice(0,idx);buf=buf.slice(idx+2);
+        var line=frame.split('\n').filter(function(l){return l.indexOf('data:')===0;})[0];
+        if(!line)continue;
+        var payload=line.slice(5).trim();
+        if(!payload)continue;
+        var evt;try{evt=JSON.parse(payload);}catch(_e){continue;}
+        if(evt.delta){full+=evt.delta;if(typeof onToken==='function')onToken(evt.delta);}
+        else if(evt.error){streamErr=evt.error;}
+        // evt.done → loop ends naturally when reader closes
+      }
+    }
+  }finally{clearTimeout(tid);}
+  if(streamErr&&!full)throw new Error(streamErr);
+  return full;
+}
 function blobToBase64Display(blob){
   return new Promise(function(resolve,reject){
     var reader=new FileReader();
@@ -6538,7 +6612,7 @@ var V2_I18N={
     heroPro:'Professional HVAC Field Intelligence',heroHome:'Is Your AC or Heat Not Working?',
     heroSubPro:'Mike — your AI master tech. Diagnostics, live camera, parts pricing, revenue coaching.',heroSubHome:'Take a photo, describe what\'s happening, and get a clear answer in seconds. No HVAC knowledge needed.',
     descPro:'Mike handles diagnostics, revenue, refrigerant, maintenance — everything in one chat.',descHome:'Plain English explanations. Know if it\'s safe, how urgent it is, and exactly what to tell your technician.',
-    tbDiag:'Run<br>Diagnostic',tbCamera:'Live<br>Camera',tbShield:'Callback<br>Shield',tbFind:'Find<br>Part',
+    tbDiag:'Run<br>Diagnostic',tbCamera:'Live<br>Camera',tbShield:'Callback<br>Shield',tbFind:'Search<br>Chat',
     qaBtn:'Quick Actions',qaFavs:'Your Favorites',qaCustomize:'Customize',qaMostUsed:'Most Used',qaLive:'Live',qaRevenue:'Revenue',
     qaDiagSub:'Full system check, 5 min',qaCamSub:'Mike sees what you see',qaShieldSub:'Pre-close 5-pt check',qaCloseSale:'Close<br>The Sale',qaCloseSaleSub:'Repair vs. replace math',
     qaAllTools:'All Tools',qaPinHint:'tap pin to favorite',qaManual:'Manual<br>Lookup',qaHistory:'Job<br>History',qaWarranty:'Warranty<br>Claim',qaPriceBook:'Price<br>Book',qaSafety:'Safety<br>Check',qaRecap:'Recap<br>Video',
@@ -6568,7 +6642,7 @@ var V2_I18N={
     heroPro:'Inteligencia Profesional de Campo HVAC',heroHome:'¿Tu aire o calefacción no funciona?',
     heroSubPro:'Mike — tu técnico maestro con IA. Diagnósticos, cámara en vivo, precios de piezas, asesoría de ingresos.',heroSubHome:'Toma una foto, describe lo que pasa y recibe una respuesta clara en segundos. Sin conocimientos de HVAC.',
     descPro:'Mike maneja diagnósticos, ingresos, refrigerante, mantenimiento — todo en un solo chat.',descHome:'Explicaciones en palabras claras. Sabe si es seguro, qué tan urgente y exactamente qué decirle a tu técnico.',
-    tbDiag:'Ejecutar<br>Diagnóstico',tbCamera:'Cámara<br>en Vivo',tbShield:'Escudo<br>Anti-Retorno',tbFind:'Buscar<br>Pieza',
+    tbDiag:'Ejecutar<br>Diagnóstico',tbCamera:'Cámara<br>en Vivo',tbShield:'Escudo<br>Anti-Retorno',tbFind:'Buscar<br>Chat',
     qaBtn:'Acciones Rápidas',qaFavs:'Tus Favoritos',qaCustomize:'Personalizar',qaMostUsed:'Más Usado',qaLive:'En Vivo',qaRevenue:'Ingresos',
     qaDiagSub:'Chequeo completo, 5 min',qaCamSub:'Mike ve lo que tú ves',qaShieldSub:'Chequeo de 5 puntos',qaCloseSale:'Cerrar<br>la Venta',qaCloseSaleSub:'Reparar vs. reemplazar',
     qaAllTools:'Todas las Herramientas',qaPinHint:'toca el pin para favorito',qaManual:'Buscar<br>Manual',qaHistory:'Historial<br>de Trabajos',qaWarranty:'Reclamo de<br>Garantía',qaPriceBook:'Lista de<br>Precios',qaSafety:'Chequeo de<br>Seguridad',qaRecap:'Video<br>Resumen',
@@ -6598,7 +6672,7 @@ var V2_I18N={
     heroPro:'专业暖通现场智能',heroHome:'您的空调或暖气坏了吗？',
     heroSubPro:'Mike — 您的 AI 高级技师。诊断、实时摄像、配件报价、营收指导。',heroSubHome:'拍张照片，描述情况，几秒内得到清晰答案。无需任何暖通知识。',
     descPro:'Mike 处理诊断、营收、制冷剂、保养 — 全部在一个对话里。',descHome:'用大白话解释。知道是否安全、有多紧急，以及该跟技师说什么。',
-    tbDiag:'运行<br>诊断',tbCamera:'实时<br>摄像',tbShield:'回访<br>防护',tbFind:'查找<br>配件',
+    tbDiag:'运行<br>诊断',tbCamera:'实时<br>摄像',tbShield:'回访<br>防护',tbFind:'搜索<br>对话',
     qaBtn:'快捷操作',qaFavs:'你的收藏',qaCustomize:'自定义',qaMostUsed:'最常用',qaLive:'实时',qaRevenue:'营收',
     qaDiagSub:'系统全检，5 分钟',qaCamSub:'Mike 看到你看到的',qaShieldSub:'收尾前 5 项检查',qaCloseSale:'促成<br>成交',qaCloseSaleSub:'维修对比更换',
     qaAllTools:'所有工具',qaPinHint:'点图钉以收藏',qaManual:'手册<br>查询',qaHistory:'工单<br>记录',qaWarranty:'保修<br>理赔',qaPriceBook:'价目<br>表',qaSafety:'安全<br>检查',qaRecap:'回顾<br>视频',
@@ -6628,7 +6702,7 @@ var V2_I18N={
     heroPro:'Trí Tuệ Hiện Trường HVAC Chuyên Nghiệp',heroHome:'Máy lạnh hay lò sưởi của bạn không chạy?',
     heroSubPro:'Mike — thợ cả AI của bạn. Chẩn đoán, camera trực tiếp, giá linh kiện, cố vấn doanh thu.',heroSubHome:'Chụp một tấm ảnh, mô tả tình hình, và nhận câu trả lời rõ ràng trong vài giây. Không cần biết về HVAC.',
     descPro:'Mike lo chẩn đoán, doanh thu, gas, bảo trì — tất cả trong một cuộc trò chuyện.',descHome:'Giải thích dễ hiểu. Biết có an toàn không, gấp đến đâu, và chính xác phải nói gì với thợ.',
-    tbDiag:'Chạy<br>Chẩn Đoán',tbCamera:'Camera<br>Trực Tiếp',tbShield:'Lá Chắn<br>Quay Lại',tbFind:'Tìm<br>Linh Kiện',
+    tbDiag:'Chạy<br>Chẩn Đoán',tbCamera:'Camera<br>Trực Tiếp',tbShield:'Lá Chắn<br>Quay Lại',tbFind:'Tìm<br>Tin Nhắn',
     qaBtn:'Thao Tác Nhanh',qaFavs:'Yêu Thích',qaCustomize:'Tùy Chỉnh',qaMostUsed:'Dùng Nhiều',qaLive:'Trực Tiếp',qaRevenue:'Doanh Thu',
     qaDiagSub:'Kiểm tra toàn hệ, 5 phút',qaCamSub:'Mike thấy điều bạn thấy',qaShieldSub:'Kiểm tra 5 điểm trước khi xong',qaCloseSale:'Chốt<br>Đơn',qaCloseSaleSub:'Sửa hay thay máy',
     qaAllTools:'Tất Cả Công Cụ',qaPinHint:'chạm ghim để yêu thích',qaManual:'Tra<br>Tài Liệu',qaHistory:'Lịch Sử<br>Công Việc',qaWarranty:'Yêu Cầu<br>Bảo Hành',qaPriceBook:'Bảng<br>Giá',qaSafety:'Kiểm Tra<br>An Toàn',qaRecap:'Video<br>Tóm Tắt',
@@ -6658,7 +6732,7 @@ var V2_I18N={
     heroPro:'Intelligence de Terrain CVC Professionnelle',heroHome:'Votre clim ou chauffage ne marche pas ?',
     heroSubPro:'Mike — votre maître technicien IA. Diagnostics, caméra en direct, prix des pièces, coaching de revenus.',heroSubHome:'Prenez une photo, décrivez le problème et obtenez une réponse claire en quelques secondes. Aucune connaissance CVC requise.',
     descPro:'Mike gère diagnostics, revenus, fluide frigorigène, entretien — tout dans une seule conversation.',descHome:'Des explications en clair. Savoir si c’est sûr, l’urgence, et exactement quoi dire à votre technicien.',
-    tbDiag:'Lancer le<br>Diagnostic',tbCamera:'Caméra<br>en Direct',tbShield:'Bouclier<br>Anti-Retour',tbFind:'Trouver<br>une Pièce',
+    tbDiag:'Lancer le<br>Diagnostic',tbCamera:'Caméra<br>en Direct',tbShield:'Bouclier<br>Anti-Retour',tbFind:'Rechercher<br>le Chat',
     qaBtn:'Actions Rapides',qaFavs:'Vos Favoris',qaCustomize:'Personnaliser',qaMostUsed:'Plus Utilisé',qaLive:'En Direct',qaRevenue:'Revenus',
     qaDiagSub:'Contrôle complet, 5 min',qaCamSub:'Mike voit ce que vous voyez',qaShieldSub:'Contrôle 5 points avant clôture',qaCloseSale:'Conclure<br>la Vente',qaCloseSaleSub:'Réparer ou remplacer',
     qaAllTools:'Tous les Outils',qaPinHint:'touchez l’épingle pour favori',qaManual:'Recherche<br>Manuel',qaHistory:'Historique<br>des Jobs',qaWarranty:'Demande de<br>Garantie',qaPriceBook:'Grille de<br>Prix',qaSafety:'Contrôle<br>Sécurité',qaRecap:'Vidéo<br>Récap',
@@ -6688,7 +6762,7 @@ var V2_I18N={
     heroPro:'Inteligência Profissional de Campo HVAC',heroHome:'Seu ar ou aquecimento não funciona?',
     heroSubPro:'Mike — seu técnico mestre com IA. Diagnósticos, câmera ao vivo, preço de peças, treino de receita.',heroSubHome:'Tire uma foto, descreva o que está acontecendo e receba uma resposta clara em segundos. Sem precisar entender de HVAC.',
     descPro:'Mike cuida de diagnósticos, receita, gás, manutenção — tudo em uma conversa.',descHome:'Explicações em bom português. Saiba se é seguro, quão urgente e exatamente o que dizer ao seu técnico.',
-    tbDiag:'Rodar<br>Diagnóstico',tbCamera:'Câmera<br>ao Vivo',tbShield:'Escudo<br>Anti-Retorno',tbFind:'Achar<br>Peça',
+    tbDiag:'Rodar<br>Diagnóstico',tbCamera:'Câmera<br>ao Vivo',tbShield:'Escudo<br>Anti-Retorno',tbFind:'Buscar<br>Conversa',
     qaBtn:'Ações Rápidas',qaFavs:'Seus Favoritos',qaCustomize:'Personalizar',qaMostUsed:'Mais Usado',qaLive:'Ao Vivo',qaRevenue:'Receita',
     qaDiagSub:'Checagem completa, 5 min',qaCamSub:'Mike vê o que você vê',qaShieldSub:'Checagem de 5 pontos',qaCloseSale:'Fechar<br>a Venda',qaCloseSaleSub:'Consertar vs. trocar',
     qaAllTools:'Todas as Ferramentas',qaPinHint:'toque no pino para favoritar',qaManual:'Buscar<br>Manual',qaHistory:'Histórico<br>de Serviços',qaWarranty:'Pedido de<br>Garantia',qaPriceBook:'Tabela de<br>Preços',qaSafety:'Checagem de<br>Segurança',qaRecap:'Vídeo<br>Resumo',
@@ -7011,6 +7085,44 @@ function showTyping(){
 function hideTyping(){
   var ti=document.getElementById('typingIndicator');if(ti)ti.style.display='none';
   var btn=document.getElementById('chatSendBtn');if(btn)btn.classList.remove('sending');
+}
+
+// ── Live streaming bubble (visual progressive reveal) ────────────────────────
+// A lightweight temporary agent bubble that text deltas append into as they stream
+// in. It is PURELY visual: once the stream completes, sendChat removes it and runs
+// the full accumulated text through the canonical appendMessage('agent',…) pipeline
+// (which does the safety banner / FIND_PRO / mentor-aside / TTS gating). So the
+// streamed bubble never double-renders and never bypasses any existing processing.
+// Text is appended via textContent (no HTML interpretation) so a partial token can
+// never inject markup mid-stream.
+function beginLiveAgentBubble(){
+  var cm=document.getElementById('chatMessages');if(!cm)return null;
+  var wrap=document.createElement('div');
+  wrap.className='msg-agent';
+  wrap.setAttribute('data-live-stream','1');
+  var isContractor=(document.body.dataset.mode==='contractor');
+  var inner=isContractor
+    ? '<div class="msg-mike-badge"></div><div class="msg-bubble msg-bubble-agent" data-live-body="1" style="white-space:pre-wrap;"></div>'
+    : '<div class="msg-bubble msg-bubble-agent" data-live-body="1" style="white-space:pre-wrap;"></div>';
+  if(isContractor)wrap.className='msg-agent has-mike-badge';
+  wrap.innerHTML=inner;
+  cm.appendChild(wrap);
+  cm.scrollTop=cm.scrollHeight;
+  window._liveAgentBubble=wrap;
+  return wrap;
+}
+function appendLiveAgentToken(wrap,piece){
+  if(!wrap||!piece)return;
+  var body=wrap.querySelector('[data-live-body]');
+  if(!body)return;
+  body.textContent+=piece;
+  var cm=document.getElementById('chatMessages');
+  if(cm){var nearBottom=(cm.scrollHeight-cm.scrollTop-cm.clientHeight)<120;if(nearBottom)cm.scrollTop=cm.scrollHeight;}
+}
+function endLiveAgentBubble(wrap){
+  wrap=wrap||window._liveAgentBubble;
+  if(wrap&&wrap.parentNode)wrap.parentNode.removeChild(wrap);
+  window._liveAgentBubble=null;
 }
 
 function handleChatFile(e){
@@ -7375,7 +7487,38 @@ async function sendChat(){
     ));
     // Audible exchanges (voice / PTT / camera) cap at 800 tokens for punchy TTS;
     // text-only goes to 2048 for detailed write-ups. Gate matches mikeSay's gate.
-    var response=await callAI(sysPrompt,apiHistory,shouldMikeSpeak()?800:2048,needsSearch);
+    var _maxTok=shouldMikeSpeak()?800:2048;
+    var response;
+    // STREAMING: only the pure-text path streams (no web_search tool-use, no
+    // attachment, not voice — those keep the proven non-stream callAI). On any
+    // streaming failure we fall back to non-stream callAI so chat NEVER silently
+    // dies. The optimistic user bubble + typing indicator already fired above, so
+    // there is never a silent gap regardless of which path runs.
+    var _canStream=!needsSearch&&!hadAttachment&&!voiceMode&&(typeof ReadableStream!=='undefined');
+    if(_canStream){
+      try{
+        var _live=beginLiveAgentBubble();
+        var _firstTok=true;
+        response=await callAIStream(sysPrompt,apiHistory,_maxTok,function(piece){
+          if(_firstTok){hideTyping();_firstTok=false;}
+          appendLiveAgentToken(_live,piece);
+        });
+        endLiveAgentBubble(_live);
+        if(!response){ // empty stream — fall back to non-stream for a real answer
+          response=await callAI(sysPrompt,apiHistory,_maxTok,needsSearch);
+        }
+      }catch(_se){
+        endLiveAgentBubble(window._liveAgentBubble);
+        // Re-throw auth/paywall/stop so the outer catch shows the right UX; otherwise
+        // fall back to the battle-tested non-stream path.
+        var _m=(_se&&_se.message)||'';
+        if(_se&&_se.name==='AbortError')throw _se;
+        if(_m.indexOf('session expired')>=0||_m.indexOf('Subscription')>=0)throw _se;
+        response=await callAI(sysPrompt,apiHistory,_maxTok,needsSearch);
+      }
+    } else {
+      response=await callAI(sysPrompt,apiHistory,_maxTok,needsSearch);
+    }
     hideTyping();response=checkAndLearn(response);response=checkAndSaveJob(response);appendMessage('agent',response);if(!voiceMode)setTimeout(function(){generateQuickReplies(response);},300);
     chatHistory.push({role:'assistant',content:response});
     saveUserHistory();

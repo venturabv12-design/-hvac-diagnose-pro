@@ -1195,7 +1195,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   if (!access.allowed)
     return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
 
-  const { messages, system, max_tokens = 1024, use_search = false } = req.body;
+  const { messages, system, max_tokens = 1024, use_search = false, stream = false } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0)
     return res.status(400).json({ error: 'messages required' });
 
@@ -1213,6 +1213,86 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     if (use_search) {
       body.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }];
     }
+
+    // ── STREAMING TRANSPORT (additive) ────────────────────────────────────────
+    // When the client requests stream:true, proxy Anthropic's SSE so Mike's words
+    // appear progressively instead of after a single ~24s wait. This changes ONLY
+    // the transport — checkPaywall, auth, the system param, and AGENT_SYSTEM are
+    // untouched (same `body` as the non-stream path, just body.stream=true). The
+    // client falls back to the non-stream JSON path on any error, so this never
+    // becomes a hard dependency. We forward only text deltas + a terminal done/error
+    // event; tool-use / web_search blocks simply produce no text deltas (the client
+    // already gates use_search off for streamed chat).
+    if (stream) {
+      body.stream = true;
+      const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      if (!upstream.ok || !upstream.body) {
+        let msg = `API error ${upstream.status}`;
+        try { const ed = await upstream.json(); msg = ed?.error?.message || msg; } catch (_) {}
+        console.error('Anthropic stream error:', upstream.status, msg);
+        return res.status(upstream.status === 429 ? 429 : 502).json({ error: msg });
+      }
+
+      // Client SSE headers.
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
+      });
+      if (typeof res.flushHeaders === 'function') res.flushHeaders();
+
+      const decoder = new TextDecoder();
+      let buf = '';
+      let sentAny = false;
+      const send = (obj) => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch (_) {} };
+
+      try {
+        for await (const chunk of upstream.body) {
+          buf += decoder.decode(chunk, { stream: true });
+          // Anthropic SSE frames are separated by a blank line. Each frame has an
+          // `event:` line and a `data:` line. We only care about the data payloads.
+          let idx;
+          while ((idx = buf.indexOf('\n\n')) !== -1) {
+            const frame = buf.slice(0, idx);
+            buf = buf.slice(idx + 2);
+            const dataLine = frame.split('\n').find(l => l.startsWith('data:'));
+            if (!dataLine) continue;
+            const payload = dataLine.slice(5).trim();
+            if (!payload || payload === '[DONE]') continue;
+            let evt;
+            try { evt = JSON.parse(payload); } catch (_) { continue; }
+            if (evt.type === 'content_block_delta' && evt.delta) {
+              const piece = evt.delta.text || '';
+              if (piece) { sentAny = true; send({ delta: piece }); }
+            } else if (evt.type === 'message_stop') {
+              send({ done: true });
+            } else if (evt.type === 'error') {
+              send({ error: (evt.error && evt.error.message) || 'stream error' });
+            }
+          }
+        }
+        if (!sentAny) send({ delta: '' });
+        send({ done: true });
+        res.end();
+      } catch (streamErr) {
+        if (streamErr.name === 'AbortError') send({ error: 'Request timed out — please try again.' });
+        else { console.error('AI stream pipe error:', streamErr.message); send({ error: 'Connection error — please try again.' }); }
+        try { res.end(); } catch (_) {}
+      }
+      return;
+    }
+    // ── NON-STREAM (default fallback path, unchanged) ─────────────────────────
 
     const response = await fetchWithRetry('https://api.anthropic.com/v1/messages', {
       method: 'POST',

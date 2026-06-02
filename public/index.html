@@ -3630,9 +3630,13 @@ function authSignUp(){
     return;
   }
   if(pass.length<8){showAuthErr('Password must be at least 8 characters.');return;}
+  // Require an EXPLICIT Homeowner/Contractor choice — never silently default to contractor.
+  // Otherwise a homeowner who skips the toggle lands in contractor mode with no homeowner
+  // protection (no price wall, contractor tools exposed). Cert blocker fix.
+  var selectedRole=window._pendingRole||pendingRole;
+  if(!selectedRole){showAuthErr('One more thing — are you a Homeowner or a Contractor? Tap one above.');return;}
   var btn=document.getElementById('suBtn');
   if(btn){btn.disabled=true;btn.textContent='Creating account...';}
-  var selectedRole=window._pendingRole||pendingRole||'contractor';
   fetch('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,password:pass,company:company,role:selectedRole})})
     .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
     .then(function(result){

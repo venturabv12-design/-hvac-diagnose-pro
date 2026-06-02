@@ -7228,14 +7228,15 @@ function hideTyping(){
 function beginLiveAgentBubble(){
   var cm=document.getElementById('chatMessages');if(!cm)return null;
   var wrap=document.createElement('div');
-  wrap.className='msg-agent';
+  // Match the FINAL appendMessage('agent',…) render EXACTLY (msg-agent v2-msg-mike + .label
+  // row + .text body) so the streaming text and the finalized text are pixel-identical —
+  // no size/bubble/reflow jump when the reply finishes (the "font goes weird" the founder saw).
+  wrap.className='msg-agent v2-msg-mike';
   wrap.setAttribute('data-live-stream','1');
-  var isContractor=(document.body.dataset.mode==='contractor');
-  var inner=isContractor
-    ? '<div class="msg-mike-badge"></div><div class="msg-bubble msg-bubble-agent" data-live-body="1" style="white-space:pre-wrap;"></div>'
-    : '<div class="msg-bubble msg-bubble-agent" data-live-body="1" style="white-space:pre-wrap;"></div>';
-  if(isContractor)wrap.className='msg-agent has-mike-badge';
-  wrap.innerHTML=inner;
+  var mikeLabel=(typeof labelV2==='function')?labelV2():'MIKE';
+  wrap.innerHTML='<div class="label"><span class="md"></span><span class="mn">'+mikeLabel
+    +'</span><span class="mt">'+getTimeStr()+'</span></div>'
+    +'<div class="text msg-bubble msg-bubble-agent" data-live-body="1" style="white-space:pre-wrap;"></div>';
   cm.appendChild(wrap);
   cm.scrollTop=cm.scrollHeight;
   window._liveAgentBubble=wrap;

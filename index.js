@@ -34,6 +34,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!ANTHROPIC_API_KEY) { console.error('FATAL: ANTHROPIC_API_KEY not set'); process.exit(1); }
 if (!JWT_SECRET) { console.error('FATAL: JWT_SECRET not set'); process.exit(1); }
+if (STRIPE_SECRET_KEY && !STRIPE_WEBHOOK_SECRET) { console.warn('WARNING: STRIPE_SECRET_KEY is set but STRIPE_WEBHOOK_SECRET is missing — webhook signature verification is DISABLED. Fake "paid" events could upgrade accounts. Set STRIPE_WEBHOOK_SECRET before accepting payments.'); }
 
 // bcrypt cost factor — 12 rounds is ~250ms on modern hardware, which is painful
 // enough for attackers while imperceptible to users logging in.
@@ -460,15 +461,12 @@ app.use((req, res, next) => {
 // Public endpoint — intentionally no auth so load balancers and Railway can
 // check it without credentials. Does NOT expose env var values, just readiness flags.
 app.get('/api/health', (req, res) => {
+  // Security: do not disclose which integrations are configured (feature-flag leak).
+  // The frontend only needs a 200; deploy-verification uses uptime.
   res.json({
     ok: true,
-    aiReady: !!ANTHROPIC_API_KEY,
-    ttsReady: !!ELEVENLABS_API_KEY,
-    dbReady: !!(SUPABASE_URL && SUPABASE_SERVICE_KEY),
-    billingReady: !!STRIPE_SECRET_KEY,
     activeRequests: globalActive,
     uptime: Math.floor(process.uptime()),
-    memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
   });
 });
 
@@ -509,7 +507,7 @@ app.post('/api/auth/signup', authLimiter, async (req, res) => {
     const now = new Date().toISOString();
     
     const users = await supabase('POST', 'users', {
-      name: name.trim(),
+      name: name.trim().replace(/[<>]/g, ''),
       email: email.toLowerCase().trim(),
       password_hash: passwordHash,
       // password_salt is no longer used — bcrypt stores the salt inside the hash.
@@ -574,7 +572,7 @@ app.post('/api/auth/signin', authLimiter, async (req, res) => {
     if (users === null)
       return res.status(503).json({ error: 'Service temporarily unavailable — please try again in a moment' });
     if (users.length === 0)
-      return res.status(404).json({ error: 'No account found with this email' });
+      return res.status(401).json({ error: 'Invalid email or password' });
 
     const user = users[0];
     
@@ -599,7 +597,7 @@ app.post('/api/auth/signin', authLimiter, async (req, res) => {
     }
     
     if (!passwordOk)
-      return res.status(401).json({ error: 'Incorrect password' });
+      return res.status(401).json({ error: 'Invalid email or password' });
 
     // Update last login
     await supabase('PATCH', 'users', { last_login: new Date().toISOString() }, 
@@ -649,7 +647,7 @@ app.post('/api/auth/profile', authenticateToken, async (req, res) => {
     // authenticated user can PATCH role:'admin' and reach the admin panel.
     const safeRoles = ['contractor', 'homeowner', 'technician'];
     const allowed = {
-      name: updates.name,
+      name: updates.name ? updates.name.replace(/[<>]/g, '') : undefined,
       company: updates.company,
       role: safeRoles.includes(updates.role) ? updates.role : undefined,
       epa_cert: updates.epaCert,
@@ -797,7 +795,7 @@ app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
 });
 
 // ── STRIPE: CREATE CHECKOUT SESSION ──────────────────────────────────────────
-app.post('/api/billing/checkout', async (req, res) => {
+app.post('/api/billing/checkout', authenticateToken, async (req, res) => {
   const { plan, email, name } = req.body;
   if (!plan || !email) return res.status(400).json({ error: 'Plan and email required' });
   if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email address' });

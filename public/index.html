@@ -2892,7 +2892,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         <section class="drawer-section">
           <div class="drawer-section-head">
             <div class="drawer-section-title" data-v2i18n="qaTodaysCalls">Today&rsquo;s Calls</div>
-            <div class="drawer-section-meta">3 calls &middot; $892</div>
+            <div class="drawer-section-meta">Example &middot; your calls appear here</div>
           </div>
           <div class="drawer-calls">
             <div class="recent-job" role="button" tabindex="0" onclick="openTodaysCall('Trane XR16','Capacitor','4TTX6048J')">
@@ -4821,8 +4821,11 @@ function updateConsoleStrip(d,danger){
   }else{
     if(unit)unit.textContent=(d.unit?String(d.unit):'FAULT IDENTIFIED').toUpperCase().slice(0,34);
     if(fault){fault.innerHTML='';fault.textContent=(d.fault||'DIAGNOSIS').toString().toUpperCase().slice(0,26);}
-    setGauge(gv1,gl1,gm1,rd[0]);
-    setGauge(gv2,gl2,gm2,rd[1]);
+    // Show gauge VALUES only — reading labels from conversational parse can be junk
+    // fragments ("VE GOT"); the value (182°, 3.2") is the useful glance. Full labels
+    // live on the diagnosis card below.
+    setGauge(gv1,gl1,gm1,rd[0]?{value:rd[0].value,label:''}:null);
+    setGauge(gv2,gl2,gm2,rd[1]?{value:rd[1].value,label:''}:null);
     if(gv1)gv1.className='is-gv warn';
     if(gv2)gv2.className='is-gv';
     if(homeStat)homeStat.style.display='none';

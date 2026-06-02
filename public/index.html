@@ -5243,7 +5243,7 @@ async function callAI(system,messages,max_tokens,useSearch){
         showPaywall();
         throw new Error(data.error||'Subscription required.');
       }
-      if(res.status===529||res.status===503||(data.error&&(data.error.indexOf('overload')>=0||data.error.indexOf('529')>=0))){
+      if(res.status===529||res.status===503||res.status===429||(data.error&&(data.error.indexOf('overload')>=0||data.error.indexOf('529')>=0||data.error.indexOf('rate')>=0))){
         if(attempt<2){await new Promise(function(r){setTimeout(r,1000*(attempt+1));});continue;}
         throw new Error('Busy right now — hit send again and I\'ll grab it.');
       }
@@ -5299,6 +5299,7 @@ async function callAIStream(system,messages,max_tokens,onToken){
       throw new Error('Your session expired. Please sign in again.');
     }
     if(res.status===402){showPaywall();throw new Error(ed.error||'Subscription required.');}
+    if(res.status===429){throw new Error('Busy right now — hit send again and I\'ll grab it.');}
     throw new Error(ed.error||('Mike hit an error ('+res.status+'). Tap send again.'));
   }
   if(!res.body||!res.body.getReader)throw new Error('NO_STREAM');
@@ -7672,8 +7673,8 @@ async function sendChat(){
       appendMessage('agent','(stopped)');
     } else if(em.includes('timed out')||em.includes('abort')||em.toLowerCase().includes('network')){
       appendMessage('agent','Taking a bit longer than usual. Check your connection and tap send again.');
-    } else if(em.includes('high demand')){
-      appendMessage('agent','Mike is handling a lot of requests right now. Give it a second and tap send again.');
+    } else if(em.includes('high demand')||em.includes('Busy right now')||em.toLowerCase().includes('rate limit')){
+      appendMessage('agent','Mike’s getting hit hard right now — give it a few seconds and tap send again.');
     } else if(em.includes('session expired')||em.includes('sign in again')){
       // Stale/invalid token — callAI already cleared it and reopened the auth overlay.
       appendMessage('agent','Looks like your session timed out — sign back in and I\'ll pick up right where we left off.');

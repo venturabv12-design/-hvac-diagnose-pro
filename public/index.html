@@ -8984,11 +8984,11 @@ function mikeSay(text){
   // greet, startListening relisten) are already voiceMode-guarded externally,
   // so this change doesn't widen their behavior — only unblocks contractor PTT.
   if(!shouldMikeSpeak())return;
-  // Idle-timeout reset: any genuine Mike utterance resets the silence timer.
-  // EXCEPT when Mike is firing the 45s "you still with me?" idle-check itself —
-  // _idleCheckFiring is set true just before that mikeSay call so we skip the
-  // reset here, letting the 60s goodbye timer continue ticking down.
-  if(!window._idleCheckFiring&&window._idleResetTimer)window._idleResetTimer();
+  // Mike is about to speak — PAUSE the silence clock so a long explanation never trips
+  // "you still with me?" mid-sentence (the user is just listening, not gone). It re-arms
+  // when his speech actually ENDS (src.onended). EXCEPT when THIS mikeSay IS the idle-check
+  // firing — then leave the goodbye timer running so an unattended call still ends.
+  if(!window._idleCheckFiring){try{clearTimeout(window._idleCheck);}catch(e){}try{clearTimeout(window._idleGoodbye);}catch(e){}}
   // Kill any other Mike that may be speaking — voice mode, camera mode, or browser fallback.
   // This is the single source of truth: only ONE Mike voice may ever play at a time.
   stopMikeSpeaking();
@@ -9025,7 +9025,7 @@ function mikeSay(text){
         if(typeof showVoiceWaveform==='function')showVoiceWaveform(false);
         if(micBtn){micBtn.classList.remove('mic-speaking');micBtn.textContent='🎙️';}
         if(stopBtn)stopBtn.style.display='none';
-        if(voiceMode&&!isListening){setVoiceStatus('Go ahead…','');setTimeout(function(){if(voiceMode&&!isListening)startListening();},1200);}
+        if(voiceMode&&!isListening){setVoiceStatus('Go ahead…','');setTimeout(function(){if(voiceMode&&!isListening)startListening();},1200);if(!window._idleCheckFiring&&window._idleResetTimer)window._idleResetTimer();}
         return;
       }
       var AudioCtx=window.AudioContext||window.webkitAudioContext;
@@ -9054,6 +9054,9 @@ function mikeSay(text){
             if(voiceMode){
               setVoiceStatus('Go ahead…','');
               setTimeout(function(){if(voiceMode&&!isListening)startListening();},1200);
+              // Mike just finished talking — NOW start the silence clock (it times the USER's
+              // silence, not Mike's). Skip if this was the idle-check (goodbye timer is running).
+              if(!window._idleCheckFiring&&window._idleResetTimer)window._idleResetTimer();
             }
           };
           src.start(0);

@@ -5385,7 +5385,7 @@ async function runHomeownerDiagnostic(){
     var syms=selectedHomeSymptoms.length?selectedHomeSymptoms.join(", "):"None selected";
 
     // SYSTEM: friendly, plain English, NO prices, pushes toward calling a tech
-    var SYSTEM="You are a friendly HVAC assistant helping a homeowner understand what is wrong with their system. Your ONLY job is to help them understand the problem in plain, simple English — then encourage them to call a licensed HVAC technician. Rules you must follow:\n1. Use plain language. No technical jargon. One or two short sentences per section — never long paragraphs.\n2. Do NOT include any cost estimates, price ranges, or dollar amounts. Never mention money.\n3. Always end by recommending they call a licensed technician.\n4. Be warm and reassuring. Homeowners are often stressed.\n5. If there is any safety concern (CO, gas, no cooling in extreme heat), make it urgent and clear.\n6. Keep every section body to 1-2 short sentences maximum.";
+    var SYSTEM="You are Mike — a straight-talking master HVAC tech who is the homeowner's most knowledgeable friend. You know what is wrong and you are going to tell them clearly, without making them feel dumb or scared. Your job: acknowledge what they are dealing with first, then explain the problem in plain English, then get them to the right licensed tech.\n\nHard rules — no exceptions:\n1. Plain language only. No technical jargon. One or two short sentences per section — never long paragraphs.\n2. NEVER include any cost estimate, price range, dollar amount, or labor cost. Never mention money. Not even as a ballpark.\n3. Always end by recommending they call a licensed HVAC technician.\n4. Be warm and direct. Homeowners are often stressed — acknowledge it, then give them the straight answer.\n5. If there is any safety concern (CO, gas, no cooling in extreme heat), lead with it — make the urgency unmistakable.\n6. Keep every section body to 1-2 short sentences maximum.";
 
     var prompt="HOMEOWNER HVAC DIAGNOSTIC\nSystem age: "+(sysAge||"Unknown")+"\nSymptoms: "+syms+"\nDescription: "+(desc||"None")+'\n\nReturn ONLY valid compact JSON — no markdown, no explanation:\n{"severity":"CRITICAL|HIGH|MEDIUM|LOW","urgency":"Call today|Call this week|Schedule when ready","summary":"One plain sentence — what is likely wrong.","sections":[{"label":"What\'s Happening","icon":"💡","body":"1-2 sentences max, plain English, what the problem likely is."},{"label":"Is It Safe?","icon":"🛡️","body":"1-2 sentences. Is it safe to keep running the system or should they shut it off?"},{"label":"How Urgent","icon":"🕐","body":"1-2 sentences. Should they call today, this week, or can they wait?"},{"label":"What To Do Next","icon":"📞","body":"Tell them to call a licensed HVAC technician. Keep it warm and helpful."}]}';
 
@@ -6328,7 +6328,17 @@ function buildPersonalizedContext(){
   var ctx = '';
   var profile = getUserMemoryProfile();
 
-  // Who Mike is talking to
+  // Who Mike is talking to -- role-branched so homeowner hard rules fire deterministically (covers chat + camera).
+  if(currentUser && currentUser.role === 'homeowner'){
+    ctx += '\n\nWHO YOU ARE TALKING TO: A HOMEOWNER -- NOT A TECHNICIAN.\nHOMEOWNER HARD RULES -- NON-NEGOTIABLE ON EVERY RESPONSE:\n- NEVER state any repair price, part price, cost range, labor cost, supply-house price, or "what a tech charges" -- not even a rough estimate or ballpark.\n- NEVER search for or quote pricing of any kind, from the web or any other source.\n- If the homeowner asks what something costs: acknowledge the concern, say pricing varies widely by region and situation, and tell them the licensed tech who comes out will give them an accurate quote.\n- Every response: (1) explain what is likely wrong in plain English, no jargon; (2) say whether it is safe or urgent; (3) tell them what to ask their tech; (4) direct them to call a licensed HVAC technician.\n- Never encourage DIY repairs beyond simple things like changing a filter.\n- Tone: warm, calm, reassuring. Homeowners are stressed. Be the knowledgeable friend who tells them straight, then sends them to the right person.\n\nHOMEOWNER PROFILE:\n';
+  ctx += 'Name: ' + (profile.firstName || currentUser.name.split(' ')[0] || 'Tech') + '\n';
+    var _hLines='';
+    if(profile.homeSysBrand) _hLines+='Brand: '+profile.homeSysBrand+'\n';
+    if(profile.homeSysAge)   _hLines+='Age: '+profile.homeSysAge+' years\n';
+    if(profile.homeSysModel) _hLines+='Model: '+profile.homeSysModel+'\n';
+    if(profile.homeZip)      _hLines+='Home ZIP: '+profile.homeZip+'\n';
+    if(_hLines) ctx+='\nHOMEOWNER SYSTEM ON FILE:\n'+_hLines;
+  } else {
   ctx += '\n\nTECH PROFILE:\n';
   ctx += 'Name: ' + (profile.firstName || currentUser.name.split(' ')[0] || 'Tech') + '\n';
 
@@ -6351,14 +6361,6 @@ function buildPersonalizedContext(){
   if(profile.phone) ctx += 'Phone: ' + profile.phone + '\n';
   if(profile.serviceZip) ctx += 'Service area zip: ' + profile.serviceZip + ' (use for local parts pricing if GPS unavailable)\n';
   if(profile.truckStock) ctx += 'Common parts on their truck: ' + profile.truckStock + '. Reference this when diagnosing — if they have the part, tell them to grab it now.\n';
-
-  if(currentUser&&currentUser.role==='homeowner'){
-    var _hLines='';
-    if(profile.homeSysBrand) _hLines+='Brand: '+profile.homeSysBrand+'\n';
-    if(profile.homeSysAge)   _hLines+='Age: '+profile.homeSysAge+' years\n';
-    if(profile.homeSysModel) _hLines+='Model: '+profile.homeSysModel+'\n';
-    if(profile.homeZip)      _hLines+='Home ZIP: '+profile.homeZip+'\n';
-    if(_hLines) ctx+='\nHOMEOWNER SYSTEM ON FILE:\n'+_hLines;
   }
 
   if(profile.totalMessages > 5){
@@ -8739,11 +8741,11 @@ function toggleVoiceMode(){
     window._idleCheck=setTimeout(function(){
       if(!voiceMode)return;
       window._idleCheckFiring=true;
-      var checkMsg={en:"You still with me?",es:"¿Sigues conmigo?",zh:"你还在吗？",vi:"Bạn còn đó không?",fr:"Vous êtes encore là?",pt:"Ainda está aí?"};
+      var checkMsg={en:"You still with me?",es:"¿Sigues ahí?",zh:"还在吗？",vi:"Vẫn còn đó không?",fr:"T'es encore là ?",pt:"Ainda tá aí?"};
       mikeSay(checkMsg[currentLang]||checkMsg.en);
       window._idleGoodbye=setTimeout(function(){
         if(!voiceMode)return;
-        var byeMsg={en:"Talk soon — tap me when you need me.",es:"Hablamos pronto — tócame cuando me necesites.",zh:"回头见 — 需要时点我。",vi:"Nói chuyện sau — chạm vào tôi khi cần.",fr:"À bientôt — touchez-moi quand vous avez besoin.",pt:"Falamos em breve — toque quando precisar."};
+        var byeMsg={en:"Alright, I'm here when you need me.",es:"Aquí estoy cuando me necesites.",zh:"需要我随时叫我。",vi:"Cần gì cứ gọi tôi.",fr:"Je suis là quand t'as besoin.",pt:"Tô aqui quando precisar."};
         mikeSay(byeMsg[currentLang]||byeMsg.en);
         setTimeout(function(){if(voiceMode)toggleVoiceMode();},3500);
       },15000);

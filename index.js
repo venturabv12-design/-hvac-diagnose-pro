@@ -1145,6 +1145,12 @@ async function checkPaywall(token) {
     return { allowed: false, reason: 'Invalid or expired session' };
   }
 
+  // BETA PHASE: billing is not live yet (no Stripe account), so NOBODY can subscribe —
+  // blocking on trial-expiry or "unknown plan" is pure friction that locks out the founder
+  // and the beta techs. A valid login (verified above) = full access. Auth is still enforced.
+  // When Stripe launches, delete the next return line to re-enable the plan/trial gating below.
+  return { allowed: true };
+
   // No DB → dev mode, allow through
   if (!SUPABASE_URL) return { allowed: true };
 

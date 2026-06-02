@@ -3479,9 +3479,10 @@ function showPersonalizedWelcome(){
   // specialty fragment. Caveat: only the English copy is Mike's signed voice; the
   // others are clear, readable translations of the same partner cadence.
   var WL=WELCOME_I18N[(typeof currentLang!=='undefined')?currentLang:'en']||WELCOME_I18N.en;
-  var nm=name?(", "+name):"";        // for "Welcome back, Name."
-  var nmEx=name?(" "+name):"";       // for "Hey Name!"
-  var sp=profile.specialty?WL.specialtyFrag.replace('{sp}',profile.specialty):"";
+  var safeName=escapeHtml(name||'');  // XSS: name is attacker-controllable at signup
+  var nm=safeName?(", "+safeName):"";        // for "Welcome back, Name."
+  var nmEx=safeName?(" "+safeName):"";       // for "Hey Name!"
+  var sp=profile.specialty?WL.specialtyFrag.replace('{sp}',escapeHtml(profile.specialty)):"";
 
   if(!isReturning){
     // Brand new tech — first time ever. Mike introduces himself.
@@ -4584,17 +4585,17 @@ function showAdminDashboard(){
       var planLabel=u.plan==='trial'?'Trial '+(dl!==null?'('+dl+'d left)':'expired'):u.plan==='pro'?'Pro':u.plan==='starter'?'Starter':u.plan==='enterprise'?'Enterprise':u.plan==='admin'?'Admin':u.plan||'—';
       var planClass='adm-plan-'+(u.plan==='pro'?'pro':u.plan==='starter'?'starter':u.plan==='enterprise'?'enterprise':u.plan==='admin'?'admin':'trial');
       var roleLabel=u.role==='homeowner'?'🏠 Homeowner':u.role==='contractor'?'🔧 Contractor':'🔧 Contractor';
-      var safeEmail=u.email.replace(/'/g,"\'");
+      var safeEmail=escapeHtml(u.email||'');  // XSS: user-controlled values rendered into admin innerHTML
       var canDelete=!u.isAdmin;
       return '<tr>'
-        +'<td style="font-weight:600;color:#fff">'+u.name+'</td>'
-        +'<td style="color:#555;font-size:12px">'+u.email+'</td>'
+        +'<td style="font-weight:600;color:#fff">'+escapeHtml(u.name||'')+'</td>'
+        +'<td style="color:#555;font-size:12px">'+safeEmail+'</td>'
         +'<td><span class="adm-plan-badge '+planClass+'">'+planLabel+'</span></td>'
         +'<td style="font-size:12px;color:#888">'+roleLabel+'</td>'
-        +'<td style="font-size:12px;color:#666">'+u.company+'</td>'
+        +'<td style="font-size:12px;color:#666">'+escapeHtml(u.company||'')+'</td>'
         +'<td style="color:var(--rust);font-weight:700;text-align:center">'+(u.usageCount||0)+'</td>'
         +'<td style="color:#555;font-size:11px">'+new Date(u.createdAt||Date.now()).toLocaleDateString()+'</td>'
-        +'<td>'+(canDelete?'<button class="adm-del-btn" onclick="deleteAdminUser(\''+safeEmail+'\')">Delete</button>':'<span style="font-size:11px;color:#333">Admin</span>')+'</td>'
+        +'<td>'+(canDelete?'<button class="adm-del-btn" data-email="'+safeEmail+'" onclick="deleteAdminUser(this.dataset.email)">Delete</button>':'<span style="font-size:11px;color:#333">Admin</span>')+'</td>'
         +'</tr>';
     }).join('')||'<tr><td colspan="8" style="color:#555;text-align:center;padding:20px">No beta users yet</td></tr>';
   }
@@ -8556,7 +8557,7 @@ function clearChat(){
       localStorage.setItem(akey,JSON.stringify(archives));
     }
   }catch(_){}
-  var firstName=(currentUser&&currentUser.name)?currentUser.name.split(' ')[0]:'there';
+  var firstName=escapeHtml((currentUser&&currentUser.name)?currentUser.name.split(' ')[0]:'there');
   // Greeting tailored per-language so non-English techs still feel addressed by Mike.
   var greetings={
     en:"Hey "+firstName+", it's Mike. What are you working on?",
@@ -8596,7 +8597,7 @@ function newChat(){
   var cm=document.getElementById('chatMessages');
   if(cm)cm.scrollTop=0;
   if(typeof cameraActive!=='undefined'&&cameraActive){
-    var firstName=(currentUser&&currentUser.name)?currentUser.name.split(' ')[0]:'there';
+    var firstName=escapeHtml((currentUser&&currentUser.name)?currentUser.name.split(' ')[0]:'there');
     var greetings={
       en:"Hey "+firstName+", it's Mike. What are you working on?",
       es:"Hola "+firstName+", soy Mike. ¿En qué estás trabajando?",
@@ -8625,9 +8626,9 @@ function wipeChat(){
   // Resolve first name — profile > currentUser > per-language fallback alias
   var _profile=(typeof getUserMemoryProfile==='function')?getUserMemoryProfile():{};
   var _fallback={en:'man',es:'amigo',zh:'兄弟',vi:'bro',fr:'mec',pt:'mano'};
-  var name=_profile.firstName
+  var name=escapeHtml(_profile.firstName
     || (currentUser && currentUser.name && currentUser.name.split(' ')[0])
-    || (_fallback[currentLang]||_fallback.en);
+    || (_fallback[currentLang]||_fallback.en));
 
   // Warm, short returning-user variations — random per call, localized
   var pools={

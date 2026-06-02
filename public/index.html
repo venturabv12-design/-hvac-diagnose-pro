@@ -5223,26 +5223,23 @@ async function callAI(system,messages,max_tokens,useSearch){
       var data=await res.json();
       // 401 = invalid/expired token (old base64 token from before Phase 1, or truly expired JWT)
       // Force a clean re-login so user gets a fresh JWT.
-      if(res.status===401||res.status===402){
-        if(res.status===401){
-          // breaker-fix Pass 1 — gate the teardown by !cameraActive. The default
-          // teardown-on-401 is appropriate for user-initiated calls (chat send,
-          // homeowner Analyze) because the user is in an auth-gated UI and needs
-          // to sign in again. The CAMERA flow exception: tearing down mid-camera-
-          // session ejects the user from a live overlay (the eng-breaker Pass 1
-          // P0-2). We still throw so the camera's own catch handler can show a
-          // localized "session paused — tap Analyze to retry" UX without losing
-          // the rest of the session state. Push 7.4's trazer_users cleanup is
-          // preserved for the non-camera path.
-          if(typeof cameraActive==='undefined'||!cameraActive){
-            localStorage.removeItem('trazer_user');
-            localStorage.removeItem('trazer_users');
-            currentUser=null;
-            document.getElementById('authOverlay').classList.remove('hidden');
-          }
-          throw new Error('Your session expired. Please sign in again.');
+      // 401, OR a 402 with paywall:false (e.g. "Invalid or expired session" — a bad/stale
+      // JWT, NOT a real paywall) → force a clean re-login. Without the !data.paywall check
+      // a stale token returned "Invalid or expired session" which slipped past sendChat's
+      // "session expired" matcher and showed the generic "Something went wrong on my end".
+      // breaker-fix Pass 1 — gate the teardown by !cameraActive so a live camera session
+      // isn't ejected mid-overlay; the camera's own catch shows a localized retry UX.
+      if(res.status===401||(res.status===402&&!data.paywall)){
+        if(typeof cameraActive==='undefined'||!cameraActive){
+          localStorage.removeItem('trazer_user');
+          localStorage.removeItem('trazer_users');
+          currentUser=null;
+          document.getElementById('authOverlay').classList.remove('hidden');
         }
-        // 402 = paywall (trial expired, no subscription)
+        throw new Error('Your session expired. Please sign in again.');
+      }
+      // 402 with paywall:true = real paywall (trial expired, no subscription).
+      if(res.status===402){
         showPaywall();
         throw new Error(data.error||'Subscription required.');
       }
@@ -5293,7 +5290,8 @@ async function callAIStream(system,messages,max_tokens,onToken){
   if(!res.ok){
     var ed={};try{ed=await res.json();}catch(_e){}
     clearTimeout(tid);
-    if(res.status===401){
+    if(res.status===401||(res.status===402&&!ed.paywall)){
+      // 401 or 402-paywall:false (stale/invalid token) → clean re-login, not a paywall/generic error.
       if(typeof cameraActive==='undefined'||!cameraActive){
         localStorage.removeItem('trazer_user');localStorage.removeItem('trazer_users');currentUser=null;
         document.getElementById('authOverlay').classList.remove('hidden');
@@ -7676,6 +7674,11 @@ async function sendChat(){
       appendMessage('agent','Taking a bit longer than usual. Check your connection and tap send again.');
     } else if(em.includes('high demand')){
       appendMessage('agent','Mike is handling a lot of requests right now. Give it a second and tap send again.');
+    } else if(em.includes('session expired')||em.includes('sign in again')){
+      // Stale/invalid token — callAI already cleared it and reopened the auth overlay.
+      appendMessage('agent','Looks like your session timed out — sign back in and I\'ll pick up right where we left off.');
+    } else if(em.includes('trial')||em.toLowerCase().includes('subscription')){
+      appendMessage('agent',em);
     } else {
       appendMessage('agent','Something went wrong on my end. Tap send again — I am ready.');
     }

@@ -3570,19 +3570,9 @@ function authSignIn(){
         // that path overrides errMsg to a hardcoded safe string, escaping at the source
         // prevents any future regression from re-introducing XSS through this surface.
         var errMsg=escapeHtml(result.data.error||'Sign in failed.');
-        // 404 = account doesn't exist in current database — likely a system migration issue.
-        // Give the user a clear, actionable message with a link to create a new account.
-        if(result.data.error&&result.data.error.indexOf('No account found')>=0){
-          errMsg='No account found with this email. If you used Trazer before, our system was recently upgraded — please create a new account to continue.';
-          // Show a "Create Account" helper link below the error
-          var e=document.getElementById('authErr');
-          if(e){
-            e.innerHTML=errMsg+' <a href="#" onclick="authTab(\'up\');return false;" style="color:var(--rust);text-decoration:underline;font-weight:600;">Create Account →</a>';
-            e.classList.add('show');
-            if(btn){btn.disabled=false;btn.textContent='Sign In';}
-            return;
-          }
-        }
+        // Security: signin now returns a unified "Invalid email or password" for both an
+        // unknown email and a wrong password (no account enumeration). Returning/migrated
+        // users are nudged to re-create via the #authMigration card (stale-token path), not here.
         showAuthErr(errMsg);if(btn){btn.disabled=false;btn.textContent='Sign In';}return;
       }
       var user=result.data.user;user.token=result.data.token;

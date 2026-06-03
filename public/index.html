@@ -1310,6 +1310,21 @@ body[data-mode="homeowner"] .drop-zone{background:rgba(255,255,255,.03);border-c
 body[data-mode="homeowner"] .symptoms-grid .chip{background:rgba(255,255,255,.04)!important;border-color:var(--line)!important;color:rgba(244,239,230,.82)!important;box-shadow:none!important;}
 body[data-mode="homeowner"] .symptoms-grid .chip.selected{background:rgba(58,139,138,.15)!important;border-color:var(--teal)!important;color:var(--teal)!important;}
 body[data-mode="homeowner"] textarea,body[data-mode="homeowner"] input[type="text"]{background:rgba(255,255,255,.04);border-color:var(--line);color:#F4EFE6;}
+/* ── Chacho field-condition fixes (cert): ≥44px tap targets, sunlight contrast, readable micro-labels ── */
+:root{--teal-bright:#5FC4C2;}
+.mp-reach-btn.chat{background:linear-gradient(180deg,#B14A32,#852F1D)!important;color:#fff!important;}
+.mp-reach-btn.face{background:linear-gradient(180deg,#6BD0CE,#3FA8A5)!important;color:#00201E!important;}
+body[data-mode="contractor"] .mp-back{width:44px!important;height:44px!important;}
+.mp-ss-close{width:44px!important;height:44px!important;}
+.mp-name .mp-sub{font-size:11px!important;color:var(--teal-bright)!important;}
+.mp-name .mp-sub .lt{color:rgba(244,239,230,.45)!important;}
+.mp-tool-sub{font-size:9px!important;}
+body[data-mode="contractor"] #quickActionsBtn{min-height:44px!important;}
+.nav-back,.nav-globe,.nav-more{width:42px!important;height:42px!important;}
+body[data-mode="contractor"] .nav-mike-status{font-size:10px!important;color:var(--teal-bright)!important;}
+.is-status-label{font-size:10px!important;color:var(--teal-bright)!important;}
+.v2-hsub{font-size:10.5px!important;}
+body[data-mode="contractor"] .v2-hbtn.face .v2-hbtn-label,body[data-mode="contractor"] .v2-hbtn.face .v2-hbtn-ic{color:var(--teal-bright)!important;}
 </style>
 </head>
 <body>
@@ -8524,7 +8539,7 @@ var MP_TOOLS={
     {label:'Load Calc',sub:'Size the equipment',fn:function(){mpEnterChat();askMikeLoadCalc();}}
   ]},
   diagnose:{title:'Diagnose',pip:'var(--teal)',actions:[
-    {label:'Full Diagnostic',sub:'Guided system check',fn:function(){var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b&&b.style.display==='none'){b.style.display='block';if(a)a.textContent='▲';}if(b)b.scrollIntoView({behavior:'smooth'});}},
+    {label:'Full Diagnostic',sub:'Guided system check',fn:function(){mpEnterChat();var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b&&b.style.display==='none'){b.style.display='block';if(a)a.textContent='▲';}if(b)setTimeout(function(){b.scrollIntoView({behavior:'smooth'});},80);}},
     {label:'Find Upsells',sub:'After the repair',fn:function(){mpEnterChat();sendQuick('I just finished the repair — what else should I check for upsell opportunities?');}},
     {label:'Beat Competitor Quote',sub:'Win the job',fn:function(){mpEnterChat();askMikeCompetitor();}},
     {label:'Get Google Review',sub:'Ask for a review',fn:function(){mpEnterChat();askMikeReviewRequest();}},

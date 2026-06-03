@@ -1392,6 +1392,10 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
           /\b(?:i'?d|i would|lean toward|i'?d lean toward|go with|my (?:honest )?take[: -]*)[^.!?\n]{0,20}?\b(replac\w*|the new (?:system|unit)|a new (?:system|unit))/gi,
           'the repair-or-replace call belongs to the tech on the job'
         );
+        outText = outText.replace(
+          /\b(?:the )?math (?:often |usually |here )?(?:favors?|points? to|leans? toward|supports?)[^.!?\n]{0,22}?\b(replac\w*|new (?:system|unit)|going new)/gi,
+          'whether to repair or replace is the licensed tech’s call'
+        );
       }
       // Prepend mandatory safety lead(s) so the action is the first thing the tech reads.
       const _leads = [_safetyLead, _inverterWarn].filter(Boolean);

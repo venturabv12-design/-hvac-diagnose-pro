@@ -1209,7 +1209,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
 
   try {
     const body = {
-      model: 'claude-sonnet-4-5',
+      model: process.env.MIKE_MODEL || 'claude-opus-4-8',
       max_tokens: Math.min(max_tokens, 8192),
       system,
       messages,

@@ -3,8 +3,8 @@
 -- Run once in the Supabase SQL editor (project: existing SUPABASE_URL).
 --
 -- EMBEDDING DIMENSION: must match the embed model used in scripts/ingest-manuals.js
---   voyage-3-large  -> 1024  (recommended: best technical retrieval)
---   voyage-3        -> 1024
+--   voyage-4-large  -> 1024  (recommended: newest, best technical retrieval)
+--   voyage-4        -> 1024
 --   openai text-embedding-3-large -> 3072
 --   openai text-embedding-3-small -> 1536
 -- Default below is 1024 (Voyage). If you use a different model, change vector(1024)

@@ -31,7 +31,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const PROVIDER = (process.env.EMBED_PROVIDER || 'voyage').toLowerCase();
 const EMBED_MODEL = process.env.EMBED_MODEL ||
-  (PROVIDER === 'openai' ? 'text-embedding-3-large' : 'voyage-3-large');
+  (PROVIDER === 'openai' ? 'text-embedding-3-large' : 'voyage-4-large');
 const EMBED_DIM = parseInt(process.env.EMBED_DIM || (PROVIDER === 'openai' ? '3072' : '1024'), 10);
 const BATCH = 96;            // embeddings per request
 const CHUNK_CHARS = 1200;    // ~300 tokens

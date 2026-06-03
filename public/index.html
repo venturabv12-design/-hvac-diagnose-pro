@@ -1180,7 +1180,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 [data-theme="dark"] #mikeWelcomeMsg button:active{background:#222 !important;}
 /* ══════ MIKE'S-PHONE HOME (redesign) — dial + toolbelt, contractor home view ══════
    All classes namespaced .mp-* to avoid collision with existing .tool/.face/.scan/.brand. */
-#mpHome{display:none;position:relative;flex-direction:column;padding:4px 0 10px;}
+#mpHome{display:none;position:relative;flex-direction:column;padding:4px 0 10px;overflow:hidden;}
 body[data-mode="contractor"] #mpHome{display:flex;}
 body[data-mode="contractor"].mp-chatting #mpHome{display:none;}
 body[data-mode="contractor"] #panelDiag>.chat-card{display:none;}
@@ -8557,6 +8557,7 @@ function mpEnsureSubsheet(){
 function mpOpenTool(key,tileEl){
   var t=MP_TOOLS[key];if(!t)return;
   if(typeof stopMikeSpeaking==='function')stopMikeSpeaking();
+  var _om=document.querySelector('.tz-modal-overlay.show');if(_om)_om.classList.remove('show');
   var s=mpEnsureSubsheet();
   var rows='';
   for(var i=0;i<t.actions.length;i++){

@@ -1203,11 +1203,12 @@ body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card{display:block;}
 .mp-cred{padding:4px 9px;border-radius:20px;border:1px solid var(--line);background:rgba(0,0,0,.35);color:rgba(244,239,230,.45);}
 .mp-cred.hot{border-color:rgba(201,169,97,.3);color:var(--brass);}
 .mp-cred-sep{width:1px;height:12px;background:rgba(244,239,230,.10);}
-.mp-reach{margin-top:14px;display:flex;gap:9px;width:100%;max-width:340px;}
-.mp-reach-btn{flex:1;height:50px;border-radius:13px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;font-family:var(--font-ui);font-weight:800;font-size:14px;}
-.mp-reach-btn.call{background:linear-gradient(180deg,#FFC02E,var(--safety));color:#1a1300;box-shadow:0 10px 26px -8px rgba(255,180,0,.5),0 1px 0 rgba(255,255,255,.4) inset;}
-.mp-reach-btn.face{background:linear-gradient(180deg,#4FB3B1,var(--teal));color:#001a18;box-shadow:0 10px 26px -8px rgba(58,139,138,.44),0 1px 0 rgba(255,255,255,.32) inset;}
-.mp-reach-sub{margin-top:8px;text-align:center;font-family:var(--font-script);font-size:16px;color:rgba(244,239,230,.55);font-weight:600;background:none;border:none;cursor:pointer;padding:4px 10px;}
+.mp-reach{margin-top:15px;display:flex;gap:8px;width:100%;max-width:360px;}
+.mp-reach-btn{flex:1;min-width:0;height:56px;border-radius:13px;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-family:var(--font-ui);font-weight:800;font-size:11.5px;letter-spacing:.02em;}
+.mp-reach-btn .mp-rico{font-size:17px;line-height:1;}
+.mp-reach-btn.call{background:linear-gradient(180deg,#FFC02E,var(--safety));color:#1a1300;box-shadow:0 8px 22px -8px rgba(255,180,0,.5),0 1px 0 rgba(255,255,255,.4) inset;}
+.mp-reach-btn.chat{background:linear-gradient(180deg,#D86A4F,var(--rust));color:#fff;box-shadow:0 8px 22px -8px rgba(199,85,59,.5),0 1px 0 rgba(255,255,255,.25) inset;}
+.mp-reach-btn.face{background:linear-gradient(180deg,#4FB3B1,var(--teal));color:#001a18;box-shadow:0 8px 22px -8px rgba(58,139,138,.46),0 1px 0 rgba(255,255,255,.3) inset;}
 .mp-rail{position:relative;z-index:5;display:flex;align-items:center;gap:10px;padding:15px 8px 0;}
 .mp-rail::before,.mp-rail::after{content:"";flex:1;height:1px;background:var(--line);}
 .mp-rail-label{font-family:var(--font-code);font-size:8px;letter-spacing:.24em;color:rgba(244,239,230,.32);white-space:nowrap;}
@@ -2746,10 +2747,10 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           <div class="mp-cred">MASTER TECH</div>
         </div>
         <div class="mp-reach">
-          <button class="mp-reach-btn call" onclick="mpEnterChat();toggleVoiceMode();" aria-label="Call Mike — hands-free voice">&#x1F4DE;&nbsp; CALL</button>
-          <button class="mp-reach-btn face" onclick="checkCameraAccess();" aria-label="FaceTime Mike — live visual">&#x1F4F7;&nbsp; FACETIME</button>
+          <button class="mp-reach-btn call" onclick="mpEnterChat();toggleVoiceMode();" aria-label="Call Mike — hands-free voice"><span class="mp-rico">&#x1F4DE;</span>CALL</button>
+          <button class="mp-reach-btn chat" onclick="mpEnterChat();setTimeout(function(){var i=document.getElementById('chatInput');if(i)i.focus();},60);" aria-label="Text Mike — chat"><span class="mp-rico">&#x1F4AC;</span>TEXT</button>
+          <button class="mp-reach-btn face" onclick="checkCameraAccess();" aria-label="FaceTime Mike — live visual"><span class="mp-rico">&#x1F4F7;</span>FACETIME</button>
         </div>
-        <button class="mp-reach-sub" onclick="mpEnterChat();setTimeout(function(){var i=document.getElementById('chatInput');if(i)i.focus();},60);">or text him below &darr;</button>
       </div>
       <div class="mp-rail"><div class="mp-rail-label">&mdash; MIKE'S TOOLBELT &mdash;</div></div>
       <div class="mp-belt">

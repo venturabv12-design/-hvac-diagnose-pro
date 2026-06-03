@@ -1243,6 +1243,10 @@ body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card{display:block;}
 /* back-to-home chip (only in contractor chat view) */
 .mp-back{display:none;}
 body[data-mode="contractor"] .mp-back{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:rgba(0,0,0,.3);color:rgba(244,239,230,.8);font-size:20px;cursor:pointer;flex:none;}
+/* contractor dark-theme fixes for elements that were still light (Mike's-phone redesign) */
+body[data-mode="contractor"] .card{background:var(--ink-2);border-color:var(--line);color:#F4EFE6;}
+body[data-mode="contractor"]:not(.mp-chatting) #panelDiag>.card{display:none;}
+body[data-mode="contractor"] #quickActionsBtn{background:var(--ink-2)!important;border-color:var(--line)!important;color:rgba(244,239,230,.82)!important;}
 </style>
 </head>
 <body>

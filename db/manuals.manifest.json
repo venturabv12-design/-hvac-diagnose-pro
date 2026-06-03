@@ -1,0 +1,61 @@
+[
+  { "brand": "carrier", "model_family": "25VNA", "doc_id": "carrier-24vna6-25vna4-sm",
+    "doc_title": "Carrier 24VNA6 / 25VNA4 Variable-Speed Heat Pump Service Manual",
+    "doc_url": "https://www.shareddocs.com/hvac/docs/1009/Public/01/24VNA6-25VNA4-1SM.pdf",
+    "pdf": "https://www.shareddocs.com/hvac/docs/1009/Public/01/24VNA6-25VNA4-1SM.pdf" },
+
+  { "brand": "carrier", "model_family": "40MAQ", "doc_id": "carrier-40maq-sm",
+    "doc_title": "Carrier 40MAQ Ductless High-Wall Service Manual",
+    "doc_url": "https://www.shareddocs.com/hvac/docs/1009/Public/00/40MAQ-01SM.pdf",
+    "pdf": "https://www.shareddocs.com/hvac/docs/1009/Public/00/40MAQ-01SM.pdf" },
+
+  { "brand": "heil", "model_family": null, "doc_id": "icp-heil-tech-support-25426",
+    "doc_title": "ICP / Heil / Tempstar / Comfortmaker Technical Support Manual",
+    "doc_url": "https://www.shareddocs.com/hvac/docs/1011/Public/01/42104170100_ICP_25426.pdf",
+    "pdf": "https://www.shareddocs.com/hvac/docs/1011/Public/01/42104170100_ICP_25426.pdf" },
+
+  { "brand": "heil", "model_family": "G9MVE", "doc_id": "icp-g9mve-install-25869",
+    "doc_title": "ICP F9MVE/G9MVE Condensing Gas Furnace Installation Instructions",
+    "doc_url": "https://www.shareddocs.com/hvac/docs/1011/Public/07/44001440000_ICP_25869.pdf",
+    "pdf": "https://www.shareddocs.com/hvac/docs/1011/Public/07/44001440000_ICP_25869.pdf" },
+
+  { "brand": "amana", "model_family": "RS62", "doc_id": "amana-rs6200301-service",
+    "doc_title": "Amana / Goodman Service & Troubleshooting Manual RS6200301",
+    "doc_url": "https://daikincomfort.com/docs/default-source/amst/sm-rs6200301.pdf",
+    "pdf": "https://daikincomfort.com/docs/default-source/amst/sm-rs6200301.pdf" },
+
+  { "brand": "goodman", "model_family": "GMVC96", "doc_id": "goodman-gmvc96-spec",
+    "doc_title": "Goodman GMVC96 Modulating Gas Furnace Technical/Spec Sheet",
+    "doc_url": "https://apps.goodmanmfg.com/brochures/files/5424313f8f640SS-GMVC96.pdf",
+    "pdf": "https://apps.goodmanmfg.com/brochures/files/5424313f8f640SS-GMVC96.pdf" },
+
+  { "brand": "goodman", "model_family": "GSXC18", "doc_id": "goodman-gsxc18-service",
+    "doc_title": "Goodman GSXC18 Two-Stage Condenser Service Instructions",
+    "doc_url": "https://resource.ecmdi.com/is/content/Watscocom/Gemaire/goodman_gsxc180481_article_4560502268086988_en_sm.pdf",
+    "pdf": "https://resource.ecmdi.com/is/content/Watscocom/Gemaire/goodman_gsxc180481_article_4560502268086988_en_sm.pdf" },
+
+  { "brand": "daikin", "model_family": null, "doc_id": "daikin-one-unitary-error-codes",
+    "doc_title": "Daikin One+ Unitary Error Code Table",
+    "doc_url": "https://daikinone.com/smart_thermostats/oneplus/pros/phase-one-error-codes/DaikinOneUnitaryErrorCodes.pdf",
+    "pdf": "https://daikinone.com/smart_thermostats/oneplus/pros/phase-one-error-codes/DaikinOneUnitaryErrorCodes.pdf" },
+
+  { "brand": "american standard", "model_family": null, "doc_id": "amstd-18-hd25d7-5",
+    "doc_title": "American Standard 18-HD25D7-5 Service Facts",
+    "doc_url": "https://www.comfortsite.com/Resources/Literature/pdf/18-HD25D7-5.pdf",
+    "pdf": "https://www.comfortsite.com/Resources/Literature/pdf/18-HD25D7-5.pdf" },
+
+  { "brand": "copeland", "model_family": null, "doc_id": "copeland-install-service-5400004",
+    "doc_title": "Copeland (Emerson) Scroll Compressor Installation & Service Manual",
+    "doc_url": "https://www.copeland.com/documents/installation-service-en-us-5400004.pdf",
+    "pdf": "https://www.copeland.com/documents/installation-service-en-us-5400004.pdf" },
+
+  { "brand": "lochinvar", "model_family": "KB", "doc_id": "lochinvar-kb-ser-08",
+    "doc_title": "Lochinvar Knight KB Series Boiler Service Manual (fault-message chart)",
+    "doc_url": "https://www.lochinvar.com/lit/KB-SER-08.pdf",
+    "pdf": "https://www.lochinvar.com/lit/KB-SER-08.pdf" },
+
+  { "brand": "weil-mclain", "model_family": "ULTRA", "doc_id": "weilmclain-ultra-boiler",
+    "doc_title": "Weil-McLain Ultra Gas Boiler Manual (install/service/fault codes)",
+    "doc_url": "https://www.weil-mclain.com/wp-content/uploads/Ultra-Boiler-Manual-0723-Web-Vrersion.pdf",
+    "pdf": "https://www.weil-mclain.com/wp-content/uploads/Ultra-Boiler-Manual-0723-Web-Vrersion.pdf" }
+]

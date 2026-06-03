@@ -1188,6 +1188,71 @@ async function checkPaywall(token) {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// Manual-grounded RAG — Mike answers fault-code/spec/wiring questions from real
+// OEM service manuals (Supabase pgvector), with page citations. ENV-GATED: a
+// no-op unless an embeddings key is set AND the manual_chunks table is populated,
+// so it ships safe and dormant, then activates the moment ingestion runs. Falls
+// through to the existing verified-list + web-search paths on any miss/error.
+// ════════════════════════════════════════════════════════════════════════════
+const _EMBED_PROVIDER = (process.env.EMBED_PROVIDER || 'voyage').toLowerCase();
+const _EMBED_MODEL = process.env.EMBED_MODEL || (_EMBED_PROVIDER === 'openai' ? 'text-embedding-3-large' : 'voyage-4-large');
+const _EMBED_DIM = parseInt(process.env.EMBED_DIM || (_EMBED_PROVIDER === 'openai' ? '3072' : '1024'), 10);
+const _EMBED_KEY = _EMBED_PROVIDER === 'openai' ? process.env.OPENAI_API_KEY : process.env.VOYAGE_API_KEY;
+const _RAG_ENABLED = !!(SUPABASE_URL && SUPABASE_SERVICE_KEY && _EMBED_KEY);
+const _HVAC_BRANDS = ['carrier','bryant','payne','trane','american standard','goodman','amana','daikin','york','coleman','luxaire','rheem','ruud','lennox','allied','armstrong','heil','tempstar','comfortmaker','arcoaire','keeprite','mitsubishi','fujitsu','lg','samsung','bosch','bard','weil-mclain','burnham','lochinvar','navien','triangle tube','heatcraft','copeland','hoshizaki','manitowoc'];
+
+function _needsManualRetrieval(text) {
+  if (!text) return false;
+  if (/\b(\d{1,2}[\s-]?(?:flash|blink)(?:es|s)?|error\s+code|fault\s+code|status\s+code|diagnostic\s+code|\bE\d{1,3}\b|\bF\d{1,3}\b|\bP\d{1,2}\b|code\s+\d{1,3})\b/i.test(text)) return true;
+  if (/wiring\s+(diagram|schematic|harness)|wire\s+color|terminal\s+(label|designation|layout)|connector\s+pin|ladder\s+diagram/i.test(text)) return true;
+  if (/(spec|capacity|rating|\bamps?\b|\bfla\b|\brla\b|\blra\b|\bmca\b|\bmocp\b|charge|superheat|subcool|sequence\s+of\s+operation|defrost\s+(cycle|timing)|gas\s+pressure)/i.test(text) && /\b[a-z0-9]{2,}\d[a-z0-9]{2,}\b/i.test(text)) return true;
+  return false;
+}
+function _extractBrand(text) {
+  const l = (text || '').toLowerCase();
+  for (const b of _HVAC_BRANDS) if (l.includes(b)) return b.split(' ')[0];
+  return null;
+}
+function _extractModelFamily(text) {
+  const m = (text || '').match(/\b([A-Z]{1,4}\d{1,2}[A-Z]{0,4}\d{0,4})\b/);
+  return m ? m[1].slice(0, 6).toUpperCase() : null;
+}
+async function _embedQuery(text) {
+  if (_EMBED_PROVIDER === 'openai') {
+    const r = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST', signal: AbortSignal.timeout(3500),
+      headers: { 'Authorization': `Bearer ${_EMBED_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: _EMBED_MODEL, input: text, dimensions: _EMBED_DIM }),
+    });
+    if (!r.ok) throw new Error('embed ' + r.status);
+    return (await r.json()).data[0].embedding;
+  }
+  const r = await fetch('https://api.voyageai.com/v1/embeddings', {
+    method: 'POST', signal: AbortSignal.timeout(3500),
+    headers: { 'Authorization': `Bearer ${_EMBED_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: _EMBED_MODEL, input: text, input_type: 'query', output_dimension: _EMBED_DIM }),
+  });
+  if (!r.ok) throw new Error('embed ' + r.status);
+  return (await r.json()).data[0].embedding;
+}
+async function retrieveManualContext(userText) {
+  if (!_RAG_ENABLED) return null;
+  try {
+    const embedding = await _embedQuery(String(userText).slice(0, 2000));
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_manual_chunks`, {
+      method: 'POST', signal: AbortSignal.timeout(2500),
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}` },
+      body: JSON.stringify({ query_embedding: embedding, match_threshold: 0.45, match_count: 6,
+        filter_brand: _extractBrand(userText), filter_model_family: _extractModelFamily(userText) }),
+    });
+    if (!r.ok) return null;
+    const chunks = await r.json();
+    if (!Array.isArray(chunks) || !chunks.length) return null;
+    return chunks.map(c => `[Source: ${c.doc_title}${c.page_num ? ', p.' + c.page_num : ''}]\n${c.chunk_text}`).join('\n\n---\n\n');
+  } catch (_) { return null; }
+}
+
 app.post('/api/ai', aiLimiter, async (req, res) => {
   if (globalActive >= MAX_GLOBAL)
     return res.status(503).json({ error: 'Server at capacity — please try again in a moment.' });
@@ -1259,10 +1324,21 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   const timeout = setTimeout(() => controller.abort(), 75000);
 
   try {
+    // Manual-grounded retrieval: pull real OEM service-manual excerpts and prepend
+    // them to Mike's system prompt so code/spec/wiring answers come from the page,
+    // cited. No-ops (empty string) until RAG is enabled + ingested.
+    let _ragContext = '';
+    if (_RAG_ENABLED && _needsManualRetrieval(_lastUser)) {
+      const _mc = await retrieveManualContext(_lastUser);
+      if (_mc) _ragContext = '\n\n=== MANUFACTURER SERVICE MANUAL EXCERPTS (authoritative) ===\n'
+        + 'Answer fault-code, wiring, and spec questions ONLY from these excerpts and cite the [Source: ...] tag in your reply. '
+        + 'If the answer is not in these excerpts, say so plainly and use web search.\n\n'
+        + _mc + '\n=== END MANUAL EXCERPTS ===\n';
+    }
     const body = {
       model: process.env.MIKE_MODEL || 'claude-opus-4-8',
       max_tokens: Math.min(max_tokens, 8192),
-      system,
+      system: _ragContext + (system || ''),
       messages,
     };
     if (use_search) {

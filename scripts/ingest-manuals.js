@@ -37,7 +37,16 @@ const BATCH = 96;            // embeddings per request
 const CHUNK_CHARS = 1200;    // ~300 tokens
 const CHUNK_OVERLAP = 200;   // ~50 tokens
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) fail('SUPABASE_URL + SUPABASE_SERVICE_KEY required');
+// Storage: direct Postgres (PG_CONNECTION) preferred for ops without the service key;
+// falls back to Supabase REST (SUPABASE_URL + SUPABASE_SERVICE_KEY).
+const PG_CONNECTION = process.env.PG_CONNECTION || process.env.PG_CONN || '';
+let _pgPool = null;
+if (PG_CONNECTION) {
+  const { Pool } = require('pg');
+  _pgPool = new Pool({ connectionString: PG_CONNECTION, ssl: { rejectUnauthorized: false }, max: 4 });
+} else if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  fail('Set PG_CONNECTION (preferred) or SUPABASE_URL + SUPABASE_SERVICE_KEY');
+}
 const EMBED_KEY = PROVIDER === 'openai' ? process.env.OPENAI_API_KEY : process.env.VOYAGE_API_KEY;
 if (!EMBED_KEY) fail(`EMBED_PROVIDER=${PROVIDER} requires ${PROVIDER === 'openai' ? 'OPENAI_API_KEY' : 'VOYAGE_API_KEY'}`);
 
@@ -72,8 +81,25 @@ async function embedBatch(texts, inputType) {
   return (await r.json()).data.map(d => d.embedding);
 }
 
-// ── Supabase upsert (REST, same posture as index.js supabase() helper) ────────
+// ── Upsert: direct Postgres (pgvector) when PG_CONNECTION set, else Supabase REST ──
 async function upsertChunks(rows) {
+  if (_pgPool) {
+    const cols = ['brand','model_family','doc_id','doc_title','doc_url','page_num','section','chunk_text','chunk_index','content_hash','embedding'];
+    const tuples = []; const params = []; let p = 1;
+    for (const r of rows) {
+      tuples.push(`($${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++}::vector)`);
+      const clean = (s) => (s == null ? null : String(s).split(String.fromCharCode(0)).join(""));      params.push(r.brand, clean(r.model_family), r.doc_id, clean(r.doc_title), r.doc_url || null,
+        r.page_num, clean(r.section), clean(r.chunk_text), r.chunk_index, r.content_hash || null,
+        '[' + r.embedding.join(',') + ']');
+    }
+    const q = `INSERT INTO manual_chunks (${cols.join(',')}) VALUES ${tuples.join(',')}
+      ON CONFLICT (doc_id, chunk_index) DO UPDATE SET
+        brand=EXCLUDED.brand, model_family=EXCLUDED.model_family, doc_title=EXCLUDED.doc_title,
+        doc_url=EXCLUDED.doc_url, page_num=EXCLUDED.page_num, section=EXCLUDED.section,
+        chunk_text=EXCLUDED.chunk_text, content_hash=EXCLUDED.content_hash, embedding=EXCLUDED.embedding`;
+    await _pgPool.query(q, params);
+    return;
+  }
   const r = await fetch(`${SUPABASE_URL}/rest/v1/manual_chunks?on_conflict=doc_id,chunk_index`, {
     method: 'POST',
     headers: {
@@ -197,4 +223,5 @@ async function ingestDoc(doc) {
     catch (e) { console.error('  ✗ ' + (e && e.message)); }
   }
   console.log(`\n═══ Ingest complete: ${total} chunks across ${manifest.length} docs ═══`);
+  if (_pgPool) await _pgPool.end();
 })();

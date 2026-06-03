@@ -1323,7 +1323,34 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       .join('\n')
       .trim();
 
-    res.json({ response: text || 'No response.' });
+    // ── Deterministic homeowner price guard (locked product rule: never price to a homeowner) ──
+    // If the request is homeowner-framed (or flagged), strip any dollar amount the model may have
+    // leaked. This makes the no-homeowner-pricing rule guaranteed, not dependent on the model.
+    let outText = text || 'No response.';
+    try {
+      const msgs = Array.isArray(messages) ? messages : [];
+      let lastUser = '';
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        const m = msgs[i];
+        if (m && m.role === 'user') {
+          lastUser = typeof m.content === 'string'
+            ? m.content
+            : (Array.isArray(m.content) ? m.content.map(c => (c && c.text) || '').join(' ') : '');
+          break;
+        }
+      }
+      const homeownerFramed =
+        req.body.homeowner === true ||
+        /\bi'?m a homeowner\b|\bas a homeowner\b|\bhomeowner here\b|(my contractor|the repair (guy|tech|man)|a contractor|the tech)\s+(quoted|said|is quoting|gave me|quoting me)|should i (just )?replace (it|my|the|this)|is (that|this|\$?\d[\d,]*) (a )?fair (price|quote)|gave me a quote/i.test(lastUser);
+      if (homeownerFramed) {
+        outText = outText.replace(
+          /\$\s?\d[\d,]*(?:\.\d+)?(?:\s?(?:[-–—]|to)\s?\$?\s?\d[\d,]*(?:\.\d+)?)?\+?(?:\s?\/\s?\w+)?/g,
+          '(a price your tech will give you)'
+        );
+      }
+    } catch (_) {}
+
+    res.json({ response: outText });
 
   } catch (err) {
     if (err.name === 'AbortError') res.status(504).json({ error: 'Request timed out — please try again.' });

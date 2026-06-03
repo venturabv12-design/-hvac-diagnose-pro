@@ -1296,6 +1296,20 @@ body[data-mode="contractor"] #quickActionsBtn{background:var(--ink-2)!important;
 #authOverlay .auth-btn{background:linear-gradient(180deg,#FFC02E,var(--safety));color:#1a1300;box-shadow:0 10px 26px -8px rgba(255,180,0,.5),0 1px 0 rgba(255,255,255,.4) inset;}
 #authOverlay .auth-tab.active{background:var(--teal);color:#06201f;}
 #authOverlay .auth-trial-pill{background:rgba(58,139,138,.10);border-color:rgba(58,139,138,.28);color:var(--teal);}
+/* ── BILLING reskin → teal-dial (Mike's-phone redesign) ── */
+#paywallOverlay .pw-card{background:linear-gradient(160deg,#0c0d0a,#141611);border-color:var(--line);}
+#paywallOverlay .pw-plan.sel,#paywallOverlay .pw-plan:hover{border-color:var(--teal);background:rgba(58,139,138,.08);box-shadow:0 8px 24px rgba(58,139,138,.2);}
+#paywallOverlay .pw-badge{background:var(--teal);color:#06201f;}
+/* ── HOMEOWNER surface → teal-dial dark (no pricing — diagnostic only) ── */
+body[data-mode="homeowner"]{background:var(--ink);color:#F4EFE6;}
+body[data-mode="homeowner"] .page{background:var(--ink);}
+body[data-mode="homeowner"] .card{background:var(--ink-2);border-color:var(--line);color:#F4EFE6;}
+body[data-mode="homeowner"] .field-label{color:rgba(244,239,230,.62);}
+body[data-mode="homeowner"] .field-sub{color:rgba(244,239,230,.5);}
+body[data-mode="homeowner"] .drop-zone{background:rgba(255,255,255,.03);border-color:var(--line);}
+body[data-mode="homeowner"] .symptoms-grid .chip{background:rgba(255,255,255,.04)!important;border-color:var(--line)!important;color:rgba(244,239,230,.82)!important;box-shadow:none!important;}
+body[data-mode="homeowner"] .symptoms-grid .chip.selected{background:rgba(58,139,138,.15)!important;border-color:var(--teal)!important;color:var(--teal)!important;}
+body[data-mode="homeowner"] textarea,body[data-mode="homeowner"] input[type="text"]{background:rgba(255,255,255,.04);border-color:var(--line);color:#F4EFE6;}
 </style>
 </head>
 <body>
@@ -1576,7 +1590,7 @@ body[data-mode="contractor"] #quickActionsBtn{background:var(--ink-2)!important;
 .voice-bar{
   background:#0a0a0a;
   padding:10px 14px;
-  border-bottom:1px solid rgba(199,85,59,.1);
+  border-bottom:1px solid rgba(58,139,138,.18);
   animation:slideDown .2s ease;
 }
 @keyframes slideDown{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
@@ -1587,7 +1601,7 @@ body[data-mode="contractor"] #quickActionsBtn{background:var(--ink-2)!important;
 }
 .voice-mic-btn{
   width:38px;height:38px;border-radius:50%;
-  background:var(--rust);border:none;cursor:pointer;
+  background:var(--teal);border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   font-size:16px;flex-shrink:0;transition:all .2s;
   -webkit-tap-highlight-color:transparent;
@@ -2748,12 +2762,12 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <input type="file" id="homeFileInputCam" accept="image/*,video/*" capture="environment" style="display:none" onchange="handleHomeFileSelect(event)"/>
       <div class="drop-zone" id="homeDropZone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleHomeDrop(event)" onclick="document.getElementById('homeFileInput').click()">
         <div id="homeDropPrompt" style="padding:28px 20px 20px;text-align:center;">
-          <div style="width:64px;height:64px;background:#F5F6FA;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:2px solid #e0e0e0;"><i data-lucide="camera" style="width:28px;height:28px;color:#9499B0;"></i></div>
-          <div style="font-size:16px;font-weight:700;color:#0F0F0F;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Take or Upload a Photo</div>
+          <div style="width:64px;height:64px;background:rgba(255,255,255,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:2px solid var(--line);"><i data-lucide="camera" style="width:28px;height:28px;color:var(--teal);"></i></div>
+          <div style="font-size:16px;font-weight:700;color:#F4EFE6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Take or Upload a Photo</div>
           <div style="font-size:12px;color:#9499B0;margin-bottom:18px;">Photo · Video · JPG · PNG · up to 50MB</div>
           <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;" onclick="event.stopPropagation()">
             <label for="homeFileInputCam" style="display:flex;align-items:center;gap:7px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">📸 Camera</label>
-            <label for="homeFileInput" style="display:flex;align-items:center;gap:7px;background:#FFFFFF;color:#0F0F0F;border:1.5px solid #E2E4ED;border-radius:6px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">🖼️ Library</label>
+            <label for="homeFileInput" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.08);color:#F4EFE6;border:1.5px solid var(--line);border-radius:6px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">🖼️ Library</label>
           </div>
         </div>
         <div class="photo-tips" id="homeDropTips">
@@ -3432,9 +3446,9 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <span style="font-size:12px;font-weight:700;color:#fff;letter-spacing:.3px;">LIVE</span>
     </div>
     <!-- Mike status -->
-    <div style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(199,85,59,.3);border-radius:99px;padding:6px 14px;" class="cam-glass">
-      <div style="width:8px;height:8px;border-radius:50%;background:var(--rust);box-shadow:0 0 8px rgba(199,85,59,.8);flex-shrink:0;"></div>
-      <span style="font-size:12px;font-weight:700;color:var(--rust);">Mike Online</span>
+    <div style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(58,139,138,.3);border-radius:99px;padding:6px 14px;" class="cam-glass">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px rgba(58,139,138,.8);flex-shrink:0;"></div>
+      <span style="font-size:12px;font-weight:700;color:var(--teal);">Mike Online</span>
     </div>
     <!-- Close -->
     <button onclick="stopLiveCamera()" style="width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.2);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;line-height:1;"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
@@ -3445,8 +3459,8 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     <div style="background:rgba(0,0,0,.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:14px 16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:28px;height:28px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🧑‍🔧</div>
-          <span style="font-size:12px;font-weight:800;color:var(--rust);letter-spacing:.5px;">MIKE</span>
+          <div style="width:28px;height:28px;background:linear-gradient(135deg,var(--teal),var(--mike-teal-deep));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🧑‍🔧</div>
+          <span style="font-size:12px;font-weight:800;color:var(--teal);letter-spacing:.5px;">MIKE</span>
           <span id="cameraAnalyzing" style="display:none;font-size:10px;color:rgba(255,255,255,.5);" class="pulsing">Analyzing…</span>
         </div>
         <!-- Interrupt button — always visible while Mike is talking -->
@@ -3471,7 +3485,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       </button>
 
       <!-- Main mic button — large center -->
-      <button id="cameraMicBtn" onclick="toggleCameraMic()" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--rust),var(--rust-deep));border:none;color:#fff;font-size:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(199,85,59,.6),0 0 0 0 rgba(199,85,59,.3);transition:all .2s;-webkit-tap-highlight-color:transparent;">🎙️</button>
+      <button id="cameraMicBtn" onclick="toggleCameraMic()" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--mike-teal-deep));border:none;color:#fff;font-size:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(58,139,138,.6),0 0 0 0 rgba(58,139,138,.3);transition:all .2s;-webkit-tap-highlight-color:transparent;">🎙️</button>
 
       <!-- Snap & analyze -->
       <button onclick="snapAndAnalyze()" style="width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;-webkit-tap-highlight-color:transparent;">

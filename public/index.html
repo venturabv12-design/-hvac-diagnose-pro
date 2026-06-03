@@ -1289,6 +1289,13 @@ body[data-mode="contractor"] #quickActionsBtn{background:var(--ink-2)!important;
 .mpco-cta .cs{margin-top:12px;font-family:var(--font-code);font-size:9px;letter-spacing:.18em;color:rgba(244,239,230,.3);}
 @keyframes mpcoUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes mpcoBloom{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
+/* ── SIGN-IN reskin → teal-dial (Mike's-phone redesign) — CSS only, auth form untouched ── */
+#authOverlay{background:radial-gradient(90% 55% at 50% 0%,rgba(58,139,138,.10),transparent 60%),#070706;}
+#authOverlay .auth-card{background:linear-gradient(180deg,#141611,#0e0f0c);border-color:var(--line);box-shadow:0 24px 60px rgba(0,0,0,.7);}
+#authOverlay .auth-inp:focus{border-color:var(--teal)!important;box-shadow:0 0 0 3px rgba(58,139,138,.14)!important;}
+#authOverlay .auth-btn{background:linear-gradient(180deg,#FFC02E,var(--safety));color:#1a1300;box-shadow:0 10px 26px -8px rgba(255,180,0,.5),0 1px 0 rgba(255,255,255,.4) inset;}
+#authOverlay .auth-tab.active{background:var(--teal);color:#06201f;}
+#authOverlay .auth-trial-pill{background:rgba(58,139,138,.10);border-color:rgba(58,139,138,.28);color:var(--teal);}
 </style>
 </head>
 <body>

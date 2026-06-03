@@ -1178,6 +1178,70 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 
 [data-theme="dark"] #mikeWelcomeMsg button{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;}
 [data-theme="dark"] #mikeWelcomeMsg button:active{background:#222 !important;}
+/* ══════ MIKE'S-PHONE HOME (redesign) — dial + toolbelt, contractor home view ══════
+   All classes namespaced .mp-* to avoid collision with existing .tool/.face/.scan/.brand. */
+#mpHome{display:none;position:relative;flex-direction:column;padding:4px 0 10px;}
+body[data-mode="contractor"] #mpHome{display:flex;}
+body[data-mode="contractor"].mp-chatting #mpHome{display:none;}
+body[data-mode="contractor"] #panelDiag>.chat-card{display:none;}
+body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card{display:block;}
+.mp-rings{position:absolute;left:50%;top:-34px;transform:translateX(-50%);width:540px;height:540px;pointer-events:none;z-index:0;}
+.mp-rings::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,transparent 0 27%,rgba(58,139,138,.10) 27.5%,transparent 28.2%),radial-gradient(circle,transparent 0 39%,rgba(58,139,138,.06) 39.5%,transparent 40.2%),radial-gradient(circle,transparent 0 53%,rgba(244,239,230,.04) 53.5%,transparent 54.2%);-webkit-mask-image:radial-gradient(circle,#000 48%,transparent 70%);mask-image:radial-gradient(circle,#000 48%,transparent 70%);}
+.mp-sweep{position:absolute;left:0;right:0;top:-34px;height:200px;pointer-events:none;z-index:0;background:linear-gradient(180deg,rgba(58,139,138,.10),transparent);}
+.mp-zone{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;padding:6px 6px 0;}
+.mp-avatar{position:relative;flex:none;width:124px;height:124px;margin-top:2px;}
+.mp-avatar .mp-ticks{position:absolute;inset:-9px;border-radius:50%;background:repeating-conic-gradient(rgba(58,139,138,.22) 0deg 1.5deg,transparent 1.5deg 12deg);-webkit-mask-image:radial-gradient(circle,transparent 43%,#000 45%,#000 48%,transparent 50%);mask-image:radial-gradient(circle,transparent 43%,#000 45%,#000 48%,transparent 50%);}
+.mp-avatar .mp-outer{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(58,139,138,.28);box-shadow:0 0 0 1px rgba(58,139,138,.10),0 0 38px -8px rgba(58,139,138,.5),0 0 70px -20px rgba(58,139,138,.22);}
+.mp-avatar .mp-face{position:absolute;inset:9px;border-radius:50%;overflow:hidden;border:1.5px solid rgba(58,139,138,.55);box-shadow:0 0 24px -6px rgba(58,139,138,.5) inset;}
+.mp-avatar .mp-face img{width:100%;height:100%;object-fit:cover;object-position:center 6%;display:block;}
+.mp-avatar .mp-presence{position:absolute;right:10px;bottom:10px;width:15px;height:15px;border-radius:50%;background:var(--teal);border:3px solid var(--ink);box-shadow:0 0 12px rgba(58,139,138,.8);}
+.mp-name{margin-top:11px;text-align:center;}
+.mp-name h2{font-family:var(--font-display);font-size:26px;letter-spacing:.04em;line-height:1;color:#F4EFE6;}
+.mp-name .mp-sub{font-family:var(--font-code);font-size:9.5px;letter-spacing:.18em;color:var(--teal);margin-top:5px;display:flex;align-items:center;justify-content:center;gap:7px;}
+.mp-name .mp-sub .lt{color:rgba(244,239,230,.30);}
+.mp-creds{margin-top:10px;display:flex;gap:7px;align-items:center;font-family:var(--font-code);font-size:8px;letter-spacing:.11em;}
+.mp-cred{padding:4px 9px;border-radius:20px;border:1px solid var(--line);background:rgba(0,0,0,.35);color:rgba(244,239,230,.45);}
+.mp-cred.hot{border-color:rgba(201,169,97,.3);color:var(--brass);}
+.mp-cred-sep{width:1px;height:12px;background:rgba(244,239,230,.10);}
+.mp-reach{margin-top:14px;display:flex;gap:9px;width:100%;max-width:340px;}
+.mp-reach-btn{flex:1;height:50px;border-radius:13px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;font-family:var(--font-ui);font-weight:800;font-size:14px;}
+.mp-reach-btn.call{background:linear-gradient(180deg,#FFC02E,var(--safety));color:#1a1300;box-shadow:0 10px 26px -8px rgba(255,180,0,.5),0 1px 0 rgba(255,255,255,.4) inset;}
+.mp-reach-btn.face{background:linear-gradient(180deg,#4FB3B1,var(--teal));color:#001a18;box-shadow:0 10px 26px -8px rgba(58,139,138,.44),0 1px 0 rgba(255,255,255,.32) inset;}
+.mp-reach-sub{margin-top:8px;text-align:center;font-family:var(--font-script);font-size:16px;color:rgba(244,239,230,.55);font-weight:600;background:none;border:none;cursor:pointer;padding:4px 10px;}
+.mp-rail{position:relative;z-index:5;display:flex;align-items:center;gap:10px;padding:15px 8px 0;}
+.mp-rail::before,.mp-rail::after{content:"";flex:1;height:1px;background:var(--line);}
+.mp-rail-label{font-family:var(--font-code);font-size:8px;letter-spacing:.24em;color:rgba(244,239,230,.32);white-space:nowrap;}
+.mp-belt{position:relative;z-index:5;padding:12px 6px 0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.mp-tool{position:relative;border-radius:13px;overflow:hidden;cursor:pointer;border:1px solid var(--line);background:linear-gradient(158deg,#18170F,#111009);box-shadow:0 1px 0 rgba(255,255,255,.05) inset;padding:11px 10px 9px;display:flex;flex-direction:column;gap:3px;min-height:74px;text-align:left;}
+.mp-tool::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;}
+.mp-tool.parts::before{background:var(--safety);box-shadow:0 0 7px rgba(255,180,0,.5);}
+.mp-tool.warranty::before{background:var(--moss);box-shadow:0 0 7px rgba(91,123,90,.5);}
+.mp-tool.wiring::before{background:var(--rust);box-shadow:0 0 7px rgba(199,85,59,.5);}
+.mp-tool.jobs::before{background:var(--brass);}
+.mp-tool.manual::before{background:rgba(244,239,230,.2);}
+.mp-tool.diagnose::before{background:var(--teal);box-shadow:0 0 7px rgba(58,139,138,.5);}
+.mp-tool.active{border-color:rgba(58,139,138,.45);background:linear-gradient(158deg,#0d1f1d,#0a1413);}
+.mp-tool-ico{font-size:20px;line-height:1;}
+.mp-tool-name{font-family:var(--font-display);font-size:11px;letter-spacing:.06em;color:#F4EFE6;line-height:1.1;text-transform:uppercase;}
+.mp-tool-sub{font-family:var(--font-code);font-size:7.5px;letter-spacing:.09em;color:rgba(244,239,230,.32);line-height:1.3;}
+/* tool sub-sheet (tap-opened, tap-closed — no swipe) */
+.mp-ss-scrim{position:fixed;inset:0;background:var(--scrim);z-index:99998;opacity:0;pointer-events:none;transition:opacity .26s;}
+.mp-ss-scrim.open{opacity:1;pointer-events:auto;}
+#mpSubsheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%) translateY(110%);width:100%;max-width:460px;background:linear-gradient(180deg,#141611,#0c0d0a);border:1px solid var(--line);border-bottom:none;border-radius:18px 18px 0 0;z-index:99999;padding:0 0 calc(16px + env(safe-area-inset-bottom,0px));max-height:72vh;overflow-y:auto;transition:transform .26s cubic-bezier(.16,1,.3,1);box-shadow:0 -20px 50px -12px rgba(0,0,0,.6);}
+#mpSubsheet.open{transform:translateX(-50%) translateY(0);}
+.mp-ss-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px;position:sticky;top:0;background:#141611;}
+.mp-ss-title{font-family:var(--font-display);font-size:17px;letter-spacing:.04em;color:#F4EFE6;text-transform:uppercase;}
+.mp-ss-close{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:rgba(0,0,0,.4);color:#F4EFE6;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;}
+.mp-ss-list{padding:4px 12px 8px;display:flex;flex-direction:column;gap:7px;}
+.mp-ss-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:13px 14px;cursor:pointer;min-height:52px;}
+.mp-ss-item:active{background:rgba(58,139,138,.12);}
+.mp-ss-pip{width:8px;height:8px;border-radius:50%;flex:none;}
+.mp-ss-label{display:block;font-family:var(--font-ui);font-weight:700;font-size:14px;color:#F4EFE6;}
+.mp-ss-sub{display:block;font-family:var(--font-code);font-size:8.5px;letter-spacing:.06em;color:rgba(244,239,230,.4);margin-top:2px;}
+.mp-ss-chev{margin-left:auto;color:rgba(244,239,230,.35);font-size:15px;flex:none;}
+/* back-to-home chip (only in contractor chat view) */
+.mp-back{display:none;}
+body[data-mode="contractor"] .mp-back{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:rgba(0,0,0,.3);color:rgba(244,239,230,.8);font-size:20px;cursor:pointer;flex:none;}
 </style>
 </head>
 <body>
@@ -2662,12 +2726,49 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   <!-- PRO DIAGNOSE PANEL -->
   <div id="panelDiag" style="display:none;">
 
+    <!-- ══ MIKE'S-PHONE HOME (redesign): dial + toolbelt — contractor landing ══ -->
+    <div id="mpHome">
+      <div class="mp-rings"></div><div class="mp-sweep"></div>
+      <div class="mp-zone">
+        <div class="mp-avatar">
+          <div class="mp-ticks"></div>
+          <div class="mp-outer"></div>
+          <div class="mp-face"><img src="/icon-512.png" alt="Mike — master tech"/></div>
+          <div class="mp-presence"></div>
+        </div>
+        <div class="mp-name">
+          <h2>MIKE</h2>
+          <div class="mp-sub"><span class="lt">STATUS &middot;</span> ON THE LINE <span class="lt">&middot;</span> 25 YRS</div>
+        </div>
+        <div class="mp-creds">
+          <div class="mp-cred hot">NATE CERT</div><div class="mp-cred-sep"></div>
+          <div class="mp-cred hot">EPA 608</div><div class="mp-cred-sep"></div>
+          <div class="mp-cred">MASTER TECH</div>
+        </div>
+        <div class="mp-reach">
+          <button class="mp-reach-btn call" onclick="mpEnterChat();toggleVoiceMode();" aria-label="Call Mike — hands-free voice">&#x1F4DE;&nbsp; CALL</button>
+          <button class="mp-reach-btn face" onclick="checkCameraAccess();" aria-label="FaceTime Mike — live visual">&#x1F4F7;&nbsp; FACETIME</button>
+        </div>
+        <button class="mp-reach-sub" onclick="mpEnterChat();setTimeout(function(){var i=document.getElementById('chatInput');if(i)i.focus();},60);">or text him below &darr;</button>
+      </div>
+      <div class="mp-rail"><div class="mp-rail-label">&mdash; MIKE'S TOOLBELT &mdash;</div></div>
+      <div class="mp-belt">
+        <button class="mp-tool parts" onclick="mpOpenTool('parts',this)"><div class="mp-tool-ico">&#x1F529;</div><div class="mp-tool-name">Parts</div><div class="mp-tool-sub">Lookup &amp; order</div></button>
+        <button class="mp-tool warranty" onclick="mpOpenTool('warranty',this)"><div class="mp-tool-ico">&#x1F6E1;</div><div class="mp-tool-name">Warranty</div><div class="mp-tool-sub">Check coverage</div></button>
+        <button class="mp-tool wiring" onclick="mpOpenTool('wiring',this)"><div class="mp-tool-ico">&#x26A1;</div><div class="mp-tool-name">Wiring</div><div class="mp-tool-sub">Diagrams</div></button>
+        <button class="mp-tool jobs" onclick="mpOpenTool('jobs',this)"><div class="mp-tool-ico">&#x1F4CB;</div><div class="mp-tool-name">Close Job</div><div class="mp-tool-sub">Invoice &amp; sign-off</div></button>
+        <button class="mp-tool manual" onclick="mpOpenTool('manual',this)"><div class="mp-tool-ico">&#x1F4D6;</div><div class="mp-tool-name">Manuals</div><div class="mp-tool-sub">Tech docs</div></button>
+        <button class="mp-tool diagnose" onclick="mpOpenTool('diagnose',this)"><div class="mp-tool-ico">&#x1F52C;</div><div class="mp-tool-name">Diagnose</div><div class="mp-tool-sub">Fault codes</div></button>
+      </div>
+    </div>
+
     <!-- ── MIKE CHAT CARD ─────────────────────────────────────── -->
     <div class="chat-card">
 
       <!-- MIKE HEADER — V2 treatment: no face/avatar, teal presence pulse, Call + FaceTime one tap -->
       <div class="chat-header v2-chat-header">
         <div style="display:flex;align-items:center;gap:11px;flex:1;min-width:0;">
+          <button class="mp-back" onclick="mpGoHome()" aria-label="Back to Mike's home" title="Back to home">&#x2039;</button>
           <div class="v2-hpres">
             <div class="ring">M</div>
             <div class="v2-dot pd"></div>
@@ -8292,6 +8393,80 @@ function triggerIllustration(){
 }
 
 function sendQuick(text){document.getElementById('chatInput').value=text;sendChat();}
+// ══════ MIKE'S-PHONE HOME — view routing + toolbelt sub-sheets (redesign) ══════
+function mpEnterChat(){document.body.classList.add('mp-chatting');}
+function mpGoHome(){document.body.classList.remove('mp-chatting');mpCloseSubsheet();}
+var MP_TOOLS={
+  parts:{title:'Parts Lookup',pip:'var(--safety)',actions:[
+    {label:'Find a Part',sub:'Pre-fill & search',fn:function(){mpEnterChat();var i=document.getElementById('chatInput');if(i){i.value='I need a part: ';i.focus();}}},
+    {label:'AHRI Lookup',sub:'SEER2 / EER2 / rebates',fn:function(){mpEnterChat();askMikeAHRI();}},
+    {label:'Repair vs Replace',sub:'5000-rule calculator',fn:function(){showRepairReplaceCalc();}}
+  ]},
+  warranty:{title:'Warranty Check',pip:'var(--moss)',actions:[
+    {label:'Check Warranty Status',sub:'Brand / model / install date',fn:function(){mpEnterChat();sendQuick("I need to check warranty on this equipment. Ask me the brand, model number, and install date — then tell me whether it's likely under parts warranty, labor warranty, or out of warranty, and what I need to look up to confirm.");}},
+    {label:'File a Warranty Claim',sub:'Prep the claim',fn:function(){mpEnterChat();sendQuick("Help me prepare a warranty claim. Ask me the brand, model, serial number, fault description, and what parts I'm replacing — then give me the claim number format and what info the distributor will need.");}},
+    {label:'Maintenance Agreement',sub:'Build an MA',fn:function(){mpEnterChat();askMikeMaintenanceAgreement();}}
+  ]},
+  wiring:{title:'Wiring & Diagrams',pip:'var(--rust)',actions:[
+    {label:'Terminal Guide',sub:'Labels & wire colors',fn:function(){mpEnterChat();sendQuick('I need terminal designation help. Ask me the equipment brand, model, and which board or connection point — then give me the terminal labels, wire colors, and what each one does.');}},
+    {label:'Wiring Diagram',sub:'Trace the circuit',fn:function(){mpEnterChat();sendQuick("I need a wiring diagram walkthrough. Ask me the brand, model number, and what I'm trying to trace — then walk me through the circuit path and what to test at each point.");}},
+    {label:'Pressures',sub:'R-410A target pressures',fn:function(){mpEnterChat();sendQuick('What are the correct R-410A pressures for current outdoor temperature?');}},
+    {label:'Safety Check',sub:'Pre-job checklist',fn:function(){mpEnterChat();askMikeSafetyChecklist();}}
+  ]},
+  jobs:{title:'Close This Job',pip:'var(--brass)',actions:[
+    {label:'Job Summary',sub:'Problem · fix · invoice',fn:function(){mpEnterChat();sendQuick('Give me a job summary — problem, fix, and what to put on the invoice.');}},
+    {label:'Invoice Generator',sub:'Build & copy invoice',fn:function(){generateInvoice();}},
+    {label:'Customer Sign-Off',sub:'Capture signature',fn:function(){showJobSignOff();}},
+    {label:'Save Customer',sub:'Add to customer list',fn:function(){saveCurrentJobAsCustomer();}},
+    {label:'Handle Objection',sub:'Price too high?',fn:function(){mpEnterChat();sendQuick('The homeowner said the price seems too high. How do I overcome that?');}},
+    {label:'Pitch Maintenance',sub:'~10-yr system',fn:function(){mpEnterChat();sendQuick('Help me pitch a maintenance agreement. System is about 10 years old.');}}
+  ]},
+  manual:{title:'Tech Docs',pip:'rgba(244,239,230,.5)',actions:[
+    {label:'Install Manual',sub:'Startup & commissioning',fn:function(){mpEnterChat();sendQuick('I need install manual guidance. Ask me the brand and model number — then walk me through the relevant install or startup procedure, including any commissioning checks specific to this unit.');}},
+    {label:'Service Manual',sub:'Specs & procedures',fn:function(){mpEnterChat();sendQuick("I need service manual help. Ask me the brand, model, and what I'm servicing — then give me the manufacturer's diagnostic sequence, torque specs, refrigerant charge procedure, or whatever applies to the work.");}},
+    {label:'Error / Fault Codes',sub:'Decode a code',fn:function(){mpEnterChat();sendQuick('I have a fault code. Ask me the brand, model, and the code number or LED flash pattern — then tell me what it means and what to test first.');}},
+    {label:'Load Calc',sub:'Size the equipment',fn:function(){mpEnterChat();askMikeLoadCalc();}}
+  ]},
+  diagnose:{title:'Diagnose',pip:'var(--teal)',actions:[
+    {label:'Full Diagnostic',sub:'Guided system check',fn:function(){var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b&&b.style.display==='none'){b.style.display='block';if(a)a.textContent='▲';}if(b)b.scrollIntoView({behavior:'smooth'});}},
+    {label:'Find Upsells',sub:'After the repair',fn:function(){mpEnterChat();sendQuick('I just finished the repair — what else should I check for upsell opportunities?');}},
+    {label:'Beat Competitor Quote',sub:'Win the job',fn:function(){mpEnterChat();askMikeCompetitor();}},
+    {label:'Get Google Review',sub:'Ask for a review',fn:function(){mpEnterChat();askMikeReviewRequest();}},
+    {label:'Show Memory',sub:'Debug · what Mike knows',fn:function(){showMemoryDebug();}}
+  ]}
+};
+function mpEnsureSubsheet(){
+  var s=document.getElementById('mpSubsheet');
+  if(!s){
+    var scr=document.createElement('div');scr.id='mpSubsheetScrim';scr.className='mp-ss-scrim';scr.onclick=mpCloseSubsheet;document.body.appendChild(scr);
+    s=document.createElement('div');s.id='mpSubsheet';document.body.appendChild(s);
+  }
+  return s;
+}
+function mpOpenTool(key,tileEl){
+  var t=MP_TOOLS[key];if(!t)return;
+  if(typeof stopMikeSpeaking==='function')stopMikeSpeaking();
+  var s=mpEnsureSubsheet();
+  var rows='';
+  for(var i=0;i<t.actions.length;i++){
+    rows+='<button class="mp-ss-item" type="button"><span class="mp-ss-pip" style="background:'+t.pip+'"></span><span><span class="mp-ss-label">'+t.actions[i].label+'</span><span class="mp-ss-sub">'+t.actions[i].sub+'</span></span><span class="mp-ss-chev">›</span></button>';
+  }
+  s.innerHTML='<div class="mp-ss-head"><div class="mp-ss-title">'+t.title+'</div><button class="mp-ss-close" type="button" onclick="mpCloseSubsheet()" aria-label="Close">✕</button></div><div class="mp-ss-list">'+rows+'</div>';
+  var items=s.querySelectorAll('.mp-ss-item');
+  for(var j=0;j<items.length;j++){
+    items[j].onclick=(function(idx){return function(){mpSubAction(t.actions[idx].fn);};})(j);
+  }
+  var act=document.querySelectorAll('.mp-tool.active');for(var k=0;k<act.length;k++){act[k].classList.remove('active');}
+  if(tileEl)tileEl.classList.add('active');
+  document.getElementById('mpSubsheetScrim').classList.add('open');
+  requestAnimationFrame(function(){s.classList.add('open');});
+}
+function mpCloseSubsheet(){
+  var s=document.getElementById('mpSubsheet');if(s)s.classList.remove('open');
+  var scr=document.getElementById('mpSubsheetScrim');if(scr)scr.classList.remove('open');
+  var act=document.querySelectorAll('.mp-tool.active');for(var k=0;k<act.length;k++){act[k].classList.remove('active');}
+}
+function mpSubAction(fn){mpCloseSubsheet();setTimeout(fn,180);}
 
 function needsDiagram(text){
   return !!(text&&text.match(/diagram|wiring|schematic|connect|hook.?up|install|sequence|flow|pressure chart|charge|superheat|subcooling|step.?by.?step|how to wire|procedure|walk me|draw|circuit|layout|heat pump cycle|furnace|gauges|manifold|refriger|illustrat|visual|show me|picture|what does.*look|draw me|explain.*visual|can you show|detailed visual|create.*diagram/i));

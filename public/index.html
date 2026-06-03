@@ -1325,6 +1325,16 @@ body[data-mode="contractor"] .nav-mike-status{font-size:10px!important;color:var
 .is-status-label{font-size:10px!important;color:var(--teal-bright)!important;}
 .v2-hsub{font-size:10.5px!important;}
 body[data-mode="contractor"] .v2-hbtn.face .v2-hbtn-label,body[data-mode="contractor"] .v2-hbtn.face .v2-hbtn-ic{color:var(--teal-bright)!important;}
+/* ── Tina visual cert: button color signal, cold-open + sub-label legibility, sign-in hero ── */
+.v2-hbtn.call{background:rgba(255,180,0,.14)!important;}
+.v2-hbtn.face{background:rgba(58,139,138,.16)!important;}
+.mp-tool-sub{color:rgba(244,239,230,.5)!important;}
+.mpco-istat .il{font-size:8.5px!important;color:rgba(244,239,230,.6)!important;}
+.mpco-status .cr{font-size:10.5px!important;color:var(--teal-bright)!important;}
+.mpco-av .ou{border-width:3px!important;box-shadow:0 0 22px -2px rgba(58,139,138,.55),0 0 60px -16px rgba(58,139,138,.35)!important;}
+.auth-hero{font-family:var(--font-display);font-size:32px;letter-spacing:.04em;line-height:1;text-align:center;color:#F4EFE6;margin:2px 0 6px;}
+.auth-hero .t{color:var(--teal-bright);}
+.auth-hero-sub{font-family:var(--font-code);font-size:9px;letter-spacing:.22em;color:rgba(244,239,230,.45);text-align:center;margin:0 0 20px;text-transform:uppercase;}
 </style>
 </head>
 <body>
@@ -2355,6 +2365,8 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     <div class="auth-logo-icon"><svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="9" fill="url(#lgauth)"/><path d="M18.5 5L9 18h8.5L13.5 27L23 14h-8.5L18.5 5z" fill="white" stroke="white" stroke-width=".5" stroke-linejoin="round"/><defs><linearGradient id="lgauth" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#C7553B"/><stop offset="100%" stop-color="#A8472F"/></linearGradient></defs></svg></div>
     <div class="auth-logo-name">Trazer Intelligence</div>
   </div>
+  <div class="auth-hero">POWER <span class="t">ON.</span></div>
+  <div class="auth-hero-sub">Sign in to your field instrument</div>
   <div class="auth-card">
     <!-- MIGRATION NOTICE (Variation A, Brandon-approved). V2 is a fresh-DB launch:
          returning/beta users must create a new account. B5 fix: this is existing-user
@@ -10054,6 +10066,8 @@ function showPwaInstallBanner(kind){
   t.textContent=msg;
   if(btn)btn.style.display=(kind==='android'?'inline-block':'none');
   b.style.display='block';
+  // Auto-dismiss after 8s so the install hint doesn't eat the top of every screen (Tina/Breaker cert).
+  try{if(b._pwaT)clearTimeout(b._pwaT);b._pwaT=setTimeout(function(){if(b&&!b._dismissed)b.style.display='none';},8000);}catch(e){}
 }
 // On load: show iOS hint if iOS Safari and not standalone.
 // navigator.standalone is true (standalone), false (iOS Safari browser), or undefined

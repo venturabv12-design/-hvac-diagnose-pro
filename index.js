@@ -1246,8 +1246,8 @@ async function retrieveManualContext(userText) {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_manual_chunks`, {
       method: 'POST', signal: AbortSignal.timeout(2500),
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}` },
-      body: JSON.stringify({ query_embedding: embedding, match_threshold: 0.45, match_count: 6,
-        filter_brand: _extractBrand(userText), filter_model_family: _extractModelFamily(userText) }),
+      body: JSON.stringify({ query_embedding: embedding, match_threshold: 0.42, match_count: 10,
+        filter_brand: _extractBrand(userText), filter_model_family: null }),
     });
     if (!r.ok) return null;
     const chunks = await r.json();

@@ -1203,6 +1203,57 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   if (!messages || !Array.isArray(messages) || messages.length === 0)
     return res.status(400).json({ error: 'messages required' });
 
+  // ── DETERMINISTIC GUARD LAYER ──────────────────────────────────────────────
+  // Prompt-tuning failed 3 cert passes on two safety scenarios + replacement-lean
+  // language. These guards make the critical safety + no-homeowner-pricing rules
+  // GUARANTEED rather than model-dependent: detect the hazard/homeowner signal in
+  // the request, then prepend a mandatory safety lead and/or strip prices+replace
+  // language from the reply. Same approach as the (working) price strip.
+  let _lastUser = '';
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m && m.role === 'user') {
+      _lastUser = typeof m.content === 'string' ? m.content
+        : (Array.isArray(m.content) ? m.content.map(c => (c && c.text) || '').join(' ') : '');
+      break;
+    }
+  }
+  let _safetyLead = '';
+  // (A) Burner/flame staying lit with no call for heat = stuck-open gas valve.
+  if (/(furnace|burner|flame|unit|heat)[^.]{0,70}(keeps? running|still (running|on|lit|burning)|won'?t (shut|turn) off|stays (on|lit|running))[^.]{0,55}(thermostat|t-?stat|call)/i.test(_lastUser)
+      || /(flame|burner)[^.]{0,40}(no call|without a call|no heat call)/i.test(_lastUser)
+      || /5[- ]?flash[^.]{0,90}(flame|gas|no call|thermostat (is )?off|keeps? running)/i.test(_lastUser)) {
+    _safetyLead = 'SAFETY FIRST — shut the gas off at the appliance shutoff valve right now. A burner staying lit with no call for heat means the gas valve is stuck open; kill the gas before you diagnose anything else.';
+  }
+  // (B) CO air-free at or above 400 ppm = unconditional appliance shutdown.
+  const _coM = _lastUser.match(/(\d{3,4})\s*ppm[^.]{0,24}air[- ]?free/i) || _lastUser.match(/air[- ]?free[^.]{0,24}(\d{3,4})\s*ppm/i);
+  if (_coM && parseInt(_coM[1], 10) >= 400) {
+    _safetyLead = 'SAFETY FIRST — shut the appliance down now. ' + parseInt(_coM[1], 10) + ' ppm CO air-free is above the 400 ppm threshold; the appliance comes off until you find and correct the cause, then check ambient CO in the occupied space.';
+  }
+  // (C) Confirmed spillage past 2 minutes under worst-case depressurization.
+  if (/spillage[^.]{0,55}(continu|past|over|beyond|exceed|more than|lasting)[^.]{0,16}(2|two)\s*min/i.test(_lastUser)
+      || /(2|two)\s*min[^.]{0,26}spillage/i.test(_lastUser)) {
+    _safetyLead = 'SAFETY FIRST — shut it down and red-tag it, with written notice to the occupants. Confirmed draft-hood spillage past two minutes under worst-case depressurization is a mandatory shutdown, not a judgment call.';
+  }
+  // (C2) Tripped flame-rollout switch.
+  if (/(flame )?rollout[^.]{0,30}(switch )?(trip|tripp?ed|open|is out|popped)/i.test(_lastUser)) {
+    _safetyLead = 'SAFETY FIRST — shut the gas off at the appliance valve, and do NOT reset the rollout switch until you have found the root cause (blocked flue, cracked heat exchanger, dirty or misaligned burners, failed inducer). A tripped rollout means flame left the burner box.';
+  }
+  // (C3) A2L refrigerant release/leak — ignition sources FIRST, then ventilate.
+  if (/(a2l|r-?454b|r-?32|r-?1234yf|r-?466a)[^.]{0,45}(leak|release|spray|venting|escap|discharg)/i.test(_lastUser)
+      || /(refrigerant|charge)[^.]{0,30}(leak|release|spray|venting|escap)[^.]{0,45}(a2l|r-?454b|r-?32|flammab)/i.test(_lastUser)) {
+    _safetyLead = 'SAFETY FIRST — eliminate every ignition source first: no light switches, no open flame, no sparking tools in the area. THEN ventilate and clear the space. A2L refrigerant is mildly flammable, so ignition control comes before anything else.';
+  }
+  // (D) Inverter / variable-speed fault work = lethal stored DC.
+  let _inverterWarn = '';
+  if (/(inverter|variable[- ]?speed|25vna|24vna|vrv|vrf|mini[- ]?split|modulating heat pump)/i.test(_lastUser)
+      && /(fault|error|code|not running|won'?t (start|run)|no (heat|cool)|diagnos)/i.test(_lastUser)) {
+    _inverterWarn = 'SAFETY — this is an inverter-drive unit; it stores lethal DC voltage after shutoff. Wait a full 5 minutes after killing power and confirm the DC bus is under 50 VDC with a meter before opening the inverter compartment.';
+  }
+  const _homeownerFramed = req.body.homeowner === true ||
+    /\bi'?m a homeowner\b|\bas a homeowner\b|\bhomeowner here\b|(my contractor|the repair (guy|tech|man)|a contractor|the tech)\s+(quoted|said|is quoting|gave me|quoting me)|should i (just )?replace (it|my|the|this)|is (that|this|\$?\d[\d,]*) (a )?fair (price|quote)|gave me a quote/i.test(_lastUser);
+  const _forceNonStream = !!_safetyLead || !!_inverterWarn || _homeownerFramed;
+
   globalActive++;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 75000);
@@ -1227,7 +1278,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     // becomes a hard dependency. We forward only text deltas + a terminal done/error
     // event; tool-use / web_search blocks simply produce no text deltas (the client
     // already gates use_search off for streamed chat).
-    if (stream) {
+    if (stream && !_forceNonStream) {
       body.stream = true;
       const upstream = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -1323,31 +1374,28 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       .join('\n')
       .trim();
 
-    // ── Deterministic homeowner price guard (locked product rule: never price to a homeowner) ──
-    // If the request is homeowner-framed (or flagged), strip any dollar amount the model may have
-    // leaked. This makes the no-homeowner-pricing rule guaranteed, not dependent on the model.
+    // ── Apply the deterministic guard layer to the reply ──────────────────────
     let outText = text || 'No response.';
     try {
-      const msgs = Array.isArray(messages) ? messages : [];
-      let lastUser = '';
-      for (let i = msgs.length - 1; i >= 0; i--) {
-        const m = msgs[i];
-        if (m && m.role === 'user') {
-          lastUser = typeof m.content === 'string'
-            ? m.content
-            : (Array.isArray(m.content) ? m.content.map(c => (c && c.text) || '').join(' ') : '');
-          break;
-        }
-      }
-      const homeownerFramed =
-        req.body.homeowner === true ||
-        /\bi'?m a homeowner\b|\bas a homeowner\b|\bhomeowner here\b|(my contractor|the repair (guy|tech|man)|a contractor|the tech)\s+(quoted|said|is quoting|gave me|quoting me)|should i (just )?replace (it|my|the|this)|is (that|this|\$?\d[\d,]*) (a )?fair (price|quote)|gave me a quote/i.test(lastUser);
-      if (homeownerFramed) {
+      if (_homeownerFramed) {
+        // Strip any dollar amount the model leaked.
         outText = outText.replace(
           /\$\s?\d[\d,]*(?:\.\d+)?(?:\s?(?:[-–—]|to)\s?\$?\s?\d[\d,]*(?:\.\d+)?)?\+?(?:\s?\/\s?\w+)?/g,
           '(a price your tech will give you)'
         );
+        // Neutralize replace-or-repair recommendations to a homeowner.
+        outText = outText.replace(
+          /\b(replacement|replacing(?: it)?|a new system|a new unit|the new system|going new)\b[^.!?\n]{0,45}?\b(is (?:probably |likely )?(?:the )?(?:smarter|smart|better|right|wiser)|makes (?:more )?sense|the (?:better|smarter|right) (?:move|call|bet|play))/gi,
+          'whether to repair or replace is the licensed tech’s call'
+        );
+        outText = outText.replace(
+          /\b(?:i'?d|i would|lean toward|i'?d lean toward|go with|my (?:honest )?take[: -]*)[^.!?\n]{0,20}?\b(replac\w*|the new (?:system|unit)|a new (?:system|unit))/gi,
+          'the repair-or-replace call belongs to the tech on the job'
+        );
       }
+      // Prepend mandatory safety lead(s) so the action is the first thing the tech reads.
+      const _leads = [_safetyLead, _inverterWarn].filter(Boolean);
+      if (_leads.length) outText = _leads.join('\n\n') + '\n\n' + outText;
     } catch (_) {}
 
     res.json({ response: outText });

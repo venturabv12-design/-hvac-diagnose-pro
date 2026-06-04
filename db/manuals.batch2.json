@@ -1,0 +1,21 @@
+[
+  { "brand": "goodman", "model_family": "RS6215", "doc_id": "goodman-rs6215001-furnace-service",
+    "doc_title": "Goodman / Amana Gas Furnace Service & Troubleshooting Manual RS6215001",
+    "doc_url": "https://partnerlinkmarketing.goodmanmfg.com/Lit/RS6215001r7.pdf",
+    "pdf": "https://partnerlinkmarketing.goodmanmfg.com/Lit/RS6215001r7.pdf" },
+
+  { "brand": "goodman", "model_family": "GMVC96", "doc_id": "goodman-fgmvc96-spec",
+    "doc_title": "Goodman GMVC96 / GCVC96 Modulating Gas Furnace Specifications",
+    "doc_url": "https://apps.goodmanmfg.com/brochures/files/5d94ab7d6f9adSS-FGMVC96.pdf",
+    "pdf": "https://apps.goodmanmfg.com/brochures/files/5d94ab7d6f9adSS-FGMVC96.pdf" },
+
+  { "brand": "goodman", "model_family": "GMEC96", "doc_id": "goodman-gmec96-spec",
+    "doc_title": "Goodman GMEC96 Two-Stage Gas Furnace Specifications",
+    "doc_url": "https://apps.goodmanmfg.com/brochures/files/5ba3984a94c6fSS-GMEC96.pdf",
+    "pdf": "https://apps.goodmanmfg.com/brochures/files/5ba3984a94c6fSS-GMEC96.pdf" },
+
+  { "brand": "goodman", "model_family": null, "doc_id": "goodman-sf024-8flash-bulletin",
+    "doc_title": "Goodman Furnace Service Bulletin SF-024 — 8-Flash Fault Code",
+    "doc_url": "https://mobile.goodmanmfg.com/mobileapp/stellent/Toolkit/TechServices/SB/goodman/SF-Furnace/SF-024+Missing+Identification+of+Eight+(8)+Flash+Fault+Code.pdf",
+    "pdf": "https://mobile.goodmanmfg.com/mobileapp/stellent/Toolkit/TechServices/SB/goodman/SF-Furnace/SF-024+Missing+Identification+of+Eight+(8)+Flash+Fault+Code.pdf" }
+]

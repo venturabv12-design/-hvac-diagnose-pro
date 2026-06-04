@@ -862,6 +862,13 @@ body[data-mode="homeowner"] [data-contractor-only]{display:none!important;}
 .nav-back svg{width:18px;height:18px;}
 .nav-globe svg,.nav-more svg{width:16px;height:16px;}
 body[data-mode="contractor"] .nav-actions{gap:4px;}
+/* Founder declutter (contractor): drop the redundant top-nav Mike + back arrow and the
+   WAITING-FOR-YOU instrument banner so the Call/FaceTime header sits right on top of the
+   chat. Hidden (not deleted) to keep the chevron-left lucide icon in the audit count. */
+body[data-mode="contractor"] .nav-back,
+body[data-mode="contractor"] .nav-mike,
+body[data-mode="contractor"] #instrStrip{display:none!important;}
+body[data-mode="contractor"] .nav-inner{justify-content:flex-end;}
 
 /* ── PUSH 6 — CONTRACTOR MESSAGE BUBBLES (commit 3/6) ──
    Contractor-scoped overrides for existing .msg-agent / .msg-user / bubble classes.
@@ -872,6 +879,11 @@ body[data-mode="contractor"] .msg-agent{max-width:92%;}
 body[data-mode="contractor"] .msg-agent.has-mike-badge{position:relative;padding-left:36px;}
 body[data-mode="contractor"] .msg-agent.has-mike-badge .msg-mike-badge{position:absolute;left:0;top:0;}
 body[data-mode="contractor"] .msg-agent .msg-bubble-agent{background:var(--ink-2);border:1px solid var(--line);color:rgba(255,255,255,.92);border-radius:14px 14px 14px 14px;border-top-left-radius:4px;box-shadow:none;font-size:14px;line-height:1.4;font-weight:500;letter-spacing:-.005em;}
+/* Phase 2 — wiring-diagram image card (Mike shows the real schematic from the manual). */
+.mike-diagram{margin-top:10px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:12px;overflow:hidden;background:var(--ink-2,#15201f);max-width:520px;}
+.mike-diagram-cap{display:flex;align-items:center;gap:6px;padding:9px 12px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-bright,#5FC4C2);border-bottom:1px solid var(--line,rgba(255,255,255,.1));}
+.mike-diagram-cap span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mike-diagram-img{display:block;width:100%;height:auto;background:#fff;cursor:zoom-in;}
 body[data-mode="contractor"] .msg-user .msg-bubble-user{background:linear-gradient(135deg,var(--teal),var(--teal-deep));color:var(--ink);border-radius:14px 14px 14px 14px;border-top-right-radius:4px;font-size:14px;line-height:1.4;font-weight:600;letter-spacing:-.005em;}
 body[data-mode="contractor"] .msg-time{display:none;}
 
@@ -7308,6 +7320,20 @@ function buildV2Mentor(mb){
 }
 
 function appendMessage(role,text){
+  // Phase 2 (wiring diagrams): peel Mike's diagram-image sentinel off the reply
+  // BEFORE any text processing (TTS, safety scan, markdown) so it's never spoken
+  // or shown as raw text. Server format, appended on wiring questions only:
+  //   ⟦MIKE_DIAGRAM⟧[{"url":"/diagrams/…","title":"…","page":82}]⟦/MIKE_DIAGRAM⟧
+  var _mikeDiagrams=null;
+  if(role==='agent'&&typeof text==='string'&&text.indexOf('MIKE_DIAGRAM')!==-1){
+    text=text.replace(/⟦MIKE_DIAGRAM⟧([\s\S]*?)⟦\/MIKE_DIAGRAM⟧/g,function(m,j){
+      try{var arr=JSON.parse(j);if(Array.isArray(arr))_mikeDiagrams=(_mikeDiagrams||[]).concat(arr.filter(function(d){return d&&typeof d.url==='string';}));}catch(_){}
+      return '';
+    }).trim();
+    // Belt-and-suspenders: if the reply was truncated and a closing marker is missing,
+    // strip any stray opener-to-end and any lone marker so a half-sentinel never shows.
+    text=text.replace(/⟦MIKE_DIAGRAM⟧[\s\S]*$/,'').replace(/⟦\/?MIKE_DIAGRAM⟧/g,'').trim();
+  }
   // Push 6 commit 6: Find-a-Pro sentinel + keyword fallback detection.
   // [FIND_PRO] is the deterministic primary signal (system prompt update pending in
   // index.js — locked file, so ships in a future push). Keyword regex is the
@@ -7421,6 +7447,23 @@ function appendMessage(role,text){
     // .bub keeps the legacy `.msg-bubble msg-bubble-user` hook classes for search.
     div.innerHTML='<div class="bub msg-bubble msg-bubble-user">'+formatted+'</div><div class="time">'+getTimeStr()+'</div>';
   }
+  // Phase 2: render the real wiring-diagram image(s) inside Mike's message, below
+  // the prose. URL is allow-listed to same-origin /diagrams/… or Supabase Storage;
+  // no inline handlers; tap opens the full-screen overlay (existing openImgOverlay).
+  if(isAgent&&_mikeDiagrams&&_mikeDiagrams.length){
+    _mikeDiagrams.slice(0,2).forEach(function(d){
+      var u=String(d.url||'');
+      if(!/^\/diagrams\//.test(u)&&!/^https:\/\/[a-z0-9.-]+\.supabase\.co\/storage\/v1\/object\/public\//i.test(u))return;
+      var cap=escapeHtml((d.title||'Wiring diagram')+(d.page?(' · p.'+d.page):''));
+      var fig=document.createElement('div');
+      fig.className='mike-diagram';
+      fig.innerHTML='<div class="mike-diagram-cap">📐 <span>'+cap+'</span></div>'
+        +'<img src="'+escapeHtml(u)+'" alt="'+cap+'" loading="lazy" class="mike-diagram-img"/>';
+      var img=fig.querySelector('img');
+      if(img){img.addEventListener('click',function(){openImgOverlay(u);});}
+      div.appendChild(fig);
+    });
+  }
   // Show red safety banner ABOVE the message for dangerous situations
   if(isSafetyAlert){
     var alertBanner=document.createElement('div');
@@ -7453,7 +7496,10 @@ function appendMessage(role,text){
 function openImgOverlay(url){
   var overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-  overlay.innerHTML='<img src="'+url+'" style="max-width:100%;max-height:90vh;object-fit:contain;border-radius:8px;"/>';
+  // Escape at the sink — url is concatenated into innerHTML; escaping here hardens
+  // every caller (diagram card, etc.) against an attribute break-out, not just one.
+  var _safe=(typeof escapeHtml==='function')?escapeHtml(String(url)):String(url).replace(/"/g,'&quot;');
+  overlay.innerHTML='<img src="'+_safe+'" style="max-width:100%;max-height:90vh;object-fit:contain;border-radius:8px;"/>';
   overlay.onclick=function(){document.body.removeChild(overlay);};
   document.body.appendChild(overlay);
 }
@@ -7573,7 +7619,7 @@ function toggleQuickActions(){
     menu=document.createElement('div');
     menu.id='quickActionsMenu';
     menu.style.cssText='position:fixed;background:#fff;border:1.5px solid #e2e4ed;border-radius:12px;box-shadow:0 4px 32px rgba(0,0,0,.18);z-index:99999;overflow-y:auto;max-height:360px;min-width:240px;';
-    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF0F2;color:#E8354A;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){document.getElementById(\'chatInput\').value=\'I need a part: \';document.getElementById(\'chatInput\').focus();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#E8354A;font-weight:800;" onclick="qaClick(function(){var b=document.getElementById(\'fullDiagBody\');var a=document.getElementById(\'fullDiagArrow\');if(b&&b.style.display===\'none\'){b.style.display=\'block\';if(a)a.textContent=\'&#x25B2;\';}if(b)b.scrollIntoView({behavior:\'smooth\'});})">&#x26A1; Full Diagnostic</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick(\'What are the correct R-410A pressures for current outdoor temperature?\');})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:var(--rust-deep);" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F0FDF4;color:#059669;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick(\'I just finished the repair — what else should I check for upsell opportunities?\');})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF7ED;color:#ea580c;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick(\'Give me a job summary — problem, fix, and what to put on the invoice.\');})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#EFF6FF;color:#2563eb;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick(\'The homeowner said the price seems too high. How do I overcome that?\');})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick(\'Help me pitch a maintenance agreement. System is about 10 years old.\');})">&#x1F4CB; Pitch Maintenance</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F3F4F6;color:#6B7280;border-radius:6px;margin:4px 4px 2px;">&#x1F9EA; DEBUG</div>              <button class="qa-item" style="color:#6B7280;" onclick="qaClick(function(){showMemoryDebug();})">&#x1F9E0; Show Memory</button>            </div>          ';
+    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF0F2;color:#E8354A;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){document.getElementById(\'chatInput\').value=\'I need a part: \';document.getElementById(\'chatInput\').focus();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick(\'What are the correct R-410A pressures for current outdoor temperature?\');})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:var(--rust-deep);" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F0FDF4;color:#059669;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick(\'I just finished the repair — what else should I check for upsell opportunities?\');})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF7ED;color:#ea580c;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick(\'Give me a job summary — problem, fix, and what to put on the invoice.\');})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#EFF6FF;color:#2563eb;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick(\'The homeowner said the price seems too high. How do I overcome that?\');})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick(\'Help me pitch a maintenance agreement. System is about 10 years old.\');})">&#x1F4CB; Pitch Maintenance</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F3F4F6;color:#6B7280;border-radius:6px;margin:4px 4px 2px;">&#x1F9EA; DEBUG</div>              <button class="qa-item" style="color:#6B7280;" onclick="qaClick(function(){showMemoryDebug();})">&#x1F9E0; Show Memory</button>            </div>          ';
     document.body.appendChild(menu);
     // Tap outside closes
     setTimeout(function(){
@@ -8551,7 +8597,6 @@ var MP_TOOLS={
     {label:'Load Calc',sub:'Size the equipment',fn:function(){mpEnterChat();askMikeLoadCalc();}}
   ]},
   diagnose:{title:'Diagnose',pip:'var(--teal)',actions:[
-    {label:'Full Diagnostic',sub:'Guided system check',fn:function(){mpEnterChat();var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b&&b.style.display==='none'){b.style.display='block';if(a)a.textContent='▲';}if(b)setTimeout(function(){b.scrollIntoView({behavior:'smooth'});},80);}},
     {label:'Find Upsells',sub:'After the repair',fn:function(){mpEnterChat();sendQuick("What am I leaving on the table on this job?");}},
     {label:'Beat Competitor Quote',sub:'Win the job',fn:function(){mpEnterChat();askMikeCompetitor();}},
     {label:'Get Google Review',sub:'Ask for a review',fn:function(){mpEnterChat();askMikeReviewRequest();}},

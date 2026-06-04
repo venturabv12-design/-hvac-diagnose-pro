@@ -1544,6 +1544,10 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         outText = outText.replace(/\b(?:that|this|the|their|its)?\s*(?:price|quote|cost|number)\s+(?:is|seems|sounds|looks|feels|runs)\s+(?:a (?:bit|little) )?(?:on the )?(?:high|low|steep|fair|reasonable|pricey)(?:[- ]?(?:side|end))?\b(?:[—,-]+\s*(?:often|significantly|but not)[^.!?\n]{0,24})?/gi, 'that’s a pricing question for your tech');
         outText = outText.replace(/\b(?:isn'?t|is not|not|nothing)\s+(?:automatically |necessarily |exactly |really )?(?:an? )?(?:scam|rip[- ]?off|gouging|highway robbery|a steal|a rip)/gi, 'something your tech can walk you through');
         outText = outText.replace(/\b(?:over|under)[- ]?priced\b/gi, 'a pricing question for your tech');
+        // The bare "(that's) on the high(er)/low(er) side/end" idiom about a price ONLY when
+        // a price/quote/cost word is in the same clause — so legit non-price uses ("your
+        // humidity is on the high side") and refrigeration ("high-side pressure") are safe.
+        outText = outText.replace(/\b(?:price|quote|cost|number|charge|bill)\b[^.!?\n]{0,40}?\b(?:is|runs|seems|that'?s|it'?s)\s+(?:a (?:bit|little) )?(?:on the )?(?:high|low)(?:er)?[- ]?(?:side|end)\b/gi, 'is a pricing question for your tech');
         outText = outText.replace(/\bR-?22\b[^.!?\n]{0,18}?\breplac\w*/gi, 'an R-22 system is a repair-or-replace conversation for your tech');
         outText = outText.replace(/\b(?:a |the )?new (?:system|unit)\b[^.!?\n]{0,30}?\b(?:wins|pays for itself|cheaper|cost[- ]per[- ]year|saves you money|comes out ahead)/gi, 'whether a new system is worth it is your tech’s call');
       }

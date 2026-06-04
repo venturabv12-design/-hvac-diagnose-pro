@@ -1344,6 +1344,18 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       || /(refrigerant|charge)[^.]{0,30}(leak|release|spray|venting|escap)[^.]{0,45}(a2l|r-?454b|r-?32|flammab)/i.test(_lastUser)) {
     _safetyLead = 'SAFETY FIRST — eliminate every ignition source first: no light switches, no open flame, no sparking tools in the area. THEN ventilate and clear the space. A2L refrigerant is mildly flammable, so ignition control comes before anything else.';
   }
+  // (C4) MEDICAL EMERGENCY — an occupant is incapacitated (suspected CO or otherwise).
+  // Highest-priority lead: a downed person is 911-first, before ANY equipment work, and
+  // Mike must stay the HVAC tech (instruct + get help moving) — NOT play paramedic. Placed
+  // last in the _safetyLead chain so it overrides equipment leads when a person is down.
+  const _personDown =
+    /\b(occupant|someone|somebody|person|people|homeowner|customer|tenant|resident|man|woman|lady|child|kid|baby|elderly|guy|she|he|they)\b[^.]{0,70}(unconscious|passed out|won'?t wake|unresponsive|collapsed|slurring|slurred|can barely (answer|respond|stand|talk|keep)|barely (conscious|awake|responsive|standing)|disorient|seizure|convuls|not making sense|cherry[- ]?red|blue lips|throwing up|vomit)/i.test(_lastUser)
+    || /\b(unconscious|passed out|unresponsive|barely conscious|having a seizure|convulsing|won'?t wake up)\b/i.test(_lastUser)
+    || /(confused|slurring|disorient|dizzy|nause|headache|throwing up|vomit)[^.]{0,45}(possible |suspect|maybe |might be )?(co\b|carbon monoxide|poison)/i.test(_lastUser)
+    || /(co\b|carbon monoxide)[^.]{0,45}(confused|slurring|disorient|unconscious|passed out|vomit|barely|can'?t stay awake|drowsy)/i.test(_lastUser);
+  if (_personDown) {
+    _safetyLead = 'CALL 911 IMMEDIATELY — before anything else. If you can do it safely, get the person out into fresh air, then call 911 and tell them suspected carbon monoxide poisoning. Do NOT stop to diagnose the equipment — this is a medical emergency and life safety comes first. You are the tech here, not the medic: your job right now is to get 911 moving and get everyone into fresh air. Don\'t re-enter a space you suspect is full of CO without the fire department and proper protection.';
+  }
   // (D) Inverter / variable-speed fault work = lethal stored DC.
   let _inverterWarn = '';
   if (/(inverter|variable[- ]?speed|25vna|24vna|vrv|vrf|mini[- ]?split|modulating heat pump)/i.test(_lastUser)

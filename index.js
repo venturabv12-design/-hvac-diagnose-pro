@@ -1239,19 +1239,41 @@ async function _embedQuery(text) {
   if (!r.ok) throw new Error('embed ' + r.status);
   return (await r.json()).data[0].embedding;
 }
+const _RERANK_MODEL = process.env.RERANK_MODEL || 'rerank-2.5';
+// Voyage reranker: reorder candidate chunks by true relevance to the question, then
+// keep the best few. Vector search has high recall but mediocre ordering; the reranker
+// is what makes the most-relevant manual page surface first. Voyage-only; no-op otherwise.
+async function _rerank(query, docs, topK) {
+  if (_EMBED_PROVIDER !== 'voyage') return null;
+  try {
+    const r = await fetch('https://api.voyageai.com/v1/rerank', {
+      method: 'POST', signal: AbortSignal.timeout(3500),
+      headers: { 'Authorization': `Bearer ${_EMBED_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: _RERANK_MODEL, query, documents: docs, top_k: topK }),
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return Array.isArray(d.data) ? d.data : null; // [{index, relevance_score}]
+  } catch (_) { return null; }
+}
 async function retrieveManualContext(userText) {
   if (!_RAG_ENABLED) return null;
   try {
-    const embedding = await _embedQuery(String(userText).slice(0, 2000));
+    const q = String(userText).slice(0, 2000);
+    const embedding = await _embedQuery(q);
     const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_manual_chunks`, {
       method: 'POST', signal: AbortSignal.timeout(2500),
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}` },
-      body: JSON.stringify({ query_embedding: embedding, match_threshold: 0.42, match_count: 10,
+      body: JSON.stringify({ query_embedding: embedding, match_threshold: 0.40, match_count: 20,
         filter_brand: _extractBrand(userText), filter_model_family: null }),
     });
     if (!r.ok) return null;
-    const chunks = await r.json();
+    let chunks = await r.json();
     if (!Array.isArray(chunks) || !chunks.length) return null;
+    // Rerank the candidate pool down to the best 6 (falls back to vector order on miss).
+    const ranked = await _rerank(q, chunks.map(c => c.chunk_text), 6);
+    if (ranked && ranked.length) chunks = ranked.map(x => chunks[x.index]).filter(Boolean);
+    else chunks = chunks.slice(0, 6);
     return chunks.map(c => `[Source: ${c.doc_title}${c.page_num ? ', p.' + c.page_num : ''}]\n${c.chunk_text}`).join('\n\n---\n\n');
   } catch (_) { return null; }
 }

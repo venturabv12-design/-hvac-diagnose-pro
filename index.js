@@ -1274,7 +1274,17 @@ async function retrieveManualContext(userText) {
     const ranked = await _rerank(q, chunks.map(c => c.chunk_text), 6);
     if (ranked && ranked.length) chunks = ranked.map(x => chunks[x.index]).filter(Boolean);
     else chunks = chunks.slice(0, 6);
-    return chunks.map(c => `[Source: ${c.doc_title}${c.page_num ? ', p.' + c.page_num : ''}]\n${c.chunk_text}`).join('\n\n---\n\n');
+    const text = chunks.map(c => `[Source: ${c.doc_title}${c.page_num ? ', p.' + c.page_num : ''}]\n${c.chunk_text}`).join('\n\n---\n\n');
+    // Phase 2: collect any wiring-diagram images riding on the top chunks (dedupe, cap 2).
+    const _seen = new Set(); const diagrams = [];
+    for (const c of chunks) {
+      if (c.diagram_image_url && !_seen.has(c.diagram_image_url)) {
+        _seen.add(c.diagram_image_url);
+        diagrams.push({ url: c.diagram_image_url, title: c.doc_title || 'Wiring diagram', page: c.page_num || null });
+        if (diagrams.length >= 2) break;
+      }
+    }
+    return { text, diagrams };
   } catch (_) { return null; }
 }
 
@@ -1342,7 +1352,10 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   }
   const _homeownerFramed = req.body.homeowner === true ||
     /\bi'?m a homeowner\b|\bas a homeowner\b|\bhomeowner here\b|(my contractor|the repair (guy|tech|man)|a contractor|the tech)\s+(quoted|said|is quoting|gave me|quoting me)|should i (just )?replace (it|my|the|this)|is (that|this|\$?\d[\d,]*) (a )?fair (price|quote)|gave me a quote/i.test(_lastUser);
-  const _forceNonStream = !!_safetyLead || !!_inverterWarn || _homeownerFramed;
+  // Wiring/schematic questions get a non-streamed reply so a retrieved diagram
+  // image can be attached to the end of the response without splitting the sentinel.
+  const _wiringDiagramIntent = /wiring\s+(diagram|schematic)|electrical\s+schematic|ladder\s+diagram|show\s+me\s+the\s+(wiring|schematic|diagram)|wiring\s+for\b|pull\s+up\s+the\s+(wiring|schematic|diagram)/i.test(_lastUser);
+  const _forceNonStream = !!_safetyLead || !!_inverterWarn || _homeownerFramed || _wiringDiagramIntent;
 
   globalActive++;
   const controller = new AbortController();
@@ -1353,12 +1366,16 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     // them to Mike's system prompt so code/spec/wiring answers come from the page,
     // cited. No-ops (empty string) until RAG is enabled + ingested.
     let _ragContext = '';
+    let _ragDiagrams = [];
     if (_RAG_ENABLED && _needsManualRetrieval(_lastUser)) {
       const _mc = await retrieveManualContext(_lastUser);
-      if (_mc) _ragContext = '\n\n=== MANUFACTURER SERVICE MANUAL EXCERPTS (authoritative) ===\n'
-        + 'Answer fault-code, wiring, and spec questions ONLY from these excerpts and cite the [Source: ...] tag in your reply. '
-        + 'If the answer is not in these excerpts, say so plainly and use web search.\n\n'
-        + _mc + '\n=== END MANUAL EXCERPTS ===\n';
+      if (_mc && _mc.text) {
+        _ragContext = '\n\n=== MANUFACTURER SERVICE MANUAL EXCERPTS (authoritative) ===\n'
+          + 'Answer fault-code, wiring, and spec questions ONLY from these excerpts and cite the [Source: ...] tag in your reply. '
+          + 'If the answer is not in these excerpts, say so plainly and use web search.\n\n'
+          + _mc.text + '\n=== END MANUAL EXCERPTS ===\n';
+        if (Array.isArray(_mc.diagrams)) _ragDiagrams = _mc.diagrams;
+      }
     }
     const body = {
       model: process.env.MIKE_MODEL || 'claude-opus-4-8',
@@ -1503,6 +1520,11 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       if (_leads.length) outText = _leads.join('\n\n') + '\n\n' + outText;
     } catch (_) {}
 
+    // Phase 2: attach wiring-diagram image(s) the retrieval surfaced, as a sentinel
+    // block the client parses + renders inline (then strips from the visible text).
+    if (_ragDiagrams && _ragDiagrams.length && _wiringDiagramIntent) {
+      try { outText += '\n\n⟦MIKE_DIAGRAM⟧' + JSON.stringify(_ragDiagrams) + '⟦/MIKE_DIAGRAM⟧'; } catch (_) {}
+    }
     res.json({ response: outText });
 
   } catch (err) {

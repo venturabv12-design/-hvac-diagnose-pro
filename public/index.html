@@ -867,7 +867,8 @@ body[data-mode="contractor"] .nav-actions{gap:4px;}
    chat. Hidden (not deleted) to keep the chevron-left lucide icon in the audit count. */
 body[data-mode="contractor"] .nav-back,
 body[data-mode="contractor"] .nav-mike,
-body[data-mode="contractor"] #instrStrip{display:none!important;}
+body[data-mode="contractor"] #instrStrip,
+body[data-mode="contractor"] #fullDiagCard{display:none!important;}
 body[data-mode="contractor"] .nav-inner{justify-content:flex-end;}
 
 /* ── PUSH 6 — CONTRACTOR MESSAGE BUBBLES (commit 3/6) ──
@@ -3331,8 +3332,9 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <button onclick="clearKnowledge()" style="margin-top:10px;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:6px;padding:6px 12px;font-size:12px;color:#f87171;font-weight:600;cursor:pointer;">Clear All</button>
     </div>
 
-    <!-- FULL DIAGNOSTIC FORM -->
-    <div class="card" style="border-top:3px solid var(--rust);margin-top:12px;">
+    <!-- FULL DIAGNOSTIC FORM — hidden on the contractor side per founder (removed from
+         Quick Actions + toolbelt too); kept in DOM for a future hard-delete cleanup. -->
+    <div class="card" id="fullDiagCard" style="border-top:3px solid var(--rust);margin-top:12px;">
       <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;" onclick="var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b.style.display==='none'){b.style.display='block';a.textContent='&#x25B2;';}else{b.style.display='none';a.textContent='&#x25BC; Expand';}">
         <label class="field-label" style="margin:0;cursor:pointer;">&#x26A1; Full Diagnostic</label>
         <span id="fullDiagArrow" style="font-size:12px;color:var(--rust);font-weight:700;white-space:nowrap;">&#x25BC; Expand</span>

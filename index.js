@@ -1375,6 +1375,16 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
           + 'If the answer is not in these excerpts, say so plainly and use web search.\n\n'
           + _mc.text + '\n=== END MANUAL EXCERPTS ===\n';
         if (Array.isArray(_mc.diagrams)) _ragDiagrams = _mc.diagrams;
+        // When an actual wiring-diagram image is being shown to the tech, tell Mike so
+        // his prose matches the screen — present it, don't deny having it. He cites the
+        // source by name (the image may be the closest match, not the exact model).
+        if (_ragDiagrams.length && _wiringDiagramIntent) {
+          const _d0 = _ragDiagrams[0];
+          _ragContext += '\nNOTE: A real wiring-diagram image from "' + (_d0.title || 'the service manual')
+            + (_d0.page ? ', p.' + _d0.page : '') + '" is displayed to the technician directly below your reply. '
+            + 'Reference it naturally and walk them through the relevant terminals/connections, and name the source. '
+            + 'Do NOT say you lack a wiring diagram — it is on their screen. If it is a closely related model rather than the exact one, say so briefly but still use it.\n';
+        }
       }
     }
     const body = {

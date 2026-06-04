@@ -8526,33 +8526,33 @@ var MP_TOOLS={
     {label:'Repair vs Replace',sub:'5000-rule calculator',fn:function(){showRepairReplaceCalc();}}
   ]},
   warranty:{title:'Warranty Check',pip:'var(--moss)',actions:[
-    {label:'Check Warranty Status',sub:'Brand / model / install date',fn:function(){mpEnterChat();sendQuick("I need to check warranty on this equipment. Ask me the brand, model number, and install date — then tell me whether it's likely under parts warranty, labor warranty, or out of warranty, and what I need to look up to confirm.");}},
-    {label:'File a Warranty Claim',sub:'Prep the claim',fn:function(){mpEnterChat();sendQuick("Help me prepare a warranty claim. Ask me the brand, model, serial number, fault description, and what parts I'm replacing — then give me the claim number format and what info the distributor will need.");}},
+    {label:'Check Warranty Status',sub:'Brand / model / install date',fn:function(){mpEnterChat();sendQuick("Need to check warranty on this unit.");}},
+    {label:'File a Warranty Claim',sub:'Prep the claim',fn:function(){mpEnterChat();sendQuick("I need to file a warranty claim.");}},
     {label:'Maintenance Agreement',sub:'Build an MA',fn:function(){mpEnterChat();askMikeMaintenanceAgreement();}}
   ]},
   wiring:{title:'Wiring & Diagrams',pip:'var(--rust)',actions:[
-    {label:'Terminal Guide',sub:'Labels & wire colors',fn:function(){mpEnterChat();sendQuick('I need terminal designation help. Ask me the equipment brand, model, and which board or connection point — then give me the terminal labels, wire colors, and what each one does.');}},
-    {label:'Wiring Diagram',sub:'Trace the circuit',fn:function(){mpEnterChat();sendQuick("I need a wiring diagram walkthrough. Ask me the brand, model number, and what I'm trying to trace — then walk me through the circuit path and what to test at each point.");}},
-    {label:'Pressures',sub:'R-410A target pressures',fn:function(){mpEnterChat();sendQuick('What are the correct R-410A pressures for current outdoor temperature?');}},
+    {label:'Terminal Guide',sub:'Labels & wire colors',fn:function(){mpEnterChat();sendQuick("Help me read these terminals.");}},
+    {label:'Wiring Diagram',sub:'Trace the circuit',fn:function(){mpEnterChat();sendQuick("Walk me through the wiring on this unit.");}},
+    {label:'Pressures',sub:'R-410A target pressures',fn:function(){mpEnterChat();sendQuick("What pressures am I looking for right now?");}},
     {label:'Safety Check',sub:'Pre-job checklist',fn:function(){mpEnterChat();askMikeSafetyChecklist();}}
   ]},
   jobs:{title:'Close This Job',pip:'var(--brass)',actions:[
-    {label:'Job Summary',sub:'Problem · fix · invoice',fn:function(){mpEnterChat();sendQuick('Give me a job summary — problem, fix, and what to put on the invoice.');}},
+    {label:'Job Summary',sub:'Problem · fix · invoice',fn:function(){mpEnterChat();sendQuick("Give me a summary of this job.");}},
     {label:'Invoice Generator',sub:'Build & copy invoice',fn:function(){generateInvoice();}},
     {label:'Customer Sign-Off',sub:'Capture signature',fn:function(){showJobSignOff();}},
     {label:'Save Customer',sub:'Add to customer list',fn:function(){saveCurrentJobAsCustomer();}},
-    {label:'Handle Objection',sub:'Price too high?',fn:function(){mpEnterChat();sendQuick('The homeowner said the price seems too high. How do I overcome that?');}},
-    {label:'Pitch Maintenance',sub:'~10-yr system',fn:function(){mpEnterChat();sendQuick('Help me pitch a maintenance agreement. System is about 10 years old.');}}
+    {label:'Handle Objection',sub:'Price too high?',fn:function(){mpEnterChat();sendQuick("Customer's pushing back on the price.");}},
+    {label:'Pitch Maintenance',sub:'~10-yr system',fn:function(){mpEnterChat();sendQuick("Help me pitch a maintenance agreement.");}}
   ]},
   manual:{title:'Tech Docs',pip:'rgba(244,239,230,.5)',actions:[
-    {label:'Install Manual',sub:'Startup & commissioning',fn:function(){mpEnterChat();sendQuick('I need install manual guidance. Ask me the brand and model number — then walk me through the relevant install or startup procedure, including any commissioning checks specific to this unit.');}},
-    {label:'Service Manual',sub:'Specs & procedures',fn:function(){mpEnterChat();sendQuick("I need service manual help. Ask me the brand, model, and what I'm servicing — then give me the manufacturer's diagnostic sequence, torque specs, refrigerant charge procedure, or whatever applies to the work.");}},
-    {label:'Error / Fault Codes',sub:'Decode a code',fn:function(){mpEnterChat();sendQuick('I have a fault code. Ask me the brand, model, and the code number or LED flash pattern — then tell me what it means and what to test first.');}},
+    {label:'Install Manual',sub:'Startup & commissioning',fn:function(){mpEnterChat();sendQuick("Pull up the install procedure on this unit.");}},
+    {label:'Service Manual',sub:'Specs & procedures',fn:function(){mpEnterChat();sendQuick("I need the service specs on this unit.");}},
+    {label:'Error / Fault Codes',sub:'Decode a code',fn:function(){mpEnterChat();sendQuick("I've got a fault code I need decoded.");}},
     {label:'Load Calc',sub:'Size the equipment',fn:function(){mpEnterChat();askMikeLoadCalc();}}
   ]},
   diagnose:{title:'Diagnose',pip:'var(--teal)',actions:[
     {label:'Full Diagnostic',sub:'Guided system check',fn:function(){mpEnterChat();var b=document.getElementById('fullDiagBody');var a=document.getElementById('fullDiagArrow');if(b&&b.style.display==='none'){b.style.display='block';if(a)a.textContent='▲';}if(b)setTimeout(function(){b.scrollIntoView({behavior:'smooth'});},80);}},
-    {label:'Find Upsells',sub:'After the repair',fn:function(){mpEnterChat();sendQuick('I just finished the repair — what else should I check for upsell opportunities?');}},
+    {label:'Find Upsells',sub:'After the repair',fn:function(){mpEnterChat();sendQuick("What am I leaving on the table on this job?");}},
     {label:'Beat Competitor Quote',sub:'Win the job',fn:function(){mpEnterChat();askMikeCompetitor();}},
     {label:'Get Google Review',sub:'Ask for a review',fn:function(){mpEnterChat();askMikeReviewRequest();}},
     {label:'Show Memory',sub:'Debug · what Mike knows',fn:function(){showMemoryDebug();}}
@@ -8608,6 +8608,28 @@ function mpDismissColdOpen(){
   var ignited=false;try{ignited=!!sessionStorage.getItem('mp_ignited');}catch(e){}
   if(!hasUser&&!ignited){try{sessionStorage.setItem('mp_ignited','1');}catch(e){}mpShowColdOpen();}
 });}catch(e){}})();
+// Global one-time audio unlock: iOS Safari blocks audio that starts outside a user
+// gesture, which made onboarding/greeting TTS silently fail until a manual refresh.
+// On the FIRST tap anywhere, resume every audio context + prime the iOS element so
+// Mike's voice plays reliably from then on (onboarding, voice greeting, all of it).
+(function(){
+  function _mpUnlockAllAudio(){
+    try{ if(typeof unlockAudioSafe==='function') unlockAudioSafe(); }catch(e){}
+    try{ if(typeof setSilentAudioForIOS==='function') setSilentAudioForIOS(); }catch(e){}
+    try{ if(window._obAudioCtx && window._obAudioCtx.state!=='running') window._obAudioCtx.resume(); }catch(e){}
+    try{ if(window.sharedAudioCtx && window.sharedAudioCtx.state!=='running') window.sharedAudioCtx.resume(); }catch(e){}
+  }
+  function _once(){ _mpUnlockAllAudio();
+    document.removeEventListener('pointerdown',_once,true);
+    document.removeEventListener('touchend',_once,true);
+    document.removeEventListener('click',_once,true);
+  }
+  try{
+    document.addEventListener('pointerdown',_once,true);
+    document.addEventListener('touchend',_once,true);
+    document.addEventListener('click',_once,true);
+  }catch(e){}
+})();
 
 function needsDiagram(text){
   return !!(text&&text.match(/diagram|wiring|schematic|connect|hook.?up|install|sequence|flow|pressure chart|charge|superheat|subcooling|step.?by.?step|how to wire|procedure|walk me|draw|circuit|layout|heat pump cycle|furnace|gauges|manifold|refriger|illustrat|visual|show me|picture|what does.*look|draw me|explain.*visual|can you show|detailed visual|create.*diagram/i));
@@ -9129,14 +9151,22 @@ function toggleVoiceMode(){
   // Greet on first open. unlockAudioSafe (called above on this gesture) resumed
   // the AudioContext, so mikeSay can play through it. If resuming mid-conversation,
   // auto-engage mic so the user can talk immediately.
-  if(chatHistory.length===0){
-    var greet={en:"Hey, it's Mike. Talk to me — what are you dealing with?",es:"Hola, soy Mike. Cuéntame — ¿qué tienes ahí?",zh:"我是Mike，说吧 — 什么情况？",vi:"Mike đây. Nói đi — bạn đang xử lý gì vậy?",fr:"C'est Mike. Dis-moi — qu'est-ce qui se passe ?",pt:"Aqui é o Mike. Fala — o que você tem aí?"};
-    setVoiceStatus('Mike is starting…','');
-    setTimeout(function(){if(voiceMode)mikeSay(greet[currentLang]||greet.en);},200);
-  } else {
-    setVoiceStatus('Listening…','Go ahead…');
-    setTimeout(function(){if(voiceMode&&!isListening&&!isMikeSpeaking)startListening();},300);
-  }
+  // Mike ALWAYS picks up like a real person — a warm, by-name greeting first, then
+  // the mic engages (mikeSay auto-listens when it finishes). Varies so it never feels canned.
+  var _fn=(((currentUser&&currentUser.name)||'').trim().split(/\s+/)[0])||'';
+  var nm=_fn?(' '+_fn):'';
+  var greetPool={
+    en:["Hey"+nm+", what are we working on?", (_fn?_fn+" — talk to me. What've you got?":"Talk to me. What've you got?"), "What's going on"+nm+"? I'm here.", (_fn?_fn+", good to hear you. What's the job?":"Good to hear you. What's the job?"), "Go ahead"+nm+" — what are you looking at?", "What do you need"+nm+"? I'm all ears.", "Hey"+nm+" — what are we dealing with today?"],
+    es:["Hola"+nm+", ¿en qué estamos trabajando?", "Dime"+nm+", ¿qué tienes?", "¿Qué pasa"+nm+"? Aquí estoy.", "Adelante"+nm+", ¿qué estás viendo?"],
+    zh:["嘿"+nm+"，咱们在弄什么？", "说吧"+nm+"，什么情况？", "在听呢"+nm+"，你那边怎么样？"],
+    vi:["Chào"+nm+", mình đang làm gì đây?", "Nói đi"+nm+", có gì nào?", "Tôi nghe đây"+nm+", bạn đang xem gì?"],
+    fr:["Salut"+nm+", on bosse sur quoi ?", "Dis-moi"+nm+", qu'est-ce que t'as ?", "Vas-y"+nm+", qu'est-ce que tu regardes ?"],
+    pt:["E aí"+nm+", no que estamos trabalhando?", "Fala"+nm+", o que você tem?", "Pode falar"+nm+", o que tá vendo?"]
+  };
+  var _pool=greetPool[currentLang]||greetPool.en;
+  var _greetLine=_pool[Math.floor(Math.random()*_pool.length)];
+  setVoiceStatus('Mike is starting…','');
+  setTimeout(function(){if(voiceMode)mikeSay(_greetLine);},200);
 }
 
 function unlockAudioSafe(){

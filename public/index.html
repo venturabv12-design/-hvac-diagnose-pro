@@ -2421,7 +2421,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 .is-sesh{padding:5px 14px;background:rgba(0,0,0,.22);border-bottom:1px solid var(--v2-line);font-family:var(--font-code);font-size:7.5px;letter-spacing:.14em;color:var(--v2-mute2);display:flex;align-items:center;justify-content:space-between;}
 .is-sesh .on{color:var(--teal);}
 /* ADMIN demo view-switcher — floating Tech/Home toggle, shown only for role:admin */
-.admin-vt{position:fixed;top:52px;right:12px;transform:translateZ(0);z-index:70;display:none;align-items:center;gap:3px;background:rgba(16,15,11,.96);border:1px solid var(--v2-line);border-radius:999px;padding:3px 5px;box-shadow:0 6px 18px rgba(0,0,0,.5);}
+.admin-vt{margin-right:auto;flex-shrink:0;display:none;align-items:center;gap:3px;background:rgba(16,15,11,.96);border:1px solid var(--v2-line);border-radius:999px;padding:3px 5px;box-shadow:0 4px 12px rgba(0,0,0,.4);}
 .admin-vt .avt-lbl{font-family:var(--font-code);font-size:8px;letter-spacing:.14em;color:var(--v2-mute2);padding:0 2px 0 4px;}
 .admin-vt .avt-btn{border:none;background:transparent;color:var(--v2-mute2);font-family:var(--font-code);font-size:11px;font-weight:700;letter-spacing:.05em;padding:6px 12px;border-radius:999px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background var(--v2-dur-fast,.15s),color var(--v2-dur-fast,.15s);}
 .admin-vt .avt-btn.on{background:linear-gradient(180deg,var(--rust),var(--rust-deep));color:#fff;}
@@ -2715,6 +2715,11 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 <div id="trialBanner"><span>🎯 <strong><span id="trialDaysLeft">7</span> days</strong> left in your free trial</span><button class="trial-up-btn" onclick="showPaywall()">Upgrade</button></div>
 <nav class="nav">
   <div class="nav-inner">
+    <div class="admin-vt" id="adminViewToggle">
+      <span class="avt-lbl">VIEW</span>
+      <button class="avt-btn on" id="avtTech" type="button" onclick="adminSetView('pro')">🔧 TECH</button>
+      <button class="avt-btn" id="avtHome" type="button" onclick="adminSetView('home')">🏠 HOME</button>
+    </div>
     <button class="nav-back" data-contractor-only onclick="navBackTap()" aria-label="Back"><i data-lucide="chevron-left"></i></button>
     <div class="nav-mike">
       <div class="mike-badge"><div class="live-dot"></div></div>
@@ -2863,12 +2868,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     </div>
   </div>
 
-  <!-- ADMIN-ONLY demo view switcher — flip the whole app between Tech and Homeowner sides live. Shown only for role:admin (applyModeFromRole). -->
-  <div class="admin-vt" id="adminViewToggle">
-    <span class="avt-lbl">VIEW</span>
-    <button class="avt-btn on" id="avtTech" type="button" onclick="adminSetView('pro')">🔧 TECH</button>
-    <button class="avt-btn" id="avtHome" type="button" onclick="adminSetView('home')">🏠 HOME</button>
-  </div>
+  <!-- admin demo view switcher now lives INSIDE .nav-inner (was a floating fixed pill overlapping the page top) -->
 
   <!-- MODE TABS — legacy switcher; V2 landing audience toggle (v2SetAudience→setMode) is now the real switcher. Hidden (not removed) so setMode() can still write to #tabHome/#tabPro/#modeDesc without a null throw. -->
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px;display:none;">

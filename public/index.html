@@ -967,7 +967,7 @@ body[data-mode="contractor"] .msg-time{display:none;}
 
 /* Peek bar — mockup spec: dark ink-2 tiles with colored icons */
 body[data-mode="contractor"] .peek-bar{gap:6px;padding:12px 12px 0;}
-body[data-mode="contractor"] .peek-tile{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:10px 6px;color:rgba(255,255,255,.85);position:relative;flex-direction:column;gap:4px;display:flex;align-items:center;justify-content:center;height:auto;min-height:64px;}
+body[data-mode="contractor"] .peek-tile{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:10px 4px;color:rgba(255,255,255,.85);position:relative;flex-direction:column;gap:4px;display:flex;align-items:center;justify-content:center;height:auto;min-height:64px;flex:1 1 0;min-width:0;box-sizing:border-box;}
 body[data-mode="contractor"] .peek-tile:active{background:var(--ink-3);transform:translateY(-1px);}
 body[data-mode="contractor"] .peek-tile-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
 body[data-mode="contractor"] .peek-tile-icon svg{width:22px;height:22px;stroke-width:2;}
@@ -986,7 +986,8 @@ body[data-mode="contractor"] .drawer-section-link{font-size:11px;font-weight:700
 
 /* Whoop-style gradient favorite tiles — 2x2 grid */
 body[data-mode="contractor"] .drawer-favorites{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:20px;}
-body[data-mode="contractor"] .fav-tile{border-radius:12px;padding:16px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s ease;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;border:none;text-align:left;font-family:inherit;-webkit-transform:translateZ(0);transform:translateZ(0);}
+body[data-mode="contractor"] .fav-tile{border-radius:12px;padding:16px;background:linear-gradient(135deg,var(--ink-2),var(--ink-3));color:#fff;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s ease;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;border:none;text-align:left;font-family:inherit;-webkit-transform:translateZ(0);transform:translateZ(0);}
+#actionDrawer:focus,#actionDrawer:focus-visible{outline:none;}
 body[data-mode="contractor"] .fav-tile:active{transform:translateY(-2px);}
 body[data-mode="contractor"] .fav-tile.t-diag{background:linear-gradient(135deg,var(--safety) 0%,var(--safety-deep) 100%);color:var(--ink);}
 body[data-mode="contractor"] .fav-tile.t-cam{background:linear-gradient(135deg,var(--teal) 0%,var(--teal-deep) 100%);color:var(--ink);}
@@ -1004,7 +1005,8 @@ body[data-mode="contractor"] .fav-tile-sub{font-size:11px;font-weight:600;opacit
 
 /* All Tools — 4x2 color-coded grid */
 body[data-mode="contractor"] .drawer-all-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-bottom:20px;}
-body[data-mode="contractor"] .tool-tile{background:var(--ink-3);border:1px solid var(--line);border-radius:8px;padding:14px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:all .15s ease;position:relative;font-family:inherit;color:rgba(255,255,255,.9);-webkit-transform:translateZ(0);transform:translateZ(0);}
+@media(max-width:360px){body[data-mode="contractor"] .drawer-all-tools{grid-template-columns:repeat(3,1fr);}}
+body[data-mode="contractor"] .tool-tile{background:var(--ink-3);border:1px solid var(--line);border-radius:8px;padding:14px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:all .15s ease;position:relative;font-family:inherit;color:rgba(255,255,255,.9);min-width:0;box-sizing:border-box;-webkit-transform:translateZ(0);transform:translateZ(0);}
 body[data-mode="contractor"] .tool-tile:active{background:var(--ink-4);border-color:rgba(255,180,0,.2);transform:translateY(-1px);}
 body[data-mode="contractor"] .tool-tile-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
 body[data-mode="contractor"] .tool-tile-icon svg{width:24px;height:24px;stroke-width:1.8;}
@@ -10830,7 +10832,11 @@ function showToast(msg,type,duration){
   var c=document.getElementById('toastContainer');if(!c)return;
   var t=document.createElement('div');t.className='toast '+type;
   t.textContent=({'success':'✅ ','error':'❌ ','info':'💬 '}[type]||'')+msg;
-  c.appendChild(t);
+  // A modal <dialog> (e.g. the action drawer) renders in the browser top layer, ABOVE
+  // #toastContainer — so host the toast inside the open dialog or it paints behind it.
+  var _dlg=document.querySelector('dialog[open]');
+  if(_dlg){t.style.position='fixed';t.style.left='50%';t.style.bottom='96px';t.style.transform='translateX(-50%)';t.style.zIndex='2147483647';_dlg.appendChild(t);}
+  else{c.appendChild(t);}
   setTimeout(function(){t.style.animation='toastOut .25s ease forwards';setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},250);},duration);
 }
 

@@ -161,7 +161,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .photo-tip{flex:1;padding:10px 6px;text-align:center;border-right:1px solid var(--gray-100);font-size:11px;color:var(--gray-500);line-height:1.4;}
 .photo-tip:last-child{border-right:none;}
 .photo-tip-icon{font-size:17px;display:block;margin-bottom:3px;}
-.photo-tip.bad{background:#FFF8F8;}
+.photo-tip.bad{background:rgba(199,85,59,.14);}
 .recorder{background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:14px;transition:all .2s;}
 .recorder.recording{background:#FFF5F5;border-color:#FCA5A5;}
 .recorder.done{background:var(--green-lt);border-color:#6EE7B7;}
@@ -186,7 +186,8 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .quick-chip{background:var(--white);border:1.5px solid var(--gray-200);border-radius:99px;padding:7px 14px;font-size:12px;font-family:var(--font);font-weight:600;color:var(--gray-600);cursor:pointer;transition:all .12s;white-space:nowrap;}
 .chips-bar{position:relative;z-index:10;}
 .quick-chip:hover{border-color:var(--teal);color:var(--teal-dark);background:var(--teal-lt);}
-.qa-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;background:transparent;border:none;border-radius:8px;font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;text-align:left;transition:background .12s;}
+.qa-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;background:transparent;border:none;border-radius:8px;font-family:var(--font);font-size:14px;font-weight:500;color:#dbe1e8 !important;cursor:pointer;text-align:left;transition:background .12s;}
+.qa-item:hover{background:#202327;}
 .qa-item:hover{background:var(--gray-50);}
 .qa-item:active{background:var(--gray-100);}
 /* Toolbelt tiles inside the chat drawer — the landing-page tools, reachable without
@@ -331,8 +332,8 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .ob-top{display:flex;align-items:center;justify-content:space-between;flex:none;}
 .ob-brand{font-family:'Anton','Archivo',var(--font-display),sans-serif;letter-spacing:.05em;font-size:15px;opacity:.9;}
 .ob-brand i{font-style:normal;color:var(--ob-brass);}
-.ob-skip-btn{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--ob-mute2);background:transparent;border:1px solid var(--ob-line);border-radius:18px;padding:6px 12px;cursor:pointer;}
-.ob-back-btn{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--ob-mute2);background:transparent;border:1px solid var(--ob-line);border-radius:18px;padding:6px 12px;cursor:pointer;margin-right:8px;}
+.ob-skip-btn{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--ob-mute2);background:transparent;border:1px solid var(--ob-line);border-radius:18px;padding:6px 16px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;cursor:pointer;}
+.ob-back-btn{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--ob-mute2);background:transparent;border:1px solid var(--ob-line);border-radius:18px;padding:6px 16px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;cursor:pointer;margin-right:8px;}
 .ob-top-left{display:flex;align-items:center;}
 
 /* frame content host — innerHTML swapped per frame; faded/slid in on change */
@@ -1038,7 +1039,7 @@ body[data-mode="contractor"] .recent-job-tag.progress{background:rgba(255,180,0,
 
 body[data-mode="contractor"] .chat-input-row{background:var(--ink-2);border:1px solid var(--line);border-radius:100px;padding:4px;gap:4px;align-items:center;}
 body[data-mode="contractor"] .chat-input-row .chat-attach-btn{width:38px;height:38px;background:transparent;border:none;color:rgba(255,255,255,.6);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;cursor:pointer;margin:0;}
-body[data-mode="contractor"] .chat-input-row #chatInput{background:transparent !important;border:none !important;color:#fff !important;font-family:'Archivo',sans-serif;font-size:16px;padding:0 8px;font-weight:500;flex:1;min-height:38px;line-height:1.4;box-shadow:none !important;}
+body[data-mode="contractor"] .chat-input-row #chatInput{background:transparent !important;border:none !important;color:#fff !important;font-family:'Archivo',sans-serif;font-size:16px;padding:0 8px;font-weight:500;flex:1;min-height:44px;line-height:1.4;box-shadow:none !important;}
 body[data-mode="contractor"] .chat-input-row #chatInput::placeholder{color:rgba(255,255,255,.4) !important;}
 
 body[data-mode="contractor"] #chatCharCount{display:none !important;}
@@ -2421,7 +2422,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 .is-sesh{padding:5px 14px;background:rgba(0,0,0,.22);border-bottom:1px solid var(--v2-line);font-family:var(--font-code);font-size:7.5px;letter-spacing:.14em;color:var(--v2-mute2);display:flex;align-items:center;justify-content:space-between;}
 .is-sesh .on{color:var(--teal);}
 /* ADMIN demo view-switcher — floating Tech/Home toggle, shown only for role:admin */
-.admin-vt{margin-right:auto;flex-shrink:0;display:none;align-items:center;gap:3px;background:rgba(16,15,11,.96);border:1px solid var(--v2-line);border-radius:999px;padding:3px 5px;box-shadow:0 4px 12px rgba(0,0,0,.4);}
+.admin-vt{display:none;align-items:center;justify-content:center;gap:6px;background:#0d0d0d;border-bottom:1px solid #1f1f1f;padding:7px 12px;}
 .admin-vt .avt-lbl{font-family:var(--font-code);font-size:8px;letter-spacing:.14em;color:var(--v2-mute2);padding:0 2px 0 4px;}
 .admin-vt .avt-btn{border:none;background:transparent;color:var(--v2-mute2);font-family:var(--font-code);font-size:11px;font-weight:700;letter-spacing:.05em;padding:6px 12px;border-radius:999px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background var(--v2-dur-fast,.15s),color var(--v2-dur-fast,.15s);}
 .admin-vt .avt-btn.on{background:linear-gradient(180deg,var(--rust),var(--rust-deep));color:#fff;}
@@ -2715,11 +2716,6 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 <div id="trialBanner"><span>🎯 <strong><span id="trialDaysLeft">7</span> days</strong> left in your free trial</span><button class="trial-up-btn" onclick="showPaywall()">Upgrade</button></div>
 <nav class="nav">
   <div class="nav-inner">
-    <div class="admin-vt" id="adminViewToggle">
-      <span class="avt-lbl">VIEW</span>
-      <button class="avt-btn on" id="avtTech" type="button" onclick="adminSetView('pro')">🔧 TECH</button>
-      <button class="avt-btn" id="avtHome" type="button" onclick="adminSetView('home')">🏠 HOME</button>
-    </div>
     <button class="nav-back" data-contractor-only onclick="navBackTap()" aria-label="Back"><i data-lucide="chevron-left"></i></button>
     <div class="nav-mike">
       <div class="mike-badge"><div class="live-dot"></div></div>
@@ -2738,6 +2734,12 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     </div>
   </div>
 </nav>
+<!-- admin demo view switcher: slim full-width sub-bar under the nav (was in-nav, overflowed the homeowner header). Shown only for role:admin via applyModeFromRole. -->
+<div class="admin-vt" id="adminViewToggle">
+  <span class="avt-lbl">VIEW</span>
+  <button class="avt-btn on" id="avtTech" type="button" onclick="adminSetView('pro')">🔧 TECH</button>
+  <button class="avt-btn" id="avtHome" type="button" onclick="adminSetView('home')">🏠 HOME</button>
+</div>
 <!-- Lang dropdown lifted out of .nav-actions: position:fixed (mirrors .profile-dd) so it anchors viewport-right and is reachable from both homeowner #langBtn and contractor .nav-globe triggers. -->
 <div class="lang-dropdown" id="langDropdown">
   <button class="lang-option active" onclick="setLang('en')" id="langOpt-en"><span class="lang-flag">🇺🇸</span>English</button>
@@ -4935,7 +4937,11 @@ function seedFirstPrompt(){
   var seed=v2t(isHome?'seedHome':'seedTech');
   if(!seed)return;
   ci.value=seed;
-  try{ci.style.height='auto';ci.style.height=Math.min(ci.scrollHeight,100)+'px';}catch(e){}
+  // Grow to fit the seed. seedFirstPrompt can run before the composer is laid out, so
+  // scrollHeight is wrong on the first pass — re-grow on the next frame and pin scroll to
+  // the top so the box never opens scrolled to a mid-sentence fragment.
+  var _grow=function(){try{ci.style.height='auto';ci.style.height=Math.min(ci.scrollHeight,120)+'px';}catch(e){}};
+  _grow();requestAnimationFrame(function(){_grow();try{ci.scrollTop=0;}catch(e){}});
   try{ci.focus();ci.setSelectionRange(seed.length,seed.length);}catch(e){}
 }
 
@@ -5093,7 +5099,7 @@ function renderAdminDashboard(list){
 
   // Plan distribution bars
   var distOrder=['homeowner','starter','pro','team','trial','admin'];
-  var distColors={homeowner:'#9aa6b2',starter:'#3b82f6',pro:'#C7553B',team:'#8b5cf6',trial:'#FFB400',admin:'#ffd700'};
+  var distColors={homeowner:'#9aa6b2',starter:'#3A8B8A',pro:'#C7553B',team:'#a9803f',trial:'#FFB400',admin:'#ffd700'};
   var maxC=Math.max(1,Math.max.apply(null,distOrder.map(function(p){return planCounts[p]||0;})));
   var pd=document.getElementById('admPlanDist');
   if(pd){
@@ -7992,8 +7998,8 @@ function toggleQuickActions(){
   if(!menu){
     menu=document.createElement('div');
     menu.id='quickActionsMenu';
-    menu.style.cssText='position:fixed;background:#fff;border:1.5px solid #e2e4ed;border-radius:12px;box-shadow:0 4px 32px rgba(0,0,0,.18);z-index:99999;overflow-y:auto;max-height:360px;min-width:240px;';
-    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF0F2;color:#E8354A;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){mpFindPart();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick(\'What are the correct R-410A pressures for current outdoor temperature?\');})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:var(--rust-deep);" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F0FDF4;color:#059669;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick(\'I just finished the repair — what else should I check for upsell opportunities?\');})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF7ED;color:#ea580c;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick(\'Give me a job summary — problem, fix, and what to put on the invoice.\');})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#EFF6FF;color:#2563eb;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick(\'The homeowner said the price seems too high. How do I overcome that?\');})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick(\'Help me pitch a maintenance agreement. System is about 10 years old.\');})">&#x1F4CB; Pitch Maintenance</button>            </div>          ';
+    menu.style.cssText='position:fixed;background:#15171A;border:1px solid #2a2a2a;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.55);z-index:99999;overflow-y:auto;max-height:360px;min-width:240px;';
+    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(199,85,59,.16);color:#ef8a72;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){mpFindPart();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick(\'What are the correct R-410A pressures for current outdoor temperature?\');})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:var(--rust-deep);" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:#262626;margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(58,139,138,.16);color:#5fbdb0;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick(\'I just finished the repair — what else should I check for upsell opportunities?\');})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:#262626;margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(255,180,0,.14);color:#e8a23a;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick(\'Give me a job summary — problem, fix, and what to put on the invoice.\');})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:#262626;margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(95,179,177,.16);color:#7ec7c2;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick(\'The homeowner said the price seems too high. How do I overcome that?\');})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick(\'Help me pitch a maintenance agreement. System is about 10 years old.\');})">&#x1F4CB; Pitch Maintenance</button>            </div>          ';
     document.body.appendChild(menu);
     // Tap outside closes
     setTimeout(function(){

@@ -4943,14 +4943,23 @@ function seedFirstPrompt(){
 
 async function deleteAdminUser(email){
   if(!email)return;
-  if(!await tzConfirm({title:'Delete account?',message:'Delete account for '+email+'. This cannot be undone.',okLabel:'Delete',danger:true}))return;
-  var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
-  if(users[email]){
-    delete users[email];
-    localStorage.setItem('trazer_users',JSON.stringify(users,function(k,v){return k==='token'?undefined:v;}));
+  if(!await tzConfirm({title:'Delete account?',message:'Delete account for '+email+'. This permanently removes them from the server and cannot be undone.',okLabel:'Delete',danger:true}))return;
+  var token=currentUser&&currentUser.token;
+  if(!token){if(typeof showToast==='function')showToast('Session expired — sign in again.','error',3000);return;}
+  try{
+    var r=await fetch('/api/admin/users/'+encodeURIComponent(email),{method:'DELETE',headers:{'Authorization':'Bearer '+token}});
+    if(!r.ok){
+      var m=r.status===403?'Not authorized to delete.':r.status===401?'Session expired — sign in again.':'Delete failed ('+r.status+').';
+      if(typeof showToast==='function')showToast(m,'error',3000);
+      return;
+    }
+    // Drop any stale local cache copy too, so an old per-browser roster can't resurrect the row.
+    try{var u=JSON.parse(localStorage.getItem('trazer_users')||'{}');if(u[email]){delete u[email];localStorage.setItem('trazer_users',JSON.stringify(u,function(k,v){return k==='token'?undefined:v;}));}}catch(e){}
+    if(typeof showToast==='function')showToast('Account deleted ✓','success',2500);
+    showAdminDashboard(); // re-pull the fresh roster from the server
+  }catch(e){
+    if(typeof showToast==='function')showToast('Delete failed — check your connection.','error',3000);
   }
-  // Refresh the dashboard
-  showAdminDashboard();
 }
 
 // ── ADMIN DASHBOARD — server-backed roster + revenue (Layer 1) ──────────────

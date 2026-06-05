@@ -1830,7 +1830,7 @@ body[data-mode="contractor"] .v2-hbtn.face .v2-hbtn-label,body[data-mode="contra
   color:#e5e7eb !important;
   resize:none;
   min-height:40px;
-  max-height:100px;
+  max-height:120px;
   line-height:1.5;
   outline:none;
 }
@@ -3134,7 +3134,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--rust);"></div>
         <div class="chat-input-row">
           <label for="chatFileInput" class="chat-attach-btn" title="Attach">&#x1F4CE;</label>
-          <textarea id="chatInput" placeholder="Ask Mike anything&hellip;" rows="1" maxlength="8000" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+          <textarea id="chatInput" placeholder="Ask Mike anything&hellip;" rows="1" maxlength="8000" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
           <span id="chatCharCount" style="display:none;font-size:10px;color:var(--gray-400);align-self:center;white-space:nowrap;"></span>
           <button onclick="sendChat()" id="chatSendBtn" class="send-btn">&#x279E;</button>
         </div>
@@ -8978,7 +8978,19 @@ function triggerIllustration(){
 
 function sendQuick(text){document.getElementById('chatInput').value=text;sendChat();}
 // ══════ MIKE'S-PHONE HOME — view routing + toolbelt sub-sheets (redesign) ══════
-function mpEnterChat(){document.body.classList.add('mp-chatting');}
+function mpEnterChat(){
+  document.body.classList.add('mp-chatting');
+  // The composer is now visible — grow it to fit any pre-seeded text. seedFirstPrompt can
+  // run (after onboarding) while the composer is still hidden, so scrollHeight was 0 and the
+  // seed ended up scrolled out of view at one line. Recompute now + pin scroll to the top.
+  try{
+    var ci=document.getElementById('chatInput');
+    if(ci){
+      var _g=function(){try{ci.style.height='auto';ci.style.height=Math.min(ci.scrollHeight,120)+'px';ci.scrollTop=0;}catch(e){}};
+      requestAnimationFrame(_g);setTimeout(_g,90);
+    }
+  }catch(e){}
+}
 function mpGoHome(){document.body.classList.remove('mp-chatting');mpCloseSubsheet();}
 // Toolbelt actions that need one more detail shouldn't dump a half-typed line in the box
 // and stop — Mike asks for what he needs, like he picked up the phone. The tech just answers.

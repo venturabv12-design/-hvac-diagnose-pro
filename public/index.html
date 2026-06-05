@@ -2659,8 +2659,14 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     <div id="admSpark" class="adm-spark"></div>
   </div>
   <div class="adm-sec">
-    <div class="adm-sec-title">Plan Distribution</div>
-    <div id="admPlanDist"></div>
+    <div class="adm-sec-title adm-techs-head" onclick="admTogglePlans()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+      <span>Plan Distribution</span>
+      <span id="admPlansChev" style="color:#3A8B8A;font-size:12px;transition:transform .2s ease;">▾</span>
+    </div>
+    <div id="admPlanBody" style="display:none;margin-top:8px;">
+      <div id="admPlanDist"></div>
+      <div style="font-size:11px;color:#667380;margin-top:8px;">Tap a plan to filter the techs below.</div>
+    </div>
   </div>
   <div class="adm-sec">
     <div class="adm-sec-title adm-techs-head" onclick="admToggleTechs()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
@@ -2669,6 +2675,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     </div>
     <div id="admTechsBody" style="display:none;margin-top:8px;">
       <input id="admTechSearch" type="text" placeholder="Search name, email, or company…" oninput="admFilterTechs()" autocomplete="off" spellcheck="false" style="display:block;width:100%;box-sizing:border-box;margin:0 0 10px;padding:10px 12px;background:#0a0a0a;border:1.5px solid #2a2a2a;border-radius:9px;color:#fff;-webkit-text-fill-color:#fff;font-size:16px;font-family:inherit;outline:none;-webkit-appearance:none;"/>
+      <div id="admPlanChip" onclick="admClearPlanFilter()" style="display:none;align-items:center;gap:6px;margin:0 0 10px;padding:5px 11px;background:rgba(58,139,138,.15);border:1px solid rgba(58,139,138,.4);border-radius:8px;font-size:12px;font-weight:600;color:#3A8B8A;cursor:pointer;width:fit-content;">Plan: <b id="admPlanChipName" style="text-transform:capitalize">&nbsp;</b> &nbsp;✕</div>
       <div style="overflow-x:auto">
       <table class="adm-tbl"><thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Plan</th><th>Role</th><th>Last Active</th><th>Joined</th><th>Calls</th><th>Action</th></tr></thead>
       <tbody id="admUsers"></tbody></table>
@@ -5084,7 +5091,7 @@ function renderAdminDashboard(list){
     pd.innerHTML=distOrder.map(function(p){
       var n=planCounts[p]||0;
       var w=Math.round(n/maxC*100);
-      return '<div class="adm-pd-row"><div class="adm-pd-name">'+p+'</div>'
+      return '<div class="adm-pd-row" onclick="admFilterByPlan(\''+p+'\')" style="cursor:pointer" title="Show '+p+' techs"><div class="adm-pd-name">'+p+'</div>'
         +'<div class="adm-pd-track"><div class="adm-pd-fill" style="width:'+w+'%;background:'+distColors[p]+'"></div></div>'
         +'<div class="adm-pd-count">'+n+'</div></div>';
     }).join('');
@@ -5108,7 +5115,7 @@ function renderAdminDashboard(list){
       var la=admRelTime(u.last_login);
       var joined=u.created_at?new Date(u.created_at).toLocaleDateString():'—';
       var isAdminRow=u.role==='admin'||u.plan==='admin';
-      return '<tr>'
+      return '<tr data-plan="'+escapeHtml(plan)+'">'
         +'<td style="font-weight:600;color:#fff">'+escapeHtml(u.name||'—')+'</td>'
         +'<td style="color:#778390;font-size:12px">'+safeEmail+'</td>'
         +'<td style="color:#778390;font-size:12px">'+escapeHtml(u.company||'—')+'</td>'
@@ -5142,19 +5149,41 @@ function admToggleTechs(){
   if(open){b.style.display='none';if(ch)ch.style.transform='';}
   else{b.style.display='block';if(ch)ch.style.transform='rotate(180deg)';var s=document.getElementById('admTechSearch');if(s)setTimeout(function(){try{s.focus();}catch(e){}},60);}
 }
+function admTogglePlans(){
+  var b=document.getElementById('admPlanBody'),ch=document.getElementById('admPlansChev');
+  if(!b)return;
+  var open=b.style.display!=='none';
+  if(open){b.style.display='none';if(ch)ch.style.transform='';}
+  else{b.style.display='block';if(ch)ch.style.transform='rotate(180deg)';}
+}
+function admFilterByPlan(plan){
+  window._admPlanFilter=(window._admPlanFilter===plan)?null:plan; // tap the same plan again to clear
+  var b=document.getElementById('admTechsBody');if(b&&b.style.display==='none')admToggleTechs();
+  admFilterTechs();
+  var h=document.querySelector('.adm-techs-head');if(h)try{h.scrollIntoView({block:'start'});}catch(e){}
+}
+function admClearPlanFilter(){window._admPlanFilter=null;admFilterTechs();}
 function admFilterTechs(){
   var s=document.getElementById('admTechSearch'),tb=document.getElementById('admUsers');
   if(!tb)return;
   var q=s?s.value.trim().toLowerCase():'';
+  var pf=window._admPlanFilter||'';
   var rows=tb.querySelectorAll('tr'),shown=0;
   for(var i=0;i<rows.length;i++){
     var tr=rows[i];
     if(tr.querySelector('td[colspan]')){continue;} // skip the empty-state row
-    var match=!q||tr.textContent.toLowerCase().indexOf(q)!==-1;
+    var textMatch=!q||tr.textContent.toLowerCase().indexOf(q)!==-1;
+    var planMatch=!pf||tr.getAttribute('data-plan')===pf;
+    var match=textMatch&&planMatch;
     tr.style.display=match?'':'none';
     if(match)shown++;
   }
-  var nm=document.getElementById('admTechNoMatch');if(nm)nm.style.display=(q&&shown===0)?'block':'none';
+  var nm=document.getElementById('admTechNoMatch');if(nm)nm.style.display=((q||pf)&&shown===0)?'block':'none';
+  var chip=document.getElementById('admPlanChip');
+  if(chip){
+    if(pf){chip.style.display='inline-flex';var cn=document.getElementById('admPlanChipName');if(cn)cn.textContent=pf;}
+    else chip.style.display='none';
+  }
 }
 
 

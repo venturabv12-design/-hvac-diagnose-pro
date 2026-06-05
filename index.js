@@ -905,6 +905,24 @@ app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) =>
   }
 });
 
+// ── ADMIN: ONE-TIME OWNER BOOTSTRAP ───────────────────────────────────────────
+// Lets the founder promote THEIR OWN account to admin without touching the DB.
+// Secure by design: only the hardcoded OWNER_EMAIL can ever be promoted, and only
+// when authenticated as that email. Idempotent. No privilege escalation for anyone else.
+app.post('/api/admin/bootstrap', authenticateToken, async (req, res) => {
+  try {
+    const email = ((req.user && req.user.email) || '').toLowerCase();
+    const owner = (process.env.OWNER_EMAIL || 'venturabv12@gmail.com').toLowerCase();
+    if (email !== owner) return res.status(403).json({ error: 'Not authorized' });
+    if (!SUPABASE_URL) return res.json({ ok: true, role: 'admin', dev: true });
+    await supabase('PATCH', 'users', { role: 'admin' }, `?email=eq.${encodeURIComponent(req.user.email)}`);
+    return res.json({ ok: true, role: 'admin' });
+  } catch (err) {
+    console.error('Admin bootstrap error:', err.message);
+    return res.status(500).json({ error: 'Bootstrap failed' });
+  }
+});
+
 // ── ADMIN: DELETE USER ────────────────────────────────────────────────────────
 app.delete('/api/admin/users/:email', authenticateToken, requireAdmin, async (req, res) => {
   try {

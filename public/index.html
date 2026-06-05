@@ -3748,8 +3748,31 @@ function adminSetView(m){
   if (h) h.className = 'avt-btn' + (m === 'home' ? ' on' : '');
 }
 
+// One-time owner bootstrap: when the founder logs in, silently promote their own
+// account to admin via the owner-locked /api/admin/bootstrap route, then surface
+// "Admin Stats" without them ever touching Supabase. No-ops for everyone else.
+function maybeBootstrapOwner(){
+  try{
+    if(!currentUser||!currentUser.token)return;
+    if((currentUser.email||'').toLowerCase()!=='venturabv12@gmail.com')return;
+    if(currentUser.role==='admin'||currentUser.plan==='admin')return;
+    if(window._ownerBootstrapTried)return; window._ownerBootstrapTried=true;
+    fetch('/api/admin/bootstrap',{method:'POST',headers:{'Authorization':'Bearer '+currentUser.token,'Content-Type':'application/json'}})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(d){
+        if(d&&d.ok){
+          currentUser.role='admin';
+          try{localStorage.setItem('trazer_user',JSON.stringify(currentUser));}catch(e){}
+          if(typeof updateProfileUI==='function')updateProfileUI();
+          if(typeof applyModeFromRole==='function')applyModeFromRole();
+          if(typeof showToast==='function')showToast('Owner access granted — "Admin Stats" is in your profile menu ✓','success',4000);
+        }
+      }).catch(function(){});
+  }catch(e){}
+}
 function applyModeFromRole() {
   if (!currentUser) return;
+  maybeBootstrapOwner();
   var role = currentUser.role || 'contractor';
   var avt = document.getElementById('adminViewToggle');
   // Admin = role 'admin' OR plan 'admin' (founder set plan=admin in Supabase). Either grants the demo switcher.

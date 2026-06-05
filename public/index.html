@@ -3381,11 +3381,11 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           var t=FAV_REGISTRY[i];
           var pinned=favs.indexOf(t.id)>=0;
           var aria=t.label.replace(/<br>/g,' ').replace(/<[^>]+>/g,'');
-          html+='<button class="tool-tile '+esc(t.cls)+(pinned?' pinned':'')+'" type="button" data-tool-id="'+esc(t.id)+'" aria-label="'+esc(aria)+'">'
+          html+='<div class="tool-tile '+esc(t.cls)+(pinned?' pinned':'')+'" role="button" tabindex="0" data-tool-id="'+esc(t.id)+'" aria-label="'+esc(aria)+'">'
               +'<div class="tool-tile-icon"><i data-lucide="'+esc(t.icon)+'"></i></div>'
               +'<div class="tool-tile-label">'+safeLabel(t.label)+'</div>'
               +'<button class="tool-tile-pin'+(pinned?' on':'')+'" type="button" data-pin-id="'+esc(t.id)+'" aria-pressed="'+(pinned?'true':'false')+'" aria-label="'+(pinned?'Remove '+esc(aria)+' from favorites':'Add '+esc(aria)+' to favorites')+'"><i data-lucide="'+(pinned?'star':'pin')+'"></i></button>'
-              +'</button>';
+              +'</div>';
         }
         box.innerHTML=html;
         try{ if(window.lucide&&lucide.createIcons) lucide.createIcons(); }catch(e){}

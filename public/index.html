@@ -608,6 +608,26 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .adm-plan-starter{background:rgba(59,130,246,.12);color:#3b82f6;border:1px solid rgba(59,130,246,.25);}
 .adm-plan-enterprise{background:rgba(139,92,246,.12);color:#8b5cf6;border:1px solid rgba(139,92,246,.25);}
 .adm-plan-admin{background:rgba(255,215,0,.12);color:#ffd700;border:1px solid rgba(255,215,0,.25);}
+.adm-plan-team{background:rgba(139,92,246,.12);color:#8b5cf6;border:1px solid rgba(139,92,246,.25);}
+.adm-plan-homeowner{background:rgba(120,130,140,.14);color:#9aa6b2;border:1px solid rgba(120,130,140,.28);}
+.adm-tag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:5px;background:rgba(255,180,0,.14);color:#FFB400;font-size:9px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;vertical-align:middle;border:1px solid rgba(255,180,0,.3);}
+.adm-status{padding:14px 16px;border-radius:11px;margin-bottom:18px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.adm-status.loading{background:#0d1117;border:1px solid #1a1a2a;color:#8a96a2;}
+.adm-status.error{background:rgba(199,85,59,.1);border:1px solid rgba(199,85,59,.35);color:#e0917f;}
+.adm-status-btn{background:var(--teal);border:none;border-radius:8px;color:#fff;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.adm-spinner{width:15px;height:15px;border:2px solid #2a3540;border-top-color:var(--teal);border-radius:50%;display:inline-block;animation:admspin .7s linear infinite;vertical-align:middle;margin-right:8px;}
+@keyframes admspin{to{transform:rotate(360deg)}}
+.adm-spark{display:flex;align-items:flex-end;gap:5px;height:64px;padding-top:8px;}
+.adm-spark-bar{flex:1;min-width:4px;background:linear-gradient(180deg,var(--teal),var(--teal-dark));border-radius:3px 3px 0 0;min-height:3px;position:relative;transition:height .3s;}
+.adm-spark-bar:last-child{background:linear-gradient(180deg,#FFB400,#C7553B);}
+.adm-spark-empty{color:#444;font-size:12px;}
+.adm-pd-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.adm-pd-name{width:84px;flex-shrink:0;font-size:12px;font-weight:700;color:#aab4be;text-transform:capitalize;}
+.adm-pd-track{flex:1;height:18px;background:#161d24;border-radius:5px;overflow:hidden;}
+.adm-pd-fill{height:100%;border-radius:5px;min-width:2px;transition:width .4s;}
+.adm-pd-count{width:36px;flex-shrink:0;text-align:right;font-size:12px;font-weight:800;color:#fff;}
+.adm-last-recent{color:var(--teal);font-weight:700;}
+.adm-last-stale{color:#6a7480;}
 
 
 /* ── EXPERIENCE LEVEL BUTTONS ──────────────────────────── */
@@ -2612,28 +2632,62 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 <div class="adm-wrap">
   <div class="adm-header">
     <div class="adm-title">Trazer <span>Intelligence</span> — Admin</div>
-    <button class="adm-close" onclick="closeAdmin()">Close</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="adm-close" id="admRefreshBtn" onclick="showAdminDashboard()">↻ Refresh</button>
+      <button class="adm-close" onclick="closeAdmin()">Close</button>
+    </div>
+  </div>
+  <div id="admStatus" style="display:none"></div>
+  <div id="admContent">
+  <div class="adm-grid">
+    <div class="adm-stat"><div class="adm-val" id="admTotal">0</div><div class="adm-lbl">Total Techs</div></div>
+    <div class="adm-stat"><div class="adm-val" id="admActive" style="color:var(--teal)">0</div><div class="adm-lbl">Active · 7d</div></div>
+    <div class="adm-stat"><div class="adm-val" id="admTrial" style="color:#FFB400">0</div><div class="adm-lbl">Trials</div></div>
+    <div class="adm-stat"><div class="adm-val" id="admPaid">0</div><div class="adm-lbl">Paid</div></div>
   </div>
   <div class="adm-grid">
-    <div class="adm-stat"><div class="adm-val" id="admTotal">0</div><div class="adm-lbl">Total Users</div></div>
-    <div class="adm-stat"><div class="adm-val" id="admTrial">0</div><div class="adm-lbl">Trial Users</div></div>
-    <div class="adm-stat"><div class="adm-val" id="admPaid">0</div><div class="adm-lbl">Paid Users</div></div>
-    <div class="adm-stat"><div class="adm-val" id="admCalls">0</div><div class="adm-lbl">Total AI Calls</div></div>
+    <div class="adm-stat"><div class="adm-val" id="admWeek" style="color:var(--teal)">0</div><div class="adm-lbl">Signups · This Week</div></div>
+    <div class="adm-stat"><div class="adm-val" id="admMonth" style="color:var(--teal)">0</div><div class="adm-lbl">Signups · This Month</div></div>
+    <div class="adm-stat"><div class="adm-val" id="admAllTime">0</div><div class="adm-lbl">Signups · All Time</div></div>
+    <div class="adm-stat" style="border-color:rgba(58,139,138,.4)">
+      <div class="adm-val" id="admMrr" style="color:var(--teal);font-size:24px">$0</div>
+      <div class="adm-lbl">Projected MRR <span class="adm-tag">billing not live</span></div>
+    </div>
   </div>
   <div class="adm-sec">
-    <div class="adm-sec-title">Users</div>
-    <table class="adm-tbl"><thead><tr><th>Name</th><th>Email</th><th>Plan</th><th>Role</th><th>Company</th><th>Calls</th><th>Joined</th><th>Action</th></tr></thead>
-    <tbody id="admUsers"></tbody></table>
+    <div class="adm-sec-title">Weekly Signups <span style="color:#444;font-weight:600;font-size:11px">· last 12 weeks</span></div>
+    <div id="admSpark" class="adm-spark"></div>
   </div>
   <div class="adm-sec">
-    <div class="adm-sec-title">Feature Usage</div>
-    <table class="adm-tbl"><thead><tr><th>Feature</th><th>Uses</th><th>Popularity</th></tr></thead>
-    <tbody id="admFeats"></tbody></table>
+    <div class="adm-sec-title adm-techs-head" onclick="admTogglePlans()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+      <span>Plan Distribution</span>
+      <span id="admPlansChev" style="color:#3A8B8A;font-size:12px;transition:transform .2s ease;">▾</span>
+    </div>
+    <div id="admPlanBody" style="display:none;margin-top:8px;">
+      <div id="admPlanDist"></div>
+      <div style="font-size:11px;color:#667380;margin-top:8px;">Tap a plan to filter the techs below.</div>
+    </div>
+  </div>
+  <div class="adm-sec">
+    <div class="adm-sec-title adm-techs-head" onclick="admToggleTechs()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+      <span>Techs <span id="admTechCount" style="color:#3A8B8A;font-weight:700;font-size:12px"></span></span>
+      <span id="admTechsChev" style="color:#3A8B8A;font-size:12px;transition:transform .2s ease;">▾</span>
+    </div>
+    <div id="admTechsBody" style="display:none;margin-top:8px;">
+      <input id="admTechSearch" type="text" placeholder="Search name, email, or company…" oninput="admFilterTechs()" autocomplete="off" spellcheck="false" style="display:block;width:100%;box-sizing:border-box;margin:0 0 10px;padding:10px 12px;background:#0a0a0a;border:1.5px solid #2a2a2a;border-radius:9px;color:#fff;-webkit-text-fill-color:#fff;font-size:16px;font-family:inherit;outline:none;-webkit-appearance:none;"/>
+      <div id="admPlanChip" onclick="admClearPlanFilter()" style="display:none;align-items:center;gap:6px;margin:0 0 10px;padding:5px 11px;background:rgba(58,139,138,.15);border:1px solid rgba(58,139,138,.4);border-radius:8px;font-size:12px;font-weight:600;color:#3A8B8A;cursor:pointer;width:fit-content;">Plan: <b id="admPlanChipName" style="text-transform:capitalize">&nbsp;</b> &nbsp;✕</div>
+      <div style="overflow-x:auto">
+      <table class="adm-tbl"><thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Plan</th><th>Role</th><th>Last Active</th><th>Joined</th><th>Calls</th><th>Action</th></tr></thead>
+      <tbody id="admUsers"></tbody></table>
+      </div>
+      <div id="admTechNoMatch" style="display:none;color:#667380;text-align:center;padding:14px;font-size:13px;">No techs match your search.</div>
+    </div>
   </div>
   <div class="adm-sec">
     <div class="adm-sec-title">User Feedback</div>
     <table class="adm-tbl"><thead><tr><th>From</th><th>Email</th><th>Feedback</th><th>Date</th></tr></thead>
     <tbody id="admFeedback"></tbody></table>
+  </div>
   </div>
 </div>
 </div>
@@ -2642,10 +2696,10 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 <div class="pdd-trial" id="pddTrial" style="display:none">🎯 <strong><span id="pddTrialDays">7</span> days</strong> left in free trial</div>
 <div class="pdd-usage"><div class="pdd-usage-lbl">Usage</div><div class="pdd-bar"><div class="pdd-bar-fill" id="pddBarFill" style="width:0%"></div></div><div class="pdd-usage-count" id="pddUsageCount">0 AI calls</div></div>
 <div class="pdd-menu">
+  <div class="pdd-item" id="adminMenuItem" style="display:none;color:#3A8B8A;font-weight:700;" onclick="pddStats()"><span class="pdd-ic">📊</span>Admin Stats</div>
   <div class="pdd-item" onclick="closeProfileDD();toggleLangMenu();"><span class="pdd-ic">🌐</span><span data-v2i18n="qaLanguage">Language</span></div>
   <div class="pdd-item" onclick="pddProfile()"><span class="pdd-ic">👤</span>Profile Settings</div>
   <div class="pdd-item" onclick="pddBilling()"><span class="pdd-ic">💳</span>Billing &amp; Plan</div>
-  <div class="pdd-item" id="adminMenuItem" style="display:none" onclick="pddStats()"><span class="pdd-ic">📊</span>Check Stats</div>
   <div class="pdd-item" onclick="pddWhatsNew()"><span class="pdd-ic">🔔</span>What's New</div>
   <div class="pdd-item" data-contractor-only onclick="pddPerformance()"><span class="pdd-ic">📊</span>My Performance</div>
   <div class="pdd-item" data-contractor-only onclick="pddInvoice()"><span class="pdd-ic">🧾</span>Invoice Generator</div>
@@ -3708,8 +3762,31 @@ function adminSetView(m){
   if (h) h.className = 'avt-btn' + (m === 'home' ? ' on' : '');
 }
 
+// One-time owner bootstrap: when the founder logs in, silently promote their own
+// account to admin via the owner-locked /api/admin/bootstrap route, then surface
+// "Admin Stats" without them ever touching Supabase. No-ops for everyone else.
+function maybeBootstrapOwner(){
+  try{
+    if(!currentUser||!currentUser.token)return;
+    if((currentUser.email||'').toLowerCase()!=='venturabv12@gmail.com')return;
+    if(currentUser.role==='admin'||currentUser.plan==='admin')return;
+    if(window._ownerBootstrapTried)return; window._ownerBootstrapTried=true;
+    fetch('/api/admin/bootstrap',{method:'POST',headers:{'Authorization':'Bearer '+currentUser.token,'Content-Type':'application/json'}})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(d){
+        if(d&&d.ok){
+          currentUser.role='admin';
+          try{localStorage.setItem('trazer_user',JSON.stringify(currentUser));}catch(e){}
+          if(typeof updateProfileUI==='function')updateProfileUI();
+          if(typeof applyModeFromRole==='function')applyModeFromRole();
+          if(typeof showToast==='function')showToast('Owner access granted — "Admin Stats" is in your profile menu ✓','success',4000);
+        }
+      }).catch(function(){});
+  }catch(e){}
+}
 function applyModeFromRole() {
   if (!currentUser) return;
+  maybeBootstrapOwner();
   var role = currentUser.role || 'contractor';
   var avt = document.getElementById('adminViewToggle');
   // Admin = role 'admin' OR plan 'admin' (founder set plan=admin in Supabase). Either grants the demo switcher.
@@ -4073,7 +4150,7 @@ function updateProfileUI(){
   var bf=document.getElementById('pddBarFill');if(bf)bf.style.width=Math.min(u/500*100,100)+'%';
   var uc=document.getElementById('pddUsageCount');if(uc)uc.textContent=u+' AI calls this month';
   var ai=document.getElementById('adminMenuItem');
-  if(ai)ai.style.display=currentUser.isAdmin?'flex':'none';
+  if(ai)ai.style.display=(currentUser.role==='admin'||currentUser.plan==='admin'||currentUser.isAdmin)?'flex':'none';
 }
 
 function toggleProfileDD(){
@@ -4876,66 +4953,238 @@ async function deleteAdminUser(email){
   showAdminDashboard();
 }
 
+// ── ADMIN DASHBOARD — server-backed roster + revenue (Layer 1) ──────────────
+// Pulls the full tech roster from GET /api/admin/users (up to 500). The server
+// gate (authenticateToken + requireAdmin) is the real protection; the client
+// gate below just keeps non-admins from opening the panel. Token is sent the way
+// authenticateToken expects: Authorization: Bearer <currentUser.token> header.
+
+// Display prices for projected MRR (billing is OFF — this is a projection only).
+var ADM_PRICES={homeowner:19.99,starter:79,pro:149}; // team = custom, excluded
+
+function admSetStatus(html,cls){
+  var s=document.getElementById('admStatus');
+  var c=document.getElementById('admContent');
+  if(!s)return;
+  if(!html){s.style.display='none';s.innerHTML='';if(c)c.style.opacity='1';return;}
+  s.style.display='block';
+  s.className='adm-status '+(cls||'loading');
+  s.innerHTML=html;
+}
+
+function admRelTime(ts){
+  if(!ts)return {txt:'never',recent:false};
+  var t=new Date(ts).getTime();
+  if(isNaN(t))return {txt:'—',recent:false};
+  var d=Date.now()-t;
+  if(d<0)d=0;
+  var mins=Math.floor(d/60000),hrs=Math.floor(d/3600000),days=Math.floor(d/86400000);
+  var txt;
+  if(mins<1)txt='just now';
+  else if(mins<60)txt=mins+'m ago';
+  else if(hrs<24)txt=hrs+'h ago';
+  else if(days<30)txt=days+'d ago';
+  else if(days<365)txt=Math.floor(days/30)+'mo ago';
+  else txt=Math.floor(days/365)+'y ago';
+  return {txt:txt,recent:d<7*86400000};
+}
+
 function showAdminDashboard(){
-  // SECURITY: Only admin accounts can access dashboard
-  if(!currentUser||currentUser.plan!=='admin'){
+  // SECURITY (client gate): server enforces role==='admin'; mirror that here but
+  // also accept plan==='admin' so the owner isn't locked out by a stale field.
+  if(!currentUser||!(currentUser.role==='admin'||currentUser.plan==='admin'||currentUser.isAdmin)){
     showToast('Access denied.','error',3000);
     return;
   }
   var el=document.getElementById('adminOverlay');if(!el)return;
-  var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
-  var list=Object.values(users);
+  el.classList.add('show');
+  var c=document.getElementById('admContent');if(c)c.style.opacity='.35';
+  admSetStatus('<span><span class="adm-spinner"></span>Loading roster from server…</span>','loading');
+
+  var token=currentUser&&currentUser.token;
+  if(!token){
+    admSetStatus('<span>Not signed in — your session has no token. Please sign in again.</span>','error');
+    return;
+  }
+
+  fetch('/api/admin/users',{headers:{'Authorization':'Bearer '+token}})
+    .then(function(r){
+      if(r.status===401){throw {kind:'auth',msg:'Session expired or invalid. Please sign in again.'};}
+      if(r.status===403){throw {kind:'auth',msg:'Access denied — this account is not an admin on the server.'};}
+      if(!r.ok){throw {kind:'net',msg:'Server error ('+r.status+'). Try again.'};}
+      return r.json();
+    })
+    .then(function(data){
+      var list=(data&&data.users)||[];
+      renderAdminDashboard(list);
+      admSetStatus('');
+    })
+    .catch(function(err){
+      var isAuth=err&&err.kind==='auth';
+      var msg=(err&&err.msg)||'Network error — could not reach the server.';
+      var btn=isAuth?'':'<button class="adm-status-btn" onclick="showAdminDashboard()">Retry</button>';
+      admSetStatus('<span>'+escapeHtml(msg)+'</span>'+btn,'error');
+      var c2=document.getElementById('admContent');if(c2)c2.style.opacity='1';
+    });
+}
+
+function renderAdminDashboard(list){
+  var c=document.getElementById('admContent');if(c)c.style.opacity='1';
+  var now=Date.now();
+  var WEEK=7*86400000;
   var total=list.length;
+  var active=list.filter(function(u){var t=u.last_login?new Date(u.last_login).getTime():0;return t&&(now-t)<WEEK;}).length;
   var trial=list.filter(function(u){return u.plan==='trial';}).length;
-  var paid=list.filter(function(u){return u.plan==='pro'||u.plan==='starter'||u.plan==='enterprise';}).length;
-  var calls=list.reduce(function(s,u){return s+(u.usageCount||0);},0);
-  var e=function(id,v){var el=document.getElementById(id);if(el)el.textContent=v;};
-  e('admTotal',total);e('admTrial',trial);e('admPaid',paid);e('admCalls',calls);
+  var paid=list.filter(function(u){return u.plan==='starter'||u.plan==='pro'||u.plan==='team';}).length;
+
+  // Signups by created_at
+  var monthAgo=now-30*86400000;
+  var wk=0,mo=0;
+  list.forEach(function(u){
+    var t=u.created_at?new Date(u.created_at).getTime():0;
+    if(!t)return;
+    if(now-t<WEEK)wk++;
+    if(t>=monthAgo)mo++;
+  });
+
+  // Projected MRR from paid-plan counts × display prices (team excluded as custom)
+  var planCounts={homeowner:0,starter:0,pro:0,team:0,trial:0,admin:0};
+  list.forEach(function(u){var p=u.plan||'—';if(planCounts[p]===undefined)planCounts[p]=0;planCounts[p]++;});
+  var mrr=0;
+  Object.keys(ADM_PRICES).forEach(function(p){mrr+=(planCounts[p]||0)*ADM_PRICES[p];});
+  var mrrStr=mrr>=1000?'$'+(Math.round(mrr)).toLocaleString():'$'+Math.round(mrr).toLocaleString();
+
+  var set=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  set('admTotal',total);set('admActive',active);set('admTrial',trial);set('admPaid',paid);
+  set('admWeek',wk);set('admMonth',mo);set('admAllTime',total);
+  set('admMrr',mrrStr+'/mo');
+  set('admTechCount','('+total+')');
+
+  // Sparkline: signups per week over last 12 weeks (oldest → newest)
+  var weeks=[];
+  for(var i=11;i>=0;i--)weeks.push(0);
+  list.forEach(function(u){
+    var t=u.created_at?new Date(u.created_at).getTime():0;if(!t)return;
+    var wAgo=Math.floor((now-t)/WEEK);
+    if(wAgo>=0&&wAgo<12)weeks[11-wAgo]++;
+  });
+  var maxW=Math.max(1,Math.max.apply(null,weeks));
+  var spk=document.getElementById('admSpark');
+  if(spk){
+    var any=weeks.some(function(v){return v>0;});
+    if(!any){spk.innerHTML='<span class="adm-spark-empty">No signups yet</span>';}
+    else{
+      spk.innerHTML=weeks.map(function(v,idx){
+        var h=Math.max(3,Math.round(v/maxW*100));
+        var wkLbl=(11-idx)===0?'this week':(11-idx)+'w ago';
+        return '<div class="adm-spark-bar" style="height:'+h+'%" title="'+escapeHtml(wkLbl+': '+v+' signup'+(v===1?'':'s'))+'"></div>';
+      }).join('');
+    }
+  }
+
+  // Plan distribution bars
+  var distOrder=['homeowner','starter','pro','team','trial','admin'];
+  var distColors={homeowner:'#9aa6b2',starter:'#3b82f6',pro:'#C7553B',team:'#8b5cf6',trial:'#FFB400',admin:'#ffd700'};
+  var maxC=Math.max(1,Math.max.apply(null,distOrder.map(function(p){return planCounts[p]||0;})));
+  var pd=document.getElementById('admPlanDist');
+  if(pd){
+    pd.innerHTML=distOrder.map(function(p){
+      var n=planCounts[p]||0;
+      var w=Math.round(n/maxC*100);
+      return '<div class="adm-pd-row" onclick="admFilterByPlan(\''+p+'\')" style="cursor:pointer" title="Show '+p+' techs"><div class="adm-pd-name">'+p+'</div>'
+        +'<div class="adm-pd-track"><div class="adm-pd-fill" style="width:'+w+'%;background:'+distColors[p]+'"></div></div>'
+        +'<div class="adm-pd-count">'+n+'</div></div>';
+    }).join('');
+  }
+
+  // Tech table — sorted by last_active (most recent first)
+  var rows=list.slice().sort(function(a,b){
+    var ta=a.last_login?new Date(a.last_login).getTime():0;
+    var tb=b.last_login?new Date(b.last_login).getTime():0;
+    return tb-ta;
+  });
   var tbody=document.getElementById('admUsers');
   if(tbody){
-    tbody.innerHTML=list.sort(function(a,b){return (b.usageCount||0)-(a.usageCount||0);}).map(function(u){
-      var daysUsed=u.trialStart?Math.floor((Date.now()-u.trialStart)/86400000):0;
-      var dl=u.plan==='trial'?Math.max(0,7-daysUsed):null;
-      var planLabel=u.plan==='trial'?'Trial '+(dl!==null?'('+dl+'d left)':'expired'):u.plan==='pro'?'Pro':u.plan==='starter'?'Starter':u.plan==='enterprise'?'Enterprise':u.plan==='admin'?'Admin':u.plan||'—';
-      var planClass='adm-plan-'+(u.plan==='pro'?'pro':u.plan==='starter'?'starter':u.plan==='enterprise'?'enterprise':u.plan==='admin'?'admin':'trial');
-      var roleLabel=u.role==='homeowner'?'🏠 Homeowner':u.role==='contractor'?'🔧 Contractor':'🔧 Contractor';
-      var safeEmail=escapeHtml(u.email||'');  // XSS: user-controlled values rendered into admin innerHTML
-      var canDelete=!u.isAdmin;
-      return '<tr>'
-        +'<td style="font-weight:600;color:#fff">'+escapeHtml(u.name||'')+'</td>'
-        +'<td style="color:#555;font-size:12px">'+safeEmail+'</td>'
-        +'<td><span class="adm-plan-badge '+planClass+'">'+planLabel+'</span></td>'
-        +'<td style="font-size:12px;color:#888">'+roleLabel+'</td>'
-        +'<td style="font-size:12px;color:#666">'+escapeHtml(u.company||'')+'</td>'
-        +'<td style="color:var(--rust);font-weight:700;text-align:center">'+(u.usageCount||0)+'</td>'
-        +'<td style="color:#555;font-size:11px">'+new Date(u.createdAt||Date.now()).toLocaleDateString()+'</td>'
-        +'<td>'+(canDelete?'<button class="adm-del-btn" data-email="'+safeEmail+'" onclick="deleteAdminUser(this.dataset.email)">Delete</button>':'<span style="font-size:11px;color:#333">Admin</span>')+'</td>'
+    tbody.innerHTML=rows.map(function(u){
+      var plan=u.plan||'—';
+      var planLabel=plan==='trial'?'Trial':plan==='pro'?'Pro':plan==='starter'?'Starter':plan==='team'?'Team':plan==='homeowner'?'Home':plan==='admin'?'Admin':plan;
+      var pc=(plan==='pro'||plan==='starter'||plan==='team'||plan==='homeowner'||plan==='trial'||plan==='admin')?plan:'trial';
+      var planClass='adm-plan-'+pc;
+      var roleLabel=u.role==='homeowner'?'🏠 Homeowner':u.role==='admin'?'👑 Admin':'🔧 Contractor';
+      var safeEmail=escapeHtml(u.email||''); // user-controlled → escape for admin innerHTML
+      var la=admRelTime(u.last_login);
+      var joined=u.created_at?new Date(u.created_at).toLocaleDateString():'—';
+      var isAdminRow=u.role==='admin'||u.plan==='admin';
+      return '<tr data-plan="'+escapeHtml(plan)+'">'
+        +'<td style="font-weight:600;color:#fff">'+escapeHtml(u.name||'—')+'</td>'
+        +'<td style="color:#778390;font-size:12px">'+safeEmail+'</td>'
+        +'<td style="color:#778390;font-size:12px">'+escapeHtml(u.company||'—')+'</td>'
+        +'<td><span class="adm-plan-badge '+planClass+'">'+escapeHtml(planLabel)+'</span></td>'
+        +'<td style="font-size:12px;color:#99a3ad">'+roleLabel+'</td>'
+        +'<td class="'+(la.recent?'adm-last-recent':'adm-last-stale')+'" style="font-size:12px">'+escapeHtml(la.txt)+'</td>'
+        +'<td style="color:#667380;font-size:11px">'+escapeHtml(joined)+'</td>'
+        +'<td style="color:var(--rust);font-weight:700;text-align:center">'+(u.usage_count||0)+'</td>'
+        +'<td>'+(isAdminRow?'<span style="font-size:11px;color:#333">—</span>':'<button class="adm-del-btn" data-email="'+safeEmail+'" onclick="deleteAdminUser(this.dataset.email)">Delete</button>')+'</td>'
         +'</tr>';
-    }).join('')||'<tr><td colspan="8" style="color:#555;text-align:center;padding:20px">No beta users yet</td></tr>';
+    }).join('')||'<tr><td colspan="9" style="color:#555;text-align:center;padding:20px">No techs yet</td></tr>';
+    var _ts=document.getElementById('admTechSearch');if(_ts&&_ts.value)admFilterTechs();
   }
-  var featTotals={};
-  list.forEach(function(u){if(u.features){Object.keys(u.features).forEach(function(k){featTotals[k]=(featTotals[k]||0)+u.features[k];});}});
-  var featList=Object.entries(featTotals).sort(function(a,b){return b[1]-a[1];});
-  var maxF=featList.length?featList[0][1]:1;
-  var fbody=document.getElementById('admFeats');
-  if(fbody){
-    fbody.innerHTML=featList.map(function(f){
-      var pct=Math.round(f[1]/maxF*100);
-      return '<tr><td style="font-weight:600">'+f[0]+'</td><td style="color:var(--rust);font-weight:700">'+f[1]+'</td><td><div style="height:5px;background:#1a1a2a;border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--rust);border-radius:3px"></div></div></td></tr>';
-    }).join('')||'<tr><td colspan="3" style="color:#555;text-align:center">No data yet</td></tr>';
-  }
-  // Show feedback
+
+  // Feedback (still browser-local — kept as-is)
   var allFeedback=JSON.parse(localStorage.getItem('trazer_feedback')||'[]');
   var fbody=document.getElementById('admFeedback');
   if(fbody){
     fbody.innerHTML=allFeedback.length?allFeedback.sort(function(a,b){return b.timestamp-a.timestamp;}).map(function(f){
-      // breaker-fix Pass 3 — escape every user-supplied field (name, email, feedback body). Without escape, an attacker who submits feedback with `<img onerror>` payload in their name/email/text gets it rendered as raw HTML when the admin opens the dashboard → potential admin session hijack.
+      // escape every user-supplied field (name/email/text) before admin innerHTML
       return '<tr><td style="font-weight:600">'+escapeHtml(f.user||'')+'</td><td style="color:#555;font-size:12px">'+escapeHtml(f.email||'')+'</td><td style="color:#ccc">'+escapeHtml((f.text||'').substring(0,120))+(f.text&&f.text.length>120?'...':'')+'</td><td style="color:#555;font-size:12px">'+new Date(f.timestamp).toLocaleDateString()+'</td></tr>';
     }).join(''):'<tr><td colspan="4" style="color:#555;text-align:center">No feedback yet</td></tr>';
   }
-  el.classList.add('show');
 }
 function closeAdmin(){var el=document.getElementById('adminOverlay');if(el)el.classList.remove('show');}
+// Techs section: collapsible dropdown + live search filter (name / email / company).
+function admToggleTechs(){
+  var b=document.getElementById('admTechsBody'),ch=document.getElementById('admTechsChev');
+  if(!b)return;
+  var open=b.style.display!=='none';
+  if(open){b.style.display='none';if(ch)ch.style.transform='';}
+  else{b.style.display='block';if(ch)ch.style.transform='rotate(180deg)';var s=document.getElementById('admTechSearch');if(s)setTimeout(function(){try{s.focus();}catch(e){}},60);}
+}
+function admTogglePlans(){
+  var b=document.getElementById('admPlanBody'),ch=document.getElementById('admPlansChev');
+  if(!b)return;
+  var open=b.style.display!=='none';
+  if(open){b.style.display='none';if(ch)ch.style.transform='';}
+  else{b.style.display='block';if(ch)ch.style.transform='rotate(180deg)';}
+}
+function admFilterByPlan(plan){
+  window._admPlanFilter=(window._admPlanFilter===plan)?null:plan; // tap the same plan again to clear
+  var b=document.getElementById('admTechsBody');if(b&&b.style.display==='none')admToggleTechs();
+  admFilterTechs();
+  var h=document.querySelector('.adm-techs-head');if(h)try{h.scrollIntoView({block:'start'});}catch(e){}
+}
+function admClearPlanFilter(){window._admPlanFilter=null;admFilterTechs();}
+function admFilterTechs(){
+  var s=document.getElementById('admTechSearch'),tb=document.getElementById('admUsers');
+  if(!tb)return;
+  var q=s?s.value.trim().toLowerCase():'';
+  var pf=window._admPlanFilter||'';
+  var rows=tb.querySelectorAll('tr'),shown=0;
+  for(var i=0;i<rows.length;i++){
+    var tr=rows[i];
+    if(tr.querySelector('td[colspan]')){continue;} // skip the empty-state row
+    var textMatch=!q||tr.textContent.toLowerCase().indexOf(q)!==-1;
+    var planMatch=!pf||tr.getAttribute('data-plan')===pf;
+    var match=textMatch&&planMatch;
+    tr.style.display=match?'':'none';
+    if(match)shown++;
+  }
+  var nm=document.getElementById('admTechNoMatch');if(nm)nm.style.display=((q||pf)&&shown===0)?'block':'none';
+  var chip=document.getElementById('admPlanChip');
+  if(chip){
+    if(pf){chip.style.display='inline-flex';var cn=document.getElementById('admPlanChipName');if(cn)cn.textContent=pf;}
+    else chip.style.display='none';
+  }
+}
 
 
 

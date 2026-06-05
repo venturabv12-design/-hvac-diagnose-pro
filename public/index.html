@@ -910,10 +910,10 @@ body[data-mode="contractor"] .msg-agent.has-mike-badge{position:relative;padding
 body[data-mode="contractor"] .msg-agent.has-mike-badge .msg-mike-badge{position:absolute;left:0;top:0;}
 body[data-mode="contractor"] .msg-agent .msg-bubble-agent{background:var(--ink-2);border:1px solid var(--line);color:rgba(255,255,255,.92);border-radius:14px 14px 14px 14px;border-top-left-radius:4px;box-shadow:none;font-size:14px;line-height:1.4;font-weight:500;letter-spacing:-.005em;}
 /* Phase 2 — wiring-diagram image card (Mike shows the real schematic from the manual). */
-.mike-diagram{margin-top:10px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:12px;overflow:hidden;background:var(--ink-2,#15201f);max-width:520px;}
+.mike-diagram{margin-top:10px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:12px;overflow:hidden;background:var(--ink-2,#15201f);max-width:100%;min-width:0;box-sizing:border-box;}
 .mike-diagram-cap{display:flex;align-items:center;gap:6px;padding:9px 12px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-bright,#5FC4C2);border-bottom:1px solid var(--line,rgba(255,255,255,.1));}
 .mike-diagram-cap span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.mike-diagram-img{display:block;width:100%;height:auto;background:#fff;cursor:zoom-in;}
+.mike-diagram-img{display:block;width:100%;height:auto;max-width:100%;background:#fff;cursor:zoom-in;}
 /* ── Nameplate Scan — first-class feature: camera → Mike reads the plate → job auto-loads ── */
 #npReading{position:fixed;inset:0;z-index:100000;background:rgba(8,10,9,.92);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:none;flex-direction:column;align-items:center;justify-content:center;gap:15px;padding:24px;text-align:center;}
 #npReading.show{display:flex;}

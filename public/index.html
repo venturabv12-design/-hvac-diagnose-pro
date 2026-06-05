@@ -252,7 +252,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .auth-err.show{display:block;}
 .auth-field{margin-bottom:14px;}
 .auth-lbl{display:block;font-size:11px;font-weight:700;color:#666;letter-spacing:.4px;text-transform:uppercase;margin-bottom:5px;}
-.auth-inp{display:block;width:100%;padding:12px 14px;background:#0a0a0a !important;border:1.5px solid #2a2a2a;border-radius:9px;color:#fff !important;-webkit-text-fill-color:#fff !important;font-size:15px;font-family:inherit;outline:none;transition:border-color .2s;box-sizing:border-box;}
+.auth-inp{display:block;width:100%;padding:12px 14px;background:#0a0a0a !important;border:1.5px solid #2a2a2a;border-radius:9px;color:#fff !important;-webkit-text-fill-color:#fff !important;font-size:16px;font-family:inherit;outline:none;transition:border-color .2s;box-sizing:border-box;}
 .auth-inp:focus{border-color:var(--rust) !important;}
 .auth-inp::placeholder{color:#444 !important;-webkit-text-fill-color:#444 !important;}
 .auth-inp:-webkit-autofill,.auth-inp:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px #0a0a0a inset !important;-webkit-text-fill-color:#fff !important;caret-color:#fff;}
@@ -686,7 +686,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .haptic-tap{transition:transform .08s;}.haptic-tap:active{transform:scale(.96);}
 #chatSearchBar{display:none;background:#fff;border-bottom:1px solid #E2E4ED;padding:8px 12px;align-items:center;gap:8px;}
 #chatSearchBar.show{display:flex;}
-#chatSearchInput{flex:1;border:1.5px solid #E2E4ED;border-radius:8px;padding:7px 12px;font-size:13px;font-family:var(--font);outline:none;}
+#chatSearchInput{flex:1;border:1.5px solid #E2E4ED;border-radius:8px;padding:7px 12px;font-size:16px;font-family:var(--font);outline:none;}
 #chatSearchInput:focus{border-color:var(--rust);}
 #chatSearchClose{background:none;border:none;font-size:18px;cursor:pointer;color:#9499B0;padding:0 4px;}
 #searchResultCount{font-size:12px;color:#9499B0;white-space:nowrap;}
@@ -1018,7 +1018,7 @@ body[data-mode="contractor"] .recent-job-tag.progress{background:rgba(255,180,0,
 
 body[data-mode="contractor"] .chat-input-row{background:var(--ink-2);border:1px solid var(--line);border-radius:100px;padding:4px;gap:4px;align-items:center;}
 body[data-mode="contractor"] .chat-input-row .chat-attach-btn{width:38px;height:38px;background:transparent;border:none;color:rgba(255,255,255,.6);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;cursor:pointer;margin:0;}
-body[data-mode="contractor"] .chat-input-row #chatInput{background:transparent !important;border:none !important;color:#fff !important;font-family:'Archivo',sans-serif;font-size:14px;padding:0 8px;font-weight:500;flex:1;min-height:38px;line-height:1.4;box-shadow:none !important;}
+body[data-mode="contractor"] .chat-input-row #chatInput{background:transparent !important;border:none !important;color:#fff !important;font-family:'Archivo',sans-serif;font-size:16px;padding:0 8px;font-weight:500;flex:1;min-height:38px;line-height:1.4;box-shadow:none !important;}
 body[data-mode="contractor"] .chat-input-row #chatInput::placeholder{color:rgba(255,255,255,.4) !important;}
 
 body[data-mode="contractor"] #chatCharCount{display:none !important;}
@@ -1177,7 +1177,7 @@ body.landing-atop .nav-mike .mike-badge{visibility:hidden;}
 .quick-chip:active{transform:scale(.96);}
 
 /* ── CHAT INPUT ────────────────────────────────────────────── */
-#chatInput{font-size:15px;line-height:1.5;padding:11px 14px;}
+#chatInput{font-size:16px;line-height:1.5;padding:11px 14px;}
 
 /* ── SEND BUTTON ───────────────────────────────────────────── */
 #chatSendBtn{background:linear-gradient(135deg,var(--rust),var(--rust-deep));border-radius:10px;width:42px;height:42px;box-shadow:0 4px 12px rgba(199,85,59,.3);transition:all .15s;}
@@ -3102,7 +3102,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
             <div class="drawer-section-link" data-v2i18n="qaCustomize" onclick="pushFeatureSoon('Customize')">Customize</div>
           </div>
           <div class="drawer-favorites">
-            <button class="fav-tile t-diag" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Run Diagnostic');">
+            <button class="fav-tile t-diag" type="button" onclick="window.closeActionDrawer();mpEnterChat();sendQuick('Run me through a full system diagnostic. Start by asking me what unit I am on and what it is doing, then walk me step by step.');">
               <div class="fav-tile-top">
                 <div class="fav-tile-icon"><i data-lucide="zap"></i></div>
                 <div class="fav-tile-badge" data-v2i18n="qaMostUsed">Most Used</div>
@@ -3132,7 +3132,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
                 <div class="fav-tile-sub" data-v2i18n="qaShieldSub">Pre-close 5-pt check</div>
               </div>
             </button>
-            <button class="fav-tile t-sale" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Close The Sale');">
+            <button class="fav-tile t-sale" type="button" onclick="window.closeActionDrawer();showRepairReplaceCalc();">
               <div class="fav-tile-top">
                 <div class="fav-tile-icon"><i data-lucide="trending-up"></i></div>
                 <div class="fav-tile-badge" data-v2i18n="qaRevenue">Revenue</div>
@@ -4234,13 +4234,13 @@ function deleteMemoryItem(idx){
     pddProfile();
   }
 }
-function clearMyMemory(){
-  if(!confirm('Reset everything Mike remembers about you?\n\nYour account and chat history stay, but Mike will start fresh getting to know you again.'))return;
+async function clearMyMemory(){
+  if(!await tzConfirm({title:'Reset Mike\'s memory of you?',message:'Your account and chat history stay — Mike just starts fresh getting to know you again.',okLabel:'Reset',danger:true}))return;
   if(!currentUser)return;
   localStorage.removeItem(getUserMemoryKey('profile'));
   // Don't clear knowledge — that's manually taught facts
   closeModal('profileModal');
-  alert('Done. Mike will start fresh getting to know you.');
+  if(typeof showToast==='function')showToast('Done — Mike will start fresh getting to know you.','success',3000);
 }
 
 function saveProfileSettings(){
@@ -4405,7 +4405,7 @@ function notifyWhenBillingLive(){
     if(u[currentUser.email]){u[currentUser.email]=currentUser;localStorage.setItem('trazer_users',JSON.stringify(u,function(k,v){return k==='token'?undefined:v;}));}
     localStorage.setItem('trazer_user',JSON.stringify(currentUser));
   }
-  alert('Got it! We will notify you at '+((currentUser&&currentUser.email)||'your email')+' when billing goes live.');
+  if(typeof showToast==='function')showToast('Got it — we will email '+((currentUser&&currentUser.email)||'you')+' when billing goes live.','success',3500);
   closeModal('billingModal');
 }
 
@@ -4422,7 +4422,7 @@ function showFeedbackSection(){
 
 function submitFeedback(){
   var text=(document.getElementById('feedbackText').value||'').trim();
-  if(!text){alert('Please write your feedback before sending.');return;}
+  if(!text){if(typeof showToast==='function')showToast('Write your feedback first, then send.','error',3000);return;}
   // Store feedback to admin account
   var allFeedback=JSON.parse(localStorage.getItem('trazer_feedback')||'[]');
   allFeedback.push({
@@ -4435,7 +4435,7 @@ function submitFeedback(){
   localStorage.setItem('trazer_feedback',JSON.stringify(allFeedback));
   document.getElementById('feedbackText').value='';
   document.getElementById('feedbackSection').style.display='none';
-  alert('Thank you! Your feedback has been sent.');
+  if(typeof showToast==='function')showToast('Thank you — your feedback has been sent ✓','success',3000);
   closeModal('helpModal');
 }
 function showPaywall(){
@@ -4864,9 +4864,9 @@ function seedFirstPrompt(){
 
 // ── ADMIN DASHBOARD ─────────────────────────────────────────────
 
-function deleteAdminUser(email){
+async function deleteAdminUser(email){
   if(!email)return;
-  if(!confirm('Delete account for '+email+'?\n\nThis cannot be undone.'))return;
+  if(!await tzConfirm({title:'Delete account?',message:'Delete account for '+email+'. This cannot be undone.',okLabel:'Delete',danger:true}))return;
   var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
   if(users[email]){
     delete users[email];
@@ -6710,7 +6710,8 @@ function buildPersonalizedContext(){
     if(profile.homeZip)      _hLines+='Home ZIP: '+profile.homeZip+'\n';
     if(_hLines) ctx+='\nHOMEOWNER SYSTEM ON FILE:\n'+_hLines;
   } else {
-  ctx += '\n\nTECH PROFILE:\n';
+  ctx += '\n\nWHO YOU ARE TALKING TO: A LICENSED HVAC TECHNICIAN — your professional peer in the field, NOT a homeowner. You already know this. NEVER ask whether they are the tech or the homeowner, and never withhold a sales script, closing script, pricing, or technical depth on the grounds of who they might be. They are the pro on the job — talk to them that way.\n';
+  ctx += '\nTECH PROFILE:\n';
   ctx += 'Name: ' + (profile.firstName || currentUser.name.split(' ')[0] || 'Tech') + '\n';
 
   if(profile.experienceLevel){
@@ -6888,8 +6889,8 @@ function copyMemoryDebug(){
 // Mike keeps ALL memory across sessions, days, and conversations
 // History is only cleared when tech explicitly deletes it
 
-function clearUserMemory(){
-  if(!confirm('Clear all of Mike\'s memory for your account?\n\nThis removes your conversation history and everything Mike has learned about you.\n\nThis cannot be undone.'))return;
+async function clearUserMemory(){
+  if(!await tzConfirm({title:'Clear all of Mike\'s memory?',message:'This removes your conversation history and everything Mike has learned about you. This cannot be undone.',okLabel:'Clear all',danger:true}))return;
   if(!currentUser)return;
   localStorage.removeItem(getUserMemoryKey('history'));
   localStorage.removeItem(getUserMemoryKey('knowledge'));
@@ -6933,7 +6934,7 @@ function showKnowledge(){
       +'</div>';
   }).join('');
 }
-function clearKnowledge(){if(confirm('Clear all knowledge Mike has learned from you?')){saveUserKnowledge([]);document.getElementById('knowledgePanel').style.display='none';}}
+async function clearKnowledge(){if(await tzConfirm({title:'Clear what Mike learned?',message:'This erases all knowledge Mike has learned from you.',okLabel:'Clear',danger:true})){saveUserKnowledge([]);document.getElementById('knowledgePanel').style.display='none';showToast('Mike\'s learned knowledge cleared ✓','success',2500);}}
 function deleteLearning(id){var items=getUserKnowledge().filter(function(i){return i.id!==id;});saveUserKnowledge(items);showKnowledge();}
 
 async function lookupWarranty(brand,model,serial,age){
@@ -7583,7 +7584,7 @@ function appendMessage(role,text){
     var cta=document.createElement('button');
     cta.className='find-pro-cta';
     cta.type='button';
-    cta.setAttribute('onclick',"pushFeatureSoon('Find a Pro referral')");
+    cta.setAttribute('onclick',"findLocalTech()");
     cta.innerHTML='<i data-lucide="users"></i><span>Find a Pro near me</span><span class="find-pro-arrow">&rarr;</span>';
     div.appendChild(cta);
     if(window.lucide&&typeof window.lucide.createIcons==='function'){
@@ -7734,7 +7735,7 @@ function toggleQuickActions(){
     menu=document.createElement('div');
     menu.id='quickActionsMenu';
     menu.style.cssText='position:fixed;background:#fff;border:1.5px solid #e2e4ed;border-radius:12px;box-shadow:0 4px 32px rgba(0,0,0,.18);z-index:99999;overflow-y:auto;max-height:360px;min-width:240px;';
-    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF0F2;color:#E8354A;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){document.getElementById(\'chatInput\').value=\'I need a part: \';document.getElementById(\'chatInput\').focus();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick(\'What are the correct R-410A pressures for current outdoor temperature?\');})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:var(--rust-deep);" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F0FDF4;color:#059669;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick(\'I just finished the repair — what else should I check for upsell opportunities?\');})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF7ED;color:#ea580c;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick(\'Give me a job summary — problem, fix, and what to put on the invoice.\');})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#EFF6FF;color:#2563eb;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick(\'The homeowner said the price seems too high. How do I overcome that?\');})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick(\'Help me pitch a maintenance agreement. System is about 10 years old.\');})">&#x1F4CB; Pitch Maintenance</button>            </div>          ';
+    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF0F2;color:#E8354A;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){mpFindPart();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick(\'What are the correct R-410A pressures for current outdoor temperature?\');})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:var(--rust-deep);" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F0FDF4;color:#059669;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick(\'I just finished the repair — what else should I check for upsell opportunities?\');})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF7ED;color:#ea580c;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick(\'Give me a job summary — problem, fix, and what to put on the invoice.\');})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#EFF6FF;color:#2563eb;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick(\'The homeowner said the price seems too high. How do I overcome that?\');})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick(\'Help me pitch a maintenance agreement. System is about 10 years old.\');})">&#x1F4CB; Pitch Maintenance</button>            </div>          ';
     document.body.appendChild(menu);
     // Tap outside closes
     setTimeout(function(){
@@ -7963,6 +7964,16 @@ async function sendChat(){
       handleOnboardingResponse(text);
       return;
     }
+  }
+  // Toolbelt one-shot: tech tapped Draw a Diagram / Illustrate It and Mike asked what to
+  // draw — THIS reply is the subject. Route it straight to the sketch generator so a short
+  // answer ("reversing valve") still draws; the keyword detector would otherwise miss it.
+  if(currentUser&&text&&window._mpPendingGen){
+    var _genKind=window._mpPendingGen;window._mpPendingGen=null;
+    input.value='';input.style.height='auto';
+    appendMessage('user',escapeHtml(text));
+    if(typeof generateAndShowSVG==='function')generateAndShowSVG(text,text.substring(0,40)+'…',_genKind==='illustration');
+    return;
   }
   // Mark state and switch button to Stop mode (so user can abort a long response)
   chatSending=true;
@@ -8298,19 +8309,20 @@ function runRepairReplaceCalc(){
   
   var avgLifespan=15; // years
   var remainingLife=Math.max(0,avgLifespan-systemAge);
+  var _yl=(remainingLife===1?'year':'years');
   var newSystemCost=4500; // avg residential install
   var rule5000=(repairCost*systemAge);
   var recommendation='',color='',msg='';
   
   if(rule5000>5000||remainingLife<=2||repairCost>newSystemCost*0.5){
     recommendation='REPLACE';color='#FF6B35';
-    msg='The 5000 Rule says replace: repair cost × system age = $'+rule5000.toLocaleString()+'. With only ~'+remainingLife+' years left, a new system is the smarter investment.';
+    msg='The 5000 Rule says replace: repair cost × system age = $'+rule5000.toLocaleString()+'. With only ~'+remainingLife+' '+_yl+' left, a new system is the smarter investment.';
   } else if(rule5000>3000||remainingLife<=5){
     recommendation='BORDERLINE';color='#FFB020';
-    msg='This is close. The system has ~'+remainingLife+' years left. Repair now but start planning for replacement. Total cost of ownership favors replacement within 2-3 years.';
+    msg='This is close. The system has ~'+remainingLife+' '+_yl+' left. Repair now but start planning for replacement. Total cost of ownership favors replacement within 2-3 years.';
   } else {
     recommendation='REPAIR';color='#C7553B';
-    msg='Repair makes sense. System has ~'+remainingLife+' years of life left and the repair cost is reasonable relative to replacement cost (~$4,500-$8,000 installed).';
+    msg='Repair makes sense. System has ~'+remainingLife+' '+_yl+' of life left and the repair cost is reasonable relative to replacement cost (~$4,500-$8,000 installed).';
   }
   
   var html='<div style="text-align:center;padding:16px 0;">';
@@ -8319,7 +8331,7 @@ function runRepairReplaceCalc(){
   html+='<div style="margin-top:14px;background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;padding:12px;text-align:left;">';
   html+='<div style="font-size:11px;color:#555;margin-bottom:6px;">BREAKDOWN</div>';
   html+='<div style="font-size:12px;color:#aaa;line-height:1.9;">5000 Rule score: <span style="color:#fff;">$'+rule5000.toLocaleString()+'</span><br>';
-  html+='Remaining life: <span style="color:#fff;">~'+remainingLife+' years</span><br>';
+  html+='Remaining life: <span style="color:#fff;">~'+remainingLife+' '+_yl+'</span><br>';
   html+='Repair cost: <span style="color:#fff;">$'+repairCost.toLocaleString()+'</span><br>';
   html+='New system est: <span style="color:#fff;">$4,500 – $8,000</span></div>';
   html+='</div>';
@@ -8609,8 +8621,8 @@ function showCustomerDB(){
   if(window.lucide)lucide.createIcons();
   openModal('customerDBModal');
 }
-function addReminderForCustomer(name){
-  var months=prompt('Set a follow-up reminder for '+name+'. Remind me in how many months? (e.g. 6 for semi-annual, 12 for annual)','6');
+async function addReminderForCustomer(name){
+  var months=await tzPrompt({title:'Follow-up reminder',message:'Remind me to follow up with '+name+' in how many months? (6 = semi-annual, 12 = annual)',inputType:'number',placeholder:'6',value:'6',okLabel:'Set reminder'});
   if(!months)return;
   addReminder(name, parseInt(months)||6, 'Maintenance follow-up');
   showToast('Reminder set for '+name+' in '+months+' months ✓','success',2500);
@@ -8622,9 +8634,10 @@ function markReminderDone(id){
   if(r)r.done=true;
   saveReminders(reminders);
   showCustomerDB();
+  if(typeof showToast==='function')showToast('Reminder cleared ✓','success',2000);
 }
-function deleteCustomer(id){
-  if(!confirm('Delete this customer?'))return;
+async function deleteCustomer(id){
+  if(!await tzConfirm({title:'Delete customer?',message:'This removes the customer from your list.',okLabel:'Delete',danger:true}))return;
   var list=getCustomers().filter(function(c){return c.id!==id;});
   saveCustomers(list);
   showCustomerDB();
@@ -8703,9 +8716,15 @@ function sendQuick(text){document.getElementById('chatInput').value=text;sendCha
 // ══════ MIKE'S-PHONE HOME — view routing + toolbelt sub-sheets (redesign) ══════
 function mpEnterChat(){document.body.classList.add('mp-chatting');}
 function mpGoHome(){document.body.classList.remove('mp-chatting');mpCloseSubsheet();}
+// Toolbelt actions that need one more detail shouldn't dump a half-typed line in the box
+// and stop — Mike asks for what he needs, like he picked up the phone. The tech just answers.
+function mpAskMike(q){mpEnterChat();if(typeof appendMessage==='function')appendMessage('agent',q);requestAnimationFrame(function(){if(typeof scrollToBottom==='function')scrollToBottom();});var i=document.getElementById('chatInput');if(i){i.value='';i.focus();}}
+function mpFindPart(){mpAskMike("What part are you after? Give me the unit — make and model — and what failed, and I'll get you the part number and where to grab it.");}
+function mpDrawDiagram(){window._mpPendingGen='diagram';mpAskMike("What should I draw? Name the unit or circuit — like 'Carrier 59TP6 control wiring' or 'a heat-pump defrost circuit' — and I'll sketch it.");}
+function mpIllustrate(){window._mpPendingGen='illustration';mpAskMike("What do you want to see? Name the part — 'reversing valve,' 'TXV,' 'ECM motor' — and I'll draw it up.");}
 var MP_TOOLS={
   parts:{title:'Parts Lookup',pip:'var(--safety)',actions:[
-    {label:'Find a Part',sub:'Pre-fill & search',fn:function(){mpEnterChat();var i=document.getElementById('chatInput');if(i){i.value='I need a part: ';i.focus();}}},
+    {label:'Find a Part',sub:'Mike pulls the part #',fn:function(){mpFindPart();}},
     {label:'AHRI Lookup',sub:'SEER2 / EER2 / rebates',fn:function(){mpEnterChat();askMikeAHRI();}},
     {label:'Repair vs Replace',sub:'5000-rule calculator',fn:function(){showRepairReplaceCalc();}}
   ]},
@@ -8717,8 +8736,8 @@ var MP_TOOLS={
   wiring:{title:'Wiring & Diagrams',pip:'var(--rust)',actions:[
     {label:'Terminal Guide',sub:'Labels & wire colors',fn:function(){mpEnterChat();sendQuick("Help me read these terminals.");}},
     {label:'Wiring Diagram',sub:'Trace the circuit',fn:function(){mpEnterChat();sendQuick("Walk me through the wiring on this unit.");}},
-    {label:'Draw a Diagram',sub:'Mike sketches it from scratch',fn:function(){mpEnterChat();var i=document.getElementById('chatInput');if(i){i.value='Draw me a diagram of ';i.focus();}}},
-    {label:'Illustrate It',sub:'See how a part works',fn:function(){mpEnterChat();var i=document.getElementById('chatInput');if(i){i.value='Draw me an illustration of ';i.focus();}}},
+    {label:'Draw a Diagram',sub:'Mike sketches it from scratch',fn:function(){mpDrawDiagram();}},
+    {label:'Illustrate It',sub:'See how a part works',fn:function(){mpIllustrate();}},
     {label:'Pressures',sub:'R-410A target pressures',fn:function(){mpEnterChat();sendQuick("What pressures am I looking for right now?");}},
     {label:'Safety Check',sub:'Pre-job checklist',fn:function(){mpEnterChat();askMikeSafetyChecklist();}}
   ]},
@@ -9083,10 +9102,11 @@ function openTodaysCall(brand,symptom,model){
   var msg=(tmpl[L]||tmpl.en)(job);
   var inp=document.getElementById('chatInput');
   if(inp){
+    if(typeof mpEnterChat==='function')mpEnterChat();
     inp.value=msg;
     inp.focus();
-    inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,120)+'px';
-    inp.scrollIntoView({behavior:'smooth',block:'center'});
+    // Tap a call → actually ask Mike. Pre-fill-and-stop left the tech to hunt for Send.
+    if(typeof sendChat==='function')sendChat();
   }else if(typeof showToast==='function'){
     showToast(job,'info',2500);
   }
@@ -9138,7 +9158,7 @@ function clearChat(){
 // User-facing wrapper around clearChat that adds a per-language confirm dialog
 // and also refreshes the camera response bubble + greeting when camera is active.
 // Signout still calls clearChat() directly (no confirm — already implicit in signout).
-function newChat(){
+async function newChat(){
   var confirmText={
     en:'Start a new chat in English? Current conversation will be cleared.',
     es:'¿Iniciar una nueva conversación en español? La conversación actual se borrará.',
@@ -9147,7 +9167,7 @@ function newChat(){
     fr:'Démarrer une nouvelle conversation en français ? La conversation actuelle sera effacée.',
     pt:'Iniciar uma nova conversa em português? A conversa atual será apagada.'
   };
-  if(!confirm(confirmText[currentLang]||confirmText.en))return;
+  if(!await tzConfirm({title:'Start a new chat?',message:confirmText[currentLang]||confirmText.en,okLabel:'New chat'}))return;
   clearChat();
   var cm=document.getElementById('chatMessages');
   if(cm)cm.scrollTop=0;
@@ -9167,7 +9187,10 @@ function newChat(){
   }
 }
 
-function wipeChat(){
+async function wipeChat(){
+  // Confirm before nuking a conversation — an accidental tap shouldn't lose a long
+  // diagnostic. Mike's learned memory is untouched; only this chat thread clears.
+  if(!await tzConfirm({title:'Clear this chat?',message:'Clears the current conversation. Mike keeps everything he has learned about you.',okLabel:'Clear chat'}))return;
   // Kill any in-flight Mike audio / open mic from the prior turn so the wipe is clean.
   if(typeof stopMikeSpeaking==='function')stopMikeSpeaking();
   if(typeof stopListening==='function')stopListening();
@@ -10405,6 +10428,35 @@ function showToast(msg,type,duration){
   c.appendChild(t);
   setTimeout(function(){t.style.animation='toastOut .25s ease forwards';setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},250);},duration);
 }
+
+// In-app confirm/prompt — replaces native confirm()/prompt() so destructive actions and
+// quick inputs match the dark app instead of a raw browser chrome dialog (PE-grade polish).
+// Both return a Promise: tzConfirm→true/false, tzPrompt→entered string or null on cancel.
+function _tzDialogCSS(){
+  if(document.getElementById('tzDialogCSS'))return;
+  var s=document.createElement('style');s.id='tzDialogCSS';
+  s.textContent='.tz-dialog-scrim{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.62);opacity:0;transition:opacity .18s ease;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}.tz-dialog-scrim.show{opacity:1;}.tz-dialog{width:100%;max-width:340px;background:#141414;border:1px solid #2a2a2a;border-radius:16px;padding:20px 18px 16px;box-shadow:0 24px 60px rgba(0,0,0,.55);transform:translateY(8px) scale(.98);transition:transform .18s ease;}.tz-dialog-scrim.show .tz-dialog{transform:none;}.tz-dialog-title{font-size:17px;font-weight:800;color:#fff;margin-bottom:6px;font-family:inherit;}.tz-dialog-msg{font-size:13.5px;line-height:1.5;color:rgba(255,255,255,.66);margin-bottom:14px;white-space:pre-line;}.tz-dialog-input{display:block;width:100%;box-sizing:border-box;padding:11px 13px;background:#0a0a0a;border:1.5px solid #2a2a2a;border-radius:10px;color:#fff;-webkit-text-fill-color:#fff;font-size:16px;font-family:inherit;outline:none;margin-bottom:14px;-webkit-appearance:none;}.tz-dialog-scrim .tz-dialog-input:focus{border-color:#3A8B8A !important;box-shadow:0 0 0 3px rgba(58,139,138,.18) !important;}.tz-dialog-input::-webkit-inner-spin-button,.tz-dialog-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}.tz-dialog-input[type=number]{-moz-appearance:textfield;}.tz-dialog-actions{display:flex;gap:9px;}.tz-dialog-btn{flex:1;padding:11px 14px;border-radius:10px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;border:1px solid transparent;transition:filter .15s,background .15s;min-height:44px;}.tz-dialog-cancel{background:#222;color:rgba(255,255,255,.82);border-color:#2f2f2f;}.tz-dialog-cancel:active{background:#2a2a2a;}.tz-dialog-ok{background:#3A8B8A;color:#fff;}.tz-dialog-ok:active{filter:brightness(1.08);}.tz-dialog-danger{background:#C7553B;color:#fff;}.tz-dialog-danger:active{filter:brightness(1.08);}';
+  document.head.appendChild(s);
+}
+function _tzDialog(o,done){
+  _tzDialogCSS();
+  var ov=document.createElement('div');
+  ov.className='tz-dialog-scrim';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');
+  var inputHtml=o.input?'<input class="tz-dialog-input" type="'+(o.inputType||'text')+'" inputmode="'+(o.inputType==='number'?'numeric':'text')+'" placeholder="'+(o.placeholder||'').replace(/"/g,'&quot;')+'" value="'+(o.value||'').replace(/"/g,'&quot;')+'" />':'';
+  ov.innerHTML='<div class="tz-dialog"><div class="tz-dialog-title">'+escapeHtml(o.title||'')+'</div>'+(o.message?'<div class="tz-dialog-msg">'+escapeHtml(o.message)+'</div>':'')+inputHtml+'<div class="tz-dialog-actions"><button type="button" class="tz-dialog-btn tz-dialog-cancel">'+escapeHtml(o.cancelLabel||'Cancel')+'</button><button type="button" class="tz-dialog-btn '+(o.danger?'tz-dialog-danger':'tz-dialog-ok')+'">'+escapeHtml(o.okLabel||'OK')+'</button></div></div>';
+  document.body.appendChild(ov);
+  var inp=ov.querySelector('.tz-dialog-input');
+  function close(val){if(ov._closed)return;ov._closed=true;ov.classList.remove('show');setTimeout(function(){if(ov.parentNode)ov.parentNode.removeChild(ov);},180);document.removeEventListener('keydown',onKey,true);done(val);}
+  function ok(){close(o.input?(inp?inp.value.trim():''):'1');}
+  function onKey(e){if(e.key==='Escape'){e.preventDefault();close(null);}else if(e.key==='Enter'&&(!inp||document.activeElement===inp)){e.preventDefault();ok();}}
+  ov.querySelector('.tz-dialog-cancel').onclick=function(){close(null);};
+  ov.querySelector('.tz-dialog-actions').lastChild.onclick=ok;
+  ov.addEventListener('click',function(e){if(e.target===ov)close(null);});
+  document.addEventListener('keydown',onKey,true);
+  requestAnimationFrame(function(){ov.classList.add('show');if(inp){try{inp.focus();inp.select();}catch(e){}}});
+}
+function tzConfirm(o){o=o||{};return new Promise(function(res){_tzDialog({title:o.title||'Confirm',message:o.message||'',okLabel:o.okLabel||'Confirm',cancelLabel:o.cancelLabel||'Cancel',danger:!!o.danger,input:false},function(v){res(v!==null);});});}
+function tzPrompt(o){o=o||{};return new Promise(function(res){_tzDialog({title:o.title||'',message:o.message||'',okLabel:o.okLabel||'OK',cancelLabel:o.cancelLabel||'Cancel',input:true,inputType:o.inputType||'text',placeholder:o.placeholder||'',value:o.value||''},function(v){res(v);});});}
 
 function haptic(type){
   if(!navigator.vibrate)return;

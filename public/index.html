@@ -1356,6 +1356,8 @@ body[data-mode="contractor"] #quickActionsBtn{background:var(--ink-2)!important;
 #authOverlay{background:radial-gradient(90% 55% at 50% 0%,rgba(58,139,138,.10),transparent 60%),#070706;}
 #authOverlay .auth-card{background:linear-gradient(180deg,#141611,#0e0f0c);border-color:var(--line);box-shadow:0 24px 60px rgba(0,0,0,.7);}
 #authOverlay .auth-inp:focus{border-color:var(--teal)!important;box-shadow:0 0 0 3px rgba(58,139,138,.14)!important;}
+/* iOS Safari autofill: the focus box-shadow above out-specifies the autofill guard and lets the yellow bleed through. This top-specificity rule keeps the dark fill AND the focus ring on a focused, autofilled field. */
+#authOverlay .auth-inp:-webkit-autofill,#authOverlay .auth-inp:-webkit-autofill:hover,#authOverlay .auth-inp:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px #0a0a0a inset,0 0 0 3px rgba(58,139,138,.14)!important;box-shadow:0 0 0 100px #0a0a0a inset!important;-webkit-text-fill-color:#fff!important;caret-color:#fff!important;}
 #authOverlay .auth-btn{background:linear-gradient(180deg,#FFC02E,var(--safety));color:#1a1300;box-shadow:0 10px 26px -8px rgba(255,180,0,.5),0 1px 0 rgba(255,255,255,.4) inset;}
 #authOverlay .auth-tab.active{background:var(--teal);color:#06201f;}
 #authOverlay .auth-trial-pill{background:rgba(58,139,138,.10);border-color:rgba(58,139,138,.28);color:var(--teal);}

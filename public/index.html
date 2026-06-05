@@ -3148,44 +3148,44 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
             <div class="drawer-section-meta" data-v2i18n="qaPinHint">tap pin to favorite</div>
           </div>
           <div class="drawer-all-tools">
-            <button class="tool-tile t-find pinned" type="button" onclick="window.closeActionDrawer();openChatSearch();">
-              <div class="tool-tile-icon"><i data-lucide="search"></i></div>
-              <div class="tool-tile-label" data-v2i18n="tbFind">Search<br>Chat</div>
+            <button class="tool-tile t-find pinned" type="button" onclick="window.closeActionDrawer();scanNameplate();">
+              <div class="tool-tile-icon"><i data-lucide="scan-line"></i></div>
+              <div class="tool-tile-label">Scan<br>Nameplate</div>
               <div class="tool-tile-pin"></div>
             </button>
-            <button class="tool-tile t-manual" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Manual Lookup')">
+            <button class="tool-tile t-manual" type="button" onclick="window.closeActionDrawer();mpOpenTool('parts');">
+              <div class="tool-tile-icon"><i data-lucide="wrench"></i></div>
+              <div class="tool-tile-label">Parts</div>
+              <div class="tool-tile-pin"></div>
+            </button>
+            <button class="tool-tile t-history" type="button" onclick="window.closeActionDrawer();mpOpenTool('wiring');">
+              <div class="tool-tile-icon"><i data-lucide="zap"></i></div>
+              <div class="tool-tile-label">Wiring</div>
+              <div class="tool-tile-pin"></div>
+            </button>
+            <button class="tool-tile t-warranty" type="button" onclick="window.closeActionDrawer();mpOpenTool('warranty');">
+              <div class="tool-tile-icon"><i data-lucide="shield-check"></i></div>
+              <div class="tool-tile-label">Warranty</div>
+              <div class="tool-tile-pin"></div>
+            </button>
+            <button class="tool-tile t-pricing" type="button" onclick="window.closeActionDrawer();mpOpenTool('diagnose');">
+              <div class="tool-tile-icon"><i data-lucide="activity"></i></div>
+              <div class="tool-tile-label">Diagnose</div>
+              <div class="tool-tile-pin"></div>
+            </button>
+            <button class="tool-tile t-safety" type="button" onclick="window.closeActionDrawer();mpOpenTool('jobs');">
+              <div class="tool-tile-icon"><i data-lucide="clipboard-check"></i></div>
+              <div class="tool-tile-label">Close<br>Job</div>
+              <div class="tool-tile-pin"></div>
+            </button>
+            <button class="tool-tile t-recap" type="button" onclick="window.closeActionDrawer();mpOpenTool('manual');">
               <div class="tool-tile-icon"><i data-lucide="book-open"></i></div>
-              <div class="tool-tile-label" data-v2i18n="qaManual">Manual<br>Lookup</div>
+              <div class="tool-tile-label">Manuals</div>
               <div class="tool-tile-pin"></div>
             </button>
-            <button class="tool-tile t-history" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Job History')">
-              <div class="tool-tile-icon"><i data-lucide="clipboard-list"></i></div>
-              <div class="tool-tile-label" data-v2i18n="qaHistory">Job<br>History</div>
-              <div class="tool-tile-pin"></div>
-            </button>
-            <button class="tool-tile t-warranty" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Warranty Claim')">
-              <div class="tool-tile-icon"><i data-lucide="file-check"></i></div>
-              <div class="tool-tile-label" data-v2i18n="qaWarranty">Warranty<br>Claim</div>
-              <div class="tool-tile-pin"></div>
-            </button>
-            <button class="tool-tile t-pricing" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Price Book')">
-              <div class="tool-tile-icon"><i data-lucide="dollar-sign"></i></div>
-              <div class="tool-tile-label" data-v2i18n="qaPriceBook">Price<br>Book</div>
-              <div class="tool-tile-pin"></div>
-            </button>
-            <button class="tool-tile t-safety" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Safety Check')">
-              <div class="tool-tile-icon"><i data-lucide="shield-alert"></i></div>
-              <div class="tool-tile-label" data-v2i18n="qaSafety">Safety<br>Check</div>
-              <div class="tool-tile-pin"></div>
-            </button>
-            <button class="tool-tile t-recap" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Recap Video')">
-              <div class="tool-tile-icon"><i data-lucide="film"></i></div>
-              <div class="tool-tile-label" data-v2i18n="qaRecap">Recap<br>Video</div>
-              <div class="tool-tile-pin"></div>
-            </button>
-            <button class="tool-tile t-customize" type="button" onclick="window.closeActionDrawer();pushFeatureSoon('Customize')">
-              <div class="tool-tile-icon"><i data-lucide="settings"></i></div>
-              <div class="tool-tile-label" data-v2i18n="qaCustomize">Customize</div>
+            <button class="tool-tile t-customize" type="button" onclick="window.closeActionDrawer();openChatSearch();">
+              <div class="tool-tile-icon"><i data-lucide="search"></i></div>
+              <div class="tool-tile-label">Search<br>Chat</div>
               <div class="tool-tile-pin"></div>
             </button>
           </div>
@@ -7732,7 +7732,7 @@ function toggleQuickActions(){
     menu=document.createElement('div');
     menu.id='quickActionsMenu';
     menu.style.cssText='position:fixed;background:#fff;border:1.5px solid #e2e4ed;border-radius:12px;box-shadow:0 4px 32px rgba(0,0,0,.18);z-index:99999;overflow-y:auto;max-height:360px;min-width:240px;';
-    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#ECFEFF;color:#0E7490;border-radius:6px;margin:4px 4px 6px;">&#x1F9F0; MIKE&#39;S TOOLBELT</div><button class="qa-item" style="color:#5FC4C2;font-weight:800;background:rgba(95,196,194,.08);margin:0 4px 6px;" onclick="qaClick(function(){scanNameplate();})">&#x1F4F7; Scan Nameplate &mdash; Mike reads the unit</button><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:2px 6px 8px;"><button type="button" class="qa-tool" onclick="qaClick(function(){mpOpenTool(\'parts\');})"><span style="font-size:18px;">&#x1F529;</span>Parts</button><button type="button" class="qa-tool" onclick="qaClick(function(){mpOpenTool(\'warranty\');})"><span style="font-size:18px;">&#x1F6E1;</span>Warranty</button><button type="button" class="qa-tool" onclick="qaClick(function(){mpOpenTool(\'wiring\');})"><span style="font-size:18px;">&#x26A1;</span>Wiring</button><button type="button" class="qa-tool" onclick="qaClick(function(){mpOpenTool(\'jobs\');})"><span style="font-size:18px;">&#x1F4CB;</span>Close Job</button><button type="button" class="qa-tool" onclick="qaClick(function(){mpOpenTool(\'manual\');})"><span style="font-size:18px;">&#x1F4D6;</span>Manuals</button><button type="button" class="qa-tool" onclick="qaClick(function(){mpOpenTool(\'diagnose\');})"><span style="font-size:18px;">&#x1F52C;</span>Diagnose</button></div><div style="height:1px;background:var(--gray-100);margin:4px 0 6px;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF0F2;color:#E8354A;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){document.getElementById(\'chatInput\').value=\'I need a part: \';document.getElementById(\'chatInput\').focus();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick(\'What are the correct R-410A pressures for current outdoor temperature?\');})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:var(--rust-deep);" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F0FDF4;color:#059669;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick(\'I just finished the repair — what else should I check for upsell opportunities?\');})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF7ED;color:#ea580c;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick(\'Give me a job summary — problem, fix, and what to put on the invoice.\');})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#EFF6FF;color:#2563eb;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick(\'The homeowner said the price seems too high. How do I overcome that?\');})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick(\'Help me pitch a maintenance agreement. System is about 10 years old.\');})">&#x1F4CB; Pitch Maintenance</button>            </div>          ';
+    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF0F2;color:#E8354A;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){document.getElementById(\'chatInput\').value=\'I need a part: \';document.getElementById(\'chatInput\').focus();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){sendQuick(\'What are the correct R-410A pressures for current outdoor temperature?\');})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:var(--rust-deep);" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#F0FDF4;color:#059669;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){sendQuick(\'I just finished the repair — what else should I check for upsell opportunities?\');})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#FFF7ED;color:#ea580c;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){sendQuick(\'Give me a job summary — problem, fix, and what to put on the invoice.\');})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:var(--gray-100);margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:#EFF6FF;color:#2563eb;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){sendQuick(\'The homeowner said the price seems too high. How do I overcome that?\');})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){sendQuick(\'Help me pitch a maintenance agreement. System is about 10 years old.\');})">&#x1F4CB; Pitch Maintenance</button>            </div>          ';
     document.body.appendChild(menu);
     // Tap outside closes
     setTimeout(function(){

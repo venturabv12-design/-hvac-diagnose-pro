@@ -967,7 +967,7 @@ body[data-mode="contractor"] .msg-time{display:none;}
 
 /* Peek bar — mockup spec: dark ink-2 tiles with colored icons */
 body[data-mode="contractor"] .peek-bar{gap:6px;padding:12px 12px 0;}
-body[data-mode="contractor"] .peek-tile{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:10px 6px;color:rgba(255,255,255,.85);position:relative;flex-direction:column;gap:4px;display:flex;align-items:center;justify-content:center;height:auto;min-height:64px;}
+body[data-mode="contractor"] .peek-tile{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:10px 4px;color:rgba(255,255,255,.85);position:relative;flex-direction:column;gap:4px;display:flex;align-items:center;justify-content:center;height:auto;min-height:64px;flex:1 1 0;min-width:0;box-sizing:border-box;}
 body[data-mode="contractor"] .peek-tile:active{background:var(--ink-3);transform:translateY(-1px);}
 body[data-mode="contractor"] .peek-tile-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
 body[data-mode="contractor"] .peek-tile-icon svg{width:22px;height:22px;stroke-width:2;}
@@ -986,7 +986,8 @@ body[data-mode="contractor"] .drawer-section-link{font-size:11px;font-weight:700
 
 /* Whoop-style gradient favorite tiles — 2x2 grid */
 body[data-mode="contractor"] .drawer-favorites{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:20px;}
-body[data-mode="contractor"] .fav-tile{border-radius:12px;padding:16px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s ease;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;border:none;text-align:left;font-family:inherit;-webkit-transform:translateZ(0);transform:translateZ(0);}
+body[data-mode="contractor"] .fav-tile{border-radius:12px;padding:16px;background:linear-gradient(135deg,var(--ink-2),var(--ink-3));color:#fff;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s ease;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;border:none;text-align:left;font-family:inherit;-webkit-transform:translateZ(0);transform:translateZ(0);}
+#actionDrawer:focus,#actionDrawer:focus-visible{outline:none;}
 body[data-mode="contractor"] .fav-tile:active{transform:translateY(-2px);}
 body[data-mode="contractor"] .fav-tile.t-diag{background:linear-gradient(135deg,var(--safety) 0%,var(--safety-deep) 100%);color:var(--ink);}
 body[data-mode="contractor"] .fav-tile.t-cam{background:linear-gradient(135deg,var(--teal) 0%,var(--teal-deep) 100%);color:var(--ink);}
@@ -1004,7 +1005,8 @@ body[data-mode="contractor"] .fav-tile-sub{font-size:11px;font-weight:600;opacit
 
 /* All Tools — 4x2 color-coded grid */
 body[data-mode="contractor"] .drawer-all-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-bottom:20px;}
-body[data-mode="contractor"] .tool-tile{background:var(--ink-3);border:1px solid var(--line);border-radius:8px;padding:14px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:all .15s ease;position:relative;font-family:inherit;color:rgba(255,255,255,.9);-webkit-transform:translateZ(0);transform:translateZ(0);}
+@media(max-width:360px){body[data-mode="contractor"] .drawer-all-tools{grid-template-columns:repeat(3,1fr);}}
+body[data-mode="contractor"] .tool-tile{background:var(--ink-3);border:1px solid var(--line);border-radius:8px;padding:14px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:all .15s ease;position:relative;font-family:inherit;color:rgba(255,255,255,.9);min-width:0;box-sizing:border-box;-webkit-transform:translateZ(0);transform:translateZ(0);}
 body[data-mode="contractor"] .tool-tile:active{background:var(--ink-4);border-color:rgba(255,180,0,.2);transform:translateY(-1px);}
 body[data-mode="contractor"] .tool-tile-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
 body[data-mode="contractor"] .tool-tile-icon svg{width:24px;height:24px;stroke-width:1.8;}
@@ -1019,6 +1021,53 @@ body[data-mode="contractor"] .tool-tile.t-customize .tool-tile-icon{color:rgba(2
 body[data-mode="contractor"] .tool-tile-label{font-size:9px;font-weight:800;color:rgba(255,255,255,.9);letter-spacing:.04em;text-transform:uppercase;text-align:center;line-height:1.1;}
 body[data-mode="contractor"] .tool-tile-pin{position:absolute;top:5px;right:5px;width:5px;height:5px;background:var(--safety);border-radius:50%;opacity:0;}
 body[data-mode="contractor"] .tool-tile.pinned .tool-tile-pin{opacity:1;}
+
+/* ── CUSTOMIZABLE TOOL DRAWER (feat/customizable-drawer) ──────────────── */
+/* Discoverability header above the peek tiles — "there's a full toolkit here, and you can arrange it." */
+.peek-tools-head{
+  display:flex;align-items:center;gap:8px;width:100%;
+  min-height:44px;padding:8px 10px;margin:0 0 8px;
+  background:linear-gradient(180deg,rgba(58,139,138,.12),rgba(58,139,138,.04));
+  border:1px solid rgba(58,139,138,.32);border-radius:12px;
+  color:rgba(255,255,255,.86);font-family:inherit;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:background .14s ease,transform .12s ease;
+  text-align:left;
+}
+.peek-tools-head:active{transform:scale(.99);background:linear-gradient(180deg,rgba(58,139,138,.18),rgba(58,139,138,.06));}
+.peek-tools-grab{width:26px;height:4px;border-radius:3px;background:rgba(58,139,138,.55);flex-shrink:0;}
+.peek-tools-label{
+  font-family:var(--font-code);font-size:11px;font-weight:800;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--mike-teal,#3A8B8A);
+}
+.peek-tools-hint{
+  margin-left:auto;display:inline-flex;align-items:center;gap:4px;
+  font-family:var(--font-code);font-size:10px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:rgba(255,255,255,.55);
+}
+.peek-tools-hint svg{width:13px;height:13px;stroke-width:2.4;color:var(--mike-teal,#3A8B8A);}
+@media (max-width:340px){
+  .peek-tools-hint{font-size:9px;letter-spacing:.02em;}
+  .peek-tools-grab{width:18px;}
+}
+
+/* Functional pin — real >=40px tap target, hollow when off, filled teal/star when favorited. */
+body[data-mode="contractor"] .tool-tile{padding-top:18px;}
+body[data-mode="contractor"] .tool-tile-pin{
+  position:absolute;top:2px;right:2px;width:40px;height:40px;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent;border:none;border-radius:50%;padding:0;margin:0;
+  cursor:pointer;opacity:1;z-index:2;-webkit-tap-highlight-color:transparent;
+  color:rgba(255,255,255,.34);transition:color .14s ease,transform .12s ease;
+}
+body[data-mode="contractor"] .tool-tile-pin svg{width:16px;height:16px;stroke-width:2;fill:none;}
+body[data-mode="contractor"] .tool-tile-pin:active{transform:scale(.88);}
+body[data-mode="contractor"] .tool-tile-pin.on{color:var(--mike-teal,#3A8B8A);}
+body[data-mode="contractor"] .tool-tile-pin.on svg{fill:currentColor;stroke:currentColor;}
+body[data-mode="contractor"] .tool-tile.pinned{border-color:rgba(58,139,138,.4);}
+body[data-mode="contractor"] .tool-tile.pinned .tool-tile-pin{opacity:1;}
+@media (prefers-reduced-motion:reduce){
+  .peek-tools-head,body[data-mode="contractor"] .tool-tile-pin{transition:none;}
+}
 
 /* Today's Calls — recent-job rows with status-colored left borders */
 body[data-mode="contractor"] .drawer-calls{display:flex;flex-direction:column;gap:6px;padding-bottom:24px;}
@@ -3108,28 +3157,14 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 
       <!-- CHAT INPUT -->
       <div class="chat-input-area">
-        <!-- Peek bar (Push 4) — 4 favorite tool tiles; tap or swipe-up opens action drawer -->
-        <div class="peek-bar" id="peekBar" role="toolbar" aria-label="Tool shortcuts; swipe up to open drawer">
-          <button class="peek-tile t-diag" type="button" data-peek-idx="0" aria-label="Run Diagnostic" onclick="window.openActionDrawer&&window.openActionDrawer()">
-            <span class="peek-tile-icon"><i data-lucide="zap"></i></span>
-            <span class="peek-tile-label" data-v2i18n="tbDiag">Run<br>Diagnostic</span>
-            <span class="peek-tile-pin"></span>
-          </button>
-          <button class="peek-tile t-cam" type="button" data-peek-idx="1" aria-label="Live Camera" onclick="checkCameraAccess()">
-            <span class="peek-tile-icon"><i data-lucide="video"></i></span>
-            <span class="peek-tile-label" data-v2i18n="tbCamera">Live<br>Camera</span>
-            <span class="peek-tile-pin"></span>
-          </button>
-          <button class="peek-tile t-shield" type="button" data-peek-idx="2" aria-label="Callback Shield" onclick="askCallbackShield()">
-            <span class="peek-tile-icon"><i data-lucide="shield-check"></i></span>
-            <span class="peek-tile-label" data-v2i18n="tbShield">Callback<br>Shield</span>
-            <span class="peek-tile-pin"></span>
-          </button>
-          <button class="peek-tile t-find" type="button" data-peek-idx="3" aria-label="Search Chat" onclick="openChatSearch()">
-            <span class="peek-tile-icon"><i data-lucide="search"></i></span>
-            <span class="peek-tile-label" data-v2i18n="tbFind">Search<br>Chat</span>
-          </button>
-        </div>
+        <!-- Discoverability header (feat/customizable-drawer) — tells the tech there's a full toolkit and it's arrangeable; whole row opens the drawer -->
+        <button class="peek-tools-head" type="button" id="peekToolsHead" aria-label="Your tools — tap to open and customize your toolkit" onclick="window.openActionDrawer&&window.openActionDrawer()">
+          <span class="peek-tools-grab" aria-hidden="true"></span>
+          <span class="peek-tools-label">Your Tools</span>
+          <span class="peek-tools-hint">tap to customize<i data-lucide="chevron-up"></i></span>
+        </button>
+        <!-- Peek bar (Push 4) — favorite tool tiles rendered from the favTools registry; tap or swipe-up opens action drawer -->
+        <div class="peek-bar" id="peekBar" role="toolbar" aria-label="Favorite tools; swipe up to open the full toolkit"></div>
         <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none" onchange="handleChatFile(event)"/>
         <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--rust);"></div>
         <div class="chat-input-row">
@@ -3155,98 +3190,18 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         <section class="drawer-section">
           <div class="drawer-section-head">
             <div class="drawer-section-title" data-v2i18n="qaFavs">Your Favorites</div>
-            <div class="drawer-section-link" data-v2i18n="qaCustomize" onclick="pushFeatureSoon('Customize')">Customize</div>
+            <div class="drawer-section-meta">your 4 go-to tools</div>
           </div>
-          <div class="drawer-favorites">
-            <button class="fav-tile t-diag" type="button" onclick="window.closeActionDrawer();mpEnterChat();sendQuick('Run me through a full system diagnostic. Start by asking me what unit I am on and what it is doing, then walk me step by step.');">
-              <div class="fav-tile-top">
-                <div class="fav-tile-icon"><i data-lucide="zap"></i></div>
-                <div class="fav-tile-badge" data-v2i18n="qaMostUsed">Most Used</div>
-              </div>
-              <div>
-                <div class="fav-tile-title" data-v2i18n="tbDiag">Run<br>Diagnostic</div>
-                <div class="fav-tile-sub" data-v2i18n="qaDiagSub">Full system check, 5 min</div>
-              </div>
-            </button>
-            <button class="fav-tile t-cam" type="button" onclick="window.closeActionDrawer();startLiveCamera();">
-              <div class="fav-tile-top">
-                <div class="fav-tile-icon"><i data-lucide="video"></i></div>
-                <div class="fav-tile-badge" data-v2i18n="qaLive">Live</div>
-              </div>
-              <div>
-                <div class="fav-tile-title" data-v2i18n="tbCamera">Live<br>Camera</div>
-                <div class="fav-tile-sub" data-v2i18n="qaCamSub">Mike sees what you see</div>
-              </div>
-            </button>
-            <button class="fav-tile t-shield" type="button" onclick="askCallbackShield();">
-              <div class="fav-tile-top">
-                <div class="fav-tile-icon"><i data-lucide="shield-check"></i></div>
-                <div class="fav-tile-badge">$312 saved</div>
-              </div>
-              <div>
-                <div class="fav-tile-title" data-v2i18n="tbShield">Callback<br>Shield</div>
-                <div class="fav-tile-sub" data-v2i18n="qaShieldSub">Pre-close 5-pt check</div>
-              </div>
-            </button>
-            <button class="fav-tile t-sale" type="button" onclick="window.closeActionDrawer();showRepairReplaceCalc();">
-              <div class="fav-tile-top">
-                <div class="fav-tile-icon"><i data-lucide="trending-up"></i></div>
-                <div class="fav-tile-badge" data-v2i18n="qaRevenue">Revenue</div>
-              </div>
-              <div>
-                <div class="fav-tile-title" data-v2i18n="qaCloseSale">Close<br>The Sale</div>
-                <div class="fav-tile-sub" data-v2i18n="qaCloseSaleSub">Repair vs. replace math</div>
-              </div>
-            </button>
-          </div>
+          <!-- Rendered from the favTools registry + saved favorites by renderFavTools() -->
+          <div class="drawer-favorites" id="drawerFavorites" aria-label="Your favorite tools"></div>
         </section>
         <section class="drawer-section">
           <div class="drawer-section-head">
             <div class="drawer-section-title" data-v2i18n="qaAllTools">All Tools</div>
-            <div class="drawer-section-meta" data-v2i18n="qaPinHint">tap pin to favorite</div>
+            <div class="drawer-section-meta" data-v2i18n="qaPinHint">tap the pin to favorite</div>
           </div>
-          <div class="drawer-all-tools">
-            <button class="tool-tile t-find pinned" type="button" onclick="window.closeActionDrawer();scanNameplate();">
-              <div class="tool-tile-icon"><i data-lucide="scan-line"></i></div>
-              <div class="tool-tile-label">Scan<br>Nameplate</div>
-              <div class="tool-tile-pin"></div>
-            </button>
-            <button class="tool-tile t-manual" type="button" onclick="window.closeActionDrawer();mpOpenTool('parts');">
-              <div class="tool-tile-icon"><i data-lucide="wrench"></i></div>
-              <div class="tool-tile-label">Parts</div>
-              <div class="tool-tile-pin"></div>
-            </button>
-            <button class="tool-tile t-history" type="button" onclick="window.closeActionDrawer();mpOpenTool('wiring');">
-              <div class="tool-tile-icon"><i data-lucide="zap"></i></div>
-              <div class="tool-tile-label">Wiring</div>
-              <div class="tool-tile-pin"></div>
-            </button>
-            <button class="tool-tile t-warranty" type="button" onclick="window.closeActionDrawer();mpOpenTool('warranty');">
-              <div class="tool-tile-icon"><i data-lucide="shield-check"></i></div>
-              <div class="tool-tile-label">Warranty</div>
-              <div class="tool-tile-pin"></div>
-            </button>
-            <button class="tool-tile t-pricing" type="button" onclick="window.closeActionDrawer();mpOpenTool('diagnose');">
-              <div class="tool-tile-icon"><i data-lucide="activity"></i></div>
-              <div class="tool-tile-label">Diagnose</div>
-              <div class="tool-tile-pin"></div>
-            </button>
-            <button class="tool-tile t-safety" type="button" onclick="window.closeActionDrawer();mpOpenTool('jobs');">
-              <div class="tool-tile-icon"><i data-lucide="clipboard-check"></i></div>
-              <div class="tool-tile-label">Close<br>Job</div>
-              <div class="tool-tile-pin"></div>
-            </button>
-            <button class="tool-tile t-recap" type="button" onclick="window.closeActionDrawer();mpOpenTool('manual');">
-              <div class="tool-tile-icon"><i data-lucide="book-open"></i></div>
-              <div class="tool-tile-label">Manuals</div>
-              <div class="tool-tile-pin"></div>
-            </button>
-            <button class="tool-tile t-customize" type="button" onclick="window.closeActionDrawer();openChatSearch();">
-              <div class="tool-tile-icon"><i data-lucide="search"></i></div>
-              <div class="tool-tile-label">Search<br>Chat</div>
-              <div class="tool-tile-pin"></div>
-            </button>
-          </div>
+          <!-- Rendered from the full favTools registry by renderAllTools(); pin toggles favorite -->
+          <div class="drawer-all-tools" id="drawerAllTools" aria-label="All tools — tap a tile to use it, tap its pin to add or remove it from favorites"></div>
         </section>
         <section class="drawer-section">
           <div class="drawer-section-head">
@@ -3308,6 +3263,180 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       }
       window.openActionDrawer=openDrawer;
       window.closeActionDrawer=closeDrawer;
+
+      // ── CUSTOMIZABLE TOOL DRAWER (feat/customizable-drawer) ──────────────
+      // Single source of truth for every chat tool. Peek bar + drawer Favorites
+      // render from FAV_REGISTRY filtered by the user's saved favorites list, so
+      // the two surfaces can never drift. Favorites persist per-user via the same
+      // getUserMemoryKey() localStorage pattern used by history/knowledge/jobs.
+      var DIAG_PROMPT='Run me through a full system diagnostic. Start by asking me what unit I am on and what it is doing, then walk me step by step.';
+      var FAV_REGISTRY=[
+        {id:'run-diagnostic',label:'Run<br>Diagnostic',icon:'zap',cls:'t-diag',badge:'Most Used',sub:'Full system check, 5 min',
+          run:function(){closeDrawer();if(typeof mpEnterChat==='function')mpEnterChat();if(typeof sendQuick==='function')sendQuick(DIAG_PROMPT);}},
+        {id:'live-camera',label:'Live<br>Camera',icon:'video',cls:'t-cam',badge:'Live',sub:'Mike sees what you see',
+          run:function(){closeDrawer();if(typeof startLiveCamera==='function')startLiveCamera();}},
+        {id:'callback-shield',label:'Callback<br>Shield',icon:'shield-check',cls:'t-shield',badge:'$312 saved',sub:'Pre-close 5-pt check',
+          run:function(){if(typeof askCallbackShield==='function')askCallbackShield();}},
+        {id:'close-the-sale',label:'Close<br>The Sale',icon:'trending-up',cls:'t-sale',badge:'Revenue',sub:'Repair vs. replace math',
+          run:function(){closeDrawer();if(typeof showRepairReplaceCalc==='function')showRepairReplaceCalc();}},
+        {id:'scan-nameplate',label:'Scan<br>Nameplate',icon:'scan-line',cls:'t-find',badge:'OCR',sub:'Read the data plate',
+          run:function(){closeDrawer();if(typeof scanNameplate==='function')scanNameplate();}},
+        {id:'parts',label:'Parts',icon:'wrench',cls:'t-manual',sub:'Find the right part',
+          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('parts');}},
+        {id:'wiring',label:'Wiring',icon:'zap',cls:'t-history',sub:'Wiring diagrams',
+          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('wiring');}},
+        {id:'warranty',label:'Warranty',icon:'shield-check',cls:'t-warranty',sub:'Check coverage',
+          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('warranty');}},
+        {id:'diagnose',label:'Diagnose',icon:'activity',cls:'t-pricing',sub:'Guided fault find',
+          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('diagnose');}},
+        {id:'close-job',label:'Close<br>Job',icon:'clipboard-check',cls:'t-safety',sub:'Wrap & log the call',
+          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('jobs');}},
+        {id:'manuals',label:'Manuals',icon:'book-open',cls:'t-recap',sub:'Service manuals',
+          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('manual');}},
+        {id:'search-chat',label:'Search<br>Chat',icon:'search',cls:'t-customize',sub:'Find past answers',
+          run:function(){closeDrawer();if(typeof openChatSearch==='function')openChatSearch();}}
+      ];
+      var DEFAULT_FAVS=['run-diagnostic','live-camera','callback-shield','close-the-sale'];
+      var FAV_MAX=4;
+
+      function favKey(){
+        try{ return (typeof getUserMemoryKey==='function')?getUserMemoryKey('favTools'):'trazer_favTools_guest'; }
+        catch(e){ return 'trazer_favTools_guest'; }
+      }
+      function toolById(id){ for(var i=0;i<FAV_REGISTRY.length;i++){ if(FAV_REGISTRY[i].id===id) return FAV_REGISTRY[i]; } return null; }
+      function getFavTools(){
+        var ids=null;
+        try{
+          var raw=localStorage.getItem(favKey());
+          if(raw){ ids=JSON.parse(raw); }
+        }catch(e){ ids=null; }
+        if(!ids||!ids.length||Object.prototype.toString.call(ids)!=='[object Array]'){ ids=DEFAULT_FAVS.slice(); }
+        // Keep only ids that still exist in the registry, cap at FAV_MAX.
+        var clean=[];
+        for(var i=0;i<ids.length&&clean.length<FAV_MAX;i++){ if(toolById(ids[i])&&clean.indexOf(ids[i])<0) clean.push(ids[i]); }
+        if(!clean.length) clean=DEFAULT_FAVS.slice();
+        return clean;
+      }
+      function saveFavTools(ids){
+        try{ localStorage.setItem(favKey(),JSON.stringify(ids.slice(0,FAV_MAX))); }catch(e){}
+      }
+      function isFav(id){ return getFavTools().indexOf(id)>=0; }
+      function toggleFav(id){
+        var favs=getFavTools();
+        var at=favs.indexOf(id);
+        if(at>=0){ favs.splice(at,1); }
+        else{
+          if(favs.length>=FAV_MAX){
+            if(typeof showToast==='function') showToast('Unpin one first — 4 favorites max','info',2500);
+            return;
+          }
+          favs.push(id);
+        }
+        saveFavTools(favs);
+        renderFavTools();
+        renderAllTools();
+      }
+
+      function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+      // label may legitimately contain <br>; allow only <br>, escape the rest.
+      function safeLabel(s){ return esc(s).replace(/&lt;br&gt;/g,'<br>'); }
+
+      function renderPeek(favs){
+        if(!peek) return;
+        var html='';
+        for(var i=0;i<favs.length;i++){
+          var t=toolById(favs[i]); if(!t) continue;
+          var aria=t.label.replace(/<br>/g,' ').replace(/<[^>]+>/g,'');
+          html+='<button class="peek-tile '+esc(t.cls)+'" type="button" data-peek-idx="'+i+'" data-tool-id="'+esc(t.id)+'" aria-label="'+esc(aria)+'">'
+              +'<span class="peek-tile-icon"><i data-lucide="'+esc(t.icon)+'"></i></span>'
+              +'<span class="peek-tile-label">'+safeLabel(t.label)+'</span>'
+              +'</button>';
+        }
+        peek.innerHTML=html;
+      }
+      function renderDrawerFavs(favs){
+        var box=document.getElementById('drawerFavorites');
+        if(!box) return;
+        var html='';
+        for(var i=0;i<favs.length;i++){
+          var t=toolById(favs[i]); if(!t) continue;
+          var aria=t.label.replace(/<br>/g,' ').replace(/<[^>]+>/g,'');
+          html+='<button class="fav-tile '+esc(t.cls)+'" type="button" data-tool-id="'+esc(t.id)+'" aria-label="'+esc(aria)+'">'
+              +'<div class="fav-tile-top">'
+                +'<div class="fav-tile-icon"><i data-lucide="'+esc(t.icon)+'"></i></div>'
+                +(t.badge?'<div class="fav-tile-badge">'+esc(t.badge)+'</div>':'')
+              +'</div>'
+              +'<div>'
+                +'<div class="fav-tile-title">'+safeLabel(t.label)+'</div>'
+                +(t.sub?'<div class="fav-tile-sub">'+esc(t.sub)+'</div>':'')
+              +'</div>'
+              +'</button>';
+        }
+        box.innerHTML=html;
+      }
+      function renderAllTools(){
+        var box=document.getElementById('drawerAllTools');
+        if(!box) return;
+        var favs=getFavTools();
+        var html='';
+        for(var i=0;i<FAV_REGISTRY.length;i++){
+          var t=FAV_REGISTRY[i];
+          var pinned=favs.indexOf(t.id)>=0;
+          var aria=t.label.replace(/<br>/g,' ').replace(/<[^>]+>/g,'');
+          html+='<div class="tool-tile '+esc(t.cls)+(pinned?' pinned':'')+'" role="button" tabindex="0" data-tool-id="'+esc(t.id)+'" aria-label="'+esc(aria)+'">'
+              +'<div class="tool-tile-icon"><i data-lucide="'+esc(t.icon)+'"></i></div>'
+              +'<div class="tool-tile-label">'+safeLabel(t.label)+'</div>'
+              +'<button class="tool-tile-pin'+(pinned?' on':'')+'" type="button" data-pin-id="'+esc(t.id)+'" aria-pressed="'+(pinned?'true':'false')+'" aria-label="'+(pinned?'Remove '+esc(aria)+' from favorites':'Add '+esc(aria)+' to favorites')+'"><i data-lucide="'+(pinned?'star':'pin')+'"></i></button>'
+              +'</div>';
+        }
+        box.innerHTML=html;
+        try{ if(window.lucide&&lucide.createIcons) lucide.createIcons(); }catch(e){}
+      }
+      function renderFavTools(){
+        var favs=getFavTools();
+        renderPeek(favs);
+        renderDrawerFavs(favs);
+        renderAllTools();
+        try{ if(window.lucide&&lucide.createIcons) lucide.createIcons(); }catch(e){}
+      }
+      window.renderFavTools=renderFavTools;
+
+      // Run a tool when a peek/fav tile body is tapped.
+      function runToolFromEl(el){
+        var id=el&&el.getAttribute('data-tool-id');
+        if(!id) return;
+        var t=toolById(id);
+        if(t&&typeof t.run==='function'){ try{ t.run(); }catch(e){} }
+      }
+      // Peek tiles: delegate clicks (the bar already opens the drawer for non-tile taps).
+      peek.addEventListener('click',function(e){
+        var tile=e.target.closest('.peek-tile');
+        if(tile){ runToolFromEl(tile); }
+      });
+      // Drawer favorites: delegate tile clicks.
+      (function(){
+        var fb=document.getElementById('drawerFavorites');
+        if(fb) fb.addEventListener('click',function(e){
+          var tile=e.target.closest('.fav-tile'); if(tile) runToolFromEl(tile);
+        });
+      })();
+      // All tools: pin toggles favorite (stopPropagation); tile body runs the tool.
+      (function(){
+        var ab=document.getElementById('drawerAllTools');
+        if(!ab) return;
+        ab.addEventListener('click',function(e){
+          var pin=e.target.closest('.tool-tile-pin');
+          if(pin){ e.preventDefault(); e.stopPropagation(); toggleFav(pin.getAttribute('data-pin-id')); return; }
+          var tile=e.target.closest('.tool-tile');
+          if(tile) runToolFromEl(tile);
+        });
+      })();
+
+      // Initial paint + repaint whenever the drawer opens (favorites/user may have changed).
+      try{ renderFavTools(); }catch(e){}
+      var _origOpen=openDrawer;
+      openDrawer=function(){ try{ renderFavTools(); }catch(e){} return _origOpen.apply(this,arguments); };
+      window.openActionDrawer=openDrawer;
 
       peek.addEventListener('click',function(e){
         if(e.target.closest('.peek-tile')) return;
@@ -5360,6 +5489,8 @@ function setMode(m){
   // Option B chat-forward: pre-auth shows the tall #v2Landing front door; post-auth
   // collapses it to the 80px #instrStrip so the chat sits at the fold.
   syncAuthSurface();
+  // Re-render the chat toolkit so favorites resolve to this user's namespace.
+  try{ if(typeof window.renderFavTools==='function') window.renderFavTools(); }catch(e){}
 }
 
 // Option B: swap the tall pre-auth landing for the post-auth instrument strip.
@@ -10701,7 +10832,11 @@ function showToast(msg,type,duration){
   var c=document.getElementById('toastContainer');if(!c)return;
   var t=document.createElement('div');t.className='toast '+type;
   t.textContent=({'success':'✅ ','error':'❌ ','info':'💬 '}[type]||'')+msg;
-  c.appendChild(t);
+  // A modal <dialog> (e.g. the action drawer) renders in the browser top layer, ABOVE
+  // #toastContainer — so host the toast inside the open dialog or it paints behind it.
+  var _dlg=document.querySelector('dialog[open]');
+  if(_dlg){t.style.position='fixed';t.style.left='50%';t.style.bottom='96px';t.style.transform='translateX(-50%)';t.style.zIndex='2147483647';_dlg.appendChild(t);}
+  else{c.appendChild(t);}
   setTimeout(function(){t.style.animation='toastOut .25s ease forwards';setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},250);},duration);
 }
 

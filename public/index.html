@@ -2663,10 +2663,17 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     <div id="admPlanDist"></div>
   </div>
   <div class="adm-sec">
-    <div class="adm-sec-title">Techs <span style="color:#444;font-weight:600;font-size:11px">· sorted by last active</span></div>
-    <div style="overflow-x:auto">
-    <table class="adm-tbl"><thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Plan</th><th>Role</th><th>Last Active</th><th>Joined</th><th>Calls</th><th>Action</th></tr></thead>
-    <tbody id="admUsers"></tbody></table>
+    <div class="adm-sec-title adm-techs-head" onclick="admToggleTechs()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+      <span>Techs <span id="admTechCount" style="color:#3A8B8A;font-weight:700;font-size:12px"></span></span>
+      <span id="admTechsChev" style="color:#3A8B8A;font-size:12px;transition:transform .2s ease;">▾</span>
+    </div>
+    <div id="admTechsBody" style="display:none;margin-top:8px;">
+      <input id="admTechSearch" type="text" placeholder="Search name, email, or company…" oninput="admFilterTechs()" autocomplete="off" spellcheck="false" style="display:block;width:100%;box-sizing:border-box;margin:0 0 10px;padding:10px 12px;background:#0a0a0a;border:1.5px solid #2a2a2a;border-radius:9px;color:#fff;-webkit-text-fill-color:#fff;font-size:16px;font-family:inherit;outline:none;-webkit-appearance:none;"/>
+      <div style="overflow-x:auto">
+      <table class="adm-tbl"><thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Plan</th><th>Role</th><th>Last Active</th><th>Joined</th><th>Calls</th><th>Action</th></tr></thead>
+      <tbody id="admUsers"></tbody></table>
+      </div>
+      <div id="admTechNoMatch" style="display:none;color:#667380;text-align:center;padding:14px;font-size:13px;">No techs match your search.</div>
     </div>
   </div>
   <div class="adm-sec">
@@ -5044,6 +5051,7 @@ function renderAdminDashboard(list){
   set('admTotal',total);set('admActive',active);set('admTrial',trial);set('admPaid',paid);
   set('admWeek',wk);set('admMonth',mo);set('admAllTime',total);
   set('admMrr',mrrStr+'/mo');
+  set('admTechCount','('+total+')');
 
   // Sparkline: signups per week over last 12 weeks (oldest → newest)
   var weeks=[];
@@ -5112,6 +5120,7 @@ function renderAdminDashboard(list){
         +'<td>'+(isAdminRow?'<span style="font-size:11px;color:#333">—</span>':'<button class="adm-del-btn" data-email="'+safeEmail+'" onclick="deleteAdminUser(this.dataset.email)">Delete</button>')+'</td>'
         +'</tr>';
     }).join('')||'<tr><td colspan="9" style="color:#555;text-align:center;padding:20px">No techs yet</td></tr>';
+    var _ts=document.getElementById('admTechSearch');if(_ts&&_ts.value)admFilterTechs();
   }
 
   // Feedback (still browser-local — kept as-is)
@@ -5125,6 +5134,28 @@ function renderAdminDashboard(list){
   }
 }
 function closeAdmin(){var el=document.getElementById('adminOverlay');if(el)el.classList.remove('show');}
+// Techs section: collapsible dropdown + live search filter (name / email / company).
+function admToggleTechs(){
+  var b=document.getElementById('admTechsBody'),ch=document.getElementById('admTechsChev');
+  if(!b)return;
+  var open=b.style.display!=='none';
+  if(open){b.style.display='none';if(ch)ch.style.transform='';}
+  else{b.style.display='block';if(ch)ch.style.transform='rotate(180deg)';var s=document.getElementById('admTechSearch');if(s)setTimeout(function(){try{s.focus();}catch(e){}},60);}
+}
+function admFilterTechs(){
+  var s=document.getElementById('admTechSearch'),tb=document.getElementById('admUsers');
+  if(!tb)return;
+  var q=s?s.value.trim().toLowerCase():'';
+  var rows=tb.querySelectorAll('tr'),shown=0;
+  for(var i=0;i<rows.length;i++){
+    var tr=rows[i];
+    if(tr.querySelector('td[colspan]')){continue;} // skip the empty-state row
+    var match=!q||tr.textContent.toLowerCase().indexOf(q)!==-1;
+    tr.style.display=match?'':'none';
+    if(match)shown++;
+  }
+  var nm=document.getElementById('admTechNoMatch');if(nm)nm.style.display=(q&&shown===0)?'block':'none';
+}
 
 
 

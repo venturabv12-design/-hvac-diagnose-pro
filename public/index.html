@@ -2682,10 +2682,10 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 <div class="pdd-trial" id="pddTrial" style="display:none">🎯 <strong><span id="pddTrialDays">7</span> days</strong> left in free trial</div>
 <div class="pdd-usage"><div class="pdd-usage-lbl">Usage</div><div class="pdd-bar"><div class="pdd-bar-fill" id="pddBarFill" style="width:0%"></div></div><div class="pdd-usage-count" id="pddUsageCount">0 AI calls</div></div>
 <div class="pdd-menu">
+  <div class="pdd-item" id="adminMenuItem" style="display:none;color:#3A8B8A;font-weight:700;" onclick="pddStats()"><span class="pdd-ic">📊</span>Admin Stats</div>
   <div class="pdd-item" onclick="closeProfileDD();toggleLangMenu();"><span class="pdd-ic">🌐</span><span data-v2i18n="qaLanguage">Language</span></div>
   <div class="pdd-item" onclick="pddProfile()"><span class="pdd-ic">👤</span>Profile Settings</div>
   <div class="pdd-item" onclick="pddBilling()"><span class="pdd-ic">💳</span>Billing &amp; Plan</div>
-  <div class="pdd-item" id="adminMenuItem" style="display:none" onclick="pddStats()"><span class="pdd-ic">📊</span>Check Stats</div>
   <div class="pdd-item" onclick="pddWhatsNew()"><span class="pdd-ic">🔔</span>What's New</div>
   <div class="pdd-item" data-contractor-only onclick="pddPerformance()"><span class="pdd-ic">📊</span>My Performance</div>
   <div class="pdd-item" data-contractor-only onclick="pddInvoice()"><span class="pdd-ic">🧾</span>Invoice Generator</div>
@@ -4113,7 +4113,7 @@ function updateProfileUI(){
   var bf=document.getElementById('pddBarFill');if(bf)bf.style.width=Math.min(u/500*100,100)+'%';
   var uc=document.getElementById('pddUsageCount');if(uc)uc.textContent=u+' AI calls this month';
   var ai=document.getElementById('adminMenuItem');
-  if(ai)ai.style.display=currentUser.isAdmin?'flex':'none';
+  if(ai)ai.style.display=(currentUser.role==='admin'||currentUser.plan==='admin'||currentUser.isAdmin)?'flex':'none';
 }
 
 function toggleProfileDD(){

@@ -34,6 +34,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!ANTHROPIC_API_KEY) { console.error('FATAL: ANTHROPIC_API_KEY not set'); process.exit(1); }
 if (!JWT_SECRET) { console.error('FATAL: JWT_SECRET not set'); process.exit(1); }
+if (STRIPE_SECRET_KEY && !STRIPE_WEBHOOK_SECRET) { console.warn('WARNING: STRIPE_SECRET_KEY is set but STRIPE_WEBHOOK_SECRET is missing — webhook signature verification is DISABLED. Fake "paid" events could upgrade accounts. Set STRIPE_WEBHOOK_SECRET before accepting payments.'); }
 
 // bcrypt cost factor — 12 rounds is ~250ms on modern hardware, which is painful
 // enough for attackers while imperceptible to users logging in.
@@ -208,6 +209,17 @@ const aiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'AI rate limit exceeded — please wait a moment' },
+});
+
+// TTS endpoint: per-IP cap to protect the ElevenLabs quota from drain.
+// Mike speaks in short bursts during chat/onboarding/camera; 40/min/IP is generous
+// for a single active user while still blocking abuse. (Security fix C3.)
+const ttsLimiter = rateLimit({
+  windowMs: 60 * 1000,          // 1 minute
+  max: 40,                       // 40 TTS requests per IP per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Voice rate limit exceeded — please wait a moment' },
 });
 
 // Global fallback — catches anything that slips through endpoint-specific limits.
@@ -449,15 +461,12 @@ app.use((req, res, next) => {
 // Public endpoint — intentionally no auth so load balancers and Railway can
 // check it without credentials. Does NOT expose env var values, just readiness flags.
 app.get('/api/health', (req, res) => {
+  // Security: do not disclose which integrations are configured (feature-flag leak).
+  // The frontend only needs a 200; deploy-verification uses uptime.
   res.json({
     ok: true,
-    aiReady: !!ANTHROPIC_API_KEY,
-    ttsReady: !!ELEVENLABS_API_KEY,
-    dbReady: !!(SUPABASE_URL && SUPABASE_SERVICE_KEY),
-    billingReady: !!STRIPE_SECRET_KEY,
     activeRequests: globalActive,
     uptime: Math.floor(process.uptime()),
-    memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
   });
 });
 
@@ -472,8 +481,10 @@ app.post('/api/auth/signup', authLimiter, async (req, res) => {
   if (!isValidEmail(email))
     return res.status(400).json({ error: 'Invalid email address' });
 
-  // Validate optional fields — role must be a known value
-  const validRoles = ['contractor', 'homeowner', 'technician', 'admin'];
+  // Validate optional fields — role must be a known value.
+  // 'admin' is intentionally NOT self-assignable: admins are promoted directly in the DB.
+  // (Security fix C2 — prevents stranger self-registering as admin.)
+  const validRoles = ['contractor', 'homeowner', 'technician'];
   const userRole = validRoles.includes(role) ? role : 'contractor';
 
   if (!SUPABASE_URL) {
@@ -496,7 +507,7 @@ app.post('/api/auth/signup', authLimiter, async (req, res) => {
     const now = new Date().toISOString();
     
     const users = await supabase('POST', 'users', {
-      name: name.trim(),
+      name: name.trim().replace(/[<>]/g, ''),
       email: email.toLowerCase().trim(),
       password_hash: passwordHash,
       // password_salt is no longer used — bcrypt stores the salt inside the hash.
@@ -561,7 +572,7 @@ app.post('/api/auth/signin', authLimiter, async (req, res) => {
     if (users === null)
       return res.status(503).json({ error: 'Service temporarily unavailable — please try again in a moment' });
     if (users.length === 0)
-      return res.status(404).json({ error: 'No account found with this email' });
+      return res.status(401).json({ error: 'Invalid email or password' });
 
     const user = users[0];
     
@@ -586,7 +597,7 @@ app.post('/api/auth/signin', authLimiter, async (req, res) => {
     }
     
     if (!passwordOk)
-      return res.status(401).json({ error: 'Incorrect password' });
+      return res.status(401).json({ error: 'Invalid email or password' });
 
     // Update last login
     await supabase('PATCH', 'users', { last_login: new Date().toISOString() }, 
@@ -630,10 +641,15 @@ app.post('/api/auth/profile', authenticateToken, async (req, res) => {
   try {
     if (!SUPABASE_URL) return res.json({ ok: true });
 
+    // SECURITY: a user may switch their own role between non-privileged types
+    // (homeowner/contractor/technician) but NEVER self-assign 'admin'. The signup
+    // endpoint enforces the same allowlist; the profile path must too, or any
+    // authenticated user can PATCH role:'admin' and reach the admin panel.
+    const safeRoles = ['contractor', 'homeowner', 'technician'];
     const allowed = {
-      name: updates.name,
+      name: updates.name ? updates.name.replace(/[<>]/g, '') : undefined,
       company: updates.company,
-      role: updates.role,
+      role: safeRoles.includes(updates.role) ? updates.role : undefined,
       epa_cert: updates.epaCert,
       nate_cert: updates.nateCert,
       years_experience: updates.yearsExperience,
@@ -779,7 +795,7 @@ app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
 });
 
 // ── STRIPE: CREATE CHECKOUT SESSION ──────────────────────────────────────────
-app.post('/api/billing/checkout', async (req, res) => {
+app.post('/api/billing/checkout', authenticateToken, async (req, res) => {
   const { plan, email, name } = req.body;
   if (!plan || !email) return res.status(400).json({ error: 'Plan and email required' });
   if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email address' });
@@ -1115,14 +1131,10 @@ app.post('/api/knowledge', authenticateToken, async (req, res) => {
 
 // ── AI ────────────────────────────────────────────────────────────────────────
 // ── SERVER-SIDE PAYWALL CHECK ─────────────────────────────────────────────────
-// PAYWALL TEMPORARILY DISABLED — Kaizen will say when to turn it on.
-// The full logic is preserved below the early return for the eventual flip.
+// Allow-set: admin/pro/team/starter/homeowner/beta (forever) + trial (≤7 days).
+// No token / invalid / expired / unknown plan → denied (402, paywall flag).
+// DB error → fail-open so an outage never locks out paying users/techs.
 async function checkPaywall(token) {
-  // EMERGENCY DISABLE: allow everyone through. No trial expiry, no plan gate.
-  // Re-enable by deleting this block and the function will resume its 7-day trial enforcement.
-  return { allowed: true };
-
-  // ----- ORIGINAL LOGIC (kept for when paywall is re-enabled) -----
   // No token at all → deny
   if (!token) return { allowed: false, reason: 'Authentication required' };
 
@@ -1132,6 +1144,12 @@ async function checkPaywall(token) {
   } catch {
     return { allowed: false, reason: 'Invalid or expired session' };
   }
+
+  // BETA PHASE: billing is not live yet (no Stripe account), so NOBODY can subscribe —
+  // blocking on trial-expiry or "unknown plan" is pure friction that locks out the founder
+  // and the beta techs. A valid login (verified above) = full access. Auth is still enforced.
+  // When Stripe launches, delete the next return line to re-enable the plan/trial gating below.
+  return { allowed: true };
 
   // No DB → dev mode, allow through
   if (!SUPABASE_URL) return { allowed: true };
@@ -1170,6 +1188,113 @@ async function checkPaywall(token) {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// Manual-grounded RAG — Mike answers fault-code/spec/wiring questions from real
+// OEM service manuals (Supabase pgvector), with page citations. ENV-GATED: a
+// no-op unless an embeddings key is set AND the manual_chunks table is populated,
+// so it ships safe and dormant, then activates the moment ingestion runs. Falls
+// through to the existing verified-list + web-search paths on any miss/error.
+// ════════════════════════════════════════════════════════════════════════════
+const _EMBED_PROVIDER = (process.env.EMBED_PROVIDER || 'voyage').toLowerCase();
+const _EMBED_MODEL = process.env.EMBED_MODEL || (_EMBED_PROVIDER === 'openai' ? 'text-embedding-3-large' : 'voyage-4-large');
+const _EMBED_DIM = parseInt(process.env.EMBED_DIM || (_EMBED_PROVIDER === 'openai' ? '3072' : '1024'), 10);
+const _EMBED_KEY = _EMBED_PROVIDER === 'openai' ? process.env.OPENAI_API_KEY : process.env.VOYAGE_API_KEY;
+const _RAG_ENABLED = !!(SUPABASE_URL && SUPABASE_SERVICE_KEY && _EMBED_KEY);
+const _HVAC_BRANDS = ['carrier','bryant','payne','trane','american standard','goodman','amana','daikin','york','coleman','luxaire','rheem','ruud','lennox','allied','armstrong','heil','tempstar','comfortmaker','arcoaire','keeprite','mitsubishi','fujitsu','lg','samsung','bosch','bard','weil-mclain','burnham','lochinvar','navien','triangle tube','heatcraft','copeland','hoshizaki','manitowoc',
+  // equipment brands added in later batches
+  'gree','midea','friedrich','senville','pioneer','mrcool','scotsman','traulsen','bohn','tecumseh','bitzer','danfoss','nordyne','frigidaire','aaon','htp','laars',
+  // thermostats
+  'ecobee','nest','sensi','honeywell','pro1','braeburn','venstar','white-rodgers','aprilaire',
+  // IAQ (humidifiers/dehumidifiers/air cleaners/UV/ERV-HRV/ventilation)
+  'broan','fantech','renewaire','rgf','freshaireuv','santafe','generalaire','panasonic'];
+// Typed variants / aliases → the canonical brand key stored in manual_chunks.brand.
+const _BRAND_ALIASES = {'fresh-aire':'freshaireuv','fresh aire':'freshaireuv','freshaire':'freshaireuv','apco':'freshaireuv','reme halo':'rgf','reme-halo':'rgf','santa fe':'santafe','ultra-aire':'santafe','ultra aire':'santafe','ultraaire':'santafe','general aire':'generalaire','white rodgers':'white-rodgers','whiterodgers':'white-rodgers','pro 1':'pro1','resideo':'honeywell','honeywell home':'honeywell','google nest':'nest','emerson sensi':'sensi'};
+
+function _needsManualRetrieval(text) {
+  if (!text) return false;
+  if (/\b(\d{1,2}[\s-]?(?:flash|blink)(?:es|s)?|error\s+code|fault\s+code|status\s+code|diagnostic\s+code|\bE\d{1,3}\b|\bF\d{1,3}\b|\bP\d{1,2}\b|code\s+\d{1,3})\b/i.test(text)) return true;
+  if (/wiring\s+(diagram|schematic|harness)|wire\s+color|terminal\s+(label|designation|layout)|connector\s+pin|ladder\s+diagram/i.test(text)) return true;
+  if (/(spec|capacity|rating|\bamps?\b|\bfla\b|\brla\b|\blra\b|\bmca\b|\bmocp\b|charge|superheat|subcool|sequence\s+of\s+operation|defrost\s+(cycle|timing)|gas\s+pressure)/i.test(text) && /\b[a-z0-9]{2,}\d[a-z0-9]{2,}\b/i.test(text)) return true;
+  // High-recall: any known HVAC brand named + a technical/diagnostic intent → check the manuals
+  // (retrieval is cheap and falls through gracefully on a miss).
+  if (_extractBrand(text) && /(manual|service|fault|error|\bcode\b|flash|blink|check|test|diagnos|troublesho|lockout|short.?cycl|wiring|terminal|sequence|\bspec|pressure|charge|superheat|subcool|replace|inspect|megohm|\bohm|capacitor|igniter|ignition|flame|limit|board|sensor|valve|how (do|to)|what (does|do|should|to)|install|setup|set up|hook.?up|connect|mount|\bwire\b|schematic|diagram|reversing|defrost|c.?wire|\brc\b|\brh\b|humidist|dehumidif|thermostat|ventilat|\berv\b|\bhrv\b|filter|\buv\b|commission)/i.test(text)) return true;
+  return false;
+}
+function _extractBrand(text) {
+  const l = (text || '').toLowerCase();
+  for (const b of _HVAC_BRANDS) if (l.includes(b)) return b.split(' ')[0];
+  return null;
+}
+function _extractModelFamily(text) {
+  const m = (text || '').match(/\b([A-Z]{1,4}\d{1,2}[A-Z]{0,4}\d{0,4})\b/);
+  return m ? m[1].slice(0, 6).toUpperCase() : null;
+}
+async function _embedQuery(text) {
+  if (_EMBED_PROVIDER === 'openai') {
+    const r = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST', signal: AbortSignal.timeout(3500),
+      headers: { 'Authorization': `Bearer ${_EMBED_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: _EMBED_MODEL, input: text, dimensions: _EMBED_DIM }),
+    });
+    if (!r.ok) throw new Error('embed ' + r.status);
+    return (await r.json()).data[0].embedding;
+  }
+  const r = await fetch('https://api.voyageai.com/v1/embeddings', {
+    method: 'POST', signal: AbortSignal.timeout(3500),
+    headers: { 'Authorization': `Bearer ${_EMBED_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: _EMBED_MODEL, input: text, input_type: 'query', output_dimension: _EMBED_DIM }),
+  });
+  if (!r.ok) throw new Error('embed ' + r.status);
+  return (await r.json()).data[0].embedding;
+}
+const _RERANK_MODEL = process.env.RERANK_MODEL || 'rerank-2.5';
+// Voyage reranker: reorder candidate chunks by true relevance to the question, then
+// keep the best few. Vector search has high recall but mediocre ordering; the reranker
+// is what makes the most-relevant manual page surface first. Voyage-only; no-op otherwise.
+async function _rerank(query, docs, topK) {
+  if (_EMBED_PROVIDER !== 'voyage') return null;
+  try {
+    const r = await fetch('https://api.voyageai.com/v1/rerank', {
+      method: 'POST', signal: AbortSignal.timeout(3500),
+      headers: { 'Authorization': `Bearer ${_EMBED_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: _RERANK_MODEL, query, documents: docs, top_k: topK }),
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return Array.isArray(d.data) ? d.data : null; // [{index, relevance_score}]
+  } catch (_) { return null; }
+}
+async function retrieveManualContext(userText) {
+  if (!_RAG_ENABLED) return null;
+  try {
+    const q = String(userText).slice(0, 2000);
+    const embedding = await _embedQuery(q);
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_manual_chunks`, {
+      method: 'POST', signal: AbortSignal.timeout(2500),
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}` },
+      body: JSON.stringify({ query_embedding: embedding, match_threshold: 0.40, match_count: 20,
+        filter_brand: _extractBrand(userText), filter_model_family: null }),
+    });
+    if (!r.ok) return null;
+    let chunks = await r.json();
+    if (!Array.isArray(chunks) || !chunks.length) return null;
+    // Rerank the candidate pool down to the best 6 (falls back to vector order on miss).
+    const _pool = chunks; // full candidate pool (vector order) — used to surface a diagram even if rerank drops it
+    const ranked = await _rerank(q, chunks.map(c => c.chunk_text), 6);
+    if (ranked && ranked.length) chunks = ranked.map(x => chunks[x.index]).filter(Boolean);
+    else chunks = chunks.slice(0, 6);
+    const text = chunks.map(c => `[Source: ${c.doc_title}${c.page_num ? ', p.' + c.page_num : ''}]\n${c.chunk_text}`).join('\n\n---\n\n');
+    // Phase 2: collect wiring-diagram images. Prefer the reranked top chunks; if NONE of them
+    // carry a diagram, fall back to the best diagram in the full candidate pool so a brand that
+    // HAS a diagram reliably shows it (rerank ordering must not hide an available diagram).
+    const _seen = new Set(); const diagrams = [];
+    const _collect = (list) => { for (const c of list) { if (c && c.diagram_image_url && !_seen.has(c.diagram_image_url)) { _seen.add(c.diagram_image_url); diagrams.push({ url: c.diagram_image_url, title: c.doc_title || 'Wiring diagram', page: c.page_num || null }); if (diagrams.length >= 2) return; } } };
+    _collect(chunks);
+    if (!diagrams.length) _collect(_pool);
+    return { text, diagrams };
+  } catch (_) { return null; }
+}
+
 app.post('/api/ai', aiLimiter, async (req, res) => {
   if (globalActive >= MAX_GLOBAL)
     return res.status(503).json({ error: 'Server at capacity — please try again in a moment.' });
@@ -1181,24 +1306,195 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   if (!access.allowed)
     return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
 
-  const { messages, system, max_tokens = 1024, use_search = false } = req.body;
+  const { messages, system, max_tokens = 1024, use_search = false, stream = false } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0)
     return res.status(400).json({ error: 'messages required' });
+
+  // ── DETERMINISTIC GUARD LAYER ──────────────────────────────────────────────
+  // Prompt-tuning failed 3 cert passes on two safety scenarios + replacement-lean
+  // language. These guards make the critical safety + no-homeowner-pricing rules
+  // GUARANTEED rather than model-dependent: detect the hazard/homeowner signal in
+  // the request, then prepend a mandatory safety lead and/or strip prices+replace
+  // language from the reply. Same approach as the (working) price strip.
+  let _lastUser = '';
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m && m.role === 'user') {
+      _lastUser = typeof m.content === 'string' ? m.content
+        : (Array.isArray(m.content) ? m.content.map(c => (c && c.text) || '').join(' ') : '');
+      break;
+    }
+  }
+  let _safetyLead = '';
+  // (A) Burner/flame staying lit with no call for heat = stuck-open gas valve.
+  if (/(furnace|burner|flame|unit|heat)[^.]{0,70}(keeps? running|still (running|on|lit|burning)|won'?t (shut|turn) off|stays (on|lit|running))[^.]{0,55}(thermostat|t-?stat|call)/i.test(_lastUser)
+      || /(flame|burner)[^.]{0,40}(no call|without a call|no heat call)/i.test(_lastUser)
+      || /5[- ]?flash[^.]{0,90}(flame|gas|no call|thermostat (is )?off|keeps? running)/i.test(_lastUser)) {
+    _safetyLead = 'SAFETY FIRST — shut the gas off at the appliance shutoff valve right now. A burner staying lit with no call for heat means the gas valve is stuck open; kill the gas before you diagnose anything else.';
+  }
+  // (B) CO air-free at or above 400 ppm = unconditional appliance shutdown.
+  const _coM = _lastUser.match(/(\d{3,4})\s*ppm[^.]{0,24}air[- ]?free/i) || _lastUser.match(/air[- ]?free[^.]{0,24}(\d{3,4})\s*ppm/i);
+  if (_coM && parseInt(_coM[1], 10) >= 400) {
+    _safetyLead = 'SAFETY FIRST — shut the appliance down now. ' + parseInt(_coM[1], 10) + ' ppm CO air-free is above the 400 ppm threshold; the appliance comes off until you find and correct the cause, then check ambient CO in the occupied space.';
+  }
+  // (C) Confirmed spillage past 2 minutes under worst-case depressurization.
+  if (/spillage[^.]{0,55}(continu|past|over|beyond|exceed|more than|lasting)[^.]{0,16}(2|two)\s*min/i.test(_lastUser)
+      || /(2|two)\s*min[^.]{0,26}spillage/i.test(_lastUser)) {
+    _safetyLead = 'SAFETY FIRST — shut it down and red-tag it, with written notice to the occupants. Confirmed draft-hood spillage past two minutes under worst-case depressurization is a mandatory shutdown, not a judgment call.';
+  }
+  // (C2) Tripped flame-rollout switch.
+  if (/(flame )?rollout[^.]{0,30}(switch )?(trip|tripp?ed|open|is out|popped)/i.test(_lastUser)) {
+    _safetyLead = 'SAFETY FIRST — shut the gas off at the appliance valve, and do NOT reset the rollout switch until you have found the root cause (blocked flue, cracked heat exchanger, dirty or misaligned burners, failed inducer). A tripped rollout means flame left the burner box.';
+  }
+  // (C3) A2L refrigerant release/leak — ignition sources FIRST, then ventilate.
+  if (/(a2l|r-?454b|r-?32|r-?1234yf|r-?466a)[^.]{0,45}(leak|release|spray|venting|escap|discharg)/i.test(_lastUser)
+      || /(refrigerant|charge)[^.]{0,30}(leak|release|spray|venting|escap)[^.]{0,45}(a2l|r-?454b|r-?32|flammab)/i.test(_lastUser)) {
+    _safetyLead = 'SAFETY FIRST — eliminate every ignition source first: no light switches, no open flame, no sparking tools in the area. THEN ventilate and clear the space. A2L refrigerant is mildly flammable, so ignition control comes before anything else.';
+  }
+  // (C4) MEDICAL EMERGENCY — an occupant is incapacitated (suspected CO or otherwise).
+  // Highest-priority lead: a downed person is 911-first, before ANY equipment work, and
+  // Mike must stay the HVAC tech (instruct + get help moving) — NOT play paramedic. Placed
+  // last in the _safetyLead chain so it overrides equipment leads when a person is down.
+  const _personDown =
+    /\b(occupant|someone|somebody|person|people|homeowner|customer|tenant|resident|man|woman|lady|child|kid|baby|elderly|guy|she|he|they)\b[^.]{0,70}(unconscious|passed out|won'?t wake|unresponsive|collapsed|slurring|slurred|can barely (answer|respond|stand|talk|keep)|barely (conscious|awake|responsive|standing)|disorient|seizure|convuls|not making sense|cherry[- ]?red|blue lips|throwing up|vomit)/i.test(_lastUser)
+    || /\b(unconscious|passed out|unresponsive|barely conscious|having a seizure|convulsing|won'?t wake up)\b/i.test(_lastUser)
+    || /(confused|slurring|disorient|dizzy|nause|headache|throwing up|vomit)[^.]{0,45}(possible |suspect|maybe |might be )?(co\b|carbon monoxide|poison)/i.test(_lastUser)
+    || /(co\b|carbon monoxide)[^.]{0,45}(confused|slurring|disorient|unconscious|passed out|vomit|barely|can'?t stay awake|drowsy)/i.test(_lastUser);
+  if (_personDown) {
+    _safetyLead = 'CALL 911 IMMEDIATELY — before anything else. If you can do it safely, get the person out into fresh air, then call 911 and tell them suspected carbon monoxide poisoning. Do NOT stop to diagnose the equipment — this is a medical emergency and life safety comes first. You are the tech here, not the medic: your job right now is to get 911 moving and get everyone into fresh air. Don\'t re-enter a space you suspect is full of CO without the fire department and proper protection.';
+  }
+  // (D) Inverter / variable-speed fault work = lethal stored DC.
+  let _inverterWarn = '';
+  if (/(inverter|variable[- ]?speed|25vna|24vna|vrv|vrf|mini[- ]?split|modulating heat pump)/i.test(_lastUser)
+      && /(fault|error|code|not running|won'?t (start|run)|no (heat|cool)|diagnos)/i.test(_lastUser)) {
+    _inverterWarn = 'SAFETY — this is an inverter-drive unit; it stores lethal DC voltage after shutoff. Wait a full 5 minutes after killing power and confirm the DC bus is under 50 VDC with a meter before opening the inverter compartment.';
+  }
+  const _homeownerFramed = req.body.homeowner === true ||
+    /\bi'?m a homeowner\b|\bas a homeowner\b|\bhomeowner here\b|(my contractor|the repair (guy|tech|man)|a contractor|the tech)\s+(quoted|said|is quoting|gave me|quoting me)|should i (just )?replace (it|my|the|this)|is (that|this|\$?\d[\d,]*) (a )?fair (price|quote)|gave me a quote/i.test(_lastUser);
+  // Wiring/schematic questions get a non-streamed reply so a retrieved diagram
+  // image can be attached to the end of the response without splitting the sentinel.
+  const _wiringDiagramIntent = /(wiring|schematic|connection|ladder)\s+diagram|electrical\s+schematic|wiring\s+schematic|(diagram|schematic)\s+(for|of|on)\b|wiring\s+(for|on|of)\b|\bthe\s+(wiring|schematic)\b|(show|pull\s+up|bring\s+up|upload|get|give|send|see|need|want|grab|find)\s+(me\s+)?(the\s+|a\s+|an\s+)?(wiring|schematic|diagram)|(diagram|schematic)\b[^.!?\n]{0,20}\b(hook.?up|wiring|terminal)/i.test(_lastUser);
+  const _forceNonStream = !!_safetyLead || !!_inverterWarn || _homeownerFramed || _wiringDiagramIntent;
 
   globalActive++;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 75000);
 
   try {
+    // Manual-grounded retrieval: pull real OEM service-manual excerpts and prepend
+    // them to Mike's system prompt so code/spec/wiring answers come from the page,
+    // cited. No-ops (empty string) until RAG is enabled + ingested.
+    let _ragContext = '';
+    let _ragDiagrams = [];
+    if (_RAG_ENABLED && _needsManualRetrieval(_lastUser)) {
+      const _mc = await retrieveManualContext(_lastUser);
+      if (_mc && _mc.text) {
+        _ragContext = '\n\n=== MANUFACTURER SERVICE MANUAL EXCERPTS (authoritative) ===\n'
+          + 'Answer fault-code, wiring, and spec questions ONLY from these excerpts and cite the [Source: ...] tag in your reply. '
+          + 'If the answer is not in these excerpts, say so plainly and use web search.\n\n'
+          + _mc.text + '\n=== END MANUAL EXCERPTS ===\n';
+        if (Array.isArray(_mc.diagrams)) _ragDiagrams = _mc.diagrams;
+        // When an actual wiring-diagram image is being shown to the tech, tell Mike so
+        // his prose matches the screen — present it, don't deny having it. He cites the
+        // source by name (the image may be the closest match, not the exact model).
+        if (_ragDiagrams.length && _wiringDiagramIntent) {
+          const _d0 = _ragDiagrams[0];
+          _ragContext += '\nNOTE: A real wiring-diagram image from "' + (_d0.title || 'the service manual')
+            + (_d0.page ? ', p.' + _d0.page : '') + '" is displayed to the technician directly below your reply. '
+            + 'Reference it naturally and walk them through the relevant terminals/connections, and name the source. '
+            + 'Do NOT say you lack a wiring diagram — it is on their screen. If it is a closely related model rather than the exact one, say so briefly but still use it.\n';
+        }
+      }
+    }
     const body = {
-      model: 'claude-sonnet-4-5',
+      model: process.env.MIKE_MODEL || 'claude-opus-4-8',
       max_tokens: Math.min(max_tokens, 8192),
-      system,
+      system: _ragContext + (system || ''),
       messages,
     };
     if (use_search) {
       body.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }];
     }
+
+    // ── STREAMING TRANSPORT (additive) ────────────────────────────────────────
+    // When the client requests stream:true, proxy Anthropic's SSE so Mike's words
+    // appear progressively instead of after a single ~24s wait. This changes ONLY
+    // the transport — checkPaywall, auth, the system param, and AGENT_SYSTEM are
+    // untouched (same `body` as the non-stream path, just body.stream=true). The
+    // client falls back to the non-stream JSON path on any error, so this never
+    // becomes a hard dependency. We forward only text deltas + a terminal done/error
+    // event; tool-use / web_search blocks simply produce no text deltas (the client
+    // already gates use_search off for streamed chat).
+    if (stream && !_forceNonStream) {
+      body.stream = true;
+      const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      if (!upstream.ok || !upstream.body) {
+        let msg = `API error ${upstream.status}`;
+        try { const ed = await upstream.json(); msg = ed?.error?.message || msg; } catch (_) {}
+        console.error('Anthropic stream error:', upstream.status, msg);
+        return res.status(upstream.status === 429 ? 429 : 502).json({ error: msg });
+      }
+
+      // Client SSE headers.
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
+      });
+      if (typeof res.flushHeaders === 'function') res.flushHeaders();
+
+      const decoder = new TextDecoder();
+      let buf = '';
+      let sentAny = false;
+      const send = (obj) => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch (_) {} };
+
+      try {
+        for await (const chunk of upstream.body) {
+          buf += decoder.decode(chunk, { stream: true });
+          // Anthropic SSE frames are separated by a blank line. Each frame has an
+          // `event:` line and a `data:` line. We only care about the data payloads.
+          let idx;
+          while ((idx = buf.indexOf('\n\n')) !== -1) {
+            const frame = buf.slice(0, idx);
+            buf = buf.slice(idx + 2);
+            const dataLine = frame.split('\n').find(l => l.startsWith('data:'));
+            if (!dataLine) continue;
+            const payload = dataLine.slice(5).trim();
+            if (!payload || payload === '[DONE]') continue;
+            let evt;
+            try { evt = JSON.parse(payload); } catch (_) { continue; }
+            if (evt.type === 'content_block_delta' && evt.delta) {
+              const piece = evt.delta.text || '';
+              if (piece) { sentAny = true; send({ delta: piece }); }
+            } else if (evt.type === 'message_stop') {
+              send({ done: true });
+            } else if (evt.type === 'error') {
+              send({ error: (evt.error && evt.error.message) || 'stream error' });
+            }
+          }
+        }
+        if (!sentAny) send({ delta: '' });
+        send({ done: true });
+        res.end();
+      } catch (streamErr) {
+        if (streamErr.name === 'AbortError') send({ error: 'Request timed out — please try again.' });
+        else { console.error('AI stream pipe error:', streamErr.message); send({ error: 'Connection error — please try again.' }); }
+        try { res.end(); } catch (_) {}
+      }
+      return;
+    }
+    // ── NON-STREAM (default fallback path, unchanged) ─────────────────────────
 
     const response = await fetchWithRetry('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -1225,7 +1521,54 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       .join('\n')
       .trim();
 
-    res.json({ response: text || 'No response.' });
+    // ── Apply the deterministic guard layer to the reply ──────────────────────
+    let outText = text || 'No response.';
+    try {
+      if (_homeownerFramed) {
+        // Strip any dollar amount the model leaked.
+        outText = outText.replace(
+          /\$\s?\d[\d,]*(?:\.\d+)?(?:\s?(?:[-–—]|to)\s?\$?\s?\d[\d,]*(?:\.\d+)?)?\+?(?:\s?\/\s?\w+)?/g,
+          '(a price your tech will give you)'
+        );
+        // Neutralize replace-or-repair recommendations to a homeowner.
+        outText = outText.replace(
+          /\b(replacement|replacing(?: it)?|a new system|a new unit|the new system|going new)\b[^.!?\n]{0,45}?\b(is (?:probably |likely )?(?:the )?(?:smarter|smart|better|right|wiser)|makes (?:more )?sense|the (?:better|smarter|right) (?:move|call|bet|play))/gi,
+          'whether to repair or replace is the licensed tech’s call'
+        );
+        outText = outText.replace(
+          /\b(?:i'?d|i would|lean toward|i'?d lean toward|go with|my (?:honest )?take[: -]*)[^.!?\n]{0,20}?\b(replac\w*|the new (?:system|unit)|a new (?:system|unit))/gi,
+          'the repair-or-replace call belongs to the tech on the job'
+        );
+        outText = outText.replace(
+          /\b(?:the )?math (?:often |usually |here )?(?:favors?|points? to|leans? toward|supports?)[^.!?\n]{0,22}?\b(replac\w*|new (?:system|unit)|going new)/gi,
+          'whether to repair or replace is the licensed tech’s call'
+        );
+        // Never GRADE another contractor's price to a homeowner (fair/high/premium/scam)
+        // — that undercuts the paying tech as much as quoting a number does. These target
+        // unambiguous price-judgment phrases only; anchored to price words so technical
+        // language ("high-side pressure", "low on refrigerant") is left untouched.
+        outText = outText.replace(/\b(?:premium|fair|reasonable|steep|pricey|expensive|cheap|outrageous|excessive|unreasonable|high|low)\s+(?:pricing|price|quote|cost)\b/gi, 'a pricing question for your tech');
+        outText = outText.replace(/\b(?:that|this|the|their|its)?\s*(?:price|quote|cost|number)\s+(?:is|seems|sounds|looks|feels|runs)\s+(?:a (?:bit|little) )?(?:on the )?(?:high|low|steep|fair|reasonable|pricey)(?:[- ]?(?:side|end))?\b(?:[—,-]+\s*(?:often|significantly|but not)[^.!?\n]{0,24})?/gi, 'that’s a pricing question for your tech');
+        outText = outText.replace(/\b(?:isn'?t|is not|not|nothing)\s+(?:automatically |necessarily |exactly |really )?(?:an? )?(?:scam|rip[- ]?off|gouging|highway robbery|a steal|a rip)/gi, 'something your tech can walk you through');
+        outText = outText.replace(/\b(?:over|under)[- ]?priced\b/gi, 'a pricing question for your tech');
+        // The bare "(that's) on the high(er)/low(er) side/end" idiom about a price ONLY when
+        // a price/quote/cost word is in the same clause — so legit non-price uses ("your
+        // humidity is on the high side") and refrigeration ("high-side pressure") are safe.
+        outText = outText.replace(/\b(?:price|quote|cost|number|charge|bill)\b[^.!?\n]{0,40}?\b(?:is|runs|seems|that'?s|it'?s)\s+(?:a (?:bit|little) )?(?:on the )?(?:high|low)(?:er)?[- ]?(?:side|end)\b/gi, 'is a pricing question for your tech');
+        outText = outText.replace(/\bR-?22\b[^.!?\n]{0,18}?\breplac\w*/gi, 'an R-22 system is a repair-or-replace conversation for your tech');
+        outText = outText.replace(/\b(?:a |the )?new (?:system|unit)\b[^.!?\n]{0,30}?\b(?:wins|pays for itself|cheaper|cost[- ]per[- ]year|saves you money|comes out ahead)/gi, 'whether a new system is worth it is your tech’s call');
+      }
+      // Prepend mandatory safety lead(s) so the action is the first thing the tech reads.
+      const _leads = [_safetyLead, _inverterWarn].filter(Boolean);
+      if (_leads.length) outText = _leads.join('\n\n') + '\n\n' + outText;
+    } catch (_) {}
+
+    // Phase 2: attach wiring-diagram image(s) the retrieval surfaced, as a sentinel
+    // block the client parses + renders inline (then strips from the visible text).
+    if (_ragDiagrams && _ragDiagrams.length && _wiringDiagramIntent) {
+      try { outText += '\n\n⟦MIKE_DIAGRAM⟧' + JSON.stringify(_ragDiagrams) + '⟦/MIKE_DIAGRAM⟧'; } catch (_) {}
+    }
+    res.json({ response: outText });
 
   } catch (err) {
     if (err.name === 'AbortError') res.status(504).json({ error: 'Request timed out — please try again.' });
@@ -1237,7 +1580,9 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
 });
 
 // ── TTS ───────────────────────────────────────────────────────────────────────
-app.post('/api/tts', async (req, res) => {
+// Auth + rate-limited: token comes from body (existing frontend pattern, same as /api/ai)
+// or Authorization: Bearer header. authenticateToken reads both. (Security fix C3.)
+app.post('/api/tts', ttsLimiter, authenticateToken, async (req, res) => {
   const { text } = req.body;
   if (!text || typeof text !== 'string') return res.status(400).json({ error: 'text required' });
   if (!ELEVENLABS_API_KEY) return res.status(503).json({ error: 'TTS not configured' });

@@ -1200,7 +1200,15 @@ const _EMBED_MODEL = process.env.EMBED_MODEL || (_EMBED_PROVIDER === 'openai' ? 
 const _EMBED_DIM = parseInt(process.env.EMBED_DIM || (_EMBED_PROVIDER === 'openai' ? '3072' : '1024'), 10);
 const _EMBED_KEY = _EMBED_PROVIDER === 'openai' ? process.env.OPENAI_API_KEY : process.env.VOYAGE_API_KEY;
 const _RAG_ENABLED = !!(SUPABASE_URL && SUPABASE_SERVICE_KEY && _EMBED_KEY);
-const _HVAC_BRANDS = ['carrier','bryant','payne','trane','american standard','goodman','amana','daikin','york','coleman','luxaire','rheem','ruud','lennox','allied','armstrong','heil','tempstar','comfortmaker','arcoaire','keeprite','mitsubishi','fujitsu','lg','samsung','bosch','bard','weil-mclain','burnham','lochinvar','navien','triangle tube','heatcraft','copeland','hoshizaki','manitowoc'];
+const _HVAC_BRANDS = ['carrier','bryant','payne','trane','american standard','goodman','amana','daikin','york','coleman','luxaire','rheem','ruud','lennox','allied','armstrong','heil','tempstar','comfortmaker','arcoaire','keeprite','mitsubishi','fujitsu','lg','samsung','bosch','bard','weil-mclain','burnham','lochinvar','navien','triangle tube','heatcraft','copeland','hoshizaki','manitowoc',
+  // equipment brands added in later batches
+  'gree','midea','friedrich','senville','pioneer','mrcool','scotsman','traulsen','bohn','tecumseh','bitzer','danfoss','nordyne','frigidaire','aaon','htp','laars',
+  // thermostats
+  'ecobee','nest','sensi','honeywell','pro1','braeburn','venstar','white-rodgers','aprilaire',
+  // IAQ (humidifiers/dehumidifiers/air cleaners/UV/ERV-HRV/ventilation)
+  'broan','fantech','renewaire','rgf','freshaireuv','santafe','generalaire','panasonic'];
+// Typed variants / aliases → the canonical brand key stored in manual_chunks.brand.
+const _BRAND_ALIASES = {'fresh-aire':'freshaireuv','fresh aire':'freshaireuv','freshaire':'freshaireuv','apco':'freshaireuv','reme halo':'rgf','reme-halo':'rgf','santa fe':'santafe','ultra-aire':'santafe','ultra aire':'santafe','ultraaire':'santafe','general aire':'generalaire','white rodgers':'white-rodgers','whiterodgers':'white-rodgers','pro 1':'pro1','resideo':'honeywell','honeywell home':'honeywell','google nest':'nest','emerson sensi':'sensi'};
 
 function _needsManualRetrieval(text) {
   if (!text) return false;
@@ -1209,7 +1217,7 @@ function _needsManualRetrieval(text) {
   if (/(spec|capacity|rating|\bamps?\b|\bfla\b|\brla\b|\blra\b|\bmca\b|\bmocp\b|charge|superheat|subcool|sequence\s+of\s+operation|defrost\s+(cycle|timing)|gas\s+pressure)/i.test(text) && /\b[a-z0-9]{2,}\d[a-z0-9]{2,}\b/i.test(text)) return true;
   // High-recall: any known HVAC brand named + a technical/diagnostic intent → check the manuals
   // (retrieval is cheap and falls through gracefully on a miss).
-  if (_extractBrand(text) && /(manual|service|fault|error|\bcode\b|flash|blink|check|test|diagnos|troublesho|lockout|short.?cycl|wiring|terminal|sequence|\bspec|pressure|charge|superheat|subcool|replace|inspect|megohm|\bohm|capacitor|igniter|ignition|flame|limit|board|sensor|valve|how (do|to)|what (does|do|should|to))/i.test(text)) return true;
+  if (_extractBrand(text) && /(manual|service|fault|error|\bcode\b|flash|blink|check|test|diagnos|troublesho|lockout|short.?cycl|wiring|terminal|sequence|\bspec|pressure|charge|superheat|subcool|replace|inspect|megohm|\bohm|capacitor|igniter|ignition|flame|limit|board|sensor|valve|how (do|to)|what (does|do|should|to)|install|setup|set up|hook.?up|connect|mount|\bwire\b|schematic|diagram|reversing|defrost|c.?wire|\brc\b|\brh\b|humidist|dehumidif|thermostat|ventilat|\berv\b|\bhrv\b|filter|\buv\b|commission)/i.test(text)) return true;
   return false;
 }
 function _extractBrand(text) {
@@ -1271,19 +1279,18 @@ async function retrieveManualContext(userText) {
     let chunks = await r.json();
     if (!Array.isArray(chunks) || !chunks.length) return null;
     // Rerank the candidate pool down to the best 6 (falls back to vector order on miss).
+    const _pool = chunks; // full candidate pool (vector order) — used to surface a diagram even if rerank drops it
     const ranked = await _rerank(q, chunks.map(c => c.chunk_text), 6);
     if (ranked && ranked.length) chunks = ranked.map(x => chunks[x.index]).filter(Boolean);
     else chunks = chunks.slice(0, 6);
     const text = chunks.map(c => `[Source: ${c.doc_title}${c.page_num ? ', p.' + c.page_num : ''}]\n${c.chunk_text}`).join('\n\n---\n\n');
-    // Phase 2: collect any wiring-diagram images riding on the top chunks (dedupe, cap 2).
+    // Phase 2: collect wiring-diagram images. Prefer the reranked top chunks; if NONE of them
+    // carry a diagram, fall back to the best diagram in the full candidate pool so a brand that
+    // HAS a diagram reliably shows it (rerank ordering must not hide an available diagram).
     const _seen = new Set(); const diagrams = [];
-    for (const c of chunks) {
-      if (c.diagram_image_url && !_seen.has(c.diagram_image_url)) {
-        _seen.add(c.diagram_image_url);
-        diagrams.push({ url: c.diagram_image_url, title: c.doc_title || 'Wiring diagram', page: c.page_num || null });
-        if (diagrams.length >= 2) break;
-      }
-    }
+    const _collect = (list) => { for (const c of list) { if (c && c.diagram_image_url && !_seen.has(c.diagram_image_url)) { _seen.add(c.diagram_image_url); diagrams.push({ url: c.diagram_image_url, title: c.doc_title || 'Wiring diagram', page: c.page_num || null }); if (diagrams.length >= 2) return; } } };
+    _collect(chunks);
+    if (!diagrams.length) _collect(_pool);
     return { text, diagrams };
   } catch (_) { return null; }
 }
@@ -1366,7 +1373,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     /\bi'?m a homeowner\b|\bas a homeowner\b|\bhomeowner here\b|(my contractor|the repair (guy|tech|man)|a contractor|the tech)\s+(quoted|said|is quoting|gave me|quoting me)|should i (just )?replace (it|my|the|this)|is (that|this|\$?\d[\d,]*) (a )?fair (price|quote)|gave me a quote/i.test(_lastUser);
   // Wiring/schematic questions get a non-streamed reply so a retrieved diagram
   // image can be attached to the end of the response without splitting the sentinel.
-  const _wiringDiagramIntent = /wiring\s+(diagram|schematic)|electrical\s+schematic|ladder\s+diagram|show\s+me\s+the\s+(wiring|schematic|diagram)|wiring\s+for\b|pull\s+up\s+the\s+(wiring|schematic|diagram)/i.test(_lastUser);
+  const _wiringDiagramIntent = /(wiring|schematic|connection|ladder)\s+diagram|electrical\s+schematic|wiring\s+schematic|(diagram|schematic)\s+(for|of|on)\b|wiring\s+(for|on|of)\b|\bthe\s+(wiring|schematic)\b|(show|pull\s+up|bring\s+up|upload|get|give|send|see|need|want|grab|find)\s+(me\s+)?(the\s+|a\s+|an\s+)?(wiring|schematic|diagram)|(diagram|schematic)\b[^.!?\n]{0,20}\b(hook.?up|wiring|terminal)/i.test(_lastUser);
   const _forceNonStream = !!_safetyLead || !!_inverterWarn || _homeownerFramed || _wiringDiagramIntent;
 
   globalActive++;

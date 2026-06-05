@@ -8011,7 +8011,9 @@ async function sendChat(){
       // get me / I need the diagram" — not just "draw". Any of these should PRODUCE a visual.
       var _wantDiagram=/\b(draw|sketch|create|generate|make|map out)\b[^.!?\n]{0,34}\b(diagram|schematic|circuit|wiring|drawing|sketch|sequence|cycle|layout|hook[- ]?up)\b/.test(_drawReq)
         ||/\b(draw|sketch|map)\s+(it|this|that|me one|one up|one out)\b/.test(_drawReq)
-        ||/\b(upload|show|pull up|bring up|get me|give me|send me|i need|i want|need the|want the|lemme see|let me see|can i (?:get|see)|where'?s|find me|bring me|pull|grab)\b[^.!?\n]{0,30}\b(diagram|schematic|wiring(?:\s+diagram)?)\b/.test(_drawReq);
+        ||/\b(upload|show|pull up|bring up|get me|give me|send me|i need|i want|need the|want the|lemme see|let me see|can i (?:get|see)|where'?s|find me|bring me|pull|grab)\b[^.!?\n]{0,30}\b(diagram|schematic|wiring(?:\s+diagram)?)\b/.test(_drawReq)
+        ||/\b(diagram|schematic)\s+(for|of|on)\b/.test(_drawReq)
+        ||/\b(wiring|schematic)\s+(for|on|of)\b/.test(_drawReq);
       if((/\b(draw|sketch|illustrate|show)\b[^.!?\n]{0,34}\b(illustration|cutaway|picture|visual|what\b[^.!?\n]{0,14}look)\b/.test(_drawReq)||/\billustrate\b/.test(_drawReq))){
         if(typeof generateAndShowIllustration==='function')generateAndShowIllustration(text,response);
       } else if(_wantDiagram&&!_hasRealDiagram){
@@ -8797,7 +8799,11 @@ async function generateAndShowSVG(prompt, caption, isIllustration){
   label.style.cssText='font-size:11px;color:#9499B0;margin-bottom:8px;font-weight:700;';
   label.textContent=(isIllustration?'🎨 ':'📐 ')+(caption||'Technical Visual');
   var svgContainer=document.createElement('div');
+  svgContainer.style.cssText='width:100%;max-width:100%;overflow:hidden;';
   svgContainer.innerHTML=svg;
+  // Make the generated SVG responsive — it ships with a native width (e.g. 900px) that would
+  // overflow the phone chat column. Drop the fixed dims and let the viewBox scale to 100% width.
+  (function(){var _sv=svgContainer.querySelector('svg');if(_sv){_sv.removeAttribute('width');_sv.removeAttribute('height');_sv.style.cssText='width:100%;height:auto;max-width:100%;display:block;border-radius:8px;';}})();
   var hint=document.createElement('div');
   hint.style.cssText='font-size:10px;color:#9499B0;margin-top:8px;text-align:center;';
   hint.textContent='Tap to zoom';

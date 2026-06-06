@@ -1147,6 +1147,146 @@ app.post('/api/knowledge', authenticateToken, async (req, res) => {
   res.json({ knowledge: rows[0] });
 });
 
+// ── KNOWLEDGE LIBRARY ───────────────────────────────────────────────────────────
+// Model-keyed cache of Mike's redrawn wiring diagrams ("the moat"). The first tech
+// on a given exact model pays the AI cost once; every future tech on that EXACT
+// model gets the saved SVG instantly (zero AI cost). All routes fail SAFE — any
+// supabase() null becomes { found:false } / { ok:false }, never a 500 of the app.
+// Serving is mike-svg only this phase; matching is dead-exact (normalizeModelKey).
+
+// GET /api/library/:modelKey — lookup a model + its diagrams (verified first). Zero AI.
+app.get('/api/library/:modelKey', authenticateToken, async (req, res) => {
+  try {
+    const modelKey = String(req.params.modelKey || '').toUpperCase();
+    if (!modelKey) return res.json({ found: false });
+    const models = await supabase('GET', 'library_models', null,
+      `?model_key=eq.${encodeURIComponent(modelKey)}&limit=1`);
+    if (!models || !models[0]) return res.json({ found: false });
+    const model = models[0];
+    // verified diagrams first, then newest — only mike-svg are served this phase.
+    const diags = await supabase('GET', 'library_diagrams', null,
+      `?model_key=eq.${encodeURIComponent(modelKey)}&source=eq.mike-svg&order=verified.desc,created_at.desc`);
+    const diagrams = (diags || []).map(d => ({
+      id: d.id, circuit_type: d.circuit_type, svg: d.svg,
+      verified: !!d.verified, oem_diagram_number: d.oem_diagram_number,
+    }));
+    res.json({ found: true, model: {
+      model_key: model.model_key, model_raw: model.model_raw, brand: model.brand,
+      equipment_type: model.equipment_type, specs: model.specs, specs_verified: !!model.specs_verified,
+    }, diagrams });
+  } catch (e) {
+    console.error('library GET error:', e.message);
+    res.json({ found: false });
+  }
+});
+
+// POST /api/library/diagram — save Mike's freshly-drawn SVG as unverified.
+// Upserts the model row, then UPDATEs an existing (model_key,circuit_type,mike-svg)
+// row if present (no dupes) else INSERTs a new one. Body: {brand,model,circuit_type,svg,oem_diagram_number?}
+app.post('/api/library/diagram', authenticateToken, async (req, res) => {
+  try {
+    const { brand, model, circuit_type, svg, oem_diagram_number } = req.body || {};
+    if (!model || !svg) return res.json({ ok: false, error: 'model and svg required' });
+    const model_key = normalizeModelKey(brand, model);
+    if (!model_key) return res.json({ ok: false, error: 'bad model' });
+    const ct = circuit_type || 'full';
+    const who = req.user.email || req.user.id;
+
+    // 1) Upsert model row WITHOUT relying on PostgREST merge-duplicates (the shared
+    //    supabase() helper doesn't send Prefer: resolution=merge-duplicates), so we
+    //    GET-then-PATCH-or-INSERT on the unique model_key. Fails safe either way.
+    const haveModel = await supabase('GET', 'library_models', null,
+      `?model_key=eq.${encodeURIComponent(model_key)}&select=model_key&limit=1`);
+    if (haveModel && haveModel[0]) {
+      await supabase('PATCH', 'library_models',
+        { model_raw: model, brand: (brand || null), family: _extractModelFamily(model),
+          updated_at: new Date().toISOString() },
+        `?model_key=eq.${encodeURIComponent(model_key)}`);
+    } else {
+      await supabase('POST', 'library_models',
+        { model_key, model_raw: model, brand: (brand || null), family: _extractModelFamily(model),
+          updated_at: new Date().toISOString(), created_by: who });
+    }
+
+    // 2) Dedup: does a mike-svg row for this model_key + circuit_type already exist?
+    const existing = await supabase('GET', 'library_diagrams', null,
+      `?model_key=eq.${encodeURIComponent(model_key)}&circuit_type=eq.${encodeURIComponent(ct)}&source=eq.mike-svg&limit=1`);
+    if (existing && existing[0]) {
+      // Update the existing UNVERIFIED draw in place; leave a verified one untouched.
+      if (existing[0].verified) return res.json({ ok: true, model_key, diagram_id: existing[0].id, updated: false, verified: true });
+      const upd = await supabase('PATCH', 'library_diagrams',
+        { svg, oem_diagram_number: (oem_diagram_number || existing[0].oem_diagram_number || null), created_by: who },
+        `?id=eq.${existing[0].id}`);
+      const row = (upd && upd[0]) || existing[0];
+      return res.json({ ok: true, model_key, diagram_id: row.id, updated: true });
+    }
+
+    // 3) Insert fresh unverified mike-svg row.
+    const ins = await supabase('POST', 'library_diagrams',
+      { model_key, circuit_type: ct, source: 'mike-svg', svg,
+        oem_diagram_number: (oem_diagram_number || null), verified: false, created_by: who });
+    if (!ins || !ins[0]) return res.json({ ok: false, error: 'insert failed' });
+    res.json({ ok: true, model_key, diagram_id: ins[0].id, created: true });
+  } catch (e) {
+    console.error('library diagram POST error:', e.message);
+    res.json({ ok: false });
+  }
+});
+
+// POST /api/library/flag — report a bad diagram. Logs the flag, bumps flag_count,
+// auto-demotes (verified=false) at >=2 flags ("fail toward distrust"). Body: {diagram_id,model_key,reason}
+app.post('/api/library/flag', authenticateToken, async (req, res) => {
+  try {
+    const { diagram_id, model_key, reason } = req.body || {};
+    if (!diagram_id) return res.json({ ok: false, error: 'diagram_id required' });
+    await supabase('POST', 'library_flags',
+      { diagram_id, model_key: (model_key || null), reporter_user_id: (req.user.id || req.user.email),
+        reason: (reason || null), status: 'open' });
+    // Read current count, increment, and demote at the threshold.
+    const cur = await supabase('GET', 'library_diagrams', null,
+      `?id=eq.${encodeURIComponent(diagram_id)}&select=flag_count,verified&limit=1`);
+    const count = ((cur && cur[0] && cur[0].flag_count) || 0) + 1;
+    const patch = { flag_count: count, last_flagged_at: new Date().toISOString() };
+    if (count >= 2) patch.verified = false; // auto-demote: distrust until re-verified
+    await supabase('PATCH', 'library_diagrams', patch, `?id=eq.${encodeURIComponent(diagram_id)}`);
+    res.json({ ok: true, flag_count: count, demoted: count >= 2 });
+  } catch (e) {
+    console.error('library flag POST error:', e.message);
+    res.json({ ok: false });
+  }
+});
+
+// PATCH /api/library/verify/:diagramId — admin marks a diagram as trusted/canonical.
+app.patch('/api/library/verify/:diagramId', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const id = String(req.params.diagramId || '');
+    if (!id) return res.json({ ok: false, error: 'diagram id required' });
+    const upd = await supabase('PATCH', 'library_diagrams',
+      { verified: true, verified_by: (req.user.email || req.user.id), verified_at: new Date().toISOString() },
+      `?id=eq.${encodeURIComponent(id)}`);
+    if (!upd || !upd[0]) return res.json({ ok: false, error: 'not found' });
+    res.json({ ok: true, diagram: { id: upd[0].id, verified: !!upd[0].verified } });
+  } catch (e) {
+    console.error('library verify PATCH error:', e.message);
+    res.json({ ok: false });
+  }
+});
+
+// GET /api/library/admin/unverified — admin list of pending mike-svg draws to review.
+app.get('/api/library/admin/unverified', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const rows = await supabase('GET', 'library_diagrams', null,
+      `?source=eq.mike-svg&verified=eq.false&order=created_at.desc&limit=100`);
+    res.json({ diagrams: (rows || []).map(d => ({
+      id: d.id, model_key: d.model_key, circuit_type: d.circuit_type, svg: d.svg,
+      flag_count: d.flag_count, created_by: d.created_by, created_at: d.created_at,
+    })) });
+  } catch (e) {
+    console.error('library admin list error:', e.message);
+    res.json({ diagrams: [] });
+  }
+});
+
 // ── AI ────────────────────────────────────────────────────────────────────────
 // ── SERVER-SIDE PAYWALL CHECK ─────────────────────────────────────────────────
 // Allow-set: admin/pro/team/starter/homeowner/beta (forever) + trial (≤7 days).
@@ -1246,6 +1386,19 @@ function _extractBrand(text) {
 function _extractModelFamily(text) {
   const m = (text || '').match(/\b([A-Z]{1,4}\d{1,2}[A-Z]{0,4}\d{0,4})\b/);
   return m ? m[1].slice(0, 6).toUpperCase() : null;
+}
+// Knowledge Library dedup key. DEAD EXACT by Brandon's decision: canonical brand
+// + ':' + the FULL model number uppercased with all non-alphanumerics stripped.
+//   normalizeModelKey('Trane','4TWR5024H1000BA') -> 'TRANE:4TWR5024H1000BA'
+// To relax later (family/cousin matching) swap the model segment for a family
+// prefix (e.g. _extractModelFamily) — keep the brand canonicalization intact.
+function normalizeModelKey(brand, modelRaw) {
+  const m = String(modelRaw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!m) return null;
+  let b = String(brand || '').toLowerCase().trim();
+  if (_BRAND_ALIASES[b]) b = _BRAND_ALIASES[b];          // alias → canonical
+  else b = (_extractBrand(b) || b.split(' ')[0] || 'UNKNOWN');
+  return `${b.toUpperCase()}:${m}`;
 }
 async function _embedQuery(text) {
   if (_EMBED_PROVIDER === 'openai') {

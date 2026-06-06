@@ -1317,7 +1317,15 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 body[data-mode="contractor"] #mpHome{display:flex;}
 body[data-mode="contractor"].mp-chatting #mpHome{display:none;}
 body[data-mode="contractor"] #panelDiag>.chat-card{display:none;}
-body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card{display:block;}
+body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card{display:flex;position:fixed;inset:0;height:100dvh;max-height:100dvh;flex-direction:column;margin:0;border-radius:0;z-index:60;}
+/* Native-chat layout: header pinned top, messages scroll in the middle, composer+drawer pinned bottom — scoped to the active contractor chat thread only. */
+body[data-mode="contractor"].mp-chatting{overflow:hidden;}
+body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-header{flex:0 0 auto;}
+/* The messages wrapper (.chat-messages-wrap) is the direct flex child that must grow; the
+   inner #chatMessages fills it and scrolls. min-height:0 lets the column actually shrink. */
+body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-messages-wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card .chat-messages{flex:1 1 auto;min-height:0;max-height:none;}
+body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-input-area{flex:0 0 auto;}
 .mp-rings{position:absolute;left:50%;top:-34px;transform:translateX(-50%);width:540px;height:540px;pointer-events:none;z-index:0;}
 .mp-rings::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,transparent 0 27%,rgba(58,139,138,.10) 27.5%,transparent 28.2%),radial-gradient(circle,transparent 0 39%,rgba(58,139,138,.06) 39.5%,transparent 40.2%),radial-gradient(circle,transparent 0 53%,rgba(244,239,230,.04) 53.5%,transparent 54.2%);-webkit-mask-image:radial-gradient(circle,#000 48%,transparent 70%);mask-image:radial-gradient(circle,#000 48%,transparent 70%);}
 .mp-sweep{position:absolute;left:0;right:0;top:-34px;height:200px;pointer-events:none;z-index:0;background:linear-gradient(180deg,rgba(58,139,138,.10),transparent);}
@@ -3128,7 +3136,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       </div>
 
       <!-- CHAT MESSAGES -->
-      <div style="position:relative;">
+      <div class="chat-messages-wrap" style="position:relative;">
         <div id="chatMessages" class="chat-messages">
           <div class="msg-agent has-mike-badge" id="mikeWelcomeMsg">
             <div class="msg-mike-badge"></div>
@@ -9317,8 +9325,32 @@ function triggerIllustration(){
 
 function sendQuick(text){document.getElementById('chatInput').value=text;sendChat();}
 // ══════ MIKE'S-PHONE HOME — view routing + toolbelt sub-sheets (redesign) ══════
+// iOS soft-keyboard handling for the pinned chat: when the keyboard opens, visualViewport
+// shrinks while layout viewport (100dvh) does not, which would slide the composer + drawer
+// under the keyboard. Match the pinned chat-card's height to visualViewport.height so the
+// composer rides ABOVE the keyboard. Degrades to the CSS 100dvh when visualViewport is absent.
+function mpSyncChatViewport(){
+  var card=document.querySelector('body.mp-chatting #panelDiag>.chat-card');
+  if(!card)return;
+  var vv=window.visualViewport;
+  if(!vv){card.style.height='';card.style.maxHeight='';return;}
+  card.style.height=vv.height+'px';
+  card.style.maxHeight=vv.height+'px';
+}
+function mpClearChatViewport(){
+  var card=document.querySelector('#panelDiag>.chat-card');
+  if(card){card.style.height='';card.style.maxHeight='';}
+}
+(function(){
+  var vv=window.visualViewport;
+  if(!vv)return;
+  var onVV=function(){ if(document.body.classList.contains('mp-chatting')) mpSyncChatViewport(); };
+  vv.addEventListener('resize',onVV);
+  vv.addEventListener('scroll',onVV);
+})();
 function mpEnterChat(){
   document.body.classList.add('mp-chatting');
+  try{ mpSyncChatViewport(); requestAnimationFrame(mpSyncChatViewport); setTimeout(mpSyncChatViewport,120); }catch(e){}
   // The composer is now visible — grow it to fit any pre-seeded text. seedFirstPrompt can
   // run (after onboarding) while the composer is still hidden, so scrollHeight was 0 and the
   // seed ended up scrolled out of view at one line. Recompute now + pin scroll to the top.
@@ -9330,7 +9362,7 @@ function mpEnterChat(){
     }
   }catch(e){}
 }
-function mpGoHome(){document.body.classList.remove('mp-chatting');mpCloseSubsheet();}
+function mpGoHome(){document.body.classList.remove('mp-chatting');mpClearChatViewport();mpCloseSubsheet();}
 // Toolbelt actions that need one more detail shouldn't dump a half-typed line in the box
 // and stop — Mike asks for what he needs, like he picked up the phone. The tech just answers.
 function mpAskMike(q){mpEnterChat();if(typeof appendMessage==='function')appendMessage('agent',q);requestAnimationFrame(function(){if(typeof scrollToBottom==='function')scrollToBottom();});var i=document.getElementById('chatInput');if(i){i.value='';i.focus();}}

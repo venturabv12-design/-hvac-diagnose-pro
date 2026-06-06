@@ -1387,12 +1387,20 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       && /(fault|error|code|not running|won'?t (start|run)|no (heat|cool)|diagnos)/i.test(_lastUser)) {
     _inverterWarn = 'SAFETY — this is an inverter-drive unit; it stores lethal DC voltage after shutoff. Wait a full 5 minutes after killing power and confirm the DC bus is under 50 VDC with a meter before opening the inverter compartment.';
   }
+  // (D2) Capacitor work = lethal stored charge. Run/start caps hold 370-440V even
+  // with power off; "bulging cap, can I leave it?" must lead with discharge protocol,
+  // not generic-electronics advice. Guard, because prompt-only failed re-cert.
+  let _capacitorWarn = '';
+  if (/(capacitor|\bcaps?\b|dual[- ]?run|run cap|start cap|hard start)/i.test(_lastUser)
+      && /(bulg|swollen|swell|leak|fail|bad|blown|burst|rupture|replace|chang|swap|test|check|touch|discharg|pull|remov|leave it|leave for now|leave that|still good|how do i)/i.test(_lastUser)) {
+    _capacitorWarn = 'SAFETY — a run or start capacitor holds a lethal charge even with the power off. Kill the disconnect AND the breaker, then discharge the capacitor (bleed it across a ~20k ohm resistor; an insulated screwdriver across the terminals is a last resort) before you touch it or test it. A bulging or swollen cap has already failed and is never safe to leave running -- it can leak, rupture, or start a fire, so it comes out, it does not stay in.';
+  }
   const _homeownerFramed = req.body.homeowner === true ||
     /\bi'?m a homeowner\b|\bas a homeowner\b|\bhomeowner here\b|(my contractor|the repair (guy|tech|man)|a contractor|the tech)\s+(quoted|said|is quoting|gave me|quoting me)|should i (just )?replace (it|my|the|this)|is (that|this|\$?\d[\d,]*) (a )?fair (price|quote)|gave me a quote/i.test(_lastUser);
   // Wiring/schematic questions get a non-streamed reply so a retrieved diagram
   // image can be attached to the end of the response without splitting the sentinel.
   const _wiringDiagramIntent = /(wiring|schematic|connection|ladder)\s+diagram|electrical\s+schematic|wiring\s+schematic|(diagram|schematic)\s+(for|of|on)\b|wiring\s+(for|on|of)\b|\bthe\s+(wiring|schematic)\b|(show|pull\s+up|bring\s+up|upload|get|give|send|see|need|want|grab|find)\s+(me\s+)?(the\s+|a\s+|an\s+)?(wiring|schematic|diagram)|(diagram|schematic)\b[^.!?\n]{0,20}\b(hook.?up|wiring|terminal)/i.test(_lastUser);
-  const _forceNonStream = !!_safetyLead || !!_inverterWarn || _homeownerFramed || _wiringDiagramIntent;
+  const _forceNonStream = !!_safetyLead || !!_inverterWarn || !!_capacitorWarn || _homeownerFramed || _wiringDiagramIntent;
 
   globalActive++;
   const controller = new AbortController();
@@ -1592,7 +1600,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         outText = outText.replace(/\b(?:a |the )?new (?:system|unit)\b[^.!?\n]{0,30}?\b(?:wins|pays for itself|cheaper|cost[- ]per[- ]year|saves you money|comes out ahead)/gi, 'whether a new system is worth it is your tech’s call');
       }
       // Prepend mandatory safety lead(s) so the action is the first thing the tech reads.
-      const _leads = [_safetyLead, _inverterWarn].filter(Boolean);
+      const _leads = [_safetyLead, _capacitorWarn, _inverterWarn].filter(Boolean);
       if (_leads.length) outText = _leads.join('\n\n') + '\n\n' + outText;
     } catch (_) {}
 

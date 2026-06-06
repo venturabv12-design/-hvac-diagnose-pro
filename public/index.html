@@ -10167,6 +10167,13 @@ async function startLiveCamera(){
     showToast(msg,'error',6000);
     return;
   }
+  // iOS: getUserMedia(video) in startCameraStream just reset AVAudioSession to
+  // record/earpiece, stealing the loudspeaker route set during the open tap.
+  // Replay the silent HTMLAudioElement (the only thing that forces the iOS
+  // 'playback' category → loudspeaker; the AudioContext unlock can't change the
+  // output port) so Mike's greeting below isn't routed to the silent earpiece.
+  // Replies already work because the route settles by reply time.
+  try{if(typeof setSilentAudioForIOS==='function')setSilentAudioForIOS();}catch(e){}
   // Camera open sequence (per Kaizen):
   // 1. Show overlay immediately
   // 2. Mike speaks the intro: "Point your camera at the unit"
@@ -10185,11 +10192,10 @@ async function startLiveCamera(){
     };
     var msg=intros[currentLang]||intros.en;
     setCameraResponse(msg);
-    // iOS: acquiring the camera (getUserMedia video) interrupts the audio
-    // session, so this FIRST utterance can play silent while later replies are
-    // fine (the session is warm by then). Re-warm the playback session right
-    // before the intro so it isn't the cold first buffer post-acquisition.
-    try{if(typeof unlockAudioForPlayback==='function')unlockAudioForPlayback();}catch(e){}
+    // Re-assert the loudspeaker route one more time right before the greeting
+    // (HTMLAudioElement.play, not the AudioContext unlock which can't change the
+    // iOS output port). Belt-and-suspenders with the call right after camera open.
+    try{if(typeof setSilentAudioForIOS==='function')setSilentAudioForIOS();}catch(e){}
     mikeSayCamera(msg);
   },900);
 }

@@ -1317,7 +1317,9 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 body[data-mode="contractor"] #mpHome{display:flex;}
 body[data-mode="contractor"].mp-chatting #mpHome{display:none;}
 body[data-mode="contractor"] #panelDiag>.chat-card{display:none;}
-body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card{display:flex;position:fixed;top:0;left:0;right:0;height:100dvh;max-height:100dvh;flex-direction:column;margin:0;border-radius:0;z-index:60;}
+body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card{display:flex;position:fixed;top:0;left:0;right:0;height:100dvh;max-height:100dvh;flex-direction:column;margin:0;border-radius:0;z-index:120;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);}
+/* While the chat is pinned full-screen, hide the page's sticky nav bar so it can't overlap Mike's header / the back button. */
+body[data-mode="contractor"].mp-chatting .nav{display:none;}
 /* Native-chat layout: header pinned top, messages scroll in the middle, composer+drawer pinned bottom — scoped to the active contractor chat thread only. */
 body[data-mode="contractor"].mp-chatting{overflow:hidden;}
 body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-header{flex:0 0 auto;}

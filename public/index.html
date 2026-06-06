@@ -10597,9 +10597,19 @@ function startCameraListen(){
   // On non-iOS browsers the warm-up is unnecessary, so we skip it directly.
   if(isSafari&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
     navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
-      // Release the warm-up stream immediately — the recognizer creates its own.
-      try{stream.getTracks().forEach(function(t){t.stop();});}catch(e){}
+      // iOS WebKit #179363 (camera-mode silent-mic bug): while the live camera
+      // VIDEO stream is active, stopping this warm-up audio track BEFORE
+      // SpeechRecognition.start() hands the recognizer a muted mic — it shows
+      // "Listening…" but captures silence (voice mode is fine because no video
+      // stream competes). Fix: keep the warm-up audio session ALIVE across
+      // start() so iOS hands the live record session to the recognizer, then
+      // release it once SR has latched. stopCameraListen() also clears it.
+      try{if(window._camWarmupStream){window._camWarmupStream.getTracks().forEach(function(t){t.stop();});}}catch(e){}
+      window._camWarmupStream=stream;
       go();
+      setTimeout(function(){
+        try{if(window._camWarmupStream===stream){stream.getTracks().forEach(function(t){t.stop();});window._camWarmupStream=null;}}catch(e){}
+      },500);
     }).catch(function(err){
       var msg='Microphone permission is required for voice.';
       if(err&&err.name==='NotAllowedError')msg='Mic blocked. Tap the camera permission icon in the address bar to allow microphone access.';
@@ -10620,6 +10630,7 @@ function stopCameraListen(){
     cameraSpeechRec.onresult=null;cameraSpeechRec.onend=null;cameraSpeechRec.onerror=null;
     cameraSpeechRec=null;
   }
+  try{if(window._camWarmupStream){window._camWarmupStream.getTracks().forEach(function(t){t.stop();});window._camWarmupStream=null;}}catch(e){}
   updateCameraMicState('idle');
 }
 

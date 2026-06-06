@@ -1317,7 +1317,7 @@ A"]{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af 
 body[data-mode="contractor"] #mpHome{display:flex;}
 body[data-mode="contractor"].mp-chatting #mpHome{display:none;}
 body[data-mode="contractor"] #panelDiag>.chat-card{display:none;}
-body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card{display:flex;position:fixed;inset:0;height:100dvh;max-height:100dvh;flex-direction:column;margin:0;border-radius:0;z-index:60;}
+body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card{display:flex;position:fixed;top:0;left:0;right:0;height:100dvh;max-height:100dvh;flex-direction:column;margin:0;border-radius:0;z-index:60;}
 /* Native-chat layout: header pinned top, messages scroll in the middle, composer+drawer pinned bottom — scoped to the active contractor chat thread only. */
 body[data-mode="contractor"].mp-chatting{overflow:hidden;}
 body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-header{flex:0 0 auto;}
@@ -9333,13 +9333,18 @@ function mpSyncChatViewport(){
   var card=document.querySelector('body.mp-chatting #panelDiag>.chat-card');
   if(!card)return;
   var vv=window.visualViewport;
-  if(!vv){card.style.height='';card.style.maxHeight='';return;}
+  if(!vv){card.style.height='';card.style.maxHeight='';card.style.top='';return;}
+  // Track BOTH the shrunk height AND the top offset: iOS scrolls the page up when
+  // the keyboard opens, so vv.offsetTop > 0. Pinning top to offsetTop + height to
+  // vv.height overlays the card exactly on the visible area, so the composer sits
+  // right above the keyboard (not floating mid-screen with a gap).
+  card.style.top=vv.offsetTop+'px';
   card.style.height=vv.height+'px';
   card.style.maxHeight=vv.height+'px';
 }
 function mpClearChatViewport(){
   var card=document.querySelector('#panelDiag>.chat-card');
-  if(card){card.style.height='';card.style.maxHeight='';}
+  if(card){card.style.height='';card.style.maxHeight='';card.style.top='';}
 }
 (function(){
   var vv=window.visualViewport;

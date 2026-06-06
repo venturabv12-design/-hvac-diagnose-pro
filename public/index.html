@@ -10185,8 +10185,13 @@ async function startLiveCamera(){
     };
     var msg=intros[currentLang]||intros.en;
     setCameraResponse(msg);
+    // iOS: acquiring the camera (getUserMedia video) interrupts the audio
+    // session, so this FIRST utterance can play silent while later replies are
+    // fine (the session is warm by then). Re-warm the playback session right
+    // before the intro so it isn't the cold first buffer post-acquisition.
+    try{if(typeof unlockAudioForPlayback==='function')unlockAudioForPlayback();}catch(e){}
     mikeSayCamera(msg);
-  },600);
+  },900);
 }
 
 async function startCameraStream(){

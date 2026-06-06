@@ -2755,6 +2755,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   <div class="pdd-item" data-contractor-only onclick="pddInvoice()"><span class="pdd-ic">🧾</span>Invoice Generator</div>
   <div class="pdd-item" data-contractor-only onclick="pddCustomers()"><span class="pdd-ic">👥</span>Customers</div>
   <div class="pdd-item" data-contractor-only onclick="pddRefLog()"><span class="pdd-ic">🧪</span>Refrigerant Log</div>
+  <div class="pdd-item" onclick="openSavedDiagrams()"><span class="pdd-ic">📐</span>Saved Diagrams</div>
   <div class="pdd-item" onclick="pddHelp()"><span class="pdd-ic">❓</span>Help</div>
   <div class="pdd-item" onclick="toggleDarkMode()"><span class="pdd-ic">🌙</span>Dark Mode</div>
   <div class="pdd-sep"></div>
@@ -7436,6 +7437,153 @@ function primeCameraAudio(){
 
 
 function getTimeStr(){var now=new Date();return now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+
+/* ── Offline diagram/spec cache (IndexedDB) ──────────────────────────────────
+   Saves generated SVG diagrams + nameplate specs locally so a tech in a
+   basement/rooftop with no signal can still pull up what they've already loaded.
+   Pure client-side, best-effort: every call no-ops gracefully if IndexedDB is
+   unavailable (private mode, old WebView) so it can never break the main flow. */
+var IDB_NAME='trazer_offline', IDB_STORE='diagrams', IDB_VER=1, _idbPromise=null;
+function _idbOpen(){
+  if(_idbPromise)return _idbPromise;
+  _idbPromise=new Promise(function(resolve,reject){
+    try{
+      if(!('indexedDB' in window)||!window.indexedDB){reject(new Error('no-idb'));return;}
+      var rq=indexedDB.open(IDB_NAME,IDB_VER);
+      rq.onupgradeneeded=function(e){
+        var db=e.target.result;
+        if(!db.objectStoreNames.contains(IDB_STORE)){
+          db.createObjectStore(IDB_STORE,{keyPath:'id'});
+        }
+      };
+      rq.onsuccess=function(e){resolve(e.target.result);};
+      rq.onerror=function(){reject(rq.error||new Error('idb-open-failed'));};
+    }catch(err){reject(err);}
+  });
+  return _idbPromise;
+}
+// Save a diagram/spec. record = {label, svg?, specs?, isIllustration?}. Keyed by
+// a normalized label/model so re-saving the same unit updates rather than dupes.
+function idbSaveDiagram(record){
+  if(!record||!record.label)return Promise.resolve(false);
+  return _idbOpen().then(function(db){
+    return new Promise(function(resolve){
+      try{
+        var tx=db.transaction(IDB_STORE,'readwrite');
+        var row={
+          id:String(record.label).toLowerCase().replace(/\s+/g,' ').trim().slice(0,200),
+          label:String(record.label).slice(0,200),
+          svg:record.svg||null,
+          specs:record.specs||null,
+          isIllustration:!!record.isIllustration,
+          savedAt:Date.now()
+        };
+        tx.objectStore(IDB_STORE).put(row);
+        tx.oncomplete=function(){resolve(true);};
+        tx.onerror=function(){resolve(false);};
+      }catch(e){resolve(false);}
+    });
+  }).catch(function(){return false;});
+}
+// Fetch one saved record by its label/id. Resolves null if missing/unavailable.
+function idbGetDiagram(label){
+  if(!label)return Promise.resolve(null);
+  var key=String(label).toLowerCase().replace(/\s+/g,' ').trim().slice(0,200);
+  return _idbOpen().then(function(db){
+    return new Promise(function(resolve){
+      try{
+        var rq=db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).get(key);
+        rq.onsuccess=function(){resolve(rq.result||null);};
+        rq.onerror=function(){resolve(null);};
+      }catch(e){resolve(null);}
+    });
+  }).catch(function(){return null;});
+}
+// List all saved records, newest first. Resolves [] if unavailable.
+function idbListDiagrams(){
+  return _idbOpen().then(function(db){
+    return new Promise(function(resolve){
+      try{
+        var out=[],cur=db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).openCursor();
+        cur.onsuccess=function(e){
+          var c=e.target.result;
+          if(c){out.push(c.value);c.continue();}
+          else{out.sort(function(a,b){return (b.savedAt||0)-(a.savedAt||0);});resolve(out);}
+        };
+        cur.onerror=function(){resolve([]);};
+      }catch(e){resolve([]);}
+    });
+  }).catch(function(){return [];});
+}
+// Delete one saved record by label/id.
+function idbDeleteDiagram(label){
+  if(!label)return Promise.resolve(false);
+  var key=String(label).toLowerCase().replace(/\s+/g,' ').trim().slice(0,200);
+  return _idbOpen().then(function(db){
+    return new Promise(function(resolve){
+      try{
+        var tx=db.transaction(IDB_STORE,'readwrite');
+        tx.objectStore(IDB_STORE).delete(key);
+        tx.oncomplete=function(){resolve(true);};
+        tx.onerror=function(){resolve(false);};
+      }catch(e){resolve(false);}
+    });
+  }).catch(function(){return false;});
+}
+
+// Open the "Saved Diagrams" modal and render the offline list from IndexedDB.
+function openSavedDiagrams(){
+  if(typeof closeProfileDD==='function')try{closeProfileDD();}catch(_){}
+  var body=document.getElementById('savedDiagramsBody');
+  if(!body){if(typeof openModal==='function')openModal('savedDiagramsModal');return;}
+  body.innerHTML='<div style="text-align:center;color:#9499B0;font-size:13px;padding:24px 0;">Loading saved diagrams…</div>';
+  if(typeof openModal==='function')openModal('savedDiagramsModal');
+  idbListDiagrams().then(function(list){
+    if(!list||!list.length){
+      body.innerHTML='<div style="text-align:center;color:#9499B0;font-size:13px;line-height:1.6;padding:24px 12px;">📐<br><br>No saved diagrams yet.<br><span style="color:#666;font-size:12px;">Diagrams you generate are saved here automatically so you can pull them up with no signal.</span></div>';
+      return;
+    }
+    body.innerHTML='';
+    list.forEach(function(item){
+      var card=document.createElement('div');
+      card.style.cssText='background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px;margin-bottom:12px;';
+      var head=document.createElement('div');
+      head.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;';
+      var title=document.createElement('div');
+      title.style.cssText='font-size:13px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      title.textContent=(item.isIllustration?'🎨 ':'📐 ')+(item.label||'Saved visual');
+      var del=document.createElement('button');
+      del.textContent='✕';
+      del.title='Remove';
+      del.style.cssText='flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#222;border:none;color:#aaa;font-size:13px;cursor:pointer;';
+      del.addEventListener('click',function(e){
+        e.stopPropagation();
+        idbDeleteDiagram(item.id||item.label).then(function(){openSavedDiagrams();});
+      });
+      head.appendChild(title);head.appendChild(del);
+      card.appendChild(head);
+      if(item.svg){
+        var holder=document.createElement('div');
+        holder.style.cssText='width:100%;max-width:100%;overflow:hidden;border-radius:8px;background:'+(item.isIllustration?'#ffffff':'#0f172a')+';';
+        holder.innerHTML=item.svg;
+        var sv=holder.querySelector('svg');
+        if(sv){sv.removeAttribute('width');sv.removeAttribute('height');sv.style.cssText='width:100%;height:auto;max-width:100%;display:block;';}
+        card.appendChild(holder);
+      }
+      if(item.specs){
+        var sp=document.createElement('div');
+        sp.style.cssText='margin-top:8px;font-size:12px;color:#9499B0;white-space:pre-wrap;line-height:1.5;';
+        sp.textContent=item.specs;
+        card.appendChild(sp);
+      }
+      var when=document.createElement('div');
+      when.style.cssText='margin-top:8px;font-size:10px;color:#555;text-align:right;';
+      when.textContent='Saved '+(typeof getRelativeTime==='function'?getRelativeTime(item.savedAt):new Date(item.savedAt||Date.now()).toLocaleDateString());
+      card.appendChild(when);
+      body.appendChild(card);
+    });
+  });
+}
 function getRelativeTime(ts){
   if(!ts)return getTimeStr();
   var diff=Math.floor((Date.now()-ts)/1000);
@@ -9352,6 +9500,14 @@ async function generateAndShowSVG(prompt, caption, isIllustration){
   }
   container.appendChild(div);
   container.scrollTop=container.scrollHeight;
+  // Offline cache: persist this generated visual locally (best-effort, no-op on
+  // failure) so the tech can pull it up later with no signal. Save the final
+  // rendered SVG markup keyed by its caption/label.
+  try{
+    if(typeof idbSaveDiagram==='function'&&svgContainer&&svgContainer.innerHTML){
+      idbSaveDiagram({label:caption||'Technical Visual',svg:svgContainer.innerHTML,isIllustration:!!isIllustration});
+    }
+  }catch(_){}
 }
 
 function buildDiagramPrompt(prompt){
@@ -11738,11 +11894,35 @@ document.addEventListener('DOMContentLoaded',function(){
 </div>
 </div>
 
+<!-- Saved Diagrams (offline) — reads from IndexedDB, works with no signal -->
+<div class="tz-modal-overlay" id="savedDiagramsModal">
+<div class="tz-modal">
+  <div class="tz-modal-header">
+    <div class="tz-modal-title">📐 Saved Diagrams</div>
+    <button class="tz-modal-close" onclick="closeModal('savedDiagramsModal')">✕</button>
+  </div>
+  <div class="tz-modal-body" id="savedDiagramsBody"></div>
+</div>
+</div>
+
 <!-- Lucide icon renderer — boots SVGs from <i data-lucide> placeholders -->
 <script>
 document.addEventListener('DOMContentLoaded',function(){
   if(window.lucide)lucide.createIcons();
 });
+</script>
+
+<!-- Offline/PWA: register the network-first service worker (safe, can't brick).
+     Registered after load so it never blocks first paint. sw.js is served at
+     '/sw.js' by express.static (root = public/), giving it scope '/'. -->
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(err){
+      console.warn('SW registration failed (offline support disabled):',err);
+    });
+  });
+}
 </script>
 </body>
 </html>

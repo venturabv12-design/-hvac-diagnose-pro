@@ -1324,7 +1324,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   if (!access.allowed)
     return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
 
-  const { messages, system, max_tokens = 1024, use_search = false, stream = false } = req.body;
+  const { messages, system, systemExtra = '', max_tokens = 1024, use_search = false, stream = false } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0)
     return res.status(400).json({ error: 'messages required' });
 
@@ -1424,10 +1424,25 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         }
       }
     }
+    // ── PROMPT CACHING ─────────────────────────────────────────────────────────
+    // Mike's large static rulebook (AGENT_SYSTEM) is identical on every call and across
+    // every tech, so cache it (1-hour TTL) instead of re-billing ~16k tokens per message.
+    // The per-message context (RAG + dynamic, sent separately as systemExtra) stays uncached.
+    // For the common no-RAG case the concatenated text equals the old `_ragContext + system`,
+    // so the prompt the model sees is byte-identical and Mike's answers are unchanged.
+    const _baseSys = (system || '');
+    const _tailSys = _ragContext + (systemExtra || '');
+    let _systemField;
+    if (_baseSys.length > 8000) {
+      const _baseBlock = { type: 'text', text: _baseSys, cache_control: { type: 'ephemeral', ttl: '1h' } };
+      _systemField = _tailSys ? [_baseBlock, { type: 'text', text: _tailSys }] : [_baseBlock];
+    } else {
+      _systemField = _ragContext + _baseSys;
+    }
     const body = {
       model: process.env.MIKE_MODEL || 'claude-opus-4-8',
       max_tokens: Math.min(max_tokens, 8192),
-      system: _ragContext + (system || ''),
+      system: _systemField,
       messages,
     };
     if (use_search) {

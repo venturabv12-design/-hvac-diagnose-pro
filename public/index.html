@@ -2738,6 +2738,13 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     <table class="adm-tbl"><thead><tr><th>From</th><th>Email</th><th>Feedback</th><th>Date</th></tr></thead>
     <tbody id="admFeedback"></tbody></table>
   </div>
+  <div class="adm-sec">
+    <div class="adm-sec-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <span>Knowledge Library &mdash; pending review</span>
+      <button onclick="admLoadLibrary()" style="background:#1e293b;color:#9aa6b2;border:1px solid #2a3a4a;border-radius:6px;font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer;">Refresh</button>
+    </div>
+    <div id="admLibrary" style="font-size:12px;color:#778390;">Tap Refresh to load unverified diagrams.</div>
+  </div>
   </div>
 </div>
 </div>
@@ -5288,6 +5295,45 @@ function renderAdminDashboard(list){
       return '<tr><td style="font-weight:600">'+escapeHtml(f.user||'')+'</td><td style="color:#555;font-size:12px">'+escapeHtml(f.email||'')+'</td><td style="color:#ccc">'+escapeHtml((f.text||'').substring(0,120))+(f.text&&f.text.length>120?'...':'')+'</td><td style="color:#555;font-size:12px">'+new Date(f.timestamp).toLocaleDateString()+'</td></tr>';
     }).join(''):'<tr><td colspan="4" style="color:#555;text-align:center">No feedback yet</td></tr>';
   }
+}
+// ── KNOWLEDGE LIBRARY (admin verify) ───────────────────────────────────────
+// Lists unverified mike-svg diagrams; admin taps Verify to mark one canonical.
+function admLoadLibrary(){
+  var box=document.getElementById('admLibrary');if(!box)return;
+  var token=currentUser&&currentUser.token;
+  if(!token){box.textContent='Not signed in.';return;}
+  box.innerHTML='<span class="adm-spinner"></span> Loading…';
+  fetch('/api/library/admin/unverified',{headers:{'Authorization':'Bearer '+token}})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var rows=(d&&d.diagrams)||[];
+      if(!rows.length){box.innerHTML='<span style="color:#667380;">No pending diagrams &mdash; all caught up.</span>';return;}
+      box.innerHTML=rows.map(function(g){
+        var flags=g.flag_count?(' &middot; <span style="color:#FFB400;">&#9873; '+g.flag_count+'</span>'):'';
+        return '<div style="border:1px solid #1e293b;border-radius:8px;padding:10px;margin-bottom:8px;background:#0b1220;">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">'
+          +'<div style="font-weight:700;color:#cdd6df;">'+escapeHtml(g.model_key||'?')+' <span style="color:#778390;font-weight:400;">/ '+escapeHtml(g.circuit_type||'full')+'</span>'+flags+'</div>'
+          +'<button onclick="admVerifyDiagram(this,\''+escapeHtml(g.id)+'\')" style="background:#0e6b46;color:#d6ffe9;border:none;border-radius:6px;font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer;white-space:nowrap;">Verify &#10003;</button>'
+          +'</div>'
+          +'<div style="background:#0f172a;border-radius:6px;overflow:hidden;max-height:160px;">'+(g.svg||'')+'</div>'
+          +'<div style="font-size:10px;color:#556270;margin-top:5px;">by '+escapeHtml(g.created_by||'?')+'</div>'
+          +'</div>';
+      }).join('');
+      // size any embedded SVGs to fit the preview box
+      Array.prototype.forEach.call(box.querySelectorAll('svg'),function(s){s.removeAttribute('width');s.removeAttribute('height');s.style.cssText='width:100%;height:auto;max-height:160px;display:block;';});
+    })
+    .catch(function(){box.innerHTML='<span style="color:#C7553B;">Could not load library.</span>';});
+}
+function admVerifyDiagram(btn,id){
+  var token=currentUser&&currentUser.token;if(!token)return;
+  btn.disabled=true;btn.textContent='…';
+  fetch('/api/library/verify/'+encodeURIComponent(id),{method:'PATCH',headers:{'Authorization':'Bearer '+token}})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d&&d.ok){if(typeof showToast==='function')showToast('Diagram verified','success',2000);admLoadLibrary();}
+      else{btn.disabled=false;btn.innerHTML='Verify &#10003;';if(typeof showToast==='function')showToast('Verify failed','error',2500);}
+    })
+    .catch(function(){btn.disabled=false;btn.innerHTML='Verify &#10003;';});
 }
 function closeAdmin(){var el=document.getElementById('adminOverlay');if(el)el.classList.remove('show');}
 // Techs section: collapsible dropdown + live search filter (name / email / company).
@@ -9418,7 +9464,119 @@ function needsIllustration(text){
   return !!(text&&text.match(/illustrat|show me what|what does.*look like|draw me|create.*image|make.*image|generate.*image|picture of|visual of|detailed visual|create.*visual|can you illustrate|can you draw/i));
 }
 
+// ── KNOWLEDGE LIBRARY (client) ──────────────────────────────────────────────
+// Model-keyed cache of Mike's redrawn wiring diagrams. First tech on an exact
+// model pays the AI cost; every later tech on that EXACT model gets it instantly.
+// normalizeModelKey here MUST stay identical to the server's (index.js) so the
+// lookup key and the saved key match — dead-exact, no fuzzing.
+var LIB_BRAND_LIST=['carrier','bryant','payne','trane','american standard','goodman','amana','daikin','york','coleman','luxaire','rheem','ruud','lennox','allied','armstrong','heil','tempstar','comfortmaker','arcoaire','keeprite','mitsubishi','fujitsu','lg','samsung','bosch','bard','weil-mclain','burnham','lochinvar','navien','triangle tube','heatcraft','copeland','gree','midea','friedrich','senville','pioneer','mrcool','nordyne','frigidaire','aaon','htp','laars','ecobee','nest','sensi','honeywell','pro1','braeburn','venstar','white-rodgers','aprilaire'];
+var LIB_BRAND_ALIASES={'fresh-aire':'freshaireuv','fresh aire':'freshaireuv','freshaire':'freshaireuv','apco':'freshaireuv','reme halo':'rgf','reme-halo':'rgf','santa fe':'santafe','ultra-aire':'santafe','ultra aire':'santafe','ultraaire':'santafe','general aire':'generalaire','white rodgers':'white-rodgers','whiterodgers':'white-rodgers','pro 1':'pro1','resideo':'honeywell','honeywell home':'honeywell','google nest':'nest','emerson sensi':'sensi','mitsubishi electric':'mitsubishi','american standard':'american','other / unknown':''};
+function normalizeLibKey(brand,modelRaw){
+  var m=String(modelRaw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(!m)return null;
+  var b=String(brand||'').toLowerCase().trim();
+  if(LIB_BRAND_ALIASES.hasOwnProperty(b))b=LIB_BRAND_ALIASES[b];
+  else{var hit=null;for(var i=0;i<LIB_BRAND_LIST.length;i++){if(b.indexOf(LIB_BRAND_LIST[i])>=0){hit=LIB_BRAND_LIST[i];break;}}b=hit?hit.split(' ')[0]:(b.split(' ')[0]||'unknown');}
+  if(!b)b='unknown';
+  return b.toUpperCase()+':'+m;
+}
+// Read the current model context from the diagnostic form (brand + model number).
+// Returns {brand,model,modelKey} or null when we don't have enough to cache by model.
+function getLibModelContext(){
+  try{
+    var mEl=document.getElementById('modelNumber');
+    var bEl=document.getElementById('brand');
+    var model=mEl&&mEl.value?mEl.value.trim():'';
+    var brand=bEl&&bEl.value?bEl.value.trim():'';
+    if(!model)return null;
+    var key=normalizeLibKey(brand,model);
+    if(!key)return null;
+    return {brand:brand,model:model,modelKey:key};
+  }catch(e){return null;}
+}
+// Render a stored library SVG into the chat with a verified/unverified badge and
+// a "report a problem" link. Mirrors generateAndShowSVG's display + zoom behavior.
+function renderLibraryDiagram(svg,caption,diagramId,modelKey,isVerified){
+  var container=document.getElementById('chatMessages');if(!container)return;
+  svg=String(svg||'').replace(/<svg\b([^>]*)>/i,function(match,attrs){
+    var cleaned=attrs.replace(/\s+(?:width|height)=["'][^"']*["']/gi,'');
+    return '<svg'+cleaned+' style="width:100%;height:auto;display:block;cursor:pointer;">';
+  });
+  var div=document.createElement('div');div.className='msg-agent';
+  var wrapper=document.createElement('div');
+  wrapper.className='msg-bubble msg-bubble-agent';
+  wrapper.style.cssText='padding:10px;background:#0f172a;border-color:#1e293b;border-radius:12px;';
+  var badge=document.createElement('div');
+  if(isVerified){badge.style.cssText='font-size:11px;color:#34d399;margin-bottom:8px;font-weight:800;';badge.textContent='✅ Verified — confirmed on this exact model';}
+  else{badge.style.cssText='font-size:11px;color:#FFB400;margin-bottom:8px;font-weight:800;';badge.textContent='⚠ Mike’s draw — confirm against your unit';}
+  var label=document.createElement('div');
+  label.style.cssText='font-size:11px;color:#9499B0;margin-bottom:8px;font-weight:700;';
+  label.textContent='📐 '+(caption||'Wiring Diagram');
+  var svgContainer=document.createElement('div');
+  svgContainer.style.cssText='width:100%;max-width:100%;overflow:hidden;';
+  svgContainer.innerHTML=svg;
+  (function(){var _sv=svgContainer.querySelector('svg');if(_sv){_sv.removeAttribute('width');_sv.removeAttribute('height');_sv.style.cssText='width:100%;height:auto;max-width:100%;display:block;border-radius:8px;';}})();
+  var hint=document.createElement('div');
+  hint.style.cssText='font-size:10px;color:#9499B0;margin-top:8px;text-align:center;';
+  hint.textContent='Tap to zoom';
+  wrapper.appendChild(badge);wrapper.appendChild(label);wrapper.appendChild(svgContainer);wrapper.appendChild(hint);
+  if(diagramId){
+    var flag=document.createElement('div');
+    flag.style.cssText='font-size:11px;color:#778390;margin-top:8px;text-align:center;cursor:pointer;text-decoration:underline;';
+    flag.textContent='⚑ Report a problem';
+    flag.addEventListener('click',function(){flagLibraryDiagram(diagramId,modelKey,flag);});
+    wrapper.appendChild(flag);
+  }
+  var time=document.createElement('div');time.className='msg-time';time.textContent=getTimeStr();
+  div.appendChild(wrapper);div.appendChild(time);
+  var svgEl=svgContainer.querySelector('svg');
+  if(svgEl){
+    svgEl.style.cursor='pointer';
+    svgEl.addEventListener('click',function(){
+      var overlay=document.createElement('div');
+      overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;-webkit-overflow-scrolling:touch;';
+      var clone=svgEl.cloneNode(true);
+      clone.style.cssText='width:100%;max-width:720px;height:auto;background:#0f172a;border-radius:12px;';
+      clone.setAttribute('width','100%');clone.removeAttribute('height');
+      var closeBtn=document.createElement('button');closeBtn.textContent='✕';
+      closeBtn.style.cssText='position:fixed;top:max(env(safe-area-inset-top,0px),16px);right:16px;background:rgba(255,255,255,.25);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;z-index:10000;-webkit-tap-highlight-color:transparent;';
+      closeBtn.addEventListener('click',function(e){e.stopPropagation();if(document.body.contains(overlay))document.body.removeChild(overlay);});
+      overlay.appendChild(clone);overlay.appendChild(closeBtn);
+      overlay.addEventListener('click',function(e){if(e.target===overlay&&document.body.contains(overlay))document.body.removeChild(overlay);});
+      document.body.appendChild(overlay);
+    });
+  }
+  container.appendChild(div);container.scrollTop=container.scrollHeight;
+  // Offline cache (best-effort) — same as freshly-generated diagrams.
+  try{if(typeof idbSaveDiagram==='function')idbSaveDiagram({label:caption||'Wiring Diagram',svg:svgContainer.innerHTML,isIllustration:false});}catch(_){}
+}
+function flagLibraryDiagram(diagramId,modelKey,linkEl){
+  var token=currentUser&&currentUser.token;if(!token)return;
+  fetch('/api/library/flag',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({diagram_id:diagramId,model_key:modelKey,reason:'tech reported via diagram view'})})
+    .then(function(r){return r.json();})
+    .then(function(d){if(linkEl){linkEl.textContent='✓ Reported — thanks';linkEl.style.cursor='default';linkEl.style.textDecoration='none';linkEl.onclick=null;}
+      if(d&&d.demoted&&typeof showToast==='function')showToast('Diagram flagged for review','info',2500);})
+    .catch(function(){});
+}
 async function generateAndShowSVG(prompt, caption, isIllustration){
+  // Knowledge Library: for WIRING diagrams with a known model, check the shared
+  // cache first. A VERIFIED hit is rendered instantly (zero AI cost). Otherwise
+  // we fall through to fresh generation and save the result as unverified.
+  var libCtx=isIllustration?null:getLibModelContext();
+  if(libCtx){
+    try{
+      var token=currentUser&&currentUser.token;
+      if(token){
+        var lr=await fetch('/api/library/'+encodeURIComponent(libCtx.modelKey),{headers:{'Authorization':'Bearer '+token}});
+        var lj=await lr.json();
+        if(lj&&lj.found&&lj.diagrams&&lj.diagrams.length){
+          var verified=null;for(var vi=0;vi<lj.diagrams.length;vi++){if(lj.diagrams[vi].verified){verified=lj.diagrams[vi];break;}}
+          if(verified&&verified.svg){renderLibraryDiagram(verified.svg,caption,verified.id,libCtx.modelKey,true);return;}
+        }
+      }
+    }catch(e){/* lookup failed → just generate fresh below */}
+  }
   var container = document.getElementById('chatMessages');
   var loadDiv = document.createElement('div');
   loadDiv.className = 'msg-agent';
@@ -9446,6 +9604,7 @@ async function generateAndShowSVG(prompt, caption, isIllustration){
   }
   if(lastErr&&!svg)console.warn('Diagram all attempts failed. Last error:',lastErr);
   if(container.contains(loadDiv))container.removeChild(loadDiv);
+  var libGenOk=!!svg; // a real generation (not the fallback) — only these get cached
   if(!svg){
     // All 3 attempts failed. Show the user a real error instead of a generic-looking fallback
     // (the silent fallback made the feature feel broken). Surface a retry option.
@@ -9459,6 +9618,21 @@ async function generateAndShowSVG(prompt, caption, isIllustration){
     var cleaned=attrs.replace(/\s+(?:width|height)=["'][^"']*["']/gi,'');
     return '<svg'+cleaned+' style="width:100%;height:auto;display:block;cursor:pointer;">';
   });
+  // Knowledge Library: we have a model context and a real freshly-drawn diagram →
+  // save it to the shared cache (unverified) and render it with the amber "confirm
+  // against your unit" badge + a report link, so future techs on this exact model
+  // can benefit once an admin verifies it. (Fallback diagrams are never cached.)
+  if(libCtx&&libGenOk){
+    var _tok=currentUser&&currentUser.token;
+    var _done=function(diagId){renderLibraryDiagram(svg,caption,diagId||null,libCtx.modelKey,false);};
+    if(_tok){
+      fetch('/api/library/diagram',{method:'POST',headers:{'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},
+        body:JSON.stringify({brand:libCtx.brand,model:libCtx.model,circuit_type:'full',svg:svg})})
+        .then(function(r){return r.json();}).then(function(d){_done(d&&d.ok?d.diagram_id:null);})
+        .catch(function(){_done(null);});
+    }else{_done(null);}
+    return;
+  }
   var div=document.createElement('div');div.className='msg-agent';
   var wrapper=document.createElement('div');
   wrapper.className='msg-bubble msg-bubble-agent';

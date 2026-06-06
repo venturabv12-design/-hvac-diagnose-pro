@@ -4236,7 +4236,11 @@ function authSignOut(){
   // Push 7.4 — clear per-user `trazer_*_<email-slug>` localStorage keys for the signing-out user (Gap #006). Matches the slug format produced by getUserMemoryKey(). Closes the "saw my coworker's chat history on the shop tablet" UX hazard on shared devices. Runs AFTER clearChat() so the archive that clearChat just wrote also gets cleared — accepted tradeoff per Brandon's Option A directive (no history carry-over on the same device after signout).
   if(currentUser&&currentUser.email){
     var sl7_4=currentUser.email.replace(/[^a-z0-9]/gi,'_');
-    Object.keys(localStorage).filter(function(k){return k.indexOf('trazer_')===0&&k!=='trazer_user'&&k!=='trazer_users'&&k.indexOf('_'+sl7_4)>-1;}).forEach(function(k){localStorage.removeItem(k);});
+    // Favorites (trazer_favTools_<email>) are a non-sensitive UI preference, not
+    // private data — exempt them from the sign-out wipe so a tech's pinned tools
+    // persist across sign-out/sign-in. They're email-keyed, so another user on a
+    // shared device never sees them anyway.
+    Object.keys(localStorage).filter(function(k){return k.indexOf('trazer_')===0&&k!=='trazer_user'&&k!=='trazer_users'&&k.indexOf('trazer_favTools_')!==0&&k.indexOf('_'+sl7_4)>-1;}).forEach(function(k){localStorage.removeItem(k);});
   }
   currentUser=null;localStorage.removeItem('trazer_user');
   // Option B: back to signed-out → restore the tall front-door landing, hide the strip.

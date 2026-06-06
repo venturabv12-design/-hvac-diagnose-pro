@@ -9216,7 +9216,8 @@ function mpSubAction(fn){mpCloseSubsheet();setTimeout(fn,180);}
 function mpShowColdOpen(){
   var el=document.getElementById('mpColdOpen');if(!el)return;
   el.style.display='flex';el.setAttribute('aria-hidden','false');
-  el._t=setTimeout(mpDismissColdOpen,3000);
+  // Wait for the tech to tap "Get Started" — do NOT auto-dismiss. The screen invites a tap
+  // ("TAP TO MEET MIKE"); a 3s auto-close was whisking the button away before they could hit it.
 }
 function mpDismissColdOpen(){
   var el=document.getElementById('mpColdOpen');if(!el)return;

@@ -1601,7 +1601,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     if (_ragDiagrams && _ragDiagrams.length && _wiringDiagramIntent) {
       try { outText += '\n\n⟦MIKE_DIAGRAM⟧' + JSON.stringify(_ragDiagrams) + '⟦/MIKE_DIAGRAM⟧'; } catch (_) {}
     }
-    res.json({ response: outText });
+    res.json({ response: outText, usage: data.usage });
 
   } catch (err) {
     if (err.name === 'AbortError') res.status(504).json({ error: 'Request timed out — please try again.' });

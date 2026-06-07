@@ -1321,9 +1321,9 @@ body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card{display:flex;posi
 /* While the chat is pinned full-screen, hide the page's sticky nav bar so it can't overlap Mike's header / the back button. */
 body[data-mode="contractor"].mp-chatting .nav{display:none;}
 /* Native-chat layout: header pinned top, messages scroll in the middle, composer+drawer pinned bottom — scoped to the active contractor chat thread only. */
-/* Hard scroll-lock the page while chatting so iOS rubber-band can't reveal the footer/app behind the fixed chat. html.mp-chatting is toggled in mpEnterChat/mpGoHome (more reliable than :has across iOS versions). */
-html.mp-chatting,body[data-mode="contractor"].mp-chatting{overflow:hidden;overscroll-behavior:none;height:100%;}
-body[data-mode="contractor"].mp-chatting #panelDiag{overflow:hidden;}
+/* Scroll-lock the page while chatting. IMPORTANT: do NOT set overflow:hidden on <html> or #panelDiag — #panelDiag is height:0 and on iOS Safari the showModal action-drawer dialog gets clipped to it (it doesn't always escape to the top layer like Chromium), leaving only the dim backdrop. overscroll-behavior:none + body overflow:hidden stops the rubber-band/footer-reveal and is dialog-safe. */
+html.mp-chatting{overscroll-behavior:none;}
+body[data-mode="contractor"].mp-chatting{overflow:hidden;overscroll-behavior:none;}
 body[data-mode="contractor"].mp-chatting .footer{display:none;}
 body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-header{flex:0 0 auto;}
 /* The messages wrapper (.chat-messages-wrap) is the direct flex child that must grow; the

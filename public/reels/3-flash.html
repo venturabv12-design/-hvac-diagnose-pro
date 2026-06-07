@@ -539,6 +539,55 @@ var loopStart = null;
 var audioFired = false;
 var audio = document.getElementById('mikeAudio');
 
+// ── iOS-proof voice via Web Audio (ports the main app's proven unlock path) ──
+// HTMLAudioElement.play() deferred seconds after the tap is blocked by iOS
+// Safari (out of gesture). The app solves this with AudioContext: resume the
+// context INSIDE the tap, hold the audio session open with a silent loop,
+// decode the MP3 to a buffer, then start a BufferSource at the cue — which iOS
+// allows once the context is already running.
+var actx = null, mikeBuffer = null, voiceSrc = null, voiceDecoding = false;
+function holdAudioSession() {
+  try {
+    var s = document.getElementById('_silentLoop');
+    if (!s) {
+      s = document.createElement('audio');
+      s.id = '_silentLoop';
+      s.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+      s.loop = true; s.volume = 0.001;
+      document.body.appendChild(s);
+    }
+    s.play().catch(function(){});
+  } catch(e){}
+}
+function unlockVoice() {
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC && !actx) actx = new AC();
+    if (actx && actx.state !== 'running') actx.resume().catch(function(){});
+    holdAudioSession();
+    if (actx && !mikeBuffer && !voiceDecoding) {
+      voiceDecoding = true;
+      var uri = audio.querySelector('source').src;
+      fetch(uri).then(function(r){ return r.arrayBuffer(); }).then(function(buf){
+        actx.decodeAudioData(buf, function(decoded){ mikeBuffer = decoded; voiceDecoding = false; },
+                                  function(){ voiceDecoding = false; });
+      }).catch(function(){ voiceDecoding = false; });
+    }
+  } catch(e){}
+}
+function playVoice() {
+  try {
+    if (!actx || !mikeBuffer) return;
+    if (actx.state !== 'running') actx.resume().catch(function(){});
+    if (voiceSrc) { try { voiceSrc.stop(0); } catch(e){} voiceSrc = null; }
+    var src = actx.createBufferSource();
+    src.buffer = mikeBuffer;
+    src.connect(actx.destination);
+    src.start(0);
+    voiceSrc = src;
+  } catch(e){}
+}
+
 function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 function easeIn(t)  { return t * t * t; }
 function lerp(a, b, t) { return a + (b - a) * t; }
@@ -614,8 +663,7 @@ function tick(now) {
   // On loop (loopCount > 0), restart from 0 each time we cross 12000.
   if (elapsed >= 12000 && elapsed < 12100 && !audioFired) {
     audioFired = true;
-    audio.currentTime = 0;
-    audio.play().catch(function(){});
+    playVoice();
   }
   // Reset audioFired flag when we're before the audio cue
   // so it re-fires on next loop
@@ -730,12 +778,7 @@ document.getElementById('tap-overlay').addEventListener('click', function() {
   // iOS UNLOCK: Safari only lets audio play if play() is called inside the tap
   // gesture. The voice fires ~12s later (not in a gesture), so iOS would block it.
   // Play+pause now (within this tap) to unlock the element, then the later cue works.
-  try {
-    audio.muted = false; audio.volume = 1;
-    var p = audio.play();
-    if (p && p.then) { p.then(function(){ audio.pause(); audio.currentTime = 0; }).catch(function(){}); }
-    else { audio.pause(); audio.currentTime = 0; }
-  } catch(e){}
+  unlockVoice();
   // Reset and start timeline
   loopStart = null;
   audioFired = false;

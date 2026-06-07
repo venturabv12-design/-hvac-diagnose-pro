@@ -9390,35 +9390,35 @@ var MP_TOOLS={
     {label:'Repair vs Replace',sub:'5000-rule calculator',fn:function(){showRepairReplaceCalc();}}
   ]},
   warranty:{title:'Warranty Check',pip:'var(--moss)',actions:[
-    {label:'Check Warranty Status',sub:'Brand / model / install date',fn:function(){mpEnterChat();sendQuick("Need to check warranty on this unit.");}},
-    {label:'File a Warranty Claim',sub:'Prep the claim',fn:function(){mpEnterChat();sendQuick("I need to file a warranty claim.");}},
+    {label:'Check Warranty Status',sub:'Brand / model / install date',fn:function(){mpAskMike("What's the brand, model, and install date? I'll check where the warranty stands.");window._mpActionDirective={search:true,text:'ACTION — WARRANTY CHECK: the tech just gave you the brand, model, and install date. Search the manufacturer warranty terms for this exact equipment and tell them what is covered (parts / compressor / labor), the length, and whether registration was required to keep it. Use real searched info, not a guess.'};}},
+    {label:'File a Warranty Claim',sub:'Prep the claim',fn:function(){mpAskMike("What's the unit, what failed, and the install date? I'll prep the warranty claim with you.");}},
     {label:'Maintenance Agreement',sub:'Build an MA',fn:function(){mpEnterChat();askMikeMaintenanceAgreement();}}
   ]},
   wiring:{title:'Wiring & Diagrams',pip:'var(--rust)',actions:[
-    {label:'Terminal Guide',sub:'Labels & wire colors',fn:function(){mpEnterChat();sendQuick("Help me read these terminals.");}},
+    {label:'Terminal Guide',sub:'Labels & wire colors',fn:function(){mpAskMike("What are you wiring — thermostat, contactor, a board? Tell me what you've got, or point the camera at it, and I'll walk the terminals with you.");}},
     {label:'Wiring Diagram',sub:'Read the real one off your panel',fn:function(){mpWiringDiagram();}},
     {label:'Draw a Diagram',sub:'Concept sketch — not the OEM diagram',fn:function(){mpDrawDiagram();}},
     {label:'Illustrate It',sub:'See how a part works',fn:function(){mpIllustrate();}},
-    {label:'Pressures',sub:'R-410A target pressures',fn:function(){mpEnterChat();sendQuick("What pressures am I looking for right now?");}},
+    {label:'Pressures',sub:'Target suction & head',fn:function(){mpAskMike("What refrigerant are you on, and what's the outdoor temp at the job? I'll get you your target suction and head.");}},
     {label:'Safety Check',sub:'Pre-job checklist',fn:function(){mpEnterChat();askMikeSafetyChecklist();}}
   ]},
   jobs:{title:'Close This Job',pip:'var(--brass)',actions:[
-    {label:'Job Summary',sub:'Problem · fix · invoice',fn:function(){mpEnterChat();sendQuick("Give me a summary of this job.");}},
+    {label:'Job Summary',sub:'Problem · fix · invoice',fn:function(){mpAskMike("Want me to write up this job — the problem, what you fixed, and what to invoice? Fill me in on anything I don't already have.");}},
     {label:'Invoice Generator',sub:'Build & copy invoice',fn:function(){generateInvoice();}},
     {label:'Customer Sign-Off',sub:'Capture signature',fn:function(){showJobSignOff();}},
     {label:'Save Customer',sub:'Add to customer list',fn:function(){saveCurrentJobAsCustomer();}},
-    {label:'Handle Objection',sub:'Price too high?',fn:function(){mpEnterChat();sendQuick("Customer's pushing back on the price.");}},
-    {label:'Pitch Maintenance',sub:'~10-yr system',fn:function(){mpEnterChat();sendQuick("Help me pitch a maintenance agreement.");}}
+    {label:'Handle Objection',sub:'Price too high?',fn:function(){mpAskMike("What are they balking at — the price, or whether they really need it? Tell me what they said and I'll give you the words.");}},
+    {label:'Pitch Maintenance',sub:'~10-yr system',fn:function(){mpAskMike("What system are they on and how old is it? I'll give you the maintenance-plan pitch that lands.");}}
   ]},
   manual:{title:'Tech Docs',pip:'rgba(244,239,230,.5)',actions:[
-    {label:'Install Manual',sub:'Startup & commissioning',fn:function(){mpEnterChat();sendQuick("Pull up the install procedure on this unit.");}},
-    {label:'Service Manual',sub:'Specs & procedures',fn:function(){mpEnterChat();sendQuick("I need the service specs on this unit.");}},
-    {label:'Error / Fault Codes',sub:'Decode a code',fn:function(){mpEnterChat();sendQuick("I've got a fault code I need decoded.");}},
+    {label:'Install Manual',sub:'Startup & commissioning',fn:function(){mpAskMike("What's the make and model? I'll pull the install and startup procedure.");window._mpActionDirective={search:true,text:'ACTION — INSTALL/STARTUP PROCEDURE: the tech gave the make and model. Search the manufacturer install/IOM startup and commissioning procedure for this exact unit and give the real steps plus the document reference. Searched, not from memory.'};}},
+    {label:'Service Manual',sub:'Specs & procedures',fn:function(){mpAskMike("Give me the make and model and I'll pull the service specs.");window._mpActionDirective={search:true,text:'ACTION — SERVICE SPECS: the tech gave the make and model. Search the manufacturer service literature for this exact unit and give the real specs (charge, target pressures, electrical, clearances) plus the document reference.'};}},
+    {label:'Error / Fault Codes',sub:'Decode a code',fn:function(){mpAskMike("What's the brand, the exact model off the data plate, and the code or flash count? I'll decode it.");window._mpActionDirective={search:true,text:'ACTION — FAULT CODE DECODE: the tech is giving brand + EXACT model + the code/flash count. Decode it for THIS exact model (codes shift across generations) and search the model service literature to confirm. Give the meaning, the most likely cause, and the check. Never guess across brands; use the exact model.'};}},
     {label:'Load Calc',sub:'Size the equipment',fn:function(){mpEnterChat();askMikeLoadCalc();}}
   ]},
   diagnose:{title:'Diagnose',pip:'var(--teal)',actions:[
     {label:'📷 Scan Nameplate',sub:'Camera reads the unit + Mike reads it',fn:function(){scanNameplate();}},
-    {label:'Find Upsells',sub:'After the repair',fn:function(){mpEnterChat();sendQuick("What am I leaving on the table on this job?");}},
+    {label:'Find Upsells',sub:'After the repair',fn:function(){mpAskMike("What'd you just do on this unit, and how old's the system? I'll show you what's worth offering — and how to frame it.");}},
     {label:'Beat Competitor Quote',sub:'Win the job',fn:function(){mpEnterChat();askMikeCompetitor();}},
     {label:'Get Google Review',sub:'Ask for a review',fn:function(){mpEnterChat();askMikeReviewRequest();}}
   ]}

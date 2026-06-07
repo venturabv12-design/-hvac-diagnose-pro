@@ -171,15 +171,13 @@ html, body {
    ===================================================== */
 #s1 {
   background:
-    radial-gradient(ellipse 120% 60% at 50% 100%, rgba(199,85,59,0.55) 0%, transparent 65%),
-    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(120,60,10,0.4) 0%, transparent 60%),
-    linear-gradient(180deg, #0A0704 0%, #0E0A05 40%, #120907 100%);
+    radial-gradient(ellipse 140% 80% at 50% 110%, #8B2E00 0%, #5A1A00 25%, #1A0900 55%, #0A0704 100%);
 }
 
-.heat-lines { position: absolute; top: 0; left: 0; width: 100%; height: 50%; pointer-events: none; overflow: hidden; }
+.heat-lines { position: absolute; top: 0; left: 0; width: 100%; height: 60%; pointer-events: none; overflow: hidden; }
 .heat-line {
   position: absolute; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255,180,80,0.12) 30%, rgba(255,180,80,0.25) 50%, rgba(255,180,80,0.12) 70%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255,180,80,0.3) 30%, rgba(255,180,80,0.6) 50%, rgba(255,180,80,0.3) 70%, transparent 100%);
   animation: heatRise 2.5s ease-in-out infinite;
 }
 @keyframes heatRise {
@@ -188,123 +186,231 @@ html, body {
   100% { transform: translateY(-300px) scaleX(0.6); opacity: 0; }
 }
 
-.temp-badge { position: absolute; top: 180px; right: 80px; display: flex; flex-direction: column; align-items: flex-end; opacity: 0; animation: fadeInUp 0.6s ease 0.5s forwards; }
-.temp-number { font-family: 'JetBrains Mono', monospace; font-size: 96px; font-weight: 700; color: #FFB400; line-height: 1; letter-spacing: -3px; text-shadow: 0 0 40px rgba(255,180,0,0.6), 0 0 80px rgba(255,180,0,0.3); }
-.temp-label { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 400; color: rgba(255,180,0,0.7); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4px; }
+.temp-badge { position: absolute; top: 160px; left: 80px; display: flex; flex-direction: column; align-items: flex-start; opacity: 0; }
+.temp-number { font-family: 'JetBrains Mono', monospace; font-size: 180px; font-weight: 700; color: #FFB400; line-height: 0.9; letter-spacing: -6px; text-shadow: 0 0 60px rgba(255,180,0,0.8), 0 0 120px rgba(255,180,0,0.4); }
+.temp-label { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 400; color: rgba(255,180,0,0.7); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 8px; }
 
-.rooftop-unit { position: absolute; bottom: 540px; left: 50%; transform: translateX(-50%); width: 680px; height: 320px; opacity: 0; animation: unitAppear 0.8s ease 0.3s forwards; }
+.rooftop-unit { position: absolute; bottom: 420px; left: 50%; transform: translateX(-50%); width: 800px; height: 420px; opacity: 0; }
 @keyframes unitAppear { from { opacity: 0; transform: translateX(-50%) scale(0.97); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
 
-.rtu-body { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 640px; height: 240px; background: linear-gradient(180deg, #2a2a26 0%, #1a1a17 60%, #111110 100%); border: 1px solid rgba(244,239,230,0.12); border-radius: 8px 8px 4px 4px; }
+.rtu-body { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 760px; height: 300px; background: linear-gradient(180deg, #2a2a26 0%, #1a1a17 60%, #111110 100%); border: 1px solid rgba(244,239,230,0.12); border-radius: 8px 8px 4px 4px; box-shadow: 0 0 60px rgba(180,80,0,0.4); }
 .rtu-body::before { content: ''; position: absolute; top: 20px; left: 20px; right: 20px; bottom: 20px; border: 1px solid rgba(244,239,230,0.06); border-radius: 4px; }
-.rtu-body::after { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 280px; height: 60px; background: linear-gradient(180deg, rgba(60,60,55,0.8), rgba(30,30,28,0.8)); border-bottom: 1px solid rgba(244,239,230,0.08); border-radius: 0 0 6px 6px; }
+.rtu-body::after { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 320px; height: 70px; background: linear-gradient(180deg, rgba(60,60,55,0.8), rgba(30,30,28,0.8)); border-bottom: 1px solid rgba(244,239,230,0.08); border-radius: 0 0 6px 6px; }
 
-.fan-grille { position: absolute; top: -70px; left: 50%; transform: translateX(-50%); width: 200px; height: 200px; border-radius: 50%; border: 6px solid rgba(244,239,230,0.15); background: rgba(0,0,0,0.6); box-shadow: 0 0 0 2px rgba(244,239,230,0.06); overflow: hidden; animation: fanSpin 0.6s linear infinite; opacity: 0.6; }
+.fan-grille { position: absolute; top: -80px; left: 50%; transform: translateX(-50%); width: 240px; height: 240px; border-radius: 50%; border: 6px solid rgba(244,239,230,0.15); background: rgba(0,0,0,0.6); box-shadow: 0 0 0 2px rgba(244,239,230,0.06); overflow: hidden; animation: fanSpin 0.6s linear infinite; opacity: 1; }
 @keyframes fanSpin { to { transform: translateX(-50%) rotate(360deg); } }
-.fan-blade { position: absolute; top: 50%; left: 50%; width: 2px; height: 80px; background: rgba(244,239,230,0.2); transform-origin: 50% 0%; margin-left: -1px; }
+.fan-blade { position: absolute; top: 50%; left: 50%; width: 2px; height: 96px; background: rgba(244,239,230,0.2); transform-origin: 50% 0%; }
 
-.fault-panel { position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%); display: flex; gap: 16px; align-items: center; }
-.fault-dot { width: 24px; height: 24px; border-radius: 50%; background: #C7553B; box-shadow: 0 0 0 3px rgba(199,85,59,0.2); }
+.fault-panel { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; align-items: center; }
+.fault-dot { width: 28px; height: 28px; border-radius: 50%; background: #C7553B; box-shadow: 0 0 0 6px rgba(199,85,59,0.25), 0 0 20px rgba(199,85,59,0.7); }
 
-.fault-code-display { position: absolute; bottom: 360px; left: 50%; transform: translateX(-50%); text-align: center; opacity: 0; animation: fadeInUp 0.5s ease 1.2s forwards; }
-.fault-code-hex { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: #C7553B; letter-spacing: 0.15em; text-transform: uppercase; }
-.fault-code-label { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: rgba(244,239,230,0.4); letter-spacing: 0.2em; margin-top: 6px; text-transform: uppercase; }
+.fault-badge { position: absolute; top: 380px; left: 80px; opacity: 0; }
+.fault-badge-text { font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 700; color: #C7553B; border-left: 4px solid #C7553B; padding-left: 20px; letter-spacing: 0.05em; text-transform: uppercase; }
 
-.stuck-copy { position: absolute; bottom: 180px; left: 0; right: 0; text-align: center; padding: 0 80px; opacity: 0; animation: fadeInUp 0.6s ease 1.8s forwards; }
-.stuck-headline { font-family: 'Anton', sans-serif; font-size: 72px; line-height: 1; color: #F4EFE6; letter-spacing: 0.01em; text-transform: uppercase; }
-.stuck-sub { font-family: 'Archivo', sans-serif; font-size: 28px; font-weight: 600; color: rgba(244,239,230,0.5); margin-top: 16px; letter-spacing: 0.03em; }
+.stuck-copy { position: absolute; bottom: 160px; left: 0; right: 0; text-align: center; padding: 0 80px; opacity: 0; }
+.stuck-headline { font-family: 'Anton', sans-serif; font-size: 160px; line-height: 0.9; color: #F4EFE6; letter-spacing: 0.01em; text-transform: uppercase; }
+.stuck-sub { font-family: 'Archivo', sans-serif; font-size: 36px; font-weight: 600; color: rgba(244,239,230,0.5); margin-top: 20px; }
 
-.roof-ground { position: absolute; bottom: 0; left: 0; right: 0; height: 480px; background: linear-gradient(180deg, transparent 0%, rgba(30,25,20,0.5) 40%, rgba(20,16,12,0.8) 70%, #0E0A05 100%); }
-.city-glow { position: absolute; bottom: 460px; left: 0; right: 0; height: 80px; background: linear-gradient(180deg, transparent 0%, rgba(199,85,59,0.08) 50%, transparent 100%); }
+.roof-ground { position: absolute; bottom: 0; left: 0; right: 0; height: 400px; background: linear-gradient(180deg, transparent 0%, rgba(10,7,4,0.95) 100%); }
 
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slamIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
 /* =====================================================
    SCENE 2 — THE 3 FLASHES
    ===================================================== */
-#s2 { background: #050504; }
+#s2 {
+  background:
+    radial-gradient(ellipse 100% 50% at 50% 50%, rgba(199,85,59,0.18) 0%, transparent 65%),
+    #050504;
+}
 
-.flash-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 900px; }
-.flash-dots-large { display: flex; gap: 48px; justify-content: center; margin-bottom: 64px; }
-.flash-dot-lg { width: 80px; height: 80px; border-radius: 50%; background: #C7553B; box-shadow: 0 0 0 4px rgba(199,85,59,0.3), 0 0 40px rgba(199,85,59,0.8), 0 0 80px rgba(199,85,59,0.4); }
-.what-now { font-family: 'Anton', sans-serif; font-size: 140px; line-height: 0.95; color: #F4EFE6; letter-spacing: 0.01em; text-transform: uppercase; opacity: 0; }
-.trane-model { font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 700; color: rgba(244,239,230,0.35); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 40px; opacity: 0; }
+.flash-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 960px; }
+.flash-dots-large { display: flex; gap: 64px; justify-content: center; margin-bottom: 80px; }
+.flash-dot-lg { width: 120px; height: 120px; border-radius: 50%; background: #C7553B; box-shadow: 0 0 0 4px rgba(199,85,59,0.1), 0 0 20px rgba(199,85,59,0.3); opacity: 0; }
+.what-now { font-family: 'Anton', sans-serif; font-size: 160px; line-height: 0.95; color: #F4EFE6; letter-spacing: -3px; text-transform: uppercase; opacity: 0; }
+.trane-model { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: rgba(244,239,230,0.4); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 48px; opacity: 0; }
 .error-strip { position: absolute; bottom: 400px; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #C7553B 20%, #C7553B 80%, transparent); opacity: 0; }
 
-/* =====================================================
-   SCENE 3 — TAP MIKE
-   ===================================================== */
-#s3 { background: #050504; }
+/* Fault ripple rings */
+.ripple-ring { position: absolute; border-radius: 50%; border: 2px solid rgba(199,85,59,0.7); animation: faultRipple 1.8s ease-out infinite; pointer-events: none; }
+@keyframes faultRipple { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.8); opacity: 0; } }
 
-.phone-lift { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%); width: 520px; background: linear-gradient(180deg, #1a1a1a 0%, #111 100%); border-radius: 56px; border: 2px solid rgba(244,239,230,0.12); box-shadow: 0 0 0 1px rgba(0,0,0,0.8), 0 40px 120px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.08); overflow: hidden; height: 1100px; }
-.phone-screen { position: absolute; top: 24px; left: 12px; right: 12px; bottom: 24px; border-radius: 44px; overflow: hidden; background: #0A0A0A; }
-.phone-notch { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 120px; height: 24px; background: #000; border-radius: 12px; z-index: 10; }
-.app-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 200px; border-radius: 48px; background: linear-gradient(135deg, #0A2422 0%, #0D2E2C 50%, #0A2422 100%); border: 2px solid rgba(0,194,178,0.35); box-shadow: 0 0 0 1px rgba(0,194,178,0.1), 0 0 40px rgba(0,194,178,0.3), 0 0 80px rgba(0,194,178,0.15); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; overflow: hidden; }
-.app-icon-face { width: 120px; height: 120px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(0,194,178,0.5); }
-.app-icon-face img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.1) translateY(-4px); }
-.app-icon-label { font-family: 'Anton', sans-serif; font-size: 22px; letter-spacing: 0.1em; color: #00C2B2; text-transform: uppercase; }
-.tap-ripple { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 280px; height: 280px; border-radius: 50%; border: 3px solid rgba(0,194,178,0.6); opacity: 0; }
-.s3-caption { position: absolute; top: 140px; left: 0; right: 0; text-align: center; padding: 0 80px; opacity: 0; }
-.s3-caption-text { font-family: 'Archivo', sans-serif; font-size: 36px; font-weight: 700; color: rgba(244,239,230,0.6); letter-spacing: 0.02em; }
-.s3-caption-sub { font-family: 'JetBrains Mono', monospace; font-size: 24px; color: rgba(244,239,230,0.3); margin-top: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+/* =====================================================
+   SCENE 3 — MIKE IS THE SCENE
+   ===================================================== */
+#s3 {
+  background:
+    radial-gradient(ellipse 120% 70% at 50% 60%, rgba(0,194,178,0.22) 0%, rgba(0,30,27,0.9) 50%, #050504 100%);
+}
+
+/* Phone prop behind Mike */
+.s3-phone-prop { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 480px; height: 900px; background: linear-gradient(180deg, #1a1e1d, #0e1210); border-radius: 52px; border: 2px solid rgba(0,194,178,0.15); z-index: 1; }
+.s3-phone-screen { position: absolute; inset: 18px; border-radius: 38px; background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(0,194,178,0.08), #050906); overflow: hidden; }
+
+/* Mike hero — z-index above phone */
+.s3-mike-hero { position: absolute; top: 50%; left: 50%; transform: translateX(-50%) translateY(-52%); width: 640px; height: 640px; border-radius: 50%; overflow: hidden; border: 4px solid #00C2B2; box-shadow: 0 0 0 4px rgba(0,194,178,0.9), 0 0 60px rgba(0,194,178,0.5); z-index: 2; opacity: 0; }
+.s3-mike-hero img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.1) translateY(-3px); }
+
+/* Ripple rings behind Mike in s3 */
+.s3-ripple { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -52%); border-radius: 50%; border: 2px solid rgba(0,194,178,0.4); animation: tealRipple 2.4s ease-out infinite; pointer-events: none; z-index: 1; }
+@keyframes tealRipple { 0% { opacity: 0.6; transform: translate(-50%,-52%) scale(1); } 100% { opacity: 0; transform: translate(-50%,-52%) scale(2.2); } }
+
+.s3-one-tap { position: absolute; top: 140px; left: 0; right: 0; text-align: center; opacity: 0; z-index: 3; }
+.s3-one-tap-text { font-family: 'Anton', sans-serif; font-size: 100px; color: #F4EFE6; line-height: 1; letter-spacing: 0.01em; text-transform: uppercase; }
+
+.s3-caption { position: absolute; bottom: 220px; left: 0; right: 0; text-align: center; padding: 0 80px; opacity: 0; z-index: 3; }
+.s3-caption-text { font-family: 'Archivo', sans-serif; font-size: 36px; font-weight: 700; color: rgba(244,239,230,0.85); letter-spacing: 0.02em; line-height: 1.3; }
 
 /* =====================================================
    SCENE 4 — MIKE ANSWERS
    ===================================================== */
 #s4 {
   background:
-    radial-gradient(ellipse 90% 70% at 50% 40%, rgba(0,194,178,0.08) 0%, transparent 65%),
-    linear-gradient(180deg, #060806 0%, #050604 100%);
+    radial-gradient(ellipse 100% 60% at 50% 30%, rgba(0,194,178,0.12) 0%, transparent 55%),
+    linear-gradient(180deg,#060806,#030403);
 }
 
-.mike-answer-face { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -52%); width: 560px; height: 560px; border-radius: 50%; overflow: hidden; border: 4px solid #00C2B2; box-shadow: 0 0 0 2px rgba(0,194,178,0.2), 0 0 60px rgba(0,194,178,0.5), 0 0 140px rgba(0,194,178,0.25), 0 0 280px rgba(0,194,178,0.12); opacity: 0; }
+.mike-answer-face { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -52%); width: 420px; height: 420px; border-radius: 50%; overflow: hidden; border: 4px solid #00C2B2; box-shadow: 0 0 0 4px rgba(0,194,178,0.9), 0 0 60px rgba(0,194,178,0.5); opacity: 0; }
 .mike-answer-face img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.08) translateY(-2%); }
 
 .pulse-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -52%); border-radius: 50%; border: 2px solid rgba(0,194,178,0.25); opacity: 0; }
 
-.voice-bars { position: absolute; top: calc(50% + 340px); left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; height: 80px; opacity: 0; }
-.voice-bar { width: 10px; background: #00C2B2; border-radius: 5px; animation: voiceAnim 0.5s ease-in-out infinite alternate; box-shadow: 0 0 12px rgba(0,194,178,0.6); }
-@keyframes voiceAnim { from { transform: scaleY(0.15); } to { transform: scaleY(1); } }
+/* 12-bar symmetric live waveform */
+.voice-bars { position: absolute; top: calc(50% + 260px); left: 50%; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; height: 80px; opacity: 0; }
+.voice-bar { width: 10px; background: #00C2B2; border-radius: 5px; box-shadow: 0 0 6px rgba(0,194,178,0.6); transform-origin: center; }
 
-.mike-answer-bubble { position: absolute; bottom: 180px; left: 60px; right: 60px; background: rgba(10,20,19,0.9); border: 1px solid rgba(0,194,178,0.25); border-left: 3px solid #00C2B2; border-radius: 12px; padding: 40px 44px; opacity: 0; transform: translateY(24px); backdrop-filter: blur(20px); }
+.mike-answer-bubble { position: absolute; bottom: 120px; left: 60px; right: 60px; background: rgba(10,20,19,0.9); border: 1px solid rgba(0,194,178,0.3); border-left: 3px solid #00C2B2; border-radius: 12px; padding: 40px 44px; opacity: 0; transform: translateY(24px); }
 .mike-answer-tag { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: #00C2B2; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
-.mike-answer-tag::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #00C2B2; box-shadow: 0 0 8px #00C2B2; animation: blink 1s ease infinite; }
+.mike-answer-tag::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #00C2B2; box-shadow: 0 0 8px #00C2B2; animation: blink 1.2s ease infinite; }
 @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-.mike-answer-text { font-family: 'Archivo', sans-serif; font-size: 34px; font-weight: 700; color: #F4EFE6; line-height: 1.35; letter-spacing: 0.005em; }
+.mike-answer-text { font-family: 'Archivo', sans-serif; font-size: 32px; font-weight: 700; color: #F4EFE6; line-height: 1.4; }
 .mike-answer-text .highlight { color: #FFB400; background: rgba(255,180,0,0.1); padding: 0 6px; border-radius: 4px; }
 
-.mike-name-badge { position: absolute; top: 120px; left: 0; right: 0; text-align: center; opacity: 0; }
-.mike-name-text { font-family: 'Anton', sans-serif; font-size: 64px; letter-spacing: 0.12em; color: #00C2B2; text-transform: uppercase; }
-.mike-title-text { font-family: 'JetBrains Mono', monospace; font-size: 20px; color: rgba(0,194,178,0.55); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 10px; }
+.mike-name-badge { position: absolute; top: 100px; left: 0; right: 0; text-align: center; opacity: 0; }
+.mike-name-text { font-family: 'Anton', sans-serif; font-size: 64px; letter-spacing: 0.12em; color: #00C2B2; text-transform: uppercase; line-height: 1; }
+.mike-title-text { font-family: 'JetBrains Mono', monospace; font-size: 20px; color: rgba(0,194,178,0.55); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 8px; }
 
 /* =====================================================
-   SCENE 5 — BRAND CLOSE
+   SCENE 5 — BRAND CLOSE (20000–30000ms)
    ===================================================== */
-#s5 { background: #000; }
+#s5 {
+  background: linear-gradient(180deg,#0A0704,#050403);
+}
 
-.brand-seam-top { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, #00C2B2 15%, #00C2B2 85%, transparent); opacity: 0; }
-.brand-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(244,239,230,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(244,239,230,0.02) 1px, transparent 1px); background-size: 60px 60px; }
-.brand-mike { position: absolute; top: 340px; left: 50%; transform: translateX(-50%); width: 320px; height: 320px; border-radius: 50%; overflow: hidden; border: 3px solid rgba(0,194,178,0.4); box-shadow: 0 0 40px rgba(0,194,178,0.3), 0 0 100px rgba(0,194,178,0.12); opacity: 0; }
-.brand-mike img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.08) translateY(-2%); }
-.brand-credential { position: absolute; top: 700px; left: 60px; right: 60px; opacity: 0; }
-.brand-cred-rule { height: 1px; background: linear-gradient(90deg, rgba(0,194,178,0.5), rgba(0,194,178,0.1)); margin-bottom: 32px; }
-.brand-cred-item { display: flex; justify-content: space-between; align-items: baseline; padding: 18px 0; border-bottom: 1px solid rgba(244,239,230,0.06); }
-.brand-cred-label { font-family: 'JetBrains Mono', monospace; font-size: 20px; color: rgba(244,239,230,0.4); letter-spacing: 0.12em; text-transform: uppercase; }
-.brand-cred-value { font-family: 'Archivo', sans-serif; font-size: 24px; font-weight: 700; color: #F4EFE6; letter-spacing: 0.02em; }
-.brand-cred-value.teal { color: #00C2B2; }
-.brand-cred-value.gold { color: #FFB400; }
-.brand-wordmark { position: absolute; bottom: 520px; left: 0; right: 0; text-align: center; opacity: 0; }
-.brand-trazer { font-family: 'Anton', sans-serif; font-size: 148px; letter-spacing: 0.06em; color: #F4EFE6; line-height: 0.9; text-transform: uppercase; }
-.brand-intelligence { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: rgba(244,239,230,0.4); letter-spacing: 0.35em; text-transform: uppercase; margin-top: 16px; }
-.brand-underline { position: absolute; bottom: 492px; left: 50%; transform: translateX(-50%); height: 3px; background: #00C2B2; width: 0; box-shadow: 0 0 12px rgba(0,194,178,0.8); }
-.brand-cta { position: absolute; bottom: 300px; left: 0; right: 0; text-align: center; opacity: 0; }
-.brand-cta-url { font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 700; color: #FFB400; letter-spacing: 0.12em; text-transform: uppercase; }
-.brand-cta-sub { font-family: 'Archivo', sans-serif; font-size: 24px; font-weight: 600; color: rgba(244,239,230,0.45); margin-top: 14px; letter-spacing: 0.06em; }
-.brand-seam-bottom { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, #FFB400 15%, #FFB400 85%, transparent); opacity: 0; }
+.brand-scanlines {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(244,239,230,0.025) 0px,
+      transparent 1px,
+      transparent 59px,
+      rgba(244,239,230,0.025) 60px
+    );
+}
+.brand-grid5 {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,194,178,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,194,178,0.015) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+.brand-seam-top5 { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, #00C2B2 20%, #00C2B2 80%, transparent); opacity: 0; }
+.brand-seam-bottom5 { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, #FFB400 20%, #FFB400 80%, transparent); opacity: 0; }
+
+/* Mike at 35% from top */
+.brand-mike5 {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  width: 340px; height: 340px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid #00C2B2;
+  box-shadow: 0 0 0 4px rgba(0,194,178,0.9), 0 0 60px rgba(0,194,178,0.5);
+  opacity: 0;
+}
+.brand-mike5 img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.08) translateY(-2%); }
+
+/* Brand block */
+.brand-block5 {
+  position: absolute;
+  top: calc(35% + 210px);
+  left: 0; right: 0;
+  text-align: center;
+  opacity: 0;
+}
+.brand-block5-trazer { font-family: 'Anton', sans-serif; font-size: 48px; color: rgba(244,239,230,0.35); letter-spacing: 0.3em; text-transform: uppercase; line-height: 1; }
+.brand-block5-intel { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: #00C2B2; letter-spacing: 0.4em; text-transform: uppercase; margin-top: 12px; }
+.brand-block5-rule { height: 2px; background: #00C2B2; width: 200px; margin: 20px auto 0; box-shadow: 0 0 10px rgba(0,194,178,0.6); }
+.brand-block5-url { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: rgba(244,239,230,0.5); letter-spacing: 0.25em; text-transform: uppercase; margin-top: 20px; }
+
+/* Credential strip */
+.brand-cred5 {
+  position: absolute;
+  top: calc(35% + 410px);
+  left: 80px; right: 80px;
+  opacity: 0;
+}
+.brand-cred5-rule { height: 1px; background: linear-gradient(90deg, rgba(0,194,178,0.5), rgba(0,194,178,0.1)); margin-bottom: 24px; }
+.brand-cred5-row { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0; border-bottom: 1px solid rgba(244,239,230,0.08); }
+.brand-cred5-key { font-family: 'JetBrains Mono', monospace; font-size: 20px; color: rgba(244,239,230,0.35); letter-spacing: 0.12em; text-transform: uppercase; }
+.brand-cred5-val { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: #F4EFE6; letter-spacing: 0.04em; text-align: right; }
+
+/* Caveat tagline */
+.brand-tagline5 {
+  position: absolute;
+  bottom: 180px;
+  left: 0; right: 0;
+  text-align: center;
+  opacity: 0;
+}
+.brand-tagline5-text { font-family: 'Caveat', cursive; font-size: 52px; font-weight: 700; color: rgba(0,194,178,0.85); line-height: 1.2; }
 
 /* PROGRESS BAR */
-#progress { position: absolute; top: 0; left: 0; height: 4px; background: linear-gradient(90deg, #00C2B2, #FFB400); width: 0%; z-index: 300; box-shadow: 0 0 8px rgba(0,194,178,0.6); }
+#progress { position: absolute; top: 0; left: 0; height: 4px; background: linear-gradient(90deg, #00C2B2, #FFB400); width: 0; z-index: 210; }
 
+/* =====================================================
+   PERF: Radial-gradient glow sibling layers (cheap compositing)
+   These replace the expensive multi-layer box-shadow glows.
+   They are static siblings positioned behind the circle, animated
+   only via transform+opacity — never re-rasterized.
+   ===================================================== */
+.s3-mike-glow {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -52%);
+  width: 900px; height: 900px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,194,178,0.55) 0%, rgba(0,194,178,0.22) 35%, transparent 70%);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+}
+.mike-answer-glow {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -52%);
+  width: 700px; height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,194,178,0.5) 0%, rgba(0,194,178,0.2) 35%, transparent 70%);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+.brand-mike5-glow {
+  position: absolute;
+  top: 35%; left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,194,178,0.5) 0%, rgba(0,194,178,0.2) 35%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+}
 </style>
 </head>
 <body>
@@ -337,14 +443,20 @@ html, body {
     <!-- SCENE 1 — ROOFTOP HELL -->
     <div class="scene" id="s1">
       <div class="heat-lines" id="heatLines"></div>
-      <div class="city-glow"></div>
       <div class="roof-ground"></div>
-      <div class="rooftop-unit">
+      <div class="temp-badge" id="tempBadge">
+        <div class="temp-number">104&deg;</div>
+        <div class="temp-label">Roof Temp</div>
+      </div>
+      <div class="fault-badge" id="faultBadge">
+        <div class="fault-badge-text">3-FLASH FAULT</div>
+      </div>
+      <div class="rooftop-unit" id="rooftopUnit">
         <div class="rtu-body">
           <div class="fault-panel">
-            <div class="fault-dot" id="fd1" style="opacity:0.2"></div>
-            <div class="fault-dot" id="fd2" style="opacity:0.2"></div>
-            <div class="fault-dot" id="fd3" style="opacity:0.2"></div>
+            <div class="fault-dot" id="fd1"></div>
+            <div class="fault-dot" id="fd2"></div>
+            <div class="fault-dot" id="fd3"></div>
           </div>
         </div>
         <div class="fan-grille">
@@ -358,132 +470,136 @@ html, body {
           <div class="fan-blade" style="transform-origin:50% 0%;transform:rotate(315deg) translateX(-1px)"></div>
         </div>
       </div>
-      <div class="temp-badge">
-        <div class="temp-number">104&deg;</div>
-        <div class="temp-label">Roof Temp</div>
-      </div>
-      <div class="fault-code-display">
-        <div class="fault-code-hex">3-FLASH FAULT</div>
-        <div class="fault-code-label">Error &middot; Trane XR15 &middot; No Cool</div>
-      </div>
-      <div class="stuck-copy">
+      <div class="stuck-copy" id="stuckCopy">
         <div class="stuck-headline">NOW<br>WHAT?</div>
-        <div class="stuck-sub">Manual's in the truck. Customer's waiting.</div>
+        <div class="stuck-sub">Manual&#39;s in the truck. Customer&#39;s waiting.</div>
       </div>
     </div>
 
     <!-- SCENE 2 — THE 3 FLASHES -->
     <div class="scene" id="s2">
       <div class="flash-frame">
-        <div class="flash-dots-large">
-          <div class="flash-dot-lg" id="fl1"></div>
-          <div class="flash-dot-lg" id="fl2"></div>
-          <div class="flash-dot-lg" id="fl3"></div>
+        <div class="flash-dots-large" id="flashDotsWrap">
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+            <div class="flash-dot-lg" id="fl1"></div>
+            <div class="ripple-ring" id="rr1a" style="width:120px;height:120px;animation-delay:0s;"></div>
+            <div class="ripple-ring" id="rr1b" style="width:120px;height:120px;animation-delay:0.6s;"></div>
+            <div class="ripple-ring" id="rr1c" style="width:120px;height:120px;animation-delay:1.2s;"></div>
+          </div>
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+            <div class="flash-dot-lg" id="fl2"></div>
+            <div class="ripple-ring" id="rr2a" style="width:120px;height:120px;animation-delay:0s;"></div>
+            <div class="ripple-ring" id="rr2b" style="width:120px;height:120px;animation-delay:0.6s;"></div>
+            <div class="ripple-ring" id="rr2c" style="width:120px;height:120px;animation-delay:1.2s;"></div>
+          </div>
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+            <div class="flash-dot-lg" id="fl3"></div>
+            <div class="ripple-ring" id="rr3a" style="width:120px;height:120px;animation-delay:0s;"></div>
+            <div class="ripple-ring" id="rr3b" style="width:120px;height:120px;animation-delay:0.6s;"></div>
+            <div class="ripple-ring" id="rr3c" style="width:120px;height:120px;animation-delay:1.2s;"></div>
+          </div>
         </div>
-        <div class="what-now" id="whatNow">STUCK.<br>104&deg;.<br>UNIT DOWN.</div>
-        <div class="trane-model" id="traneModel">TRANE XR15 &middot; 3-FLASH FAULT</div>
+        <div class="what-now" id="whatNow">WHAT<br>NOW?</div>
+        <div class="trane-model" id="traneModel">TRANE XR15 &middot; HIGH-PRESSURE LOCKOUT</div>
       </div>
       <div class="error-strip" id="errorStrip"></div>
     </div>
 
-    <!-- SCENE 3 — TAP MIKE -->
+    <!-- SCENE 3 — MIKE IS THE SCENE -->
     <div class="scene" id="s3">
-      <div class="s3-caption" id="s3cap">
-        <div class="s3-caption-text">One move.</div>
-        <div class="s3-caption-sub">TRAZERMIKE.IO</div>
+      <div class="s3-phone-prop"></div>
+      <div class="s3-ripple" id="s3r1" style="width:700px;height:700px;animation-delay:0s;"></div>
+      <div class="s3-ripple" id="s3r2" style="width:700px;height:700px;animation-delay:0.8s;"></div>
+      <div class="s3-ripple" id="s3r3" style="width:700px;height:700px;animation-delay:1.6s;"></div>
+      <div class="s3-mike-glow" id="s3MikeGlow"></div>
+      <div class="s3-mike-hero" id="s3Mike">
+        <img src="mike.png" alt="Mike" onerror="this.style.background='#0A2422'">
       </div>
-      <div class="phone-lift" id="phoneLift">
-        <div class="phone-screen">
-          <div class="phone-notch"></div>
-          <div class="app-icon">
-            <div class="app-icon-face">
-              <img src="mike.png" alt="Mike" onerror="this.style.background='#00C2B2'">
-            </div>
-            <div class="app-icon-label">MIKE</div>
-          </div>
-          <div class="tap-ripple" id="tapRipple"></div>
-        </div>
+      <div class="s3-one-tap" id="s3OneTap">
+        <div class="s3-one-tap-text">ONE TAP.</div>
+      </div>
+      <div class="s3-caption" id="s3Cap">
+        <div class="s3-caption-text">MIKE&#39;S ALREADY LOOKING AT IT.</div>
       </div>
     </div>
 
     <!-- SCENE 4 — MIKE ANSWERS (voice plays here) -->
     <div class="scene" id="s4">
-      <div class="pulse-ring" id="pr1" style="width:640px;height:640px;"></div>
-      <div class="pulse-ring" id="pr2" style="width:800px;height:800px;"></div>
-      <div class="pulse-ring" id="pr3" style="width:960px;height:960px;"></div>
+      <div class="pulse-ring" id="pr1" style="width:480px;height:480px;"></div>
+      <div class="pulse-ring" id="pr2" style="width:620px;height:620px;"></div>
+      <div class="pulse-ring" id="pr3" style="width:760px;height:760px;"></div>
       <div class="mike-name-badge" id="mikeNameBadge">
         <div class="mike-name-text">MIKE</div>
         <div class="mike-title-text">25-YR MASTER TECH &middot; ALWAYS ON</div>
       </div>
+      <div class="mike-answer-glow" id="mikeAnswerGlow"></div>
       <div class="mike-answer-face" id="mikeAnswerFace">
         <img src="mike.png" alt="Mike" onerror="this.style.background='#0A2422'">
       </div>
       <div class="voice-bars" id="voiceBars">
-        <div class="voice-bar" style="height:20px; animation-delay:0s; animation-duration:0.4s;"></div>
-        <div class="voice-bar" style="height:40px; animation-delay:0.05s; animation-duration:0.5s;"></div>
-        <div class="voice-bar" style="height:64px; animation-delay:0.1s; animation-duration:0.35s;"></div>
-        <div class="voice-bar" style="height:80px; animation-delay:0.15s; animation-duration:0.55s;"></div>
-        <div class="voice-bar" style="height:80px; animation-delay:0.07s; animation-duration:0.45s;"></div>
-        <div class="voice-bar" style="height:64px; animation-delay:0.12s; animation-duration:0.38s;"></div>
-        <div class="voice-bar" style="height:48px; animation-delay:0.04s; animation-duration:0.6s;"></div>
-        <div class="voice-bar" style="height:32px; animation-delay:0.09s; animation-duration:0.42s;"></div>
-        <div class="voice-bar" style="height:48px; animation-delay:0.02s; animation-duration:0.48s;"></div>
-        <div class="voice-bar" style="height:64px; animation-delay:0.14s; animation-duration:0.52s;"></div>
-        <div class="voice-bar" style="height:80px; animation-delay:0.06s; animation-duration:0.44s;"></div>
-        <div class="voice-bar" style="height:80px; animation-delay:0.11s; animation-duration:0.36s;"></div>
-        <div class="voice-bar" style="height:64px; animation-delay:0.03s; animation-duration:0.58s;"></div>
-        <div class="voice-bar" style="height:48px; animation-delay:0.08s; animation-duration:0.4s;"></div>
-        <div class="voice-bar" style="height:32px; animation-delay:0.13s; animation-duration:0.5s;"></div>
-        <div class="voice-bar" style="height:20px; animation-delay:0.01s; animation-duration:0.46s;"></div>
+        <div class="voice-bar" style="height:16px;"></div>
+        <div class="voice-bar" style="height:32px;"></div>
+        <div class="voice-bar" style="height:48px;"></div>
+        <div class="voice-bar" style="height:64px;"></div>
+        <div class="voice-bar" style="height:72px;"></div>
+        <div class="voice-bar" style="height:80px;"></div>
+        <div class="voice-bar" style="height:80px;"></div>
+        <div class="voice-bar" style="height:72px;"></div>
+        <div class="voice-bar" style="height:80px;"></div>
+        <div class="voice-bar" style="height:80px;"></div>
+        <div class="voice-bar" style="height:72px;"></div>
+        <div class="voice-bar" style="height:64px;"></div>
+        <div class="voice-bar" style="height:48px;"></div>
+        <div class="voice-bar" style="height:32px;"></div>
+        <div class="voice-bar" style="height:24px;"></div>
+        <div class="voice-bar" style="height:16px;"></div>
       </div>
       <div class="mike-answer-bubble" id="mikeAnswerBubble">
         <div class="mike-answer-tag">MIKE &mdash; LIVE</div>
         <div class="mike-answer-text">
-          "3-flash on an XR15 is
+          &#34;3-flash on an XR15 is
           <span class="highlight">high-pressure lockout</span> &mdash;
-          check your liquid line TXV. Schrader's
+          check your liquid line TXV. Schrader&#39;s
           on the right side of the coil.
-          I'm looking at the same unit right now."
+          I&#39;m looking at the same unit right now.&#34;
         </div>
       </div>
     </div>
 
-    <!-- SCENE 5 — BRAND CLOSE -->
+    <!-- SCENE 5 — BRAND CLOSE (20000–30000ms) -->
     <div class="scene" id="s5">
-      <div class="brand-seam-top" id="brandSeamTop"></div>
-      <div class="brand-grid"></div>
-      <div class="brand-mike" id="brandMike">
+      <div class="brand-scanlines"></div>
+      <div class="brand-grid5"></div>
+      <div class="brand-seam-top5" id="brandSeamTop5"></div>
+      <div class="brand-seam-bottom5" id="brandSeamBot5"></div>
+      <div class="brand-mike5-glow" id="brandMike5Glow"></div>
+      <div class="brand-mike5" id="brandMike5">
         <img src="mike.png" alt="Mike" onerror="this.style.background='#0A2422'">
       </div>
-      <div class="brand-credential" id="brandCred">
-        <div class="brand-cred-rule"></div>
-        <div class="brand-cred-item">
-          <span class="brand-cred-label">Status</span>
-          <span class="brand-cred-value teal">Always On</span>
+      <div class="brand-block5" id="brandBlock5">
+        <div class="brand-block5-trazer">TRAZER</div>
+        <div class="brand-block5-intel">INTELLIGENCE</div>
+        <div class="brand-block5-rule"></div>
+        <div class="brand-block5-url">TRAZERMIKE.IO</div>
+      </div>
+      <div class="brand-cred5" id="brandCred5">
+        <div class="brand-cred5-rule"></div>
+        <div class="brand-cred5-row">
+          <span class="brand-cred5-key">RESPONSE TIME</span>
+          <span class="brand-cred5-val">INSTANT</span>
         </div>
-        <div class="brand-cred-item">
-          <span class="brand-cred-label">Experience</span>
-          <span class="brand-cred-value">25 Years On Truck</span>
+        <div class="brand-cred5-row">
+          <span class="brand-cred5-key">EXPERIENCE</span>
+          <span class="brand-cred5-val">25 YR MASTER TECH</span>
         </div>
-        <div class="brand-cred-item">
-          <span class="brand-cred-label">Brands Known</span>
-          <span class="brand-cred-value">Every One</span>
-        </div>
-        <div class="brand-cred-item">
-          <span class="brand-cred-label">Cost</span>
-          <span class="brand-cred-value gold">$0 / Call</span>
+        <div class="brand-cred5-row">
+          <span class="brand-cred5-key">AVAILABILITY</span>
+          <span class="brand-cred5-val">24-7 &middot; ANY JOB</span>
         </div>
       </div>
-      <div class="brand-wordmark" id="brandWordmark">
-        <div class="brand-trazer">TRAZER</div>
-        <div class="brand-intelligence">INTELLIGENCE</div>
+      <div class="brand-tagline5" id="brandTagline5">
+        <div class="brand-tagline5-text">Your next call. His next fix.</div>
       </div>
-      <div class="brand-underline" id="brandUnderline"></div>
-      <div class="brand-cta" id="brandCta">
-        <div class="brand-cta-url">TRAZERMIKE.IO</div>
-        <div class="brand-cta-sub">A master tech in every pocket.</div>
-      </div>
-      <div class="brand-seam-bottom" id="brandSeamBottom"></div>
     </div>
 
   </div><!-- #stage -->
@@ -515,24 +631,43 @@ html, body {
 (function buildHeatLines() {
   var container = document.getElementById('heatLines');
   if (!container) return;
-  for (var i = 0; i < 14; i++) {
+  for (var i = 0; i < 18; i++) {
     var el = document.createElement('div');
     el.className = 'heat-line';
     el.style.top = (Math.random() * 100) + '%';
     el.style.animationDelay = (Math.random() * 2.5) + 's';
     el.style.animationDuration = (1.8 + Math.random() * 1.5) + 's';
-    el.style.opacity = (0.3 + Math.random() * 0.5).toString();
+    el.style.opacity = (0.3 + Math.random() * 0.7).toString();
     container.appendChild(el);
   }
 })();
 
 // =====================================================
+// LIVE WAVEFORM VISUALIZER — Scene 4
+// =====================================================
+var waveInterval = null;
+function startWaveform() {
+  if (waveInterval) return;
+  var bars = document.querySelectorAll('#voiceBars .voice-bar');
+  waveInterval = setInterval(function() {
+    bars.forEach(function(b) {
+      b.style.transform = 'scaleY(' + (0.2 + Math.random() * 0.8) + ')';
+    });
+  }, 80);
+}
+function stopWaveform() {
+  if (waveInterval) { clearInterval(waveInterval); waveInterval = null; }
+  var bars = document.querySelectorAll('#voiceBars .voice-bar');
+  bars.forEach(function(b) { b.style.transform = 'scaleY(0.15)'; });
+}
+
+// =====================================================
 // ANIMATION ENGINE
 // Total: 30s, then loop
-// Scene 1: 0–4000 | Scene 2: 4000–8000
-// Scene 3: 8000–12000 | Scene 4: 12000–23000
-// Scene 5: 23000–30000 → loop
-// AUDIO fires at elapsed=12000 (Scene 4 start)
+// Scene 1: 0–4500  | Scene 2: 4500–8000
+// Scene 3: 8000–12000 | Scene 4: 12000–20000
+// Scene 5: 20000–30000 → loop
+// AUDIO fires at elapsed=12000 (Scene 4 start — voice cue)
 // =====================================================
 var totalDuration = 30000;
 var loopStart = null;
@@ -650,59 +785,93 @@ function playFlashLarge(now) {
   f3.style.boxShadow = on3 ? onShadow : offShadow;
 }
 
+// Sequential entrance for fl2 and fl3 in scene 2
+var fl2Shown = false, fl3Shown = false;
+
 function tick(now) {
   if (!loopStart) loopStart = now;
   var elapsed = (now - loopStart) % totalDuration;
-  var loopCount = Math.floor((now - loopStart) / totalDuration);
 
   // Progress bar
   var prog = document.getElementById('progress');
   if (prog) prog.style.width = (elapsed / totalDuration * 100) + '%';
 
   // Audio sync — fire when Scene 4 begins (elapsed 12000ms).
-  // On loop (loopCount > 0), restart from 0 each time we cross 12000.
   if (elapsed >= 12000 && elapsed < 12100 && !audioFired) {
     audioFired = true;
     playVoice();
   }
-  // Reset audioFired flag when we're before the audio cue
-  // so it re-fires on next loop
-  if (elapsed < 12000) {
-    audioFired = false;
-  }
+  if (elapsed < 12000) { audioFired = false; }
 
-  // ---- SCENE 1: 0–4000 ----
-  if (elapsed < 4000) {
-    var s1op = elapsed < 800 ? easeOut(elapsed / 800) : 1;
-    if (elapsed > 3400) s1op = easeIn(1 - (elapsed - 3400) / 600);
+  // Reset sequential entrance flags on loop
+  if (elapsed < 4500) { fl2Shown = false; fl3Shown = false; }
+
+  // ---- SCENE 1: 0–4500 ----
+  if (elapsed < 4500) {
+    var s1l = elapsed;
+    var s1op = s1l < 800 ? easeOut(s1l / 800) : 1;
+    if (s1l > 3900) s1op = easeIn(1 - (s1l - 3900) / 600);
     document.getElementById('s1').style.opacity = s1op;
     document.getElementById('s2').style.opacity = 0;
     document.getElementById('s3').style.opacity = 0;
     document.getElementById('s4').style.opacity = 0;
     document.getElementById('s5').style.opacity = 0;
+    stopWaveform();
     playFlash(now);
+
+    // Animate unit in
+    var unit = document.getElementById('rooftopUnit');
+    if (unit) {
+      var ut = clamp((s1l - 200) / 700, 0, 1);
+      unit.style.opacity = easeOut(ut);
+      unit.style.transform = 'translateX(-50%) scale(' + lerp(0.94, 1, easeOut(ut)) + ')';
+    }
+    // Temp badge entrance
+    var tb = document.getElementById('tempBadge');
+    if (tb) { var tbt = clamp((s1l - 300) / 500, 0, 1); tb.style.opacity = easeOut(tbt); }
+    // Fault badge entrance
+    var fb = document.getElementById('faultBadge');
+    if (fb) { var fbt = clamp((s1l - 600) / 500, 0, 1); fb.style.opacity = easeOut(fbt); }
+    // Copy entrance
+    var sc = document.getElementById('stuckCopy');
+    if (sc) { var sct = clamp((s1l - 1400) / 700, 0, 1); sc.style.opacity = easeOut(sct); sc.style.transform = 'translateY(' + lerp(30, 0, easeOut(sct)) + 'px)'; }
   }
 
-  // ---- SCENE 2: 4000–8000 ----
+  // ---- SCENE 2: 4500–8000 ----
   else if (elapsed < 8000) {
-    var s2l = elapsed - 4000;
+    var s2l = elapsed - 4500;
     var s2op = s2l < 400 ? easeOut(s2l / 400) : 1;
-    if (s2l > 3400) s2op = easeIn(1 - (s2l - 3400) / 600);
+    if (s2l > 3100) s2op = easeIn(1 - (s2l - 3100) / 400);
     document.getElementById('s1').style.opacity = 0;
     document.getElementById('s2').style.opacity = s2op;
     document.getElementById('s3').style.opacity = 0;
     document.getElementById('s4').style.opacity = 0;
     document.getElementById('s5').style.opacity = 0;
+    stopWaveform();
     playFlashLarge(now);
+
+    // Sequential dot entrances: fl1 at s2l=0, fl2 at s2l=250, fl3 at s2l=500
+    var f1 = document.getElementById('fl1');
+    var f2 = document.getElementById('fl2');
+    var f3 = document.getElementById('fl3');
+    if (f1) { var f1t = clamp(s2l / 200, 0, 1); f1.style.opacity = easeOut(f1t); }
+    if (!fl2Shown && s2l >= 250) { fl2Shown = true; }
+    if (f2) { var f2t = fl2Shown ? clamp((s2l - 250) / 200, 0, 1) : 0; f2.style.opacity = easeOut(f2t); }
+    if (!fl3Shown && s2l >= 500) { fl3Shown = true; }
+    if (f3) { var f3t = fl3Shown ? clamp((s2l - 500) / 200, 0, 1) : 0; f3.style.opacity = easeOut(f3t); }
+
+    // Headline slam
     var wn = document.getElementById('whatNow');
+    if (wn) { var wnt = clamp((s2l - 300) / 350, 0, 1); wn.style.opacity = easeOut(wnt); wn.style.transform = 'translateY(' + lerp(80, 0, easeOut(wnt)) + 'px)'; }
+    // Data line
     var tm = document.getElementById('traneModel');
+    if (tm) { var tmt = clamp((s2l - 700) / 400, 0, 1); tm.style.opacity = easeOut(tmt) * 0.8; }
+    // Error strip
     var es = document.getElementById('errorStrip');
-    if (wn) { var wnt = clamp((s2l-400)/400,0,1); wn.style.opacity = easeOut(wnt); wn.style.transform = 'translateY('+lerp(40,0,easeOut(wnt))+'px)'; }
-    if (tm) { var tmt = clamp((s2l-800)/400,0,1); tm.style.opacity = easeOut(tmt)*0.8; }
-    if (es) { var est = clamp((s2l-600)/600,0,1); es.style.opacity = easeOut(est)*0.6; }
+    if (es) { var est = clamp((s2l - 500) / 600, 0, 1); es.style.opacity = easeOut(est) * 0.6; }
   }
 
-  // ---- SCENE 3: 8000–12000 ----
+  // ---- SCENE 3: 8000–12000 — MIKE IS THE SCENE ----
   else if (elapsed < 12000) {
     var s3l = elapsed - 8000;
     var s3op = s3l < 400 ? easeOut(s3l / 400) : 1;
@@ -712,59 +881,90 @@ function tick(now) {
     document.getElementById('s3').style.opacity = s3op;
     document.getElementById('s4').style.opacity = 0;
     document.getElementById('s5').style.opacity = 0;
-    var phone = document.getElementById('phoneLift');
-    var s3cap = document.getElementById('s3cap');
-    var tapRipple = document.getElementById('tapRipple');
-    if (phone) { var pt = clamp((s3l-200)/900,0,1); phone.style.transform = 'translateX(-50%) translateY('+lerp(100,-5,easeOut(pt))+'%)'; }
-    if (s3cap) { var ct = clamp((s3l-600)/600,0,1); s3cap.style.opacity = easeOut(ct); }
-    if (tapRipple) { var trt = clamp((s3l-2400)/800,0,1); tapRipple.style.transform = 'translate(-50%,-50%) scale('+lerp(0,2,easeOut(trt))+')'; tapRipple.style.opacity = (1-trt)*0.8; }
+    stopWaveform();
+
+    // Mike hero entrance — scale(0)→1.08→1 power4.out
+    var mike3 = document.getElementById('s3Mike');
+    if (mike3) {
+      var m3t = clamp((s3l - 100) / 400, 0, 1);
+      var m3e = easeOut(m3t);
+      var m3scale = m3t < 0.7 ? lerp(0, 1.08, m3t / 0.7) : lerp(1.08, 1, (m3t - 0.7) / 0.3);
+      mike3.style.opacity = Math.min(1, m3e * 1.5);
+      mike3.style.transform = 'translateX(-50%) translateY(-52%) scale(' + m3scale + ')';
+      var mg3 = document.getElementById('s3MikeGlow');
+      if (mg3) { mg3.style.opacity = Math.min(1, m3e * 1.2); }
+    }
+
+    // ONE TAP copy
+    var ot = document.getElementById('s3OneTap');
+    if (ot) { var ott = clamp((s3l - 300) / 500, 0, 1); ot.style.opacity = easeOut(ott); }
+
+    // Caption below
+    var cap = document.getElementById('s3Cap');
+    if (cap) { var capt = clamp((s3l - 800) / 600, 0, 1); cap.style.opacity = easeOut(capt); }
   }
 
-  // ---- SCENE 4: 12000–23000 ----
-  else if (elapsed < 23000) {
+  // ---- SCENE 4: 12000–20000 ----
+  else if (elapsed < 20000) {
     var s4l = elapsed - 12000;
     var s4op = s4l < 500 ? easeOut(s4l / 500) : 1;
-    if (s4l > 10200) s4op = easeIn(1 - (s4l - 10200) / 800);
+    if (s4l > 7200) s4op = easeIn(1 - (s4l - 7200) / 800);
     document.getElementById('s1').style.opacity = 0;
     document.getElementById('s2').style.opacity = 0;
     document.getElementById('s3').style.opacity = 0;
     document.getElementById('s4').style.opacity = s4op;
     document.getElementById('s5').style.opacity = 0;
+
+    // Start waveform when scene 4 is running
+    startWaveform();
+
     var mf = document.getElementById('mikeAnswerFace');
-    if (mf) { var mft = clamp((s4l-100)/700,0,1); mf.style.opacity = easeOut(mft); mf.style.transform = 'translate(-50%,-52%) scale('+lerp(0.85,1,easeOut(mft))+')'; }
+    if (mf) { var mft = clamp((s4l - 100) / 700, 0, 1); mf.style.opacity = easeOut(mft); mf.style.transform = 'translate(-50%,-52%) scale(' + lerp(0.85, 1, easeOut(mft)) + ')'; }
+    var mag = document.getElementById('mikeAnswerGlow');
+    if (mag) { var magt = clamp((s4l - 100) / 700, 0, 1); mag.style.opacity = easeOut(magt); }
     var mnb = document.getElementById('mikeNameBadge');
-    if (mnb) { var mnbt = clamp((s4l-300)/500,0,1); mnb.style.opacity = easeOut(mnbt); }
+    if (mnb) { var mnbt = clamp((s4l - 300) / 500, 0, 1); mnb.style.opacity = easeOut(mnbt); }
     var vb = document.getElementById('voiceBars');
-    if (vb) { var vbt = clamp((s4l-600)/400,0,1); vb.style.opacity = easeOut(vbt); }
+    if (vb) { var vbt = clamp((s4l - 600) / 400, 0, 1); vb.style.opacity = easeOut(vbt); }
     initPulseRings();
     if (s4l > 500) animatePulseRings(now);
     var ab = document.getElementById('mikeAnswerBubble');
-    if (ab) { var abt = clamp((s4l-1200)/600,0,1); ab.style.opacity = easeOut(abt); ab.style.transform = 'translateY('+lerp(24,0,easeOut(abt))+'px)'; }
+    if (ab) { var abt = clamp((s4l - 1200) / 600, 0, 1); ab.style.opacity = easeOut(abt); ab.style.transform = 'translateY(' + lerp(24, 0, easeOut(abt)) + 'px)'; }
   }
 
-  // ---- SCENE 5: 23000–30000 ----
+  // ---- SCENE 5: 20000–30000 — BRAND CLOSE ----
   else {
-    var s5l = elapsed - 23000;
+    var s5l = elapsed - 20000;
     var s5op = s5l < 600 ? easeOut(s5l / 600) : 1;
     document.getElementById('s1').style.opacity = 0;
     document.getElementById('s2').style.opacity = 0;
     document.getElementById('s3').style.opacity = 0;
     document.getElementById('s4').style.opacity = 0;
     document.getElementById('s5').style.opacity = s5op;
-    var bst = document.getElementById('brandSeamTop');
-    var bsb = document.getElementById('brandSeamBottom');
-    if (bst) { var bt = clamp((s5l-200)/400,0,1); bst.style.opacity = bt; }
-    if (bsb) { var bb = clamp((s5l-400)/600,0,1); bsb.style.opacity = bb; }
-    var bm = document.getElementById('brandMike');
-    if (bm) { var bmt = clamp((s5l-300)/600,0,1); bm.style.opacity = easeOut(bmt); }
-    var bc = document.getElementById('brandCred');
-    if (bc) { var bct = clamp((s5l-700)/700,0,1); bc.style.opacity = easeOut(bct); }
-    var bw = document.getElementById('brandWordmark');
-    if (bw) { var bwt = clamp((s5l-1400)/600,0,1); bw.style.opacity = easeOut(bwt); bw.style.transform = 'translateY('+lerp(30,0,easeOut(bwt))+'px)'; }
-    var bu = document.getElementById('brandUnderline');
-    if (bu) { var but = clamp((s5l-1800)/700,0,1); bu.style.width = (easeOut(but)*780)+'px'; }
-    var bca = document.getElementById('brandCta');
-    if (bca) { var bcat = clamp((s5l-2200)/700,0,1); bca.style.opacity = easeOut(bcat); }
+    stopWaveform();
+
+    console.log('[S5] s5l=' + s5l + ' s5op=' + s5op.toFixed(3));
+
+    var bst5 = document.getElementById('brandSeamTop5');
+    var bsb5 = document.getElementById('brandSeamBot5');
+    var bm5  = document.getElementById('brandMike5');
+    var bbl5 = document.getElementById('brandBlock5');
+    var bc5  = document.getElementById('brandCred5');
+    var btg5 = document.getElementById('brandTagline5');
+
+    if (bst5) bst5.style.opacity = clamp((s5l - 100) / 400, 0, 1);
+    if (bsb5) bsb5.style.opacity = clamp((s5l - 300) / 500, 0, 1);
+
+    if (bm5) {
+      var bm5t = clamp((s5l - 200) / 600, 0, 1);
+      bm5.style.opacity = easeOut(bm5t);
+      bm5.style.transform = 'translateX(-50%) translateY(-50%) scale(' + lerp(0.8, 1, easeOut(bm5t)) + ')';
+    }
+    var bmg5 = document.getElementById('brandMike5Glow');
+    if (bmg5) { var bmg5t = clamp((s5l - 200) / 600, 0, 1); bmg5.style.opacity = easeOut(bmg5t); }
+    if (bbl5) { var bbl5t = clamp((s5l - 700) / 600, 0, 1); bbl5.style.opacity = easeOut(bbl5t); }
+    if (bc5) { var bc5t = clamp((s5l - 1400) / 700, 0, 1); bc5.style.opacity = easeOut(bc5t); }
+    if (btg5) { var btg5t = clamp((s5l - 2200) / 800, 0, 1); btg5.style.opacity = easeOut(btg5t); }
   }
 
   requestAnimationFrame(tick);
@@ -782,6 +982,8 @@ document.getElementById('tap-overlay').addEventListener('click', function() {
   // Reset and start timeline
   loopStart = null;
   audioFired = false;
+  fl2Shown = false;
+  fl3Shown = false;
   // Start rAF loop
   requestAnimationFrame(tick);
   // Audio will fire automatically when elapsed hits 12000ms (now unlocked)

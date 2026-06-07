@@ -42,7 +42,7 @@ html, body {
 .tap-headline { font-family: 'Anton', sans-serif; font-size: 48px; letter-spacing: 0.12em; color: #F4EFE6; text-transform: uppercase; text-align: center; line-height: 1; margin-bottom: 16px; }
 .tap-sub { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: rgba(0,194,178,0.7); letter-spacing: 0.2em; text-transform: uppercase; text-align: center; margin-bottom: 64px; }
 .tap-btn { width: 220px; height: 72px; border: 2px solid #00C2B2; border-radius: 4px; background: rgba(0,194,178,0.08); display: flex; align-items: center; justify-content: center; gap: 14px; animation: btnPulse 1.8s ease-in-out infinite; }
-@keyframes btnPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(0,194,178,0); } 50% { box-shadow: 0 0 20px rgba(0,194,178,0.4); } }
+@keyframes btnPulse { 0%, 100% { border-color: #00C2B2; box-shadow: 0 0 0 0 rgba(0,194,178,0); } 50% { border-color: #00C2B2; box-shadow: 0 0 20px rgba(0,194,178,0.4); } }
 .tap-btn-dot { width: 12px; height: 12px; border-radius: 50%; background: #00C2B2; box-shadow: 0 0 8px #00C2B2; animation: dotBlink 1.2s ease infinite; }
 @keyframes dotBlink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
 .tap-btn-text { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: #00C2B2; letter-spacing: 0.15em; text-transform: uppercase; }
@@ -55,39 +55,56 @@ html, body {
 #stage-wrap { position: relative; }
 #stage { position: absolute; top: 0; left: 0; width: 1080px; height: 1920px; overflow: hidden; transform-origin: top left; background: #000; }
 
-/* GRAIN */
+/* FILM GRAIN */
 #grain { position: absolute; inset: 0; z-index: 200; pointer-events: none; opacity: 0.04; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"); background-size: 200px 200px; mix-blend-mode: overlay; animation: grainShift 0.08s steps(1) infinite; }
 @keyframes grainShift { 0%{background-position:0 0;} 25%{background-position:-20px 10px;} 50%{background-position:10px -15px;} 75%{background-position:-30px -5px;} 100%{background-position:5px 20px;} }
+
+/* VIGNETTE */
 #vignette { position: absolute; inset: 0; z-index: 199; pointer-events: none; background: radial-gradient(ellipse 80% 80% at 50% 50%, transparent 40%, rgba(0,0,0,0.85) 100%); }
-#progress { position: absolute; top: 0; left: 0; height: 4px; background: linear-gradient(90deg, #00C2B2, #FFB400); width: 0%; z-index: 300; box-shadow: 0 0 8px rgba(0,194,178,0.6); }
 
 /* SCENES */
 .scene { position: absolute; top: 0; left: 0; width: 1080px; height: 1920px; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; }
 
 /* =====================================================
-   SCENE 1 — THE WIRING NIGHTMARE
+   SCENE 1 — WIRING NIGHTMARE 0-3500ms
    ===================================================== */
-#s1 { background: radial-gradient(ellipse 100% 60% at 50% 100%, rgba(199,85,59,0.2), transparent 60%), linear-gradient(180deg, #0A0907 0%, #080806 100%); }
-.wire-label { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: rgba(244,239,230,0.25); letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 3px; }
-.control-board { position: absolute; top: 260px; left: 50%; transform: translateX(-50%); width: 900px; height: 980px; border: 1px solid rgba(244,239,230,0.08); border-radius: 6px; background: linear-gradient(180deg, rgba(28,25,22,0.9), rgba(18,16,14,0.9)); }
+#s1 {
+  background:
+    radial-gradient(ellipse 120% 70% at 50% 50%, rgba(199,85,59,0.15), transparent 65%),
+    linear-gradient(180deg,#0A0907,#080806);
+}
+/* schematic-paper substrate overlay */
+#s1::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(244,239,230,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244,239,230,0.018) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+
+.control-board { position: absolute; top: 160px; left: 50%; transform: translateX(-50%); width: 960px; height: 1100px; border: 1px solid rgba(244,239,230,0.1); border-radius: 6px; background: linear-gradient(180deg, rgba(28,25,22,0.92), rgba(18,16,14,0.95)); opacity: 0; }
+.board-label5 { position: absolute; top: 22px; left: 28px; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: rgba(244,239,230,0.6); letter-spacing: 0.15em; text-transform: uppercase; }
 .screw { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle, rgba(244,239,230,0.3), rgba(244,239,230,0.1)); border: 1px solid rgba(244,239,230,0.15); }
-.board-label { position: absolute; top: 20px; left: 24px; font-family: 'JetBrains Mono', monospace; font-size: 18px; color: rgba(244,239,230,0.25); letter-spacing: 0.15em; text-transform: uppercase; }
 .terminal-row { position: absolute; display: flex; gap: 12px; }
 .terminal { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(244,239,230,0.2); background: rgba(0,0,0,0.6); position: relative; }
 .terminal::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 10px; height: 10px; border-radius: 50%; background: rgba(244,239,230,0.3); }
-.s1-headline { position: absolute; top: 140px; left: 0; right: 0; text-align: center; opacity: 0; animation: fadeSlideDown 0.5s ease 0.4s forwards; }
-.s1-title { font-family: 'Anton', sans-serif; font-size: 64px; color: #F4EFE6; letter-spacing: 0.02em; text-transform: uppercase; line-height: 1; }
-.s1-sub { font-family: 'JetBrains Mono', monospace; font-size: 22px; color: rgba(244,239,230,0.4); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 12px; }
-.s1-bottom-copy { position: absolute; bottom: 200px; left: 0; right: 0; text-align: center; opacity: 0; animation: fadeSlideDown 0.5s ease 1.5s forwards; }
+.wire-label { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: rgba(244,239,230,0.7); letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; background: rgba(0,0,0,0.7); padding: 4px 12px; border-radius: 3px; }
+
+.s1-top-copy { position: absolute; top: 68px; left: 0; right: 0; text-align: center; opacity: 0; transform: translateY(-40px); }
+.s1-top-title { font-family: 'Anton', sans-serif; font-size: 96px; color: #F4EFE6; letter-spacing: 0.02em; text-transform: uppercase; line-height: 0.95; }
+.s1-top-sub { font-family: 'Archivo', sans-serif; font-size: 32px; font-weight: 700; color: rgba(244,239,230,0.5); margin-top: 12px; }
+
+.s1-bottom-copy { position: absolute; bottom: 120px; left: 0; right: 0; text-align: center; opacity: 0; transform: translateY(-40px); }
 .s1-bottom-title { font-family: 'Anton', sans-serif; font-size: 80px; color: #F4EFE6; line-height: 1; text-transform: uppercase; }
 .s1-bottom-sub { font-family: 'Archivo', sans-serif; font-size: 28px; font-weight: 600; color: rgba(244,239,230,0.45); margin-top: 14px; }
-@keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
 /* =====================================================
-   SCENE 2 — POINT THE PHONE
+   SCENE 2 — POINT THE PHONE 3500-7500ms
    ===================================================== */
 #s2 { background: #050504; }
-.viewfinder { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 900px; height: 1200px; background: linear-gradient(180deg, rgba(20,22,20,0.95), rgba(14,16,14,0.95)); border-radius: 20px; overflow: hidden; border: 1px solid rgba(0,194,178,0.15); }
+
+.viewfinder { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 1020px; height: 1700px; background: linear-gradient(180deg, rgba(20,22,20,0.95), rgba(14,16,14,0.95)); overflow: hidden; border: 1px solid rgba(0,194,178,0.15); opacity: 0; }
 .camera-live { position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 45% 50%, rgba(40,35,25,0.9), transparent 70%), linear-gradient(135deg, #181410 0%, #101210 50%, #0E1010 100%); }
 .cam-ui-top { position: absolute; top: 0; left: 0; right: 0; height: 100px; background: linear-gradient(180deg, rgba(0,0,0,0.8), transparent); display: flex; align-items: center; padding: 0 32px; z-index: 10; }
 .cam-mode-label { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: #00C2B2; letter-spacing: 0.15em; text-transform: uppercase; }
@@ -96,68 +113,99 @@ html, body {
 .cam-live-text { font-family: 'JetBrains Mono', monospace; font-size: 20px; color: #C7553B; letter-spacing: 0.1em; }
 .cam-ui-bottom { position: absolute; bottom: 0; left: 0; right: 0; height: 140px; background: linear-gradient(180deg, transparent, rgba(0,0,0,0.85)); display: flex; align-items: center; justify-content: center; z-index: 10; }
 .scan-overlay { position: absolute; inset: 0; z-index: 5; pointer-events: none; opacity: 0; }
-.scan-line { position: absolute; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, rgba(0,194,178,0.6) 20%, rgba(0,194,178,0.9) 50%, rgba(0,194,178,0.6) 80%, transparent); box-shadow: 0 0 12px rgba(0,194,178,0.5); animation: scanDown 1.4s ease-in-out infinite; }
+.scan-line { position: absolute; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, rgba(0,194,178,0.6) 20%, rgba(0,194,178,0.9) 50%, rgba(0,194,178,0.6) 80%, transparent); box-shadow: 0 0 20px rgba(0,194,178,0.8); animation: scanDown 1.4s ease-in-out infinite; opacity: 0.7; }
 @keyframes scanDown { 0%{top:0%;} 100%{top:100%;} }
 .scan-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(0,194,178,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,194,178,0.04) 1px, transparent 1px); background-size: 48px 48px; }
-.corner { position: absolute; width: 48px; height: 48px; border-color: #00C2B2; border-style: solid; opacity: 0; }
-.corner-tl { top: 100px; left: 60px; border-width: 3px 0 0 3px; }
-.corner-tr { top: 100px; right: 60px; border-width: 3px 3px 0 0; }
-.corner-bl { bottom: 140px; left: 60px; border-width: 0 0 3px 3px; }
-.corner-br { bottom: 140px; right: 60px; border-width: 0 3px 3px 0; }
+.corner { position: absolute; width: 60px; height: 60px; border-color: #00C2B2; border-style: solid; opacity: 0; }
+.corner-tl { top: 100px; left: 20px; border-width: 4px 0 0 4px; }
+.corner-tr { top: 100px; right: 20px; border-width: 4px 4px 0 0; }
+.corner-bl { bottom: 140px; left: 20px; border-width: 0 0 4px 4px; }
+.corner-br { bottom: 140px; right: 20px; border-width: 0 4px 4px 0; }
 .mike-cam-thumb { position: absolute; top: 20px; left: 24px; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; border: 2px solid #00C2B2; box-shadow: 0 0 16px rgba(0,194,178,0.5); z-index: 20; opacity: 0; }
 .mike-cam-thumb img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.1) translateY(-3px); }
-.s2-prompt { position: absolute; top: 80px; left: 0; right: 0; text-align: center; opacity: 0; }
-.s2-prompt-text { font-family: 'Anton', sans-serif; font-size: 80px; color: #F4EFE6; line-height: 0.95; text-transform: uppercase; }
-.s2-prompt-sub { font-family: 'JetBrains Mono', monospace; font-size: 24px; color: rgba(244,239,230,0.4); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 16px; }
+
+/* Slam copy — outside viewfinder, bottom third */
+.s2-slam { position: absolute; bottom: 40px; left: 0; right: 0; text-align: center; opacity: 0; z-index: 10; padding: 0 60px; }
+.s2-slam-line { font-family: 'Anton', sans-serif; font-size: 140px; color: #F4EFE6; line-height: 0.92; text-transform: uppercase; display: block; opacity: 0; }
+.s2-slam-line.gold-period { color: #FFB400; }
 
 /* =====================================================
-   SCENE 3 — MIKE READS IT (voice plays here, starts at elapsed=9500)
+   SCENE 3 — MIKE READS IT (voice cue at elapsed=9500) 7500-16000ms
    ===================================================== */
 #s3 { background: radial-gradient(ellipse 80% 60% at 50% 30%, rgba(0,194,178,0.07), transparent 60%), linear-gradient(180deg, #060806, #040504); }
-.annotation-zone { position: absolute; top: 80px; left: 60px; right: 60px; height: 780px; background: rgba(10,14,12,0.85); border: 1px solid rgba(0,194,178,0.2); border-radius: 16px; overflow: hidden; opacity: 0; }
+
+.annotation-zone { position: absolute; top: 80px; left: 60px; right: 60px; height: 820px; background: rgba(10,14,12,0.85); border: 1px solid rgba(0,194,178,0.2); border-radius: 16px; overflow: hidden; opacity: 0; }
 .ann-label { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; color: #00C2B2; background: rgba(0,30,27,0.9); border: 1px solid rgba(0,194,178,0.35); padding: 6px 14px; border-radius: 4px; white-space: nowrap; opacity: 0; pointer-events: none; }
 .ann-dot { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #00C2B2; box-shadow: 0 0 12px rgba(0,194,178,0.8); margin: -8px 0 0 -8px; opacity: 0; }
-.mike-reader { position: absolute; bottom: 440px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 48px; opacity: 0; }
-.mike-reader-face { width: 240px; height: 240px; border-radius: 50%; overflow: hidden; border: 3px solid #00C2B2; box-shadow: 0 0 0 2px rgba(0,194,178,0.15), 0 0 40px rgba(0,194,178,0.4), 0 0 80px rgba(0,194,178,0.15); flex-shrink: 0; }
+
+/* Mike reader — slides in from left */
+.mike-reader { position: absolute; bottom: 340px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 40px; opacity: 0; }
+.mike-reader-face { width: 360px; height: 360px; border-radius: 50%; overflow: hidden; border: 3px solid #00C2B2; box-shadow: 0 0 0 4px rgba(0,194,178,0.9), 0 0 60px rgba(0,194,178,0.5); flex-shrink: 0; }
 .mike-reader-face img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.1) translateY(-2%); }
-.mike-reader-voice { display: flex; flex-direction: column; gap: 12px; }
-.reader-voice-bar { height: 6px; border-radius: 3px; background: #00C2B2; box-shadow: 0 0 8px rgba(0,194,178,0.6); animation: readerVoice 0.45s ease-in-out infinite alternate; }
-@keyframes readerVoice { from { transform: scaleX(0.3); } to { transform: scaleX(1); } }
-.mike-reading-panel { position: absolute; bottom: 100px; left: 60px; right: 60px; background: rgba(8,18,16,0.92); border: 1px solid rgba(0,194,178,0.25); border-left: 3px solid #00C2B2; border-radius: 12px; padding: 44px 48px; opacity: 0; transform: translateY(20px); backdrop-filter: blur(20px); }
+/* 8-bar live waveform */
+.reader-voice-wrap { display: flex; flex-direction: column; gap: 10px; }
+.reader-voice-bar { height: 7px; border-radius: 4px; background: #00C2B2; box-shadow: 0 0 8px rgba(0,194,178,0.7); transform-origin: left; }
+
+.mike-reading-panel { position: absolute; bottom: 60px; left: 60px; right: 60px; background: rgba(8,18,16,0.92); border: 1px solid rgba(0,194,178,0.25); border-left: 3px solid #00C2B2; border-radius: 12px; padding: 44px 48px; opacity: 0; transform: translateY(20px); }
 .reading-tag { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: #00C2B2; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
 .reading-tag::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #00C2B2; box-shadow: 0 0 8px #00C2B2; animation: blink 1s ease infinite; }
 @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-.reading-text { font-family: 'Archivo', sans-serif; font-size: 34px; font-weight: 700; color: #F4EFE6; line-height: 1.35; }
-.reading-text .teal { color: #00C2B2; }
-.reading-text .rust { color: #C7553B; }
-.reading-text .gold { color: #FFB400; }
+.reading-text { font-family: 'Archivo', sans-serif; font-size: 32px; font-weight: 700; color: #F4EFE6; line-height: 1.35; min-height: 4em; }
+.tw-cursor { display: inline-block; width: 2px; height: 1.1em; background: #00C2B2; margin-left: 2px; animation: cursorBlink 0.7s ease infinite; vertical-align: bottom; }
+@keyframes cursorBlink { 0%,100%{opacity:1;} 50%{opacity:0;} }
 
 /* =====================================================
-   SCENE 4 — BRAND CLOSE
+   SCENE 4 — BRAND CLOSE (16000-28000ms)
    ===================================================== */
-#s4 { background: #000; }
-.brand-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(244,239,230,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(244,239,230,0.02) 1px, transparent 1px); background-size: 60px 60px; }
-.brand-seam { position: absolute; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, #00C2B2 15%, #00C2B2 85%, transparent); opacity: 0; }
-#brandSeamTop2 { top: 0; }
-#brandSeamBot2 { bottom: 0; background: linear-gradient(90deg, transparent, #FFB400 15%, #FFB400 85%, transparent); }
-.brand2-mike { position: absolute; top: 320px; left: 50%; transform: translateX(-50%); width: 320px; height: 320px; border-radius: 50%; overflow: hidden; border: 3px solid rgba(0,194,178,0.4); box-shadow: 0 0 40px rgba(0,194,178,0.3), 0 0 100px rgba(0,194,178,0.12); opacity: 0; }
+#s4 { background: linear-gradient(180deg,#0A0704,#050403); }
+.brand-scanlines2 { position: absolute; inset: 0; pointer-events: none; background-image: repeating-linear-gradient(0deg, rgba(244,239,230,0.025) 0px, transparent 1px, transparent 59px, rgba(244,239,230,0.025) 60px); }
+.brand-grid2 { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(0,194,178,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(0,194,178,0.015) 1px, transparent 1px); background-size: 80px 80px; }
+.brand-seam2 { position: absolute; left: 0; right: 0; height: 3px; opacity: 0; }
+#brandSeamTop2 { top: 0; background: linear-gradient(90deg, transparent, #00C2B2 20%, #00C2B2 80%, transparent); }
+#brandSeamBot2 { bottom: 0; background: linear-gradient(90deg, transparent, #FFB400 20%, #FFB400 80%, transparent); }
+.brand2-mike { position: absolute; top: 35%; left: 50%; transform: translateX(-50%) translateY(-50%); width: 340px; height: 340px; border-radius: 50%; overflow: hidden; border: 4px solid #00C2B2; box-shadow: 0 0 0 4px rgba(0,194,178,0.9), 0 0 60px rgba(0,194,178,0.5); opacity: 0; }
 .brand2-mike img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.08) translateY(-2%); }
-.brand2-tagline { position: absolute; top: 680px; left: 0; right: 0; text-align: center; opacity: 0; }
-.brand2-tagline-text { font-family: 'Caveat', cursive; font-size: 52px; font-weight: 700; color: rgba(0,194,178,0.8); letter-spacing: 0.01em; line-height: 1.2; }
-.brand2-cred { position: absolute; top: 820px; left: 60px; right: 60px; opacity: 0; }
-.brand2-cred-rule { height: 1px; background: linear-gradient(90deg, rgba(0,194,178,0.5), rgba(0,194,178,0.1)); margin-bottom: 28px; }
-.brand2-cred-row { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0; border-bottom: 1px solid rgba(244,239,230,0.06); }
-.brand2-cred-key { font-family: 'JetBrains Mono', monospace; font-size: 20px; color: rgba(244,239,230,0.4); letter-spacing: 0.12em; text-transform: uppercase; }
-.brand2-cred-val { font-family: 'Archivo', sans-serif; font-size: 24px; font-weight: 700; color: #F4EFE6; }
-.brand2-cred-val.teal { color: #00C2B2; }
-.brand2-cred-val.gold { color: #FFB400; }
-.brand2-wordmark { position: absolute; bottom: 500px; left: 0; right: 0; text-align: center; opacity: 0; }
-.brand2-trazer { font-family: 'Anton', sans-serif; font-size: 148px; letter-spacing: 0.06em; color: #F4EFE6; line-height: 0.9; text-transform: uppercase; }
-.brand2-intel { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: rgba(244,239,230,0.4); letter-spacing: 0.35em; text-transform: uppercase; margin-top: 16px; }
-.brand2-underline { position: absolute; bottom: 478px; left: 50%; transform: translateX(-50%); height: 3px; width: 0; background: #00C2B2; box-shadow: 0 0 12px rgba(0,194,178,0.8); }
-.brand2-cta { position: absolute; bottom: 280px; left: 0; right: 0; text-align: center; opacity: 0; }
-.brand2-url { font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 700; color: #FFB400; letter-spacing: 0.12em; text-transform: uppercase; }
-.brand2-sub { font-family: 'Archivo', sans-serif; font-size: 24px; font-weight: 600; color: rgba(244,239,230,0.45); margin-top: 12px; letter-spacing: 0.04em; }
+.brand2-block { position: absolute; top: calc(35% + 220px); left: 0; right: 0; text-align: center; opacity: 0; }
+.brand2-trazer { font-family: 'Anton', sans-serif; font-size: 48px; color: rgba(244,239,230,0.35); letter-spacing: 0.3em; text-transform: uppercase; line-height: 1; }
+.brand2-intel { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: #00C2B2; letter-spacing: 0.4em; text-transform: uppercase; margin-top: 12px; }
+.brand2-rule { height: 2px; background: #00C2B2; width: 200px; margin: 20px auto 0; box-shadow: 0 0 10px rgba(0,194,178,0.6); }
+.brand2-url { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: rgba(244,239,230,0.5); letter-spacing: 0.25em; text-transform: uppercase; margin-top: 20px; }
+.brand2-cred { position: absolute; top: calc(35% + 430px); left: 80px; right: 80px; opacity: 0; }
+.brand2-cred-rule { height: 1px; background: linear-gradient(90deg, rgba(0,194,178,0.5), rgba(0,194,178,0.1)); margin-bottom: 24px; }
+.brand2-cred-row { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0; border-bottom: 1px solid rgba(244,239,230,0.08); }
+.brand2-cred-key { font-family: 'JetBrains Mono', monospace; font-size: 20px; color: rgba(244,239,230,0.35); letter-spacing: 0.12em; text-transform: uppercase; }
+.brand2-cred-val { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: #F4EFE6; letter-spacing: 0.04em; text-align: right; }
+.brand2-tagline { position: absolute; bottom: 140px; left: 0; right: 0; text-align: center; opacity: 0; }
+.brand2-tagline-text { font-family: 'Caveat', cursive; font-size: 52px; font-weight: 700; color: rgba(0,194,178,0.85); line-height: 1.2; }
+
+/* PROGRESS BAR */
+#progress { position: absolute; top: 0; left: 0; height: 4px; background: linear-gradient(90deg, #00C2B2, #FFB400); width: 0; z-index: 210; }
+
+/* =====================================================
+   PERF: Radial-gradient glow sibling layers (cheap compositing)
+   Replaces expensive multi-layer box-shadow glows on animated circles.
+   Only transform+opacity animated — no re-rasterization.
+   ===================================================== */
+.mike-reader-glow {
+  position: absolute;
+  bottom: 340px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,194,178,0.5) 0%, rgba(0,194,178,0.2) 35%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+}
+.brand2-mike-glow {
+  position: absolute;
+  top: 35%; left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,194,178,0.5) 0%, rgba(0,194,178,0.2) 35%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+}
 </style>
 </head>
 <body>
@@ -187,18 +235,18 @@ html, body {
     <div id="vignette"></div>
     <div id="progress"></div>
 
-    <!-- SCENE 1 — THE WIRING NIGHTMARE -->
+    <!-- SCENE 1 — THE WIRING NIGHTMARE 0-3500ms -->
     <div class="scene" id="s1">
-      <div class="s1-headline">
-        <div class="s1-title">WIRE MAZE.</div>
-        <div class="s1-sub">Previous tech. Unknown brand. Zero notes.</div>
+      <div class="s1-top-copy" id="s1TopCopy">
+        <div class="s1-top-title">YOU&#39;VE SEEN<br>THIS DIAGRAM.</div>
+        <div class="s1-top-sub">Every wire looks the same.</div>
       </div>
-      <div class="control-board">
+      <div class="control-board" id="controlBoard">
         <div class="screw" style="top:12px;left:12px;"></div>
         <div class="screw" style="top:12px;right:12px;"></div>
         <div class="screw" style="bottom:12px;left:12px;"></div>
         <div class="screw" style="bottom:12px;right:12px;"></div>
-        <div class="board-label">CTRL-BOARD V2 &middot; 208/230V</div>
+        <div class="board-label5">WIRING DIAGRAM &mdash; R-410A HEAT PUMP SYSTEM</div>
         <div class="terminal-row" style="top:80px;left:40px;">
           <div class="terminal"></div><div class="terminal"></div>
           <div class="terminal"></div><div class="terminal"></div>
@@ -216,54 +264,50 @@ html, body {
           <div class="terminal"></div><div class="terminal"></div>
           <div class="terminal"></div>
         </div>
-        <svg width="900" height="780" style="position:absolute;top:0;left:0;opacity:0.55;">
-          <path d="M 80 140 C 200 200, 350 160, 480 220 S 700 180, 820 140" stroke="#C7553B" stroke-width="4" fill="none" opacity="0.7"/>
+        <svg width="960" height="1100" style="position:absolute;top:0;left:0;">
+          <path d="M 80 140 C 200 200, 350 160, 480 220 S 700 180, 860 140" stroke="#C7553B" stroke-width="4" fill="none" opacity="0.7"/>
           <path d="M 80 140 C 150 280, 300 320, 440 280 S 650 240, 760 300" stroke="#FFB400" stroke-width="3.5" fill="none" opacity="0.65"/>
-          <path d="M 80 140 C 200 350, 380 400, 500 360 S 680 310, 820 380" stroke="#F4EFE6" stroke-width="3" fill="none" opacity="0.35"/>
-          <path d="M 140 600 C 260 540, 400 560, 520 600 S 700 640, 820 600" stroke="#5B7B5A" stroke-width="4" fill="none" opacity="0.6"/>
-          <path d="M 140 600 C 200 480, 360 460, 480 500 S 640 480, 760 520" stroke="#C7553B" stroke-width="3.5" fill="none" opacity="0.55"/>
-          <path d="M 820 140 C 700 260, 580 300, 460 340 S 300 380, 160 440" stroke="#FFB400" stroke-width="3" fill="none" opacity="0.5"/>
-          <path d="M 820 380 C 680 420, 560 400, 440 440 S 280 480, 140 460" stroke="#F4EFE6" stroke-width="2.5" fill="none" opacity="0.3"/>
-          <line x1="80" y1="140" x2="80" y2="600" stroke="rgba(244,239,230,0.2)" stroke-width="2.5"/>
-          <line x1="820" y1="140" x2="820" y2="600" stroke="rgba(244,239,230,0.2)" stroke-width="2.5"/>
-          <rect x="70" y="130" width="20" height="8" rx="2" fill="rgba(199,85,59,0.6)"/>
-          <rect x="810" y="372" width="20" height="8" rx="2" fill="rgba(255,180,0,0.6)"/>
-          <rect x="70" y="592" width="20" height="8" rx="2" fill="rgba(91,123,90,0.7)"/>
+          <path d="M 80 140 C 200 350, 380 400, 500 360 S 680 310, 860 380" stroke="#F4EFE6" stroke-width="3" fill="none" opacity="0.8"/>
+          <path d="M 140 700 C 260 640, 400 660, 520 700 S 700 740, 860 700" stroke="#4A7C59" stroke-width="4" fill="none" opacity="0.6"/>
+          <path d="M 140 700 C 200 580, 360 560, 480 600 S 640 580, 760 620" stroke="#C7553B" stroke-width="3.5" fill="none" opacity="0.55"/>
+          <path d="M 860 140 C 700 260, 580 300, 460 340 S 300 380, 160 440" stroke="#FFB400" stroke-width="3" fill="none" opacity="0.5"/>
+          <path d="M 860 380 C 680 420, 560 400, 440 440 S 280 480, 140 460" stroke="#F4EFE6" stroke-width="2.5" fill="none" opacity="0.6"/>
+          <line x1="80" y1="140" x2="80" y2="700" stroke="rgba(244,239,230,0.3)" stroke-width="2.5"/>
+          <line x1="860" y1="140" x2="860" y2="700" stroke="rgba(244,239,230,0.3)" stroke-width="2.5"/>
+          <rect x="70" y="130" width="20" height="8" rx="2" fill="rgba(199,85,59,0.7)"/>
+          <rect x="850" y="372" width="20" height="8" rx="2" fill="rgba(255,180,0,0.7)"/>
+          <rect x="70" y="692" width="20" height="8" rx="2" fill="rgba(74,124,89,0.8)"/>
           <path d="M 300 280 Q 340 240 380 280" stroke="#00C2B2" stroke-width="3" fill="none" opacity="0.8"/>
           <path d="M 580 350 Q 620 310 660 350" stroke="#00C2B2" stroke-width="3" fill="none" opacity="0.7"/>
         </svg>
         <div class="wire-label" style="top:148px;left:50px;">R &middot; 24V</div>
-        <div class="wire-label" style="top:148px;left:180px;">C &middot; COMMON</div>
-        <div class="wire-label" style="top:300px;right:40px;">Y1 &middot; COOL</div>
-        <div class="wire-label" style="top:460px;left:40px;">W1 &middot; HEAT</div>
+        <div class="wire-label" style="top:148px;left:200px;">C &middot; COMMON</div>
+        <div class="wire-label" style="top:310px;right:40px;">Y1 &middot; COOL</div>
+        <div class="wire-label" style="top:470px;left:40px;">W1 &middot; HEAT</div>
         <div class="wire-label" style="bottom:100px;right:40px;">G &middot; FAN</div>
-        <div class="wire-label" style="top:400px;left:50%;transform:translateX(-50%);color:rgba(199,85,59,0.7);">??? &middot; UNKNOWN</div>
+        <div class="wire-label" style="top:460px;left:50%;transform:translateX(-50%);color:rgba(199,85,59,0.9);background:rgba(40,8,4,0.85);">??? &middot; UNKNOWN</div>
       </div>
-      <div class="s1-bottom-copy">
+      <div class="s1-bottom-copy" id="s1BottomCopy">
         <div class="s1-bottom-title">NO IDEA.<br>WRONG MOVE<br>= BIG DAMAGE.</div>
         <div class="s1-bottom-sub">Point your phone. Mike reads it cold.</div>
       </div>
     </div>
 
-    <!-- SCENE 2 — POINT THE PHONE -->
+    <!-- SCENE 2 — POINT THE PHONE 3500-7500ms -->
     <div class="scene" id="s2">
-      <div class="s2-prompt" id="s2prompt">
-        <div class="s2-prompt-text">POINT.<br>MIKE<br>READS.</div>
-        <div class="s2-prompt-sub">Live camera &middot; Instant analysis</div>
-      </div>
-      <div class="viewfinder" id="viewfinder" style="transform:translate(-50%,-50%) scale(0.85);opacity:0;">
+      <div class="viewfinder" id="viewfinder">
         <div class="camera-live">
-          <svg width="900" height="1200" style="position:absolute;top:0;left:0;opacity:0.45;">
-            <path d="M 80 300 C 200 360, 350 320, 480 380 S 700 340, 820 300" stroke="#C7553B" stroke-width="5" fill="none"/>
-            <path d="M 80 300 C 150 440, 300 480, 440 440 S 650 400, 760 460" stroke="#FFB400" stroke-width="4" fill="none"/>
-            <path d="M 80 300 C 200 510, 380 560, 500 520 S 680 470, 820 540" stroke="#F4EFE6" stroke-width="3.5" fill="none"/>
-            <path d="M 140 760 C 260 700, 400 720, 520 760 S 700 800, 820 760" stroke="#5B7B5A" stroke-width="5" fill="none"/>
-            <path d="M 140 760 C 200 640, 360 620, 480 660 S 640 640, 760 680" stroke="#C7553B" stroke-width="4" fill="none"/>
-            <path d="M 820 300 C 700 420, 580 460, 460 500 S 300 540, 160 600" stroke="#FFB400" stroke-width="3.5" fill="none"/>
-            <line x1="80" y1="300" x2="80" y2="760" stroke="rgba(244,239,230,0.25)" stroke-width="3"/>
-            <line x1="820" y1="300" x2="820" y2="760" stroke="rgba(244,239,230,0.25)" stroke-width="3"/>
-            <path d="M 300 440 Q 340 400 380 440" stroke="#00C2B2" stroke-width="3.5" fill="none" opacity="0.6"/>
-            <path d="M 580 510 Q 620 470 660 510" stroke="#00C2B2" stroke-width="3.5" fill="none" opacity="0.6"/>
+          <svg width="1020" height="1700" style="position:absolute;top:0;left:0;">
+            <path d="M 80 300 C 200 360, 350 320, 480 380 S 700 340, 940 300" stroke="#C7553B" stroke-width="5" fill="none" opacity="0.55"/>
+            <path d="M 80 300 C 150 440, 300 480, 440 440 S 650 400, 760 460" stroke="#FFB400" stroke-width="4" fill="none" opacity="0.5"/>
+            <path d="M 80 300 C 200 510, 380 560, 500 520 S 680 470, 940 540" stroke="#F4EFE6" stroke-width="3.5" fill="none" opacity="0.8"/>
+            <path d="M 140 900 C 260 840, 400 860, 520 900 S 700 940, 940 900" stroke="#4A7C59" stroke-width="5" fill="none" opacity="0.55"/>
+            <path d="M 140 900 C 200 780, 360 760, 480 800 S 640 780, 760 820" stroke="#C7553B" stroke-width="4" fill="none" opacity="0.5"/>
+            <path d="M 940 300 C 700 420, 580 460, 460 500 S 300 540, 160 600" stroke="#FFB400" stroke-width="3.5" fill="none" opacity="0.45"/>
+            <line x1="80" y1="300" x2="80" y2="900" stroke="rgba(244,239,230,0.25)" stroke-width="3"/>
+            <line x1="940" y1="300" x2="940" y2="900" stroke="rgba(244,239,230,0.25)" stroke-width="3"/>
+            <path d="M 300 440 Q 340 400 380 440" stroke="#00C2B2" stroke-width="3.5" fill="none" opacity="0.8"/>
+            <path d="M 580 510 Q 620 470 660 510" stroke="#00C2B2" stroke-width="3.5" fill="none" opacity="0.8"/>
           </svg>
         </div>
         <div class="scan-overlay" id="scanOverlay">
@@ -286,98 +330,96 @@ html, body {
           <div style="font-family:'JetBrains Mono',monospace;font-size:22px;color:rgba(0,194,178,0.6);letter-spacing:0.1em;text-transform:uppercase;">Analyzing wiring diagram&hellip;</div>
         </div>
       </div>
+      <!-- SLAM COPY below viewfinder -->
+      <div class="s2-slam" id="s2Slam">
+        <span class="s2-slam-line" id="slamPoint">POINT.</span>
+        <span class="s2-slam-line" id="slamMike">MIKE</span>
+        <span class="s2-slam-line gold-period" id="slamReads">READS.</span>
+      </div>
     </div>
 
-    <!-- SCENE 3 — MIKE READS IT (voice starts at scene 3 fade-in) -->
+    <!-- SCENE 3 — MIKE READS IT (voice starts at elapsed=9500) 7500-16000ms -->
     <div class="scene" id="s3">
       <div class="annotation-zone" id="annotationZone">
-        <svg width="960" height="780" style="position:absolute;top:0;left:0;opacity:0.3;">
+        <svg width="960" height="820" style="position:absolute;top:0;left:0;opacity:0.45;">
           <path d="M 80 180 C 200 240, 350 200, 480 260 S 700 220, 860 180" stroke="#C7553B" stroke-width="4" fill="none"/>
           <path d="M 80 180 C 150 320, 300 360, 440 320 S 650 280, 760 340" stroke="#FFB400" stroke-width="3.5" fill="none"/>
           <path d="M 80 180 C 200 390, 380 440, 500 400 S 680 350, 860 420" stroke="#F4EFE6" stroke-width="3" fill="none"/>
-          <path d="M 100 580 C 220 520, 380 540, 500 580 S 680 620, 860 580" stroke="#5B7B5A" stroke-width="4" fill="none"/>
-          <line x1="80" y1="180" x2="80" y2="580" stroke="rgba(244,239,230,0.2)" stroke-width="2"/>
-          <line x1="860" y1="180" x2="860" y2="580" stroke="rgba(244,239,230,0.2)" stroke-width="2"/>
+          <path d="M 100 650 C 220 590, 380 610, 500 650 S 680 690, 860 650" stroke="#4A7C59" stroke-width="4" fill="none"/>
+          <line x1="80" y1="180" x2="80" y2="650" stroke="rgba(244,239,230,0.2)" stroke-width="2"/>
+          <line x1="860" y1="180" x2="860" y2="650" stroke="rgba(244,239,230,0.2)" stroke-width="2"/>
         </svg>
         <div class="ann-label" id="ann1" style="top:140px;left:40px;">R &middot; 24V POWER</div>
         <div class="ann-dot"   id="ad1"  style="top:193px;left:78px;"></div>
-        <div class="ann-label" id="ann2" style="top:240px;right:40px;">Y1 &middot; COMPRESSOR</div>
-        <div class="ann-dot"   id="ad2"  style="top:245px;right:42px;"></div>
-        <div class="ann-label" id="ann3" style="top:380px;left:40px;">W1 &middot; HEAT STRIP</div>
-        <div class="ann-dot"   id="ad3"  style="top:383px;left:40px;"></div>
-        <div class="ann-label" id="ann4" style="top:480px;right:40px;">G &middot; FAN RELAY</div>
-        <div class="ann-dot"   id="ad4"  style="top:484px;right:42px;"></div>
-        <div class="ann-label" id="ann5" style="top:570px;left:40px;color:#C7553B;border-color:rgba(199,85,59,0.5);background:rgba(40,8,4,0.9);">UNKNOWN &middot; PREV TECH MOD</div>
-        <div class="ann-dot"   id="ad5"  style="top:574px;left:40px;background:#C7553B;box-shadow:0 0 12px rgba(199,85,59,0.8);"></div>
+        <div class="ann-label" id="ann2" style="top:250px;right:40px;">Y1 &middot; COMPRESSOR</div>
+        <div class="ann-dot"   id="ad2"  style="top:255px;right:42px;"></div>
+        <div class="ann-label" id="ann3" style="top:400px;left:40px;">W1 &middot; HEAT STRIP</div>
+        <div class="ann-dot"   id="ad3"  style="top:403px;left:40px;"></div>
+        <div class="ann-label" id="ann4" style="top:510px;right:40px;">G &middot; FAN RELAY</div>
+        <div class="ann-dot"   id="ad4"  style="top:514px;right:42px;"></div>
+        <div class="ann-label" id="ann5" style="top:630px;left:40px;color:#C7553B;border-color:rgba(199,85,59,0.5);background:rgba(40,8,4,0.9);">UNKNOWN &middot; PREV TECH MOD</div>
+        <div class="ann-dot"   id="ad5"  style="top:634px;left:40px;background:#C7553B;box-shadow:0 0 12px rgba(199,85,59,0.8);"></div>
         <div id="mikestamp" style="position:absolute;top:16px;right:16px;opacity:0;">
           <div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:rgba(0,194,178,0.7);letter-spacing:0.12em;text-transform:uppercase;">MIKE ANALYZED</div>
         </div>
       </div>
 
+      <div class="mike-reader-glow" id="mikeReaderGlow"></div>
       <div class="mike-reader" id="mikeReader">
         <div class="mike-reader-face">
           <img src="mike.png" alt="Mike" onerror="this.style.background='#0A2422'">
         </div>
-        <div class="mike-reader-voice">
-          <div class="reader-voice-bar" style="width:120px;animation-delay:0s;animation-duration:0.4s;"></div>
-          <div class="reader-voice-bar" style="width:180px;animation-delay:0.06s;animation-duration:0.55s;"></div>
-          <div class="reader-voice-bar" style="width:140px;animation-delay:0.12s;animation-duration:0.38s;"></div>
-          <div class="reader-voice-bar" style="width:200px;animation-delay:0.03s;animation-duration:0.48s;"></div>
-          <div class="reader-voice-bar" style="width:160px;animation-delay:0.09s;animation-duration:0.42s;"></div>
-          <div class="reader-voice-bar" style="width:120px;animation-delay:0.15s;animation-duration:0.52s;"></div>
+        <div class="reader-voice-wrap" id="readerVoiceBars">
+          <div class="reader-voice-bar" style="width:100px;"></div>
+          <div class="reader-voice-bar" style="width:160px;"></div>
+          <div class="reader-voice-bar" style="width:120px;"></div>
+          <div class="reader-voice-bar" style="width:180px;"></div>
+          <div class="reader-voice-bar" style="width:140px;"></div>
+          <div class="reader-voice-bar" style="width:120px;"></div>
+          <div class="reader-voice-bar" style="width:160px;"></div>
+          <div class="reader-voice-bar" style="width:100px;"></div>
         </div>
       </div>
 
       <div class="mike-reading-panel" id="mikeReadingPanel">
         <div class="reading-tag">MIKE &mdash; READING LIVE</div>
-        <div class="reading-text">
-          "That <span class="rust">unknown orange wire</span> is a
-          <span class="gold">factory jumper for the economizer</span> &mdash;
-          it shouldn't be there on this model.
-          <span class="teal">Pull it. Wire the R directly to the stat terminal.</span>
-          You'll get cool."
-        </div>
+        <div class="reading-text" id="twText"></div>
       </div>
     </div>
 
-    <!-- SCENE 4 — BRAND CLOSE -->
+    <!-- SCENE 4 — BRAND CLOSE (16000-28000ms) -->
     <div class="scene" id="s4">
-      <div class="brand-grid"></div>
-      <div class="brand-seam" id="brandSeamTop2"></div>
-      <div class="brand-seam" id="brandSeamBot2"></div>
+      <div class="brand-scanlines2"></div>
+      <div class="brand-grid2"></div>
+      <div class="brand-seam2" id="brandSeamTop2"></div>
+      <div class="brand-seam2" id="brandSeamBot2"></div>
+      <div class="brand2-mike-glow" id="brand2MikeGlow"></div>
       <div class="brand2-mike" id="brand2Mike">
         <img src="mike.png" alt="Mike" onerror="this.style.background='#0A2422'">
       </div>
-      <div class="brand2-tagline" id="brand2Tagline">
-        <div class="brand2-tagline-text">"I've seen this wiring before.<br>25 years worth."</div>
+      <div class="brand2-block" id="brand2Block">
+        <div class="brand2-trazer">TRAZER</div>
+        <div class="brand2-intel">INTELLIGENCE</div>
+        <div class="brand2-rule"></div>
+        <div class="brand2-url">TRAZERMIKE.IO</div>
       </div>
       <div class="brand2-cred" id="brand2Cred">
         <div class="brand2-cred-rule"></div>
         <div class="brand2-cred-row">
-          <span class="brand2-cred-key">Response</span>
-          <span class="brand2-cred-val teal">Instant</span>
+          <span class="brand2-cred-key">RESPONSE TIME</span>
+          <span class="brand2-cred-val">INSTANT</span>
         </div>
         <div class="brand2-cred-row">
-          <span class="brand2-cred-key">Camera AI</span>
-          <span class="brand2-cred-val">Live Wiring Read</span>
+          <span class="brand2-cred-key">EXPERIENCE</span>
+          <span class="brand2-cred-val">25 YR MASTER TECH</span>
         </div>
         <div class="brand2-cred-row">
-          <span class="brand2-cred-key">Brands</span>
-          <span class="brand2-cred-val">Every OEM Known</span>
-        </div>
-        <div class="brand2-cred-row">
-          <span class="brand2-cred-key">Availability</span>
-          <span class="brand2-cred-val gold">24/7 &middot; Always On</span>
+          <span class="brand2-cred-key">AVAILABILITY</span>
+          <span class="brand2-cred-val">24-7 &middot; ANY JOB</span>
         </div>
       </div>
-      <div class="brand2-wordmark" id="brand2Wordmark">
-        <div class="brand2-trazer">TRAZER</div>
-        <div class="brand2-intel">INTELLIGENCE</div>
-      </div>
-      <div class="brand2-underline" id="brand2Underline"></div>
-      <div class="brand2-cta" id="brand2Cta">
-        <div class="brand2-url">TRAZERMIKE.IO</div>
-        <div class="brand2-sub">A master tech in every pocket.</div>
+      <div class="brand2-tagline" id="brand2Tagline">
+        <div class="brand2-tagline-text">Point. Mike reads. Job done.</div>
       </div>
     </div>
 
@@ -404,17 +446,54 @@ html, body {
 })();
 
 // =====================================================
+// LIVE WAVEFORM — 8-bar reader bars
+// =====================================================
+var readerWaveInterval = null;
+function startReaderWave() {
+  if (readerWaveInterval) return;
+  var bars = document.querySelectorAll('#readerVoiceBars .reader-voice-bar');
+  readerWaveInterval = setInterval(function() {
+    bars.forEach(function(b) {
+      b.style.transform = 'scaleY(' + (0.15 + Math.random() * 0.85) + ')';
+    });
+  }, 80);
+}
+function stopReaderWave() {
+  if (readerWaveInterval) { clearInterval(readerWaveInterval); readerWaveInterval = null; }
+  var bars = document.querySelectorAll('#readerVoiceBars .reader-voice-bar');
+  bars.forEach(function(b) { b.style.transform = 'scaleY(0.15)'; });
+}
+
+// =====================================================
+// TYPEWRITER — Scene 3 reading text
+// =====================================================
+var TW_TEXT = '3-wire C-terminal — your Y2 to the condensing unit runs through the contactor coil. Verify continuity there.';
+var twTimer = null;
+var twIndex = 0;
+var twStarted = false;
+function startTypewriter(el) {
+  if (twTimer) { clearInterval(twTimer); twTimer = null; }
+  twIndex = 0;
+  el.innerHTML = '<span class="tw-cursor"></span>';
+  twTimer = setInterval(function() {
+    if (twIndex >= TW_TEXT.length) { clearInterval(twTimer); twTimer = null; return; }
+    el.innerHTML = TW_TEXT.slice(0, twIndex + 1) + '<span class="tw-cursor"></span>';
+    twIndex++;
+  }, 30);
+}
+
+// =====================================================
 // ANIMATION ENGINE
 // Total: 28s, then loop
-// S1: 0–5000 | S2: 5000–9500 | S3: 9500–21000 | S4: 21000–28000
-// AUDIO fires at elapsed=9500 (Scene 3 start — Mike reading)
+// S1: 0-3500 | S2: 3500-7500 | S3: 7500-16000 | S4: 16000-28000
+// AUDIO fires at elapsed=9500 (voice cue)
 // =====================================================
 var totalDuration = 28000;
 var loopStart = null;
 var audioFired = false;
 var audio = document.getElementById('mikeAudio');
 
-// ── iOS-proof voice via Web Audio (ports the main app's proven unlock path) ──
+// ── iOS-proof voice via Web Audio (ports the main app’s proven unlock path) ──
 // HTMLAudioElement.play() deferred seconds after the tap is blocked by iOS
 // Safari (out of gesture). The app solves this with AudioContext: resume the
 // context INSIDE the tap, hold the audio session open with a silent loop,
@@ -470,7 +549,9 @@ function clamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
 function setOp(id,v){ var e=document.getElementById(id); if(e) e.style.opacity=v; }
 
 var annIds  = ['ann1','ad1','ann2','ad2','ann3','ad3','ann4','ad4','ann5','ad5','mikestamp'];
-var annTimes = [400, 500, 1200, 1300, 2000, 2100, 2800, 2900, 3600, 3700, 4200];
+var annTimes = [400, 500, 1000, 1100, 1700, 1800, 2400, 2500, 3200, 3300, 4000];
+
+var slamDone = [false, false, false];
 
 function tick(now) {
   if (!loopStart) loopStart = now;
@@ -480,13 +561,24 @@ function tick(now) {
   var prog = document.getElementById('progress');
   if (prog) prog.style.width = (elapsed/totalDuration*100) + '%';
 
-  // Audio sync — fires when Scene 3 begins (elapsed 9500ms)
+  // Audio sync
   if (elapsed >= 9500 && elapsed < 9600 && !audioFired) {
     audioFired = true;
     playVoice();
   }
-  if (elapsed < 9500) {
-    audioFired = false;
+  if (elapsed < 9500) { audioFired = false; }
+
+  // Reset flags on new loop
+  if (elapsed < 3500) {
+    if (slamDone[0] || slamDone[1] || slamDone[2]) {
+      slamDone = [false, false, false];
+    }
+    if (twStarted) {
+      twStarted = false;
+      if (twTimer) { clearInterval(twTimer); twTimer = null; twIndex = 0; }
+      var twEl = document.getElementById('twText');
+      if (twEl) twEl.innerHTML = '';
+    }
   }
 
   var s = [
@@ -496,47 +588,88 @@ function tick(now) {
     document.getElementById('s4')
   ];
 
-  // ---- S1: 0–5000 ----
-  if (elapsed < 5000) {
-    var op1 = elapsed < 600 ? easeOut(elapsed/600) : 1;
-    if (elapsed > 4400) op1 = easeIn(1-(elapsed-4400)/600);
+  // ---- S1: 0-3500 ----
+  if (elapsed < 3500) {
+    var s1l = elapsed;
+    var op1 = s1l < 600 ? easeOut(s1l/600) : 1;
+    if (s1l > 2900) op1 = easeIn(1-(s1l-2900)/600);
     s[0].style.opacity = op1; s[1].style.opacity = 0; s[2].style.opacity = 0; s[3].style.opacity = 0;
+    stopReaderWave();
+
+    var cb = document.getElementById('controlBoard');
+    if (cb) { var cbt = clamp((s1l-100)/600,0,1); cb.style.opacity = easeOut(cbt); }
+
+    var topC = document.getElementById('s1TopCopy');
+    if (topC) { var tct = clamp((s1l-200)/500,0,1); topC.style.opacity = easeOut(tct); topC.style.transform = 'translateY('+lerp(-40,0,easeOut(tct))+'px)'; }
+
+    var botC = document.getElementById('s1BottomCopy');
+    if (botC) { var bct = clamp((s1l-1000)/600,0,1); botC.style.opacity = easeOut(bct); botC.style.transform = 'translateY('+lerp(-40,0,easeOut(bct))+'px)'; }
   }
 
-  // ---- S2: 5000–9500 ----
-  else if (elapsed < 9500) {
-    var s2l = elapsed - 5000;
+  // ---- S2: 3500-7500 ----
+  else if (elapsed < 7500) {
+    var s2l = elapsed - 3500;
     var op2 = s2l < 500 ? easeOut(s2l/500) : 1;
-    if (s2l > 4000) op2 = easeIn(1-(s2l-4000)/500);
+    if (s2l > 3600) op2 = easeIn(1-(s2l-3600)/400);
     s[0].style.opacity = 0; s[1].style.opacity = op2; s[2].style.opacity = 0; s[3].style.opacity = 0;
+    stopReaderWave();
 
     var vf = document.getElementById('viewfinder');
-    var prompt = document.getElementById('s2prompt');
     if (vf) {
-      var vft = clamp((s2l-200)/800,0,1);
-      var sc = lerp(0.85,1,easeOut(vft));
-      var vfy = lerp(80,0,easeOut(vft));
-      vf.style.transform = 'translate(-50%,-50%) translateY('+vfy+'px) scale('+sc+')';
+      var vft = clamp((s2l-100)/700,0,1);
+      vf.style.transform = 'translate(-50%,-50%) scale('+lerp(0.85,1,easeOut(vft))+')';
       vf.style.opacity = easeOut(vft);
     }
-    if (prompt) { var pt = clamp(s2l/400,0,1); prompt.style.opacity = easeOut(pt); }
 
     ['ctl','ctr','cbl','cbr'].forEach(function(c,i){
       var el = document.getElementById(c);
-      if(el){ var ct = clamp((s2l-600-i*100)/400,0,1); el.style.opacity = easeOut(ct); }
+      if(el){ var ct = clamp((s2l-500-i*100)/400,0,1); el.style.opacity = easeOut(ct); }
     });
     var so = document.getElementById('scanOverlay');
-    if(so){ var sot = clamp((s2l-800)/400,0,1); so.style.opacity = easeOut(sot)*0.8; }
+    if(so){ var sot = clamp((s2l-700)/400,0,1); so.style.opacity = easeOut(sot)*0.8; }
     var mt = document.getElementById('mikeCamThumb');
-    if(mt){ var mtt = clamp((s2l-1000)/500,0,1); mt.style.opacity = easeOut(mtt); }
+    if(mt){ var mtt = clamp((s2l-900)/500,0,1); mt.style.opacity = easeOut(mtt); }
+
+    // Slam words — sequential hammer
+    var slamEl = document.getElementById('s2Slam');
+    var sp = document.getElementById('slamPoint');
+    var sm = document.getElementById('slamMike');
+    var sr = document.getElementById('slamReads');
+    if (slamEl) {
+      if (s2l > 700) {
+        slamEl.style.opacity = '1';
+        if (!slamDone[0]) slamDone[0] = true;
+        if (sp) {
+          var spt = clamp((s2l-700)/200,0,1);
+          sp.style.opacity = easeOut(spt);
+          sp.style.transform = 'translateX('+lerp(80,0,easeOut(spt))+'px)';
+        }
+        if (s2l >= 1000 && !slamDone[1]) slamDone[1] = true;
+        if (sm) {
+          var smt = slamDone[1] ? clamp((s2l-1000)/200,0,1) : 0;
+          sm.style.opacity = easeOut(smt);
+          sm.style.transform = 'translateX('+lerp(-80,0,easeOut(smt))+'px)';
+        }
+        if (s2l >= 1300 && !slamDone[2]) slamDone[2] = true;
+        if (sr) {
+          var srt = slamDone[2] ? clamp((s2l-1300)/200,0,1) : 0;
+          sr.style.opacity = easeOut(srt);
+          sr.style.transform = 'scale('+lerp(0.7,1,easeOut(srt))+')';
+          sr.style.transformOrigin = 'center';
+        }
+      } else {
+        slamEl.style.opacity = '0';
+      }
+    }
   }
 
-  // ---- S3: 9500–21000 ----
-  else if (elapsed < 21000) {
-    var s3l = elapsed - 9500;
+  // ---- S3: 7500-16000 (voice cue at 9500) ----
+  else if (elapsed < 16000) {
+    var s3l = elapsed - 7500;
     var op3 = s3l < 600 ? easeOut(s3l/600) : 1;
-    if (s3l > 10800) op3 = easeIn(1-(s3l-10800)/700);
+    if (s3l > 7800) op3 = easeIn(1-(s3l-7800)/700);
     s[0].style.opacity = 0; s[1].style.opacity = 0; s[2].style.opacity = op3; s[3].style.opacity = 0;
+    startReaderWave();
 
     var az = document.getElementById('annotationZone');
     if(az){ var azt = clamp((s3l-200)/600,0,1); az.style.opacity = easeOut(azt); }
@@ -546,40 +679,60 @@ function tick(now) {
       if(!el) return;
       var at = clamp((s3l-annTimes[i])/400,0,1);
       el.style.opacity = easeOut(at);
+      el.style.transform = at < 1 ? 'scale('+lerp(0.8,1,easeOut(at))+')' : 'scale(1)';
     });
 
+    // Mike reader slides in from left (translateX -120px)
     var mr = document.getElementById('mikeReader');
-    if(mr){ var mrt = clamp((s3l-1000)/600,0,1); mr.style.opacity = easeOut(mrt); }
+    if(mr){
+      var mrt = clamp((s3l-800)/600,0,1);
+      mr.style.opacity = easeOut(mrt);
+      mr.style.transform = 'translateX('+lerp(-120,0,easeOut(mrt))+'px) translateX(-50%)';
+    }
+    var mrg = document.getElementById('mikeReaderGlow');
+    if(mrg){ var mrgt = clamp((s3l-800)/600,0,1); mrg.style.opacity = easeOut(mrgt); }
 
     var rp = document.getElementById('mikeReadingPanel');
     if(rp){
-      var rpt = clamp((s3l-5000)/700,0,1);
+      var rpt = clamp((s3l-4000)/700,0,1);
       rp.style.opacity = easeOut(rpt);
       rp.style.transform = 'translateY('+lerp(20,0,easeOut(rpt))+'px)';
     }
+
+    // Typewriter starts when reading panel fades in (~4300ms)
+    if (!twStarted && s3l >= 4300) {
+      twStarted = true;
+      var twEl = document.getElementById('twText');
+      if (twEl) startTypewriter(twEl);
+    }
   }
 
-  // ---- S4: 21000–28000 ----
+  // ---- S4: 16000-28000 — BRAND CLOSE ----
   else {
-    var s4l = elapsed - 21000;
+    var s4l = elapsed - 16000;
     var op4 = s4l < 600 ? easeOut(s4l/600) : 1;
     s[0].style.opacity = 0; s[1].style.opacity = 0; s[2].style.opacity = 0; s[3].style.opacity = op4;
+    stopReaderWave();
 
-    setOp('brandSeamTop2', clamp((s4l-200)/500,0,1));
-    setOp('brandSeamBot2', clamp((s4l-400)/600,0,1));
+    console.log('[S4-PC] s4l=' + s4l + ' op4=' + op4.toFixed(3));
 
-    var bm = document.getElementById('brand2Mike');
-    if(bm){ var bmt=clamp((s4l-300)/600,0,1); bm.style.opacity=easeOut(bmt); }
-    var bt = document.getElementById('brand2Tagline');
-    if(bt){ var btt=clamp((s4l-700)/600,0,1); bt.style.opacity=easeOut(btt); }
-    var bc = document.getElementById('brand2Cred');
-    if(bc){ var bct=clamp((s4l-1200)/700,0,1); bc.style.opacity=easeOut(bct); }
-    var bw = document.getElementById('brand2Wordmark');
-    if(bw){ var bwt=clamp((s4l-1800)/600,0,1); bw.style.opacity=easeOut(bwt); bw.style.transform='translateY('+lerp(30,0,easeOut(bwt))+'px)'; }
-    var bu = document.getElementById('brand2Underline');
-    if(bu){ var but=clamp((s4l-2200)/700,0,1); bu.style.width=(easeOut(but)*780)+'px'; }
-    var bca = document.getElementById('brand2Cta');
-    if(bca){ var bcat=clamp((s4l-2600)/600,0,1); bca.style.opacity=easeOut(bcat); }
+    setOp('brandSeamTop2', clamp((s4l-100)/400,0,1));
+    setOp('brandSeamBot2', clamp((s4l-300)/500,0,1));
+
+    var bm2 = document.getElementById('brand2Mike');
+    if(bm2){
+      var bm2t = clamp((s4l-200)/600,0,1);
+      bm2.style.opacity = easeOut(bm2t);
+      bm2.style.transform = 'translateX(-50%) translateY(-50%) scale('+lerp(0.8,1,easeOut(bm2t))+')';
+    }
+    var bmg2 = document.getElementById('brand2MikeGlow');
+    if(bmg2){ var bmg2t = clamp((s4l-200)/600,0,1); bmg2.style.opacity = easeOut(bmg2t); }
+    var bb2 = document.getElementById('brand2Block');
+    if(bb2){ var bb2t = clamp((s4l-700)/600,0,1); bb2.style.opacity = easeOut(bb2t); }
+    var bc2 = document.getElementById('brand2Cred');
+    if(bc2){ var bc2t = clamp((s4l-1400)/700,0,1); bc2.style.opacity = easeOut(bc2t); }
+    var bt2 = document.getElementById('brand2Tagline');
+    if(bt2){ var bt2t = clamp((s4l-2200)/800,0,1); bt2.style.opacity = easeOut(bt2t); }
   }
 
   requestAnimationFrame(tick);
@@ -595,6 +748,8 @@ document.getElementById('tap-overlay').addEventListener('click', function() {
   unlockVoice();
   loopStart = null;
   audioFired = false;
+  slamDone = [false, false, false];
+  twStarted = false;
   requestAnimationFrame(tick);
 });
 </script>

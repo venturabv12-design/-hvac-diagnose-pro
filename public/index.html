@@ -1321,9 +1321,9 @@ body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card{display:flex;posi
 /* While the chat is pinned full-screen, hide the page's sticky nav bar so it can't overlap Mike's header / the back button. */
 body[data-mode="contractor"].mp-chatting .nav{display:none;}
 /* Native-chat layout: header pinned top, messages scroll in the middle, composer+drawer pinned bottom — scoped to the active contractor chat thread only. */
-/* Hard scroll-lock the page while chatting so iOS rubber-band can't reveal the footer/app behind the fixed chat. html.mp-chatting is toggled in mpEnterChat/mpGoHome (more reliable than :has across iOS versions). */
-html.mp-chatting,body[data-mode="contractor"].mp-chatting{overflow:hidden;overscroll-behavior:none;height:100%;}
-body[data-mode="contractor"].mp-chatting #panelDiag{overflow:hidden;}
+/* Scroll-lock the page while chatting. IMPORTANT: do NOT set overflow:hidden on <html> or #panelDiag — #panelDiag is height:0 and on iOS Safari the showModal action-drawer dialog gets clipped to it (it doesn't always escape to the top layer like Chromium), leaving only the dim backdrop. overscroll-behavior:none + body overflow:hidden stops the rubber-band/footer-reveal and is dialog-safe. */
+html.mp-chatting{overscroll-behavior:none;}
+body[data-mode="contractor"].mp-chatting{overflow:hidden;overscroll-behavior:none;}
 body[data-mode="contractor"].mp-chatting .footer{display:none;}
 body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-header{flex:0 0 auto;}
 /* The messages wrapper (.chat-messages-wrap) is the direct flex child that must grow; the
@@ -8662,6 +8662,14 @@ async function sendChat(){
     var needsSearch=hadAttachment||!!(text&&text.match(
       /price|cost|how much|availability|where to buy|near me|supply house|warrant|recall|bulletin|tax credit|rebate|current code|regulation|2025|2026|error code|fault code|model number|serial number|part number|cross.?ref|discontinued|latest model|new equipment|current price|in stock|lead time|ship|weather|temperature|temp outside|outdoor temp|ambient|what.?s it|how hot|how cold|degrees|fahrenheit|celsius|climate|forecast|condition|pressure|superheat|subcool|charging|refrigerant|outside|right now|today|tonight|current/i
     ));
+    // Quick-action follow-through: an action had Mike open with a question (e.g. AHRI).
+    // When the tech answers, force the real work — flip search on and add a hidden,
+    // turn-only directive so Mike actually does it instead of estimating or telling the
+    // tech to "tap the button" they already tapped. Consumed after one turn.
+    if(window._mpActionDirective){
+      try{ sysPrompt += '\n\n' + window._mpActionDirective.text; if(window._mpActionDirective.search) needsSearch=true; }catch(_mpd){}
+      window._mpActionDirective=null;
+    }
     // Audible exchanges (voice / PTT / camera) cap at 800 tokens for punchy TTS;
     // text-only goes to 2048 for detailed write-ups. Gate matches mikeSay's gate.
     var _maxTok=shouldMikeSpeak()?800:2048;
@@ -8843,8 +8851,7 @@ function showRefrigerantLog(){
   openModal('refLogModal');
 }
 function logRefrigerantFromChat(){
-  document.getElementById('chatInput').value='Log refrigerant: I need to record refrigerant usage for this job. Ask me the refrigerant type, amount added or removed, and unit address.';
-  sendChat();
+  mpAskMike("What refrigerant, how much did you add or recover, and what's the unit address? I'll log it for the job.");
 }
 function exportRefrigerantLog(){
   var log=getRefrigerantLog();
@@ -9069,37 +9076,30 @@ function showPerformanceDashboard(){
 // ═══════════════════════════════════════════════════════════════════
 function askMikeRepairReplace(){showRepairReplaceCalc();}
 function askMikeMaintenanceAgreement(){
-  document.getElementById('chatInput').value='Write me a professional maintenance agreement for this customer. Include: what is covered, how many visits per year, priority scheduling, discount on repairs, and the price. Make it sound professional enough to sign right now.';
-  sendChat();
+  mpAskMike("Who's the customer and what system are they on? I'll write you a maintenance agreement they can sign today.");
 }
 function askMikeReviewRequest(){
-  document.getElementById('chatInput').value='Write me a short text message I can send this customer right now asking for a Google review. Make it friendly, personal, and include a blank for their name and my company name.';
-  sendChat();
+  mpAskMike("What's your company name and the customer's first name? I'll write you a friendly review-ask text to send right now.");
 }
 function askMikeLoadCalc(){
-  document.getElementById('chatInput').value='I need a quick load estimate. Ask me the square footage, ceiling height, climate zone or location, insulation quality, and number of windows. Then give me the recommended BTU tonnage.';
-  sendChat();
+  mpAskMike("Give me the square footage, ceiling height, your location, insulation, and rough window count — I'll size it for you.");
 }
 function askMikeSafetyChecklist(){
-  document.getElementById('chatInput').value='Give me the pre-job safety checklist for this job. Ask me the job type (residential, commercial, rooftop, gas, electrical, refrigerant) and generate the appropriate OSHA-aligned safety checklist.';
-  sendChat();
+  mpAskMike("What's the job — residential, commercial, rooftop, gas, electrical, refrigerant? I'll run you the right pre-job safety checklist.");
 }
 // Item 10 — "Callback Shield" now points at a REAL surface instead of opening the
 // generic drawer: a pre-close verification run with Mike so the label matches a working
 // feature. The composer prompt routes into Mike's brain like every other quick action.
 function askCallbackShield(){
   try{if(window.closeActionDrawer)window.closeActionDrawer();}catch(_){}
-  var inp=document.getElementById('chatInput');
-  if(inp){inp.value='Run my Callback Shield pre-close check. Before I leave this job, walk me through a 5-point verification so I don\'t get a callback — ask me the system type and the work I performed, then give me the checks that prevent the most common comebacks.';}
-  if(typeof sendChat==='function')sendChat();
+  mpAskMike("Before you roll out — what system is it and what did you do today? I'll run you a quick pre-close check so you don't get a callback.");
 }
 function askMikeAHRI(){
-  document.getElementById('chatInput').value='I need to look up an AHRI certificate. Ask me the outdoor unit model number and indoor unit model number, then search for the matched system efficiency ratings (SEER2, EER2, HSPF2) and any available utility rebates for this equipment in my area.';
-  sendChat();
+  mpAskMike("What's the outdoor and indoor model number? I'll pull the matched AHRI cert — SEER2, EER2, HSPF2 — and check what rebates you've got in your area.");
+  window._mpActionDirective={search:true,text:'ACTION — AHRI LOOKUP IN PROGRESS: You already asked the tech for the outdoor and indoor model numbers and they just gave them to you. DO the lookup now: search the AHRI directory (ahridirectory.org) for the matched-system certificate for these exact models and give the certified SEER2/EER2/HSPF2 (or SEER/HSPF for pre-2023 equipment) with the AHRI reference number, then search current utility rebates for the tech\'s area (ask their city only if you have no location). Give real searched numbers, not memory estimates, and NEVER tell the tech to tap a button — you are already doing it.'};
 }
 function askMikeCompetitor(){
-  document.getElementById('chatInput').value='The customer got another quote. Help me compare. Ask me: what brand or system they were quoted, the price, and what we are installing. Then give me the comparison and the exact words to win the sale.';
-  sendChat();
+  mpAskMike("What'd the other guy quote — brand, system, and price — and what are we putting in? I'll show you how to beat it.");
 }
 
 
@@ -9187,8 +9187,7 @@ function copyInvoice(){
 }
 function askMikeForInvoice(){
   closeModal('invoiceModal');
-  document.getElementById('chatInput').value='Write me a professional invoice summary for this job. Ask me the customer name, address, work performed, and amount to charge.';
-  sendChat();
+  mpAskMike("Give me the customer name, the work you did, and what you're charging — I'll write the invoice summary.");
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -9277,8 +9276,7 @@ function applyContractorDefaults(){
 // ── QUICK INVOICE CHIP ───────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
 function askMikeInvoice(){
-  document.getElementById('chatInput').value='Build me an invoice for this job. Ask me the customer name, what was done, parts used, labor hours, and what to charge.';
-  sendChat();
+  mpAskMike("Who's the customer, what did you do, parts and labor — I'll build the invoice.");
 }
 
 function findLocalTech(){
@@ -9376,7 +9374,7 @@ function mpEnterChat(){
 function mpGoHome(){document.body.classList.remove('mp-chatting');document.documentElement.classList.remove('mp-chatting');mpClearChatViewport();mpCloseSubsheet();}
 // Toolbelt actions that need one more detail shouldn't dump a half-typed line in the box
 // and stop — Mike asks for what he needs, like he picked up the phone. The tech just answers.
-function mpAskMike(q){mpEnterChat();if(typeof appendMessage==='function')appendMessage('agent',q);requestAnimationFrame(function(){if(typeof scrollToBottom==='function')scrollToBottom();});var i=document.getElementById('chatInput');if(i){i.value='';i.focus();}}
+function mpAskMike(q){window._mpActionDirective=null;mpEnterChat();if(typeof appendMessage==='function')appendMessage('agent',q);try{if(typeof chatHistory!=='undefined'&&chatHistory&&chatHistory.push)chatHistory.push({role:'assistant',content:q});}catch(e){}requestAnimationFrame(function(){if(typeof scrollToBottom==='function')scrollToBottom();});var i=document.getElementById('chatInput');if(i){i.value='';i.focus();}}
 function mpFindPart(){mpAskMike("What part are you after? Give me the unit — make and model — and what failed, and I'll get you the part number and where to grab it.");}
 function mpDrawDiagram(){window._mpPendingGen='diagram';mpAskMike("What should I draw? Name the unit or circuit — like 'Carrier 59TP6 control wiring' or 'a heat-pump defrost circuit' — and I'll sketch it.");}
 function mpIllustrate(){window._mpPendingGen='illustration';mpAskMike("What do you want to see? Name the part — 'reversing valve,' 'TXV,' 'ECM motor' — and I'll draw it up.");}

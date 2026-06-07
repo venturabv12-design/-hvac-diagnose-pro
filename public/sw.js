@@ -144,10 +144,6 @@ self.addEventListener('fetch', function (event) {
   // The SW file itself — never cache-serve it.
   if (url.pathname === '/sw.js') return;
 
-  // /reels/* — standalone marketing pages. NEVER intercept: let the browser load
-  // them straight from the network so the app shell can't hijack the reel URLs.
-  if (url.pathname.indexOf('/reels/') === 0) return;
-
   // HTML shell / navigations — NETWORK-FIRST (never serve stale to online users).
   if (isNavigationRequest(req)) {
     event.respondWith(networkFirst(event));

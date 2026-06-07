@@ -1321,13 +1321,16 @@ body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card{display:flex;posi
 /* While the chat is pinned full-screen, hide the page's sticky nav bar so it can't overlap Mike's header / the back button. */
 body[data-mode="contractor"].mp-chatting .nav{display:none;}
 /* Native-chat layout: header pinned top, messages scroll in the middle, composer+drawer pinned bottom — scoped to the active contractor chat thread only. */
-body[data-mode="contractor"].mp-chatting{overflow:hidden;}
+/* Hard scroll-lock the page while chatting so iOS rubber-band can't reveal the footer/app behind the fixed chat. html.mp-chatting is toggled in mpEnterChat/mpGoHome (more reliable than :has across iOS versions). */
+html.mp-chatting,body[data-mode="contractor"].mp-chatting{overflow:hidden;overscroll-behavior:none;height:100%;}
+body[data-mode="contractor"].mp-chatting #panelDiag{overflow:hidden;}
+body[data-mode="contractor"].mp-chatting .footer{display:none;}
 body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-header{flex:0 0 auto;}
 /* The messages wrapper (.chat-messages-wrap) is the direct flex child that must grow; the
    inner #chatMessages fills it and scrolls. min-height:0 lets the column actually shrink. */
 body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-messages-wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
-body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card .chat-messages{flex:1 1 auto;min-height:0;max-height:none;}
-body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-input-area{flex:0 0 auto;}
+body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card .chat-messages{flex:1 1 auto;min-height:0;max-height:none;overscroll-behavior-y:contain;}
+body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-input-area{flex:0 0 auto;padding-bottom:max(12px,env(safe-area-inset-bottom,12px));}
 .mp-rings{position:absolute;left:50%;top:-34px;transform:translateX(-50%);width:540px;height:540px;pointer-events:none;z-index:0;}
 .mp-rings::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,transparent 0 27%,rgba(58,139,138,.10) 27.5%,transparent 28.2%),radial-gradient(circle,transparent 0 39%,rgba(58,139,138,.06) 39.5%,transparent 40.2%),radial-gradient(circle,transparent 0 53%,rgba(244,239,230,.04) 53.5%,transparent 54.2%);-webkit-mask-image:radial-gradient(circle,#000 48%,transparent 70%);mask-image:radial-gradient(circle,#000 48%,transparent 70%);}
 .mp-sweep{position:absolute;left:0;right:0;top:-34px;height:200px;pointer-events:none;z-index:0;background:linear-gradient(180deg,rgba(58,139,138,.10),transparent);}
@@ -9357,6 +9360,7 @@ function mpClearChatViewport(){
 })();
 function mpEnterChat(){
   document.body.classList.add('mp-chatting');
+  document.documentElement.classList.add('mp-chatting');
   try{ mpSyncChatViewport(); requestAnimationFrame(mpSyncChatViewport); setTimeout(mpSyncChatViewport,120); }catch(e){}
   // The composer is now visible — grow it to fit any pre-seeded text. seedFirstPrompt can
   // run (after onboarding) while the composer is still hidden, so scrollHeight was 0 and the
@@ -9369,7 +9373,7 @@ function mpEnterChat(){
     }
   }catch(e){}
 }
-function mpGoHome(){document.body.classList.remove('mp-chatting');mpClearChatViewport();mpCloseSubsheet();}
+function mpGoHome(){document.body.classList.remove('mp-chatting');document.documentElement.classList.remove('mp-chatting');mpClearChatViewport();mpCloseSubsheet();}
 // Toolbelt actions that need one more detail shouldn't dump a half-typed line in the box
 // and stop — Mike asks for what he needs, like he picked up the phone. The tech just answers.
 function mpAskMike(q){mpEnterChat();if(typeof appendMessage==='function')appendMessage('agent',q);requestAnimationFrame(function(){if(typeof scrollToBottom==='function')scrollToBottom();});var i=document.getElementById('chatInput');if(i){i.value='';i.focus();}}

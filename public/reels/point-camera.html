@@ -542,6 +542,14 @@ function tick(now) {
 // =====================================================
 document.getElementById('tap-overlay').addEventListener('click', function() {
   this.classList.add('hidden');
+  // iOS UNLOCK: play+pause the voice inside this tap gesture so the later timed
+  // cue can actually fire it (iOS blocks deferred play() outside a gesture).
+  try {
+    audio.muted = false; audio.volume = 1;
+    var p = audio.play();
+    if (p && p.then) { p.then(function(){ audio.pause(); audio.currentTime = 0; }).catch(function(){}); }
+    else { audio.pause(); audio.currentTime = 0; }
+  } catch(e){}
   loopStart = null;
   audioFired = false;
   requestAnimationFrame(tick);

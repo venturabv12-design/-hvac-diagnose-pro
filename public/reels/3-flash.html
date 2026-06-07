@@ -727,12 +727,21 @@ function tick(now) {
 // =====================================================
 document.getElementById('tap-overlay').addEventListener('click', function() {
   this.classList.add('hidden');
+  // iOS UNLOCK: Safari only lets audio play if play() is called inside the tap
+  // gesture. The voice fires ~12s later (not in a gesture), so iOS would block it.
+  // Play+pause now (within this tap) to unlock the element, then the later cue works.
+  try {
+    audio.muted = false; audio.volume = 1;
+    var p = audio.play();
+    if (p && p.then) { p.then(function(){ audio.pause(); audio.currentTime = 0; }).catch(function(){}); }
+    else { audio.pause(); audio.currentTime = 0; }
+  } catch(e){}
   // Reset and start timeline
   loopStart = null;
   audioFired = false;
   // Start rAF loop
   requestAnimationFrame(tick);
-  // Audio will fire automatically when elapsed hits 12000ms
+  // Audio will fire automatically when elapsed hits 12000ms (now unlocked)
 });
 </script>
 </body>

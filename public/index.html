@@ -328,8 +328,8 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
   background:linear-gradient(180deg,rgba(58,139,138,.06),transparent);animation:ob-scope 5s ease-in-out infinite;}
 @keyframes ob-scope{0%{transform:translateY(-30%)}50%{transform:translateY(190%)}100%{transform:translateY(-30%)}}
 
-.ob-canvas{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;padding:18px 22px;padding-bottom:max(18px, env(safe-area-inset-bottom,18px));}
-.ob-top{display:flex;align-items:center;justify-content:space-between;flex:none;}
+.ob-canvas{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;padding:max(18px, env(safe-area-inset-top,18px)) 22px max(18px, env(safe-area-inset-bottom,18px));}
+.ob-top{display:flex;align-items:center;justify-content:space-between;flex:none;position:relative;z-index:1;}
 .ob-brand{font-family:'Anton','Archivo',var(--font-display),sans-serif;letter-spacing:.05em;font-size:15px;opacity:.9;}
 .ob-brand i{font-style:normal;color:var(--ob-brass);}
 .ob-skip-btn{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--ob-mute2);background:transparent;border:1px solid var(--ob-line);border-radius:18px;padding:6px 16px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;cursor:pointer;}
@@ -910,6 +910,8 @@ body[data-mode="homeowner"] [data-contractor-only]{display:none!important;}
 .nav-back{border:none;padding:4px;}
 .nav-back svg{width:18px;height:18px;}
 .nav-globe svg,.nav-more svg{width:16px;height:16px;}
+.nav-globe{width:auto!important;padding:0 8px;gap:4px;}
+.nav-globe-lc{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;font-weight:700;color:rgba(255,255,255,.7);}
 body[data-mode="contractor"] .nav-actions{gap:4px;}
 /* Founder declutter (contractor): drop the redundant top-nav Mike + back arrow and the
    WAITING-FOR-YOU instrument banner so the Call/FaceTime header sits right on top of the
@@ -1234,7 +1236,7 @@ body[data-mode="contractor"] #chatSendBtn{width:44px;height:44px;border-radius:5
 .nav-mike-name{font-family:var(--font-display);font-size:15px;font-weight:800;color:var(--ink);line-height:1;letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .nav-mike-status{font-size:10px;color:var(--moss);margin-top:3px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 /* breaker-fix Pass 5 + 6 — .nav-actions had flex-shrink:0 which forced its 336px content out past the viewport on signed-out 320px and 390px screens. Pass 5's shrink-parent-only fix moved the overflow to children. Pass 6 final fix: parent shrinks (already), nav-inner clips any residual overflow (safety net), and a narrow-viewport media query tightens gaps and icon button padding so the children actually fit on small screens without losing tap targets. Result: zero horizontal overflow at 320×568, 390×844, and 768×1024. */
-.nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:1;min-width:0;}
+.nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:1;min-width:0;position:relative;z-index:1;}
 .nav-actions > *{flex-shrink:0;}
 .nav-inner{overflow:hidden;}
 @media (max-width: 400px){
@@ -1492,7 +1494,8 @@ body[data-mode="contractor"] .mp-back{width:44px!important;height:44px!important
 .mp-name .mp-sub .lt{color:rgba(244,239,230,.45)!important;}
 .mp-tool-sub{font-size:9px!important;}
 body[data-mode="contractor"] #quickActionsBtn{min-height:44px!important;}
-.nav-back,.nav-globe,.nav-more{width:42px!important;height:42px!important;}
+.nav-back,.nav-more{width:42px!important;height:42px!important;}
+.nav-globe{height:42px!important;}
 body[data-mode="contractor"] .nav-mike-status{font-size:10px!important;color:var(--teal-bright)!important;}
 .is-status-label{font-size:10px!important;color:var(--teal-bright)!important;}
 .v2-hsub{font-size:10.5px!important;}
@@ -2823,8 +2826,8 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn" data-homeowner-only><span id="langFlag">🇺🇸</span><span id="langCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span></button>
       <button onclick="newChat()" class="nav-icon-btn" id="navRefreshBtn" data-homeowner-only title="New chat — full intro in current language">&#x21BB;</button>
       <button class="nav-profile-btn" id="navProfileBtn" data-homeowner-only onclick="toggleProfileDD()">?</button>
-      <button class="nav-globe" data-contractor-only aria-label="Language" onclick="toggleLangMenu()"><i data-lucide="globe"></i></button>
-      <button class="nav-more" data-contractor-only aria-label="More" onclick="toggleProfileDD()"><i data-lucide="more-horizontal"></i></button>
+      <button class="nav-globe" data-contractor-only aria-label="Language" onclick="toggleLangMenu()"><i data-lucide="globe"></i><span id="navGlobeLangCode" class="nav-globe-lc">EN</span></button>
+      <button class="nav-more" data-contractor-only aria-label="Profile" onclick="toggleProfileDD()"><i data-lucide="circle-user"></i></button>
     </div>
   </div>
 </nav>
@@ -4839,8 +4842,8 @@ function getObPack(){
 // Frame SEQUENCES — order = render order. TECH has the money frame; HOME never does
 // (guardrail: revenue/objection coaching is tech-only). Each entry names the pack key
 // the renderer reads its prose from.
-var OB_FRAMES_TECH=['cold','call','facetime','text','money','magic'];
-var OB_FRAMES_HOME=['cold','talkedaround','facetime','magic'];
+var OB_FRAMES_TECH=['cold','call','facetime','text','money'];
+var OB_FRAMES_HOME=['cold','talkedaround','facetime'];
 function obFrames(){
   return (currentUser&&currentUser.role==='homeowner')?OB_FRAMES_HOME:OB_FRAMES_TECH;
 }
@@ -5018,7 +5021,7 @@ function renderOb(){
   if(nb){
     // Cold/magic frames carry their own localized cta; middle frames use the
     // existing localized obNext key so the dock label translates with the language.
-    nb.textContent=cur.cta?cur.cta:v2t('obNext');
+    nb.textContent=cur.cta?cur.cta:(obStep===frames.length-1?v2t('obStart'):v2t('obNext'));
   }
   // Progress dots — rebuilt to match active frame count (6 tech / 4 home).
   var dotsWrap=document.getElementById('obDots');
@@ -11165,6 +11168,7 @@ function setLang(lang){
   var codeEl=document.getElementById('langCode');
   if(flagEl)flagEl.textContent=flags[lang]||'🇺🇸';
   if(codeEl)codeEl.textContent=codes[lang]||'EN';
+  var ngc=document.getElementById('navGlobeLangCode');if(ngc)ngc.textContent=codes[lang]||'EN';
   // Keep the pre-login auth-overlay language switcher (C-BUG1/3) in sync too.
   var aFlag=document.getElementById('authLangFlag');if(aFlag)aFlag.textContent=flags[lang]||'🇺🇸';
   var aCode=document.getElementById('authLangCode');if(aCode)aCode.textContent=codes[lang]||'EN';

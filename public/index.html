@@ -4653,6 +4653,7 @@ function closeModal(id){
 }
 
 function selectBillingPlan(plan,el){
+  selPlan=plan;
   document.querySelectorAll('.plan-card').forEach(function(c){c.classList.remove('active');});
   el.classList.add('active');
 }
@@ -4723,10 +4724,20 @@ function _showPaywall_DISABLED(){
 }
 function selectPlan(p,el){selPlan=p;document.querySelectorAll('.pw-plan').forEach(function(x){x.classList.remove('sel');});el.classList.add('sel');}
 async function goCheckout(){
-  var plan=selectedBillingPlan||'pro';
-  if(!currentUser){showToast('Please sign in first.','error',2500);return;}
-  showToast('Billing goes live soon — you\'re on beta access','info',3000);
-  closeModal('billingModal');
+  if(!currentUser||!currentUser.token){showToast('Please sign in first.','error',2500);return;}
+  var plan=selPlan||'pro';
+  if(plan==='enterprise'){
+    showToast('Opening email — tell us your crew size and we\'ll set you up.','info',3500);
+    window.location.href='mailto:trazerintelligence@gmail.com?subject='+encodeURIComponent('Trazer Enterprise inquiry')+'&body='+encodeURIComponent('Name: '+(currentUser.name||'')+'\nEmail: '+(currentUser.email||'')+'\nCrew size: \n\nI want to talk Enterprise pricing for Trazer.');
+    return;
+  }
+  showToast('Opening secure checkout…','info',2000);
+  try{
+    var r=await fetch('/api/billing/checkout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentUser.token},body:JSON.stringify({plan:plan,email:currentUser.email,name:currentUser.name||''})});
+    var d=await r.json().catch(function(){return{};});
+    if(r.ok&&d.url){window.location.href=d.url;return;}
+    showToast(d.error||'Could not start checkout — please try again.','error',3500);
+  }catch(e){showToast('Network error — could not reach checkout.','error',3500);}
 }
 
 // ── CINEMATIC ONBOARDING ────────────────────────────────────────
@@ -11878,7 +11889,7 @@ document.addEventListener('DOMContentLoaded',function(){
         </div>
       </div>
     </div>
-    <button class="tz-modal-btn" onclick="notifyWhenBillingLive()">Notify Me When Billing Goes Live</button>
+    <button class="tz-modal-btn" onclick="goCheckout()">Subscribe Now — Cancel Anytime</button>
     <button class="tz-modal-btn-outline" onclick="closeModal('billingModal')">← Back</button>
   </div>
 </div>

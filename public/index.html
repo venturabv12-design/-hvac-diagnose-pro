@@ -4290,6 +4290,9 @@ function authSignOut(){
     Object.keys(localStorage).filter(function(k){return k.indexOf('trazer_')===0&&k!=='trazer_user'&&k!=='trazer_users'&&k.indexOf('trazer_favTools_')!==0&&k.indexOf('_'+sl7_4)>-1;}).forEach(function(k){localStorage.removeItem(k);});
   }
   currentUser=null;localStorage.removeItem('trazer_user');
+  // Clear the Create-Account fields so the next person doesn't see the prior user's
+  // name/email/password pre-filled after a sign-out.
+  try{['suName','suEmail','suPass'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});}catch(e){}
   // Option B: back to signed-out → restore the tall front-door landing, hide the strip.
   if(typeof syncAuthSurface==='function')syncAuthSurface();
   // Bug 5 fix (Owner persona / Gap #007): clear DOM remnants of prior user.
@@ -5591,7 +5594,9 @@ function requestTechLocation(){
       });
   }
   function onError(err){
-    console.warn('GPS error:',err.code,err.message);
+    // console.debug (not warn) — GPS timeouts/denials are expected and self-recover via
+    // the low-accuracy retry + profile-zip fallback below; no need to clutter the console.
+    console.debug('GPS error:',err.code,err.message);
     window._locationDenied=(err.code===1);
     if(err.code!==1){
       navigator.geolocation.getCurrentPosition(onSuccess,function(){window._locationDenied=false;},opts_low);
@@ -6174,7 +6179,11 @@ async function callAI(system,messages,max_tokens,useSearch){
     // Fall back to a per-attempt controller for our own 30s timeout.
     var externalCtrl=window.chatAbortController;
     var controller=externalCtrl||new AbortController();
-    var tid=setTimeout(function(){try{controller.abort();}catch(e){}},60000);
+    // Web-search replies can legitimately run up to the server's 75s window; give those
+    // the full window + buffer so a slow search on a phone network isn't killed at 60s
+    // (was the "Taking a bit longer" failure on the Sales School "latest" path). Regular
+    // chat keeps the snappy 60s.
+    var tid=setTimeout(function(){try{controller.abort();}catch(e){}},useSearch?90000:60000);
     try{
       var reqBody={system:_sysBase,messages:messages,max_tokens:max_tokens};
       if(_sysExtra)reqBody.systemExtra=_sysExtra;
@@ -6205,7 +6214,11 @@ async function callAI(system,messages,max_tokens,useSearch){
         showPaywall();
         throw new Error(data.error||'Subscription required.');
       }
-      if(res.status===529||res.status===503||res.status===429||(data.error&&(data.error.indexOf('overload')>=0||data.error.indexOf('529')>=0||data.error.indexOf('rate')>=0))){
+      // 502 = a transient upstream hiccup (Anthropic/web_search blipped) — these fail
+      // FAST, so a quick auto-retry recovers silently instead of erroring at the user.
+      // (504 is the server's own 75s timeout and is intentionally NOT retried — retrying
+      // would just wait the full window again — it falls through to the graceful message.)
+      if(res.status===529||res.status===503||res.status===429||res.status===502||(data.error&&(data.error.indexOf('overload')>=0||data.error.indexOf('529')>=0||data.error.indexOf('rate')>=0))){
         if(attempt<2){await new Promise(function(r){setTimeout(r,1000*(attempt+1));});continue;}
         throw new Error('Busy right now — hit send again and I\'ll grab it.');
       }
@@ -6380,6 +6393,9 @@ async function runHomeownerDiagnostic(){
     };
     var c=COLORS[sev]||COLORS.MEDIUM;
 
+    // Count the homeowner diagnostic toward usage too — tech chat calls trackUsage("chat"),
+    // but the homeowner path didn't, so the profile counter read 0 for homeowners.
+    if(typeof trackUsage==='function')trackUsage("homeowner");
     document.getElementById("homeResultCard").style.borderLeft="4px solid "+c.border;
 
     var out="";
@@ -10491,7 +10507,10 @@ function mikeSay(text){
   stopMikeSpeaking();
   stopListening();
   document.getElementById('chatInput').value='';
-  var clean=text.replace(/https?:\/\/[^\s)>\]"]+/g,'').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim().substring(0,5000);
+  // Speak units like a human: the DISPLAY keeps "75°F" / "29 mph", but TTS should SAY
+  // "75 degrees" and "miles per hour" — not "75 degree F" / "m-p-h". (Display text is the
+  // separate `text` passed to appendMessage; `clean` here is spoken-only.)
+  var clean=text.replace(/https?:\/\/[^\s)>\]"]+/g,'').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/(\d+)\s*°\s*[FfCc]?/g,'$1 degrees').replace(/°\s*[FfCc]?/g,' degrees').replace(/(\d+)\s*degrees?\s*(?:Fahrenheit|Celsius|F\b|C\b)/gi,'$1 degrees').replace(/\bmph\b/gi,'miles per hour').replace(/  +/g,' ').trim().substring(0,5000);
   if(!clean)return;
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
   isMikeSpeaking=true;

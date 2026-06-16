@@ -8819,9 +8819,13 @@ async function sendChat(){
       try{ sysPrompt += '\n\n' + window._mpActionDirective.text; if(window._mpActionDirective.search) needsSearch=true; }catch(_mpd){}
       window._mpActionDirective=null;
     }
-    // Audible exchanges (voice / PTT / camera) cap at 800 tokens for punchy TTS;
-    // text-only goes to 2048 for detailed write-ups. Gate matches mikeSay's gate.
-    var _maxTok=shouldMikeSpeak()?800:2048;
+    // Audible exchanges (voice / PTT / camera) stay SHORT + conversational so it feels
+    // like a real phone call (lead with the answer, offer more) — and shorter replies
+    // generate + speak faster, so Mike responds quicker. Text-only still goes long for
+    // detailed write-ups. Gate matches mikeSay's gate.
+    var _speakingNow=shouldMikeSpeak();
+    var _maxTok=_speakingNow?400:2048;
+    if(_speakingNow){sysPrompt+='\n\nYOU ARE TALKING OUT LOUD on a call right now — talk like a real person on the phone, not an essay. Keep it to one to three sentences: lead with the answer, then stop. No lists or long lectures out loud. If there is more to it, ask "want me to walk you through it?" and let them say yes. Quick, natural, back-and-forth.';}
     var response;
     // STREAMING: only the pure-text path streams (no web_search tool-use, no
     // attachment, not voice — those keep the proven non-stream callAI). On any

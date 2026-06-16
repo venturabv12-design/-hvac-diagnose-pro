@@ -1752,9 +1752,14 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         outText = outText.replace(/\bR-?22\b[^.!?\n]{0,18}?\breplac\w*/gi, 'an R-22 system is a repair-or-replace conversation for your tech');
         outText = outText.replace(/\b(?:a |the )?new (?:system|unit)\b[^.!?\n]{0,30}?\b(?:wins|pays for itself|cheaper|cost[- ]per[- ]year|saves you money|comes out ahead)/gi, 'whether a new system is worth it is your tech’s call');
       }
-      // Prepend mandatory safety lead(s) so the action is the first thing the tech reads.
-      const _leads = [_safetyLead, _capacitorWarn, _inverterWarn].filter(Boolean);
-      if (_leads.length) outText = _leads.join('\n\n') + '\n\n' + outText;
+      // Genuine ACTIVE emergencies (911 / live gas / CO / spillage / A2L release) still
+      // LEAD — you never bury "call 911" or "shut the gas off" under an answer. The
+      // precautionary stored-energy cautions (capacitor / inverter "discharge before you
+      // touch it") move to a TAIL note so Mike answers the tech's actual question first,
+      // for ANY experience level (Brandon field note 2026-06-16).
+      if (_safetyLead) outText = _safetyLead + '\n\n' + outText;
+      const _tail = [_capacitorWarn, _inverterWarn].filter(Boolean);
+      if (_tail.length) outText = outText + '\n\n' + _tail.join('\n\n');
     } catch (_) {}
 
     // Phase 2: attach wiring-diagram image(s) the retrieval surfaced, as a sentinel

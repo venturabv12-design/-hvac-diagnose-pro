@@ -7337,7 +7337,7 @@ function buildPersonalizedContext(){
 
   // RESPONSE DISCIPLINE — answer-first for EVERY level. A working tech wants the answer,
   // not an interview (Brandon field note 2026-06-16: stop interrogating techs).
-  ctx += '\nRESPONSE DISCIPLINE (all levels): The tech is on a job and wants the answer, not an interview. When they state a fact or a decision ("I already verified the cap is bad," "it\'s a Turbo 200"), take it as GIVEN — do not re-confirm it, do not second-guess it, never ask "are you sure." Lead with the answer to what they actually asked. Ask AT MOST ONE clarifying question, and only when you genuinely cannot proceed safely or accurately without it — never stack questions. For a universal / multi-tap part you do NOT need an exact spec to point them to it. Do NOT open with a safety lecture: answer first, and put any genuine safety reminder briefly at the END. Only a real emergency (call 911, shut the gas off, CO shutdown) ever leads.\n';
+  ctx += '\nRESPONSE DISCIPLINE (all levels): The tech is on a job and wants the answer, not an interview. When they state a fact or a decision ("I already verified the cap is bad," "it\'s a Turbo 200"), take it as GIVEN — do not re-confirm it, do not second-guess it, never ask "are you sure." Lead with the answer to what they actually asked. Ask AT MOST ONE clarifying question, and only when you genuinely cannot proceed safely or accurately without it — never stack questions. For a universal / multi-tap part you do NOT need an exact spec to point them to it. Do NOT open with a safety lecture: answer first, and put any genuine safety reminder briefly at the END. Only a real emergency (call 911, shut the gas off, CO shutdown) ever leads. Never write your own capacitor or electrical lethal-charge or discharge warning — the required safety note is appended automatically by the system; do not repeat it in your answer. This OVERRIDES any earlier rule about confirming all inputs or never quoting a number without every value — instead state your best-assumption answer, name the assumption, and ask at most ONE question, and only if the answer genuinely changes without it. Never end a reply with two or three stacked questions — ask ONE and stop.\n';
 
   // SALES TRAINER — Mike teaches selling as a craft, calibrated to the level above.
   ctx += '\nSALES TRAINER ROLE: You are also this tech\'s sales coach, not just a diagnostic co-pilot. When they ask how to sell, handle an objection, present options, or close, TEACH the technique — name it, give the exact words to say, explain WHY it works, and give one quick way to practice it. Calibrate the depth to their experience level above:\n';
@@ -8830,6 +8830,7 @@ async function sendChat(){
     var _speakingNow=shouldMikeSpeak();
     var _maxTok=_speakingNow?400:2048;
     if(_speakingNow){sysPrompt+='\n\nYOU ARE TALKING OUT LOUD on a call right now — talk like a real person on the phone, not an essay. Keep it to one to three sentences: lead with the answer, then stop. No lists or long lectures out loud. If there is more to it, ask "want me to walk you through it?" and let them say yes. Quick, natural, back-and-forth.';}
+    else{sysPrompt+='\n\nKeep it tight: lead with the answer in the first sentence and keep the whole reply to a few sentences unless the tech asks you to walk them through it. No preamble, no safety lecture up front. If you genuinely need something, ask ONE question and stop — never end with a pile of questions.';}
     var response;
     // STREAMING: only the pure-text path streams (no web_search tool-use, no
     // attachment, not voice — those keep the proven non-stream callAI). On any
@@ -9239,10 +9240,10 @@ function askMikeReviewRequest(){
   mpAskMike("What's your company name and the customer's first name? I'll write you a friendly review-ask text to send right now.");
 }
 function askMikeLoadCalc(){
-  mpAskMike("Give me the square footage, ceiling height, your location, insulation, and rough window count — I'll size it for you.");
+  mpAskMike("What's the square footage? I'll size it — toss me ceiling height, insulation, and your location if you've got 'em.");
 }
 function askMikeSafetyChecklist(){
-  mpAskMike("What's the job — residential, commercial, rooftop, gas, electrical, refrigerant? I'll run you the right pre-job safety checklist.");
+  mpAskMike("What are you walking into? Tell me the unit or the job and I'll run you the right pre-job safety check.");
 }
 // Item 10 — "Callback Shield" now points at a REAL surface instead of opening the
 // generic drawer: a pre-close verification run with Mike so the label matches a working
@@ -9256,14 +9257,14 @@ function askMikeAHRI(){
   window._mpActionDirective={search:true,text:'ACTION — AHRI LOOKUP IN PROGRESS: You already asked the tech for the outdoor and indoor model numbers and they just gave them to you. DO the lookup now: search the AHRI directory (ahridirectory.org) for the matched-system certificate for these exact models and give the certified SEER2/EER2/HSPF2 (or SEER/HSPF for pre-2023 equipment) with the AHRI reference number, then search current utility rebates for the tech\'s area (ask their city only if you have no location). Give real searched numbers, not memory estimates, and NEVER tell the tech to tap a button — you are already doing it.'};
 }
 function askMikeCompetitor(){
-  mpAskMike("What'd the other guy quote — brand, system, and price — and what are we putting in? I'll show you how to beat it.");
+  mpAskMike("What'd the other guy quote, and what are you putting in? I'll show you how to beat it.");
 }
 function qaPressures(){mpAskMike("What refrigerant are you on, and what's the outdoor temp at the job? I'll get you your target suction and head.");}
-function qaFindUpsells(){mpAskMike("What'd you just do on this unit, and how old's the system? I'll show you what's worth offering — and how to frame it.");}
-function qaJobSummary(){mpAskMike("What was wrong, what'd you fix, and what parts did you use? I'll write up the summary and what to put on the invoice.");}
+function qaFindUpsells(){mpAskMike("What'd you just do on this unit? I'll show you what's worth offering — and how to frame it.");}
+function qaJobSummary(){mpAskMike("Walk me through it — what happened and what'd you put in? I'll write the summary and the invoice line.");}
 function qaHandleObjection(){mpAskMike("What are they balking at — the price, or whether they really need it? Tell me what they said and I'll give you the words.");}
 function qaPitchMaintenance(){mpAskMike("What system are they on and how old is it? I'll give you the maintenance-plan pitch that lands.");}
-function qaSalesSchool(){mpAskMike("Sales school. What do you want to sharpen — objections, good/better/best, closing, financing, or a talk track? Tell me where you're losing the sale and I'll coach you to your level. Want what's working right now? Say 'the latest' and I'll pull it.");window._mpActionDirective={search:true,text:'ACTION — SALES COACHING: the tech wants to get better at selling. Teach the technique that fits what they said: name it, give the exact words to say, explain why it works, and give one quick way to practice. Calibrate to their experience level on file (beginner = fundamentals + encouragement; experienced = sharper technique; master/owner = strategy + coaching their crew). If they ask for the newest/latest methods or what is working now, SEARCH the web for current sales techniques and scripts and translate them into HVAC field language. Every technique stays HONEST value-selling — never pressure or deception.'};}
+function qaSalesSchool(){mpAskMike("Sales school — what do you want to sharpen? Objections, good/better/best, closing, financing, or a talk track. Pick one and I'll coach you to your level.");window._mpActionDirective={search:true,text:'ACTION — SALES COACHING: the tech wants to get better at selling. Teach the technique that fits what they said: name it, give the exact words to say, explain why it works, and give one quick way to practice. Calibrate to their experience level on file (beginner = fundamentals + encouragement; experienced = sharper technique; master/owner = strategy + coaching their crew). If they ask for the newest/latest methods or what is working now, SEARCH the web for current sales techniques and scripts and translate them into HVAC field language. Every technique stays HONEST value-selling — never pressure or deception.'};}
 
 
 
@@ -9553,8 +9554,8 @@ var MP_TOOLS={
     {label:'Repair vs Replace',sub:'5000-rule calculator',fn:function(){showRepairReplaceCalc();}}
   ]},
   warranty:{title:'Warranty Check',pip:'var(--moss)',actions:[
-    {label:'Check Warranty Status',sub:'Brand / model / install date',fn:function(){mpAskMike("What's the brand, model, and install date? I'll check where the warranty stands.");window._mpActionDirective={search:true,text:'ACTION — WARRANTY CHECK: the tech just gave you the brand, model, and install date. Search the manufacturer warranty terms for this exact equipment and tell them what is covered (parts / compressor / labor), the length, and whether registration was required to keep it. Use real searched info, not a guess.'};}},
-    {label:'File a Warranty Claim',sub:'Prep the claim',fn:function(){mpAskMike("What's the unit, what failed, and the install date? I'll prep the warranty claim with you.");}},
+    {label:'Check Warranty Status',sub:'Brand / model / install date',fn:function(){mpAskMike("Give me the model and install date and I'll check where the warranty stands.");window._mpActionDirective={search:true,text:'ACTION — WARRANTY CHECK: the tech just gave you the brand, model, and install date. Search the manufacturer warranty terms for this exact equipment and tell them what is covered (parts / compressor / labor), the length, and whether registration was required to keep it. Use real searched info, not a guess.'};}},
+    {label:'File a Warranty Claim',sub:'Prep the claim',fn:function(){mpAskMike("What's the model and what failed? I'll prep the claim — grab the install date too if it's handy.");}},
     {label:'Maintenance Agreement',sub:'Build an MA',fn:function(){mpEnterChat();askMikeMaintenanceAgreement();}}
   ]},
   wiring:{title:'Wiring & Diagrams',pip:'var(--rust)',actions:[
@@ -9566,7 +9567,7 @@ var MP_TOOLS={
     {label:'Safety Check',sub:'Pre-job checklist',fn:function(){mpEnterChat();askMikeSafetyChecklist();}}
   ]},
   jobs:{title:'Close This Job',pip:'var(--brass)',actions:[
-    {label:'Job Summary',sub:'Problem · fix · invoice',fn:function(){mpAskMike("What was wrong, what'd you fix, and what parts did you use? I'll write up the summary and what to put on the invoice.");}},
+    {label:'Job Summary',sub:'Problem · fix · invoice',fn:function(){mpAskMike("Walk me through it — what happened and what'd you put in? I'll write the summary and the invoice line.");}},
     {label:'Invoice Generator',sub:'Build & copy invoice',fn:function(){generateInvoice();}},
     {label:'Customer Sign-Off',sub:'Capture signature',fn:function(){showJobSignOff();}},
     {label:'Save Customer',sub:'Add to customer list',fn:function(){saveCurrentJobAsCustomer();}},
@@ -9576,12 +9577,12 @@ var MP_TOOLS={
   manual:{title:'Tech Docs',pip:'rgba(244,239,230,.5)',actions:[
     {label:'Install Manual',sub:'Startup & commissioning',fn:function(){mpAskMike("What's the make and model? I'll pull the install and startup procedure.");window._mpActionDirective={search:true,text:'ACTION — INSTALL/STARTUP PROCEDURE: the tech gave the make and model. Search the manufacturer install/IOM startup and commissioning procedure for this exact unit and give the real steps plus the document reference. Searched, not from memory.'};}},
     {label:'Service Manual',sub:'Specs & procedures',fn:function(){mpAskMike("Give me the make and model and I'll pull the service specs.");window._mpActionDirective={search:true,text:'ACTION — SERVICE SPECS: the tech gave the make and model. Search the manufacturer service literature for this exact unit and give the real specs (charge, target pressures, electrical, clearances) plus the document reference.'};}},
-    {label:'Error / Fault Codes',sub:'Decode a code',fn:function(){mpAskMike("What's the brand, the exact model off the data plate, and the code or flash count? I'll decode it.");window._mpActionDirective={search:true,text:'ACTION — FAULT CODE DECODE: the tech is giving brand + EXACT model + the code/flash count. Decode it for THIS exact model (codes shift across generations) and search the model service literature to confirm. Give the meaning, the most likely cause, and the check. Never guess across brands; use the exact model.'};}},
+    {label:'Error / Fault Codes',sub:'Decode a code',fn:function(){mpAskMike("Give me the code or flash count and the model off the data plate — I'll decode it for that exact unit.");window._mpActionDirective={search:true,text:'ACTION — FAULT CODE DECODE: the tech is giving brand + EXACT model + the code/flash count. Decode it for THIS exact model (codes shift across generations) and search the model service literature to confirm. Give the meaning, the most likely cause, and the check. Never guess across brands; use the exact model.'};}},
     {label:'Load Calc',sub:'Size the equipment',fn:function(){mpEnterChat();askMikeLoadCalc();}}
   ]},
   diagnose:{title:'Diagnose',pip:'var(--teal)',actions:[
     {label:'📷 Scan Nameplate',sub:'Camera reads the unit + Mike reads it',fn:function(){scanNameplate();}},
-    {label:'Find Upsells',sub:'After the repair',fn:function(){mpAskMike("What'd you just do on this unit, and how old's the system? I'll show you what's worth offering — and how to frame it.");}},
+    {label:'Find Upsells',sub:'After the repair',fn:function(){mpAskMike("What'd you just do on this unit? I'll show you what's worth offering — and how to frame it.");}},
     {label:'Beat Competitor Quote',sub:'Win the job',fn:function(){mpEnterChat();askMikeCompetitor();}},
     {label:'Get Google Review',sub:'Ask for a review',fn:function(){mpEnterChat();askMikeReviewRequest();}}
   ]}

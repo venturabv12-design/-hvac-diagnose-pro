@@ -993,11 +993,11 @@ body[data-mode="contractor"] .msg-time{display:none;}
 
 /* Peek bar — mockup spec: dark ink-2 tiles with colored icons */
 body[data-mode="contractor"] .peek-bar{gap:6px;padding:12px 12px 0;}
-body[data-mode="contractor"] .peek-tile{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:10px 4px;color:rgba(255,255,255,.85);position:relative;flex-direction:column;gap:4px;display:flex;align-items:center;justify-content:center;height:auto;min-height:64px;flex:1 1 0;min-width:0;box-sizing:border-box;}
+body[data-mode="contractor"] .peek-tile{background:var(--ink-3);border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:11px 4px;color:rgba(255,255,255,.92);position:relative;flex-direction:column;gap:5px;display:flex;align-items:center;justify-content:center;height:auto;min-height:66px;flex:1 1 0;min-width:0;box-sizing:border-box;box-shadow:0 1px 3px rgba(0,0,0,.35);}
 body[data-mode="contractor"] .peek-tile:active{background:var(--ink-3);transform:translateY(-1px);}
 body[data-mode="contractor"] .peek-tile-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
 body[data-mode="contractor"] .peek-tile-icon svg{width:22px;height:22px;stroke-width:2;}
-body[data-mode="contractor"] .peek-tile-label{font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1.1;text-align:center;color:rgba(255,255,255,.85);}
+body[data-mode="contractor"] .peek-tile-label{font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;line-height:1.1;text-align:center;color:rgba(255,255,255,.96);}
 body[data-mode="contractor"] .peek-tile.t-diag .peek-tile-icon{color:var(--safety);}
 body[data-mode="contractor"] .peek-tile.t-cam .peek-tile-icon{color:var(--teal);}
 body[data-mode="contractor"] .peek-tile.t-shield .peek-tile-icon{color:var(--moss);}
@@ -1068,7 +1068,7 @@ body[data-mode="contractor"] .tool-tile.pinned .tool-tile-pin{opacity:1;}
 .peek-tools-hint{
   margin-left:auto;display:inline-flex;align-items:center;gap:4px;
   font-family:var(--font-code);font-size:10px;font-weight:700;letter-spacing:.06em;
-  text-transform:uppercase;color:rgba(255,255,255,.55);
+  text-transform:uppercase;color:rgba(255,255,255,.72);
 }
 .peek-tools-hint svg{width:13px;height:13px;stroke-width:2.4;color:var(--mike-teal,#3A8B8A);}
 @media (max-width:340px){
@@ -4290,6 +4290,9 @@ function authSignOut(){
     Object.keys(localStorage).filter(function(k){return k.indexOf('trazer_')===0&&k!=='trazer_user'&&k!=='trazer_users'&&k.indexOf('trazer_favTools_')!==0&&k.indexOf('_'+sl7_4)>-1;}).forEach(function(k){localStorage.removeItem(k);});
   }
   currentUser=null;localStorage.removeItem('trazer_user');
+  // Clear the Create-Account fields so the next person doesn't see the prior user's
+  // name/email/password pre-filled after a sign-out.
+  try{['suName','suEmail','suPass'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});}catch(e){}
   // Option B: back to signed-out → restore the tall front-door landing, hide the strip.
   if(typeof syncAuthSurface==='function')syncAuthSurface();
   // Bug 5 fix (Owner persona / Gap #007): clear DOM remnants of prior user.
@@ -4653,6 +4656,7 @@ function closeModal(id){
 }
 
 function selectBillingPlan(plan,el){
+  selPlan=plan;
   document.querySelectorAll('.plan-card').forEach(function(c){c.classList.remove('active');});
   el.classList.add('active');
 }
@@ -4723,10 +4727,20 @@ function _showPaywall_DISABLED(){
 }
 function selectPlan(p,el){selPlan=p;document.querySelectorAll('.pw-plan').forEach(function(x){x.classList.remove('sel');});el.classList.add('sel');}
 async function goCheckout(){
-  var plan=selectedBillingPlan||'pro';
-  if(!currentUser){showToast('Please sign in first.','error',2500);return;}
-  showToast('Billing goes live soon — you\'re on beta access','info',3000);
-  closeModal('billingModal');
+  if(!currentUser||!currentUser.token){showToast('Please sign in first.','error',2500);return;}
+  var plan=selPlan||'pro';
+  if(plan==='enterprise'){
+    showToast('Opening email — tell us your crew size and we\'ll set you up.','info',3500);
+    window.location.href='mailto:trazerintelligence@gmail.com?subject='+encodeURIComponent('Trazer Enterprise inquiry')+'&body='+encodeURIComponent('Name: '+(currentUser.name||'')+'\nEmail: '+(currentUser.email||'')+'\nCrew size: \n\nI want to talk Enterprise pricing for Trazer.');
+    return;
+  }
+  showToast('Opening secure checkout…','info',2000);
+  try{
+    var r=await fetch('/api/billing/checkout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentUser.token},body:JSON.stringify({plan:plan,email:currentUser.email,name:currentUser.name||''})});
+    var d=await r.json().catch(function(){return{};});
+    if(r.ok&&d.url){window.location.href=d.url;return;}
+    showToast(d.error||'Could not start checkout — please try again.','error',3500);
+  }catch(e){showToast('Network error — could not reach checkout.','error',3500);}
 }
 
 // ── CINEMATIC ONBOARDING ────────────────────────────────────────
@@ -5580,7 +5594,9 @@ function requestTechLocation(){
       });
   }
   function onError(err){
-    console.warn('GPS error:',err.code,err.message);
+    // console.debug (not warn) — GPS timeouts/denials are expected and self-recover via
+    // the low-accuracy retry + profile-zip fallback below; no need to clutter the console.
+    console.debug('GPS error:',err.code,err.message);
     window._locationDenied=(err.code===1);
     if(err.code!==1){
       navigator.geolocation.getCurrentPosition(onSuccess,function(){window._locationDenied=false;},opts_low);
@@ -6163,7 +6179,11 @@ async function callAI(system,messages,max_tokens,useSearch){
     // Fall back to a per-attempt controller for our own 30s timeout.
     var externalCtrl=window.chatAbortController;
     var controller=externalCtrl||new AbortController();
-    var tid=setTimeout(function(){try{controller.abort();}catch(e){}},60000);
+    // Web-search replies can legitimately run up to the server's 75s window; give those
+    // the full window + buffer so a slow search on a phone network isn't killed at 60s
+    // (was the "Taking a bit longer" failure on the Sales School "latest" path). Regular
+    // chat keeps the snappy 60s.
+    var tid=setTimeout(function(){try{controller.abort();}catch(e){}},useSearch?90000:60000);
     try{
       var reqBody={system:_sysBase,messages:messages,max_tokens:max_tokens};
       if(_sysExtra)reqBody.systemExtra=_sysExtra;
@@ -6194,7 +6214,11 @@ async function callAI(system,messages,max_tokens,useSearch){
         showPaywall();
         throw new Error(data.error||'Subscription required.');
       }
-      if(res.status===529||res.status===503||res.status===429||(data.error&&(data.error.indexOf('overload')>=0||data.error.indexOf('529')>=0||data.error.indexOf('rate')>=0))){
+      // 502 = a transient upstream hiccup (Anthropic/web_search blipped) — these fail
+      // FAST, so a quick auto-retry recovers silently instead of erroring at the user.
+      // (504 is the server's own 75s timeout and is intentionally NOT retried — retrying
+      // would just wait the full window again — it falls through to the graceful message.)
+      if(res.status===529||res.status===503||res.status===429||res.status===502||(data.error&&(data.error.indexOf('overload')>=0||data.error.indexOf('529')>=0||data.error.indexOf('rate')>=0))){
         if(attempt<2){await new Promise(function(r){setTimeout(r,1000*(attempt+1));});continue;}
         throw new Error('Busy right now — hit send again and I\'ll grab it.');
       }
@@ -6369,6 +6393,9 @@ async function runHomeownerDiagnostic(){
     };
     var c=COLORS[sev]||COLORS.MEDIUM;
 
+    // Count the homeowner diagnostic toward usage too — tech chat calls trackUsage("chat"),
+    // but the homeowner path didn't, so the profile counter read 0 for homeowners.
+    if(typeof trackUsage==='function')trackUsage("homeowner");
     document.getElementById("homeResultCard").style.borderLeft="4px solid "+c.border;
 
     var out="";
@@ -7307,6 +7334,14 @@ function buildPersonalizedContext(){
   } else {
     ctx += 'Experience: Unknown — gauge from their questions and adapt in real time.\n';
   }
+
+  // SALES TRAINER — Mike teaches selling as a craft, calibrated to the level above.
+  ctx += '\nSALES TRAINER ROLE: You are also this tech\'s sales coach, not just a diagnostic co-pilot. When they ask how to sell, handle an objection, present options, or close, TEACH the technique — name it, give the exact words to say, explain WHY it works, and give one quick way to practice it. Calibrate the depth to their experience level above:\n';
+  ctx += '- Beginner: teach fundamentals one at a time (build trust, "show don\'t tell," good/better/best, ask for the sale then go quiet). Plain language, encouraging, no jargon.\n';
+  ctx += '- Experienced: sharpen technique (reframe price as a monthly number, the honest cost-of-waiting frame — real deferred-repair cost, never manufactured urgency — tie-downs, isolating the real objection, financing language). Peer-to-peer, push them.\n';
+  ctx += '- Master/owner: strategy (lifting close rates across a crew, coaching their own junior techs, repeatable talk tracks, lifetime customer value over today\'s ticket).\n';
+  ctx += 'IRON RULE: every technique you teach is HONEST value-selling — never pressure, fear-mongering, deception, or selling something they don\'t need. The honest move IS the close. If a repair is the right call over a replacement, teach that.\n';
+  ctx += 'STAY CURRENT: when the tech asks for the newest / latest / "what\'s working now" in selling, USE WEB SEARCH to pull current sales methods, scripts, and trends, then translate them into HVAC field terms — don\'t rely on memory alone for what\'s new.\n';
 
   if(profile.specialty) ctx += 'Specialty: ' + profile.specialty + '\n';
   if(profile.preferredBrand) ctx += 'Works mostly on: ' + profile.preferredBrand + ' equipment\n';
@@ -8465,7 +8500,7 @@ function toggleQuickActions(){
     menu=document.createElement('div');
     menu.id='quickActionsMenu';
     menu.style.cssText='position:fixed;background:#15171A;border:1px solid #2a2a2a;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.55);z-index:99999;overflow-y:auto;max-height:360px;min-width:240px;';
-    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(199,85,59,.16);color:#ef8a72;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){mpFindPart();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){qaPressures();})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:var(--rust-deep);" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:#262626;margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(58,139,138,.16);color:#5fbdb0;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){qaFindUpsells();})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:#262626;margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(255,180,0,.14);color:#e8a23a;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){qaJobSummary();})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:#262626;margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(95,179,177,.16);color:#7ec7c2;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){qaHandleObjection();})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){qaPitchMaintenance();})">&#x1F4CB; Pitch Maintenance</button>            </div>          ';
+    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(199,85,59,.16);color:#ef8a72;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){mpFindPart();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){qaPressures();})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:var(--rust-deep);" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:#262626;margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(58,139,138,.16);color:#5fbdb0;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){qaFindUpsells();})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:#262626;margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(255,180,0,.14);color:#e8a23a;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){qaJobSummary();})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:#262626;margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(95,179,177,.16);color:#7ec7c2;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){qaSalesSchool();})">&#x1F393; Sales School</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){qaHandleObjection();})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){qaPitchMaintenance();})">&#x1F4CB; Pitch Maintenance</button>            </div>          ';
     document.body.appendChild(menu);
     // Tap outside closes
     setTimeout(function(){
@@ -8784,9 +8819,13 @@ async function sendChat(){
       try{ sysPrompt += '\n\n' + window._mpActionDirective.text; if(window._mpActionDirective.search) needsSearch=true; }catch(_mpd){}
       window._mpActionDirective=null;
     }
-    // Audible exchanges (voice / PTT / camera) cap at 800 tokens for punchy TTS;
-    // text-only goes to 2048 for detailed write-ups. Gate matches mikeSay's gate.
-    var _maxTok=shouldMikeSpeak()?800:2048;
+    // Audible exchanges (voice / PTT / camera) stay SHORT + conversational so it feels
+    // like a real phone call (lead with the answer, offer more) — and shorter replies
+    // generate + speak faster, so Mike responds quicker. Text-only still goes long for
+    // detailed write-ups. Gate matches mikeSay's gate.
+    var _speakingNow=shouldMikeSpeak();
+    var _maxTok=_speakingNow?400:2048;
+    if(_speakingNow){sysPrompt+='\n\nYOU ARE TALKING OUT LOUD on a call right now — talk like a real person on the phone, not an essay. Keep it to one to three sentences: lead with the answer, then stop. No lists or long lectures out loud. If there is more to it, ask "want me to walk you through it?" and let them say yes. Quick, natural, back-and-forth.';}
     var response;
     // STREAMING: only the pure-text path streams (no web_search tool-use, no
     // attachment, not voice — those keep the proven non-stream callAI). On any
@@ -9220,6 +9259,7 @@ function qaFindUpsells(){mpAskMike("What'd you just do on this unit, and how old
 function qaJobSummary(){mpAskMike("What was wrong, what'd you fix, and what parts did you use? I'll write up the summary and what to put on the invoice.");}
 function qaHandleObjection(){mpAskMike("What are they balking at — the price, or whether they really need it? Tell me what they said and I'll give you the words.");}
 function qaPitchMaintenance(){mpAskMike("What system are they on and how old is it? I'll give you the maintenance-plan pitch that lands.");}
+function qaSalesSchool(){mpAskMike("Sales school. What do you want to sharpen — objections, good/better/best, closing, financing, or a talk track? Tell me where you're losing the sale and I'll coach you to your level. Want what's working right now? Say 'the latest' and I'll pull it.");window._mpActionDirective={search:true,text:'ACTION — SALES COACHING: the tech wants to get better at selling. Teach the technique that fits what they said: name it, give the exact words to say, explain why it works, and give one quick way to practice. Calibrate to their experience level on file (beginner = fundamentals + encouragement; experienced = sharper technique; master/owner = strategy + coaching their crew). If they ask for the newest/latest methods or what is working now, SEARCH the web for current sales techniques and scripts and translate them into HVAC field language. Every technique stays HONEST value-selling — never pressure or deception.'};}
 
 
 
@@ -10471,7 +10511,10 @@ function mikeSay(text){
   stopMikeSpeaking();
   stopListening();
   document.getElementById('chatInput').value='';
-  var clean=text.replace(/https?:\/\/[^\s)>\]"]+/g,'').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/  +/g,' ').trim().substring(0,5000);
+  // Speak units like a human: the DISPLAY keeps "75°F" / "29 mph", but TTS should SAY
+  // "75 degrees" and "miles per hour" — not "75 degree F" / "m-p-h". (Display text is the
+  // separate `text` passed to appendMessage; `clean` here is spoken-only.)
+  var clean=text.replace(/https?:\/\/[^\s)>\]"]+/g,'').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]+>/g,' ').replace(/\n\n/g,'. ').replace(/\n/g,' ').replace(/[▸▼▲→*#_]/g,'').replace(/(\d+)\s*°\s*[FfCc]?/g,'$1 degrees').replace(/°\s*[FfCc]?/g,' degrees').replace(/(\d+)\s*degrees?\s*(?:Fahrenheit|Celsius|F\b|C\b)/gi,'$1 degrees').replace(/\bmph\b/gi,'miles per hour').replace(/  +/g,' ').trim().substring(0,5000);
   if(!clean)return;
   var micBtn=document.getElementById('micBtn'),stopBtn=document.getElementById('stopSpeakBtn');
   isMikeSpeaking=true;
@@ -11878,7 +11921,7 @@ document.addEventListener('DOMContentLoaded',function(){
         </div>
       </div>
     </div>
-    <button class="tz-modal-btn" onclick="notifyWhenBillingLive()">Notify Me When Billing Goes Live</button>
+    <button class="tz-modal-btn" onclick="goCheckout()">Subscribe Now — Cancel Anytime</button>
     <button class="tz-modal-btn-outline" onclick="closeModal('billingModal')">← Back</button>
   </div>
 </div>

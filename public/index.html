@@ -4725,6 +4725,7 @@ function _showPaywall_DISABLED(){
   if(isHome)selPlan='homeowner';
   e.classList.add('show');
 }
+var selPlan='pro'; // default plan so goCheckout never reads an UNDECLARED selPlan — tapping "Subscribe" before a plan card was clicked threw ReferenceError and killed checkout
 function selectPlan(p,el){selPlan=p;document.querySelectorAll('.pw-plan').forEach(function(x){x.classList.remove('sel');});el.classList.add('sel');}
 async function goCheckout(){
   if(!currentUser||!currentUser.token){showToast('Please sign in first.','error',2500);return;}

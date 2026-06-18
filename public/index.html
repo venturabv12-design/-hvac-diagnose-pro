@@ -2767,6 +2767,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <input id="admTechSearch" type="text" placeholder="Search name, email, or company…" oninput="admFilterTechs()" autocomplete="off" spellcheck="false" style="display:block;width:100%;box-sizing:border-box;margin:0 0 10px;padding:10px 12px;background:#0a0a0a;border:1.5px solid #2a2a2a;border-radius:9px;color:#fff;-webkit-text-fill-color:#fff;font-size:16px;font-family:inherit;outline:none;-webkit-appearance:none;"/>
       <div id="admPlanChip" onclick="admClearPlanFilter()" style="display:none;align-items:center;gap:6px;margin:0 0 10px;padding:5px 11px;background:rgba(58,139,138,.15);border:1px solid rgba(58,139,138,.4);border-radius:8px;font-size:12px;font-weight:600;color:#3A8B8A;cursor:pointer;width:fit-content;">Plan: <b id="admPlanChipName" style="text-transform:capitalize">&nbsp;</b> &nbsp;✕</div>
       <button onclick="exportAdminCSV()" style="display:inline-flex;align-items:center;gap:6px;margin:0 0 10px;padding:8px 14px;background:rgba(58,139,138,.15);border:1px solid rgba(58,139,138,.45);border-radius:9px;color:#3A8B8A;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;-webkit-appearance:none;">⬇ Export to Excel</button>
+      <button onclick="purgeTestAccounts()" style="display:inline-flex;align-items:center;gap:6px;margin:0 0 10px 8px;padding:8px 14px;background:rgba(199,85,59,.12);border:1px solid rgba(199,85,59,.4);border-radius:9px;color:var(--rust);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;-webkit-appearance:none;">🧹 Purge Test Accounts</button>
       <div style="overflow-x:auto">
       <table class="adm-tbl"><thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Plan</th><th>Role</th><th>Last Active</th><th>Joined</th><th>Calls</th><th>Events</th><th>Rev $</th><th>Action</th></tr></thead>
       <tbody id="admUsers"></tbody></table>
@@ -5394,6 +5395,27 @@ function showAdminDashboard(){
 
 // CSV/Excel export of the per-tech roster — Slice A of the company tech-tracking dashboard.
 function admCsvCell(v){v=(v==null?'':String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+// Safely remove the test accounts my/agent testing left in the SHARED prod DB.
+// Targets ONLY @example.com (no real tech uses that) and never an admin/owner row —
+// a real user can't be hit. Loops the per-row DELETE with the admin's own token.
+async function purgeTestAccounts(){
+  var token=currentUser&&currentUser.token;
+  if(!token){if(typeof showToast==='function')showToast('Sign in as admin first.','error',3000);return;}
+  var list=(window._admUserList||[]).filter(function(u){
+    return u.email&&/@example\.com$/i.test(u.email)&&u.role!=='admin'&&u.role!=='owner';
+  });
+  if(!list.length){if(typeof showToast==='function')showToast('No @example.com test accounts to purge.','info',2800);return;}
+  if(!await tzConfirm({title:'Purge test accounts?',message:'Delete '+list.length+' test account'+(list.length===1?'':'s')+' (only @example.com — your real users are untouched). This cannot be undone.',okLabel:'Delete '+list.length,danger:true}))return;
+  var ok=0,fail=0;
+  for(var i=0;i<list.length;i++){
+    try{
+      var r=await fetch('/api/admin/users/'+encodeURIComponent(list[i].email),{method:'DELETE',headers:{'Authorization':'Bearer '+token}});
+      if(r.ok)ok++;else fail++;
+    }catch(e){fail++;}
+  }
+  if(typeof showToast==='function')showToast('Purged '+ok+' test account'+(ok===1?'':'s')+(fail?(' ('+fail+' failed)'):'')+' ✓','success',3500);
+  showAdminDashboard();
+}
 function exportAdminCSV(){
   var list=window._admUserList||[];
   if(!list.length){if(typeof showToast==='function')showToast('No techs to export yet.','info');return;}

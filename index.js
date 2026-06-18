@@ -1166,6 +1166,16 @@ app.post('/api/events', authenticateToken, async (req, res) => {
   res.json({ event: rows[0] });
 });
 
+// A tech's own event history — powers the longitudinal coaching memory (Mike recalls
+// what this tech has drilled) and their personal numbers.
+app.get('/api/events', authenticateToken, async (req, res) => {
+  const user_id = req.user.id;
+  const rows = await supabase('GET', 'events', null,
+    `?select=type,amount,payload,created_at&user_id=eq.${encodeURIComponent(user_id)}&order=created_at.desc&limit=500`);
+  if (rows === null) return res.status(500).json({ error: 'Database error' });
+  res.json({ events: rows || [] });
+});
+
 // Admin rollup feed: recent events for the dashboard to aggregate per tech. Bounded
 // limit keeps it cheap; swap for a Postgres view/RPC when volume grows.
 app.get('/api/admin/events', authenticateToken, requireAdmin, async (req, res) => {

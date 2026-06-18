@@ -2768,7 +2768,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div id="admPlanChip" onclick="admClearPlanFilter()" style="display:none;align-items:center;gap:6px;margin:0 0 10px;padding:5px 11px;background:rgba(58,139,138,.15);border:1px solid rgba(58,139,138,.4);border-radius:8px;font-size:12px;font-weight:600;color:#3A8B8A;cursor:pointer;width:fit-content;">Plan: <b id="admPlanChipName" style="text-transform:capitalize">&nbsp;</b> &nbsp;✕</div>
       <button onclick="exportAdminCSV()" style="display:inline-flex;align-items:center;gap:6px;margin:0 0 10px;padding:8px 14px;background:rgba(58,139,138,.15);border:1px solid rgba(58,139,138,.45);border-radius:9px;color:#3A8B8A;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;-webkit-appearance:none;">⬇ Export to Excel</button>
       <div style="overflow-x:auto">
-      <table class="adm-tbl"><thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Plan</th><th>Role</th><th>Last Active</th><th>Joined</th><th>Calls</th><th>Events</th><th>Action</th></tr></thead>
+      <table class="adm-tbl"><thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Plan</th><th>Role</th><th>Last Active</th><th>Joined</th><th>Calls</th><th>Events</th><th>Rev $</th><th>Action</th></tr></thead>
       <tbody id="admUsers"></tbody></table>
       </div>
       <div id="admTechNoMatch" style="display:none;color:#667380;text-align:center;padding:14px;font-size:13px;">No techs match your search.</div>
@@ -4337,6 +4337,7 @@ function updateProfileUI(){
   var uc=document.getElementById('pddUsageCount');if(uc)uc.textContent=u+' AI calls this month';
   var ai=document.getElementById('adminMenuItem');
   if(ai)ai.style.display=(currentUser.role==='admin'||currentUser.plan==='admin'||currentUser.isAdmin)?'flex':'none';
+  loadMyCoachingHistory();
 }
 
 function toggleProfileDD(){
@@ -4382,10 +4383,35 @@ function trackUsage(feature){
   if(users[currentUser.email]){users[currentUser.email]=currentUser;localStorage.setItem('trazer_users',JSON.stringify(users,function(k,v){return k==='token'?undefined:v;}));}
   localStorage.setItem('trazer_user',JSON.stringify(currentUser));
   updateProfileUI();
-  // Persist the usage event server-side so the company admin dashboard can track each
-  // tech's real activity (not just a per-device counter). Fire-and-forget — a logging
-  // failure must never block or break the feature the tech is actually using.
-  try{if(currentUser.token){fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentUser.token},body:JSON.stringify({type:'usage',payload:{feature:feature||'app'}})}).catch(function(){});}}catch(e){}
+  recordEvent('usage',{feature:feature||'app'});
+}
+// Fire-and-forget event logger — powers the company tracking + revenue/ROI dashboard
+// and the million-dollar-tech coaching history. Never blocks the feature in use.
+function recordEvent(type,payload,amount){
+  try{
+    if(!currentUser||!currentUser.token||!type)return;
+    var body={type:type,payload:payload||{}};
+    if(amount!=null&&!isNaN(amount))body.amount=Number(amount);
+    fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentUser.token},body:JSON.stringify(body)}).catch(function(){});
+  }catch(e){}
+}
+// Million-dollar-tech: load this tech's coaching history ONCE per session so Mike can
+// coach longitudinally — reference what they've drilled and push them up a level.
+function loadMyCoachingHistory(){
+  try{
+    if(!currentUser||!currentUser.token||window._coachingLoading)return;
+    window._coachingLoading=true;
+    fetch('/api/events',{headers:{'Authorization':'Bearer '+currentUser.token}})
+      .then(function(r){return r.ok?r.json():{events:[]};})
+      .then(function(d){
+        var topics={};
+        ((d&&d.events)||[]).forEach(function(e){
+          if(e.type==='coaching'&&e.payload&&e.payload.topic)topics[e.payload.topic]=(topics[e.payload.topic]||0)+1;
+        });
+        var parts=Object.keys(topics).sort(function(a,b){return topics[b]-topics[a];}).slice(0,4).map(function(t){return t.replace(/_/g,' ')+' ('+topics[t]+'x)';});
+        window._myCoaching=parts.length?('COACHING HISTORY — reference it naturally, like a mentor who remembers: this tech has worked with you on '+parts.join(', ')+'. Build on it; don\'t re-teach what they\'ve drilled — push them to the next level.'):'';
+      }).catch(function(){});
+  }catch(e){}
 }
 
 function isAccessAllowed(){
@@ -5350,10 +5376,12 @@ function admCsvCell(v){v=(v==null?'':String(v));return /[",\n]/.test(v)?'"'+v.re
 function exportAdminCSV(){
   var list=window._admUserList||[];
   if(!list.length){if(typeof showToast==='function')showToast('No techs to export yet.','info');return;}
-  var headers=['Name','Email','Company','Plan','Role','Last Active','Joined','Calls','Events'];
+  var headers=['Name','Email','Company','Plan','Role','Last Active','Joined','Calls','Events','Revenue $','Upsells Closed','Coaching','Repair/Replace','Close Rate %'];
   var rows=list.slice().sort(function(a,b){var ta=a.last_login?new Date(a.last_login).getTime():0;var tb=b.last_login?new Date(b.last_login).getTime():0;return tb-ta;}).map(function(u){
-    var ev=(window._admEventsByUser&&window._admEventsByUser[u.id]&&window._admEventsByUser[u.id].total)||0;
-    return [u.name||'',u.email||'',u.company||'',u.plan||'',u.role||'',u.last_login?new Date(u.last_login).toLocaleString():'',u.created_at?new Date(u.created_at).toLocaleDateString():'',u.usage_count||0,ev].map(admCsvCell).join(',');
+    var m=(window._admEventsByUser&&window._admEventsByUser[u.id])||{total:0,types:{},amount:0};
+    var ty=m.types||{};var closed=ty.upsell_closed||0,suggested=ty.upsell_suggested||0;
+    var closeRate=suggested?Math.round(closed/suggested*100):'';
+    return [u.name||'',u.email||'',u.company||'',u.plan||'',u.role||'',u.last_login?new Date(u.last_login).toLocaleString():'',u.created_at?new Date(u.created_at).toLocaleDateString():'',u.usage_count||0,m.total||0,Math.round(m.amount||0),closed,ty.coaching||0,ty.repair_replace||0,closeRate].map(admCsvCell).join(',');
   });
   var csv=headers.join(',')+'\n'+rows.join('\n');
   var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'}); // BOM so Excel reads UTF-8 cleanly
@@ -5461,9 +5489,10 @@ function renderAdminDashboard(list){
         +'<td style="color:#667380;font-size:11px">'+escapeHtml(joined)+'</td>'
         +'<td style="color:var(--rust);font-weight:700;text-align:center">'+(u.usage_count||0)+'</td>'
         +'<td style="color:#3A8B8A;font-weight:700;text-align:center">'+((window._admEventsByUser&&window._admEventsByUser[u.id]&&window._admEventsByUser[u.id].total)||0)+'</td>'
+        +'<td style="color:#6ad08f;font-weight:700;text-align:right">$'+Math.round((window._admEventsByUser&&window._admEventsByUser[u.id]&&window._admEventsByUser[u.id].amount)||0).toLocaleString()+'</td>'
         +'<td>'+(isAdminRow?'<span style="font-size:11px;color:#333">—</span>':'<button class="adm-del-btn" data-email="'+safeEmail+'" onclick="deleteAdminUser(this.dataset.email)">Delete</button>')+'</td>'
         +'</tr>';
-    }).join('')||'<tr><td colspan="10" style="color:#555;text-align:center;padding:20px">No techs yet</td></tr>';
+    }).join('')||'<tr><td colspan="11" style="color:#555;text-align:center;padding:20px">No techs yet</td></tr>';
     var _ts=document.getElementById('admTechSearch');if(_ts&&_ts.value)admFilterTechs();
   }
 
@@ -7374,6 +7403,7 @@ function buildPersonalizedContext(){
   } else {
     ctx += 'Experience: Unknown — gauge from their questions and adapt in real time.\n';
   }
+  if(window._myCoaching)ctx += '\n'+window._myCoaching+'\n';
 
   // RESPONSE DISCIPLINE — answer-first for EVERY level. A working tech wants the answer,
   // not an interview (Brandon field note 2026-06-16: stop interrogating techs).
@@ -9008,6 +9038,7 @@ function addUpsellRevenue(amount){
   if(!currentUser||!amount)return;
   var total=getUpsellTotal()+parseFloat(amount);
   try{localStorage.setItem(getUserMemoryKey('upsell_total'),total.toFixed(2));}catch(e){}
+  recordEvent('upsell_closed',{},parseFloat(amount)); // revenue signal for the dashboard
 }
 function getUpsellStats(){
   var total=getUpsellTotal();
@@ -9145,7 +9176,8 @@ function runRepairReplaceCalc(){
     recommendation='REPAIR';color='#C7553B';
     msg='Repair makes sense. System has ~'+remainingLife+' '+_yl+' of life left and the repair cost is reasonable relative to replacement cost (~$4,500-$8,000 installed).';
   }
-  
+  recordEvent('repair_replace',{decision:recommendation,repairCost:repairCost,age:systemAge});
+
   var html='<div style="text-align:center;padding:16px 0;">';
   html+='<div style="font-size:36px;font-weight:900;color:'+color+';">'+recommendation+'</div>';
   html+='<div style="font-size:13px;color:#aaa;line-height:1.6;margin-top:10px;">'+msg+'</div>';
@@ -9300,11 +9332,11 @@ function askMikeCompetitor(){
   mpAskMike("What'd the other guy quote, and what are you putting in? I'll show you how to beat it.");
 }
 function qaPressures(){mpAskMike("What refrigerant are you on, and what's the outdoor temp at the job? I'll get you your target suction and head.");}
-function qaFindUpsells(){mpAskMike("What'd you just do on this unit? I'll show you what's worth offering — and how to frame it.");}
+function qaFindUpsells(){mpAskMike("What'd you just do on this unit? I'll show you what's worth offering — and how to frame it.");recordEvent('coaching',{topic:'upsells'});recordEvent('upsell_suggested',{});}
 function qaJobSummary(){mpAskMike("Walk me through it — what happened and what'd you put in? I'll write the summary and the invoice line.");}
-function qaHandleObjection(){mpAskMike("What are they balking at — the price, or whether they really need it? Tell me what they said and I'll give you the words.");}
-function qaPitchMaintenance(){mpAskMike("What system are they on and how old is it? I'll give you the maintenance-plan pitch that lands.");}
-function qaSalesSchool(){mpAskMike("Sales school — what do you want to sharpen? Objections, good/better/best, closing, financing, or a talk track. Pick one and I'll coach you to your level.");window._mpActionDirective={search:true,text:'ACTION — SALES COACHING: the tech wants to get better at selling. Teach the technique that fits what they said: name it, give the exact words to say, explain why it works, and give one quick way to practice. Calibrate to their experience level on file (beginner = fundamentals + encouragement; experienced = sharper technique; master/owner = strategy + coaching their crew). If they ask for the newest/latest methods or what is working now, SEARCH the web for current sales techniques and scripts and translate them into HVAC field language. Every technique stays HONEST value-selling — never pressure or deception.'};}
+function qaHandleObjection(){mpAskMike("What are they balking at — the price, or whether they really need it? Tell me what they said and I'll give you the words.");recordEvent('coaching',{topic:'objection'});}
+function qaPitchMaintenance(){mpAskMike("What system are they on and how old is it? I'll give you the maintenance-plan pitch that lands.");recordEvent('coaching',{topic:'maintenance'});}
+function qaSalesSchool(){mpAskMike("Sales school — what do you want to sharpen? Objections, good/better/best, closing, financing, or a talk track. Pick one and I'll coach you to your level.");window._mpActionDirective={search:true,text:'ACTION — SALES COACHING: the tech wants to get better at selling. Teach the technique that fits what they said: name it, give the exact words to say, explain why it works, and give one quick way to practice. Calibrate to their experience level on file (beginner = fundamentals + encouragement; experienced = sharper technique; master/owner = strategy + coaching their crew). If they ask for the newest/latest methods or what is working now, SEARCH the web for current sales techniques and scripts and translate them into HVAC field language. Every technique stays HONEST value-selling — never pressure or deception.'};recordEvent('coaching',{topic:'sales_school'});}
 
 
 

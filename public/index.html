@@ -2766,6 +2766,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     <div id="admTechsBody" style="display:none;margin-top:8px;">
       <input id="admTechSearch" type="text" placeholder="Search name, email, or company…" oninput="admFilterTechs()" autocomplete="off" spellcheck="false" style="display:block;width:100%;box-sizing:border-box;margin:0 0 10px;padding:10px 12px;background:#0a0a0a;border:1.5px solid #2a2a2a;border-radius:9px;color:#fff;-webkit-text-fill-color:#fff;font-size:16px;font-family:inherit;outline:none;-webkit-appearance:none;"/>
       <div id="admPlanChip" onclick="admClearPlanFilter()" style="display:none;align-items:center;gap:6px;margin:0 0 10px;padding:5px 11px;background:rgba(58,139,138,.15);border:1px solid rgba(58,139,138,.4);border-radius:8px;font-size:12px;font-weight:600;color:#3A8B8A;cursor:pointer;width:fit-content;">Plan: <b id="admPlanChipName" style="text-transform:capitalize">&nbsp;</b> &nbsp;✕</div>
+      <button onclick="exportAdminCSV()" style="display:inline-flex;align-items:center;gap:6px;margin:0 0 10px;padding:8px 14px;background:rgba(58,139,138,.15);border:1px solid rgba(58,139,138,.45);border-radius:9px;color:#3A8B8A;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;-webkit-appearance:none;">⬇ Export to Excel</button>
       <div style="overflow-x:auto">
       <table class="adm-tbl"><thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Plan</th><th>Role</th><th>Last Active</th><th>Joined</th><th>Calls</th><th>Action</th></tr></thead>
       <tbody id="admUsers"></tbody></table>
@@ -5326,7 +5327,25 @@ function showAdminDashboard(){
     });
 }
 
+// CSV/Excel export of the per-tech roster — Slice A of the company tech-tracking dashboard.
+function admCsvCell(v){v=(v==null?'':String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function exportAdminCSV(){
+  var list=window._admUserList||[];
+  if(!list.length){if(typeof showToast==='function')showToast('No techs to export yet.','info');return;}
+  var headers=['Name','Email','Company','Plan','Role','Last Active','Joined','Calls'];
+  var rows=list.slice().sort(function(a,b){var ta=a.last_login?new Date(a.last_login).getTime():0;var tb=b.last_login?new Date(b.last_login).getTime():0;return tb-ta;}).map(function(u){
+    return [u.name||'',u.email||'',u.company||'',u.plan||'',u.role||'',u.last_login?new Date(u.last_login).toLocaleString():'',u.created_at?new Date(u.created_at).toLocaleDateString():'',u.usage_count||0].map(admCsvCell).join(',');
+  });
+  var csv=headers.join(',')+'\n'+rows.join('\n');
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'}); // BOM so Excel reads UTF-8 cleanly
+  var url=URL.createObjectURL(blob);
+  var d=new Date();var stamp=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  var a=document.createElement('a');a.href=url;a.download='trazer-techs-'+stamp+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},1000);
+  if(typeof showToast==='function')showToast('Exported '+list.length+' techs to CSV.','success');
+}
 function renderAdminDashboard(list){
+  window._admUserList=list; // cache for CSV export
   var c=document.getElementById('admContent');if(c)c.style.opacity='1';
   var now=Date.now();
   var WEEK=7*86400000;

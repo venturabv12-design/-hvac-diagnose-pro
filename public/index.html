@@ -5282,6 +5282,27 @@ async function deleteAdminUser(email){
   }
 }
 
+// Promote a tech to COMPANY OWNER — they get a dashboard scoped to only their company's
+// crew. Super-admin only (server enforces via requireAdmin on /api/admin/set-owner).
+async function makeOwner(email){
+  if(!email)return;
+  var token=currentUser&&currentUser.token;
+  if(!token){if(typeof showToast==='function')showToast('Session expired — sign in again.','error',3000);return;}
+  var u=(window._admUserList||[]).filter(function(x){return x.email===email;})[0];
+  var company=await tzPrompt({title:'Make Company Owner',message:email+' will get a dashboard scoped to this company. Their techs must use this EXACT company name to show up.',okLabel:'Continue',placeholder:'Company name',value:(u&&u.company)||''});
+  if(company===null)return;
+  company=(company||'').trim();
+  if(!company){if(typeof showToast==='function')showToast('Enter a company name.','error',2500);return;}
+  if(!await tzConfirm({title:'Confirm owner',message:'Make '+email+' the OWNER of "'+company+'"? They will see only that company\'s techs and revenue.',okLabel:'Make Owner'}))return;
+  try{
+    var r=await fetch('/api/admin/set-owner',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({email:email,company:company})});
+    var d=await r.json().catch(function(){return {};});
+    if(!r.ok){if(typeof showToast==='function')showToast(d.error||(r.status===403?'Not authorized.':'Failed ('+r.status+').'),'error',3000);return;}
+    if(typeof showToast==='function')showToast('✅ '+email+' is now owner of '+company,'success',3200);
+    showAdminDashboard(); // re-pull so their role/company shows updated
+  }catch(e){if(typeof showToast==='function')showToast('Network error — try again.','error',2500);}
+}
+
 // ── ADMIN DASHBOARD — server-backed roster + revenue (Layer 1) ──────────────
 // Pulls the full tech roster from GET /api/admin/users (up to 500). The server
 // gate (authenticateToken + requireAdmin) is the real protection; the client
@@ -5490,7 +5511,7 @@ function renderAdminDashboard(list){
         +'<td style="color:var(--rust);font-weight:700;text-align:center">'+(u.usage_count||0)+'</td>'
         +'<td style="color:#3A8B8A;font-weight:700;text-align:center">'+((window._admEventsByUser&&window._admEventsByUser[u.id]&&window._admEventsByUser[u.id].total)||0)+'</td>'
         +'<td style="color:#6ad08f;font-weight:700;text-align:right">$'+Math.round((window._admEventsByUser&&window._admEventsByUser[u.id]&&window._admEventsByUser[u.id].amount)||0).toLocaleString()+'</td>'
-        +'<td>'+(isAdminRow?'<span style="font-size:11px;color:#333">—</span>':'<button class="adm-del-btn" data-email="'+safeEmail+'" onclick="deleteAdminUser(this.dataset.email)">Delete</button>')+'</td>'
+        +'<td>'+(isAdminRow?'<span style="font-size:11px;color:#333">—</span>':'<button data-email="'+safeEmail+'" onclick="makeOwner(this.dataset.email)" style="background:rgba(58,139,138,.15);border:1px solid rgba(58,139,138,.4);color:#3A8B8A;font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;cursor:pointer;margin-right:6px;font-family:inherit;">Make Owner</button><button class="adm-del-btn" data-email="'+safeEmail+'" onclick="deleteAdminUser(this.dataset.email)">Delete</button>')+'</td>'
         +'</tr>';
     }).join('')||'<tr><td colspan="11" style="color:#555;text-align:center;padding:20px">No techs yet</td></tr>';
     var _ts=document.getElementById('admTechSearch');if(_ts&&_ts.value)admFilterTechs();

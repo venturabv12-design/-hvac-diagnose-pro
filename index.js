@@ -171,6 +171,31 @@ async function requireAdmin(req, res, next) {
   }
 }
 
+// Allows a global admin (sees ALL companies) OR a company owner (locked to their own
+// company). Attaches req.scope = { role, all, company }. Data routes MUST honour
+// req.scope so an owner can NEVER see another company's techs or events. The company
+// is read from the DB by the authenticated email — never from client input.
+async function requireAdminOrOwner(req, res, next) {
+  if (!SUPABASE_URL) { req.scope = { role: 'admin', all: true, company: null }; return next(); }
+  try {
+    const rows = await supabase('GET', 'users', null,
+      `?email=eq.${encodeURIComponent(req.user.email)}&select=role,company`);
+    const u = rows && rows[0];
+    if (!u) return res.status(403).json({ error: 'Access denied' });
+    if (u.role === 'admin') { req.scope = { role: 'admin', all: true, company: null }; return next(); }
+    if (u.role === 'owner') {
+      const company = (u.company || '').trim();
+      if (!company) return res.status(403).json({ error: 'Owner account has no company set' });
+      req.scope = { role: 'owner', all: false, company };
+      return next();
+    }
+    return res.status(403).json({ error: 'Access denied' });
+  } catch (err) {
+    console.error('Admin/owner check error:', err.message);
+    res.status(500).json({ error: 'Authorization check failed' });
+  }
+}
+
 // ── INPUT VALIDATION HELPERS ──────────────────────────────────────────────────
 // Lightweight validation without a full schema library — keeps the dep count low.
 // Validates that email is a real-looking address before it ever touches a DB query.
@@ -894,10 +919,12 @@ app.post('/api/billing/notify', async (req, res) => {
 // ── ADMIN: GET ALL USERS ──────────────────────────────────────────────────────
 // authenticateToken verifies the JWT; requireAdmin checks role === 'admin' in DB.
 // Previously this checked plan === 'admin' — plan is billing data, not an auth level.
-app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+app.get('/api/admin/users', authenticateToken, requireAdminOrOwner, async (req, res) => {
   try {
     if (!SUPABASE_URL) return res.json({ users: [] });
-    const users = await supabase('GET', 'users', null, '?select=id,name,email,company,role,plan,usage_count,created_at,trial_start,last_login&order=created_at.desc&limit=500');
+    let q = '?select=id,name,email,company,role,plan,usage_count,created_at,trial_start,last_login&order=created_at.desc&limit=500';
+    if (!req.scope.all) q += `&company=eq.${encodeURIComponent(req.scope.company)}`; // owner: ONLY their company
+    const users = await supabase('GET', 'users', null, q);
     res.json({ users: users || [] });
   } catch(err) {
     console.error('Admin users error:', err.message);
@@ -1179,12 +1206,34 @@ app.get('/api/events', authenticateToken, async (req, res) => {
 
 // Admin rollup feed: recent events for the dashboard to aggregate per tech. Bounded
 // limit keeps it cheap; swap for a Postgres view/RPC when volume grows.
-app.get('/api/admin/events', authenticateToken, requireAdmin, async (req, res) => {
+app.get('/api/admin/events', authenticateToken, requireAdminOrOwner, async (req, res) => {
   if (!SUPABASE_URL) return res.json({ events: [] });
+  let userFilter = '';
+  if (!req.scope.all) {
+    // owner: restrict events to techs in their company (data isolation)
+    const techs = await supabase('GET', 'users', null,
+      `?select=id&company=eq.${encodeURIComponent(req.scope.company)}`);
+    const ids = (techs || []).map(t => t.id).filter(Boolean);
+    if (!ids.length) return res.json({ events: [] });
+    userFilter = `&user_id=in.(${ids.map(encodeURIComponent).join(',')})`;
+  }
   const rows = await supabase('GET', 'events', null,
-    '?select=user_id,type,amount,created_at&order=created_at.desc&limit=10000');
+    `?select=user_id,type,amount,created_at&order=created_at.desc&limit=10000${userFilter}`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
   res.json({ events: rows || [] });
+});
+
+// Promote a customer's owner to a company OWNER — they get a dashboard scoped to just
+// their crew. Super-admin only. Reuses the company string; owner + techs must share
+// the exact company name (a real company_id FK replaces this when we go multi-customer).
+app.post('/api/admin/set-owner', authenticateToken, requireAdmin, async (req, res) => {
+  const { email, company } = req.body || {};
+  if (!email || !company) return res.status(400).json({ error: 'email and company required' });
+  if (!SUPABASE_URL) return res.json({ ok: true, dev: true });
+  const rows = await supabase('PATCH', 'users', { role: 'owner', company: String(company).trim() },
+    `?email=eq.${encodeURIComponent(String(email).toLowerCase().trim())}`);
+  if (!rows || !rows[0]) return res.status(404).json({ error: 'User not found' });
+  res.json({ ok: true, owner: { email: rows[0].email, company: rows[0].company, role: rows[0].role } });
 });
 
 // ── KNOWLEDGE LIBRARY ───────────────────────────────────────────────────────────

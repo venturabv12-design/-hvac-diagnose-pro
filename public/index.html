@@ -4336,7 +4336,7 @@ function updateProfileUI(){
   var bf=document.getElementById('pddBarFill');if(bf)bf.style.width=Math.min(u/500*100,100)+'%';
   var uc=document.getElementById('pddUsageCount');if(uc)uc.textContent=u+' AI calls this month';
   var ai=document.getElementById('adminMenuItem');
-  if(ai)ai.style.display=(currentUser.role==='admin'||currentUser.plan==='admin'||currentUser.isAdmin)?'flex':'none';
+  if(ai)ai.style.display=(currentUser.role==='admin'||currentUser.role==='owner'||currentUser.plan==='admin'||currentUser.isAdmin)?'flex':'none';
   loadMyCoachingHistory();
 }
 

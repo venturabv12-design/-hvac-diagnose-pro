@@ -2768,7 +2768,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div id="admPlanChip" onclick="admClearPlanFilter()" style="display:none;align-items:center;gap:6px;margin:0 0 10px;padding:5px 11px;background:rgba(58,139,138,.15);border:1px solid rgba(58,139,138,.4);border-radius:8px;font-size:12px;font-weight:600;color:#3A8B8A;cursor:pointer;width:fit-content;">Plan: <b id="admPlanChipName" style="text-transform:capitalize">&nbsp;</b> &nbsp;✕</div>
       <button onclick="exportAdminCSV()" style="display:inline-flex;align-items:center;gap:6px;margin:0 0 10px;padding:8px 14px;background:rgba(58,139,138,.15);border:1px solid rgba(58,139,138,.45);border-radius:9px;color:#3A8B8A;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;-webkit-appearance:none;">⬇ Export to Excel</button>
       <div style="overflow-x:auto">
-      <table class="adm-tbl"><thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Plan</th><th>Role</th><th>Last Active</th><th>Joined</th><th>Calls</th><th>Action</th></tr></thead>
+      <table class="adm-tbl"><thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Plan</th><th>Role</th><th>Last Active</th><th>Joined</th><th>Calls</th><th>Events</th><th>Action</th></tr></thead>
       <tbody id="admUsers"></tbody></table>
       </div>
       <div id="admTechNoMatch" style="display:none;color:#667380;text-align:center;padding:14px;font-size:13px;">No techs match your search.</div>
@@ -4382,6 +4382,10 @@ function trackUsage(feature){
   if(users[currentUser.email]){users[currentUser.email]=currentUser;localStorage.setItem('trazer_users',JSON.stringify(users,function(k,v){return k==='token'?undefined:v;}));}
   localStorage.setItem('trazer_user',JSON.stringify(currentUser));
   updateProfileUI();
+  // Persist the usage event server-side so the company admin dashboard can track each
+  // tech's real activity (not just a per-device counter). Fire-and-forget — a logging
+  // failure must never block or break the feature the tech is actually using.
+  try{if(currentUser.token){fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentUser.token},body:JSON.stringify({type:'usage',payload:{feature:feature||'app'}})}).catch(function(){});}}catch(e){}
 }
 
 function isAccessAllowed(){
@@ -5315,8 +5319,22 @@ function showAdminDashboard(){
     })
     .then(function(data){
       var list=(data&&data.users)||[];
-      renderAdminDashboard(list);
-      admSetStatus('');
+      // Best-effort: pull recent events for the per-tech usage rollup. Never block the
+      // roster render on it — if events fail, the dashboard still shows everything else.
+      fetch('/api/admin/events',{headers:{'Authorization':'Bearer '+token}})
+        .then(function(r){return r.ok?r.json():{events:[]};})
+        .catch(function(){return {events:[]};})
+        .then(function(ed){
+          var map={};((ed&&ed.events)||[]).forEach(function(e){
+            if(!e.user_id)return;
+            var m=map[e.user_id]||(map[e.user_id]={total:0,types:{},amount:0});
+            m.total++;m.types[e.type]=(m.types[e.type]||0)+1;
+            if(e.amount)m.amount+=(Number(e.amount)||0);
+          });
+          window._admEventsByUser=map;
+          renderAdminDashboard(list);
+          admSetStatus('');
+        });
     })
     .catch(function(err){
       var isAuth=err&&err.kind==='auth';
@@ -5332,9 +5350,10 @@ function admCsvCell(v){v=(v==null?'':String(v));return /[",\n]/.test(v)?'"'+v.re
 function exportAdminCSV(){
   var list=window._admUserList||[];
   if(!list.length){if(typeof showToast==='function')showToast('No techs to export yet.','info');return;}
-  var headers=['Name','Email','Company','Plan','Role','Last Active','Joined','Calls'];
+  var headers=['Name','Email','Company','Plan','Role','Last Active','Joined','Calls','Events'];
   var rows=list.slice().sort(function(a,b){var ta=a.last_login?new Date(a.last_login).getTime():0;var tb=b.last_login?new Date(b.last_login).getTime():0;return tb-ta;}).map(function(u){
-    return [u.name||'',u.email||'',u.company||'',u.plan||'',u.role||'',u.last_login?new Date(u.last_login).toLocaleString():'',u.created_at?new Date(u.created_at).toLocaleDateString():'',u.usage_count||0].map(admCsvCell).join(',');
+    var ev=(window._admEventsByUser&&window._admEventsByUser[u.id]&&window._admEventsByUser[u.id].total)||0;
+    return [u.name||'',u.email||'',u.company||'',u.plan||'',u.role||'',u.last_login?new Date(u.last_login).toLocaleString():'',u.created_at?new Date(u.created_at).toLocaleDateString():'',u.usage_count||0,ev].map(admCsvCell).join(',');
   });
   var csv=headers.join(',')+'\n'+rows.join('\n');
   var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'}); // BOM so Excel reads UTF-8 cleanly
@@ -5441,9 +5460,10 @@ function renderAdminDashboard(list){
         +'<td class="'+(la.recent?'adm-last-recent':'adm-last-stale')+'" style="font-size:12px">'+escapeHtml(la.txt)+'</td>'
         +'<td style="color:#667380;font-size:11px">'+escapeHtml(joined)+'</td>'
         +'<td style="color:var(--rust);font-weight:700;text-align:center">'+(u.usage_count||0)+'</td>'
+        +'<td style="color:#3A8B8A;font-weight:700;text-align:center">'+((window._admEventsByUser&&window._admEventsByUser[u.id]&&window._admEventsByUser[u.id].total)||0)+'</td>'
         +'<td>'+(isAdminRow?'<span style="font-size:11px;color:#333">—</span>':'<button class="adm-del-btn" data-email="'+safeEmail+'" onclick="deleteAdminUser(this.dataset.email)">Delete</button>')+'</td>'
         +'</tr>';
-    }).join('')||'<tr><td colspan="9" style="color:#555;text-align:center;padding:20px">No techs yet</td></tr>';
+    }).join('')||'<tr><td colspan="10" style="color:#555;text-align:center;padding:20px">No techs yet</td></tr>';
     var _ts=document.getElementById('admTechSearch');if(_ts&&_ts.value)admFilterTechs();
   }
 

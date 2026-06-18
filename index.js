@@ -1147,6 +1147,35 @@ app.post('/api/knowledge', authenticateToken, async (req, res) => {
   res.json({ knowledge: rows[0] });
 });
 
+// ── EVENTS (per-tech usage / outcome spine for the company tracking dashboard) ──
+// Append-only signal log. trackUsage() POSTs type='usage'; later slices add upsell /
+// repair-replace / coaching outcomes (with amount). Per-user_id; the admin rollup
+// joins these to the roster to show what each tech actually does. Cheap rows.
+app.post('/api/events', authenticateToken, async (req, res) => {
+  const { type, payload, amount } = req.body;
+  if (!type) return res.status(400).json({ error: 'type required' });
+  const user_id = req.user.id;
+  const row = {
+    user_id,
+    type: String(type).slice(0, 40),
+    payload: (payload && typeof payload === 'object') ? payload : {},
+    amount: (amount != null && !isNaN(amount)) ? Number(amount) : null,
+  };
+  const rows = await supabase('POST', 'events', row);
+  if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to record event' });
+  res.json({ event: rows[0] });
+});
+
+// Admin rollup feed: recent events for the dashboard to aggregate per tech. Bounded
+// limit keeps it cheap; swap for a Postgres view/RPC when volume grows.
+app.get('/api/admin/events', authenticateToken, requireAdmin, async (req, res) => {
+  if (!SUPABASE_URL) return res.json({ events: [] });
+  const rows = await supabase('GET', 'events', null,
+    '?select=user_id,type,amount,created_at&order=created_at.desc&limit=10000');
+  if (rows === null) return res.status(500).json({ error: 'Database error' });
+  res.json({ events: rows || [] });
+});
+
 // ── KNOWLEDGE LIBRARY ───────────────────────────────────────────────────────────
 // Model-keyed cache of Mike's redrawn wiring diagrams ("the moat"). The first tech
 // on a given exact model pays the AI cost once; every future tech on that EXACT

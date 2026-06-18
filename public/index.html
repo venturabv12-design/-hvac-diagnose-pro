@@ -4410,7 +4410,7 @@ function loadMyCoachingHistory(){
         });
         var parts=Object.keys(topics).sort(function(a,b){return topics[b]-topics[a];}).slice(0,4).map(function(t){return t.replace(/_/g,' ')+' ('+topics[t]+'x)';});
         window._myCoaching=parts.length?('COACHING HISTORY — reference it naturally, like a mentor who remembers: this tech has worked with you on '+parts.join(', ')+'. Build on it; don\'t re-teach what they\'ve drilled — push them to the next level.'):'';
-      }).catch(function(){});
+      }).catch(function(){window._coachingLoading=false;}); // allow a retry next tick on transient failure
   }catch(e){}
 }
 

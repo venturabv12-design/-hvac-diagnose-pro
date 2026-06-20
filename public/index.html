@@ -9343,6 +9343,7 @@ function loadCustomerToChat(id){
 }
 function saveCurrentJobAsCustomer(){
   document.getElementById('newCustName').value='';
+  var _ne=document.getElementById('newCustEmail');if(_ne)_ne.value='';
   document.getElementById('newCustAddress').value='';
   document.getElementById('newCustEquipment').value='';
   document.getElementById('newCustNotes').value='';
@@ -9353,6 +9354,7 @@ function confirmSaveCustomer(){
   if(!name){showToast('Customer name required.','error',2500);return;}
   saveCustomer({
     name:name,
+    email:((document.getElementById('newCustEmail')||{}).value||'').trim(),
     address:document.getElementById('newCustAddress').value.trim(),
     equipment:document.getElementById('newCustEquipment').value.trim(),
     notes:document.getElementById('newCustNotes').value.trim()
@@ -9458,14 +9460,30 @@ function saveSignOff(){
   var work=document.getElementById('signOffWork').value.trim();
   if(!customer||!work){showToast('Please fill in customer name and work performed.','error',3000);return;}
   var sig=signOffCanvas?signOffCanvas.toDataURL():'';
-  var empty=!sig||sig.length<1500; // empty canvas is very small
+  // Detect a blank canvas by scanning the alpha channel for ANY drawn pixel — the old
+  // data-URL length check passed empty canvases (a blank 320x100 encodes to ~1526 chars),
+  // letting a legally-void unsigned form save as "legally documented".
+  var empty=!sig;
+  if(!empty&&signOffCtx&&signOffCanvas){
+    try{
+      var _sd=signOffCtx.getImageData(0,0,signOffCanvas.width,signOffCanvas.height).data;
+      empty=true;
+      for(var _si=3;_si<_sd.length;_si+=4){if(_sd[_si]>0){empty=false;break;}}
+    }catch(_se){empty=(sig.length<2000);}
+  }
   if(empty){showToast('Please have the customer sign first.','error',3000);return;}
+  var email=((document.getElementById('signOffEmail')||{}).value||'').trim();
   var signoffs=JSON.parse(localStorage.getItem(getUserMemoryKey('signoffs'))||'[]');
-  signoffs.push({id:Date.now(),date:new Date().toISOString(),customer:customer,work:work,signature:sig});
+  signoffs.push({id:Date.now(),date:new Date().toISOString(),customer:customer,email:email,work:work,signature:sig});
   if(signoffs.length>100)signoffs=signoffs.slice(-100);
   localStorage.setItem(getUserMemoryKey('signoffs'),JSON.stringify(signoffs));
   closeModal('signOffModal');
   showToast('Job sign-off saved ✓ — legally documented','success',3500);
+  if(email){
+    var profile=getUserMemoryProfile();var company=(profile&&profile.company)||'your technician';
+    var body='Hi '+customer+',\n\nThanks for approving today\'s work. Here\'s what we did:\n\n'+work+'\n\nYou signed off on this on-site, and a signed copy is on file. Reach out any time if you have questions.\n\n— '+((profile&&profile.firstName)||'')+(company&&company!=='your technician'?(', '+company):'');
+    emailToCustomer(email,'Your signed work order — '+company,body);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -9609,13 +9627,25 @@ function generateInvoice(){
   document.getElementById('invNum').textContent='INV-'+getNextInvoiceNum();
   document.getElementById('invDate').textContent=new Date().toLocaleDateString();
   document.getElementById('invCustomer').value='';
+  var _ie=document.getElementById('invEmail');if(_ie)_ie.value='';
   document.getElementById('invAddress').value='';
   document.getElementById('invWork').value='';
   document.getElementById('invAmount').value='';
   document.getElementById('invNotes').value='';
   openModal('invoiceModal');
 }
-function copyInvoice(){
+// ── EMAIL TO CUSTOMER ─────────────────────────────────────────────
+// Frontend-only send: opens the tech's own mail app pre-filled (mailto). The note
+// comes FROM the tech (lands in their sent folder), no backend, no API cost. A
+// server-sent branded email is the Phase-2 upgrade (needs the locked backend + Resend).
+function emailToCustomer(to,subject,body){
+  to=(to||'').trim();
+  if(!to||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)){if(typeof showToast==='function')showToast("Add the customer's email first.","error",2800);return false;}
+  var url='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subject||'')+'&body='+encodeURIComponent(body||'');
+  try{window.location.href=url;}catch(e){try{window.open(url,'_blank');}catch(_){}}
+  return true;
+}
+function buildInvoiceText(){
   var num=document.getElementById('invNum').textContent;
   var date=document.getElementById('invDate').textContent;
   var customer=document.getElementById('invCustomer').value.trim();
@@ -9625,7 +9655,11 @@ function copyInvoice(){
   var notes=document.getElementById('invNotes').value.trim();
   var profile=getUserMemoryProfile();
   var companyName=(profile&&profile.company)||'HVAC Services';
-    var text=companyName+'\n'+'━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+'INVOICE '+num+'\n'+'Date: '+date+'\n'+'━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+'BILL TO:\n'+customer+(address?'\n'+address:'')+'\n\n'+'WORK PERFORMED:\n'+work+'\n\n'+'AMOUNT DUE: $'+amount+(notes?'\n\nNotes: '+notes:'')+'\n'+'━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+'Thank you for your business!\n'+'Questions? Contact us at: support@trazerintelligence.ai';
+  var text=companyName+'\n'+'━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+'INVOICE '+num+'\n'+'Date: '+date+'\n'+'━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+'BILL TO:\n'+customer+(address?'\n'+address:'')+'\n\n'+'WORK PERFORMED:\n'+work+'\n\n'+'AMOUNT DUE: $'+amount+(notes?'\n\nNotes: '+notes:'')+'\n'+'━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+'Thank you for your business!\n'+'Questions? Contact us at: support@trazerintelligence.ai';
+  return {num:num,company:companyName,text:text};
+}
+function copyInvoice(){
+  var text=buildInvoiceText().text;
   if(navigator.clipboard){
     navigator.clipboard.writeText(text).then(function(){
       showToast('Invoice copied — paste into any message or email ✓','success',3000);
@@ -9636,6 +9670,23 @@ function copyInvoice(){
     document.execCommand('copy');document.body.removeChild(ta);
     showToast('Invoice copied ✓','success',2500);
   }
+}
+function emailInvoice(){
+  var d=buildInvoiceText();
+  var to=((document.getElementById('invEmail')||{}).value)||'';
+  if(emailToCustomer(to,'Invoice '+d.num+' — '+d.company,d.text)){
+    showToast('Opening your email to send the invoice ✉','success',2600);
+  } else { var e=document.getElementById('invEmail');if(e)e.focus(); }
+}
+function emailCustomerById(id){
+  var c=getCustomers().filter(function(x){return x.id===id;})[0];
+  if(!c)return;
+  if(!c.email){if(typeof showToast==='function')showToast('No email on file — re-save this customer with an email to send.','info',3400);return;}
+  var profile=getUserMemoryProfile();
+  var who=(profile&&profile.firstName)||(currentUser&&currentUser.name?currentUser.name.split(' ')[0]:'');
+  var company=(profile&&profile.company)||'your technician';
+  var body='Hi '+(c.name||'there')+',\n\nThanks for having us out'+(c.equipment?(' for your '+c.equipment):'')+'.'+(c.notes?('\n\n'+c.notes):'')+'\n\nReach out any time if you have questions or need us back.\n\n— '+who+(company&&company!=='your technician'?(', '+company):'');
+  emailToCustomer(c.email,'A note from '+company,body);
 }
 function askMikeForInvoice(){
   closeModal('invoiceModal');
@@ -9673,10 +9724,11 @@ function showCustomerDB(){
       html+='<div style="flex:1;cursor:pointer;" onclick="loadCustomerToChat('+c.id+')">';
       html+='<div style="font-weight:700;color:#fff;font-size:14px;">'+escapeHtml(c.name||'No name')+'</div>';
       html+='<div style="font-size:12px;color:#555;margin-top:2px;">'+escapeHtml(c.address||'No address')+'</div>';
+      if(c.email)html+='<div style="font-size:11px;color:#6b7280;margin-top:2px;">'+escapeHtml(c.email)+'</div>';
       if(c.equipment)html+='<div style="font-size:11px;color:var(--rust);margin-top:3px;">'+escapeHtml(c.equipment)+'</div>';
       html+='</div>';
       html+='<div style="display:flex;gap:6px;flex-shrink:0;">';
-
+      if(c.email)html+='<button title="Email customer" onclick="emailCustomerById('+c.id+')" style="background:rgba(58,139,138,.12);border:1px solid rgba(58,139,138,.32);color:var(--teal);border-radius:6px;padding:4px 9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✉️</button>';
       html+='<button onclick="deleteCustomer('+c.id+')" style="background:rgba(232,53,74,.08);border:1px solid rgba(232,53,74,.2);color:#E8354A;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>';
       html+='</div></div>';
       if(c.notes)html+='<div style="font-size:12px;color:#555;margin-top:6px;font-style:italic;">'+escapeHtml(c.notes)+'</div>';
@@ -12517,6 +12569,10 @@ document.addEventListener('DOMContentLoaded',function(){
       <input class="tz-modal-input" type="text" id="newCustName" placeholder="e.g. John Smith"/>
     </div>
     <div class="tz-modal-field">
+      <label class="tz-modal-label">Email</label>
+      <input class="tz-modal-input" type="email" id="newCustEmail" placeholder="customer@email.com — so you can email them"/>
+    </div>
+    <div class="tz-modal-field">
       <label class="tz-modal-label">Address</label>
       <input class="tz-modal-input" type="text" id="newCustAddress" placeholder="e.g. 123 Main St, Houston TX"/>
     </div>
@@ -12582,6 +12638,10 @@ document.addEventListener('DOMContentLoaded',function(){
     <div class="tz-modal-field">
       <label class="tz-modal-label">Work Performed</label>
       <textarea class="tz-modal-input" id="signOffWork" placeholder="e.g. Replaced 40/5 MFD dual run capacitor. System tested and running. Recommended coil cleaning next visit." style="min-height:70px;resize:vertical;font-family:inherit;font-size:13px;"></textarea>
+    </div>
+    <div class="tz-modal-field">
+      <label class="tz-modal-label">Customer Email <span style="color:#555;font-weight:400;">— optional, to send them a copy</span></label>
+      <input class="tz-modal-input" type="email" id="signOffEmail" placeholder="customer@email.com"/>
     </div>
     <div class="tz-modal-field">
       <label class="tz-modal-label">Customer Signature</label>
@@ -12660,6 +12720,10 @@ document.addEventListener('DOMContentLoaded',function(){
       <input class="tz-modal-input" type="text" id="invCustomer" placeholder="e.g. John Smith"/>
     </div>
     <div class="tz-modal-field">
+      <label class="tz-modal-label">Customer Email</label>
+      <input class="tz-modal-input" type="email" id="invEmail" placeholder="customer@email.com — to email it to them"/>
+    </div>
+    <div class="tz-modal-field">
       <label class="tz-modal-label">Address</label>
       <input class="tz-modal-input" type="text" id="invAddress" placeholder="e.g. 123 Main St, Houston TX"/>
     </div>
@@ -12675,6 +12739,7 @@ document.addEventListener('DOMContentLoaded',function(){
       <label class="tz-modal-label">Notes (optional)</label>
       <input class="tz-modal-input" type="text" id="invNotes" placeholder="e.g. Recommend annual maintenance agreement"/>
     </div>
+    <button onclick="emailInvoice()" style="width:100%;padding:12px;margin-bottom:8px;background:var(--teal);border:none;border-radius:9px;color:#04201f;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;">✉️ Email to Customer</button>
     <button class="tz-modal-btn" onclick="copyInvoice()" style="margin-bottom:8px;">📋 Copy Invoice Text</button>
     <button onclick="askMikeForInvoice()" style="width:100%;padding:11px;background:rgba(199,85,59,.1);border:1px solid rgba(199,85,59,.25);border-radius:9px;color:var(--rust);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Ask Mike to write it →</button>
     <button class="tz-modal-btn-outline" onclick="closeModal('invoiceModal')">Cancel</button>

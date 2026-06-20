@@ -568,6 +568,22 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .dev-tab:hover{color:#9aa3ad;}
 .dev-tab.active{color:#fff;border-bottom-color:var(--rust);}
 .dev-nudge{display:flex;align-items:center;gap:8px;background:rgba(58,139,138,.10);border:1px solid rgba(58,139,138,.32);border-radius:11px;padding:11px 14px;margin-bottom:16px;font-size:12.5px;font-weight:600;color:#8fd0c7;line-height:1.4;}
+/* Hero buy-in figure — fat number for the active sort metric */
+.dev-hero{background:linear-gradient(180deg,rgba(58,139,138,.07),rgba(58,139,138,.02));border:1px solid rgba(58,139,138,.22);border-radius:14px;padding:18px 22px;margin-bottom:14px;}
+.dev-hero-num{font-family:var(--font-code);font-weight:800;font-size:46px;line-height:1.02;color:var(--teal-mid);letter-spacing:-1px;}
+.dev-hero-lbl{font-size:11px;font-weight:800;letter-spacing:.6px;color:#667380;text-transform:uppercase;margin-top:5px;}
+/* Filter / sort control row */
+.dev-filter-row{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;margin-bottom:16px;}
+.dev-filter-grp{display:flex;flex-direction:column;gap:6px;}
+.dev-filter-cap{font-size:10px;font-weight:800;letter-spacing:.5px;color:#4a5562;text-transform:uppercase;}
+.dev-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.dev-chip{background:#0e141b;border:1px solid #1f2733;border-radius:8px;color:#9aa3ad;font-family:inherit;font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer;-webkit-appearance:none;transition:border-color .12s,color .12s,background .12s;white-space:nowrap;}
+.dev-chip:hover{border-color:#2d3a47;color:#cdd6df;}
+.dev-chip.active{border-color:var(--teal);color:#6fc8bc;background:rgba(58,139,138,.14);}
+.dev-custom-range{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;width:100%;margin-top:2px;}
+.dev-date-l{display:flex;flex-direction:column;gap:5px;font-size:10px;font-weight:800;letter-spacing:.4px;color:#4a5562;text-transform:uppercase;}
+.dev-date{background:#0a0e13;border:1.5px solid #1f2733;border-radius:8px;color:#e8eaed;font-family:var(--font-code);font-size:13px;padding:8px 10px;-webkit-appearance:none;color-scheme:dark;}
+.dev-date:focus{outline:none;border-color:var(--teal);}
 .dev-dash{display:flex;border:1px solid var(--line);border-radius:14px;background:#0d1117;overflow:hidden;position:relative;}
 .dev-left{display:flex;flex-direction:column;min-height:0;}
 .dev-left-h{font-size:11px;font-weight:800;letter-spacing:.5px;color:#556270;text-transform:uppercase;padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
@@ -645,6 +661,10 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .dev-dash[data-layout="tablet"] .dev-arc-card,.dev-dash[data-layout="phone"] .dev-arc-card{width:100%;}
 .dev-dash[data-layout="phone"] .dev-activity{grid-template-columns:1fr;}
 .dev-dash[data-layout="phone"] .dev-arc-card{align-items:center;}
+/* Phone hero sizing (hard device signal + narrow-viewport fallback) */
+body[data-device="phone"] .dev-hero-num{font-size:32px;}
+body[data-device="phone"] .dev-filter-row{gap:12px;}
+@media (max-width:560px){.dev-hero-num{font-size:32px;}.dev-filter-row{gap:12px;}}
 
 /* ══ MODALS — PROFILE / BILLING / WHATS NEW / HELP ═════════ */
 .job-bar{margin:12px 16px 2px;}
@@ -5851,22 +5871,35 @@ function renderDevTab(){
     host.innerHTML=nudge+'<div class="dev-dash" data-layout="desktop"><div class="dev-empty"><div class="de-big">&#128100;</div>No techs yet. As your crew uses Mike on jobs, each tech&rsquo;s development shows up here &mdash; no data entry, ever.</div></div>';
     return;
   }
+  if(!window._devSort)window._devSort='rev';
+  if(!window._devDir)window._devDir='desc';
+  if(!window._devTf)window._devTf='all';
   var w=host.clientWidth||960;
+  var sortKey=window._devSort, dir=window._devDir, tf=window._devTf;
+  function chip(k,lbl){ return '<button class="dev-chip'+(sortKey===k?' active':'')+'" data-k="'+k+'" onclick="devSortRoster(\''+k+'\')">'+lbl+'</button>'; }
+  function dchip(d,lbl){ return '<button class="dev-chip'+(dir===d?' active':'')+'" data-d="'+d+'" onclick="devSetDir(\''+d+'\')">'+lbl+'</button>'; }
+  function tchip(t,lbl){ return '<button class="dev-chip'+(tf===t?' active':'')+'" data-t="'+t+'" onclick="devSetTimeframe(\''+t+'\')">'+lbl+'</button>'; }
+  var fromVal=window._devTfFrom?(' value="'+escapeHtml(window._devTfFrom)+'"'):'';
+  var toVal=window._devTfTo?(' value="'+escapeHtml(window._devTfTo)+'"'):'';
   host.innerHTML=nudge
+    +'<div class="dev-hero"><div class="dev-hero-num" id="devHeroNum">$0</div><div class="dev-hero-lbl" id="devHeroLbl">TOTAL REVENUE</div></div>'
+    +'<div class="dev-filter-row">'
+      +'<div class="dev-filter-grp"><span class="dev-filter-cap">Sort by</span><span class="dev-chips" id="devSortChips">'+chip('rev','Revenue')+chip('score','Score')+chip('close','Close rate')+chip('jobs','Jobs')+chip('name','Name')+'</span></div>'
+      +'<div class="dev-filter-grp"><span class="dev-filter-cap">Direction</span><span class="dev-chips" id="devDirChips">'+dchip('desc','Highest')+dchip('asc','Lowest')+'</span></div>'
+      +'<div class="dev-filter-grp"><span class="dev-filter-cap">Timeframe</span><span class="dev-chips" id="devTfChips">'+tchip('month','This Month')+tchip('quarter','This Quarter')+tchip('year','This Year')+tchip('all','All Time')+tchip('custom','Custom')+'</span></div>'
+      +'<div class="dev-custom-range" id="devCustomRange" style="display:'+(tf==='custom'?'flex':'none')+'">'
+        +'<label class="dev-date-l">From <input type="date" id="devTfFrom" class="dev-date"'+fromVal+' onchange="devApplyCustomRange()"></label>'
+        +'<label class="dev-date-l">To <input type="date" id="devTfTo" class="dev-date"'+toVal+' onchange="devApplyCustomRange()"></label>'
+      +'</div>'
+    +'</div>'
     +'<div class="dev-dash" data-layout="'+devLayoutMode(w)+'">'
       +'<div class="dev-left">'
-        +'<div class="dev-left-h"><span>Crew &middot; '+list.length+'</span>'
-          +'<span class="dev-sort">'
-            +'<button class="dev-sort-btn on" id="devSortScore" onclick="devSortRoster(\'score\')">Score</button>'
-            +'<button class="dev-sort-btn" id="devSortRev" onclick="devSortRoster(\'rev\')">Rev</button>'
-            +'<button class="dev-sort-btn" id="devSortName" onclick="devSortRoster(\'name\')">A-Z</button>'
-          +'</span>'
-        +'</div>'
+        +'<div class="dev-left-h"><span>Crew &middot; '+list.length+'</span></div>'
         +'<div class="dev-roster" id="devRoster"></div>'
       +'</div>'
       +'<div class="dev-right" id="devRight"><div class="dev-empty">Select a tech to see their development.</div></div>'
     +'</div>';
-  if(!window._devSort)window._devSort='score';
+  renderDevHero(list);
   renderDevRoster(list);
   // Never show a blank right pane on desktop — auto-select the top tech after layout settles.
   clearTimeout(window._devAutoSelTimer);
@@ -5893,24 +5926,30 @@ function devInitials(name,email){
   return (s[0]||'?').toUpperCase();
 }
 // Sort + paint the roster rows. Selected row keeps the rust left-border (CSS reserves it).
+// Respects active sort key + direction + timeframe (all from module vars).
 function renderDevRoster(list){
   var box=document.getElementById('devRoster'); if(!box) return;
-  var key=window._devSort||'score';
+  var key=window._devSort||'rev';
+  var dir=window._devDir||'desc';
+  var range=devTfRange();
   var rows=list.slice().map(function(u){
-    var sc=computeTechScore(u.id);
-    return {u:u, score:(sc?sc.score:null), rev:(window._admEventsByUser&&window._admEventsByUser[u.id]&&window._admEventsByUser[u.id].amount)||0};
+    var sc=computeTechScore(u.id, range);
+    var m=devTechMetrics(u.id, range);
+    return {u:u, score:(sc?sc.score:null), rev:m.revenue, jobs:m.jobs, close:m.jobs?m.closeRate:null};
   });
   rows.sort(function(a,b){
-    if(key==='name') return (a.u.name||a.u.email||'').localeCompare(b.u.name||b.u.email||'');
-    if(key==='rev') return b.rev-a.rev;
-    // score: nulls last
-    var as=a.score==null?-1:a.score, bs=b.score==null?-1:b.score;
-    return bs-as;
+    if(key==='name'){ var c=(a.u.name||a.u.email||'').localeCompare(b.u.name||b.u.email||''); return dir==='asc'?c:-c; }
+    var av, bv;
+    if(key==='rev'){ av=a.rev; bv=b.rev; }
+    else if(key==='jobs'){ av=a.jobs; bv=b.jobs; }
+    else if(key==='close'){ av=a.close==null?-1:a.close; bv=b.close==null?-1:b.close; }
+    else { av=a.score==null?-1:a.score; bv=b.score==null?-1:b.score; } // score: nulls last
+    return dir==='asc'?(av-bv):(bv-av);
   });
   box.innerHTML=rows.map(function(r){
     var u=r.u, t=devTier(r.score);
     var badge=r.score==null?'?':r.score;
-    var sub=(u.company||'Independent')+' &middot; $'+Math.round(r.rev).toLocaleString();
+    var sub=(u.company||'Independent')+' &middot; $'+Math.round(r.rev).toLocaleString()+' &middot; '+r.jobs+' jobs';
     var sel=(window._devSelUid===u.id)?' sel':'';
     return '<div class="dev-roster-row'+sel+'" data-uid="'+escapeHtml(u.id)+'" onclick="devSelectTech(\''+escapeHtml(u.id)+'\')">'
       +'<div class="dev-row-av">'+escapeHtml(devInitials(u.name,u.email))+'</div>'
@@ -5919,11 +5958,64 @@ function renderDevRoster(list){
       +'</div>';
   }).join('');
 }
+// Hero buy-in figure — big number for the active sort metric, across the visible roster.
+function renderDevHero(list){
+  var box=document.getElementById('devHeroNum'); var lbl=document.getElementById('devHeroLbl');
+  if(!box||!lbl) return;
+  var key=window._devSort||'rev'; var range=devTfRange();
+  var big, label;
+  if(key==='rev'){
+    var tot=0; list.forEach(function(u){ tot+=devTechMetrics(u.id,range).revenue; });
+    big='$'+Math.round(tot).toLocaleString(); label='TOTAL REVENUE';
+  } else if(key==='jobs'){
+    var j=0; list.forEach(function(u){ j+=devTechMetrics(u.id,range).jobs; });
+    big=j.toLocaleString(); label='TOTAL JOBS LOGGED';
+  } else if(key==='close'){
+    var w=0,n=0; list.forEach(function(u){ var m=devTechMetrics(u.id,range); w+=m.won; n+=m.jobs; });
+    big=(n?Math.round(w/n*100):0)+'%'; label='AVG CLOSE RATE';
+  } else if(key==='name'){
+    big=list.length.toLocaleString(); label='TECHS ON THE BOARD';
+  } else { // score
+    var sum=0,c=0; list.forEach(function(u){ var sc=computeTechScore(u.id,range); if(sc){ sum+=sc.score; c++; } });
+    big=c?Math.round(sum/c):'—'; label='AVG TECH SCORE';
+  }
+  box.textContent=big;
+  lbl.textContent=label+' · '+devTfLabel();
+}
+// Re-render hero + roster (+ selected pane) — single entry point on any filter change.
+function devRefresh(){
+  var list=devRosterList();
+  renderDevHero(list);
+  renderDevRoster(list);
+  if(window._devSelUid) renderDevTechView(window._devSelUid);
+}
 function devSortRoster(key){
   window._devSort=key;
-  var ids={score:'devSortScore',rev:'devSortRev',name:'devSortName'};
-  Object.keys(ids).forEach(function(k){var b=document.getElementById(ids[k]);if(b)b.classList.toggle('on',k===key);});
-  renderDevRoster(devRosterList());
+  var row=document.getElementById('devSortChips');
+  if(row){ Array.prototype.forEach.call(row.querySelectorAll('.dev-chip'),function(b){ b.classList.toggle('active', b.dataset.k===key); }); }
+  devRefresh();
+}
+function devSetDir(dir){
+  window._devDir=dir;
+  var row=document.getElementById('devDirChips');
+  if(row){ Array.prototype.forEach.call(row.querySelectorAll('.dev-chip'),function(b){ b.classList.toggle('active', b.dataset.d===dir); }); }
+  devRefresh();
+}
+function devSetTimeframe(tf){
+  window._devTf=tf;
+  var row=document.getElementById('devTfChips');
+  if(row){ Array.prototype.forEach.call(row.querySelectorAll('.dev-chip'),function(b){ b.classList.toggle('active', b.dataset.t===tf); }); }
+  var cust=document.getElementById('devCustomRange');
+  if(cust) cust.style.display = tf==='custom'?'flex':'none';
+  if(tf!=='custom') devRefresh();
+  else { var f=document.getElementById('devTfFrom'); if(f) f.focus(); devRefresh(); }
+}
+function devApplyCustomRange(){
+  var f=document.getElementById('devTfFrom'), t=document.getElementById('devTfTo');
+  window._devTfFrom=f&&f.value?f.value:null;
+  window._devTfTo=t&&t.value?t.value:null;
+  window._devTf='custom';
+  devRefresh();
 }
 // Select a tech → repaint right pane in place; slide it in on tablet/phone.
 function devSelectTech(uid){
@@ -5943,26 +6035,86 @@ function devBackToRoster(){
 // ── METRICS (all client-side from window._admEvByUser[uid]) ──
 var DEV_TARGETS={close:65, attach:40, ticketFallback:280};
 function devEvents(uid){ return (window._admEvByUser&&window._admEvByUser[uid])||[]; }
-function devRosterAvgTicket(){
+// Active timeframe → {from,to} in ms (nulls = unbounded / all-time). Persisted in module vars.
+function devTfRange(){
+  var tf=window._devTf||'all'; var now=new Date();
+  if(tf==='month'){ return {from:new Date(now.getFullYear(),now.getMonth(),1).getTime(), to:null}; }
+  if(tf==='quarter'){ var q=Math.floor(now.getMonth()/3)*3; return {from:new Date(now.getFullYear(),q,1).getTime(), to:null}; }
+  if(tf==='year'){ return {from:new Date(now.getFullYear(),0,1).getTime(), to:null}; }
+  if(tf==='custom'){
+    var f=window._devTfFrom?new Date(window._devTfFrom+'T00:00:00').getTime():null;
+    var t=window._devTfTo?new Date(window._devTfTo+'T23:59:59').getTime():null;
+    return {from:f, to:t};
+  }
+  return {from:null, to:null}; // all-time
+}
+function devInRange(created_at, range){
+  if(!range || (range.from==null && range.to==null)) return true;
+  if(!created_at) return false;
+  var t=new Date(created_at).getTime(); if(isNaN(t)) return false;
+  if(range.from!=null && t<range.from) return false;
+  if(range.to!=null && t>range.to) return false;
+  return true;
+}
+function devTfLabel(){
+  var tf=window._devTf||'all';
+  if(tf==='month') return 'This Month';
+  if(tf==='quarter') return 'This Quarter';
+  if(tf==='year') return 'This Year';
+  if(tf==='custom'){
+    var f=window._devTfFrom, t=window._devTfTo;
+    if(f||t) return (f||'…')+' → '+(t||'…');
+    return 'Custom';
+  }
+  return 'All Time';
+}
+// Timeframe-aware per-tech metrics from RAW events (the aggregate has no timestamps).
+function devTechMetrics(uid, range){
+  range=range||devTfRange();
+  var evs=devEvents(uid);
+  var revenue=0, jobs=0, won=0, ticketSum=0, ticketN=0, enh=0, usageAll=0, coaching=0;
+  for(var i=0;i<evs.length;i++){
+    var e=evs[i]; if(!devInRange(e.created_at, range)) continue;
+    if(e.type==='job_closed'){
+      jobs++;
+      if(e.amount){ revenue+=Number(e.amount)||0; ticketSum+=Number(e.amount)||0; ticketN++; }
+      if(e.payload && e.payload.outcome==='won') won++;
+    } else if(e.type==='enhancement_recommended'){ enh++; }
+    else if(e.type==='usage'){ usageAll++; }
+    else if(e.type==='coaching'){ coaching++; }
+  }
+  return {
+    revenue:revenue, jobs:jobs, won:won,
+    closeRate: jobs?won/jobs*100:0,
+    avgTicket: ticketN?ticketSum/ticketN:0,
+    attachRate: jobs?enh/jobs*100:0,
+    enh:enh, usage:usageAll, coaching:coaching
+  };
+}
+function devRosterAvgTicket(range){
+  range=range||devTfRange();
   var sum=0,n=0, list=devRosterList();
   for(var i=0;i<list.length;i++){
     var evs=devEvents(list[i].id);
-    for(var j=0;j<evs.length;j++){ if(evs[j].type==='job_closed' && evs[j].amount){ sum+=Number(evs[j].amount)||0; n++; } }
+    for(var j=0;j<evs.length;j++){ var e=evs[j]; if(e.type==='job_closed' && e.amount && devInRange(e.created_at,range)){ sum+=Number(e.amount)||0; n++; } }
   }
   return n?Math.round(sum/n):DEV_TARGETS.ticketFallback;
 }
-// Tech Score — composite of close/ticket/attach/engage/callback. <3 closes → null.
-function computeTechScore(uid){
+// Tech Score — composite of close/ticket/attach/engage/callback. <3 closes (in range) → null.
+// Range-aware: close/ticket/attach scope to the active timeframe. Engagement stays a
+// trailing-30-day recency proxy (NOT scoped to range) — it answers "are they on Mike now?".
+function computeTechScore(uid, range){
+  range=range||devTfRange();
   var evs=devEvents(uid);
-  var closes=evs.filter(function(e){return e.type==='job_closed';});
+  var closes=evs.filter(function(e){return e.type==='job_closed' && devInRange(e.created_at,range);});
   if(closes.length<3) return null;
   var won=closes.filter(function(e){return e.payload&&e.payload.outcome==='won';}).length;
   var closeRate=won/closes.length*100;
   var ticketSum=0,ticketN=0;
   closes.forEach(function(e){ if(e.amount){ ticketSum+=Number(e.amount)||0; ticketN++; } });
   var avgTicket=ticketN?ticketSum/ticketN:0;
-  var ticketTarget=devRosterAvgTicket()||DEV_TARGETS.ticketFallback;
-  var enh=evs.filter(function(e){return e.type==='enhancement_recommended';}).length;
+  var ticketTarget=devRosterAvgTicket(range)||DEV_TARGETS.ticketFallback;
+  var enh=evs.filter(function(e){return e.type==='enhancement_recommended' && devInRange(e.created_at,range);}).length;
   var attachRate=closes.length?enh/closes.length*100:0;
   var cutoff=Date.now()-30*86400000;
   var usage30=evs.filter(function(e){return e.type==='usage' && e.created_at && new Date(e.created_at).getTime()>=cutoff;}).length;
@@ -6001,7 +6153,8 @@ function buildArcSVG(score){
 // Side-by-side growth curve: <polyline> data + dashed --safety TARGET line.
 function buildGrowthSVG(uid, metric){
   metric=metric||'close';
-  var evs=devEvents(uid).filter(function(e){return e.type==='job_closed' && e.created_at;});
+  var range=devTfRange();
+  var evs=devEvents(uid).filter(function(e){return e.type==='job_closed' && e.created_at && devInRange(e.created_at,range);});
   var nBuckets=isPhone()?6:12;
   // Build month keys for the last nBuckets months ending this month.
   var now=new Date(); var buckets=[];
@@ -6015,12 +6168,12 @@ function buildGrowthSVG(uid, metric){
     if(bmap[k]) bmap[k].jobs.push(e);
   });
   // enhancements by month (for attach)
-  devEvents(uid).filter(function(e){return e.type==='enhancement_recommended' && e.created_at;}).forEach(function(e){
+  devEvents(uid).filter(function(e){return e.type==='enhancement_recommended' && e.created_at && devInRange(e.created_at,range);}).forEach(function(e){
     var d=new Date(e.created_at); var k=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2);
     if(bmap[k]) bmap[k].enh++;
   });
   var target, vmax, unit, mlabel;
-  if(metric==='ticket'){ target=devRosterAvgTicket()||DEV_TARGETS.ticketFallback; unit='$'; mlabel='Avg Ticket'; }
+  if(metric==='ticket'){ target=devRosterAvgTicket(range)||DEV_TARGETS.ticketFallback; unit='$'; mlabel='Avg Ticket'; }
   else if(metric==='attach'){ target=DEV_TARGETS.attach; unit='%'; mlabel='Attach Rate'; }
   else { target=DEV_TARGETS.close; unit='%'; mlabel='Close Rate'; }
   var vals=buckets.map(function(b){
@@ -6068,13 +6221,13 @@ function renderDevTechView(uid){
   var box=document.getElementById('devRight'); if(!box) return;
   var u=(window._admUserList||[]).filter(function(x){return x.id===uid;})[0];
   if(!u){ box.innerHTML='<div class="dev-empty">Tech not found.</div>'; return; }
-  var sc=computeTechScore(uid);
+  var range=devTfRange();
+  var sc=computeTechScore(uid, range);
   var t=devTier(sc?sc.score:null);
-  var agg=(window._admEventsByUser&&window._admEventsByUser[uid])||{types:{},amount:0};
-  var ty=agg.types||{};
-  var jobs=(devEvents(uid).filter(function(e){return e.type==='job_closed';})).length;
-  var sessions=ty.usage||0;
-  var questions=ty.coaching||0;
+  var m=devTechMetrics(uid, range);
+  var jobs=m.jobs;
+  var sessions=m.usage;
+  var questions=m.coaching;
   var metric=window._devMetric||'close';
   var g=buildGrowthSVG(uid, metric);
   // arc center content
@@ -6107,7 +6260,7 @@ function renderDevTechView(uid){
     +'<div class="dev-right-h">'
       +'<button class="dev-back" onclick="devBackToRoster()">&larr; Crew</button>'
       +'<div><div class="dev-right-name">'+escapeHtml(u.name||u.email||'Tech')+'</div>'
-        +'<div class="dev-right-sub">'+escapeHtml(u.company||'Independent')+' &middot; '+escapeHtml(u.email||'')+'</div></div>'
+        +'<div class="dev-right-sub">'+escapeHtml(u.company||'Independent')+' &middot; '+escapeHtml(u.email||'')+' &middot; <span style="color:#8a96a2">'+escapeHtml(devTfLabel())+'</span></div></div>'
     +'</div>'
     +'<div class="dev-toprow">'
       +'<div class="dev-arc-card">'

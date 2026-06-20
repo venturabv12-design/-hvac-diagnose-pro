@@ -581,16 +581,16 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .enh-chip{padding:7px 11px;border-radius:8px;border:1.5px solid #2a2a2a;background:#0d0d0d;color:#9aa3ad;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;-webkit-appearance:none;}
 .enh-chip.on{border-color:var(--teal,#3A8B8A);background:rgba(58,139,138,.16);color:#6fc8bc;}
 .cj-save{width:100%;margin-top:18px;padding:14px;border-radius:11px;border:none;background:var(--teal,#3A8B8A);color:#fff;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;-webkit-appearance:none;}
-.convo-hint{font-size:12.5px;color:#7d858f;line-height:1.45;margin-bottom:12px;}
-.convo-list{display:flex;flex-direction:column;gap:8px;}
-.convo-empty{font-size:13px;color:#7d858f;line-height:1.5;text-align:center;padding:26px 14px;}
+.convo-hint{font-size:12.5px;color:#9aa3ad;line-height:1.45;margin-bottom:12px;}
+.convo-list{display:flex;flex-direction:column;gap:8px;transform:translateZ(0);}
+.convo-empty{font-size:13px;color:#9aa3ad;line-height:1.5;text-align:center;padding:26px 14px;}
 .convo-item{display:flex;align-items:center;gap:11px;padding:12px;border-radius:12px;border:1px solid #242424;background:#0e0e0e;cursor:pointer;transition:background .12s,border-color .12s;}
 .convo-item:active{background:#1a1a1a;border-color:#333;}
 .convo-ic{font-size:18px;flex-shrink:0;width:24px;text-align:center;}
 .convo-meta{flex:1;min-width:0;}
 .convo-title{font-size:14px;font-weight:700;color:#e8eaed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.convo-sub{font-size:11.5px;color:#7d858f;margin-top:2px;}
-.convo-del{flex-shrink:0;background:none;border:none;color:#5a626c;font-size:15px;padding:6px;cursor:pointer;border-radius:7px;-webkit-appearance:none;}
+.convo-sub{font-size:11.5px;color:#9aa3ad;margin-top:2px;font-family:var(--font-code);}
+.convo-del{flex-shrink:0;background:none;border:none;color:#7d858f;font-size:15px;padding:11px;margin:-5px;cursor:pointer;border-radius:9px;-webkit-appearance:none;}
 .convo-del:active{background:#2a1414;color:#e0726a;}
 .tz-modal-overlay{position:fixed;inset:0;z-index:9980;background:rgba(0,0,0,.85);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px;}
 .tz-modal-overlay.show{display:flex;}
@@ -2452,6 +2452,8 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 .v2-hbtn.face .v2-hbtn-ic,.v2-hbtn.face .v2-hbtn-label{color:var(--teal);}
 .v2-hbtn.face{border-color:rgba(58,139,138,.32);}
 .v2-hbtn.clear .v2-hbtn-ic{color:rgba(244,239,230,.5);}
+.v2-hbtn.chats .v2-hbtn-ic,.v2-hbtn.chats .v2-hbtn-label{color:var(--teal);}
+.v2-hbtn.chats{border-color:rgba(58,139,138,.32);}
 
 /* ===== V2 LANDING (Frame G) — the living-console front door, both audiences ===== */
 .v2-landing{position:relative;border-radius:18px;overflow:hidden;padding:15px 15px 16px;margin-bottom:14px;
@@ -3159,7 +3161,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
             <span class="v2-hbtn-ic">&#x1F4F9;</span>
             <span class="v2-hbtn-label" data-v2i18n="reachFace">FACETIME</span>
           </button>
-          <button onclick="openConvoHistory()" class="v2-hbtn clear" title="Your chats — past conversations Mike remembers" aria-label="Chat history">
+          <button onclick="openConvoHistory()" class="v2-hbtn chats" title="Your chats — past conversations Mike remembers" aria-label="Chat history">
             <span class="v2-hbtn-ic">&#x1F553;</span>
             <span class="v2-hbtn-label">CHATS</span>
           </button>
@@ -10417,8 +10419,9 @@ function openConversation(id){
   closeConvoHistory();
   if(typeof showToast==='function')showToast('Picked up where you left off ↩','info',2200);
 }
-function deleteConversation(id,ev){
+async function deleteConversation(id,ev){
   if(ev&&ev.stopPropagation)ev.stopPropagation();
+  if(typeof tzConfirm==='function'&&!await tzConfirm({title:'Delete this chat?',message:'Removes it for good — Mike won\'t remember this one.',okLabel:'Delete'}))return;
   setArchives(getArchives().filter(function(c){return c.id!==id;}));
   renderConversationList();
 }

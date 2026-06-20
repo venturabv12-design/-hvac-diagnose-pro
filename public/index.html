@@ -563,7 +563,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .adm-tbl tr:last-child td{border-bottom:none;}
 
 /* ══ TECH DEVELOPMENT DASHBOARD (Phase 1, desktop-first master-detail) ══ */
-.dev-tabnav{display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid #1a1a2a;}
+.dev-tabnav{display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid #1a1a2a;position:sticky;top:0;background:#060a0f;z-index:5;padding-top:4px;}
 .dev-tab{background:none;border:none;border-bottom:2px solid transparent;color:#667380;font-family:inherit;font-size:13px;font-weight:800;letter-spacing:.5px;padding:9px 14px;margin-bottom:-1px;cursor:pointer;-webkit-appearance:none;transition:color .15s,border-color .15s;}
 .dev-tab:hover{color:#9aa3ad;}
 .dev-tab.active{color:#fff;border-bottom-color:var(--rust);}
@@ -597,7 +597,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .dev-arc-card{flex-shrink:0;width:360px;background:#0a0e13;border:1px solid var(--line);border-radius:13px;padding:18px;display:flex;flex-direction:column;}
 .dev-arc-wrap{display:flex;align-items:center;justify-content:center;position:relative;}
 .dev-arc-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-30%);text-align:center;pointer-events:none;}
-.dev-arc-num{font-family:var(--font-code);font-size:46px;font-weight:800;line-height:1;color:#fff;}
+.dev-arc-num{font-family:var(--font-code);font-size:46px;font-weight:800;line-height:1;color:#fff;font-variant-numeric:tabular-nums;}
 .dev-arc-num.--q{font-size:38px;color:#667380;}
 .dev-arc-lbl{font-size:10px;font-weight:800;letter-spacing:1px;color:#556270;text-transform:uppercase;margin-top:4px;}
 .dev-arc-tier{font-size:11px;font-weight:700;margin-top:2px;}
@@ -639,6 +639,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .dev-dash[data-layout="tablet"] .dev-left,.dev-dash[data-layout="phone"] .dev-left{width:100%;border-right:none;}
 .dev-dash[data-layout="tablet"] .dev-right,.dev-dash[data-layout="phone"] .dev-right{position:absolute;inset:0;background:#0d1117;transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);z-index:3;}
 .dev-dash[data-layout="tablet"].slid .dev-right,.dev-dash[data-layout="phone"].slid .dev-right{transform:translateX(0);}
+.dev-dash[data-layout="tablet"].slid,.dev-dash[data-layout="phone"].slid{min-height:100dvh;}
 .dev-dash[data-layout="tablet"] .dev-back,.dev-dash[data-layout="phone"] .dev-back{display:inline-block;}
 .dev-dash[data-layout="tablet"] .dev-toprow,.dev-dash[data-layout="phone"] .dev-toprow{flex-direction:column;}
 .dev-dash[data-layout="tablet"] .dev-arc-card,.dev-dash[data-layout="phone"] .dev-arc-card{width:100%;}
@@ -5843,8 +5844,8 @@ function devRosterList(){
 function renderDevTab(){
   var host=document.getElementById('devTabContent'); if(!host) return;
   var list=devRosterList();
-  var nudge = isPhone()
-    ? '<div class="dev-nudge"><span>&#128202;</span><span>Full dashboard is built for desktop &mdash; open trazermike.io on your computer for the complete view.</span></div>'
+  var nudge = (isPhone() && sessionStorage.getItem('devNudgeX')!=='1')
+    ? '<div class="dev-nudge"><span>&#128202;</span><span>Full dashboard is built for desktop &mdash; open trazermike.io on your computer for the complete view.</span><button onclick="this.closest(\'.dev-nudge\').style.display=\'none\';sessionStorage.setItem(\'devNudgeX\',\'1\');" style="margin-left:auto;background:none;border:none;color:#8fd0c7;font-size:16px;cursor:pointer;line-height:1;padding:0 2px;">&times;</button></div>'
     : '';
   if(!list.length){
     host.innerHTML=nudge+'<div class="dev-dash" data-layout="desktop"><div class="dev-empty"><div class="de-big">&#128100;</div>No techs yet. As your crew uses Mike on jobs, each tech&rsquo;s development shows up here &mdash; no data entry, ever.</div></div>';
@@ -5993,7 +5994,7 @@ function buildArcSVG(score){
   var pct=score==null?0:Math.max(0,Math.min(100,score));
   var offset=arcLen*(1-pct/100);
   return '<svg width="'+size+'" height="'+(size*0.72).toFixed(0)+'" viewBox="0 0 '+size+' '+(size*0.72).toFixed(0)+'" style="overflow:visible">'
-    +'<path d="'+pathD+'" fill="none" stroke="#1a2129" stroke-width="11" stroke-linecap="round"/>'
+    +'<path d="'+pathD+'" fill="none" stroke="#232d38" stroke-width="11" stroke-linecap="round"/>'
     +'<path d="'+pathD+'" fill="none" stroke="'+t.hex+'" stroke-width="11" stroke-linecap="round" stroke-dasharray="'+arcLen.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'" style="transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1)"/>'
     +'</svg>';
 }
@@ -6084,10 +6085,12 @@ function renderDevTechView(uid){
   // component bars (only meaningful when scored)
   var comps='';
   if(sc){
-    var rows=[['Close rate', sc.closeRate+'%', sc.sub.close],['Avg ticket', '$'+sc.avgTicket, sc.sub.ticket],['Enhancement attach', sc.attachRate+'%', sc.sub.attach],['Engagement', sc.usage30+' uses/30d', sc.sub.engage],['Callback rate', 'n/a', sc.sub.callback]];
+    var rows=[['Close rate', sc.closeRate+'%', sc.sub.close],['Avg ticket', '$'+sc.avgTicket, sc.sub.ticket],['Enhancement attach', sc.attachRate+'%', sc.sub.attach],['Engagement', sc.usage30+' uses/30d', sc.sub.engage],['Callback rate', 'Phase 2', 0, true]];
     comps=rows.map(function(r){
-      return '<div class="dev-comp-row"><div class="dev-comp-top"><span class="dev-comp-name">'+r[0]+'</span><span class="dev-comp-val">'+r[1]+'</span></div>'
-        +'<div class="dev-bar"><div class="dev-bar-fill" style="width:'+Math.round(r[2])+'%"></div></div></div>';
+      var dim=r[3]?' style="opacity:.45"':''; // callback is Phase 2 — show pending, not a full bar
+      var fw=r[3]?'0':String(Math.round(r[2]));
+      return '<div class="dev-comp-row"'+dim+'><div class="dev-comp-top"><span class="dev-comp-name">'+r[0]+'</span><span class="dev-comp-val">'+r[1]+'</span></div>'
+        +'<div class="dev-bar"><div class="dev-bar-fill" style="width:'+fw+'%"></div></div></div>';
     }).join('');
   } else {
     comps='<div style="font-size:12px;color:#667380;line-height:1.5;text-align:center;padding:8px 4px;">Needs <b style="color:#9aa3ad">3+ closed jobs</b> before a score is meaningful. '+jobs+' so far &mdash; keep them on Mike.</div>';

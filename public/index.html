@@ -564,6 +564,22 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 
 
 /* ══ MODALS — PROFILE / BILLING / WHATS NEW / HELP ═════════ */
+.job-bar{margin:12px 16px 2px;}
+.job-start-btn{width:100%;padding:13px;border-radius:12px;border:1px solid rgba(58,139,138,.5);background:linear-gradient(180deg,rgba(58,139,138,.22),rgba(58,139,138,.07));color:#6fc8bc;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:.3px;cursor:pointer;-webkit-appearance:none;}
+.job-start-btn:active{transform:scale(.99);}
+.job-active{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(199,85,59,.12);border:1px solid rgba(199,85,59,.42);}
+.job-live{font-size:12.5px;font-weight:800;letter-spacing:.4px;color:#ef8a72;font-family:var(--font-code,monospace);}
+.job-close-btn{padding:8px 16px;border-radius:9px;border:none;background:var(--rust,#C7553B);color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;-webkit-appearance:none;}
+.cj-label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#7A8595;margin:14px 0 6px;}
+.cj-hint{font-weight:600;text-transform:none;letter-spacing:0;color:#5A6470;}
+.cj-input{width:100%;box-sizing:border-box;padding:11px 12px;background:#0a0a0a;border:1.5px solid #2a2a2a;border-radius:9px;color:#fff;-webkit-text-fill-color:#fff;font-size:16px;font-family:inherit;outline:none;-webkit-appearance:none;}
+.cj-row{display:flex;gap:6px;flex-wrap:wrap;}
+.outcome-btn{flex:1;min-width:64px;padding:9px 6px;border-radius:9px;border:1.5px solid #2a2a2a;background:#0d0d0d;color:#9aa3ad;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;-webkit-appearance:none;}
+.outcome-btn.on{border-color:var(--teal,#3A8B8A);background:rgba(58,139,138,.16);color:#6fc8bc;}
+.cj-chips{display:flex;gap:6px;flex-wrap:wrap;}
+.enh-chip{padding:7px 11px;border-radius:8px;border:1.5px solid #2a2a2a;background:#0d0d0d;color:#9aa3ad;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;-webkit-appearance:none;}
+.enh-chip.on{border-color:var(--teal,#3A8B8A);background:rgba(58,139,138,.16);color:#6fc8bc;}
+.cj-save{width:100%;margin-top:18px;padding:14px;border-radius:11px;border:none;background:var(--teal,#3A8B8A);color:#fff;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;-webkit-appearance:none;}
 .tz-modal-overlay{position:fixed;inset:0;z-index:9980;background:rgba(0,0,0,.85);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px;}
 .tz-modal-overlay.show{display:flex;}
 .tz-modal{background:#161616;border:1px solid #2a2a2a;border-radius:18px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.7);}
@@ -3093,6 +3109,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           <button class="mp-reach-btn chat" onclick="mpEnterChat();setTimeout(function(){var i=document.getElementById('chatInput');if(i)i.focus();},60);" aria-label="Text Mike — chat"><span class="mp-rico">&#x1F4AC;</span>TEXT</button>
           <button class="mp-reach-btn face" onclick="checkCameraAccess();" aria-label="FaceTime Mike — live visual"><span class="mp-rico">&#x1F4F7;</span>FACETIME</button>
         </div>
+        <div id="jobBar" class="job-bar"></div>
       </div>
       <div class="mp-rail"><div class="mp-rail-label">&mdash; MIKE'S TOOLBELT &mdash;</div></div>
       <div class="mp-belt">
@@ -4339,6 +4356,7 @@ function updateProfileUI(){
   var ai=document.getElementById('adminMenuItem');
   if(ai)ai.style.display=(currentUser.role==='admin'||currentUser.role==='owner'||currentUser.plan==='admin'||currentUser.isAdmin)?'flex':'none';
   loadMyCoachingHistory();
+  try{if(!window._activeJob)window._activeJob=getActiveJob();renderJobBar();}catch(e){}
 }
 
 function toggleProfileDD(){
@@ -4392,10 +4410,78 @@ function recordEvent(type,payload,amount){
   try{
     if(!currentUser||!currentUser.token||!type)return;
     var body={type:type,payload:payload||{}};
+    if(window._activeJob&&window._activeJob.id&&body.payload&&typeof body.payload==='object'&&body.payload.job_id==null)body.payload.job_id=window._activeJob.id; // tag to the active job for accurate per-call data
     if(amount!=null&&!isNaN(amount))body.amount=Number(amount);
     fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentUser.token},body:JSON.stringify(body)}).catch(function(){});
   }catch(e){}
 }
+
+// ── JOB LIFECYCLE ───────────────────────────────────────────────────────────────
+// Every service call is a JOB: Start a Job → all activity (Mike chat, diagnostics,
+// enhancement recs) tags to that job_id → Close the Job (capture ticket revenue +
+// enhancements + outcome) → Start New. Makes per-call revenue/data accurate, which is
+// what the company dashboards run on. "Enhancements" = honest home-improvement + safety
+// recommendations (surge protector, zoning, capacitor, IAQ, water heater, safety...).
+var JOB_ENHANCEMENTS=['Surge Protector','Zoning System','Capacitor','Air Quality (IAQ)','Water Heater','Safety Inspection','Membership Plan','Smart Thermostat','Duct Sealing'];
+window._activeJob=window._activeJob||null;window._jobEnhSel={};window._jobOutcome='won';
+function getActiveJob(){try{return JSON.parse(localStorage.getItem(getUserMemoryKey('active_job'))||'null');}catch(e){return null;}}
+function setActiveJob(j){window._activeJob=j||null;try{if(j)localStorage.setItem(getUserMemoryKey('active_job'),JSON.stringify(j));else localStorage.removeItem(getUserMemoryKey('active_job'));}catch(e){}renderJobBar();}
+function startJob(){
+  if(window._activeJob){renderJobBar();return;}
+  setActiveJob({id:'job-'+Date.now()+'-'+Math.floor(Math.random()*9999),startedAt:Date.now()});
+  recordEvent('job_start',{});
+  if(typeof showToast==='function')showToast('Job started — Mike is tracking this call ▶','success',2500);
+}
+function jobElapsed(){if(!window._activeJob)return'0:00';var s=Math.max(0,Math.floor((Date.now()-window._activeJob.startedAt)/1000));return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);}
+function renderJobBar(){
+  var el=document.getElementById('jobBar');if(!el)return;
+  if(window._activeJob){
+    el.innerHTML='<div class="job-active"><span class="job-live">● JOB IN PROGRESS · <span id="jobTimer">'+jobElapsed()+'</span></span><button class="job-close-btn" onclick="openCloseJob()">Close Job</button></div>';
+    if(!window._jobTick)window._jobTick=setInterval(function(){var t=document.getElementById('jobTimer');if(t&&window._activeJob)t.textContent=jobElapsed();else{clearInterval(window._jobTick);window._jobTick=null;}},1000);
+  }else{
+    if(window._jobTick){clearInterval(window._jobTick);window._jobTick=null;}
+    el.innerHTML='<button class="job-start-btn" onclick="startJob()">▶ Start a Job</button>';
+  }
+}
+function openCloseJob(){
+  if(!window._activeJob){if(typeof showToast==='function')showToast('No active job — tap Start a Job first.','info',2500);return;}
+  window._jobOutcome='won';window._jobEnhSel={};
+  var t=document.getElementById('closeJobTicket');if(t)t.value='';
+  var a=document.getElementById('closeJobEnhAmt');if(a)a.value='';
+  var n=document.getElementById('closeJobNote');if(n)n.value='';
+  renderEnhChips();renderOutcomeBtns();
+  openModal('closeJobModal');
+}
+function renderEnhChips(){
+  var c=document.getElementById('closeJobEnh');if(!c)return;
+  c.innerHTML=JOB_ENHANCEMENTS.map(function(e){var on=window._jobEnhSel[e]?' on':'';return '<button type="button" class="enh-chip'+on+'" onclick="toggleEnh(this,\''+e.replace(/'/g,'')+'\')">'+e+'</button>';}).join('');
+}
+function toggleEnh(btn,e){if(window._jobEnhSel[e]){delete window._jobEnhSel[e];btn.classList.remove('on');}else{window._jobEnhSel[e]=true;btn.classList.add('on');}}
+function setJobOutcome(o){window._jobOutcome=o;renderOutcomeBtns();}
+function renderOutcomeBtns(){
+  var c=document.getElementById('closeJobOutcome');if(!c)return;
+  var opts=[['won','Won'],['repair','Repaired'],['replace','Replaced'],['nosale','No Sale']];
+  c.innerHTML=opts.map(function(o){var on=window._jobOutcome===o[0]?' on':'';return '<button type="button" class="outcome-btn'+on+'" onclick="setJobOutcome(\''+o[0]+'\')">'+o[1]+'</button>';}).join('');
+}
+function submitCloseJob(){
+  if(!window._activeJob){closeModal('closeJobModal');return;}
+  var ticket=parseFloat((document.getElementById('closeJobTicket')||{}).value)||0;
+  var enhAmt=parseFloat((document.getElementById('closeJobEnhAmt')||{}).value)||0;
+  var note=(((document.getElementById('closeJobNote')||{}).value)||'').trim().slice(0,300);
+  var recommended=Object.keys(window._jobEnhSel||{});
+  var outcome=window._jobOutcome||'won';
+  var jid=window._activeJob.id;var dur=Math.round((Date.now()-window._activeJob.startedAt)/60000);
+  // The accurate per-call record: ticket is THE revenue (amount); enhancements_closed_amount
+  // is a sub-metric of the ticket (NOT added again, so Rev$ never double-counts).
+  recordEvent('job_closed',{job_id:jid,outcome:outcome,enhancements_recommended:recommended,enhancements_closed_amount:enhAmt,duration_min:dur,note:note},ticket);
+  recommended.forEach(function(e){recordEvent('enhancement_recommended',{job_id:jid,item:e});});
+  try{saveJobToHistory({type:'job',summary:note,revenue:ticket,upsells:recommended});}catch(e){}
+  try{if(currentUser&&currentUser.token){fetch('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentUser.token},body:JSON.stringify({date:new Date().toISOString(),type:'job',job_id:jid,ticket_total:ticket,enhancements_recommended:recommended,enhancements_closed_amount:enhAmt,outcome:outcome,duration_min:dur,summary:note})}).catch(function(){});}}catch(e){}
+  setActiveJob(null);
+  closeModal('closeJobModal');
+  if(typeof showToast==='function')showToast('Job closed ✓ $'+ticket.toLocaleString()+(enhAmt?(' · $'+enhAmt.toLocaleString()+' enhancements'):'')+' logged','success',3600);
+}
+// Million-dollar-tech: load this tech's coaching history ONCE per session so Mike can
 // Million-dollar-tech: load this tech's coaching history ONCE per session so Mike can
 // coach longitudinally — reference what they've drilled and push them up a level.
 function loadMyCoachingHistory(){
@@ -12211,6 +12297,29 @@ document.addEventListener('DOMContentLoaded',function(){
 </div>
 
 <!-- ── REFRIGERANT LOG MODAL ────────────────────────────────────── -->
+<!-- ── CLOSE JOB — per-call revenue + enhancements capture ───────────── -->
+<div class="tz-modal-overlay" id="closeJobModal">
+<div class="tz-modal">
+  <div class="tz-modal-header">
+    <div class="tz-modal-title">■ Close Job</div>
+    <button class="tz-modal-close" onclick="closeModal('closeJobModal')"><i data-lucide="x" style="width:1em;height:1em;vertical-align:middle;stroke-width:2.5;"></i></button>
+  </div>
+  <div class="tz-modal-body">
+    <label class="cj-label">Ticket total ($)</label>
+    <input id="closeJobTicket" type="number" inputmode="decimal" placeholder="e.g. 1200" class="cj-input"/>
+    <label class="cj-label">Outcome</label>
+    <div id="closeJobOutcome" class="cj-row"></div>
+    <label class="cj-label">Enhancements recommended <span class="cj-hint">— home &amp; safety</span></label>
+    <div id="closeJobEnh" class="cj-chips"></div>
+    <label class="cj-label">Enhancements $ closed</label>
+    <input id="closeJobEnhAmt" type="number" inputmode="decimal" placeholder="$ of the ticket from enhancements" class="cj-input"/>
+    <label class="cj-label">What you did <span class="cj-hint">— optional</span></label>
+    <textarea id="closeJobNote" rows="2" placeholder="Quick note for the record" class="cj-input" style="resize:none;"></textarea>
+    <button class="cj-save" onclick="submitCloseJob()">Close Job &amp; Log Revenue</button>
+  </div>
+</div>
+</div>
+
 <div class="tz-modal-overlay" id="refLogModal">
 <div class="tz-modal">
   <div class="tz-modal-header">

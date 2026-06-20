@@ -581,6 +581,17 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .enh-chip{padding:7px 11px;border-radius:8px;border:1.5px solid #2a2a2a;background:#0d0d0d;color:#9aa3ad;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;-webkit-appearance:none;}
 .enh-chip.on{border-color:var(--teal,#3A8B8A);background:rgba(58,139,138,.16);color:#6fc8bc;}
 .cj-save{width:100%;margin-top:18px;padding:14px;border-radius:11px;border:none;background:var(--teal,#3A8B8A);color:#fff;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;-webkit-appearance:none;}
+.convo-hint{font-size:12.5px;color:#7d858f;line-height:1.45;margin-bottom:12px;}
+.convo-list{display:flex;flex-direction:column;gap:8px;}
+.convo-empty{font-size:13px;color:#7d858f;line-height:1.5;text-align:center;padding:26px 14px;}
+.convo-item{display:flex;align-items:center;gap:11px;padding:12px;border-radius:12px;border:1px solid #242424;background:#0e0e0e;cursor:pointer;transition:background .12s,border-color .12s;}
+.convo-item:active{background:#1a1a1a;border-color:#333;}
+.convo-ic{font-size:18px;flex-shrink:0;width:24px;text-align:center;}
+.convo-meta{flex:1;min-width:0;}
+.convo-title{font-size:14px;font-weight:700;color:#e8eaed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.convo-sub{font-size:11.5px;color:#7d858f;margin-top:2px;}
+.convo-del{flex-shrink:0;background:none;border:none;color:#5a626c;font-size:15px;padding:6px;cursor:pointer;border-radius:7px;-webkit-appearance:none;}
+.convo-del:active{background:#2a1414;color:#e0726a;}
 .tz-modal-overlay{position:fixed;inset:0;z-index:9980;background:rgba(0,0,0,.85);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px;}
 .tz-modal-overlay.show{display:flex;}
 .tz-modal{background:#161616;border:1px solid #2a2a2a;border-radius:18px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.7);}
@@ -3148,6 +3159,10 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
             <span class="v2-hbtn-ic">&#x1F4F9;</span>
             <span class="v2-hbtn-label" data-v2i18n="reachFace">FACETIME</span>
           </button>
+          <button onclick="openConvoHistory()" class="v2-hbtn clear" title="Your chats — past conversations Mike remembers" aria-label="Chat history">
+            <span class="v2-hbtn-ic">&#x1F553;</span>
+            <span class="v2-hbtn-label">CHATS</span>
+          </button>
           <button onclick="wipeChat()" class="v2-hbtn clear" title="Clear chat" aria-label="Clear chat">
             <span class="v2-hbtn-ic">&#x2715;</span>
             <span class="v2-hbtn-label" data-v2i18n="clear">CLEAR</span>
@@ -4359,6 +4374,7 @@ function updateProfileUI(){
   var ai=document.getElementById('adminMenuItem');
   if(ai)ai.style.display=(currentUser.role==='admin'||currentUser.role==='owner'||currentUser.plan==='admin'||currentUser.isAdmin)?'flex':'none';
   loadMyCoachingHistory();
+  try{buildConvoMemory();}catch(e){}
   try{if(!window._activeJob)window._activeJob=getActiveJob();renderJobBar();}catch(e){}
 }
 
@@ -4454,6 +4470,11 @@ function startJob(){
   setActiveJob({id:'job-'+Date.now()+'-'+Math.floor(Math.random()*9999),startedAt:Date.now()});
   recordEvent('job_start',{});
   if(typeof showToast==='function')showToast('Job started — Mike is tracking this call ▶','success',2500);
+  // Each job is its own remembered conversation: save the prior thread, start clean, tag it a job.
+  try{archiveCurrentChat();}catch(e){}
+  if(typeof chatHistory!=='undefined')chatHistory=[];
+  window._activeConvoId='jc-'+window._activeJob.id;window._activeConvoMeta={type:'job',jobId:window._activeJob.id};
+  var _jcm=document.getElementById('chatMessages');if(_jcm)_jcm.innerHTML='';
   // JOB MODE: Mike opens the call — greets the tech by name and asks what we're working on.
   // Their next reply is the job context (unit + complaint): captured in sendChat, logged on the job.
   var greet=jobModeGreeting();
@@ -7569,6 +7590,7 @@ function buildPersonalizedContext(){
     ctx += 'Experience: Unknown — gauge from their questions and adapt in real time.\n';
   }
   if(window._myCoaching)ctx += '\n'+window._myCoaching+'\n';
+  if(window._convoMemory)ctx += '\n'+window._convoMemory+'\n';
 
   // RESPONSE DISCIPLINE — answer-first for EVERY level. A working tech wants the answer,
   // not an interview (Brandon field note 2026-06-16: stop interrogating techs).
@@ -10345,19 +10367,97 @@ function pushFeatureSoon(name){
   }catch(_){}
   try{console.log('[push6] '+name+' — coming soon');}catch(_){}
 }
+/* ============ CONVERSATION HISTORY — every chat & job is a saved, reopenable thread,
+   and Mike remembers across them (buildConvoMemory → injected into his context).
+   Built on the existing localStorage 'archives' store, enriched with id + title + type. ============ */
+window._activeConvoId=window._activeConvoId||null;window._activeConvoMeta=window._activeConvoMeta||null;
+function _archKey(){return (typeof getUserMemoryKey==='function')?getUserMemoryKey('archives'):'trazer_archives';}
+function convoTitle(history){
+  try{
+    for(var i=0;i<history.length;i++){if(history[i]&&history[i].role==='user'&&history[i].content){var t=(''+history[i].content).replace(/\s+/g,' ').trim();if(t)return t.length>46?t.slice(0,46)+'…':t;}}
+    for(var j=0;j<history.length;j++){if(history[j]&&history[j].content){var s=(''+history[j].content).replace(/\s+/g,' ').trim();if(s)return s.length>46?s.slice(0,46)+'…':s;}}
+  }catch(e){}
+  return 'Conversation';
+}
+function getArchives(){
+  try{
+    var a=JSON.parse(localStorage.getItem(_archKey())||'[]');
+    if(!Array.isArray(a))return [];
+    return a.map(function(c){if(!c||!c.history)return null;return {id:c.id||('c'+(c.ts||0)),ts:c.ts||Date.now(),title:c.title||convoTitle(c.history),type:c.type||'chat',jobId:c.jobId||null,history:c.history};}).filter(Boolean);
+  }catch(e){return [];}
+}
+function setArchives(a){try{localStorage.setItem(_archKey(),JSON.stringify(a.slice(0,30)));}catch(e){}buildConvoMemory();}
+function archiveCurrentChat(meta){
+  try{
+    if(typeof chatHistory==='undefined'||!chatHistory||!chatHistory.length)return;
+    meta=meta||window._activeConvoMeta||{};
+    var a=getArchives();
+    a.unshift({id:window._activeConvoId||('c'+Date.now()),ts:Date.now(),title:meta.title||convoTitle(chatHistory),type:meta.type||'chat',jobId:meta.jobId||null,history:chatHistory.slice()});
+    setArchives(a);
+    window._activeConvoId=null;window._activeConvoMeta=null;
+  }catch(e){}
+}
+function renderMessagesFromHistory(history){
+  var cm=document.getElementById('chatMessages');if(!cm)return;
+  cm.innerHTML='';
+  for(var i=0;i<history.length;i++){var m=history[i];if(!m||!m.content)continue;if(typeof appendMessage==='function')appendMessage(m.role==='user'?'user':'agent',''+m.content);}
+  requestAnimationFrame(function(){if(typeof scrollToBottom==='function')scrollToBottom();});
+}
+function openConversation(id){
+  archiveCurrentChat(); // save whatever is open, then make the chosen thread live
+  var a=getArchives(),idx=-1;
+  for(var i=0;i<a.length;i++){if(a[i].id===id){idx=i;break;}}
+  if(idx<0){closeConvoHistory();return;}
+  var convo=a.splice(idx,1)[0];
+  setArchives(a);
+  window._activeConvoId=convo.id;window._activeConvoMeta={type:convo.type,jobId:convo.jobId};
+  if(typeof chatHistory!=='undefined')chatHistory=convo.history.slice();
+  if(typeof mpEnterChat==='function')mpEnterChat();
+  renderMessagesFromHistory(convo.history);
+  closeConvoHistory();
+  if(typeof showToast==='function')showToast('Picked up where you left off ↩','info',2200);
+}
+function deleteConversation(id,ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  setArchives(getArchives().filter(function(c){return c.id!==id;}));
+  renderConversationList();
+}
+function _convoWhen(ts){
+  try{var d=Date.now()-ts,day=86400000;
+    if(d<3600000)return Math.max(1,Math.round(d/60000))+'m ago';
+    if(d<day)return Math.round(d/3600000)+'h ago';
+    if(d<7*day)return Math.round(d/day)+'d ago';
+    return new Date(ts).toLocaleDateString();
+  }catch(e){return '';}
+}
+function renderConversationList(){
+  var box=document.getElementById('convoHistoryList');if(!box)return;
+  var a=getArchives();
+  if(!a.length){box.innerHTML='<div class="convo-empty">No saved chats yet. Every chat and job you finish lands here — and Mike remembers them next time.</div>';return;}
+  box.innerHTML=a.map(function(c){
+    var icon=c.type==='job'?'🧰':'💬';var t=escapeHtml(c.title||'Conversation');var n=c.history?c.history.length:0;
+    return '<div class="convo-item" onclick="openConversation(\''+c.id+'\')">'+
+      '<div class="convo-ic">'+icon+'</div>'+
+      '<div class="convo-meta"><div class="convo-title">'+t+'</div>'+
+      '<div class="convo-sub">'+_convoWhen(c.ts)+' · '+n+' message'+(n===1?'':'s')+'</div></div>'+
+      '<button class="convo-del" title="Delete" onclick="deleteConversation(\''+c.id+'\',event)">&#x1F5D1;</button></div>';
+  }).join('');
+}
+function openConvoHistory(){renderConversationList();if(typeof openModal==='function')openModal('convoHistory');}
+function closeConvoHistory(){if(typeof closeModal==='function')closeModal('convoHistory');}
+function buildConvoMemory(){
+  try{
+    var a=getArchives();
+    if(!a.length){window._convoMemory='';return;}
+    var recent=a.slice(0,6).map(function(c){return '- '+(c.type==='job'?'[job] ':'')+(c.title||'conversation')+' ('+_convoWhen(c.ts)+')';});
+    window._convoMemory='CONVERSATION MEMORY — past sessions with this tech, most recent first. Reference them naturally like someone who remembers ("last time we were on that..."). Do NOT dump their full contents unasked — use them for continuity and to build on prior work:\n'+recent.join('\n');
+  }catch(e){window._convoMemory='';}
+}
 function clearChat(){
   // Push 6 commit 6: archive-not-delete — preserve the current chat to localStorage
-  // before clearing so users can recover prior sessions. Mirrors the chatHistory.slice(-40)
-  // discipline already used for history storage at line ~4647. FIFO eviction at 20 archives.
-  try{
-    if(typeof chatHistory!=='undefined'&&chatHistory&&chatHistory.length>0){
-      var akey=(typeof getUserMemoryKey==='function')?getUserMemoryKey('archives'):'trazer_archives';
-      var archives=JSON.parse(localStorage.getItem(akey)||'[]');
-      archives.unshift({ts:Date.now(),history:chatHistory.slice()});
-      if(archives.length>20)archives=archives.slice(0,20);
-      localStorage.setItem(akey,JSON.stringify(archives));
-    }
-  }catch(_){}
+  // before clearing so users can recover it from the Chats history. archiveCurrentChat()
+  // enriches the entry (id + title + type) and rebuilds Mike's conversation memory.
+  try{archiveCurrentChat();}catch(_){}
   var firstName=escapeHtml((currentUser&&currentUser.name)?currentUser.name.split(' ')[0]:'there');
   // Greeting tailored per-language so non-English techs still feel addressed by Mike.
   var greetings={
@@ -10414,13 +10514,15 @@ async function newChat(){
 }
 
 async function wipeChat(){
-  // Confirm before nuking a conversation — an accidental tap shouldn't lose a long
-  // diagnostic. Mike's learned memory is untouched; only this chat thread clears.
-  if(!await tzConfirm({title:'Clear this chat?',message:'Clears the current conversation. Mike keeps everything he has learned about you.',okLabel:'Clear chat'}))return;
+  // Non-destructive: clearing starts a fresh chat but SAVES this one to the Chats history
+  // (Mike remembers it). True delete lives on each item in the Chats list.
+  if(!await tzConfirm({title:'Start a fresh chat?',message:'Starts a clean chat. This one is saved to your Chats — tap CHATS anytime to pick it back up.',okLabel:'New chat'}))return;
   // Kill any in-flight Mike audio / open mic from the prior turn so the wipe is clean.
   if(typeof stopMikeSpeaking==='function')stopMikeSpeaking();
   if(typeof stopListening==='function')stopListening();
 
+  // Archive the current thread before resetting so nothing is ever lost.
+  try{archiveCurrentChat();}catch(e){}
   // Reset conversation state
   if(typeof chatHistory!=='undefined')chatHistory=[];
   var cm=document.getElementById('chatMessages');
@@ -12358,6 +12460,19 @@ document.addEventListener('DOMContentLoaded',function(){
     <label class="cj-label">What you did <span class="cj-hint">— optional</span></label>
     <textarea id="closeJobNote" rows="2" placeholder="Quick note for the record" class="cj-input" style="resize:none;"></textarea>
     <button class="cj-save" onclick="submitCloseJob()">Close Job &amp; Log Revenue</button>
+  </div>
+</div>
+</div>
+
+<div class="tz-modal-overlay" id="convoHistory">
+<div class="tz-modal">
+  <div class="tz-modal-header">
+    <div class="tz-modal-title">&#x1F553; Your Chats</div>
+    <button class="tz-modal-close" onclick="closeModal('convoHistory')">&#x2715;</button>
+  </div>
+  <div class="tz-modal-body">
+    <div class="convo-hint">Every chat and job is saved here — tap one to pick up right where you left off. Mike remembers them.</div>
+    <div id="convoHistoryList" class="convo-list"></div>
   </div>
 </div>
 </div>

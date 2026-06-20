@@ -4428,13 +4428,41 @@ function recordEvent(type,payload,amount){
 var JOB_ENHANCEMENTS=['Surge Protector','Zoning System','Capacitor','Air Quality (IAQ)','Water Heater','Safety Inspection','Membership Plan','Smart Thermostat','Duct Sealing'];
 window._activeJob=window._activeJob||null;window._jobEnhSel={};window._jobOutcome='won';
 function getActiveJob(){try{return JSON.parse(localStorage.getItem(getUserMemoryKey('active_job'))||'null');}catch(e){return null;}}
-function setActiveJob(j){window._activeJob=j||null;try{if(j)localStorage.setItem(getUserMemoryKey('active_job'),JSON.stringify(j));else localStorage.removeItem(getUserMemoryKey('active_job'));}catch(e){}renderJobBar();}
+function setActiveJob(j){window._activeJob=j||null;if(!j)window._awaitingJobContext=false;try{if(j)localStorage.setItem(getUserMemoryKey('active_job'),JSON.stringify(j));else localStorage.removeItem(getUserMemoryKey('active_job'));}catch(e){}renderJobBar();}
+function jobModeGreeting(){
+  var p=(typeof profile!=='undefined'&&profile)?profile:{};
+  var nm=((p.firstName||(currentUser&&currentUser.name?currentUser.name.split(' ')[0]:'')||'').trim())||'boss';
+  var lvl=p.experienceLevel||'';
+  // Apprentice openers carry a confidence cue ("we'll work it together"); pros get the lean peer version.
+  var appr=[
+    "Alright {n} — what are we walking into? Unit, complaint, whatever you've got. We'll work it together.",
+    "{n}. Talk me onto the job — what's the customer saying, and what are you standing in front of? Don't overthink it, just tell me what you see.",
+    "New job, {n}. Give me the unit and the complaint in your own words — whatever you've got, we'll figure out the rest together."
+  ];
+  var pro=[
+    "Alright {n}, what're we on? Give me the unit and the complaint and I'll log it.",
+    "{n} — walk me onto the job. What's the system and what's it doing?",
+    "New job. Give me the unit and the customer's beef, I'll get it logged.",
+    "Talk to me, {n}. Unit, symptom, anything weird so far — whatever you've got."
+  ];
+  var pool=(lvl==='beginner')?appr:pro;
+  return pool[Math.floor(Math.random()*pool.length)].replace('{n}',nm);
+}
 function startJob(){
   if(typeof mpEnterChat==='function')mpEnterChat(); // a job IS a conversation with Mike — drop into the chat
   if(window._activeJob){renderJobBar();return;}
   setActiveJob({id:'job-'+Date.now()+'-'+Math.floor(Math.random()*9999),startedAt:Date.now()});
   recordEvent('job_start',{});
   if(typeof showToast==='function')showToast('Job started — Mike is tracking this call ▶','success',2500);
+  // JOB MODE: Mike opens the call — greets the tech by name and asks what we're working on.
+  // Their next reply is the job context (unit + complaint): captured in sendChat, logged on the job.
+  var greet=jobModeGreeting();
+  if(typeof appendMessage==='function')appendMessage('agent',greet);
+  try{if(typeof chatHistory!=='undefined'&&chatHistory&&chatHistory.push)chatHistory.push({role:'assistant',content:greet});}catch(e){}
+  window._awaitingJobContext=true;
+  window._mpActionDirective={text:'ACTION — JOB START: The tech just tapped Start Job and you asked what they are working on. Their next message IS this job — the unit and the customer\'s complaint. Take it as GIVEN (do not re-confirm or interrogate), echo it back in one short line so they know it is logged ("Got it — logging this as ..."), then help them take the next step on it. Keep it tight and get them moving.'};
+  requestAnimationFrame(function(){if(typeof scrollToBottom==='function')scrollToBottom();});
+  var i=document.getElementById('chatInput');if(i)i.focus();
 }
 function jobElapsed(){if(!window._activeJob)return'0:00';var s=Math.max(0,Math.floor((Date.now()-window._activeJob.startedAt)/1000));return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);}
 function renderJobBar(){
@@ -4478,12 +4506,13 @@ function submitCloseJob(){
   var recommended=Object.keys(window._jobEnhSel||{});
   var outcome=window._jobOutcome||'won';
   var jid=window._activeJob.id;var dur=Math.round((Date.now()-window._activeJob.startedAt)/60000);
+  var jwhat=(window._activeJob.what||''); // what the tech told Mike at Start Job — the call in their words
   // The accurate per-call record: ticket is THE revenue (amount); enhancements_closed_amount
   // is a sub-metric of the ticket (NOT added again, so Rev$ never double-counts).
-  recordEvent('job_closed',{job_id:jid,outcome:outcome,enhancements_recommended:recommended,enhancements_closed_amount:enhAmt,duration_min:dur,note:note},ticket);
+  recordEvent('job_closed',{job_id:jid,what:jwhat,outcome:outcome,enhancements_recommended:recommended,enhancements_closed_amount:enhAmt,duration_min:dur,note:note},ticket);
   recommended.forEach(function(e){recordEvent('enhancement_recommended',{job_id:jid,item:e});});
-  try{saveJobToHistory({type:'job',summary:note,revenue:ticket,upsells:recommended});}catch(e){}
-  try{if(currentUser&&currentUser.token){fetch('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentUser.token},body:JSON.stringify({date:new Date().toISOString(),type:'job',job_id:jid,ticket_total:ticket,enhancements_recommended:recommended,enhancements_closed_amount:enhAmt,outcome:outcome,duration_min:dur,summary:note})}).catch(function(){});}}catch(e){}
+  try{saveJobToHistory({type:'job',summary:(note||jwhat),revenue:ticket,upsells:recommended});}catch(e){}
+  try{if(currentUser&&currentUser.token){fetch('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentUser.token},body:JSON.stringify({date:new Date().toISOString(),type:'job',job_id:jid,what:jwhat,ticket_total:ticket,enhancements_recommended:recommended,enhancements_closed_amount:enhAmt,outcome:outcome,duration_min:dur,summary:note})}).catch(function(){});}}catch(e){}
   setActiveJob(null);
   closeModal('closeJobModal');
   if(typeof showToast==='function')showToast('Job closed ✓ $'+ticket.toLocaleString()+(enhAmt?(' · $'+enhAmt.toLocaleString()+' enhancements'):'')+' logged','success',3600);
@@ -7531,7 +7560,7 @@ function buildPersonalizedContext(){
 
   if(profile.experienceLevel){
     var expMap = {
-      beginner: 'New tech or apprentice — explain fundamentals, be encouraging, never assume they know terminology. Build their confidence.',
+      beginner: 'APPRENTICE — your #1 mission is to BUILD this person into a great tech (the trade is short on master techs; every apprentice you grow is the whole point of this product). Give the answer AND the "why" behind it in plain words so the lesson sticks, not just the fix. Now and then, before you reveal the answer, ask what THEY would check first — then confirm it or gently correct. Normalize not knowing ("good question — most guys miss that one") so they stay in the conversation and keep asking. When it is safe, have them try it and report back ("go read it and tell me the number, I will tell you if it is in range"). Patient, encouraging, confidence-building — name what they got right. BUT never quiz them or slow them down when they are mid-job and need the answer NOW: answer first, coach second.',
       experienced: 'Journeyman tech — talk peer-to-peer, use technical terms, skip basics, challenge them with deeper knowledge.',
       master: 'Master tech — talk as equals, share insights, they may teach you something, mutual respect.',
     };
@@ -8928,6 +8957,12 @@ async function sendChat(){
   var input=document.getElementById('chatInput'),text=input.value.trim();
   if(text.length>8000){showToast('Message too long — please shorten it.','error',3000);return;}
   if(!text&&!chatAttachment)return;
+  // JOB MODE: the reply right after Start Job is what the job IS — log it on the active job.
+  if(window._awaitingJobContext&&window._activeJob&&text){
+    window._activeJob.what=text.slice(0,200);
+    try{localStorage.setItem(getUserMemoryKey('active_job'),JSON.stringify(window._activeJob));}catch(e){}
+    window._awaitingJobContext=false;
+  }
   // Mike signup conversation intercept — when a tech is mid-onboarding (step 1-8),
   // route their reply through the local handler instead of /api/ai. Saves the field,
   // posts the next question, returns early. No API call, no chatHistory push.

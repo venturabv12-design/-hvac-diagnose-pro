@@ -565,6 +565,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 
 /* ══ MODALS — PROFILE / BILLING / WHATS NEW / HELP ═════════ */
 .job-bar{margin:12px 16px 2px;}
+.job-bar-chat{margin:8px 12px 4px;flex:0 0 auto;}
 .job-start-btn{width:100%;padding:13px;border-radius:12px;border:1px solid rgba(58,139,138,.5);background:linear-gradient(180deg,rgba(58,139,138,.22),rgba(58,139,138,.07));color:#6fc8bc;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:.3px;cursor:pointer;-webkit-appearance:none;}
 .job-start-btn:active{transform:scale(.99);}
 .job-active{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(199,85,59,.12);border:1px solid rgba(199,85,59,.42);}
@@ -3154,6 +3155,8 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         </div>
       </div>
 
+      <div id="jobBarChat" class="job-bar-chat"></div>
+
       <!-- VOICE CALL BAR — shown while a Call is active -->
       <div id="voiceModeBar" style="display:none;" class="voice-bar">
         <div style="display:flex;align-items:center;gap:10px;">
@@ -4427,6 +4430,7 @@ window._activeJob=window._activeJob||null;window._jobEnhSel={};window._jobOutcom
 function getActiveJob(){try{return JSON.parse(localStorage.getItem(getUserMemoryKey('active_job'))||'null');}catch(e){return null;}}
 function setActiveJob(j){window._activeJob=j||null;try{if(j)localStorage.setItem(getUserMemoryKey('active_job'),JSON.stringify(j));else localStorage.removeItem(getUserMemoryKey('active_job'));}catch(e){}renderJobBar();}
 function startJob(){
+  if(typeof mpEnterChat==='function')mpEnterChat(); // a job IS a conversation with Mike — drop into the chat
   if(window._activeJob){renderJobBar();return;}
   setActiveJob({id:'job-'+Date.now()+'-'+Math.floor(Math.random()*9999),startedAt:Date.now()});
   recordEvent('job_start',{});
@@ -4434,13 +4438,16 @@ function startJob(){
 }
 function jobElapsed(){if(!window._activeJob)return'0:00';var s=Math.max(0,Math.floor((Date.now()-window._activeJob.startedAt)/1000));return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);}
 function renderJobBar(){
-  var el=document.getElementById('jobBar');if(!el)return;
+  var home=document.getElementById('jobBar'),chat=document.getElementById('jobBarChat');
   if(window._activeJob){
-    el.innerHTML='<div class="job-active"><span class="job-live">● JOB IN PROGRESS · <span id="jobTimer">'+jobElapsed()+'</span></span><button class="job-close-btn" onclick="openCloseJob()">Close Job</button></div>';
-    if(!window._jobTick)window._jobTick=setInterval(function(){var t=document.getElementById('jobTimer');if(t&&window._activeJob)t.textContent=jobElapsed();else{clearInterval(window._jobTick);window._jobTick=null;}},1000);
+    var activeHTML='<div class="job-active"><span class="job-live">● JOB IN PROGRESS · <span class="jobTimerEl">'+jobElapsed()+'</span></span><button class="job-close-btn" onclick="openCloseJob()">End Job</button></div>';
+    if(home)home.innerHTML=activeHTML;
+    if(chat){chat.style.display='block';chat.innerHTML=activeHTML;}
+    if(!window._jobTick)window._jobTick=setInterval(function(){if(!window._activeJob){clearInterval(window._jobTick);window._jobTick=null;return;}var t=jobElapsed();var els=document.querySelectorAll('.jobTimerEl');for(var i=0;i<els.length;i++)els[i].textContent=t;},1000);
   }else{
     if(window._jobTick){clearInterval(window._jobTick);window._jobTick=null;}
-    el.innerHTML='<button class="job-start-btn" onclick="startJob()">▶ Start a Job</button>';
+    if(home)home.innerHTML='<button class="job-start-btn" onclick="startJob()">▶ Start a Job</button>';
+    if(chat){chat.style.display='block';chat.innerHTML='<button class="job-start-btn" onclick="startJob()">＋ Start New Job</button>';}
   }
 }
 function openCloseJob(){

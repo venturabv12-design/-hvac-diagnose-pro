@@ -1635,7 +1635,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   let _capacitorWarn = '';
   if (/(capacitor|\bcaps?\b|dual[- ]?run|run cap|start cap|hard start)/i.test(_lastUser)
       && /(bulg|swollen|swell|leak|fail|bad|blown|burst|rupture|replace|chang|swap|test|check|touch|discharg|pull|remov|leave it|leave for now|leave that|still good|how do i)/i.test(_lastUser)) {
-    _capacitorWarn = 'SAFETY — a run or start capacitor holds a lethal charge even with the power off. Kill the disconnect AND the breaker, then discharge the capacitor (bleed it across a ~20k ohm resistor; an insulated screwdriver across the terminals is a last resort) before you touch it or test it. A bulging or swollen cap has already failed and is never safe to leave running -- it can leak, rupture, or start a fire, so it comes out, it does not stay in.';
+    _capacitorWarn = 'SAFETY — a run or start capacitor holds a lethal charge even with the power off. Kill the disconnect AND the breaker, then discharge the capacitor (bleed it across a ~20k ohm resistor across each terminal pair — never short the terminals with a screwdriver, which arcs and can injure) before you touch it or test it. A bulging or swollen cap has already failed and is never safe to leave running -- it can leak, rupture, or start a fire, so it comes out, it does not stay in.';
   }
   const _homeownerFramed = req.body.homeowner === true ||
     /\bi'?m a homeowner\b|\bas a homeowner\b|\bhomeowner here\b|(my contractor|the repair (guy|tech|man)|a contractor|the tech)\s+(quoted|said|is quoting|gave me|quoting me)|should i (just )?replace (it|my|the|this)|is (that|this|\$?\d[\d,]*) (a )?fair (price|quote)|gave me a quote/i.test(_lastUser);

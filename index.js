@@ -1849,7 +1849,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         outText = outText.replace(/[^.!?\n]*\bscrewdriver\b[^.!?\n]*\b(?:terminal|short|shorting|blade|across)\b[^.!?\n]*[.!?]/gi, '');
         outText = outText.replace(/[^.!?\n]*\b(?:short|shorting|bridge)\b[^.!?\n]*\bterminal[^.!?\n]*\bscrewdriver\b[^.!?\n]*[.!?]/gi, '');
         // removing the screwdriver "Method 1" leaves "Method 2" orphaned — de-number remaining method headings so it reads clean
-        outText = outText.replace(/\bMethod\s*[1-9]\s*:\s*/gi, '');
+        outText = outText.replace(/\bMethod\s*[1-9]\b[.:)\-—]*\s*/gi, '');
         outText = outText.replace(/\n{3,}/g, '\n\n').trim();
       }
       // Genuine ACTIVE emergencies (911 / live gas / CO / spillage / A2L release) still

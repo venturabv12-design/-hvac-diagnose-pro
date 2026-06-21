@@ -1488,6 +1488,11 @@ body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-header{flex
 body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-messages-wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
 body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card .chat-messages{flex:1 1 auto;min-height:0;max-height:none;overscroll-behavior-y:contain;}
 body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-input-area{flex:0 0 auto;padding-bottom:max(12px,env(safe-area-inset-bottom,12px));}
+/* DESKTOP FIX: the phone-first Mike app stretched full-width on laptops (looked zoomed). Cap it to a centered app-width column on wide screens. The owner dashboard (#adminOverlay, position:fixed) is intentionally NOT scoped here, so it stays full-width. */
+@media(min-width:760px){
+  body[data-mode="contractor"] #app{max-width:600px;margin-left:auto;margin-right:auto;}
+  body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card{left:50%;right:auto;width:600px;max-width:600px;transform:translateX(-50%);}
+}
 .mp-rings{position:absolute;left:50%;top:-34px;transform:translateX(-50%);width:540px;height:540px;pointer-events:none;z-index:0;}
 .mp-rings::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,transparent 0 27%,rgba(58,139,138,.10) 27.5%,transparent 28.2%),radial-gradient(circle,transparent 0 39%,rgba(58,139,138,.06) 39.5%,transparent 40.2%),radial-gradient(circle,transparent 0 53%,rgba(244,239,230,.04) 53.5%,transparent 54.2%);-webkit-mask-image:radial-gradient(circle,#000 48%,transparent 70%);mask-image:radial-gradient(circle,#000 48%,transparent 70%);}
 .mp-sweep{position:absolute;left:0;right:0;top:-34px;height:200px;pointer-events:none;z-index:0;background:linear-gradient(180deg,rgba(58,139,138,.10),transparent);}

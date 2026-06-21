@@ -1841,6 +1841,15 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         outText = outText.replace(/\bR-?22\b[^.!?\n]{0,18}?\breplac\w*/gi, 'an R-22 system is a repair-or-replace conversation for your tech');
         outText = outText.replace(/\b(?:a |the )?new (?:system|unit)\b[^.!?\n]{0,30}?\b(?:wins|pays for itself|cheaper|cost[- ]per[- ]year|saves you money|comes out ahead)/gi, 'whether a new system is worth it is your tech’s call');
       }
+      // SAFETY STRIP (deterministic): the model keeps generating the "short the terminals with a
+      // screwdriver" discharge method despite the prompt forbidding it. A prompt can't be trusted
+      // for a trained-in dangerous default — remove it here so only the resistor method survives.
+      if (_capacitorWarn) {
+        outText = outText.replace(/(?:#{1,6}\s*|\*\*\s*)?Method\s*1\b[^\n]*screwdriver[\s\S]*?(?=(?:#{1,6}\s*|\*\*\s*)?Method\s*2\b|\n#{1,6}\s|$)/i, '');
+        outText = outText.replace(/[^.!?\n]*\bscrewdriver\b[^.!?\n]*\b(?:terminal|short|shorting|blade|across)\b[^.!?\n]*[.!?]/gi, '');
+        outText = outText.replace(/[^.!?\n]*\b(?:short|shorting|bridge)\b[^.!?\n]*\bterminal[^.!?\n]*\bscrewdriver\b[^.!?\n]*[.!?]/gi, '');
+        outText = outText.replace(/\n{3,}/g, '\n\n').trim();
+      }
       // Genuine ACTIVE emergencies (911 / live gas / CO / spillage / A2L release) still
       // LEAD — you never bury "call 911" or "shut the gas off" under an answer. The
       // precautionary stored-energy cautions (capacitor / inverter "discharge before you

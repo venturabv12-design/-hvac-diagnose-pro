@@ -1105,7 +1105,11 @@ body[data-mode="contractor"] .msg-agent .msg-bubble-agent{background:var(--ink-2
 @keyframes npd{0%,100%{opacity:.35;transform:scale(.85);}50%{opacity:1;transform:scale(1);}}
 /* ── SCAN & SIZE → CUT SHEET: guided scale-anchor overlay (camera-first step 1) ── */
 #csAnchorOverlay{position:fixed;inset:0;z-index:100001;background:#0b0f0e;display:none;flex-direction:column;}
-#csAnchorOverlay .cs-anchor-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);}
+#csAnchorOverlay .cs-anchor-top{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;border-bottom:1px solid rgba(255,255,255,.08);}
+/* P1 fix: the close (X) and Retake controls must clear the iOS notch/status bar — without
+   the safe-area-inset-top pad they render UNDER the status bar and become untappable
+   (the "stuck, can't tap Leave/Retake" freeze). Enlarge tap targets too. */
+#csAnchorOverlay .cs-anchor-x,#csAnchorOverlay .cs-anchor-retake{min-height:44px;min-width:44px;display:flex;align-items:center;justify-content:center;}
 #csAnchorOverlay .cs-anchor-title{font-size:14px;font-weight:800;color:#fff;letter-spacing:.01em;}
 #csAnchorOverlay .cs-anchor-x{background:transparent;border:none;color:#9aa0a6;font-size:26px;line-height:1;cursor:pointer;padding:0 6px;}
 #csAnchorOverlay .cs-anchor-retake{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#dbe1e8;font-size:12px;font-weight:700;border-radius:8px;padding:6px 12px;cursor:pointer;}
@@ -10227,9 +10231,14 @@ function qaScanSizeChat(){
 // anchor honestly. No dimensions are fabricated here.
 // ═══════════════════════════════════════════════════════════════════
 var _csState=null; // { imgURL, imgW, imgH, taps:[{x,y}], lengthIn:Number }
+// Free a captured blob URL so repeated captures/retakes don't leak object URLs.
+function _csRevoke(){ try{ if(_csState&&_csState.imgURL){ URL.revokeObjectURL(_csState.imgURL); } }catch(_r){} }
 function csStartCapture(){
   if(!currentUser){ if(typeof showToast==='function')showToast('Loading… tap again in a moment.','info',2000); return; }
-  _csState={imgURL:null,imgW:0,imgH:0,taps:[],lengthIn:null};
+  // P1 fix: hide the overlay BEFORE reopening the picker so a cancelled retake never
+  // leaves a stale photo over a reset state (the dead/stuck overlay). The overlay
+  // reopens cleanly in csOpenAnchorOverlay when a new photo loads.
+  csCloseAnchorOverlay();
   var i=document.getElementById('csScanInput');
   if(i){ i.value=''; i.click(); }
   else { qaScanSizeChat(); } // graceful fallback if the input isn't present
@@ -10263,12 +10272,18 @@ function csOpenAnchorOverlay(){
   try{
     if(!localStorage.getItem('cs_anchor_intro_done')){
       localStorage.setItem('cs_anchor_intro_done','1');
-      if(typeof mikeSay==='function')mikeSay("Measure any one thing in the shot with your tape — a door, a duct, anything — then tap both ends and type the length. That's all I need to size the rest.");
+      if(typeof mikeSay==='function')mikeSay("Grab your tape and measure any one thing in that photo — a duct, the cabinet, anything. Then tap each end of it on the screen and type how long it is. That's all I need to size the rest.");
     }
   }catch(_v){}
 }
-function csCloseAnchorOverlay(){
+// Full, clean teardown — hide the overlay, stop any Mike voiceover, free the blob URL,
+// and clear the captured image off the <img> so a reopen never flashes a stale photo.
+// "preserve" keeps _csState (used by Retake, which hides then recaptures into the same state).
+function csCloseAnchorOverlay(preserve){
   var ov=document.getElementById('csAnchorOverlay'); if(ov)ov.style.display='none';
+  try{ if(typeof stopMikeSpeaking==='function')stopMikeSpeaking(); }catch(_s){}
+  var ph=document.getElementById('csAnchorPhoto'); if(ph)ph.removeAttribute('src');
+  if(!preserve){ _csRevoke(); _csState=null; }
 }
 // Tap-to-place the two endpoints of the tape-measured segment on the photo.
 function csPhotoTap(ev){
@@ -10300,23 +10315,25 @@ function csRenderTaps(){
   }
   layer.innerHTML=html;
   var hint=document.getElementById('csTapHint');
-  if(hint)hint.textContent=_csState.taps.length===0?'Tap one end of what you measured.':_csState.taps.length===1?'Now tap the other end.':'Both ends set — enter the length below.';
+  if(hint)hint.textContent=_csState.taps.length===0?'Step 1: tap one end of what you measured.':_csState.taps.length===1?'Step 2: tap the other end.':'Step 3: type how long it is, then tap Done.';
 }
 // "Ready" — validate the anchor, store it, hand off. Until the VP engine diff lands,
 // we do NOT fabricate dimensions: we honestly tell the tech the measurement engine is
 // being wired and pass the photo + anchor into Mike's existing read so the capture
 // experience is real and testable now.
+var _csAnchor=null; // persists the locked anchor (image pts + real length + photo) past overlay teardown for the engine step
 function csAnchorReady(){
   if(!_csState||_csState.taps.length!==2){ if(typeof showToast==='function')showToast('Tap both ends of what you measured first.','info',3500); return; }
   var raw=(document.getElementById('csLenInput')||{}).value;
   var len=parseFloat(raw);
-  if(!len||len<=0){ if(typeof showToast==='function')showToast('Enter the length you measured (inches).','info',3500); return; }
-  _csState.lengthIn=len;
-  csCloseAnchorOverlay();
-  // Engine handoff seam — wired in the next diff (vendored LSD + VP/scale util).
-  // For now, honest placeholder: the anchor is captured and stored on _csState.
+  if(!len||len<=0){ if(typeof showToast==='function')showToast('Type how long it is, in inches.','info',3500); return; }
+  // Capture the anchor BEFORE teardown (csCloseAnchorOverlay clears _csState).
+  _csAnchor={ taps:_csState.taps.slice(), lengthIn:len, imgW:_csState.imgW, imgH:_csState.imgH };
+  csCloseAnchorOverlay(); // full teardown — no stale overlay/blob left behind
+  // Engine handoff seam — the metrology engine (TrazerMetrology) consumes _csAnchor in the
+  // wire-together step. Honest framing: per-frame tape-anchored measurement, not 3D stitching.
   if(typeof mpEnterChat==='function')mpEnterChat();
-  if(typeof appendMessage==='function')appendMessage('agent',"Got it — scale locked at "+len+'" across those two points. I\'m working the room measurement off that. While I do, give me the make and model off the plate and I\'ll get your cut sheet started.');
+  if(typeof appendMessage==='function')appendMessage('agent',"Got it — "+len+'" locked in as my measurement. I\'m working the room off that. While I do, give me the make and model off the plate and I\'ll get your cut sheet started.');
 }
 function askMikeSafetyChecklist(){
   mpAskMike("What are you walking into? Tell me the unit or the job and I'll run you the right pre-job safety check.");
@@ -13369,24 +13386,26 @@ document.addEventListener('DOMContentLoaded',function(){
      is the library fallback (and the path Brandon uses to send real practice-lab photos). -->
 <input type="file" id="csScanInput" accept="image/*" capture="environment" style="display:none" onchange="handleCutSheetCapture(event)"/>
 <input type="file" id="csScanLib" accept="image/*" style="display:none" onchange="handleCutSheetCapture(event)"/>
-<div id="csAnchorOverlay" role="dialog" aria-label="Set scale anchor">
+<div id="csAnchorOverlay" role="dialog" aria-label="Give Mike a measurement to work from">
   <div class="cs-anchor-top">
-    <button class="cs-anchor-x" onclick="csCloseAnchorOverlay()" aria-label="Close">&times;</button>
-    <div class="cs-anchor-title">Set your scale</div>
-    <button class="cs-anchor-retake" onclick="csStartCapture()">Retake</button>
+    <button class="cs-anchor-x" onclick="csCloseAnchorOverlay()" aria-label="Leave">&times;</button>
+    <div class="cs-anchor-title">Give Mike a measurement</div>
+    <button class="cs-anchor-retake" onclick="csStartCapture()">New photo</button>
   </div>
-  <div class="cs-anchor-coach">Tape-measure one thing. Tap both ends. Enter the length.</div>
+  <!-- Step-by-step, plain tech-talk. The hint line (#csTapHint) is the ONE live instruction;
+       it advances as the tech taps, so there is no redundant double-instruction. -->
+  <div class="cs-anchor-coach">Measure one thing in the photo with your tape — a duct, the cabinet, anything.</div>
   <div class="cs-anchor-stage">
-    <img id="csAnchorPhoto" alt="Captured unit" draggable="false"/>
+    <img id="csAnchorPhoto" alt="Your photo" draggable="false"/>
     <div id="csTapLayer" class="cs-tap-layer" onclick="csPhotoTap(event)"></div>
   </div>
   <div class="cs-anchor-bottom">
-    <div id="csTapHint" class="cs-tap-hint">Tap one end of what you measured.</div>
+    <div id="csTapHint" class="cs-tap-hint">Step 1: tap one end of what you measured.</div>
     <div class="cs-anchor-row">
-      <input id="csLenInput" type="number" inputmode="decimal" min="0" step="0.25" placeholder="Length (in)" class="cs-len-input"/>
-      <button class="cs-undo-btn" onclick="csUndoTap()">Undo tap</button>
+      <input id="csLenInput" type="number" inputmode="decimal" min="0" step="0.25" placeholder="How long is it? (inches)" class="cs-len-input"/>
+      <button class="cs-undo-btn" onclick="csUndoTap()">Start over</button>
     </div>
-    <button class="cs-ready-btn" onclick="csAnchorReady()">Ready &rarr;</button>
+    <button class="cs-ready-btn" onclick="csAnchorReady()">Done &rarr;</button>
   </div>
 </div>
 <div id="npReading" aria-live="polite">

@@ -1179,8 +1179,23 @@ body[data-mode="contractor"] .fav-tile-title{font-family:var(--font-display);fon
 body[data-mode="contractor"] .fav-tile-sub{font-size:11px;font-weight:600;opacity:.75;letter-spacing:-.005em;line-height:1.3;}
 
 /* All Tools — 4x2 color-coded grid */
-body[data-mode="contractor"] .drawer-all-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-bottom:20px;}
-@media(max-width:360px){body[data-mode="contractor"] .drawer-all-tools{grid-template-columns:repeat(3,1fr);}}
+body[data-mode="contractor"] .drawer-all-tools{display:block;padding-bottom:20px;}
+/* ONE TOOLBELT step 2: grouped categories — light mono subhead + a tight per-category grid. */
+body[data-mode="contractor"] .tool-cat-head{display:flex;align-items:center;gap:7px;font-family:var(--font-code,monospace);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5);padding:14px 4px 8px;}
+body[data-mode="contractor"] .tool-cat-head:first-child{padding-top:2px;}
+body[data-mode="contractor"] .tool-cat-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.4);}
+body[data-mode="contractor"] .tool-cat-head.cat-diagnose .tool-cat-dot{background:#ef8a72;}
+body[data-mode="contractor"] .tool-cat-head.cat-revenue .tool-cat-dot{background:#5fbdb0;}
+body[data-mode="contractor"] .tool-cat-head.cat-jobtools .tool-cat-dot{background:#e8a23a;}
+body[data-mode="contractor"] .tool-cat-head.cat-sales .tool-cat-dot{background:#7ec7c2;}
+body[data-mode="contractor"] .tool-cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+@media(max-width:360px){body[data-mode="contractor"] .tool-cat-grid{grid-template-columns:repeat(3,1fr);}}
+/* Hub tiles ("opens more"): a clear stacked-card edge + a corner chevron pill so a tap
+   reads as opening a menu, not firing an action. Stronger than a faint shadow on purpose. */
+body[data-mode="contractor"] .tool-tile.is-hub{box-shadow:3px -3px 0 -1px var(--ink-3),4px -4px 0 -1px rgba(255,255,255,.14);}
+body[data-mode="contractor"] .tool-tile.is-hub::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);}
+body[data-mode="contractor"] .tool-tile-hubcue{position:absolute;bottom:4px;right:4px;width:15px;height:15px;display:flex;align-items:center;justify-content:center;border-radius:5px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);}
+body[data-mode="contractor"] .tool-tile-hubcue svg{width:11px;height:11px;stroke-width:3;}
 body[data-mode="contractor"] .tool-tile{background:var(--ink-3);border:1px solid var(--line);border-radius:8px;padding:14px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:all .15s ease;position:relative;font-family:inherit;color:rgba(255,255,255,.9);min-width:0;box-sizing:border-box;-webkit-transform:translateZ(0);transform:translateZ(0);}
 body[data-mode="contractor"] .tool-tile:active{background:var(--ink-4);border-color:rgba(255,180,0,.2);transform:translateY(-1px);}
 body[data-mode="contractor"] .tool-tile-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
@@ -3508,7 +3523,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           run:function(){closeDrawer();if(typeof startLiveCamera==='function')startLiveCamera();}},
         {id:'scan-nameplate',cat:'diagnose',label:'Scan<br>Nameplate',icon:'scan-line',cls:'t-find',badge:'OCR',sub:'Read the data plate',
           run:function(){closeDrawer();if(typeof scanNameplate==='function')scanNameplate();}},
-        {id:'scan-size',cat:'diagnose',label:'Scan<br>&amp; Size',icon:'ruler',cls:'t-pricing',sub:'Cut sheet from a photo',
+        {id:'scan-size',cat:'diagnose',label:'Scan<br>& Size',icon:'ruler',cls:'t-pricing',sub:'Cut sheet from a photo',
           run:function(){closeDrawer();if(typeof qaScanSize==='function')qaScanSize();}},
         {id:'find-part',cat:'diagnose',label:'Find<br>a Part',icon:'wrench',cls:'t-manual',sub:'Mike pulls the part #',
           run:function(){closeDrawer();if(typeof mpFindPart==='function')mpFindPart();}},
@@ -3520,7 +3535,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           run:function(){closeDrawer();if(typeof askMikeAHRI==='function')askMikeAHRI();}},
         {id:'load-calc',cat:'diagnose',label:'Load<br>Calc',icon:'calculator',cls:'t-pricing',sub:'Size the equipment',
           run:function(){closeDrawer();if(typeof askMikeLoadCalc==='function')askMikeLoadCalc();}},
-        {id:'wiring',cat:'diagnose',hub:true,label:'Wiring<br>&amp; Diagrams',icon:'zap',cls:'t-history',sub:'Terminals, diagrams, sketches',
+        {id:'wiring',cat:'diagnose',hub:true,label:'Wiring<br>& Diagrams',icon:'zap',cls:'t-history',sub:'Terminals, diagrams, sketches',
           run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('wiring');}},
         {id:'manuals',cat:'diagnose',hub:true,label:'Tech<br>Docs',icon:'book-open',cls:'t-recap',sub:'Manuals & fault codes',
           run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('manual');}},
@@ -3632,20 +3647,42 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         }
         box.innerHTML=html;
       }
+      // ONE TOOLBELT step 2: render All Tools GROUPED by category (Romeo's light layout).
+      // Four color-keyed clusters (Diagnose / Revenue / Job Tools / Sales), each a small mono
+      // subhead + a tight tile grid, so ~25 tools read as 4 short scannable clusters not a slab.
+      // Hubs (hub:true) get a corner chevron so a tech sees "opens more" vs a direct action.
+      var TOOL_CATS=[
+        {key:'diagnose', label:'Diagnose',  cls:'cat-diagnose'},
+        {key:'revenue',  label:'Revenue',   cls:'cat-revenue'},
+        {key:'jobtools', label:'Job Tools', cls:'cat-jobtools'},
+        {key:'sales',    label:'Sales',     cls:'cat-sales'}
+      ];
+      function renderToolTile(t,favs){
+        var pinned=favs.indexOf(t.id)>=0;
+        var aria=t.label.replace(/<br>/g,' ').replace(/<[^>]+>/g,'')+(t.hub?' (opens menu)':'');
+        return '<div class="tool-tile '+esc(t.cls)+(pinned?' pinned':'')+(t.hub?' is-hub':'')+'" role="button" tabindex="0" data-tool-id="'+esc(t.id)+'" aria-label="'+esc(aria)+'"'+(t.hub?' aria-haspopup="menu"':'')+'>'
+            +(t.hub?'<span class="tool-tile-hubcue" aria-hidden="true"><i data-lucide="chevron-right"></i></span>':'')
+            +'<div class="tool-tile-icon"><i data-lucide="'+esc(t.icon)+'"></i></div>'
+            +'<div class="tool-tile-label">'+safeLabel(t.label)+'</div>'
+            +'<button class="tool-tile-pin'+(pinned?' on':'')+'" type="button" data-pin-id="'+esc(t.id)+'" aria-pressed="'+(pinned?'true':'false')+'" aria-label="'+(pinned?'Remove '+esc(aria)+' from favorites':'Add '+esc(aria)+' to favorites')+'"><i data-lucide="'+(pinned?'star':'pin')+'"></i></button>'
+            +'</div>';
+      }
       function renderAllTools(){
         var box=document.getElementById('drawerAllTools');
         if(!box) return;
         var favs=getFavTools();
         var html='';
-        for(var i=0;i<FAV_REGISTRY.length;i++){
-          var t=FAV_REGISTRY[i];
-          var pinned=favs.indexOf(t.id)>=0;
-          var aria=t.label.replace(/<br>/g,' ').replace(/<[^>]+>/g,'');
-          html+='<div class="tool-tile '+esc(t.cls)+(pinned?' pinned':'')+'" role="button" tabindex="0" data-tool-id="'+esc(t.id)+'" aria-label="'+esc(aria)+'">'
-              +'<div class="tool-tile-icon"><i data-lucide="'+esc(t.icon)+'"></i></div>'
-              +'<div class="tool-tile-label">'+safeLabel(t.label)+'</div>'
-              +'<button class="tool-tile-pin'+(pinned?' on':'')+'" type="button" data-pin-id="'+esc(t.id)+'" aria-pressed="'+(pinned?'true':'false')+'" aria-label="'+(pinned?'Remove '+esc(aria)+' from favorites':'Add '+esc(aria)+' to favorites')+'"><i data-lucide="'+(pinned?'star':'pin')+'"></i></button>'
-              +'</div>';
+        for(var c=0;c<TOOL_CATS.length;c++){
+          var cat=TOOL_CATS[c];
+          var tilesInCat='';
+          for(var i=0;i<FAV_REGISTRY.length;i++){
+            var t=FAV_REGISTRY[i];
+            if((t.cat||'diagnose')!==cat.key) continue;
+            tilesInCat+=renderToolTile(t,favs);
+          }
+          if(!tilesInCat) continue; // never render an empty category header
+          html+='<div class="tool-cat-head '+cat.cls+'"><span class="tool-cat-dot"></span>'+esc(cat.label)+'</div>'
+              +'<div class="tool-cat-grid">'+tilesInCat+'</div>';
         }
         box.innerHTML=html;
         try{ if(window.lucide&&lucide.createIcons) lucide.createIcons(); }catch(e){}

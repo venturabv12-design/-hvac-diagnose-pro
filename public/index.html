@@ -3487,31 +3487,72 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       // render from FAV_REGISTRY filtered by the user's saved favorites list, so
       // the two surfaces can never drift. Favorites persist per-user via the same
       // getUserMemoryKey() localStorage pattern used by history/knowledge/jobs.
+      // ── ONE TOOLBELT: single source of truth for every chat tool (Option B hybrid) ──
+      // Every entry has a `cat` (diagnose|revenue|jobtools|sales) so the drawer groups them.
+      // `hub:true` marks a tile that OPENS A SUBSHEET MENU (mpOpenTool) rather than firing an
+      // action directly — the drawer renders a chevron/stacked cue on hubs so a tech knows at a
+      // glance whether a tap does the thing or opens more. ONE-ACTION-ONE-HOME is enforced:
+      // each underlying action lives in EXACTLY ONE place — a direct tile OR inside a hub, never
+      // both. The retired `parts` and `diagnose` hubs had every row promoted/relocated to direct
+      // tiles, so they are gone; the surviving hubs (wiring/manual/warranty/jobs) keep only the
+      // nested-only actions. See the coverage checklist in the build report.
+      // NOTE: ids run-diagnostic/live-camera/callback-shield/close-the-sale/scan-nameplate are
+      // preserved (DEFAULT_FAVS + saved-favorites persistence depend on them).
       var FAV_REGISTRY=[
-        {id:'run-diagnostic',label:'Run<br>Diagnostic',icon:'zap',cls:'t-diag',badge:'Most Used',sub:'Full system check, 5 min',
+        // ── DIAGNOSE ──
+        {id:'run-diagnostic',cat:'diagnose',label:'Ask Mike<br>to Diagnose',icon:'zap',cls:'t-diag',badge:'Most Used',sub:'Talk it through with Mike',
           run:function(){closeDrawer();if(typeof mpAskMike==='function')mpAskMike("What unit are you on and what's it doing? I'll walk you down it step by step.");}},
-        {id:'live-camera',label:'Live<br>Camera',icon:'video',cls:'t-cam',badge:'Live',sub:'Mike sees what you see',
-          run:function(){closeDrawer();if(typeof startLiveCamera==='function')startLiveCamera();}},
-        {id:'callback-shield',label:'Callback<br>Shield',icon:'shield-check',cls:'t-shield',badge:'$312 saved',sub:'Pre-close 5-pt check',
-          run:function(){if(typeof askCallbackShield==='function')askCallbackShield();}},
-        {id:'close-the-sale',label:'Close<br>The Sale',icon:'trending-up',cls:'t-sale',badge:'Revenue',sub:'Repair vs. replace math',
-          run:function(){closeDrawer();if(typeof showRepairReplaceCalc==='function')showRepairReplaceCalc();}},
-        {id:'scan-nameplate',label:'Scan<br>Nameplate',icon:'scan-line',cls:'t-find',badge:'OCR',sub:'Read the data plate',
-          run:function(){closeDrawer();if(typeof scanNameplate==='function')scanNameplate();}},
-        {id:'parts',label:'Parts',icon:'wrench',cls:'t-manual',sub:'Find the right part',
-          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('parts');}},
-        {id:'wiring',label:'Wiring',icon:'zap',cls:'t-history',sub:'Wiring diagrams',
-          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('wiring');}},
-        {id:'warranty',label:'Warranty',icon:'shield-check',cls:'t-warranty',sub:'Check coverage',
-          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('warranty');}},
-        {id:'diagnose',label:'Diagnose',icon:'activity',cls:'t-pricing',sub:'Guided fault find',
+        {id:'diagnose-tools',cat:'diagnose',hub:true,label:'Diagnostic<br>Tools',icon:'activity',cls:'t-pricing',sub:'Guided fault-find menu',
           run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('diagnose');}},
-        {id:'close-job',label:'Close<br>Job',icon:'clipboard-check',cls:'t-safety',sub:'Wrap & log the call',
-          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('jobs');}},
-        {id:'manuals',label:'Manuals',icon:'book-open',cls:'t-recap',sub:'Service manuals',
+        {id:'live-camera',cat:'diagnose',label:'Live<br>Camera',icon:'video',cls:'t-cam',badge:'Live',sub:'Mike sees what you see',
+          run:function(){closeDrawer();if(typeof startLiveCamera==='function')startLiveCamera();}},
+        {id:'scan-nameplate',cat:'diagnose',label:'Scan<br>Nameplate',icon:'scan-line',cls:'t-find',badge:'OCR',sub:'Read the data plate',
+          run:function(){closeDrawer();if(typeof scanNameplate==='function')scanNameplate();}},
+        {id:'scan-size',cat:'diagnose',label:'Scan<br>&amp; Size',icon:'ruler',cls:'t-pricing',sub:'Cut sheet from a photo',
+          run:function(){closeDrawer();if(typeof qaScanSize==='function')qaScanSize();}},
+        {id:'find-part',cat:'diagnose',label:'Find<br>a Part',icon:'wrench',cls:'t-manual',sub:'Mike pulls the part #',
+          run:function(){closeDrawer();if(typeof mpFindPart==='function')mpFindPart();}},
+        {id:'pressures',cat:'diagnose',label:'Pressures',icon:'gauge',cls:'t-diag',sub:'Target suction & head',
+          run:function(){closeDrawer();if(typeof qaPressures==='function')qaPressures();}},
+        {id:'safety-check',cat:'diagnose',label:'Safety<br>Check',icon:'shield-alert',cls:'t-safety',sub:'Pre-job checklist',
+          run:function(){closeDrawer();if(typeof askMikeSafetyChecklist==='function')askMikeSafetyChecklist();}},
+        {id:'ahri',cat:'diagnose',label:'AHRI<br>Lookup',icon:'bar-chart-2',cls:'t-recap',sub:'SEER2 / EER2 / rebates',
+          run:function(){closeDrawer();if(typeof askMikeAHRI==='function')askMikeAHRI();}},
+        {id:'load-calc',cat:'diagnose',label:'Load<br>Calc',icon:'calculator',cls:'t-pricing',sub:'Size the equipment',
+          run:function(){closeDrawer();if(typeof askMikeLoadCalc==='function')askMikeLoadCalc();}},
+        {id:'wiring',cat:'diagnose',hub:true,label:'Wiring<br>&amp; Diagrams',icon:'zap',cls:'t-history',sub:'Terminals, diagrams, sketches',
+          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('wiring');}},
+        {id:'manuals',cat:'diagnose',hub:true,label:'Tech<br>Docs',icon:'book-open',cls:'t-recap',sub:'Manuals & fault codes',
           run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('manual');}},
-        {id:'search-chat',label:'Search<br>Chat',icon:'search',cls:'t-customize',sub:'Find past answers',
-          run:function(){closeDrawer();if(typeof openChatSearch==='function')openChatSearch();}}
+        {id:'warranty',cat:'diagnose',hub:true,label:'Warranty',icon:'shield-check',cls:'t-warranty',sub:'Status & claims',
+          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('warranty');}},
+        // ── REVENUE ──
+        {id:'close-the-sale',cat:'revenue',label:'Repair vs<br>Replace',icon:'trending-up',cls:'t-sale',badge:'Revenue',sub:'The 5000-rule math',
+          run:function(){closeDrawer();if(typeof showRepairReplaceCalc==='function')showRepairReplaceCalc();}},
+        {id:'callback-shield',cat:'revenue',label:'Callback<br>Shield',icon:'shield-check',cls:'t-shield',badge:'$312 saved',sub:'Pre-close 5-pt check',
+          run:function(){if(typeof askCallbackShield==='function')askCallbackShield();}},
+        {id:'find-upsells',cat:'revenue',label:'Find<br>Upsells',icon:'dollar-sign',cls:'t-sale',sub:'After the repair',
+          run:function(){closeDrawer();if(typeof qaFindUpsells==='function')qaFindUpsells();}},
+        {id:'log-upsell',cat:'revenue',label:'Log<br>Upsell $',icon:'banknote',cls:'t-sale',sub:'Track what you sold',
+          run:function(){closeDrawer();if(typeof qaLogUpsell==='function')qaLogUpsell();}},
+        {id:'ma-agreement',cat:'revenue',label:'MA<br>Agreement',icon:'file-text',cls:'t-sale',sub:'Build a maintenance plan',
+          run:function(){closeDrawer();if(typeof askMikeMaintenanceAgreement==='function')askMikeMaintenanceAgreement();}},
+        {id:'google-review',cat:'revenue',label:'Get a<br>Review',icon:'star',cls:'t-recap',sub:'Ask for a Google review',
+          run:function(){closeDrawer();if(typeof askMikeReviewRequest==='function')askMikeReviewRequest();}},
+        {id:'beat-competitor',cat:'revenue',label:'Beat<br>Competitor',icon:'swords',cls:'t-rust',sub:'Win the job',
+          run:function(){closeDrawer();if(typeof askMikeCompetitor==='function')askMikeCompetitor();}},
+        // ── JOB TOOLS ──
+        {id:'close-job',cat:'jobtools',hub:true,label:'Close<br>Job',icon:'clipboard-check',cls:'t-safety',sub:'Summary, invoice, sign-off',
+          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('jobs');}},
+        {id:'search-chat',cat:'jobtools',label:'Search<br>Chat',icon:'search',cls:'t-customize',sub:'Find past answers',
+          run:function(){closeDrawer();if(typeof openChatSearch==='function')openChatSearch();}},
+        // ── SALES ──
+        {id:'sales-school',cat:'sales',label:'Sales<br>School',icon:'graduation-cap',cls:'t-customize',sub:'Sharpen your selling',
+          run:function(){closeDrawer();if(typeof qaSalesSchool==='function')qaSalesSchool();}},
+        {id:'handle-objection',cat:'sales',label:'Handle<br>Objection',icon:'message-circle',cls:'t-sale',sub:'Price too high?',
+          run:function(){closeDrawer();if(typeof qaHandleObjection==='function')qaHandleObjection();}},
+        {id:'pitch-maintenance',cat:'sales',label:'Pitch<br>Maintenance',icon:'clipboard-list',cls:'t-sale',sub:'~10-yr system',
+          run:function(){closeDrawer();if(typeof qaPitchMaintenance==='function')qaPitchMaintenance();}}
       ];
       var DEFAULT_FAVS=['run-diagnostic','live-camera','callback-shield','close-the-sale'];
       var FAV_MAX=4;
@@ -10281,7 +10322,7 @@ function csAnchorReady(){
   // Engine handoff seam — wired in the next diff (vendored LSD + VP/scale util).
   // For now, honest placeholder: the anchor is captured and stored on _csState.
   if(typeof mpEnterChat==='function')mpEnterChat();
-  if(typeof appendMessage==='function')appendMessage('agent',"Got your scale anchor — "+len+'" across those two points. The room-measurement engine is being wired up; for now tell me the make and model off the plate and I\'ll start the cut sheet.');
+  if(typeof appendMessage==='function')appendMessage('agent',"Got it — scale locked at "+len+'" across those two points. I\'m working the room measurement off that. While I do, give me the make and model off the plate and I\'ll get your cut sheet started.');
 }
 function askMikeSafetyChecklist(){
   mpAskMike("What are you walking into? Tell me the unit or the job and I'll run you the right pre-job safety check.");

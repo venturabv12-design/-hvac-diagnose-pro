@@ -1588,7 +1588,6 @@ body[data-mode="contractor"] .mp-back{display:flex;align-items:center;justify-co
 /* contractor dark-theme fixes for elements that were still light (Mike's-phone redesign) */
 body[data-mode="contractor"] .card{background:var(--ink-2);border-color:var(--line);color:#F4EFE6;}
 body[data-mode="contractor"]:not(.mp-chatting) #panelDiag>.card{display:none;}
-body[data-mode="contractor"] #quickActionsBtn{background:var(--ink-2)!important;border-color:var(--line)!important;color:rgba(244,239,230,.82)!important;}
 /* ══════ COLD-OPEN IGNITION — "Mike powers on" (plays once per session on cold load) ══════ */
 #mpColdOpen{display:none;position:fixed;inset:0;z-index:100000;flex-direction:column;align-items:center;overflow:hidden;background:radial-gradient(90% 90% at 50% 50%,rgba(58,139,138,.13),transparent 55%),radial-gradient(120% 65% at 50% 115%,rgba(199,85,59,.30),transparent 58%),linear-gradient(180deg,#060605,#090907 50%,#070605);opacity:1;transition:opacity .45s ease;}
 #mpColdOpen.out{opacity:0;pointer-events:none;}
@@ -1663,7 +1662,6 @@ body[data-mode="contractor"] .mp-back{width:44px!important;height:44px!important
 .mp-name .mp-sub{font-size:11px!important;color:var(--teal-bright)!important;}
 .mp-name .mp-sub .lt{color:rgba(244,239,230,.45)!important;}
 .mp-tool-sub{font-size:9px!important;}
-body[data-mode="contractor"] #quickActionsBtn{min-height:44px!important;}
 .nav-back,.nav-more{width:42px!important;height:42px!important;}
 .nav-globe{height:42px!important;}
 body[data-mode="contractor"] .nav-mike-status{font-size:10px!important;color:var(--teal-bright)!important;}
@@ -3336,15 +3334,10 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       </div>
 
       <!-- QUICK CHIPS -->
+      <!-- ONE TOOLBELT step 4: the Quick Actions dropdown pill is retired. The drawer
+           (peek bar + #actionDrawer) is now the single home for every tool. -->
       <div class="chips-bar">
         <div id="quickReplies"></div>
-        <div style="position:relative;z-index:50;">
-          <button id="quickActionsBtn" onclick="toggleQuickActions()" style="display:flex;align-items:center;gap:6px;background:var(--white);border:1.5px solid var(--gray-200);border-radius:99px;padding:7px 14px;font-size:12px;font-family:var(--font);font-weight:700;color:var(--gray-600);cursor:pointer;transition:all .15s;width:100%;">
-            <span>&#x26A1;</span><span data-v2i18n="qaBtn">Quick Actions</span>
-            <span id="qaArrow" style="margin-left:auto;font-size:10px;transition:transform .2s;">&#x25BC;</span>
-          </button>
-          <div id="quickActionsMenuPlaceholder"></div>
-        </div>
       </div>
 <!-- CHAT SEARCH BAR -->
       <div id="chatSearchBar">
@@ -5065,10 +5058,6 @@ function submitHelpFeedback(){
 function pddHelp(){closeProfileDD();document.getElementById('feedbackSection').style.display='none';openModal('helpModal');}
 
 function openModal(id){
-  // Item 12 — the Quick Actions menu sits at z-index 99999 (above modal overlays).
-  // Close it before opening any modal so the menu never paints over the modal content
-  // (e.g. Repair vs Replace launched from Quick Actions).
-  try{if(typeof closeQuickActions==='function')closeQuickActions();}catch(_){}
   var el=document.getElementById(id);if(el)el.classList.add('show');
 }
 function closeModal(id){
@@ -9482,77 +9471,11 @@ function _fetchWeather(lat,lon){
     .catch(function(){window._currentWeather=null;});
 }
 
-function toggleQuickActions(){
-  // Stop Mike speaking when opening quick actions
-  if(typeof stopMikeSpeaking==='function')stopMikeSpeaking();
-
-  var arrow=document.getElementById('qaArrow');
-  var btn=document.getElementById('quickActionsBtn');
-  if(!btn)return;
-  var menu=document.getElementById('quickActionsMenu');
-  if(menu&&menu.style.display!=='none'){closeQuickActions();return;}
-  // Create menu at body level if not exists
-  if(!menu){
-    menu=document.createElement('div');
-    menu.id='quickActionsMenu';
-    menu.style.cssText='position:fixed;background:#15171A;border:1px solid #2a2a2a;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.55);z-index:99999;overflow-y:auto;max-height:360px;min-width:240px;';
-    menu.innerHTML='            <div style="padding:8px;">              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(199,85,59,.16);color:#ef8a72;border-radius:6px;margin:4px 4px 2px;">🔴 DIAGNOSE</div>              <button class="qa-item" style="color:#0284C7;" onclick="qaClick(function(){mpFindPart();})">&#x1F529; Find a Part</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){qaPressures();})">&#x1F321; Pressures</button>              <button class="qa-item" style="color:#dc2626;" onclick="qaClick(function(){askMikeSafetyChecklist();})">&#x26A0; Safety Check</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){askMikeLoadCalc();})">&#x1F4D0; Load Calc</button>              <button class="qa-item" style="color:#2563eb;" onclick="qaClick(function(){qaScanSize();})">&#x1F4CF; Scan &amp; Size</button>              <button class="qa-item" style="color:var(--rust-deep);" onclick="qaClick(function(){askMikeAHRI();})">&#x1F4CA; AHRI Lookup</button>              <div style="height:1px;background:#262626;margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(58,139,138,.16);color:#5fbdb0;border-radius:6px;margin:4px 4px 2px;">🟢 REVENUE</div>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){qaFindUpsells();})">&#x1F4B0; Find Upsells</button>              <button class="qa-item" style="color:#16a34a;" onclick="qaClick(function(){qaLogUpsell();})">&#x1F4B5; Log Upsell $</button>              <button class="qa-item" style="color:#ea580c;" onclick="qaClick(function(){showRepairReplaceCalc();})">&#x2696; Repair vs Replace</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){askMikeMaintenanceAgreement();})">&#x1F4DD; MA Agreement</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){askMikeReviewRequest();})">&#x2B50; Get Google Review</button>              <button class="qa-item" style="color:#4B5563;" onclick="qaClick(function(){askMikeCompetitor();})">&#x1F94A; Beat Competitor Quote</button>              <div style="height:1px;background:#262626;margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(255,180,0,.14);color:#e8a23a;border-radius:6px;margin:4px 4px 2px;">🟠 JOB TOOLS</div>              <button class="qa-item" style="color:#4f46e5;" onclick="qaClick(function(){qaJobSummary();})">&#x1F4CB; Job Summary</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){generateInvoice();})">&#x1F9FE; Invoice Generator</button>              <button class="qa-item" style="color:#059669;" onclick="qaClick(function(){showJobSignOff();})">&#x270D; Customer Sign-Off</button>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){saveCurrentJobAsCustomer();})">&#x1F4BE; Save Customer</button>              <div style="height:1px;background:#262626;margin:6px 0;"></div>              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px 4px;background:rgba(95,179,177,.16);color:#7ec7c2;border-radius:6px;margin:4px 4px 2px;">🔵 SALES</div>              <button class="qa-item" style="color:#0891b2;" onclick="qaClick(function(){qaSalesSchool();})">&#x1F393; Sales School</button>              <button class="qa-item" style="color:#d97706;" onclick="qaClick(function(){qaHandleObjection();})">&#x1F4AC; Handle Objection</button>              <button class="qa-item" style="color:#7C3AED;" onclick="qaClick(function(){qaPitchMaintenance();})">&#x1F4CB; Pitch Maintenance</button>            </div>          ';
-    document.body.appendChild(menu);
-    // Tap outside closes
-    setTimeout(function(){
-      document.addEventListener('click',function handler(e){
-        if(!menu.contains(e.target)&&!btn.contains(e.target)){
-          closeQuickActions();
-          document.removeEventListener('click',handler);
-        }
-      });
-    },10);
-  }
-  // Position it above the button
-  var rect=btn.getBoundingClientRect();
-  var menuW=Math.min(Math.max(rect.width,260),360);
-  menu.style.width=menuW+'px';
-  menu.style.left=rect.left+'px';
-  menu.style.top=(rect.top-4)+'px';
-  menu.style.display='block';
-  // Position below the button and keep it anchored on scroll/resize
-  function positionMenu(){
-    var r=btn.getBoundingClientRect();
-    var w=Math.min(Math.max(r.width,260),360);
-    menu.style.width=w+'px';
-    menu.style.left=r.left+'px';
-    menu.style.top=(r.bottom+4)+'px';
-  }
-  positionMenu();
-  // Store handler so we can remove it on close
-  menu._reposition=positionMenu;
-  window.addEventListener('scroll',positionMenu,true);
-  window.addEventListener('resize',positionMenu);
-  if(arrow)arrow.style.transform='rotate(180deg)';
-  btn.style.borderColor='var(--teal)';btn.style.color='var(--teal)';
-}
-function qaClick(fn){closeQuickActions();setTimeout(fn,50);}
-function closeQuickActions(){
-  var menu=document.getElementById('quickActionsMenu');
-  var arrow=document.getElementById('qaArrow');
-  var btn=document.getElementById('quickActionsBtn');
-  if(menu){
-    menu.style.display='none';
-    if(menu._reposition){
-      window.removeEventListener('scroll',menu._reposition,true);
-      window.removeEventListener('resize',menu._reposition);
-      menu._reposition=null;
-    }
-  }
-  if(arrow)arrow.style.transform='';
-  if(btn){btn.style.borderColor='';btn.style.color='var(--gray-600)';}
-}
-document.addEventListener('click',function(e){
-  var menu=document.getElementById('quickActionsMenu');
-  var btn=document.getElementById('quickActionsBtn');
-  if(!menu||menu.style.display==='none')return;
-  if(btn&&!btn.contains(e.target)&&!menu.contains(e.target)){closeQuickActions();}
-});
+// ONE TOOLBELT step 4: the Quick Actions dropdown (toggleQuickActions / qaClick /
+// closeQuickActions + its tap-outside handler and the hardcoded 21-item menu blob) is
+// RETIRED. Every tool now lives in the drawer (FAV_REGISTRY → grouped All Tools + peek
+// favorites). The underlying qa*/askMike*/mpOpenTool action functions are unchanged —
+// they're invoked from the drawer's registry run: handlers instead of the dropdown.
 
 function clearChatAttach(){chatAttachment=null;document.getElementById("chatAttachPreview").style.display="none";}
 
@@ -11224,8 +11147,7 @@ function navBackTap(){
   var d=document.getElementById('actionDrawer');
   if(d&&d.open){try{d.close();}catch(_){}return;}
   // No drawer open → still do something sensible rather than no-op:
-  // close the Quick Actions menu / any open lang or profile dropdown, else scroll chat to top.
-  if(typeof closeQuickActions==='function')closeQuickActions();
+  // close any open lang or profile dropdown, else scroll chat to top.
   var ld=document.getElementById('langDropdown');if(ld&&(ld.style.display==='block'||ld.classList.contains('open'))){ld.style.display='none';ld.classList.remove('open');return;}
   var pd=document.getElementById('profileDD');if(pd&&pd.classList.contains('open')){pd.classList.remove('open');return;}
   // Close any visible .show modal overlay.

@@ -1103,6 +1103,24 @@ body[data-mode="contractor"] .msg-agent .msg-bubble-agent{background:var(--ink-2
 .np-dots i{width:8px;height:8px;border-radius:50%;background:var(--teal-bright);animation:npd 1s infinite ease-in-out;}
 .np-dots i:nth-child(2){animation-delay:.15s;}.np-dots i:nth-child(3){animation-delay:.3s;}
 @keyframes npd{0%,100%{opacity:.35;transform:scale(.85);}50%{opacity:1;transform:scale(1);}}
+/* ── SCAN & SIZE → CUT SHEET: guided scale-anchor overlay (camera-first step 1) ── */
+#csAnchorOverlay{position:fixed;inset:0;z-index:100001;background:#0b0f0e;display:none;flex-direction:column;}
+#csAnchorOverlay .cs-anchor-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);}
+#csAnchorOverlay .cs-anchor-title{font-size:14px;font-weight:800;color:#fff;letter-spacing:.01em;}
+#csAnchorOverlay .cs-anchor-x{background:transparent;border:none;color:#9aa0a6;font-size:26px;line-height:1;cursor:pointer;padding:0 6px;}
+#csAnchorOverlay .cs-anchor-retake{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#dbe1e8;font-size:12px;font-weight:700;border-radius:8px;padding:6px 12px;cursor:pointer;}
+#csAnchorOverlay .cs-anchor-coach{text-align:center;font-size:13px;font-weight:700;color:var(--teal-bright,#5fc4c2);padding:11px 16px 8px;letter-spacing:.005em;}
+#csAnchorOverlay .cs-anchor-stage{position:relative;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;}
+#csAnchorOverlay #csAnchorPhoto{max-width:100%;max-height:100%;object-fit:contain;display:block;-webkit-user-select:none;user-select:none;pointer-events:none;}
+#csAnchorOverlay .cs-tap-layer{position:absolute;inset:0;cursor:crosshair;}
+#csAnchorOverlay .cs-tap{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:var(--teal-bright,#5fc4c2);border:2px solid #fff;color:#06201f;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 0 14px -2px rgba(95,196,194,.9);pointer-events:none;}
+#csAnchorOverlay .cs-tap-line{position:absolute;height:2px;background:var(--teal-bright,#5fc4c2);transform-origin:0 50%;box-shadow:0 0 10px rgba(95,196,194,.8);pointer-events:none;}
+#csAnchorOverlay .cs-anchor-bottom{padding:12px 16px calc(16px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.08);background:#0b0f0e;}
+#csAnchorOverlay .cs-tap-hint{font-size:12px;color:#9aa0a6;text-align:center;margin-bottom:10px;}
+#csAnchorOverlay .cs-anchor-row{display:flex;gap:10px;margin-bottom:10px;}
+#csAnchorOverlay .cs-len-input{flex:1;background:#11181a;border:1.5px solid #243034;border-radius:9px;color:#fff;font-size:16px;font-weight:700;padding:11px 13px;outline:none;}
+#csAnchorOverlay .cs-undo-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#dbe1e8;font-size:13px;font-weight:700;border-radius:9px;padding:0 16px;cursor:pointer;white-space:nowrap;}
+#csAnchorOverlay .cs-ready-btn{width:100%;background:linear-gradient(135deg,var(--teal,#3a8b8a),var(--teal-deep,#2c6b6a));border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:800;padding:14px;cursor:pointer;letter-spacing:.01em;}
 .np-idcard{margin-top:10px;background:linear-gradient(180deg,#15201f,#101615);border:1px solid rgba(95,196,194,.22);border-radius:14px;overflow:hidden;max-width:100%;}
 .np-idcard .nph{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.13em;color:var(--teal-bright);text-transform:uppercase;font-weight:800;}
 .np-idcard .npbadge{margin-left:auto;background:rgba(255,180,0,.14);border:1px solid rgba(255,180,0,.4);color:var(--safety);font-size:9px;font-weight:800;padding:2px 8px;border-radius:6px;letter-spacing:.06em;}
@@ -10151,9 +10169,119 @@ function askMikeReviewRequest(){
 function askMikeLoadCalc(){
   mpAskMike("What's the square footage? I'll size it — toss me ceiling height, insulation, and your location if you've got 'em.");
 }
+// SCAN & SIZE → CUT SHEET (camera-first). Tapping the quick action no longer drops
+// the tech into chat — it opens the guided photo-capture flow (csStartCapture). The
+// old chat-prompt path is preserved as qaScanSizeChat() so no capability is lost and
+// the capture flow can fall back to it if the device can't open the camera input.
 function qaScanSize(){
+  try{ if(typeof closeActionDrawer==='function')closeActionDrawer(); }catch(_){}
+  if(typeof csStartCapture==='function'){ csStartCapture(); return; }
+  qaScanSizeChat();
+}
+function qaScanSizeChat(){
   mpAskMike("Let's size this room — here's how to make it accurate. I scale off a known-size object, so get ONE of these clearly in frame: a standard interior door, a sheet of printer paper taped to the wall, or a wall outlet / switch plate. Then take 2-3 photos from a corner so I can see two full walls and where they meet the floor. Attach them and I'll measure the room and size the system. (If it's easier, just tell me one real measurement — a wall length or the ceiling height — and I'll work from that.)");
   window._mpActionDirective={search:false,text:'ACTION — SCAN & SIZE (REFERENCE-ANCHOR METHOD): The tech is sizing a system from photos. Work in this exact order and show your work briefly. (1) SCALE LOCK — find a known-size reference in the attached photo(s) and use it to set real-world scale: a standard interior door is 80 in tall and 32 in wide; a sheet of US Letter paper is 11 x 8.5 in; a duplex outlet/switch plate is 4.5 x 2.75 in; a standard receptacle is about 4.5 in tall. State which reference you used and its assumed real size. If the tech gave a measurement instead, use that as the scale lock. If there is NO usable reference AND no given measurement, STOP and ask for one clear photo with a door, outlet, or sheet of paper in frame, or one real measurement — do NOT guess scale. (2) MEASURE — using that locked scale, estimate each wall length along the floor line, the ceiling height, the floor area in square feet, and the number and rough size of windows. If multiple photos are attached, cross-check the same wall across them and report the spread. (3) CONFIDENCE — give each key number as a tight RANGE, not a false-precise single value, and state your confidence (reference quality and camera angle drive it). (4) SIZE — from the area and ceiling height, give an APPROXIMATE cooling and heating load and a recommended tonnage and BTU, and NAME every assumption (climate/region, insulation level, window/solar load, occupancy, ceiling height). Use a sound load method, not a crude per-square-foot rule of thumb, and say which. (5) CONFIRM — finish by asking the tech to confirm the two load-bearing numbers (ceiling height + one wall length) so you can tighten the estimate. NEVER fabricate precise dimensions — the reference anchor is the only thing that makes this accurate; if it is weak, say so out loud. Tech-mode only — never present sizing like this to a homeowner.'};
+}
+// ═══════════════════════════════════════════════════════════════════
+// ── SCAN & SIZE → CUT SHEET: camera-first guided capture + anchor step
+// Step 1 of the build (capture experience). The tech snaps the existing unit +
+// ductwork; before any measurement we capture ONE known length as the scale
+// anchor: tape-measure one thing, tap both ends in the photo, enter the length.
+// That anchor (two image points + a real length) feeds the Manhattan-world VP
+// engine in the NEXT diff — this diff stands up the experience and stores the
+// anchor honestly. No dimensions are fabricated here.
+// ═══════════════════════════════════════════════════════════════════
+var _csState=null; // { imgURL, imgW, imgH, taps:[{x,y}], lengthIn:Number }
+function csStartCapture(){
+  if(!currentUser){ if(typeof showToast==='function')showToast('Loading… tap again in a moment.','info',2000); return; }
+  _csState={imgURL:null,imgW:0,imgH:0,taps:[],lengthIn:null};
+  var i=document.getElementById('csScanInput');
+  if(i){ i.value=''; i.click(); }
+  else { qaScanSizeChat(); } // graceful fallback if the input isn't present
+}
+function csStartCaptureLib(){
+  if(!currentUser)return;
+  _csState={imgURL:null,imgW:0,imgH:0,taps:[],lengthIn:null};
+  var i=document.getElementById('csScanLib');
+  if(i){ i.value=''; i.click(); }
+}
+function handleCutSheetCapture(e){
+  var file=e.target.files&&e.target.files[0]; if(!file){ return; } e.target.value='';
+  var url=URL.createObjectURL(file);
+  var img=new Image();
+  img.onload=function(){
+    if(!_csState)_csState={taps:[],lengthIn:null};
+    _csState.imgURL=url; _csState.imgW=img.naturalWidth; _csState.imgH=img.naturalHeight; _csState.taps=[];
+    csOpenAnchorOverlay();
+  };
+  img.onerror=function(){ if(typeof showToast==='function')showToast('Could not read that photo — try again.','error',4000); };
+  img.src=url;
+}
+function csOpenAnchorOverlay(){
+  var ov=document.getElementById('csAnchorOverlay'); if(!ov||!_csState)return;
+  var ph=document.getElementById('csAnchorPhoto'); if(ph)ph.src=_csState.imgURL;
+  // Reset taps + length
+  _csState.taps=[]; var li=document.getElementById('csLenInput'); if(li)li.value='';
+  csRenderTaps();
+  ov.style.display='flex';
+  // One-line Mike voiceover on FIRST use only (terse overlay carries the rest).
+  try{
+    if(!localStorage.getItem('cs_anchor_intro_done')){
+      localStorage.setItem('cs_anchor_intro_done','1');
+      if(typeof mikeSay==='function')mikeSay("Measure any one thing in the shot with your tape — a door, a duct, anything — then tap both ends and type the length. That's all I need to size the rest.");
+    }
+  }catch(_v){}
+}
+function csCloseAnchorOverlay(){
+  var ov=document.getElementById('csAnchorOverlay'); if(ov)ov.style.display='none';
+}
+// Tap-to-place the two endpoints of the tape-measured segment on the photo.
+function csPhotoTap(ev){
+  if(!_csState)return;
+  var ph=document.getElementById('csAnchorPhoto'); if(!ph)return;
+  var r=ph.getBoundingClientRect();
+  var cx=(ev.touches&&ev.touches[0]?ev.touches[0].clientX:ev.clientX);
+  var cy=(ev.touches&&ev.touches[0]?ev.touches[0].clientY:ev.clientY);
+  var x=(cx-r.left)/r.width, y=(cy-r.top)/r.height; // normalized 0..1
+  if(x<0||x>1||y<0||y>1)return;
+  if(_csState.taps.length>=2)_csState.taps=[]; // third tap restarts the segment
+  _csState.taps.push({x:x,y:y});
+  csRenderTaps();
+}
+function csUndoTap(){ if(_csState&&_csState.taps.length){ _csState.taps.pop(); csRenderTaps(); } }
+function csRenderTaps(){
+  var layer=document.getElementById('csTapLayer'); if(!layer||!_csState)return;
+  var html='';
+  _csState.taps.forEach(function(t,idx){
+    html+='<div class="cs-tap" style="left:'+(t.x*100)+'%;top:'+(t.y*100)+'%;">'+(idx+1)+'</div>';
+  });
+  if(_csState.taps.length===2){
+    var a=_csState.taps[0],b=_csState.taps[1];
+    var mx=(a.x+b.x)/2*100, my=(a.y+b.y)/2*100;
+    var dx=(b.x-a.x), dy=(b.y-a.y);
+    var len=Math.sqrt(dx*dx+dy*dy)*100;
+    var ang=Math.atan2(dy,dx)*180/Math.PI;
+    html+='<div class="cs-tap-line" style="left:'+(a.x*100)+'%;top:'+(a.y*100)+'%;width:'+len+'%;transform:rotate('+ang+'deg);"></div>';
+  }
+  layer.innerHTML=html;
+  var hint=document.getElementById('csTapHint');
+  if(hint)hint.textContent=_csState.taps.length===0?'Tap one end of what you measured.':_csState.taps.length===1?'Now tap the other end.':'Both ends set — enter the length below.';
+}
+// "Ready" — validate the anchor, store it, hand off. Until the VP engine diff lands,
+// we do NOT fabricate dimensions: we honestly tell the tech the measurement engine is
+// being wired and pass the photo + anchor into Mike's existing read so the capture
+// experience is real and testable now.
+function csAnchorReady(){
+  if(!_csState||_csState.taps.length!==2){ if(typeof showToast==='function')showToast('Tap both ends of what you measured first.','info',3500); return; }
+  var raw=(document.getElementById('csLenInput')||{}).value;
+  var len=parseFloat(raw);
+  if(!len||len<=0){ if(typeof showToast==='function')showToast('Enter the length you measured (inches).','info',3500); return; }
+  _csState.lengthIn=len;
+  csCloseAnchorOverlay();
+  // Engine handoff seam — wired in the next diff (vendored LSD + VP/scale util).
+  // For now, honest placeholder: the anchor is captured and stored on _csState.
+  if(typeof mpEnterChat==='function')mpEnterChat();
+  if(typeof appendMessage==='function')appendMessage('agent',"Got your scale anchor — "+len+'" across those two points. The room-measurement engine is being wired up; for now tell me the make and model off the plate and I\'ll start the cut sheet.');
 }
 function askMikeSafetyChecklist(){
   mpAskMike("What are you walking into? Tell me the unit or the job and I'll run you the right pre-job safety check.");
@@ -13201,6 +13329,32 @@ document.addEventListener('DOMContentLoaded',function(){
 <!-- NAMEPLATE SCAN — first-class feature: native camera capture + Mike's "reading the plate" state -->
 <input type="file" id="npScanInput" accept="image/*" capture="environment" style="display:none" onchange="handleNameplateScan(event)"/>
 <input type="file" id="npScanLib" accept="image/*" style="display:none" onchange="handleNameplateScan(event)"/>
+
+<!-- ── SCAN & SIZE → CUT SHEET: camera-first capture inputs + guided anchor overlay ──
+     csScanInput opens the native camera (still photo) like the nameplate scan; csScanLib
+     is the library fallback (and the path Brandon uses to send real practice-lab photos). -->
+<input type="file" id="csScanInput" accept="image/*" capture="environment" style="display:none" onchange="handleCutSheetCapture(event)"/>
+<input type="file" id="csScanLib" accept="image/*" style="display:none" onchange="handleCutSheetCapture(event)"/>
+<div id="csAnchorOverlay" role="dialog" aria-label="Set scale anchor">
+  <div class="cs-anchor-top">
+    <button class="cs-anchor-x" onclick="csCloseAnchorOverlay()" aria-label="Close">&times;</button>
+    <div class="cs-anchor-title">Set your scale</div>
+    <button class="cs-anchor-retake" onclick="csStartCapture()">Retake</button>
+  </div>
+  <div class="cs-anchor-coach">Tape-measure one thing. Tap both ends. Enter the length.</div>
+  <div class="cs-anchor-stage">
+    <img id="csAnchorPhoto" alt="Captured unit" draggable="false"/>
+    <div id="csTapLayer" class="cs-tap-layer" onclick="csPhotoTap(event)"></div>
+  </div>
+  <div class="cs-anchor-bottom">
+    <div id="csTapHint" class="cs-tap-hint">Tap one end of what you measured.</div>
+    <div class="cs-anchor-row">
+      <input id="csLenInput" type="number" inputmode="decimal" min="0" step="0.25" placeholder="Length (in)" class="cs-len-input"/>
+      <button class="cs-undo-btn" onclick="csUndoTap()">Undo tap</button>
+    </div>
+    <button class="cs-ready-btn" onclick="csAnchorReady()">Ready &rarr;</button>
+  </div>
+</div>
 <div id="npReading" aria-live="polite">
   <img class="npr-face" src="/icon-512.png" alt="Mike"/>
   <div class="npr-t">Reading the plate&hellip;</div>

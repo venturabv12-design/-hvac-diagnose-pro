@@ -10335,6 +10335,251 @@ function csAnchorReady(){
   if(typeof mpEnterChat==='function')mpEnterChat();
   if(typeof appendMessage==='function')appendMessage('agent',"Got it — "+len+'" locked in as my measurement. I\'m working the room off that. While I do, give me the make and model off the plate and I\'ll get your cut sheet started.');
 }
+// ═══════════════════════════════════════════════════════════════════════════
+// ── TRAZER METROLOGY ENGINE (Scan & Size → cut sheet, step 1) ──
+// First-party, pure-JS single-view metrology under the Manhattan-world assumption.
+// NO vendored library (the only off-the-shelf WASM LSD is AGPL — legal contamination
+// for a closed commercial product; we write our own, which is small and ours to tune).
+//
+// HONEST BOUNDARY (load-bearing — must stay true in code AND in Mike's framing):
+//   Measurement = PER-FRAME, single-view metrology anchored on ONE known real length
+//   (the tech's tape-measured segment, or a known-size object). We do NOT stitch the
+//   burst frames into a 3D photogrammetry / SfM reconstruction — that is the heavy
+//   server / native chapter, not this. The room's right angles (Manhattan world) let
+//   us propagate the one anchored scale across orthogonal directions in a SINGLE image;
+//   they do NOT give us a fused 3D model. Never claim full 3D reconstruction.
+//
+// Pipeline: detectLineSegments → clusterVanishingPoints → lockScaleFromAnchor →
+//           measureBetween (tap-to-measure on the anchored frame) → confidence/guards.
+// All functions are pure (operate on passed-in pixel data / points), DOM-free, so they
+// can be unit-tested and consumed by the burst-capture + cut-sheet steps that follow.
+// ═══════════════════════════════════════════════════════════════════════════
+var TrazerMetrology=(function(){
+  // ── small vector helpers (homogeneous 2D points as [x,y,1]) ──
+  function cross(a,b){return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];}
+  function dist(a,b){var dx=a[0]-b[0],dy=a[1]-b[1];return Math.sqrt(dx*dx+dy*dy);}
+  function lineThrough(p,q){return cross([p[0],p[1],1],[q[0],q[1],1]);} // line = p × q (homogeneous)
+
+  // ── 1) LINE-SEGMENT DETECTION ───────────────────────────────────────────
+  // Light gradient-orientation detector tuned for room/structure edges (wall, floor,
+  // ceiling, cabinet lines) — NOT a general-purpose LSD. Input: {data,width,height}
+  // grayscale or RGBA pixel buffer (ImageData-shaped). Output: array of segments
+  // {x1,y1,x2,y2,angle,strength}. Threshold args let Brandon's lab photos tune it later.
+  function toGray(img){
+    var w=img.width,h=img.height,src=img.data,g=new Float32Array(w*h);
+    if(src.length===w*h){ for(var i=0;i<g.length;i++)g[i]=src[i]; return g; } // already gray
+    for(var p=0,q=0;q<w*h;p+=4,q++){ g[q]=0.299*src[p]+0.587*src[p+1]+0.114*src[p+2]; }
+    return g;
+  }
+  function sobel(g,w,h){
+    var gx=new Float32Array(w*h),gy=new Float32Array(w*h),mag=new Float32Array(w*h),ang=new Float32Array(w*h);
+    for(var y=1;y<h-1;y++){
+      for(var x=1;x<w-1;x++){
+        var i=y*w+x;
+        var a=g[i-w-1],b=g[i-w],c=g[i-w+1],d=g[i-1],f=g[i+1],j=g[i+w-1],k=g[i+w],l=g[i+w+1];
+        var sx=(c+2*f+l)-(a+2*d+j);
+        var sy=(j+2*k+l)-(a+2*b+c);
+        gx[i]=sx;gy[i]=sy;mag[i]=Math.sqrt(sx*sx+sy*sy);ang[i]=Math.atan2(sy,sx);
+      }
+    }
+    return {gx:gx,gy:gy,mag:mag,ang:ang};
+  }
+  // Group strong, similarly-oriented edge pixels into line segments via a coarse
+  // angle+offset accumulator (a light Hough), then fit endpoints. Returns segments
+  // sorted by strength. opts: {magThresh, minLen, maxSegments}.
+  function detectLineSegments(img,opts){
+    opts=opts||{};
+    var w=img.width,h=img.height;
+    if(!w||!h)return [];
+    var g=toGray(img),s=sobel(g,w,h);
+    var magThresh=opts.magThresh||Math.max(28, otsuLike(s.mag));
+    var minLen=opts.minLen||Math.min(w,h)*0.08;
+    var maxSeg=opts.maxSegments||120;
+    // Bin strong pixels by orientation (18 bins over 180°) and accumulate their points,
+    // then split each bin's point set into colinear runs and fit segments.
+    var BINS=18, bins=[]; for(var bi=0;bi<BINS;bi++)bins.push([]);
+    for(var y=1;y<h-1;y++){
+      for(var x=1;x<w-1;x++){
+        var i=y*w+x; if(s.mag[i]<magThresh)continue;
+        var a=s.ang[i]; var deg=((a*180/Math.PI)%180+180)%180; // 0..180
+        var bIdx=Math.min(BINS-1,Math.floor(deg/(180/BINS)));
+        bins[bIdx].push([x,y]);
+      }
+    }
+    var segs=[];
+    for(var b2=0;b2<BINS;b2++){
+      var pts=bins[b2]; if(pts.length<3)continue;
+      // Each bin holds points whose edge ORIENTATION is similar. Colinear points share a
+      // perpendicular offset. So: bucket points by perpendicular offset (signed distance
+      // from origin along the line NORMAL), then within each offset-bucket sort ALONG the
+      // line direction and cut runs on along-line gaps → each run is one real segment.
+      // bins hold GRADIENT orientation; the line runs PERPENDICULAR to the gradient,
+      // so the along-line direction is the bin angle + 90°.
+      var gtheta=(b2+0.5)*(Math.PI/BINS);
+      var theta=gtheta+Math.PI/2; var dx=Math.cos(theta),dy=Math.sin(theta); // along-line dir
+      var nx=-dy,ny=dx; // line normal
+      var OFF=3; // perpendicular tolerance (px) — colinear points fall in the same bucket
+      var buckets={};
+      for(var pp=0;pp<pts.length;pp++){
+        var off=Math.round((pts[pp][0]*nx+pts[pp][1]*ny)/OFF);
+        (buckets[off]||(buckets[off]=[])).push(pts[pp]);
+      }
+      for(var key in buckets){
+        var grp=buckets[key]; if(grp.length<3)continue;
+        grp.sort(function(p,q){return (p[0]*dx+p[1]*dy)-(q[0]*dx+q[1]*dy);}); // along the line
+        var run=[grp[0]];
+        for(var pi=1;pi<grp.length;pi++){
+          var prev=run[run.length-1],cur=grp[pi];
+          var along=Math.abs((cur[0]-prev[0])*dx+(cur[1]-prev[1])*dy);
+          if(along<=Math.max(3,minLen*0.25)) run.push(cur);
+          else { pushSeg(segs,run,minLen); run=[cur]; }
+        }
+        pushSeg(segs,run,minLen);
+      }
+    }
+    segs.sort(function(p,q){return q.strength-p.strength;});
+    return segs.slice(0,maxSeg);
+  }
+  function pushSeg(out,run,minLen){
+    if(run.length<2)return;
+    var a=run[0],b=run[run.length-1];
+    var len=dist([a[0],a[1]],[b[0],b[1]]);
+    if(len<minLen)return;
+    out.push({x1:a[0],y1:a[1],x2:b[0],y2:b[1],angle:Math.atan2(b[1]-a[1],b[0]-a[0]),strength:len*run.length});
+  }
+  // Auto edge threshold via a high PERCENTILE of gradient magnitude — robust for BOTH
+  // sparse high-contrast edges (a clean box) and dense soft gradients (a real photo),
+  // where a mean+std rule overshoots and rejects everything. We keep the strongest ~12%
+  // of gradient pixels as edge candidates, floored at a small constant. Brandon's lab
+  // photos refine the percentile/floor.
+  function otsuLike(mag){
+    var n=mag.length, hist=new Float64Array(0); // build a 256-bucket histogram of nonzero mags
+    var maxv=0,cnt=0;
+    for(var i=0;i<n;i++){ if(mag[i]>0){ cnt++; if(mag[i]>maxv)maxv=mag[i]; } }
+    if(!cnt||maxv<=0)return 30;
+    var B=256, h=new Int32Array(B);
+    for(var j=0;j<n;j++){ if(mag[j]>0){ var bk=Math.min(B-1,Math.floor(mag[j]/maxv*(B-1))); h[bk]++; } }
+    // walk down from the top bucket until we've collected ~12% of edge pixels
+    var keep=Math.max(1,Math.floor(cnt*0.12)), acc=0, thrBucket=B-1;
+    for(var b=B-1;b>=0;b--){ acc+=h[b]; if(acc>=keep){ thrBucket=b; break; } }
+    var thr=(thrBucket/(B-1))*maxv;
+    return Math.max(20, thr);
+  }
+
+  // ── 2) VANISHING-POINT CLUSTERING (Manhattan world) ──────────────────────
+  // Cluster segments by orientation into up to 3 mutually-orthogonal vanishing
+  // directions. Returns {vps:[{point,segments,spread}], confidence}. Pairs of segments
+  // in a cluster intersect at the VP (homogeneous line cross); we take a strength-
+  // weighted consensus and report angular spread (a key confidence + obliqueness signal).
+  function clusterVanishingPoints(segments){
+    if(!segments||segments.length<2)return {vps:[],confidence:0};
+    // Seed clusters by angle (mod 180) with a tolerance; merge similar.
+    var TOL=12*Math.PI/180, clusters=[];
+    for(var i=0;i<segments.length;i++){
+      var seg=segments[i],a=((seg.angle%Math.PI)+Math.PI)%Math.PI,placed=false;
+      for(var c=0;c<clusters.length;c++){
+        var da=Math.abs(a-clusters[c].angle); da=Math.min(da,Math.PI-da);
+        if(da<TOL){ clusters[c].segs.push(seg); clusters[c].angle=(clusters[c].angle*clusters[c].segs.length+a)/(clusters[c].segs.length+1); placed=true; break; }
+      }
+      if(!placed)clusters.push({angle:a,segs:[seg]});
+    }
+    clusters.sort(function(p,q){return q.segs.length-p.segs.length;});
+    clusters=clusters.slice(0,3);
+    var vps=[];
+    for(var k=0;k<clusters.length;k++){
+      var cl=clusters[k]; if(cl.segs.length<2){ vps.push({point:null,segments:cl.segs,spread:0}); continue; }
+      // Strength-weighted intersection consensus across segment-line pairs.
+      var sx=0,sy=0,sw=0,pairs=0;
+      for(var m=0;m<cl.segs.length-1&&pairs<40;m++){
+        for(var n=m+1;n<cl.segs.length&&pairs<40;n++){
+          var L1=lineThrough([cl.segs[m].x1,cl.segs[m].y1],[cl.segs[m].x2,cl.segs[m].y2]);
+          var L2=lineThrough([cl.segs[n].x1,cl.segs[n].y1],[cl.segs[n].x2,cl.segs[n].y2]);
+          var X=cross(L1,L2); if(Math.abs(X[2])<1e-9)continue; // parallel → VP at infinity
+          var wgt=cl.segs[m].strength+cl.segs[n].strength;
+          sx+=(X[0]/X[2])*wgt; sy+=(X[1]/X[2])*wgt; sw+=wgt; pairs++;
+        }
+      }
+      var pt=sw>0?[sx/sw,sy/sw]:null;
+      vps.push({point:pt,segments:cl.segs,spread:angularSpread(cl.segs)});
+    }
+    // Confidence: more strong clusters + tighter spread = higher. 0..1.
+    var conf=0; for(var v=0;v<vps.length;v++){ if(vps[v].point)conf+=Math.max(0,1-vps[v].spread/TOL)*(vps[v].segments.length>=3?1:0.5); }
+    conf=Math.min(1,conf/3);
+    return {vps:vps,confidence:conf};
+  }
+  function angularSpread(segs){
+    if(segs.length<2)return 0; var mean=0; for(var i=0;i<segs.length;i++)mean+=((segs[i].angle%Math.PI)+Math.PI)%Math.PI; mean/=segs.length;
+    var v=0; for(var j=0;j<segs.length;j++){var d=(((segs[j].angle%Math.PI)+Math.PI)%Math.PI)-mean;v+=d*d;} return Math.sqrt(v/segs.length);
+  }
+
+  // ── 3) ANCHOR-AGNOSTIC SCALE LOCK + TAP-TO-MEASURE ───────────────────────
+  // anchor = {p1:[x,y], p2:[x,y], lengthIn:Number} — two image points spanning a KNOWN
+  // real length (the tape segment OR a known-size object edge). pxPerInch is the local
+  // scale on the anchor's plane. measureBetween() returns the real length of any tapped
+  // segment that shares that plane; cross-plane taps carry a wider confidence band (the
+  // VP geometry corrects for orientation but plane offset is the honest error source).
+  function lockScaleFromAnchor(anchor){
+    if(!anchor||!anchor.p1||!anchor.p2||!(anchor.lengthIn>0))return null;
+    var px=dist([anchor.p1[0],anchor.p1[1]],[anchor.p2[0],anchor.p2[1]]);
+    if(px<=0)return null;
+    return {pxPerInch:px/anchor.lengthIn, anchorPx:px, lengthIn:anchor.lengthIn};
+  }
+  function measureBetween(scale,a,b){
+    if(!scale||!scale.pxPerInch)return null;
+    var px=dist([a[0],a[1]],[b[0],b[1]]);
+    return px/scale.pxPerInch; // inches on the anchored plane
+  }
+
+  // ── 4) REJECT / CONFIDENCE GUARDS (never false precision) ────────────────
+  // Decide if a frame is usable and how tight a confidence band to show. Guards on:
+  // anchor too small (scale noise), too-oblique (VP spread high), sparse VP support.
+  // Returns {usable, band:{lowPct,highPct}, reasons:[...]}.
+  function assessFrame(img,anchor,vpResult){
+    var reasons=[],usable=true;
+    var frameMin=Math.min(img.width||0,img.height||0)||1;
+    // anchor must be a healthy fraction of the frame for a stable scale
+    if(anchor){
+      var aPx=dist([anchor.p1[0],anchor.p1[1]],[anchor.p2[0],anchor.p2[1]]);
+      if(aPx < frameMin*0.10){ usable=false; reasons.push('anchor-too-small'); }
+    } else { usable=false; reasons.push('no-anchor'); }
+    // VP support / obliqueness
+    var conf=vpResult?vpResult.confidence:0;
+    if(conf<0.35){ usable=false; reasons.push('weak-vanishing-points'); }
+    var maxSpread=0; if(vpResult&&vpResult.vps){ for(var i=0;i<vpResult.vps.length;i++)maxSpread=Math.max(maxSpread,vpResult.vps[i].spread); }
+    if(maxSpread>16*Math.PI/180){ usable=false; reasons.push('too-oblique'); }
+    // Confidence band scales with VP confidence: high conf → ±~1-2%, low → widen.
+    var lowPct=usable?(conf>0.7?1:conf>0.5?2:3):8;
+    var highPct=usable?(conf>0.7?2:conf>0.5?4:6):15;
+    return {usable:usable, confidence:conf, band:{lowPct:lowPct,highPct:highPct}, reasons:reasons};
+  }
+
+  // ── 5) HYBRID DRAG-CORRECT support ───────────────────────────────────────
+  // The tech nudges two detected edges before scale locks (the accuracy backstop — so
+  // auto-detect quality is never load-bearing). Given the user-corrected segment
+  // endpoints, replace/augment the auto-detected set for the VP re-cluster.
+  function applyEdgeCorrections(autoSegments,corrections){
+    if(!corrections||!corrections.length)return autoSegments||[];
+    var out=(autoSegments||[]).slice();
+    for(var i=0;i<corrections.length;i++){
+      var c=corrections[i];
+      out.unshift({x1:c.x1,y1:c.y1,x2:c.x2,y2:c.y2,angle:Math.atan2(c.y2-c.y1,c.x2-c.x1),strength:1e9}); // user edges dominate
+    }
+    return out;
+  }
+
+  return {
+    detectLineSegments:detectLineSegments,
+    clusterVanishingPoints:clusterVanishingPoints,
+    lockScaleFromAnchor:lockScaleFromAnchor,
+    measureBetween:measureBetween,
+    assessFrame:assessFrame,
+    applyEdgeCorrections:applyEdgeCorrections,
+    // exposed for unit-testing / tuning on Brandon's lab photos
+    _internals:{toGray:toGray,sobel:sobel,dist:dist,lineThrough:lineThrough,cross:cross}
+  };
+})();
+try{ if(typeof window!=='undefined') window.TrazerMetrology=TrazerMetrology; }catch(_tm){}
+
 function askMikeSafetyChecklist(){
   mpAskMike("What are you walking into? Tell me the unit or the job and I'll run you the right pre-job safety check.");
 }

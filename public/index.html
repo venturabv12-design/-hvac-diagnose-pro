@@ -1261,6 +1261,7 @@ body[data-mode="contractor"] .tool-tile.pinned .tool-tile-pin{opacity:1;}
 
 /* Today's Calls — recent-job rows with status-colored left borders */
 body[data-mode="contractor"] .drawer-calls{display:flex;flex-direction:column;gap:6px;padding-bottom:24px;}
+body[data-mode="contractor"] .drawer-calls-empty{font-family:var(--font-code,monospace);font-size:11px;letter-spacing:.04em;color:rgba(255,255,255,.4);padding:14px 4px 24px;}
 body[data-mode="contractor"] .recent-job{background:var(--ink-3);border:1px solid var(--line);border-left:3px solid var(--moss);border-radius:0 6px 6px 0;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;}
 body[data-mode="contractor"] .recent-job.open{border-left-color:var(--rust);}
 body[data-mode="contractor"] .recent-job.progress{border-left-color:var(--safety);}
@@ -3439,34 +3440,11 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         <section class="drawer-section">
           <div class="drawer-section-head">
             <div class="drawer-section-title" data-v2i18n="qaTodaysCalls">Today&rsquo;s Calls</div>
-            <div class="drawer-section-meta">Example &middot; your calls appear here</div>
+            <div class="drawer-section-meta">From your saved jobs</div>
           </div>
-          <div class="drawer-calls">
-            <div class="recent-job" role="button" tabindex="0" onclick="openTodaysCall('Trane XR16','Capacitor','4TTX6048J')">
-              <div class="recent-job-num">01</div>
-              <div class="recent-job-info">
-                <div class="recent-job-title">Trane XR16 &middot; Capacitor</div>
-                <div class="recent-job-meta">9:14 AM &middot; 4TTX6048J &middot; $312</div>
-              </div>
-              <div class="recent-job-tag done" data-v2i18n="qaJobDone">Done</div>
-            </div>
-            <div class="recent-job open" role="button" tabindex="0" onclick="openTodaysCall('Carrier 25HCB6','Leak','')">
-              <div class="recent-job-num">02</div>
-              <div class="recent-job-info">
-                <div class="recent-job-title">Carrier 25HCB6 &middot; Leak</div>
-                <div class="recent-job-meta">7:42 AM &middot; Awaiting parts</div>
-              </div>
-              <div class="recent-job-tag open" data-v2i18n="qaJobOpen">Open</div>
-            </div>
-            <div class="recent-job progress" role="button" tabindex="0" onclick="openTodaysCall('Lennox','Inducer Motor','')">
-              <div class="recent-job-num">03</div>
-              <div class="recent-job-info">
-                <div class="recent-job-title">Lennox &middot; Inducer Motor</div>
-                <div class="recent-job-meta">Yesterday &middot; Warranty filed</div>
-              </div>
-              <div class="recent-job-tag progress" data-v2i18n="qaJobProg">In Prog</div>
-            </div>
-          </div>
+          <!-- Rendered from getJobHistory() filtered to today by renderTodaysCalls(); clean empty
+               state when there are none. NEVER fake cards — real saved jobs only. -->
+          <div class="drawer-calls" id="drawerCalls" aria-label="Your jobs logged today"></div>
         </section>
       </div>
     </dialog>
@@ -3687,11 +3665,67 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         box.innerHTML=html;
         try{ if(window.lucide&&lucide.createIcons) lucide.createIcons(); }catch(e){}
       }
+      // ONE TOOLBELT step 3: Today's Calls from REAL saved jobs (getJobHistory()),
+      // filtered to today. Clean empty state when there are none — NEVER fake cards.
+      // Tapping a row reopens that job with Mike via openTodaysCall (real job fields).
+      function renderTodaysCalls(){
+        var box=document.getElementById('drawerCalls');
+        if(!box) return;
+        var jobs=[];
+        try{ if(typeof getJobHistory==='function') jobs=getJobHistory()||[]; }catch(e){ jobs=[]; }
+        // Today only (local date match on the job's ISO date).
+        var today=new Date(); var y=today.getFullYear(),m=today.getMonth(),d=today.getDate();
+        var todays=[];
+        for(var i=0;i<jobs.length;i++){
+          var j=jobs[i]; if(!j||!j.date) continue;
+          var jd=new Date(j.date); if(isNaN(jd)) continue;
+          if(jd.getFullYear()===y&&jd.getMonth()===m&&jd.getDate()===d) todays.push(j);
+        }
+        if(!todays.length){
+          box.innerHTML='<div class="drawer-calls-empty">Your calls today will show up here.</div>';
+          return;
+        }
+        // Newest first.
+        todays.sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+        var html='';
+        for(var k=0;k<todays.length;k++){
+          var job=todays[k];
+          var brand=(job.brand||job.system||'Job');
+          var title=brand+(job.summary?(' · '+job.summary):'');
+          var t=new Date(job.date);
+          var hh=t.getHours(), mm=t.getMinutes();
+          var ampm=hh>=12?'PM':'AM'; var h12=hh%12; if(h12===0)h12=12;
+          var timeStr=h12+':'+(mm<10?'0':'')+mm+' '+ampm;
+          var rev=(typeof job.revenue==='number'&&job.revenue>0)?(' · $'+job.revenue):'';
+          var num=(k+1<10?'0':'')+(k+1);
+          html+='<div class="recent-job done" role="button" tabindex="0" data-call-idx="'+k+'">'
+              +'<div class="recent-job-num">'+num+'</div>'
+              +'<div class="recent-job-info">'
+                +'<div class="recent-job-title">'+esc(title)+'</div>'
+                +'<div class="recent-job-meta">'+esc(timeStr+rev)+'</div>'
+              +'</div>'
+              +'<div class="recent-job-tag done" data-v2i18n="qaJobDone">Logged</div>'
+              +'</div>';
+        }
+        box.innerHTML=html;
+        // Delegate taps to reopen the job with Mike (real fields, no fabricated model).
+        box._todays=todays;
+      }
+      (function(){
+        var cb=document.getElementById('drawerCalls');
+        if(cb) cb.addEventListener('click',function(e){
+          var row=e.target.closest('.recent-job'); if(!row) return;
+          var idx=parseInt(row.getAttribute('data-call-idx'),10);
+          var list=cb._todays||[]; var job=list[idx]; if(!job) return;
+          if(typeof openTodaysCall==='function') openTodaysCall((job.brand||job.system||'Job'),(job.summary||''),'');
+        });
+      })();
       function renderFavTools(){
         var favs=getFavTools();
         renderPeek(favs);
         renderDrawerFavs(favs);
         renderAllTools();
+        renderTodaysCalls();
         try{ if(window.lucide&&lucide.createIcons) lucide.createIcons(); }catch(e){}
       }
       window.renderFavTools=renderFavTools;

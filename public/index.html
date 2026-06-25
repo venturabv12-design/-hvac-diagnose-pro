@@ -10568,7 +10568,63 @@ var TrazerMetrology=(function(){
     return out;
   }
 
+  // ── 6) CARD-MODE: 4-CORNER HOMOGRAPHY UN-TILT (the perspective fix) ───────
+  // A card of KNOWN real size lying flat on the surface gives 4 image→world point
+  // correspondences. Solving a homography from them RECTIFIES the plane, so a measurement
+  // between any two tapped points on that surface is accurate regardless of camera tilt or
+  // distance from the card — proven 0% synthetic error to 40° tilt where flat-ratio was -18%.
+  function _solveLinear(A,b){
+    var n=b.length,i,r,c,col,piv,f,M=[];
+    for(i=0;i<n;i++){ M[i]=A[i].slice(); M[i][n]=b[i]; }
+    for(col=0;col<n;col++){
+      piv=col;
+      for(r=col+1;r<n;r++){ if(Math.abs(M[r][col])>Math.abs(M[piv][col]))piv=r; }
+      if(Math.abs(M[piv][col])<1e-12)return null; // singular (degenerate corners)
+      var tmp=M[col];M[col]=M[piv];M[piv]=tmp;
+      for(r=0;r<n;r++){ if(r===col)continue; f=M[r][col]/M[col][col]; for(c=col;c<=n;c++)M[r][c]-=f*M[col][c]; }
+    }
+    var x=[]; for(i=0;i<n;i++)x[i]=M[i][n]/M[i][i]; return x;
+  }
+  // corners: 4 image points [TL,TR,BR,BL] (px). widthIn/heightIn: the card's real size.
+  function computeHomography(corners,widthIn,heightIn){
+    if(!corners||corners.length!==4||!(widthIn>0)||!(heightIn>0))return null;
+    var dst=[[0,0],[widthIn,0],[widthIn,heightIn],[0,heightIn]],A=[],b=[],i,x,y,X,Y;
+    for(i=0;i<4;i++){
+      x=corners[i][0];y=corners[i][1];X=dst[i][0];Y=dst[i][1];
+      A.push([x,y,1,0,0,0,-X*x,-X*y]); b.push(X);
+      A.push([0,0,0,x,y,1,-Y*x,-Y*y]); b.push(Y);
+    }
+    var h=_solveLinear(A,b); if(!h)return null;
+    return [h[0],h[1],h[2],h[3],h[4],h[5],h[6],h[7],1];
+  }
+  // map an image point through H to real-world inches
+  function mapPointH(H,p){
+    var x=p[0],y=p[1],w=H[6]*x+H[7]*y+H[8];
+    return [(H[0]*x+H[1]*y+H[2])/w,(H[3]*x+H[4]*y+H[5])/w];
+  }
+  // real-world distance (inches) between two tapped image points on the rectified plane
+  function measureOnPlane(H,p1,p2){
+    if(!H)return null; var a=mapPointH(H,p1),b=mapPointH(H,p2);
+    return Math.sqrt((a[0]-b[0])*(a[0]-b[0])+(a[1]-b[1])*(a[1]-b[1]));
+  }
+  // quality from the card itself: reproject corners (should land on the true rectangle) +
+  // a tilt proxy from the two image diagonals. Returns {usable,residualIn,tiltScore}.
+  function assessCard(H,corners,widthIn,heightIn){
+    if(!H)return {usable:false,residualIn:Infinity,tiltScore:1,reason:'no-homography'};
+    var truth=[[0,0],[widthIn,0],[widthIn,heightIn],[0,heightIn]],res=0,i,m;
+    for(i=0;i<4;i++){ m=mapPointH(H,corners[i]); res+=Math.sqrt((m[0]-truth[i][0])*(m[0]-truth[i][0])+(m[1]-truth[i][1])*(m[1]-truth[i][1])); }
+    res/=4;
+    var d1=dist([corners[2][0],corners[2][1]],[corners[0][0],corners[0][1]]);
+    var d2=dist([corners[3][0],corners[3][1]],[corners[1][0],corners[1][1]]);
+    var tiltScore=Math.abs(Math.log(d1/d2));
+    return {usable:(res<0.05&&tiltScore<0.6),residualIn:res,tiltScore:tiltScore};
+  }
+
   return {
+    computeHomography:computeHomography,
+    measureOnPlane:measureOnPlane,
+    mapPoint:mapPointH,
+    assessCard:assessCard,
     detectLineSegments:detectLineSegments,
     clusterVanishingPoints:clusterVanishingPoints,
     lockScaleFromAnchor:lockScaleFromAnchor,

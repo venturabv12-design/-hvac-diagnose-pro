@@ -3506,8 +3506,9 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           run:function(){closeDrawer();if(typeof startLiveCamera==='function')startLiveCamera();}},
         {id:'scan-nameplate',cat:'diagnose',label:'Scan<br>Nameplate',icon:'scan-line',cls:'t-find',badge:'OCR',sub:'Read the data plate',
           run:function(){closeDrawer();if(typeof scanNameplate==='function')scanNameplate();}},
-        {id:'scan-size',cat:'diagnose',label:'Scan<br>& Size',icon:'ruler',cls:'t-pricing',sub:'Cut sheet from a photo',
-          run:function(){closeDrawer();if(typeof qaScanSize==='function')qaScanSize();}},
+        // HIDDEN 2026-06-26 — card-mode is a lab stopgap, too fiddly to put in front of a tech. Do NOT demo. Re-enable only when the simple two-tap AR flow is the entry point. Uncomment to restore.
+        // {id:'scan-size',cat:'diagnose',label:'Scan<br>& Size',icon:'ruler',cls:'t-pricing',sub:'Cut sheet from a photo',
+        //   run:function(){closeDrawer();if(typeof qaScanSize==='function')qaScanSize();}},
         {id:'find-part',cat:'diagnose',label:'Find<br>a Part',icon:'wrench',cls:'t-manual',sub:'Mike pulls the part #',
           run:function(){closeDrawer();if(typeof mpFindPart==='function')mpFindPart();}},
         {id:'pressures',cat:'diagnose',label:'Pressures',icon:'gauge',cls:'t-diag',sub:'Target suction & head',

@@ -1840,6 +1840,24 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         outText = outText.replace(/\b(?:price|quote|cost|number|charge|bill)\b[^.!?\n]{0,40}?\b(?:is|runs|seems|that'?s|it'?s)\s+(?:a (?:bit|little) )?(?:on the )?(?:high|low)(?:er)?[- ]?(?:side|end)\b/gi, 'is a pricing question for your tech');
         outText = outText.replace(/\bR-?22\b[^.!?\n]{0,18}?\breplac\w*/gi, 'an R-22 system is a repair-or-replace conversation for your tech');
         outText = outText.replace(/\b(?:a |the )?new (?:system|unit)\b[^.!?\n]{0,30}?\b(?:wins|pays for itself|cheaper|cost[- ]per[- ]year|saves you money|comes out ahead)/gi, 'whether a new system is worth it is your tech’s call');
+        // Brandon's rule (2026-06-28): to a homeowner, Mike says NOTHING about price or
+        // cost — not a number, not a range, not "it depends", not whether it's worth it.
+        // Drop any SENTENCE that talks price/cost and redirect to the tech, preserving line
+        // and list breaks. Deliberately EXCLUDES bare "charge/charged" (refrigerant + cap
+        // charge are HVAC terms), "bill" (energy bill is a legit efficiency topic), and bare
+        // "estimate" (Mike estimates age/airflow) so technical and safety content survives.
+        var _priceWord = /\b(prices?|priced|pricing|costs?|costly|costing|quotes?|quoted|quoting|expensive|inexpensive|cheap|pricey|affordable|affordability|how much (?:does|will|is|it|to|for|a|the|they|i|you)|ballpark|labou?r rate|service (?:call )?fee|trip charge|diagnostic fee|invoice)\b|\$\s?\d/i;
+        var _hoLines = outText.split('\n'), _hoDropped = false;
+        for (var _hoL = 0; _hoL < _hoLines.length; _hoL++) {
+          var _hoSents = _hoLines[_hoL].split(/(?<=[.!?])\s+/), _hoKept = [];
+          for (var _hoI = 0; _hoI < _hoSents.length; _hoI++) {
+            if (_priceWord.test(_hoSents[_hoI])) { _hoDropped = true; continue; }
+            _hoKept.push(_hoSents[_hoI]);
+          }
+          _hoLines[_hoL] = _hoKept.join(' ');
+        }
+        outText = _hoLines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+        if (_hoDropped) outText += (outText ? '\n\n' : '') + 'Numbers on price? That’s your tech’s call to make — I’m here to make sure you know exactly what’s wrong and what to ask him.';
       }
       // SAFETY STRIP (deterministic): the model keeps generating the "short the terminals with a
       // screwdriver" discharge method despite the prompt forbidding it. A prompt can't be trusted

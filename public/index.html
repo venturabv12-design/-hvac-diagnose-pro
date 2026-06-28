@@ -9085,6 +9085,13 @@ function labelV2(){return escapeHtml(v2t('mikeName'));}
 function detectV2Diagnosis(raw){
   if(typeof raw!=='string'||!raw)return null;
   var t=raw.replace(/```[\s\S]*?```/g,' ');
+  // Refrigerant designations (R-410A, R-22, R-32, R-454B, R-407C, R-1234yf…) are NOT
+  // gauge readings — but "R-410A" was parsed as "-410 amps" (the hyphen read as a minus,
+  // the trailing "A" as the amps unit), spawning a bogus reading AND mangling the name to
+  // "-410A" on screen. Neutralize them in this scan-only copy so they can't be mis-read.
+  // `t` is used ONLY for extraction (readings/fault/part/brand) below, never for the prose
+  // Mike actually displays, so the refrigerant name stays intact everywhere the tech sees it.
+  t=t.replace(/\bR-?\d{2,4}[A-Za-z]{0,2}\b/gi,' refrigerant ');
   // A reading = a labelled measurement, e.g. "static 0.91\" wc", "plenum 198°F",
   // "suction 55 psi", "superheat 22°", "blower 8.4A". Capture label + value+unit.
   var readings=[];

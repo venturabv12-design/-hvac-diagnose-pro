@@ -7181,6 +7181,12 @@ async function callAI(system,messages,max_tokens,useSearch){
       // breaker-fix Pass 1 — gate the teardown by !cameraActive so a live camera session
       // isn't ejected mid-overlay; the camera's own catch shows a localized retry UX.
       if(res.status===401||(res.status===402&&!data.paywall)){
+        // A SINGLE 401/402-no-paywall is often a transient blip — a JWT verify racing a
+        // Railway instance restart, a momentary upstream hiccup — NOT a truly dead token.
+        // Retry once before tearing the session down, so a one-off blip never ejects a
+        // signed-in tech mid-conversation. A genuinely-bad token returns 401 again on the
+        // retry and falls through to the clean re-login below. (Same token is re-sent.)
+        if(attempt<1){await new Promise(function(r){setTimeout(r,700);});continue;}
         if(typeof cameraActive==='undefined'||!cameraActive){
           localStorage.removeItem('trazer_user');
           localStorage.removeItem('trazer_users');
@@ -7250,12 +7256,12 @@ async function callAIStream(system,messages,max_tokens,onToken){
     var ed={};try{ed=await res.json();}catch(_e){}
     clearTimeout(tid);
     if(res.status===401||(res.status===402&&!ed.paywall)){
-      // 401 or 402-paywall:false (stale/invalid token) → clean re-login, not a paywall/generic error.
-      if(typeof cameraActive==='undefined'||!cameraActive){
-        localStorage.removeItem('trazer_user');localStorage.removeItem('trazer_users');currentUser=null;
-        document.getElementById('authOverlay').classList.remove('hidden');
-      }
-      throw new Error('Your session expired. Please sign in again.');
+      // DON'T tear the session down here on the streaming path's first 401/402-no-paywall —
+      // it's often a transient blip. Throw a NEUTRAL error (deliberately NOT matching
+      // "session expired"/"Subscription") so sendChat's stream catch falls back to the
+      // non-stream callAI(), which retries once and only THEN tears down if the token is
+      // genuinely dead. One blip never ejects a signed-in tech. currentUser is left intact.
+      throw new Error('stream auth blip — retrying on non-stream path');
     }
     if(res.status===402){showPaywall();throw new Error(ed.error||'Subscription required.');}
     if(res.status===429){throw new Error('Busy right now — hit send again and I\'ll grab it.');}

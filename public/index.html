@@ -3400,7 +3400,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         <div id="chatAttachPreview" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--rust);"></div>
         <div class="chat-input-row">
           <label for="chatFileInput" class="chat-attach-btn" title="Attach">&#x1F4CE;</label>
-          <textarea id="chatInput" placeholder="Ask Mike anything&hellip;" rows="1" maxlength="8000" onkeydown="handleChatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+          <textarea id="chatInput" placeholder="Ask Mike anything&hellip;" rows="1" maxlength="8000" onkeydown="handleChatKey(event)" onfocus="setTimeout(scrollToBottom,300)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
           <span id="chatCharCount" style="display:none;font-size:10px;color:var(--gray-400);align-self:center;white-space:nowrap;"></span>
           <button onclick="sendChat()" id="chatSendBtn" class="send-btn">&#x279E;</button>
         </div>
@@ -9352,11 +9352,19 @@ function appendMessage(role,text){
       try{window.lucide.createIcons();}catch(_){}
     }
   }
+  // Decide scroll behavior from the position BEFORE the new node is appended. Measuring
+  // AFTER appendChild inflated distFromBottom by the new message's OWN height, so any Mike
+  // reply taller than 200px fell into the "show scroll button" branch and landed below the
+  // fold — the "reply cut off every time" the founder flagged. Capture pinned-state first.
+  var _wasNearBottom=(container.scrollHeight-container.scrollTop-container.clientHeight)<200;
   if(isAgent&&typeof addMessageActions==="function")addMessageActions(div);
   container.appendChild(div);
-  var distFromBottom=container.scrollHeight-container.scrollTop-container.clientHeight;
-  if(distFromBottom<200){container.scrollTop=container.scrollHeight;}
-  else if(isAgent){_unreadCount=(_unreadCount||0)+1;var sBtn=document.getElementById("scrollBottomBtn");if(sBtn){sBtn.classList.add("show");sBtn.innerHTML="<span>↓</span><span class=\"unread-count\">"+_unreadCount+"</span>";}}
+  if(_wasNearBottom){
+    // Pin to the true bottom, then re-pin one frame later so a reply that grows after
+    // layout (diagram/image/CTA nodes settling) still ends fully in view, not clipped.
+    container.scrollTop=container.scrollHeight;
+    requestAnimationFrame(function(){container.scrollTop=container.scrollHeight;});
+  }else if(isAgent){_unreadCount=(_unreadCount||0)+1;var sBtn=document.getElementById("scrollBottomBtn");if(sBtn){sBtn.classList.add("show");sBtn.innerHTML="<span>↓</span><span class=\"unread-count\">"+_unreadCount+"</span>";}}
 }
 
 function openImgOverlay(url){

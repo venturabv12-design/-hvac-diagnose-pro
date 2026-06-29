@@ -2591,6 +2591,12 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 .v2-hbtn-ic{height:18px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;}
 .v2-hbtn-ic svg{width:17px;height:17px;}
 .v2-hbtn-label{font-family:var(--font-code);font-size:8px;font-weight:700;letter-spacing:.06em;color:rgba(244,239,230,.7);}
+/* chat-first: 5 header buttons (Call·FaceTime·Chats·Clear·Settings) must fit narrow phones (SE/320-360px) without clipping or crushing the MIKE identity */
+@media (max-width:380px){
+  .v2-chat-header .v2-hbtn{width:44px;height:46px;}
+  .v2-chat-header .v2-hbtn-label{font-size:7px;letter-spacing:.03em;}
+  .v2-chat-header .v2-hsub .lt{display:none;}
+}
 .v2-hbtn.call .v2-hbtn-ic,.v2-hbtn.call .v2-hbtn-label{color:var(--safety);}
 .v2-hbtn.call{border-color:rgba(255,180,0,.32);}
 .v2-hbtn.face .v2-hbtn-ic,.v2-hbtn.face .v2-hbtn-label{color:var(--teal);}
@@ -3291,7 +3297,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <!-- MIKE HEADER — V2 treatment: no face/avatar, teal presence pulse, Call + FaceTime one tap -->
       <div class="chat-header v2-chat-header">
         <div style="display:flex;align-items:center;gap:11px;flex:1;min-width:0;">
-          <button class="mp-back" onclick="mpGoHome()" aria-label="Back to Mike's home" title="Back to home">&#x2039;</button>
+          <button class="mp-back" onclick="mpGoHome()" aria-label="Back to Mike's home" title="Back to home" style="display:none;">&#x2039;</button>
           <div class="v2-hpres">
             <div class="ring"><img src="/icon-512.png" alt="Mike" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"/></div>
             <div class="v2-dot pd"></div>
@@ -3317,6 +3323,10 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           <button onclick="wipeChat()" class="v2-hbtn clear" title="Clear chat" aria-label="Clear chat">
             <span class="v2-hbtn-ic">&#x2715;</span>
             <span class="v2-hbtn-label" data-v2i18n="clear">CLEAR</span>
+          </button>
+          <button onclick="toggleProfileDD()" class="v2-hbtn settings" title="Settings · language · account" aria-label="Settings, language and account">
+            <span class="v2-hbtn-ic">&#x2699;&#xFE0F;</span>
+            <span class="v2-hbtn-label">SETTINGS</span>
           </button>
         </div>
       </div>
@@ -3353,7 +3363,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <!-- CHAT MESSAGES -->
       <div class="chat-messages-wrap" style="position:relative;">
         <div id="chatMessages" class="chat-messages">
-          <div class="msg-agent has-mike-badge" id="mikeWelcomeMsg">
+          <div class="msg-agent has-mike-badge" id="mikeWelcomeMsg" style="display:none;">
             <div class="msg-mike-badge"></div>
             <div class="msg-bubble msg-bubble-agent">
               <p style="margin-bottom:8px;"><strong>Hey, I'm Mike.</strong> 25 years in the field &mdash; every system, every failure, every fix. Ask me anything.</p>
@@ -3367,7 +3377,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
             <div class="msg-time">Just now</div>
           </div>
           <!-- DISMISSIBLE EXAMPLE PROMPTS -->
-          <div id="examplePrompts" style="margin-top:6px;padding:10px 12px;background:rgba(199,85,59,.05);border:1px solid rgba(199,85,59,.15);border-radius:10px;">
+          <div id="examplePrompts" style="display:none;margin-top:6px;padding:10px 12px;background:rgba(199,85,59,.05);border:1px solid rgba(199,85,59,.15);border-radius:10px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
               <span style="font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Try asking</span>
               <button onclick="document.getElementById('examplePrompts').style.display='none';" style="background:none;border:none;font-size:11px;color:#9ca3af;cursor:pointer;font-family:var(--font);font-weight:600;padding:2px 6px;border-radius:4px;">&#x2715; Dismiss</button>
@@ -4254,6 +4264,7 @@ function applyModeFromRole() {
     if (ht) ht.style.display = ''; if (pt) pt.style.display = '';
     if (avt) avt.style.display = 'flex';
     adminSetView('pro'); // default to the tech side
+    document.body.classList.add('mp-chatting'); document.documentElement.classList.add('mp-chatting'); // chat-first: land in the conversation, not the hero
     return;
   }
   if (avt) avt.style.display = 'none'; // non-admins: single role, no switcher
@@ -4264,6 +4275,7 @@ function applyModeFromRole() {
     if (proTab) proTab.style.display = 'none';
   } else {
     setMode('pro');
+    document.body.classList.add('mp-chatting'); document.documentElement.classList.add('mp-chatting'); // chat-first: land in the conversation, not the hero
     // Hide the homeowner tab only — keep the card visible
     var homeTab = document.getElementById('tabHome');
     if (homeTab) homeTab.style.display = 'none';
@@ -4628,7 +4640,7 @@ function toggleProfileDD(){
   if(d)d.classList.toggle('open');
   updateProfileUI();
 }
-function closeProfileDD(){var d=document.getElementById('profileDD');if(d)d.classList.remove('open');}
+function closeProfileDD(){var d=document.getElementById('profileDD');if(d)d.classList.remove('open');window._settingsReturn=false;}
 
 document.addEventListener('click',function(e){
   // e.target can be a non-Element node (text node / SVG element in some Safari paths),
@@ -4642,7 +4654,7 @@ document.addEventListener('click',function(e){
   var clo=function(sel){return (t&&typeof t.closest==='function')?t.closest(sel):null;};
   // Contractor triggers (.nav-globe / .nav-more) are whitelisted alongside the homeowner triggers (#langBtn / #navProfileBtn) so the same tap that opens a dropdown isn't immediately treated as an outside-click that closes it.
   var d=document.getElementById('profileDD'),b=document.getElementById('navProfileBtn');
-  if(d&&b&&!d.contains(t)&&!b.contains(t)&&!clo('.nav-more'))closeProfileDD();
+  if(d&&b&&!d.contains(t)&&!b.contains(t)&&!clo('.nav-more')&&!clo('[onclick*="toggleProfileDD"]'))closeProfileDD();
   var ld=document.getElementById('langDropdown'),lb=document.getElementById('langBtn'),alb=document.getElementById('authLangBtn');
   // Whitelist every trigger that opens #langDropdown: homeowner #langBtn, contractor
   // .nav-globe, pre-login #authLangBtn, and the contractor profile "Language" item.
@@ -4814,11 +4826,11 @@ function isProFeature(feature){
 }
 
 // pddBilling replaced below
-function pddStats(){closeProfileDD();showAdminDashboard();}
+function pddStats(){closeProfileDD();window._settingsReturn=true;showAdminDashboard();}
 // pddWhatsNew replaced below
 // pddHelp replaced below
 function pddProfile(){
-  closeProfileDD();
+  closeProfileDD();window._settingsReturn=true;
   var el=document.getElementById('profileModal');
   if(!el)return;
   // Basic fields
@@ -5014,7 +5026,7 @@ function saveProfileSettings(){
 }
 
 function pddBilling(){
-  closeProfileDD();
+  closeProfileDD();window._settingsReturn=true;
   var isHome=currentUser&&currentUser.role==='homeowner';
   var hc=document.getElementById('billingHomeCards');
   var pc=document.getElementById('billingProCards');
@@ -5023,7 +5035,7 @@ function pddBilling(){
   openModal('billingModal');
 }
 function pddWhatsNew(){
-  closeProfileDD();
+  closeProfileDD();window._settingsReturn=true;
   var isHome=currentUser&&currentUser.role==='homeowner';
   var title=document.getElementById('whatsNewTitle');
   var subtitle=document.getElementById('whatsNewSub');
@@ -5039,10 +5051,10 @@ function pddWhatsNew(){
   }
   openModal('whatsNewModal');
 }
-function pddRefLog(){closeProfileDD();showRefrigerantLog();}
-function pddInvoice(){closeProfileDD();generateInvoice();}
-function pddCustomers(){closeProfileDD();showCustomerDB();}
-function pddPerformance(){closeProfileDD();showPerformanceDashboard();}
+function pddRefLog(){closeProfileDD();window._settingsReturn=true;showRefrigerantLog();}
+function pddInvoice(){closeProfileDD();window._settingsReturn=true;generateInvoice();}
+function pddCustomers(){closeProfileDD();window._settingsReturn=true;showCustomerDB();}
+function pddPerformance(){closeProfileDD();window._settingsReturn=true;showPerformanceDashboard();}
 
 function showHelpFeedback(){
   var el=document.getElementById('helpFeedbackSection');
@@ -5060,7 +5072,7 @@ function submitHelpFeedback(){
   showToast('Thank you for your feedback ❤️','success',3000);
 }
 
-function pddHelp(){closeProfileDD();document.getElementById('feedbackSection').style.display='none';openModal('helpModal');}
+function pddHelp(){closeProfileDD();window._settingsReturn=true;document.getElementById('feedbackSection').style.display='none';openModal('helpModal');}
 
 function openModal(id){
   var el=document.getElementById(id);if(el)el.classList.add('show');
@@ -5069,7 +5081,12 @@ function closeModal(id){
   var el=document.getElementById(id);if(el)el.classList.remove('show');
   // Reset pending experience level if profile modal closed without saving
   if(id==='profileModal')_pendingExpLevel=null;
+  _reopenSettingsIfArmed();
 }
+// Settings back-stack: when a settings sub-page (opened from the profile menu) closes, drop
+// the tech back to the Settings list — not all the way out to the chat. Armed by the pddX
+// openers, cleared on consume or when the menu is dismissed (closeProfileDD).
+function _reopenSettingsIfArmed(){if(window._settingsReturn){window._settingsReturn=false;var pd=document.getElementById('profileDD');if(pd)pd.classList.add('open');}}
 
 function selectBillingPlan(plan,el){
   selPlan=plan;
@@ -6456,7 +6473,7 @@ function admVerifyDiagram(btn,id){
     })
     .catch(function(){btn.disabled=false;btn.innerHTML='Verify &#10003;';});
 }
-function closeAdmin(){var el=document.getElementById('adminOverlay');if(el)el.classList.remove('show');}
+function closeAdmin(){var el=document.getElementById('adminOverlay');if(el)el.classList.remove('show');_reopenSettingsIfArmed();}
 // Techs section: collapsible dropdown + live search filter (name / email / company).
 function admToggleTechs(){
   var b=document.getElementById('admTechsBody'),ch=document.getElementById('admTechsChev');
@@ -8783,6 +8800,7 @@ function idbDeleteDiagram(label){
 // Open the "Saved Diagrams" modal and render the offline list from IndexedDB.
 function openSavedDiagrams(){
   if(typeof closeProfileDD==='function')try{closeProfileDD();}catch(_){}
+  window._settingsReturn=true;
   var body=document.getElementById('savedDiagramsBody');
   if(!body){if(typeof openModal==='function')openModal('savedDiagramsModal');return;}
   body.innerHTML='<div style="text-align:center;color:#9499B0;font-size:13px;padding:24px 0;">Loading saved diagrams…</div>';
@@ -11037,7 +11055,7 @@ function mpEnsureSubsheet(){
 function mpOpenTool(key,tileEl){
   var t=MP_TOOLS[key];if(!t)return;
   if(typeof stopMikeSpeaking==='function')stopMikeSpeaking();
-  var _om=document.querySelector('.tz-modal-overlay.show');if(_om)_om.classList.remove('show');
+  var _om=document.querySelector('.tz-modal-overlay.show');if(_om)_om.classList.remove('show');_reopenSettingsIfArmed();
   var s=mpEnsureSubsheet();
   var rows='';
   for(var i=0;i<t.actions.length;i++){
@@ -11481,7 +11499,7 @@ function navBackTap(){
   var pd=document.getElementById('profileDD');if(pd&&pd.classList.contains('open')){pd.classList.remove('open');return;}
   // Close any visible .show modal overlay.
   var openMod=document.querySelector('.tz-modal-overlay.show, .modal.show');
-  if(openMod){openMod.classList.remove('show');return;}
+  if(openMod){openMod.classList.remove('show');_reopenSettingsIfArmed();return;}
   // Otherwise scroll the chat thread back to the top.
   var cm=document.getElementById('chatMessages');if(cm)cm.scrollTo({top:0,behavior:'smooth'});
 }
@@ -12783,6 +12801,7 @@ function dismissPwaHint(){
   if(b)b.style.display='none';
 }
 function showPwaInstallBanner(kind){
+  return; // chat-first (Brandon's call): the "Add to Home Screen" auto-banner is retired. triggerPwaInstall() stays intact if ever wired to a manual button.
   try{if(localStorage.getItem('trazer_pwa_hint_dismissed')==='1')return;}catch(e){}
   // GAP2 — kill the install banner on cold launch. The Frame G landing is the front
   // door; an install nag must never crowd it. Only surface the hint once the visitor
@@ -13157,7 +13176,7 @@ function initSendHaptic(){
 function initKeyboardShortcuts(){
   document.addEventListener('keydown',function(e){
     if(e.key==='/'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'){e.preventDefault();var i=document.getElementById('chatInput');if(i)i.focus();}
-    if(e.key==='Escape'){closeShare();closeChatSearch();try{if(typeof stopLiveCamera==='function')stopLiveCamera();}catch(_){}try{if(typeof closeActionDrawer==='function')closeActionDrawer();}catch(_){}var o=document.querySelector('.tz-modal-overlay.show');if(o)o.classList.remove('show');}
+    if(e.key==='Escape'){closeShare();closeChatSearch();try{if(typeof stopLiveCamera==='function')stopLiveCamera();}catch(_){}try{if(typeof closeActionDrawer==='function')closeActionDrawer();}catch(_){}var o=document.querySelector('.tz-modal-overlay.show');if(o)o.classList.remove('show');_reopenSettingsIfArmed();}
     if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();openChatSearch();}
   });
 }

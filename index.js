@@ -1642,7 +1642,14 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // Wiring/schematic questions get a non-streamed reply so a retrieved diagram
   // image can be attached to the end of the response without splitting the sentinel.
   const _wiringDiagramIntent = /(wiring|schematic|connection|ladder)\s+diagram|electrical\s+schematic|wiring\s+schematic|(diagram|schematic)\s+(for|of|on)\b|wiring\s+(for|on|of)\b|\bthe\s+(wiring|schematic)\b|(show|pull\s+up|bring\s+up|upload|get|give|send|see|need|want|grab|find)\s+(me\s+)?(the\s+|a\s+|an\s+)?(wiring|schematic|diagram)|(diagram|schematic)\b[^.!?\n]{0,20}\b(hook.?up|wiring|terminal)/i.test(_lastUser);
-  const _forceNonStream = !!_safetyLead || !!_inverterWarn || !!_capacitorWarn || _homeownerFramed || _wiringDiagramIntent;
+  // (D3) Capacitor-DISCHARGE risk: even when the tech never types "capacitor", Mike
+  // routinely self-diagnoses a failed run/start cap from "fan hums but won't spin" and
+  // then emits the lethal "short the terminals with a screwdriver" method. The
+  // deterministic screwdriver strip only exists on the non-stream path, so force
+  // non-stream for any message where a self-diagnosed cap discharge could appear —
+  // that guarantees the strip runs and the dangerous method can't reach a tech.
+  const _capDischargeRisk = /(capacitor|\bcaps?\b|dual[- ]?run|run cap|start cap|hard start|discharg)|((fan|motor|blower|compressor|condenser)[^.]{0,40}(not spinning|won'?t (spin|start|turn)|just hum|hums?|humming|buzz|won'?t run))|((won'?t (spin|start)|not spinning|humming|hums?)[^.]{0,40}(fan|motor|blower|compressor|condenser))/i.test(_lastUser);
+  const _forceNonStream = !!_safetyLead || !!_inverterWarn || !!_capacitorWarn || _homeownerFramed || _wiringDiagramIntent || _capDischargeRisk;
 
   globalActive++;
   const controller = new AbortController();
@@ -1859,17 +1866,25 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         outText = _hoLines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
         if (_hoDropped) outText += (outText ? '\n\n' : '') + 'Numbers on price? That’s your tech’s call to make — I’m here to make sure you know exactly what’s wrong and what to ask him.';
       }
-      // SAFETY STRIP (deterministic): the model keeps generating the "short the terminals with a
-      // screwdriver" discharge method despite the prompt forbidding it. A prompt can't be trusted
-      // for a trained-in dangerous default — remove it here so only the resistor method survives.
-      if (_capacitorWarn) {
+      // SAFETY STRIP (deterministic, UNCONDITIONAL): the model keeps generating the "short the
+      // terminals with a screwdriver" discharge method despite the prompt forbidding it. A prompt
+      // can't be trusted for a trained-in dangerous default. This must run on EVERY response — not
+      // just when the tech typed "capacitor" — because Mike self-diagnoses a failed cap from
+      // symptoms ("fan hums but won't spin") and emits the screwdriver method with no cap keyword in
+      // the user's message (QA scenarios A1/B4, 2026-07-08). Sentence-level, so only the dangerous
+      // sentence is removed; the resistor method and the rest of the answer survive.
+      const _hadScrewMethod = /\bscrewdriver\b/i.test(outText) && /\b(?:terminal|short|shorting|bridge|across)\b/i.test(outText);
+      outText = outText.replace(/[^.!?\n]*\bscrewdriver\b[^.!?\n]*\b(?:terminal|short|shorting|blade|across)\b[^.!?\n]*[.!?]/gi, '');
+      outText = outText.replace(/[^.!?\n]*\b(?:short|shorting|bridge)\b[^.!?\n]*\bterminal[^.!?\n]*\bscrewdriver\b[^.!?\n]*[.!?]/gi, '');
+      // The multi-line "Method 1: …screwdriver…" block + orphaned-heading cleanup can corrupt
+      // legitimately-numbered non-capacitor answers, so keep that de-numbering scoped to the
+      // capacitor path where a "Method 1 (screwdriver) / Method 2 (resistor)" pair is expected.
+      if (_capacitorWarn || _hadScrewMethod) {
         outText = outText.replace(/(?:#{1,6}\s*|\*\*\s*)?Method\s*1\b[^\n]*screwdriver[\s\S]*?(?=(?:#{1,6}\s*|\*\*\s*)?Method\s*2\b|\n#{1,6}\s|$)/i, '');
-        outText = outText.replace(/[^.!?\n]*\bscrewdriver\b[^.!?\n]*\b(?:terminal|short|shorting|blade|across)\b[^.!?\n]*[.!?]/gi, '');
-        outText = outText.replace(/[^.!?\n]*\b(?:short|shorting|bridge)\b[^.!?\n]*\bterminal[^.!?\n]*\bscrewdriver\b[^.!?\n]*[.!?]/gi, '');
         // removing the screwdriver "Method 1" leaves "Method 2" orphaned — de-number remaining method headings so it reads clean
         outText = outText.replace(/\bMethod\s*[1-9]\b[.:)\-—]*\s*/gi, '');
-        outText = outText.replace(/\n{3,}/g, '\n\n').trim();
       }
+      outText = outText.replace(/\n{3,}/g, '\n\n').trim();
       // Genuine ACTIVE emergencies (911 / live gas / CO / spillage / A2L release) still
       // LEAD — you never bury "call 911" or "shut the gas off" under an answer. The
       // precautionary stored-energy cautions (capacitor / inverter "discharge before you

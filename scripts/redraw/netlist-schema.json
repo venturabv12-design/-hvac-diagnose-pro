@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "trazer/redraw/netlist-schema.json",
+  "title": "Mike Wiring Netlist",
+  "description": "Structured circuit the vision extractor MUST emit (never SVG coordinates). A deterministic renderer turns this into a clean SVG; the verify gate round-trips a redraw netlist against this source. Every nets[].endpoints[] {component,terminal} MUST resolve to a declared component + terminal. This separation (structure, not drawing) is the whole accuracy story.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["model_key", "circuit_type", "components", "terminals", "nets"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Schema version tag. Default '1'.",
+      "default": "1"
+    },
+    "model_key": {
+      "type": "string",
+      "description": "normalizeModelKey output, e.g. 'GOODMAN:GSX130361'. Dead-exact key.",
+      "minLength": 1
+    },
+    "circuit_type": {
+      "type": "string",
+      "description": "Which single circuit this netlist describes (one circuit per netlist for legibility).",
+      "enum": ["full", "line-voltage", "low-voltage", "defrost", "ignition", "control-board", "thermostat"]
+    },
+    "components": {
+      "type": "array",
+      "description": "Every physical part in the circuit. id is unique within the netlist.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "description": "Unique component id, e.g. 'CONTACTOR'." },
+          "label": { "type": "string", "minLength": 1, "description": "Human label drawn on the box, e.g. 'Contactor'." },
+          "kind": {
+            "type": "string",
+            "description": "Optional component class (drives icon/box styling, purely cosmetic).",
+            "enum": ["thermostat", "contactor", "compressor", "capacitor", "transformer", "fan-motor", "relay", "board", "sensor", "switch", "terminal-block", "other"]
+          }
+        }
+      }
+    },
+    "terminals": {
+      "type": "array",
+      "description": "Every terminal, each owned by exactly one component. A terminal is referenced by nets via {component,terminal}. Terminal ids are unique WITHIN their component.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["component", "id"],
+        "properties": {
+          "component": { "type": "string", "minLength": 1, "description": "Owning component id (must exist in components[])." },
+          "id": { "type": "string", "minLength": 1, "description": "Terminal designation, e.g. 'HERM','C','R','Y','A1','T1'." },
+          "label": { "type": "string", "description": "Optional display label (defaults to id)." }
+        }
+      }
+    },
+    "nets": {
+      "type": "array",
+      "description": "Each net is one electrical node connecting >=2 terminals. This is what the verify gate compares set-wise.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "endpoints"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "description": "Unique net id, e.g. 'n1'." },
+          "label": { "type": "string", "description": "Optional net label, e.g. 'Y call'." },
+          "voltage_class": {
+            "type": "string",
+            "description": "Drives color-coding + safety emphasis. line = 208/240V, low = 24V control, start = start-winding/run-cap.",
+            "enum": ["line", "low-voltage", "start-winding", "ground", "signal", "unknown"],
+            "default": "unknown"
+          },
+          "wire_color": {
+            "type": "string",
+            "description": "The real conductor color from the OEM diagram, e.g. 'yellow','black','red'. Renderer prefers voltage_class for stroke, shows wire_color as a chip."
+          },
+          "gauge": { "type": "string", "description": "Optional AWG, e.g. '18'." },
+          "endpoints": {
+            "type": "array",
+            "description": "The terminals this net ties together. >=2, each must resolve to a declared component+terminal.",
+            "minItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["component", "terminal"],
+              "properties": {
+                "component": { "type": "string", "minLength": 1, "description": "component id (must exist)." },
+                "terminal": { "type": "string", "minLength": 1, "description": "terminal id owned by that component (must exist)." }
+              }
+            }
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "description": "Free-text field notes (e.g. 'Factory R-Rc jumper present'). Never load-bearing for the render geometry.",
+      "items": { "type": "string" }
+    },
+    "source_ref": {
+      "type": "object",
+      "description": "Provenance of the source diagram this was traced from.",
+      "additionalProperties": true,
+      "properties": {
+        "doc_title": { "type": "string" },
+        "page": { "type": "integer" },
+        "diagram_image_url": { "type": "string" }
+      }
+    }
+  }
+}

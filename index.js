@@ -1540,9 +1540,18 @@ async function retrieveManualContext(userText) {
     if (!Array.isArray(chunks) || !chunks.length) return null;
     // Rerank the candidate pool down to the best 6 (falls back to vector order on miss).
     const _pool = chunks; // full candidate pool (vector order) — used to surface a diagram even if rerank drops it
+    // Relevance floor: the reranker scores true relevance 0..1. If even the BEST candidate
+    // is below the floor, we have no confident manual for this exact unit — return null so Mike
+    // says "I don't have that one, read the plate" instead of being fed a wrong-family near-miss
+    // (verified: real matches rerank ~0.6-0.85; wrong-family near-misses top out ~0.41).
+    const RAG_RELEVANCE_FLOOR = parseFloat(process.env.RAG_RELEVANCE_FLOOR || '0.5');
     const ranked = await _rerank(q, chunks.map(c => c.chunk_text), 6);
-    if (ranked && ranked.length) chunks = ranked.map(x => chunks[x.index]).filter(Boolean);
-    else chunks = chunks.slice(0, 6);
+    if (ranked && ranked.length) {
+      if (ranked[0].relevance_score < RAG_RELEVANCE_FLOOR) return null;
+      chunks = ranked.map(x => chunks[x.index]).filter(Boolean);
+    } else {
+      chunks = chunks.slice(0, 6);
+    }
     const text = chunks.map(c => `[Source: ${c.doc_title}${c.page_num ? ', p.' + c.page_num : ''}]\n${c.chunk_text}`).join('\n\n---\n\n');
     // Phase 2: collect wiring-diagram images. Prefer the reranked top chunks; if NONE of them
     // carry a diagram, fall back to the best diagram in the full candidate pool so a brand that

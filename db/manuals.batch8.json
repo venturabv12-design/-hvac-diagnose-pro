@@ -1,0 +1,356 @@
+[
+  { "brand": "goodman", "model_family": "GSX14", "doc_id": "goodman-gsx14-service-instructions",
+    "doc_title": "Goodman GSX14 Single-Stage Air Conditioner Service Instructions",
+    "doc_url": "https://www.acdirect.com/media/specs/Goodman/goodman-gsx14-service-instructions.pdf",
+    "pdf": "https://www.acdirect.com/media/specs/Goodman/goodman-gsx14-service-instructions.pdf" },
+
+  { "brand": "goodman", "model_family": "GSX", "doc_id": "goodman-gsx-gsz-service-2023",
+    "doc_title": "Goodman ANX/SSX/ASX/GSX/DSX/VSX Condensing Units Service & Troubleshooting (2023)",
+    "doc_url": "https://hvacdirect.com/media/pdf/GSX%20GSZ%20Service%20Manual%20v2023.pdf",
+    "pdf": "https://hvacdirect.com/media/pdf/GSX%20GSZ%20Service%20Manual%20v2023.pdf" },
+
+  { "brand": "goodman", "model_family": "GSZ14", "doc_id": "goodman-gsz14-service",
+    "doc_title": "Goodman GSZ14 Single-Stage Heat Pump Service Manual",
+    "doc_url": "https://documents.alpinehomeair.com/product/Goodman%20GSZ14%20Service%20Manual.pdf",
+    "pdf": "https://documents.alpinehomeair.com/product/Goodman%20GSZ14%20Service%20Manual.pdf" },
+
+  { "brand": "goodman", "model_family": "DSZ", "doc_id": "goodman-dsz-service-instructions",
+    "doc_title": "Goodman DSZ Series Heat Pump Service Instructions",
+    "doc_url": "https://www.hvacpartsshop.com/content/goodman-hvac-manuals/dszseries.pdf",
+    "pdf": "https://www.hvacpartsshop.com/content/goodman-hvac-manuals/dszseries.pdf" },
+
+  { "brand": "goodman", "model_family": "GSXN4", "doc_id": "goodman-gsxn4-install",
+    "doc_title": "Goodman GSXN4 Single-Stage Air Conditioner Installation & Service Reference",
+    "doc_url": "https://hvacdirect.com/media/pdf/GSXN4%20Install%20Manual.pdf",
+    "pdf": "https://hvacdirect.com/media/pdf/GSXN4%20Install%20Manual.pdf" },
+
+  { "brand": "goodman", "model_family": "GSXH5", "doc_id": "goodman-gsxh5-specsheet",
+    "doc_title": "Goodman GSXH5 High-Efficiency Single-Stage Air Conditioner Specifications",
+    "doc_url": "https://documents.alpinehomeair.com/product/goodmangsxh5specsheet.pdf",
+    "pdf": "https://documents.alpinehomeair.com/product/goodmangsxh5specsheet.pdf" },
+
+  { "brand": "goodman", "model_family": "R32-Packaged", "doc_id": "goodman-r32-packaged-ac-service",
+    "doc_title": "Goodman R-32 Packaged Air Conditioner Service & Troubleshooting Manual",
+    "doc_url": "https://hvacdirect.com/media/pdf/Goodman%20R32%20Packaged%20AC%20Service%20Manual.pdf",
+    "pdf": "https://hvacdirect.com/media/pdf/Goodman%20R32%20Packaged%20AC%20Service%20Manual.pdf" },
+
+  { "brand": "goodman", "model_family": "RS6200301", "doc_id": "goodman-rs6200301-glxs-service",
+    "doc_title": "Goodman/Amana Single-Stage Condensing Unit (GLXS) Service & Troubleshooting",
+    "doc_url": "https://daikincomfort.com/docs/default-source/amst/sm-rs6200301r1.pdf",
+    "pdf": "https://daikincomfort.com/docs/default-source/amst/sm-rs6200301r1.pdf" },
+
+  { "brand": "goodman", "model_family": "GLXS4M", "doc_id": "goodman-glxs4m-install",
+    "doc_title": "Goodman GLXS4M Single-Stage Air Conditioner Installation & Service Reference",
+    "doc_url": "https://iwae.com/media/manuals/goodman/glxs4m-installation.pdf",
+    "pdf": "https://iwae.com/media/manuals/goodman/glxs4m-installation.pdf" },
+
+  { "brand": "goodman", "model_family": "GLXS3B", "doc_id": "goodman-glxs3b-specsheet",
+    "doc_title": "Goodman GLXS3B R-32 Single-Stage Air Conditioner Specifications",
+    "doc_url": "https://hvacdirect.com/media/pdf/Goodman-GLXS3B-specsheet.pdf",
+    "pdf": "https://hvacdirect.com/media/pdf/Goodman-GLXS3B-specsheet.pdf" },
+
+  { "brand": "goodman", "model_family": "GCVM97", "doc_id": "goodman-gcvm97-service",
+    "doc_title": "Goodman GCVM97 Modulating Gas Furnace Service Instructions",
+    "doc_url": "https://hvacdirect.com/media/hvac/pdf/GCVM97-Service.pdf",
+    "pdf": "https://hvacdirect.com/media/hvac/pdf/GCVM97-Service.pdf" },
+
+  { "brand": "goodman", "model_family": "GMVM97", "doc_id": "goodman-gmvm97-gcvm97-install",
+    "doc_title": "Goodman GMVM97 / GCVM97 Modulating Gas Furnace Installation Instructions",
+    "doc_url": "https://documents.alpinehomeair.com/product/Goodman%20GMVM97%20GCVM97%20Installation%20Instructions.pdf",
+    "pdf": "https://documents.alpinehomeair.com/product/Goodman%20GMVM97%20GCVM97%20Installation%20Instructions.pdf" },
+
+  { "brand": "ruud", "model_family": "RA14", "doc_id": "ruud-ra14-specifications",
+    "doc_title": "Ruud Achiever RA14 Single-Stage Air Conditioner Specifications",
+    "doc_url": "https://iwae.com/media/manuals/ruud/ra14-specifications.pdf",
+    "pdf": "https://iwae.com/media/manuals/ruud/ra14-specifications.pdf" },
+
+  { "brand": "rheem", "model_family": "RA16", "doc_id": "rheem-ra16-classic-spec-a11-222",
+    "doc_title": "Rheem Classic RA16 Single-Stage Air Conditioner Specifications (A11-222)",
+    "doc_url": "https://media.datatail.com/docs/manual/446467_en.pdf",
+    "pdf": "https://media.datatail.com/docs/manual/446467_en.pdf" },
+
+  { "brand": "ruud", "model_family": "RA16", "doc_id": "ruud-ra16-install",
+    "doc_title": "Ruud Achiever RA16 Air Conditioner Installation Instructions",
+    "doc_url": "https://www.meiersupply.com/customer/docs/skudocs/Document_Links/Vendors/106903%20-%20Ruud%20Residential/RA16/RA16Install.pdf",
+    "pdf": "https://www.meiersupply.com/customer/docs/skudocs/Document_Links/Vendors/106903%20-%20Ruud%20Residential/RA16/RA16Install.pdf" },
+
+  { "brand": "ruud", "model_family": "U96V", "doc_id": "ruud-u96v-specifications",
+    "doc_title": "Ruud Ultra U96V Two-Stage Multi-Position Gas Furnace Specifications",
+    "doc_url": "https://iwae.com/media/manuals/ruud/u96v-specifications.pdf",
+    "pdf": "https://iwae.com/media/manuals/ruud/u96v-specifications.pdf" },
+
+  { "brand": "rheem", "model_family": "Gas_Furnace", "doc_id": "rheem-gas-furnace-708503a",
+    "doc_title": "Rheem Gas Furnaces Installation Instructions (708503A)",
+    "doc_url": "https://files.rheem.com/LiteratureArchive/708503a.pdf",
+    "pdf": "https://files.rheem.com/LiteratureArchive/708503a.pdf" },
+
+  { "brand": "rheem", "model_family": "R802V", "doc_id": "rheem-ruud-r802v-uh-install",
+    "doc_title": "Rheem/Ruud R802V Two-Stage Upflow/Horizontal Gas Furnace Installation Instructions",
+    "doc_url": "https://airmanagementsupply.com/documents/rheem-ruud_R802V_UH_installation_instructions.pdf",
+    "pdf": "https://airmanagementsupply.com/documents/rheem-ruud_R802V_UH_installation_instructions.pdf" },
+
+  { "brand": "rheem", "model_family": "RH1P", "doc_id": "rheem-rh1p-air-handler-install",
+    "doc_title": "Rheem RH1P/RH1T Air Handler Installation Instructions (R-410A)",
+    "doc_url": "https://abrwholesalers.com/media/assets/product/documents/Rheem/RH1P-JA/InstallationInstructions_92-20521-110-05_Rev5.pdf",
+    "pdf": "https://abrwholesalers.com/media/assets/product/documents/Rheem/RH1P-JA/InstallationInstructions_92-20521-110-05_Rev5.pdf" },
+
+  { "brand": "rheem", "model_family": "RP14", "doc_id": "rheem-rp14-heat-pump-install",
+    "doc_title": "Rheem RP14 Single-Stage Heat Pump Outdoor Unit Installation Instructions",
+    "doc_url": "https://abrwholesalers.com/media/assets/product/documents/Rheem/RP14/RP14/InstallationInstructions_92-105074-04-17_Rev17.pdf",
+    "pdf": "https://abrwholesalers.com/media/assets/product/documents/Rheem/RP14/RP14/InstallationInstructions_92-105074-04-17_Rev17.pdf" },
+
+  { "brand": "runtru", "model_family": "A4AC4", "doc_id": "runtru-a4ac4-install",
+    "doc_title": "RunTru A4AC4 (by Trane) Air Conditioner Installation & Operation Manual",
+    "doc_url": "https://runtruhvac.com/assets/pdf/technical_documents/air_conditioners/a4ac4/88-A4AC4001-1K-EN.pdf",
+    "pdf": "https://runtruhvac.com/assets/pdf/technical_documents/air_conditioners/a4ac4/88-A4AC4001-1K-EN.pdf" },
+
+  { "brand": "runtru", "model_family": null, "doc_id": "runtru-guide-26-1067",
+    "doc_title": "RunTru Product & Service Guide (by Trane)",
+    "doc_url": "https://runtruhvac.com/assets/pdf/resources/TT_26-1067-02_RunTru_GUIDE_proof_042321.pdf",
+    "pdf": "https://runtruhvac.com/assets/pdf/resources/TT_26-1067-02_RunTru_GUIDE_proof_042321.pdf" },
+
+  { "brand": "runtru", "model_family": "A4AC4", "doc_id": "runtru-a4ac4-install-1j",
+    "doc_title": "RunTru/Ameristar A4AC4 Air Conditioner Installation & Operation Manual (88-A4AC4001-1J)",
+    "doc_url": "https://www.ac-supply.com/content/88-A4AC4001-1J-EN.pdf",
+    "pdf": "https://www.ac-supply.com/content/88-A4AC4001-1J-EN.pdf" },
+
+  { "brand": "runtru", "model_family": "A4AH4E", "doc_id": "runtru-a4ah4e-air-handler-install",
+    "doc_title": "RunTru A4AH4E Air Handler Installation Instructions",
+    "doc_url": "https://hvacdirect.com/media/pdf/RunTru%20A4AH4E%20Air%20Handler%20install.pdf",
+    "pdf": "https://hvacdirect.com/media/pdf/RunTru%20A4AH4E%20Air%20Handler%20install.pdf" },
+
+  { "brand": "runtru", "model_family": "A4HP4", "doc_id": "runtru-a4hp4-heat-pump-install",
+    "doc_title": "RunTru A4HP4 Heat Pump Installation Manual",
+    "doc_url": "https://hvacdirect.com/media/pdf/RunTru%20a4hp%20install%20Manual.pdf",
+    "pdf": "https://hvacdirect.com/media/pdf/RunTru%20a4hp%20install%20Manual.pdf" },
+
+  { "brand": "runtru", "model_family": "BAYCURB051", "doc_id": "runtru-baycurb051a-install",
+    "doc_title": "RunTru BAYCURB051 Full-Perimeter Roof Mounting Curb Installation",
+    "doc_url": "https://iwae.com/media/manuals/runtru/baycurb051a-installation.pdf",
+    "pdf": "https://iwae.com/media/manuals/runtru/baycurb051a-installation.pdf" },
+
+  { "brand": "ameristar", "model_family": null, "doc_id": "ameristar-runtru-application-guide",
+    "doc_title": "RunTru & Ameristar Application Guide (SS-APG015A)",
+    "doc_url": "https://www.star-supply.com/content/SS-APG015A-EN_RunTru_Ameristar%20Application%20Guide.pdf",
+    "pdf": "https://www.star-supply.com/content/SS-APG015A-EN_RunTru_Ameristar%20Application%20Guide.pdf" },
+
+  { "brand": "ameristar", "model_family": "MiniSplit", "doc_id": "ameristar-minisplit-multisplit-guide",
+    "doc_title": "Ameristar Mini-Split / Multi-Split Ductless Guide",
+    "doc_url": "https://www.star-supply.com/content/AmeristarMiniSplit-MultiSplitDuctlessGuide.pdf",
+    "pdf": "https://www.star-supply.com/content/AmeristarMiniSplit-MultiSplitDuctlessGuide.pdf" },
+
+  { "brand": "ameristar", "model_family": "M4HP40", "doc_id": "ameristar-m4hp-install",
+    "doc_title": "Ameristar M4HP40 Series Split System Heat Pump Installation Instructions",
+    "doc_url": "https://iwae.com/media/manuals/ameristar/m4hp-installation.pdf",
+    "pdf": "https://iwae.com/media/manuals/ameristar/m4hp-installation.pdf" },
+
+  { "brand": "champion", "model_family": "Momentum", "doc_id": "champion-momentum-ac-tech-guide",
+    "doc_title": "Champion Momentum Series Split System Air Conditioners Technical Guide",
+    "doc_url": "https://files.hvacnavigator.com/p/5331851-chtg-b-0517.pdf",
+    "pdf": "https://files.hvacnavigator.com/p/5331851-chtg-b-0517.pdf" },
+
+  { "brand": "champion", "model_family": "LX", "doc_id": "champion-lx-heatpump-tech-guide",
+    "doc_title": "Champion LX Series 16 SEER Split System Heat Pumps Technical Guide",
+    "doc_url": "https://files.hvacnavigator.com/p/5547667-ltg-c-0419.pdf",
+    "pdf": "https://files.hvacnavigator.com/p/5547667-ltg-c-0419.pdf" },
+
+  { "brand": "champion", "model_family": "LX", "doc_id": "champion-lx-ac-publication",
+    "doc_title": "Champion LX Series Air Conditioners Product Publication",
+    "doc_url": "https://files.hvacnavigator.com/p/publ-8937-a-0618-ch.pdf",
+    "pdf": "https://files.hvacnavigator.com/p/publ-8937-a-0618-ch.pdf" },
+
+  { "brand": "champion", "model_family": "TH4B", "doc_id": "champion-th4b-heatpump-tech-guide",
+    "doc_title": "Champion TH4B18-60 Split System Heat Pump Technical Guide",
+    "doc_url": "https://files.hvacnavigator.com/p/5523951-ctg-j-0620.pdf",
+    "pdf": "https://files.hvacnavigator.com/p/5523951-ctg-j-0620.pdf" },
+
+  { "brand": "champion", "model_family": "AirHandler", "doc_id": "champion-ecm-air-handler-tech-guide",
+    "doc_title": "Champion Single-Piece Standard ECM Air Handlers Technical Guide",
+    "doc_url": "https://files.hvacnavigator.com/p/5493740-ctg-e-0120.pdf",
+    "pdf": "https://files.hvacnavigator.com/p/5493740-ctg-e-0120.pdf" },
+
+  { "brand": "champion", "model_family": null, "doc_id": "champion-residential-linecard",
+    "doc_title": "Champion Residential Products Line Card",
+    "doc_url": "https://files.hvacnavigator.com/p/jcich11970-champ-residentialproducts-linecard-viewonly-d23d.pdf",
+    "pdf": "https://files.hvacnavigator.com/p/jcich11970-champ-residentialproducts-linecard-viewonly-d23d.pdf" },
+
+  { "brand": "fujitsu", "model_family": "AOU36RLXFZH", "doc_id": "fujitsu-aou36rlxfzh-design-technical",
+    "doc_title": "Fujitsu Halcyon AOU36RLXFZH Multi-Zone Design & Technical Manual",
+    "doc_url": "https://hvacdirect.com/media/hvac/pdf/AOU36RLXFZH-Design-and-Technical-Manual.pdf",
+    "pdf": "https://hvacdirect.com/media/hvac/pdf/AOU36RLXFZH-Design-and-Technical-Manual.pdf" },
+
+  { "brand": "fujitsu", "model_family": "ASU18-24RLF", "doc_id": "fujitsu-asu18-24rlf-om",
+    "doc_title": "Fujitsu Halcyon ASU18/24RLF Wall-Mounted Type Operating Manual",
+    "doc_url": "https://www.fujitsugeneral.com/us/resources/pdf/support/downloads/(OM)ASU18-24RLF.pdf",
+    "pdf": "https://www.fujitsugeneral.com/us/resources/pdf/support/downloads/(OM)ASU18-24RLF.pdf" },
+
+  { "brand": "fujitsu", "model_family": "18-24RLXFW1", "doc_id": "fujitsu-18-24rlxfw1-om",
+    "doc_title": "Fujitsu Halcyon 18/24RLXFW1 / RLXFWH Wall-Mounted Type Operating Manual",
+    "doc_url": "https://www.fujitsugeneral.com/us/resources/pdf/support/downloads/(OM)18-24RLXFW1-RLXFWH.pdf",
+    "pdf": "https://www.fujitsugeneral.com/us/resources/pdf/support/downloads/(OM)18-24RLXFW1-RLXFWH.pdf" },
+
+  { "brand": "ducane", "model_family": "4AC13", "doc_id": "ducane-4ac13-4ac14-install",
+    "doc_title": "Ducane 4AC13/4AC14 Split System Air Conditioner Installation / Start-Up Instructions",
+    "doc_url": "https://documents.alpinehomeair.com/product/Ducane%204AC13%20-%204AC14%20Installation%20Instructions.pdf",
+    "pdf": "https://documents.alpinehomeair.com/product/Ducane%204AC13%20-%204AC14%20Installation%20Instructions.pdf" },
+
+  { "brand": "ducane", "model_family": "CMPE", "doc_id": "ducane-cmpe-install-service",
+    "doc_title": "Ducane CMPE Furnace Installation & Servicing Instructions and User's Information Manual",
+    "doc_url": "http://www.graycoolingman.com/uploads/1/0/6/6/10667336/ducane_cmpe_manual.pdf",
+    "pdf": "http://www.graycoolingman.com/uploads/1/0/6/6/10667336/ducane_cmpe_manual.pdf" },
+
+  { "brand": "ducane", "model_family": "92G1UHE", "doc_id": "ducane-a93uh-92g1uhe-service",
+    "doc_title": "Ducane A93UH1E / 92G1UHE Upflow Gas Furnace Service Manual",
+    "doc_url": "https://d2yn8sruhmqjt4.cloudfront.net/userfiles/documents/inriver/original/206727_duc92g1uh-resi_gasfurnaces_a931e-92g1e-upflow_service-manual.pdf",
+    "pdf": "https://d2yn8sruhmqjt4.cloudfront.net/userfiles/documents/inriver/original/206727_duc92g1uh-resi_gasfurnaces_a931e-92g1e-upflow_service-manual.pdf" },
+
+  { "brand": "concord", "model_family": "4AC13", "doc_id": "alliedair-4ac13-14-16l-ac-install",
+    "doc_title": "Concord/Allied 4AC13/14/16L Single-Stage Air Conditioner Installation Manual",
+    "doc_url": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/1%20-%20Document%20Updates/VALUE_AIRCONDITIONERS_4AC13-4AC14-4AC16L_INSTALLATIONMANUAL.pdf",
+    "pdf": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/1%20-%20Document%20Updates/VALUE_AIRCONDITIONERS_4AC13-4AC14-4AC16L_INSTALLATIONMANUAL.pdf" },
+
+  { "brand": "concord", "model_family": "4HP14", "doc_id": "alliedair-4hp14-15l-hp-install",
+    "doc_title": "Concord/Allied 4HP14/15L Single-Stage Split System Heat Pump Installation Manual",
+    "doc_url": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/1%20-%20Document%20Updates/VALUE_HEATPUMPS_4HP14L-4HP14B-4HP15L_INSTALLATIONMANUAL.pdf",
+    "pdf": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/1%20-%20Document%20Updates/VALUE_HEATPUMPS_4HP14L-4HP14B-4HP15L_INSTALLATIONMANUAL.pdf" },
+
+  { "brand": "allied", "model_family": "4SCU20LX", "doc_id": "alliedair-4scu20lx-4shp20lx-service",
+    "doc_title": "Allied Air 4SCU20LX / 4SHP20LX Air Conditioner & Heat Pump Service Manual",
+    "doc_url": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/Product%20Materials%20Library/Installation%20&%20Service%20Manuals/Air%20Conditioners%20&%20Heat%20Pumps/FLAGSHIP_AIRCONDITIONERS-HEATPUMPS_4SCU20LX-4SHP20LX_SERVICEMANUAL.pdf",
+    "pdf": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/Product%20Materials%20Library/Installation%20&%20Service%20Manuals/Air%20Conditioners%20&%20Heat%20Pumps/FLAGSHIP_AIRCONDITIONERS-HEATPUMPS_4SCU20LX-4SHP20LX_SERVICEMANUAL.pdf" },
+
+  { "brand": "guardian", "model_family": "PRPAC14", "doc_id": "alliedair-prpac-prphp14-packaged-install",
+    "doc_title": "Guardian/Allied PRPAC14/PRPHP14/PRAC14/PRHP14 SEER2 Packaged Unit Installation Manual",
+    "doc_url": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/Product%20Materials%20Library/Installation%20&%20Service%20Manuals/Packaged%20Units/RESI_PACKAGEDUNITS_PRPAC14-PRPHP14-PRAC14-PRHP14_SEER2_INSTALLATIONMANUAL.pdf",
+    "pdf": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/Product%20Materials%20Library/Installation%20&%20Service%20Manuals/Packaged%20Units/RESI_PACKAGEDUNITS_PRPAC14-PRPHP14-PRAC14-PRHP14_SEER2_INSTALLATIONMANUAL.pdf" },
+
+  { "brand": "airease", "model_family": "A801E", "doc_id": "alliedair-a801e-80g1e-furnace-install",
+    "doc_title": "AirEase/Allied A801E / 80G1E Upflow Gas Furnace Installation Manual",
+    "doc_url": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/1%20-%20Document%20Updates/RESI_GASFURNACES_A801E-80G1E-UPFLOW_INSTALLATIONMANUAL.pdf",
+    "pdf": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/1%20-%20Document%20Updates/RESI_GASFURNACES_A801E-80G1E-UPFLOW_INSTALLATIONMANUAL.pdf" },
+
+  { "brand": "airease", "model_family": "A931E", "doc_id": "alliedair-a931e-92g1e-furnace-install",
+    "doc_title": "AirEase/Allied A931E / 92G1E Upflow Gas Furnace Installation Manual",
+    "doc_url": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/1%20-%20Document%20Updates/RESI_GASFURNACES_A931E-92G1E-UPFLOW_INSTALLATIONMANUAL.pdf",
+    "pdf": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/1%20-%20Document%20Updates/RESI_GASFURNACES_A931E-92G1E-UPFLOW_INSTALLATIONMANUAL.pdf" },
+
+  { "brand": "airease", "model_family": "A962E", "doc_id": "alliedair-a962e-furnace-install",
+    "doc_title": "AirEase/Allied A962E Modulating Upflow Gas Furnace Installation Manual",
+    "doc_url": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/1%20-%20Document%20Updates/FLAGSHIP_GASFURNACES_A962E-UPFLOW_INSTALLATIONMANUAL.pdf",
+    "pdf": "https://s7d2.scene7.com/is/content/AlliedAirEnterprises/1%20-%20Document%20Updates/FLAGSHIP_GASFURNACES_A962E-UPFLOW_INSTALLATIONMANUAL.pdf" },
+
+  { "brand": "aireflo", "model_family": "92AF-95AF", "doc_id": "aireflo-92af-95af-furnace-install",
+    "doc_title": "Aire-Flo 92AF/95AF Gas Furnace Installation Instructions",
+    "doc_url": "https://www.aireflo-hvac.com/products/pdfs/92AF_95AF_install_0813.pdf",
+    "pdf": "https://www.aireflo-hvac.com/products/pdfs/92AF_95AF_install_0813.pdf" },
+
+  { "brand": "aireflo", "model_family": "80AF", "doc_id": "aireflo-80af-furnace-install",
+    "doc_title": "Aire-Flo 80AF Gas Furnace Installation Instructions",
+    "doc_url": "https://www.aireflo-hvac.com/products/pdfs/80AF_install_0413.pdf",
+    "pdf": "https://www.aireflo-hvac.com/products/pdfs/80AF_install_0413.pdf" },
+
+  { "brand": "aireflo", "model_family": "4AC13L", "doc_id": "aireflo-4ac13l-ac-tech-spec",
+    "doc_title": "Aire-Flo 4AC13L 13 SEER Air Conditioner Technical Specifications",
+    "doc_url": "https://www.aireflo-hvac.com/products/pdfs/4AC13L%20Technical%20Specifications.pdf",
+    "pdf": "https://www.aireflo-hvac.com/products/pdfs/4AC13L%20Technical%20Specifications.pdf" },
+
+  { "brand": "ecotemp", "model_family": "WCA4", "doc_id": "ecotemp-wca4-ac-install",
+    "doc_title": "EcoTemp WCA4 Split System Air Conditioner Installation Instructions",
+    "doc_url": "https://iwae.com/media/manuals/ecotemp/wca4-installations.pdf",
+    "pdf": "https://iwae.com/media/manuals/ecotemp/wca4-installations.pdf" },
+
+  { "brand": "ecotemp", "model_family": "WPA4", "doc_id": "ecotemp-wpa4-packaged-install",
+    "doc_title": "EcoTemp WPA4 Packaged Air Conditioner Installation Instructions",
+    "doc_url": "https://iwae.com/media/manuals/ecotemp/wpa4-installation.pdf",
+    "pdf": "https://iwae.com/media/manuals/ecotemp/wpa4-installation.pdf" },
+
+  { "brand": "ecotemp", "model_family": "WCH4", "doc_id": "ecotemp-wch4-heatpump-install",
+    "doc_title": "EcoTemp WCH4 Split System Heat Pump Installation Instructions",
+    "doc_url": "https://iwae.com/media/manuals/ecotemp/wch4-installation.pdf",
+    "pdf": "https://iwae.com/media/manuals/ecotemp/wch4-installation.pdf" },
+
+  { "brand": "grandaire", "model_family": "WCA4", "doc_id": "grandaire-icp-wca4-install-51901180402",
+    "doc_title": "Grandaire/ICP WCA4 R-410A Split System Air Conditioner Installation Instructions",
+    "doc_url": "https://www.shareddocs.com/hvac/docs/1011/Public/07/51901180402.pdf",
+    "pdf": "https://www.shareddocs.com/hvac/docs/1011/Public/07/51901180402.pdf" },
+
+  { "brand": "grandaire", "model_family": "WJH4", "doc_id": "grandaire-wjh4-brochure",
+    "doc_title": "Grandaire WJH4 Heating & Cooling Products Guide",
+    "doc_url": "https://iwae.com/media/manuals/grandaire/wjh4-brochure.pdf",
+    "pdf": "https://iwae.com/media/manuals/grandaire/wjh4-brochure.pdf" },
+
+  { "brand": "icp", "model_family": null, "doc_id": "icp-install-42601110100",
+    "doc_title": "ICP Split System Installation Instructions (42601110100)",
+    "doc_url": "http://icpindexing.toddsit.com/documents/003350/42601110100.pdf",
+    "pdf": "http://icpindexing.toddsit.com/documents/003350/42601110100.pdf" },
+
+  { "brand": "icp", "model_family": null, "doc_id": "icp-ac-install-22786",
+    "doc_title": "ICP R-410A Split System Air Conditioner Installation Instructions (ICP_22786)",
+    "doc_url": "https://www.shareddocs.com/hvac/docs/1011/Public/00/42101510300_ICP_22786.pdf",
+    "pdf": "https://www.shareddocs.com/hvac/docs/1011/Public/00/42101510300_ICP_22786.pdf" },
+
+  { "brand": "carrier", "model_family": "24ABC6", "doc_id": "carrier-24abc6-product-data",
+    "doc_title": "Carrier 24ABC6 Comfort 16 Single-Stage Air Conditioner Product Data",
+    "doc_url": "https://www.shareddocs.com/hvac/docs/1009/Public/01/24ABC6-8PD.pdf",
+    "pdf": "https://www.shareddocs.com/hvac/docs/1009/Public/01/24ABC6-8PD.pdf" },
+
+  { "brand": "carrier", "model_family": "24ABC6", "doc_id": "carrier-24abc6-series-install-01-824-118",
+    "doc_title": "Carrier 24ABC6/24AAA5/24ACC4/24ABB3 Air Conditioner Installation Instructions",
+    "doc_url": "https://www.shareddocs.com/hvac/docs/1010/Public/00/01-824-118-25.pdf",
+    "pdf": "https://www.shareddocs.com/hvac/docs/1010/Public/00/01-824-118-25.pdf" },
+
+  { "brand": "carrier", "model_family": "58STA", "doc_id": "carrier-58sta-stx-product-data",
+    "doc_title": "Carrier 58STA/STX 4-Way Multipoise Induced-Combustion Gas Furnace Product Data",
+    "doc_url": "https://www.shareddocs.com/hvac/docs/1009/Public/08/58ST-1PD.pdf",
+    "pdf": "https://www.shareddocs.com/hvac/docs/1009/Public/08/58ST-1PD.pdf" },
+
+  { "brand": "carrier", "model_family": "58STA", "doc_id": "carrier-58sta-stx-product-data-13pd",
+    "doc_title": "Carrier 58STA/STX Gas Furnace Product Data (58ST-13PD)",
+    "doc_url": "https://www.shareddocs.com/hvac/docs/1009/Public/0F/58ST-13PD.pdf",
+    "pdf": "https://www.shareddocs.com/hvac/docs/1009/Public/0F/58ST-13PD.pdf" },
+
+  { "brand": "carrier", "model_family": "59SC5B", "doc_id": "carrier-59sc5b-product-data",
+    "doc_title": "Carrier 59SC5B Comfort 95 Single-Stage 4-Way Multipoise Gas Furnace Product Data",
+    "doc_url": "https://www.shareddocs.com/hvac/docs/1009/Public/01/59SC5B-06PD.pdf",
+    "pdf": "https://www.shareddocs.com/hvac/docs/1009/Public/01/59SC5B-06PD.pdf" },
+
+  { "brand": "tempstar", "model_family": "N4A3", "doc_id": "tempstar-n4a3-tech-support",
+    "doc_title": "Tempstar N4A3 Single-Stage Split System Air Conditioner Technical Support Manual",
+    "doc_url": "https://hvacdirect.com/hvac/pdf/N4A3-Tech.pdf",
+    "pdf": "https://hvacdirect.com/hvac/pdf/N4A3-Tech.pdf" },
+
+  { "brand": "tempstar", "model_family": null, "doc_id": "tempstar-split-system-ac-hp-42122540305",
+    "doc_title": "Tempstar Split System Air Conditioners & Heat Pumps Installation Instructions",
+    "doc_url": "https://www.shareddocs.com/hvac/docs/1011/Public/04/42122540305-TS.pdf",
+    "pdf": "https://www.shareddocs.com/hvac/docs/1011/Public/04/42122540305-TS.pdf" },
+
+  { "brand": "trane", "model_family": "XR13", "doc_id": "trane-xr-single-stage-products-handbook",
+    "doc_title": "Trane Residential Air Conditioners Product Handbook (incl. XR13/XR14 4TTR4 single-stage)",
+    "doc_url": "https://hvacdirect.com/media/pdf/Trane%20Products%20Spec%20Sheet.pdf",
+    "pdf": "https://hvacdirect.com/media/pdf/Trane%20Products%20Spec%20Sheet.pdf" },
+
+  { "brand": "lennox", "model_family": "ML14XC1", "doc_id": "lennox-ml14xc1-service-corp1502",
+    "doc_title": "Lennox ML14XC1 Merit Single-Stage Air Conditioner Service Literature (Corp 1502-L7)",
+    "doc_url": "https://tech.lennoxintl.com/C03e7o14l/VIu12Ch2uV/corp1502b.pdf",
+    "pdf": "https://tech.lennoxintl.com/C03e7o14l/VIu12Ch2uV/corp1502b.pdf" },
+
+  { "brand": "lennox", "model_family": "14ACX", "doc_id": "lennox-14acx-iom",
+    "doc_title": "Lennox 14ACX Merit Single-Stage Air Conditioner Installation & Operation Manual",
+    "doc_url": "https://www.lennox.com/dA/8b22f61eb8/Lennox_14ACX_IOM.pdf",
+    "pdf": "https://www.lennox.com/dA/8b22f61eb8/Lennox_14ACX_IOM.pdf" },
+
+  { "brand": "lennox", "model_family": "ML14XC1", "doc_id": "lennox-ml14xc1-3ph-ehb",
+    "doc_title": "Lennox ML14XC1 Merit Series Air Conditioner (3-Phase) Engineering Handbook",
+    "doc_url": "https://www.lennox.com/dA/4ea87d468c/ehb_ml14xc1-3ph_2310.pdf",
+    "pdf": "https://www.lennox.com/dA/4ea87d468c/ehb_ml14xc1-3ph_2310.pdf" },
+
+  { "brand": "lennox", "model_family": "ML14XC1", "doc_id": "lennox-ml14xc1-install-507524",
+    "doc_title": "Lennox ML14XC1 Merit Single-Stage Air Conditioner Installation Instructions (507524)",
+    "doc_url": "https://tech.lennoxintl.com/C03e7o14l/VIu12Ch2uV/507524-01d.pdf",
+    "pdf": "https://tech.lennoxintl.com/C03e7o14l/VIu12Ch2uV/507524-01d.pdf" },
+
+  { "brand": "frigidaire", "model_family": null, "doc_id": "frigidaire-nordyne-ac-install-920269f",
+    "doc_title": "Frigidaire (Nordyne) Split System Air Conditioner Installation & Field Wiring Instructions",
+    "doc_url": "https://resource.gemaire.com/is/content/Watscocom/Gemaire/frigidaire_920269f_article_1383140706082_en_ii.pdf?fmt=pdf",
+    "pdf": "https://resource.gemaire.com/is/content/Watscocom/Gemaire/frigidaire_920269f_article_1383140706082_en_ii.pdf?fmt=pdf" }
+]

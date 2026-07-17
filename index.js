@@ -1453,9 +1453,11 @@ const _HVAC_BRANDS = ['carrier','bryant','payne','trane','american standard','go
   // thermostats
   'ecobee','nest','sensi','honeywell','pro1','braeburn','venstar','white-rodgers','aprilaire',
   // IAQ (humidifiers/dehumidifiers/air cleaners/UV/ERV-HRV/ventilation)
-  'broan','fantech','renewaire','rgf','freshaireuv','santafe','generalaire','panasonic'];
+  'broan','fantech','renewaire','rgf','freshaireuv','santafe','generalaire','panasonic',
+  // budget / secondary brands (batch8)
+  'runtru','ameristar','champion','ducane','concord','airease','aireflo','ecotemp','grandaire','guardian','icp'];
 // Typed variants / aliases → the canonical brand key stored in manual_chunks.brand.
-const _BRAND_ALIASES = {'fresh-aire':'freshaireuv','fresh aire':'freshaireuv','freshaire':'freshaireuv','apco':'freshaireuv','reme halo':'rgf','reme-halo':'rgf','santa fe':'santafe','ultra-aire':'santafe','ultra aire':'santafe','ultraaire':'santafe','general aire':'generalaire','white rodgers':'white-rodgers','whiterodgers':'white-rodgers','pro 1':'pro1','resideo':'honeywell','honeywell home':'honeywell','google nest':'nest','emerson sensi':'sensi'};
+const _BRAND_ALIASES = {'fresh-aire':'freshaireuv','fresh aire':'freshaireuv','freshaire':'freshaireuv','apco':'freshaireuv','reme halo':'rgf','reme-halo':'rgf','santa fe':'santafe','ultra-aire':'santafe','ultra aire':'santafe','ultraaire':'santafe','general aire':'generalaire','white rodgers':'white-rodgers','whiterodgers':'white-rodgers','pro 1':'pro1','resideo':'honeywell','honeywell home':'honeywell','google nest':'nest','emerson sensi':'sensi','run tru':'runtru','run-tru':'runtru','ameri star':'ameristar','ameri-star':'ameristar','air ease':'airease','air-ease':'airease','aire flo':'aireflo','aire-flo':'aireflo','air flo':'aireflo','air-flo':'aireflo','eco temp':'ecotemp','eco-temp':'ecotemp','grand aire':'grandaire','grand-aire':'grandaire','international comfort products':'icp','intl comfort products':'icp','day & night':'carrier','day and night':'carrier','day&night':'carrier'};
 
 function _needsManualRetrieval(text) {
   if (!text) return false;

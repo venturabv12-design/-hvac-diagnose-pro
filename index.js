@@ -1541,7 +1541,6 @@ async function retrieveManualContext(userText) {
     let chunks = await r.json();
     if (!Array.isArray(chunks) || !chunks.length) return null;
     // Rerank the candidate pool down to the best 6 (falls back to vector order on miss).
-    const _pool = chunks; // full candidate pool (vector order) — used to surface a diagram even if rerank drops it
     // Relevance floor: the reranker scores true relevance 0..1. If even the BEST candidate
     // is below the floor, we have no confident manual for this exact unit — return null so Mike
     // says "I don't have that one, read the plate" instead of being fed a wrong-family near-miss
@@ -1555,13 +1554,20 @@ async function retrieveManualContext(userText) {
       chunks = chunks.slice(0, 6);
     }
     const text = chunks.map(c => `[Source: ${c.doc_title}${c.page_num ? ', p.' + c.page_num : ''}]\n${c.chunk_text}`).join('\n\n---\n\n');
-    // Phase 2: collect wiring-diagram images. Prefer the reranked top chunks; if NONE of them
-    // carry a diagram, fall back to the best diagram in the full candidate pool so a brand that
-    // HAS a diagram reliably shows it (rerank ordering must not hide an available diagram).
+    // Phase 2: surface a wiring-diagram image ONLY from the SAME manual the answer is citing
+    // (the top reranked chunk's doc). Serving a close-but-wrong-model/technology diagram — e.g. an
+    // inverter heat-pump diagram for a single-stage AC — is a miswire risk a tech could trust off the
+    // card without reading the caveat (staging field-test 2026-07-17). So: same-doc only, NO cross-doc
+    // pool fallback. If the cited manual carries no diagram, show none and let Mike describe it in text.
+    const _topDoc = chunks[0] && chunks[0].doc_title;
     const _seen = new Set(); const diagrams = [];
-    const _collect = (list) => { for (const c of list) { if (c && c.diagram_image_url && !_seen.has(c.diagram_image_url)) { _seen.add(c.diagram_image_url); diagrams.push({ url: c.diagram_image_url, title: c.doc_title || 'Wiring diagram', page: c.page_num || null }); if (diagrams.length >= 2) return; } } };
-    _collect(chunks);
-    if (!diagrams.length) _collect(_pool);
+    for (const c of chunks) {
+      if (!c || !c.diagram_image_url || (_topDoc && c.doc_title !== _topDoc)) continue;
+      if (_seen.has(c.diagram_image_url)) continue;
+      _seen.add(c.diagram_image_url);
+      diagrams.push({ url: c.diagram_image_url, title: c.doc_title || 'Wiring diagram', page: c.page_num || null });
+      if (diagrams.length >= 2) break;
+    }
     return { text, diagrams };
   } catch (_) { return null; }
 }

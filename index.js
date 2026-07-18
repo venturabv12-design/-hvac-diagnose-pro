@@ -1554,15 +1554,23 @@ async function retrieveManualContext(userText) {
       chunks = chunks.slice(0, 6);
     }
     const text = chunks.map(c => `[Source: ${c.doc_title}${c.page_num ? ', p.' + c.page_num : ''}]\n${c.chunk_text}`).join('\n\n---\n\n');
-    // Phase 2: surface a wiring-diagram image ONLY from the SAME manual the answer is citing
-    // (the top reranked chunk's doc). Serving a close-but-wrong-model/technology diagram — e.g. an
-    // inverter heat-pump diagram for a single-stage AC — is a miswire risk a tech could trust off the
-    // card without reading the caveat (staging field-test 2026-07-17). So: same-doc only, NO cross-doc
-    // pool fallback. If the cited manual carries no diagram, show none and let Mike describe it in text.
-    const _topDoc = chunks[0] && chunks[0].doc_title;
+    // Phase 2: surface a wiring-diagram image ONLY when its manual is genuinely for the MODEL the
+    // tech asked about. A close-but-wrong-model/technology diagram (an inverter heat-pump print for a
+    // single-stage or two-stage AC) is a miswire risk a tech could trust off the card (staging field-
+    // test 2026-07-17). Same-doc gating wasn't enough — retrieval can rank a wrong-model manual #1. So
+    // match the query's model token against the diagram's doc title (>=4-char family prefix, e.g.
+    // GSXC / GSXN / GSZC are treated as DIFFERENT). No model in the query, or no title match -> show
+    // NO diagram and let Mike describe the wiring in text (safe). No cross-doc pool fallback.
+    const _qKey = ((String(userText).toUpperCase().match(/\b([A-Z]{2,5}\d{1,3}[A-Z0-9]{0,4})\b/) || [])[1] || '').replace(/[^A-Z0-9]/g, '');
+    const _modelMatch = (title) => {
+      if (_qKey.length < 4) return false;
+      const T = String(title || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      for (let n = _qKey.length; n >= 4; n--) if (T.includes(_qKey.slice(0, n))) return true;
+      return false;
+    };
     const _seen = new Set(); const diagrams = [];
     for (const c of chunks) {
-      if (!c || !c.diagram_image_url || (_topDoc && c.doc_title !== _topDoc)) continue;
+      if (!c || !c.diagram_image_url || !_modelMatch(c.doc_title)) continue;
       if (_seen.has(c.diagram_image_url)) continue;
       _seen.add(c.diagram_image_url);
       diagrams.push({ url: c.diagram_image_url, title: c.doc_title || 'Wiring diagram', page: c.page_num || null });

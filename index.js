@@ -1545,7 +1545,7 @@ async function retrieveManualContext(userText) {
     // is below the floor, we have no confident manual for this exact unit — return null so Mike
     // says "I don't have that one, read the plate" instead of being fed a wrong-family near-miss
     // (verified: real matches rerank ~0.6-0.85; wrong-family near-misses top out ~0.41).
-    const RAG_RELEVANCE_FLOOR = parseFloat(process.env.RAG_RELEVANCE_FLOOR || '0.5');
+    const RAG_RELEVANCE_FLOOR = parseFloat(process.env.RAG_RELEVANCE_FLOOR || '0.45');
     const ranked = await _rerank(q, chunks.map(c => c.chunk_text), 6);
     if (ranked && ranked.length) {
       if (ranked[0].relevance_score < RAG_RELEVANCE_FLOOR) return null;

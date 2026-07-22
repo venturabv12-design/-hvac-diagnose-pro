@@ -1,0 +1,564 @@
+{
+  "model_key": "PAYNE:PA13NA",
+  "circuit_type": "full",
+  "components": [
+    {
+      "id": "PWR",
+      "label": "208/230V 1Ø Power Supply",
+      "kind": "terminal-block"
+    },
+    {
+      "id": "GND",
+      "label": "Equipment Ground",
+      "kind": "terminal-block"
+    },
+    {
+      "id": "CONT",
+      "label": "Contactor",
+      "kind": "contactor"
+    },
+    {
+      "id": "COMP",
+      "label": "Compressor",
+      "kind": "compressor"
+    },
+    {
+      "id": "CAP",
+      "label": "Run Capacitor",
+      "kind": "capacitor"
+    },
+    {
+      "id": "OFM",
+      "label": "Outdoor Fan Motor",
+      "kind": "fan-motor"
+    },
+    {
+      "id": "ST",
+      "label": "Start Thermistor (*ST)",
+      "kind": "sensor"
+    },
+    {
+      "id": "SC",
+      "label": "Start Capacitor (*SC)",
+      "kind": "capacitor"
+    },
+    {
+      "id": "SR",
+      "label": "Start Relay (*SR)",
+      "kind": "relay"
+    },
+    {
+      "id": "LPS",
+      "label": "Low-Pressure Switch (*LPS)",
+      "kind": "switch"
+    },
+    {
+      "id": "DTS",
+      "label": "Discharge-Temp Switch (*DTS)",
+      "kind": "switch"
+    },
+    {
+      "id": "HPS",
+      "label": "High-Pressure Switch (*HPS)",
+      "kind": "switch"
+    },
+    {
+      "id": "CTD",
+      "label": "Compressor Time-Delay (*CTD LOGIC)",
+      "kind": "board"
+    },
+    {
+      "id": "LLS",
+      "label": "Liquid-Line Solenoid (*LLS)",
+      "kind": "other"
+    }
+  ],
+  "terminals": [
+    {
+      "component": "PWR",
+      "id": "L1"
+    },
+    {
+      "component": "PWR",
+      "id": "L2"
+    },
+    {
+      "component": "GND",
+      "id": "GND"
+    },
+    {
+      "component": "CONT",
+      "id": "11"
+    },
+    {
+      "component": "CONT",
+      "id": "21"
+    },
+    {
+      "component": "CONT",
+      "id": "23L2"
+    },
+    {
+      "component": "CONT",
+      "id": "23T"
+    },
+    {
+      "component": "CONT",
+      "id": "A1"
+    },
+    {
+      "component": "CONT",
+      "id": "A2"
+    },
+    {
+      "component": "COMP",
+      "id": "C"
+    },
+    {
+      "component": "COMP",
+      "id": "S"
+    },
+    {
+      "component": "COMP",
+      "id": "R"
+    },
+    {
+      "component": "CAP",
+      "id": "H"
+    },
+    {
+      "component": "CAP",
+      "id": "C"
+    },
+    {
+      "component": "CAP",
+      "id": "F"
+    },
+    {
+      "component": "OFM",
+      "id": "L1"
+    },
+    {
+      "component": "OFM",
+      "id": "L2"
+    },
+    {
+      "component": "ST",
+      "id": "1"
+    },
+    {
+      "component": "ST",
+      "id": "2"
+    },
+    {
+      "component": "SC",
+      "id": "1"
+    },
+    {
+      "component": "SC",
+      "id": "2"
+    },
+    {
+      "component": "SR",
+      "id": "1"
+    },
+    {
+      "component": "SR",
+      "id": "2"
+    },
+    {
+      "component": "SR",
+      "id": "5"
+    },
+    {
+      "component": "LPS",
+      "id": "in"
+    },
+    {
+      "component": "LPS",
+      "id": "out"
+    },
+    {
+      "component": "DTS",
+      "id": "in"
+    },
+    {
+      "component": "DTS",
+      "id": "out"
+    },
+    {
+      "component": "HPS",
+      "id": "in"
+    },
+    {
+      "component": "HPS",
+      "id": "out"
+    },
+    {
+      "component": "CTD",
+      "id": "T1"
+    },
+    {
+      "component": "CTD",
+      "id": "T2"
+    },
+    {
+      "component": "CTD",
+      "id": "T3"
+    },
+    {
+      "component": "LLS",
+      "id": "1"
+    },
+    {
+      "component": "LLS",
+      "id": "2"
+    }
+  ],
+  "nets": [
+    {
+      "id": "n1",
+      "voltage_class": "line",
+      "endpoints": [
+        {
+          "component": "PWR",
+          "terminal": "L1"
+        },
+        {
+          "component": "CONT",
+          "terminal": "11"
+        }
+      ],
+      "plain": "One leg of 240-volt power to the contactor.",
+      "wire_color": "black"
+    },
+    {
+      "id": "n2",
+      "voltage_class": "line",
+      "endpoints": [
+        {
+          "component": "PWR",
+          "terminal": "L2"
+        },
+        {
+          "component": "CONT",
+          "terminal": "23L2"
+        }
+      ],
+      "plain": "Second leg of 240-volt power to the contactor.",
+      "wire_color": "black"
+    },
+    {
+      "id": "n3",
+      "voltage_class": "ground",
+      "endpoints": [
+        {
+          "component": "PWR",
+          "terminal": "L2"
+        },
+        {
+          "component": "GND",
+          "terminal": "GND"
+        }
+      ],
+      "plain": "Equipment ground connection.",
+      "wire_color": "green"
+    },
+    {
+      "id": "n4",
+      "voltage_class": "line",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "21"
+        },
+        {
+          "component": "COMP",
+          "terminal": "C"
+        }
+      ],
+      "plain": "Contactor output to compressor common.",
+      "wire_color": "black"
+    },
+    {
+      "id": "n5",
+      "voltage_class": "line",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "23T"
+        },
+        {
+          "component": "CAP",
+          "terminal": "C"
+        }
+      ],
+      "plain": "Other line leg to run-capacitor common node.",
+      "wire_color": "yellow"
+    },
+    {
+      "id": "n6",
+      "voltage_class": "start-winding",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "R"
+        },
+        {
+          "component": "CAP",
+          "terminal": "C"
+        }
+      ],
+      "plain": "Compressor run terminal to capacitor common.",
+      "wire_color": "yellow"
+    },
+    {
+      "id": "n7",
+      "voltage_class": "start-winding",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "S"
+        },
+        {
+          "component": "CAP",
+          "terminal": "H"
+        }
+      ],
+      "plain": "Compressor start winding to run capacitor.",
+      "wire_color": "blue"
+    },
+    {
+      "id": "n8",
+      "voltage_class": "start-winding",
+      "endpoints": [
+        {
+          "component": "CAP",
+          "terminal": "H"
+        },
+        {
+          "component": "ST",
+          "terminal": "1"
+        }
+      ],
+      "plain": "Run capacitor to start thermistor.",
+      "wire_color": "yellow"
+    },
+    {
+      "id": "n9",
+      "voltage_class": "start-winding",
+      "endpoints": [
+        {
+          "component": "ST",
+          "terminal": "2"
+        },
+        {
+          "component": "SR",
+          "terminal": "1"
+        }
+      ],
+      "plain": "Start thermistor to start relay.",
+      "wire_color": "yellow"
+    },
+    {
+      "id": "n10",
+      "voltage_class": "start-winding",
+      "endpoints": [
+        {
+          "component": "CAP",
+          "terminal": "C"
+        },
+        {
+          "component": "SC",
+          "terminal": "1"
+        }
+      ],
+      "plain": "Capacitor common to start capacitor.",
+      "wire_color": "yellow"
+    },
+    {
+      "id": "n11",
+      "voltage_class": "start-winding",
+      "endpoints": [
+        {
+          "component": "SC",
+          "terminal": "2"
+        },
+        {
+          "component": "SR",
+          "terminal": "2"
+        }
+      ],
+      "plain": "Start capacitor to start relay.",
+      "wire_color": "brown"
+    },
+    {
+      "id": "n12",
+      "voltage_class": "line",
+      "endpoints": [
+        {
+          "component": "CAP",
+          "terminal": "F"
+        },
+        {
+          "component": "OFM",
+          "terminal": "L1"
+        }
+      ],
+      "plain": "Run capacitor fan terminal to outdoor fan motor.",
+      "wire_color": "brown"
+    },
+    {
+      "id": "n13",
+      "voltage_class": "line",
+      "endpoints": [
+        {
+          "component": "OFM",
+          "terminal": "L2"
+        },
+        {
+          "component": "CAP",
+          "terminal": "C"
+        }
+      ],
+      "plain": "Outdoor fan motor return to capacitor common.",
+      "wire_color": "yellow"
+    },
+    {
+      "id": "n14",
+      "voltage_class": "line",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "C"
+        },
+        {
+          "component": "OFM",
+          "terminal": "L2"
+        }
+      ],
+      "plain": "Compressor common tied to fan motor line.",
+      "wire_color": "black"
+    },
+    {
+      "id": "n15",
+      "voltage_class": "low-voltage",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "A1"
+        },
+        {
+          "component": "LPS",
+          "terminal": "in"
+        }
+      ],
+      "plain": "24-volt path from contactor coil to low-pressure switch.",
+      "wire_color": "blue"
+    },
+    {
+      "id": "n16",
+      "voltage_class": "low-voltage",
+      "endpoints": [
+        {
+          "component": "LPS",
+          "terminal": "out"
+        },
+        {
+          "component": "DTS",
+          "terminal": "in"
+        }
+      ],
+      "plain": "Low-pressure switch to discharge-temp switch.",
+      "wire_color": "yellow"
+    },
+    {
+      "id": "n17",
+      "voltage_class": "low-voltage",
+      "endpoints": [
+        {
+          "component": "DTS",
+          "terminal": "out"
+        },
+        {
+          "component": "HPS",
+          "terminal": "in"
+        }
+      ],
+      "plain": "Discharge-temp switch to high-pressure switch.",
+      "wire_color": "blue"
+    },
+    {
+      "id": "n18",
+      "voltage_class": "low-voltage",
+      "endpoints": [
+        {
+          "component": "HPS",
+          "terminal": "out"
+        },
+        {
+          "component": "CTD",
+          "terminal": "T1"
+        }
+      ],
+      "plain": "High-pressure switch to time-delay board.",
+      "wire_color": "blue"
+    },
+    {
+      "id": "n19",
+      "voltage_class": "low-voltage",
+      "endpoints": [
+        {
+          "component": "CTD",
+          "terminal": "T2"
+        },
+        {
+          "component": "CONT",
+          "terminal": "A2"
+        }
+      ],
+      "plain": "Time-delay board back to contactor coil (violet).",
+      "wire_color": "violet"
+    },
+    {
+      "id": "n20",
+      "voltage_class": "low-voltage",
+      "endpoints": [
+        {
+          "component": "CTD",
+          "terminal": "T3"
+        },
+        {
+          "component": "LLS",
+          "terminal": "2"
+        }
+      ],
+      "plain": "Time-delay board output to liquid-line solenoid.",
+      "wire_color": "brown"
+    },
+    {
+      "id": "n21",
+      "voltage_class": "low-voltage",
+      "endpoints": [
+        {
+          "component": "LLS",
+          "terminal": "1"
+        },
+        {
+          "component": "LPS",
+          "terminal": "in"
+        }
+      ],
+      "plain": "Liquid-line solenoid tie into control string.",
+      "wire_color": "black"
+    }
+  ],
+  "notes": [
+    "The lower-right EXTERNAL POWER SUPPLY 24V block and the relay/coil next to *LLS are cropped/partially cut off at bottom of image; their internal wiring was not fully traced.",
+    "Contactor coil terminal designations (A1/A2) not printed on diagram — inferred from coil symbol at bottom of contactor box (NOTE #14).",
+    "*SR start relay terminals 1,2,5 traced but exact 5-terminal internal wiring is partly obscured (NOTE #8).",
+    "BLK/BRN/VIO long jump wires along the mid-section were traced to their visible endpoints; some routing crosses behind components and could not be confirmed at every crossing.",
+    "LLS BLK-to-BLK routing near bottom is partly cropped; endpoint into control string is best-effort."
+  ],
+  "schema_version": "1"
+}

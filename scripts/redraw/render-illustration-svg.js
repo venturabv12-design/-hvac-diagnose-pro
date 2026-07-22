@@ -79,6 +79,7 @@ function roleOf(c){
   if(k==='fan-motor'&&(id==='OFM'||lbl.includes('outdoor')||lbl.includes('condenser'))) return 'fan';
   // external 24V supply (straight-cool condensers get 24V from the indoor unit — NO onboard transformer)
   if(lbl.includes('indoor')||lbl.includes('from inside')||id==='IDU') return 'source';
+  if((k==='transformer'||id==='XFMR')&&/external|24\s*-?\s*v/i.test(lbl)) return 'source';
   if(k==='transformer'||id==='XFMR') return 'xfmr';
   if(k==='terminal-block'&&(id==='PWR'||lbl.includes('power')||lbl.includes('l1'))) return 'power';
   if(k==='thermostat'||id==='TSTAT') return 'tstat';
@@ -142,8 +143,10 @@ function pContactor(x,y){
     {key:'COIL1',x:x+54,y:y+h,dir:'down',pad:'screw',label:'24V',ldy:16,lsize:8.5},
     {key:'COIL2',x:x+136,y:y+h,dir:'down',pad:'screw',label:'24V',ldy:16,lsize:8.5},
   ];
-  // aliases: OEM sheets vary — A1/A2 (spec convention) and C1/C2 both land on the coil.
-  const al={'11':'L1','23':'L2','21':'LOAD1','22':'LOAD2','T1':'COIL1','T2':'COIL2','A1':'COIL1','A2':'COIL2','C1':'COIL1','C2':'COIL2'};
+  // aliases: OEM sheets vary — map the common terminal spellings onto the drawn poles.
+  const al={'11':'L1','23':'L2','23a':'L2','1':'L1','3':'L2',
+            '21':'LOAD1','22':'LOAD2','23b':'LOAD2','24':'LOAD2','2':'LOAD1','4':'LOAD2',
+            'T1':'COIL1','T2':'COIL2','A1':'COIL1','A2':'COIL2','C1':'COIL1','C2':'COIL2'};
   return {body:b.join(''),terms:T,alias:al};
 }
 function pCompressor(x,y){
@@ -418,7 +421,7 @@ function renderIllustrationSVG(netlist){
   return out.join('');
 }
 
-module.exports={ renderIllustrationSVG, wireColor, plainEnglish };
+module.exports={ renderIllustrationSVG, wireColor, plainEnglish, roleOf };
 
 if(require.main===module){
   const fs=require('fs');

@@ -1,0 +1,304 @@
+{
+  "model_key": "CARRIER:24ABC6",
+  "circuit_type": "full",
+  "components": [
+    {
+      "id": "PWR",
+      "label": "208/230 1Ø Power Supply",
+      "kind": "terminal-block"
+    },
+    {
+      "id": "CONT",
+      "label": "Contactor",
+      "kind": "contactor"
+    },
+    {
+      "id": "COMP",
+      "label": "Compressor",
+      "kind": "compressor"
+    },
+    {
+      "id": "CAP",
+      "label": "Run Capacitor",
+      "kind": "capacitor"
+    },
+    {
+      "id": "OFM",
+      "label": "Outdoor Fan Motor",
+      "kind": "fan-motor"
+    },
+    {
+      "id": "IDU",
+      "kind": "terminal-block",
+      "label": "24V (from indoor unit)"
+    }
+  ],
+  "terminals": [
+    {
+      "component": "PWR",
+      "id": "L1"
+    },
+    {
+      "component": "PWR",
+      "id": "L2"
+    },
+    {
+      "component": "PWR",
+      "id": "GND"
+    },
+    {
+      "component": "CONT",
+      "id": "11"
+    },
+    {
+      "component": "CONT",
+      "id": "21"
+    },
+    {
+      "component": "CONT",
+      "id": "23L",
+      "label": "23 (line)"
+    },
+    {
+      "component": "CONT",
+      "id": "23T",
+      "label": "23 (load)"
+    },
+    {
+      "component": "CONT",
+      "id": "A1",
+      "label": "coil"
+    },
+    {
+      "component": "CONT",
+      "id": "A2",
+      "label": "coil"
+    },
+    {
+      "component": "COMP",
+      "id": "C"
+    },
+    {
+      "component": "COMP",
+      "id": "S"
+    },
+    {
+      "component": "COMP",
+      "id": "R"
+    },
+    {
+      "component": "CAP",
+      "id": "H"
+    },
+    {
+      "component": "CAP",
+      "id": "C"
+    },
+    {
+      "component": "CAP",
+      "id": "F"
+    },
+    {
+      "component": "OFM",
+      "id": "L1"
+    },
+    {
+      "component": "OFM",
+      "id": "L2"
+    },
+    {
+      "component": "OFM",
+      "id": "GND"
+    },
+    {
+      "component": "IDU",
+      "id": "R"
+    },
+    {
+      "component": "IDU",
+      "id": "C"
+    }
+  ],
+  "nets": [
+    {
+      "id": "n1",
+      "label": "L1",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "plain": "One leg of the 240-volt power to the contactor.",
+      "endpoints": [
+        {
+          "component": "PWR",
+          "terminal": "L1"
+        },
+        {
+          "component": "CONT",
+          "terminal": "11"
+        }
+      ]
+    },
+    {
+      "id": "n2",
+      "label": "L2",
+      "voltage_class": "line",
+      "plain": "Other leg of the 240-volt power to the contactor.",
+      "endpoints": [
+        {
+          "component": "PWR",
+          "terminal": "L2"
+        },
+        {
+          "component": "CONT",
+          "terminal": "23L"
+        }
+      ]
+    },
+    {
+      "id": "n4",
+      "label": "Contactor load to compressor common",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "plain": "Power from contactor to the compressor common terminal.",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "21"
+        },
+        {
+          "component": "COMP",
+          "terminal": "C"
+        }
+      ]
+    },
+    {
+      "id": "n5",
+      "label": "Compressor start winding to capacitor",
+      "voltage_class": "start-winding",
+      "wire_color": "blue",
+      "plain": "Start winding of compressor to the run capacitor.",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "S"
+        },
+        {
+          "component": "CAP",
+          "terminal": "H"
+        }
+      ]
+    },
+    {
+      "id": "n6",
+      "label": "Compressor run to capacitor common",
+      "voltage_class": "start-winding",
+      "wire_color": "yellow",
+      "plain": "Compressor run terminal to the capacitor common spade.",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "R"
+        },
+        {
+          "component": "CAP",
+          "terminal": "C"
+        }
+      ]
+    },
+    {
+      "id": "n7",
+      "label": "Contactor load to fan / cap common",
+      "voltage_class": "line",
+      "wire_color": "yellow",
+      "plain": "Contactor load feeds the outdoor fan side of the capacitor.",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "23T"
+        },
+        {
+          "component": "CAP",
+          "terminal": "C"
+        }
+      ]
+    },
+    {
+      "id": "n8",
+      "label": "Capacitor fan tap to OFM start",
+      "voltage_class": "start-winding",
+      "wire_color": "brown",
+      "plain": "Capacitor fan terminal to the outdoor fan motor.",
+      "endpoints": [
+        {
+          "component": "CAP",
+          "terminal": "F"
+        },
+        {
+          "component": "OFM",
+          "terminal": "L2"
+        }
+      ]
+    },
+    {
+      "id": "n9",
+      "label": "OFM line",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "plain": "Power leg to the outdoor fan motor.",
+      "endpoints": [
+        {
+          "component": "OFM",
+          "terminal": "L1"
+        },
+        {
+          "component": "CONT",
+          "terminal": "21"
+        }
+      ]
+    },
+    {
+      "id": "ctl_call",
+      "voltage_class": "low-voltage",
+      "wire_color": "yellow",
+      "label": "24V call to coil",
+      "plain": "24-volt \"turn on\" signal from indoors to the contactor coil",
+      "endpoints": [
+        {
+          "component": "IDU",
+          "terminal": "R"
+        },
+        {
+          "component": "CONT",
+          "terminal": "COIL1"
+        }
+      ]
+    },
+    {
+      "id": "ctl_com",
+      "voltage_class": "low-voltage",
+      "wire_color": "blue",
+      "label": "24V common",
+      "plain": "24-volt common back to the indoor unit",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "COIL2"
+        },
+        {
+          "component": "IDU",
+          "terminal": "C"
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Contactor coil connection to the transformer secondary / 24V source is off the cropped area — the control transformer is not visible in this view, so the 24V primary and secondary were NOT traced.",
+    "*SR start relay terminals 2 and 5 wiring continues off-frame (NOTE #8); only the terminal-1 connection was clearly traceable.",
+    "*CTD logic T3 output routing runs off the right edge and up to VIO/BRN-YEL wires; T3 net not confirmed and omitted.",
+    "VIO, BLK, BRN/YEL wires exit to lower/right sections (EXTERNAL POWER, *LLS) that are cropped — those connections omitted.",
+    "*LLS liquid-line solenoid at bottom is cropped and not traced.",
+    "NOTE #13 and NOTE #14 splice callouts referenced but their annotated meaning is not legible in this crop.",
+    "Series safety string direction (which end returns to contactor coil vs. transformer) is partly inferred from wire colors; ends beyond CTD not confirmed.",
+    "Apprentice CORE view — factory-optional safety/start parts left to the full manual."
+  ],
+  "schema_version": "1"
+}

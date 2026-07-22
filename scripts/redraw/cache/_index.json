@@ -1,0 +1,16 @@
+{
+  "generated_from": "/tmp/mtest.json",
+  "counts": {
+    "cached-skip": 2
+  },
+  "results": [
+    {
+      "key": "CARRIER:24ABB3",
+      "status": "cached-skip"
+    },
+    {
+      "key": "GOODMAN:GSX130361",
+      "status": "cached-skip"
+    }
+  ]
+}

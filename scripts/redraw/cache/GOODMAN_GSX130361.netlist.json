@@ -1,0 +1,70 @@
+{
+  "schema_version": "1",
+  "model_key": "GOODMAN:GSX130361",
+  "circuit_type": "full",
+  "components": [
+    { "id": "WHIP",       "label": "Line In (L1/L2)",   "kind": "terminal-block" },
+    { "id": "CONTACTOR",  "label": "Contactor",          "kind": "contactor" },
+    { "id": "COMP",       "label": "Compressor",         "kind": "compressor" },
+    { "id": "OFM",        "label": "Cond. Fan Motor",    "kind": "fan-motor" },
+    { "id": "CAP",        "label": "Dual Run Cap 45/5",  "kind": "capacitor" },
+    { "id": "TSTAT",      "label": "Thermostat (Y/C)",   "kind": "thermostat" }
+  ],
+  "terminals": [
+    { "component": "WHIP",      "id": "L1" },
+    { "component": "WHIP",      "id": "L2" },
+
+    { "component": "CONTACTOR", "id": "L1" },
+    { "component": "CONTACTOR", "id": "L2" },
+    { "component": "CONTACTOR", "id": "T1" },
+    { "component": "CONTACTOR", "id": "T2" },
+    { "component": "CONTACTOR", "id": "A1" },
+    { "component": "CONTACTOR", "id": "A2" },
+
+    { "component": "COMP",      "id": "C", "label": "Common" },
+    { "component": "COMP",      "id": "R", "label": "Run" },
+    { "component": "COMP",      "id": "S", "label": "Start" },
+
+    { "component": "OFM",       "id": "L", "label": "Line" },
+    { "component": "OFM",       "id": "N", "label": "Neutral" },
+    { "component": "OFM",       "id": "CAP", "label": "Cap" },
+
+    { "component": "CAP",       "id": "HERM" },
+    { "component": "CAP",       "id": "FAN" },
+    { "component": "CAP",       "id": "C", "label": "Common" },
+
+    { "component": "TSTAT",     "id": "Y" },
+    { "component": "TSTAT",     "id": "C" }
+  ],
+  "nets": [
+    { "id": "n1", "label": "L1 line", "voltage_class": "line", "wire_color": "black", "gauge": "10",
+      "endpoints": [ {"component":"WHIP","terminal":"L1"}, {"component":"CONTACTOR","terminal":"L1"} ] },
+    { "id": "n2", "label": "L2 line", "voltage_class": "line", "wire_color": "black", "gauge": "10",
+      "endpoints": [ {"component":"WHIP","terminal":"L2"}, {"component":"CONTACTOR","terminal":"L2"} ] },
+
+    { "id": "n3", "label": "Switched line to compressor Run", "voltage_class": "line", "wire_color": "red", "gauge": "10",
+      "endpoints": [ {"component":"CONTACTOR","terminal":"T1"}, {"component":"COMP","terminal":"R"}, {"component":"OFM","terminal":"L"} ] },
+    { "id": "n4", "label": "Switched line to compressor Common", "voltage_class": "line", "wire_color": "black", "gauge": "10",
+      "endpoints": [ {"component":"CONTACTOR","terminal":"T2"}, {"component":"COMP","terminal":"C"}, {"component":"OFM","terminal":"N"} ] },
+
+    { "id": "n5", "label": "Compressor start winding", "voltage_class": "start-winding", "wire_color": "orange", "gauge": "12",
+      "endpoints": [ {"component":"COMP","terminal":"S"}, {"component":"CAP","terminal":"HERM"} ] },
+    { "id": "n6", "label": "Cap common tie", "voltage_class": "start-winding", "wire_color": "red", "gauge": "12",
+      "endpoints": [ {"component":"CAP","terminal":"C"}, {"component":"COMP","terminal":"R"} ] },
+    { "id": "n7", "label": "Fan start winding", "voltage_class": "start-winding", "wire_color": "brown", "gauge": "16",
+      "endpoints": [ {"component":"OFM","terminal":"CAP"}, {"component":"CAP","terminal":"FAN"} ] },
+
+    { "id": "n8", "label": "Y call 24V", "voltage_class": "low-voltage", "wire_color": "yellow", "gauge": "18",
+      "endpoints": [ {"component":"TSTAT","terminal":"Y"}, {"component":"CONTACTOR","terminal":"A1"} ] },
+    { "id": "n9", "label": "24V common", "voltage_class": "low-voltage", "wire_color": "blue", "gauge": "18",
+      "endpoints": [ {"component":"TSTAT","terminal":"C"}, {"component":"CONTACTOR","terminal":"A2"} ] }
+  ],
+  "notes": [
+    "Single-stage R-410A condenser. 24V coil energizes contactor on a Y call; contactor closes L1/L2 to compressor + fan.",
+    "Dual run cap: HERM -> compressor start, FAN -> fan start, C -> common (line side)."
+  ],
+  "source_ref": {
+    "doc_title": "Goodman GSX13 Service / Wiring Diagram",
+    "page": 22
+  }
+}

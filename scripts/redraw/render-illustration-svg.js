@@ -169,9 +169,9 @@ function pCompressor(x,y){
   b.push(`<text x="${f1(cx)}" y="${f1(cy+8)}" text-anchor="middle" font-size="9" fill="#9aa3b2">pumps the</text>`);
   b.push(`<text x="${f1(cx)}" y="${f1(cy+20)}" text-anchor="middle" font-size="9" fill="#9aa3b2">refrigerant</text>`);
   const T=[
-    {key:'C',x:cx-r-1,y:cy-20,dir:'left',pad:'dot',label:'C',ldx:-13,ldy:4},
+    {key:'C',x:cx-r-1,y:cy-28,dir:'left',pad:'dot',label:'C',ldx:-13,ldy:4},
     {key:'R',x:cx-r-1,y:cy,dir:'left',pad:'dot',label:'R',ldx:-13,ldy:4},
-    {key:'S',x:cx-r-1,y:cy+20,dir:'left',pad:'dot',label:'S',ldx:-13,ldy:4},
+    {key:'S',x:cx-r-1,y:cy+28,dir:'left',pad:'dot',label:'S',ldx:-13,ldy:4},
   ];
   return {body:b.join(''),terms:T};
 }
@@ -286,7 +286,7 @@ function pSource(x,y){
 const ROLE_BODY={ contactor:pContactor, compressor:pCompressor, runcap:pRunCap, fan:pFan, xfmr:pXfmr, power:pPower, switch:pSwitch, ctd:pCtd, tstat:pTstat, heater:pHeater, solenoid:pSolenoid, source:pSource };
 
 const ZONES={
-  power:{x:44,y:170}, contactor:{x:210,y:150}, runcap:{x:560,y:270}, compressor:{x:900,y:170}, fan:{x:904,y:360},
+  power:{x:44,y:170}, contactor:{x:210,y:150}, runcap:{x:548,y:352}, compressor:{x:904,y:168}, fan:{x:912,y:372},
   xfmr:{x:250,y:560}, source:{x:240,y:566}, tstat:{x:60,y:576}, ctd:{x:820,y:566}, heater:{x:620,y:170}, solenoid:{x:640,y:452},
 };
 const CHS_POS={ x:470, y:178 };            // crankcase heater switch — line zone, next to its heater
@@ -354,7 +354,7 @@ function renderIllustrationSVG(netlist){
   Object.keys(termWires).forEach(k=>{
     const list=termWires[k], n=list.length;
     const term=wires[list[0].wi][list[0].end];
-    const SEP=9;
+    const SEP=24; // wide split where multiple wires share a terminal → the junction reads clearly, no parallel double-band
     list.forEach((it,idx)=>{
       const t=wires[it.wi][it.end];
       const off=(idx-(n-1)/2)*SEP;
@@ -383,7 +383,7 @@ function renderIllustrationSVG(netlist){
     const aOut=stub(a,(i%3)*4), bOut=stub(b,(i%3)*4);
     const lo=Math.min(aOut.x,bOut.x), hi=Math.max(aOut.x,bOut.x);
     let trunk = (hi-lo<40) ? (lo+hi)/2+((i%9)-4)*9 : lo+(hi-lo)*((i+1)/(N+1));
-    while(usedTrunks.some(t=>Math.abs(t-trunk)<16)) trunk+=16; // no two wires share a lane
+    while(usedTrunks.some(t=>Math.abs(t-trunk)<26)) trunk+=26; // wide lanes → wires clearly separated
     usedTrunks.push(trunk);
     const ptsO=[a,aOut,{x:trunk,y:aOut.y},{x:trunk,y:bOut.y},bOut,b];
     const pts=ptsO.map(p=>`${f1(p.x)} ${f1(p.y)}`);

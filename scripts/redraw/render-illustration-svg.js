@@ -287,11 +287,11 @@ const ROLE_BODY={ contactor:pContactor, compressor:pCompressor, runcap:pRunCap, 
 
 const ZONES={
   power:{x:44,y:196}, contactor:{x:210,y:176}, runcap:{x:560,y:380}, compressor:{x:900,y:186}, fan:{x:906,y:404},
-  xfmr:{x:250,y:632}, source:{x:60,y:690}, tstat:{x:60,y:690}, ctd:{x:742,y:664}, heater:{x:640,y:196}, solenoid:{x:470,y:806},
+  xfmr:{x:250,y:632}, source:{x:60,y:690}, tstat:{x:60,y:690}, ctd:{x:856,y:664}, heater:{x:640,y:196}, solenoid:{x:512,y:812},
   startcap:{x:520,y:196}, startrelay:{x:648,y:196}, startsensor:{x:520,y:300},
 };
 const CHS_POS={ x:470, y:200 };            // crankcase heater switch — line zone, next to its heater
-const SWITCH_ROW={ startX:288, y:690, dx:158 };  // LPS / DTS / HPS row in the 24V control zone
+const SWITCH_ROW={ startX:308, y:690, dx:188 };  // LPS / DTS / HPS row in the 24V control zone
 
 function renderIllustrationSVG(netlist){
   if(!netlist||!Array.isArray(netlist.components)) throw new TypeError('netlist.components required');
@@ -381,7 +381,12 @@ function renderIllustrationSVG(netlist){
     const col=wireColor(w.color), stripe=wireStripe(w.color);
     const aPt=landing[`${i}_a`]||{x:w.a.x,y:w.a.y}, bPt=landing[`${i}_b`]||{x:w.b.x,y:w.b.y};
     const a={...aPt,dir:w.a.dir}, b={...bPt,dir:w.b.dir};
-    const aOut=stub(a,(i%3)*4), bOut=stub(b,(i%3)*4);
+    const so=(i%6)*10; let aOut=stub(a,so), bOut=stub(b,so);
+    // cross-zone wire (spans HIGH↔LOW voltage): drop its horizontal into a clear gutter
+    // BELOW the high-voltage parts so it never knifes through a terminal cluster.
+    if(Math.abs(a.y-b.y)>240){ const g=508+(i%4)*13;
+      if(a.dir==='down'&&a.y<g-24) aOut={x:a.x,y:g};
+      if(b.dir==='down'&&b.y<g-24) bOut={x:b.x,y:g}; }
     const lo=Math.min(aOut.x,bOut.x), hi=Math.max(aOut.x,bOut.x);
     let trunk = (hi-lo<40) ? (lo+hi)/2+((i%9)-4)*9 : lo+(hi-lo)*((i+1)/(N+1));
     while(usedTrunks.some(t=>Math.abs(t-trunk)<26)) trunk+=26; // wide lanes → wires clearly separated
@@ -427,8 +432,8 @@ function renderIllustrationSVG(netlist){
   // Two-voltage explainer — big, top-LEFT of each band (where the eye starts reading)
   H.push(`<text x="44" y="138" font-size="14" font-weight="800" fill="#d92b1c">HIGH VOLTAGE · 240V</text>`);
   H.push(`<text x="214" y="138" font-size="11" fill="#b06a62">— the power that actually runs the compressor &amp; fan</text>`);
-  H.push(`<text x="44" y="635" font-size="14" font-weight="800" fill="#0f8a7e">LOW VOLTAGE · 24V</text>`);
-  H.push(`<text x="205" y="635" font-size="11" fill="#5a9089">— the small signal from inside that switches it on</text>`);
+  H.push(`<text x="44" y="628" font-size="14" font-weight="800" fill="#0f8a7e">LOW VOLTAGE · 24V</text>`);
+  H.push(`<text x="205" y="628" font-size="11" fill="#5a9089">— the small signal from inside that switches it on</text>`);
   // ── BOTTOM REFERENCE PANEL: wire key (left) + letter glossary (right) ───────────
   const L=[]; const GY=HEIGHT-268;
   const panelH=288;

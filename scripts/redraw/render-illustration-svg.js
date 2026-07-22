@@ -42,9 +42,9 @@ const PLAIN_PHRASES = [
   [/crankcase\s*heat/i, 'Powers the crankcase heater (keeps oil warm)'],
 ];
 const PLAIN_TOKENS = [
-  [/\bcap\s*herm\b/gi, 'run capacitor → compressor run terminal'],
+  [/\bcap\s*herm\b/gi, 'run capacitor → compressor start winding'],
   [/\bcap\s*fan\b/gi, 'run capacitor → outdoor fan'],
-  [/\bherm\b/gi, 'compressor run terminal'],
+  [/\bherm\b/gi, 'compressor start winding (off the run capacitor)'],
   [/\bofm\b/gi, 'outdoor fan motor'],
   [/\bidm\b/gi, 'indoor blower motor'],
   [/\blps\b/gi, 'low-pressure safety switch'],
@@ -101,21 +101,47 @@ function padSvg(t, hasWire){
 
 // ── part bodies: return { body, terms:[{key,x,y,dir,label,pad,...}] } ────────────
 function pContactor(x,y){
-  const w=176,h=120, b=[];
+  // Drawn as a REAL residential single-pole DP contactor:
+  //  • ONE leg switched (L1→T1 through a contact), the OTHER leg a solid pass-through
+  //    bus (L2→T2, stays hot even when off — the safety note).
+  //  • a distinct 24-VOLT COIL (teal, low-voltage) whose electromagnet MECHANICALLY
+  //    pulls the power contacts closed — shown by a dashed link, the key teaching cue.
+  const w=190,h=158,b=[];
+  const coilTop=y+100;
   b.push(`<rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="11" fill="#2b2f37" stroke="#11141a" stroke-width="2"/>`);
-  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+h/2-2)}" text-anchor="middle" font-size="17" font-weight="800" fill="#e8ecf2">CONTACTOR</text>`);
-  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+h/2+16)}" text-anchor="middle" font-size="11" fill="#9aa3b2">CONT</text>`);
-  b.push(`<text x="${f1(x+88)}" y="${f1(y+h+28)}" text-anchor="middle" font-size="10" font-weight="700" fill="#0b0d10">24V COIL</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+22)}" text-anchor="middle" font-size="15" font-weight="800" fill="#e8ecf2">CONTACTOR</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+36)}" text-anchor="middle" font-size="9" fill="#9aa3b2">single-pole · 240V power switch</text>`);
+  // ── SWITCHED pole (left): L1 → open contact → T1 ──
+  const swx=x+52, top=y+46, bot=y+86;
+  b.push(`<circle cx="${f1(swx)}" cy="${f1(top)}" r="3.2" fill="#e8ecf2"/>`);
+  b.push(`<circle cx="${f1(swx)}" cy="${f1(bot)}" r="3.2" fill="#e8ecf2"/>`);
+  b.push(`<line x1="${f1(swx)}" y1="${f1(bot)}" x2="${f1(swx+15)}" y2="${f1(top+6)}" stroke="#e8ecf2" stroke-width="2.6" stroke-linecap="round"/>`); // open arm
+  b.push(`<text x="${f1(swx-8)}" y="${f1((top+bot)/2+3)}" text-anchor="end" font-size="8" fill="#9aa3b2">switched</text>`);
+  // ── UNSWITCHED pole (right): L2 solid bus straight through to T2 ──
+  const bux=x+134;
+  b.push(`<line x1="${f1(bux)}" y1="${f1(top)}" x2="${f1(bux)}" y2="${f1(bot)}" stroke="#e8ecf2" stroke-width="2.6" stroke-linecap="round"/>`);
+  b.push(`<text x="${f1(bux+8)}" y="${f1((top+bot)/2+3)}" font-size="8" fill="#e0a24a">always hot</text>`);
+  // ── divider + 24V coil section ──
+  b.push(`<line x1="${f1(x+6)}" y1="${f1(coilTop)}" x2="${f1(x+w-6)}" y2="${f1(coilTop)}" stroke="#11141a" stroke-width="1.5"/>`);
+  b.push(`<rect x="${f1(x+6)}" y="${f1(coilTop+5)}" width="${w-12}" height="46" rx="7" fill="#0f8a7e" fill-opacity="0.20" stroke="#0f8a7e" stroke-width="1.6"/>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(coilTop+21)}" text-anchor="middle" font-size="10.5" font-weight="800" fill="#0f8a7e">24-VOLT COIL</text>`);
+  const cy2=coilTop+37, cx1=x+54, cx2=x+136, seg=(cx2-cx1)/6;
+  let d=`M ${f1(cx1)} ${f1(cy2)}`;
+  for(let k=0;k<6;k++){ const sx=cx1+seg*k; d+=` Q ${f1(sx+seg/2)} ${f1(cy2-5)} ${f1(sx+seg)} ${f1(cy2)}`; }
+  b.push(`<path d="${d}" fill="none" stroke="#0f8a7e" stroke-width="2.2"/>`);
+  // ── dashed MECHANICAL link: coil pulls the switched contact in ──
+  b.push(`<line x1="${f1(swx+7)}" y1="${f1(top+3)}" x2="${f1(x+w/2)}" y2="${f1(coilTop+10)}" stroke="#0f8a7e" stroke-width="1.4" stroke-dasharray="3 3" opacity="0.85"/>`);
+  b.push(`<text x="${f1(x+w/2+30)}" y="${f1(coilTop-4)}" font-size="7.5" fill="#0f8a7e">pulls contact in</text>`);
   const T=[
-    {key:'L1',x:x+44,y:y,dir:'up',pad:'screw',label:'L1',ldy:-12},
-    {key:'L2',x:x+132,y:y,dir:'up',pad:'screw',label:'L2',ldy:-12},
-    {key:'LOAD1',x:x+w,y:y+42,dir:'right',pad:'screw',label:'T1',ldx:15,ldy:-9},
-    {key:'LOAD2',x:x+w,y:y+84,dir:'right',pad:'screw',label:'T2',ldx:15,ldy:-9},
-    {key:'COIL1',x:x+50,y:y+h,dir:'down',pad:'screw'},
-    {key:'COIL2',x:x+126,y:y+h,dir:'down',pad:'screw'},
+    {key:'L1',x:swx,y:y,dir:'up',pad:'screw',label:'L1',ldy:-12},
+    {key:'L2',x:bux,y:y,dir:'up',pad:'screw',label:'L2',ldy:-12},
+    {key:'LOAD1',x:x+w,y:y+56,dir:'right',pad:'screw',label:'T1',ldx:15,ldy:-9},
+    {key:'LOAD2',x:x+w,y:y+82,dir:'right',pad:'screw',label:'T2',ldx:15,ldy:-9},
+    {key:'COIL1',x:x+54,y:y+h,dir:'down',pad:'screw',label:'24V',ldy:16,lsize:8.5},
+    {key:'COIL2',x:x+136,y:y+h,dir:'down',pad:'screw',label:'24V',ldy:16,lsize:8.5},
   ];
-  // aliases
-  const al={'11':'L1','23':'L2','21':'LOAD1','22':'LOAD2','T1':'COIL1','T2':'COIL2','A1':'COIL1','A2':'COIL2'};
+  // aliases: OEM sheets vary — A1/A2 (spec convention) and C1/C2 both land on the coil.
+  const al={'11':'L1','23':'L2','21':'LOAD1','22':'LOAD2','T1':'COIL1','T2':'COIL2','A1':'COIL1','A2':'COIL2','C1':'COIL1','C2':'COIL2'};
   return {body:b.join(''),terms:T,alias:al};
 }
 function pCompressor(x,y){

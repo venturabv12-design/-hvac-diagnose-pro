@@ -104,44 +104,53 @@ function padSvg(t, hasWire){
 
 // ── part bodies: return { body, terms:[{key,x,y,dir,label,pad,...}] } ────────────
 function pContactor(x,y){
-  // Drawn as a REAL residential single-pole DP contactor:
-  //  • ONE leg switched (L1→T1 through a contact), the OTHER leg a solid pass-through
-  //    bus (L2→T2, stays hot even when off — the safety note).
-  //  • a distinct 24-VOLT COIL (teal, low-voltage) whose electromagnet MECHANICALLY
-  //    pulls the power contacts closed — shown by a dashed link, the key teaching cue.
-  const w=190,h=158,b=[];
-  const coilTop=y+100;
-  b.push(`<rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="11" fill="#2b2f37" stroke="#11141a" stroke-width="2"/>`);
-  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+22)}" text-anchor="middle" font-size="15" font-weight="800" fill="#e8ecf2">CONTACTOR</text>`);
-  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+36)}" text-anchor="middle" font-size="9" fill="#9aa3b2">single-pole · 240V power switch</text>`);
-  // ── SWITCHED pole (left): L1 → open contact → T1 ──
-  const swx=x+52, top=y+46, bot=y+86;
-  b.push(`<circle cx="${f1(swx)}" cy="${f1(top)}" r="3.2" fill="#e8ecf2"/>`);
-  b.push(`<circle cx="${f1(swx)}" cy="${f1(bot)}" r="3.2" fill="#e8ecf2"/>`);
-  b.push(`<line x1="${f1(swx)}" y1="${f1(bot)}" x2="${f1(swx+15)}" y2="${f1(top+6)}" stroke="#e8ecf2" stroke-width="2.6" stroke-linecap="round"/>`); // open arm
-  b.push(`<text x="${f1(swx-8)}" y="${f1((top+bot)/2+3)}" text-anchor="end" font-size="8" fill="#9aa3b2">switched</text>`);
-  // ── UNSWITCHED pole (right): L2 solid bus straight through to T2 ──
-  const bux=x+134;
-  b.push(`<line x1="${f1(bux)}" y1="${f1(top)}" x2="${f1(bux)}" y2="${f1(bot)}" stroke="#e8ecf2" stroke-width="2.6" stroke-linecap="round"/>`);
-  b.push(`<text x="${f1(bux+8)}" y="${f1((top+bot)/2+3)}" font-size="8" fill="#e0a24a">always hot</text>`);
-  // ── divider + 24V coil section ──
-  b.push(`<line x1="${f1(x+6)}" y1="${f1(coilTop)}" x2="${f1(x+w-6)}" y2="${f1(coilTop)}" stroke="#11141a" stroke-width="1.5"/>`);
-  b.push(`<rect x="${f1(x+6)}" y="${f1(coilTop+5)}" width="${w-12}" height="46" rx="7" fill="#0f8a7e" fill-opacity="0.20" stroke="#0f8a7e" stroke-width="1.6"/>`);
-  b.push(`<text x="${f1(x+w/2)}" y="${f1(coilTop+21)}" text-anchor="middle" font-size="10.5" font-weight="800" fill="#0f8a7e">24-VOLT COIL</text>`);
-  const cy2=coilTop+37, cx1=x+54, cx2=x+136, seg=(cx2-cx1)/6;
+  // Drawn to look like the ACTUAL part a tech holds (a Packard-style DP contactor):
+  //  • chunky black body with a silver armature cap on top (the pressable part),
+  //  • heavy SCREW LUGS: LINE on the left (fed straight off the disconnect), LOAD on
+  //    the right (out to compressor/fan) — power reads left→right, no guesswork,
+  //  • single-pole: top leg switched (open-contact symbol), bottom leg a solid
+  //    "always hot" bus,
+  //  • two 24V COIL spade terminals on the bottom; the coil's electromagnet pulls the
+  //    contacts in (dashed mechanical link — the key teaching cue).
+  const w=188,h=164,b=[];
+  b.push(`<rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="12" fill="#23262d" stroke="#0c0e12" stroke-width="2"/>`);
+  b.push(`<rect x="${f1(x+3)}" y="${f1(y+3)}" width="${w-6}" height="${h-6}" rx="10" fill="none" stroke="#3a3f47" stroke-width="1"/>`);
+  // silver armature cap (the pressable top of a real contactor)
+  b.push(`<rect x="${f1(x+30)}" y="${f1(y+8)}" width="${w-60}" height="16" rx="4" fill="#8b929c" stroke="#5b616b" stroke-width="1"/>`);
+  b.push(`<rect x="${f1(x+w/2-14)}" y="${f1(y+11)}" width="28" height="10" rx="3" fill="#c9ced6"/>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+42)}" text-anchor="middle" font-size="15" font-weight="800" fill="#e8ecf2">CONTACTOR</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+55)}" text-anchor="middle" font-size="8.5" fill="#9aa3b2">single-pole · 240V power switch</text>`);
+  const tp=y+82, bp=y+112; // top pole / bottom pole rows (line left → load right)
+  // side labels
+  b.push(`<text x="${f1(x+12)}" y="${f1(y+70)}" font-size="8" font-weight="700" fill="#8b929c">LINE</text>`);
+  b.push(`<text x="${f1(x+w-12)}" y="${f1(y+70)}" text-anchor="end" font-size="8" font-weight="700" fill="#8b929c">LOAD</text>`);
+  // TOP pole (switched): L1 —[open contact]— T1
+  b.push(`<line x1="${f1(x+6)}" y1="${f1(tp)}" x2="${f1(x+70)}" y2="${f1(tp)}" stroke="#e8ecf2" stroke-width="2.6" stroke-linecap="round"/>`);
+  b.push(`<circle cx="${f1(x+70)}" cy="${f1(tp)}" r="3.2" fill="#e8ecf2"/>`);
+  b.push(`<line x1="${f1(x+70)}" y1="${f1(tp)}" x2="${f1(x+90)}" y2="${f1(tp-12)}" stroke="#e8ecf2" stroke-width="2.6" stroke-linecap="round"/>`); // open arm
+  b.push(`<circle cx="${f1(x+94)}" cy="${f1(tp)}" r="3.2" fill="#e8ecf2"/>`);
+  b.push(`<line x1="${f1(x+94)}" y1="${f1(tp)}" x2="${f1(x+w-6)}" y2="${f1(tp)}" stroke="#e8ecf2" stroke-width="2.6" stroke-linecap="round"/>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(tp-16)}" text-anchor="middle" font-size="7.5" fill="#9aa3b2">switched</text>`);
+  // BOTTOM pole (unswitched bus): L2 ———— T2, always hot
+  b.push(`<line x1="${f1(x+6)}" y1="${f1(bp)}" x2="${f1(x+w-6)}" y2="${f1(bp)}" stroke="#e8ecf2" stroke-width="2.6" stroke-linecap="round"/>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(bp+12)}" text-anchor="middle" font-size="7.5" fill="#e0a24a">always hot (unswitched leg)</text>`);
+  // 24V coil box + squiggle across the two bottom spade terminals
+  const cbTop=y+126;
+  b.push(`<rect x="${f1(x+36)}" y="${f1(cbTop)}" width="${w-72}" height="26" rx="6" fill="#0f8a7e" fill-opacity="0.20" stroke="#0f8a7e" stroke-width="1.5"/>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(cbTop+16)}" text-anchor="middle" font-size="9.5" font-weight="800" fill="#0f8a7e">24V COIL</text>`);
+  const cy2=y+h-4, cx1=x+56, cx2=x+128, seg=(cx2-cx1)/6;
   let d=`M ${f1(cx1)} ${f1(cy2)}`;
-  for(let k=0;k<6;k++){ const sx=cx1+seg*k; d+=` Q ${f1(sx+seg/2)} ${f1(cy2-5)} ${f1(sx+seg)} ${f1(cy2)}`; }
-  b.push(`<path d="${d}" fill="none" stroke="#0f8a7e" stroke-width="2.2"/>`);
-  // ── dashed MECHANICAL link: coil pulls the switched contact in ──
-  b.push(`<line x1="${f1(swx+7)}" y1="${f1(top+3)}" x2="${f1(x+w/2)}" y2="${f1(coilTop+10)}" stroke="#0f8a7e" stroke-width="1.4" stroke-dasharray="3 3" opacity="0.85"/>`);
-  b.push(`<text x="${f1(x+w/2+30)}" y="${f1(coilTop-4)}" font-size="7.5" fill="#0f8a7e">pulls contact in</text>`);
+  for(let k=0;k<6;k++){ const sx=cx1+seg*k; d+=` Q ${f1(sx+seg/2)} ${f1(cy2-4)} ${f1(sx+seg)} ${f1(cy2)}`; }
+  b.push(`<path d="${d}" fill="none" stroke="#0f8a7e" stroke-width="1.8" opacity="0.7"/>`);
+  // dashed MECHANICAL link: coil pulls the switched contact in
+  b.push(`<line x1="${f1(x+82)}" y1="${f1(tp+3)}" x2="${f1(x+w/2)}" y2="${f1(cbTop)}" stroke="#0f8a7e" stroke-width="1.3" stroke-dasharray="3 3" opacity="0.8"/>`);
   const T=[
-    {key:'L1',x:swx,y:y,dir:'up',pad:'screw',label:'L1',ldy:-12},
-    {key:'L2',x:bux,y:y,dir:'up',pad:'screw',label:'L2',ldy:-12},
-    {key:'LOAD1',x:x+w,y:y+56,dir:'right',pad:'screw',label:'T1',ldx:15,ldy:-9},
-    {key:'LOAD2',x:x+w,y:y+82,dir:'right',pad:'screw',label:'T2',ldx:15,ldy:-9},
-    {key:'COIL1',x:x+54,y:y+h,dir:'down',pad:'screw',label:'24V',ldy:16,lsize:8.5},
-    {key:'COIL2',x:x+136,y:y+h,dir:'down',pad:'screw',label:'24V',ldy:16,lsize:8.5},
+    {key:'L1',x:x,y:tp,dir:'left',pad:'screw',label:'L1',ldx:-14,ldy:4},
+    {key:'L2',x:x,y:bp,dir:'left',pad:'screw',label:'L2',ldx:-14,ldy:4},
+    {key:'LOAD1',x:x+w,y:tp,dir:'right',pad:'screw',label:'T1',ldx:14,ldy:4},
+    {key:'LOAD2',x:x+w,y:bp,dir:'right',pad:'screw',label:'T2',ldx:14,ldy:4},
+    {key:'COIL1',x:x+56,y:y+h,dir:'down',pad:'spade',label:'24V',ldy:17,lsize:8.5},
+    {key:'COIL2',x:x+128,y:y+h,dir:'down',pad:'spade',label:'24V',ldy:17,lsize:8.5},
   ];
   // aliases: OEM sheets vary — map the common terminal spellings onto the drawn poles.
   const al={'11':'L1','23':'L2','23a':'L2','1':'L1','3':'L2',

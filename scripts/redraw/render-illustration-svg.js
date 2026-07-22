@@ -77,6 +77,8 @@ function roleOf(c){
   if(k==='compressor'||id==='COMP') return 'compressor';
   if(k==='capacitor'&&(id==='CAP'||lbl.includes('run'))) return 'runcap';
   if(k==='fan-motor'&&(id==='OFM'||lbl.includes('outdoor')||lbl.includes('condenser'))) return 'fan';
+  // external 24V supply (straight-cool condensers get 24V from the indoor unit — NO onboard transformer)
+  if(lbl.includes('indoor')||lbl.includes('from inside')||id==='IDU') return 'source';
   if(k==='transformer'||id==='XFMR') return 'xfmr';
   if(k==='terminal-block'&&(id==='PWR'||lbl.includes('power')||lbl.includes('l1'))) return 'power';
   if(k==='thermostat'||id==='TSTAT') return 'tstat';
@@ -248,11 +250,24 @@ function pSolenoid(x,y,comp){
   return {body:b.join(''),terms:[{key:'1',x:x,y:y+h/2,dir:'left',pad:'small'},{key:'2',x:x+w,y:y+h/2,dir:'right',pad:'small'}]};
 }
 
-const ROLE_BODY={ contactor:pContactor, compressor:pCompressor, runcap:pRunCap, fan:pFan, xfmr:pXfmr, power:pPower, switch:pSwitch, ctd:pCtd, tstat:pTstat, heater:pHeater, solenoid:pSolenoid };
+// 24V control power arriving FROM THE INDOOR UNIT (no onboard transformer on a straight-cool condenser).
+function pSource(x,y){
+  const w=140,h=56,b=[];
+  b.push(`<rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="8" fill="#0f8a7e" fill-opacity="0.14" stroke="#0f8a7e" stroke-width="1.8"/>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+24)}" text-anchor="middle" font-size="11.5" font-weight="800" fill="#0b3d38">FROM INDOOR UNIT</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+40)}" text-anchor="middle" font-size="9.5" fill="#0f8a7e">24V control power</text>`);
+  const T=[
+    {key:'R',x:x+34,y:y,dir:'up',pad:'small',label:'24V',ldy:-8,lsize:8.5},
+    {key:'C',x:x+106,y:y,dir:'up',pad:'small',label:'C',ldy:-8,lsize:8.5},
+  ];
+  return {body:b.join(''),terms:T,alias:{'Y':'R','24V':'R','COM':'C','COMMON':'C'}};
+}
+
+const ROLE_BODY={ contactor:pContactor, compressor:pCompressor, runcap:pRunCap, fan:pFan, xfmr:pXfmr, power:pPower, switch:pSwitch, ctd:pCtd, tstat:pTstat, heater:pHeater, solenoid:pSolenoid, source:pSource };
 
 const ZONES={
   power:{x:44,y:200}, contactor:{x:210,y:150}, runcap:{x:560,y:270}, compressor:{x:900,y:170}, fan:{x:904,y:360},
-  xfmr:{x:250,y:560}, tstat:{x:60,y:576}, ctd:{x:820,y:566}, heater:{x:620,y:170}, solenoid:{x:640,y:452},
+  xfmr:{x:250,y:560}, source:{x:240,y:566}, tstat:{x:60,y:576}, ctd:{x:820,y:566}, heater:{x:620,y:170}, solenoid:{x:640,y:452},
 };
 const CHS_POS={ x:470, y:178 };            // crankcase heater switch — line zone, next to its heater
 const SWITCH_ROW={ startX:420, y:582, dx:130 };  // LPS / DTS / HPS only

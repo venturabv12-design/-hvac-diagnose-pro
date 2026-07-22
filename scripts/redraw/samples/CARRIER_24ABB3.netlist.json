@@ -1,0 +1,49 @@
+{
+  "schema_version": "1",
+  "model_key": "CARRIER:24ABB3",
+  "circuit_type": "full",
+  "source_ref": { "doc_title": "Carrier 24ABB3 Base Series Wiring Diagram", "page": 1, "note": "Core circuit traced from OEM connection diagram; factory-optional *safety/start components left to the full manual for apprentice/homeowner clarity." },
+  "components": [
+    { "id": "L", "kind": "terminal-block", "label": "208/230V Power (from disconnect)" },
+    { "id": "CONT", "kind": "contactor", "label": "Contactor" },
+    { "id": "COMP", "kind": "compressor", "label": "Compressor" },
+    { "id": "CAP", "kind": "capacitor", "label": "Run Capacitor" },
+    { "id": "OFM", "kind": "fan-motor", "label": "Outdoor Fan Motor" },
+    { "id": "XFMR", "kind": "transformer", "label": "24V (from indoor unit)" }
+  ],
+  "terminals": [
+    { "component": "L", "id": "L1" },
+    { "component": "L", "id": "L2" },
+    { "component": "CONT", "id": "L1" },
+    { "component": "CONT", "id": "L2" },
+    { "component": "CONT", "id": "LOAD1" },
+    { "component": "CONT", "id": "LOAD2" },
+    { "component": "CONT", "id": "COIL1" },
+    { "component": "CONT", "id": "COIL2" },
+    { "component": "COMP", "id": "C" },
+    { "component": "COMP", "id": "R" },
+    { "component": "COMP", "id": "S" },
+    { "component": "CAP", "id": "HERM" },
+    { "component": "CAP", "id": "C" },
+    { "component": "CAP", "id": "FAN" },
+    { "component": "OFM", "id": "1" },
+    { "component": "OFM", "id": "2" },
+    { "component": "XFMR", "id": "R" },
+    { "component": "XFMR", "id": "C" }
+  ],
+  "nets": [
+    { "id": "n1", "voltage_class": "line", "wire_color": "black", "label": "L1 line", "plain": "One leg of the 240-volt power feeding the unit", "endpoints": [ { "component": "L", "terminal": "L1" }, { "component": "CONT", "terminal": "L1" } ] },
+    { "id": "n2", "voltage_class": "line", "wire_color": "black", "label": "L2 line", "plain": "The other leg of the 240-volt power", "endpoints": [ { "component": "L", "terminal": "L2" }, { "component": "CONT", "terminal": "L2" } ] },
+    { "id": "n3", "voltage_class": "line", "wire_color": "black", "label": "switched line to compressor", "plain": "Switched 240V from the contactor to the compressor", "endpoints": [ { "component": "CONT", "terminal": "LOAD1" }, { "component": "COMP", "terminal": "C" } ] },
+    { "id": "n4", "voltage_class": "line", "wire_color": "yellow", "label": "line to compressor run", "plain": "240V to the compressor run winding", "endpoints": [ { "component": "CONT", "terminal": "LOAD2" }, { "component": "COMP", "terminal": "R" } ] },
+    { "id": "n5", "voltage_class": "line", "wire_color": "yellow", "label": "capacitor common tie", "plain": "Capacitor common ties to the run leg", "endpoints": [ { "component": "CAP", "terminal": "C" }, { "component": "COMP", "terminal": "R" } ] },
+    { "id": "n6", "voltage_class": "start-winding", "wire_color": "blue", "label": "start winding", "plain": "Run capacitor to the compressor start winding", "endpoints": [ { "component": "COMP", "terminal": "S" }, { "component": "CAP", "terminal": "HERM" } ] },
+    { "id": "n7", "voltage_class": "line", "wire_color": "brown", "label": "capacitor to fan", "plain": "Run capacitor to the outdoor fan motor", "endpoints": [ { "component": "CAP", "terminal": "FAN" }, { "component": "OFM", "terminal": "1" } ] },
+    { "id": "n8", "voltage_class": "line", "wire_color": "yellow", "label": "line to fan", "plain": "240V power to the outdoor fan motor", "endpoints": [ { "component": "OFM", "terminal": "2" }, { "component": "CONT", "terminal": "LOAD2" } ] },
+    { "id": "n9", "voltage_class": "low-voltage", "wire_color": "yellow", "label": "24V call to coil", "plain": "24-volt \"turn on\" signal from indoors to the contactor coil", "endpoints": [ { "component": "XFMR", "terminal": "R" }, { "component": "CONT", "terminal": "COIL1" } ] },
+    { "id": "n10", "voltage_class": "low-voltage", "wire_color": "blue", "label": "24V common", "plain": "24-volt common back to the indoor unit", "endpoints": [ { "component": "CONT", "terminal": "COIL2" }, { "component": "XFMR", "terminal": "C" } ] }
+  ],
+  "notes": [
+    "Apprentice/homeowner CORE view. The real unit's optional safety switches (low/high pressure, discharge temp) and start components sit in the 24V line and the start circuit — shown in the full manual."
+  ]
+}

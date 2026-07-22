@@ -98,7 +98,10 @@ function padSvg(t, hasWire){
   else if(t.pad==='spade'){ g.push(`<rect x="${f1(t.x-7)}" y="${f1(t.dir==='up'?t.y:t.y-8)}" width="14" height="16" rx="2" fill="#b9bfc9" stroke="#11141a" stroke-width="1.4"/>`); }
   else if(t.pad==='dot'){ g.push(`<circle cx="${f1(t.x)}" cy="${f1(t.y)}" r="5.5" fill="#c9ced6" stroke="#11141a" stroke-width="1.5"/>`); }
   else if(t.pad==='small'){ g.push(`<circle cx="${f1(t.x)}" cy="${f1(t.y)}" r="4.5" fill="#c9ced6" stroke="#11141a" stroke-width="1.3"/>`); }
-  if(t.label){ const lx=t.x+(t.ldx||0), ly=t.y+(t.ldy||0); g.push(`<text x="${f1(lx)}" y="${f1(ly)}" text-anchor="${t.lanchor||'middle'}" font-size="${t.lsize||11}" font-weight="700" fill="#0b0d10">${escapeXml(t.label)}</text>`); }
+  if(t.label){ const lx=t.x+(t.ldx||0), ly=t.y+(t.ldy||0); const fs=t.lsize||11; const tw=String(t.label).length*fs*0.64+6, th=fs+4;
+    const anc=t.lanchor||'middle'; const rx=anc==='end'?lx-tw+3:anc==='start'?lx-3:lx-tw/2;
+    g.push(`<rect x="${f1(rx)}" y="${f1(ly-fs+1)}" width="${f1(tw)}" height="${f1(th)}" rx="3" fill="#ffffff" opacity="0.92"/>`);
+    g.push(`<text x="${f1(lx)}" y="${f1(ly)}" text-anchor="${anc}" font-size="${fs}" font-weight="700" fill="#0b0d10">${escapeXml(t.label)}</text>`); }
   return g.join('');
 }
 
@@ -119,7 +122,7 @@ function pContactor(x,y){
   b.push(`<rect x="${f1(x+30)}" y="${f1(y+8)}" width="${w-60}" height="16" rx="4" fill="#8b929c" stroke="#5b616b" stroke-width="1"/>`);
   b.push(`<rect x="${f1(x+w/2-14)}" y="${f1(y+11)}" width="28" height="10" rx="3" fill="#c9ced6"/>`);
   b.push(`<text x="${f1(x+w/2)}" y="${f1(y+42)}" text-anchor="middle" font-size="15" font-weight="800" fill="#e8ecf2">CONTACTOR</text>`);
-  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+55)}" text-anchor="middle" font-size="8.5" fill="#9aa3b2">single-pole · 240V power switch</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+55)}" text-anchor="middle" font-size="8.5" fill="#9aa3b2">the switch that powers the unit on</text>`);
   const tp=y+82, bp=y+112; // top pole / bottom pole rows (line left → load right)
   // side labels
   b.push(`<text x="${f1(x+12)}" y="${f1(y+70)}" font-size="8" font-weight="700" fill="#8b929c">LINE</text>`);
@@ -150,7 +153,7 @@ function pContactor(x,y){
     {key:'LOAD1',x:x+w,y:tp,dir:'right',pad:'screw',label:'T1',ldx:14,ldy:4},
     {key:'LOAD2',x:x+w,y:bp,dir:'right',pad:'screw',label:'T2',ldx:14,ldy:4},
     {key:'COIL1',x:x+56,y:y+h,dir:'down',pad:'spade',label:'24V',ldy:17,lsize:8.5},
-    {key:'COIL2',x:x+128,y:y+h,dir:'down',pad:'spade',label:'24V',ldy:17,lsize:8.5},
+    {key:'COIL2',x:x+128,y:y+h,dir:'down',pad:'spade',label:'C',ldy:17,lsize:8.5},
   ];
   // aliases: OEM sheets vary — map the common terminal spellings onto the drawn poles.
   const al={'11':'L1','23':'L2','23a':'L2','1':'L1','3':'L2',
@@ -162,8 +165,9 @@ function pCompressor(x,y){
   const r=54,cx=x+r,cy=y+r,b=[];
   b.push(`<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${r}" fill="#3a3f47" stroke="#11141a" stroke-width="2.6"/>`);
   b.push(`<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${r-8}" fill="none" stroke="#565c66" stroke-width="1.5"/>`);
-  b.push(`<text x="${f1(cx)}" y="${f1(cy-6)}" text-anchor="middle" font-size="16" font-weight="800" fill="#e8ecf2">COMP</text>`);
-  b.push(`<text x="${f1(cx)}" y="${f1(cy+11)}" text-anchor="middle" font-size="10" fill="#9aa3b2">compressor</text>`);
+  b.push(`<text x="${f1(cx)}" y="${f1(cy-8)}" text-anchor="middle" font-size="15" font-weight="800" fill="#e8ecf2">COMPRESSOR</text>`);
+  b.push(`<text x="${f1(cx)}" y="${f1(cy+8)}" text-anchor="middle" font-size="9" fill="#9aa3b2">pumps the</text>`);
+  b.push(`<text x="${f1(cx)}" y="${f1(cy+20)}" text-anchor="middle" font-size="9" fill="#9aa3b2">refrigerant</text>`);
   const T=[
     {key:'C',x:cx-r-1,y:cy-20,dir:'left',pad:'dot',label:'C',ldx:-13,ldy:4},
     {key:'R',x:cx-r-1,y:cy,dir:'left',pad:'dot',label:'R',ldx:-13,ldy:4},
@@ -174,9 +178,11 @@ function pCompressor(x,y){
 function pRunCap(x,y){
   const w=126,h=98,b=[];
   b.push(`<rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="30" fill="#eef1f5" stroke="#11141a" stroke-width="2.2"/>`);
-  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+h-14)}" text-anchor="middle" font-size="12" font-weight="800" fill="#0b0d10">DUAL RUN CAP</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+h-30)}" text-anchor="middle" font-size="12" font-weight="800" fill="#0b0d10">RUN CAPACITOR</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+h-16)}" text-anchor="middle" font-size="8.5" fill="#66707d">helps the motors</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+h-5)}" text-anchor="middle" font-size="8.5" fill="#66707d">start &amp; run smoothly</text>`);
   const names=['HERM','C','FAN'], T=[];
-  names.forEach((s,i)=>{ const sx=x+(w*(i+1))/4; T.push({key:s,x:sx,y:y-15,dir:'up',pad:'spade',label:s,ldy:-20}); });
+  names.forEach((s,i)=>{ const sx=x+(w*(i+1))/4; T.push({key:s,x:sx,y:y-15,dir:'up',pad:'spade',label:s,ldy:-18}); });
   return {body:b.join(''),terms:T,alias:{'H':'HERM','F':'FAN'}};
 }
 function pFan(x,y,netTerms){
@@ -185,9 +191,9 @@ function pFan(x,y,netTerms){
   for(let i=0;i<3;i++){ const a=(i*120)*Math.PI/180,bx=cx+Math.cos(a)*(r-12),by=cy+Math.sin(a)*(r-12); b.push(`<path d="M ${f1(cx)} ${f1(cy)} Q ${f1(cx+Math.cos(a+0.5)*r*0.7)} ${f1(cy+Math.sin(a+0.5)*r*0.7)} ${f1(bx)} ${f1(by)} Z" fill="#c4ccd6" stroke="#8a94a6" stroke-width="1"/>`); }
   b.push(`<circle cx="${f1(cx)}" cy="${f1(cy)}" r="8" fill="#565c66"/>`);
   b.push(`<text x="${f1(cx)}" y="${f1(y+2*r+16)}" text-anchor="middle" font-size="13" font-weight="800" fill="#0b0d10">FAN MOTOR</text>`);
-  b.push(`<text x="${f1(cx)}" y="${f1(y+2*r+30)}" text-anchor="middle" font-size="10" fill="#66707d">OFM</text>`);
+  b.push(`<text x="${f1(cx)}" y="${f1(y+2*r+30)}" text-anchor="middle" font-size="9.5" fill="#66707d">spins to cool the coil</text>`);
   let leads=(netTerms&&netTerms.length)?netTerms.slice(0,3):['1','2']; const T=[];
-  leads.forEach((k,i)=>{ T.push({key:k,x:cx-r-1,y:cy-12+i*20,dir:'left',pad:'dot',label:k,ldx:-12,ldy:4}); });
+  leads.forEach((k,i)=>{ T.push({key:k,x:cx-r-1,y:cy-12+i*20,dir:'left',pad:'dot'}); });
   return {body:b.join(''),terms:T};
 }
 function pXfmr(x,y){
@@ -330,6 +336,13 @@ function renderIllustrationSVG(netlist){
     }
   });
 
+  // ── NUMBER each distinct wire so it ties to the guide (the only reliable way to
+  //    tell four same-colored yellow wires apart) ─────────────────────────────────
+  const cleanFn=(s)=>String(s||'').replace(/\s+/g,' ').replace(/^ +| +$/g,'');
+  const rowKey=(w)=>(w.color||'')+'|'+(w.label||w.plain||'');
+  const rowNum={}; const rows=[];
+  wires.forEach(w=>{ if(!(w.label||w.plain)) return; const k=rowKey(w); if(!(k in rowNum)){ rowNum[k]=rows.length+1; rows.push({n:rows.length+1,color:w.color||'—',fn:(w.plain?cleanFn(w.plain):plainEnglish(w.label))}); } });
+
   // ── FAN-OUT shared terminals: when 2+ wires land on one terminal, spread their
   //    landing points along the terminal edge so an apprentice sees each wire
   //    distinctly, then a junction dot shows they meet. ───────────────────────────
@@ -359,7 +372,10 @@ function renderIllustrationSVG(netlist){
 
   // ── router: each wire its own vertical trunk so none overlap ────────────────────
   const stub=(p,ex)=>{ const s=18+(ex||0); if(p.dir==='up')return{x:p.x,y:p.y-s}; if(p.dir==='down')return{x:p.x,y:p.y+s}; if(p.dir==='right')return{x:p.x+s,y:p.y}; return{x:p.x-s,y:p.y}; };
-  const wireSvg=[]; const N=wires.length;
+  const wireSvg=[]; const badgeSvg=[]; const N=wires.length;
+  const usedTrunks=[]; // guarantee every wire gets its OWN vertical lane (no overlapping runs)
+  const placedBadges=[]; // keep number badges from stacking on each other
+  const placeBadge=(cx,cy)=>{ let x=cx,y=cy,k=0; while(placedBadges.some(p=>Math.hypot(p.x-x,p.y-y)<20)&&k<10){ k++; y=cy+(k%2?1:-1)*20*Math.ceil(k/2); } placedBadges.push({x,y}); return {x,y}; };
   wires.forEach((w,i)=>{
     const col=wireColor(w.color), stripe=wireStripe(w.color);
     const aPt=landing[`${i}_a`]||{x:w.a.x,y:w.a.y}, bPt=landing[`${i}_b`]||{x:w.b.x,y:w.b.y};
@@ -367,17 +383,27 @@ function renderIllustrationSVG(netlist){
     const aOut=stub(a,(i%3)*4), bOut=stub(b,(i%3)*4);
     const lo=Math.min(aOut.x,bOut.x), hi=Math.max(aOut.x,bOut.x);
     let trunk = (hi-lo<40) ? (lo+hi)/2+((i%9)-4)*9 : lo+(hi-lo)*((i+1)/(N+1));
-    const pts=[a,aOut,{x:trunk,y:aOut.y},{x:trunk,y:bOut.y},bOut,b].map(p=>`${f1(p.x)} ${f1(p.y)}`);
+    while(usedTrunks.some(t=>Math.abs(t-trunk)<16)) trunk+=16; // no two wires share a lane
+    usedTrunks.push(trunk);
+    const ptsO=[a,aOut,{x:trunk,y:aOut.y},{x:trunk,y:bOut.y},bOut,b];
+    const pts=ptsO.map(p=>`${f1(p.x)} ${f1(p.y)}`);
     const path=`M ${pts.join(' L ')}`;
     wireSvg.push(`<path d="${path}" fill="none" stroke="#ffffff" stroke-width="7" opacity="0.95" stroke-linejoin="round" stroke-linecap="round"/>`);
     wireSvg.push(`<path data-conn="${escapeXml(connOut[i]||'')}" d="${path}" fill="none" stroke="${col}" stroke-width="3.4" stroke-linejoin="round" stroke-linecap="round"/>`);
     if(stripe) wireSvg.push(`<path d="${path}" fill="none" stroke="${stripe}" stroke-width="3.4" stroke-dasharray="3 9" stroke-linejoin="round" stroke-linecap="round"/>`);
-    wireSvg.push(`<circle cx="${f1(aPt.x)}" cy="${f1(aPt.y)}" r="2.8" fill="${col}"/><circle cx="${f1(bPt.x)}" cy="${f1(bPt.y)}" r="2.8" fill="${col}"/>`);
+    // numbered badge at the trunk midpoint → look this wire up in the guide below
+    const n=rowNum[rowKey(w)];
+    if(n){ // badge on the wire's LONGEST straight segment (on the wire, clear of parts/labels), drawn on the top layer
+      let best={x:trunk,y:(aOut.y+bOut.y)/2}, bl=-1;
+      for(let s=0;s<ptsO.length-1;s++){ const p=ptsO[s],q=ptsO[s+1]; const Ln=Math.hypot(q.x-p.x,q.y-p.y); if(Ln>bl){bl=Ln;best={x:(p.x+q.x)/2,y:(p.y+q.y)/2};} }
+      const bp=placeBadge(best.x,best.y);
+      badgeSvg.push(`<circle cx="${f1(bp.x)}" cy="${f1(bp.y)}" r="8.5" fill="#ffffff" stroke="${col}" stroke-width="2"/><text x="${f1(bp.x)}" y="${f1(bp.y+3.5)}" text-anchor="middle" font-size="10" font-weight="800" fill="#0b0d10">${n}</text>`); }
   });
-  // junction dots (drawn on top): where multiple wires meet a terminal
+  // junction dots — drawn LAST (on top of parts + labels) so a real splice is never hidden
+  const junctionSvg=[];
   junctions.forEach(j=>{
-    wireSvg.push(`<line x1="${f1(j.p1.x)}" y1="${f1(j.p1.y)}" x2="${f1(j.p2.x)}" y2="${f1(j.p2.y)}" stroke="#11141a" stroke-width="2"/>`);
-    wireSvg.push(`<circle cx="${f1(j.cx)}" cy="${f1(j.cy)}" r="4.5" fill="#11141a"/>`);
+    junctionSvg.push(`<line x1="${f1(j.p1.x)}" y1="${f1(j.p1.y)}" x2="${f1(j.p2.x)}" y2="${f1(j.p2.y)}" stroke="#11141a" stroke-width="2"/>`);
+    junctionSvg.push(`<circle cx="${f1(j.cx)}" cy="${f1(j.cy)}" r="5.5" fill="#11141a" stroke="#ffffff" stroke-width="1.5"/>`);
   });
 
   // ── emit part bodies + ONLY the pads that carry a wire (no dangling terminals) ──
@@ -392,31 +418,45 @@ function renderIllustrationSVG(netlist){
   const H=[];
   // zone tint bands (behind everything) + labels in the clear top-right of each band
   const zoneBg=[];
-  zoneBg.push(`<rect x="24" y="132" width="${WIDTH-48}" height="368" rx="14" fill="#fdf4f3"/>`);
+  zoneBg.push(`<rect x="24" y="116" width="${WIDTH-48}" height="384" rx="14" fill="#fdf4f3"/>`);
   zoneBg.push(`<rect x="24" y="516" width="${WIDTH-48}" height="238" rx="14" fill="#f0f8f6"/>`);
-  H.push(`<text x="40" y="34" font-size="21" font-weight="800" fill="#0b0d10">${escapeXml(netlist.model_key||'Wiring')} — how it’s wired</text>`);
-  H.push(`<text x="40" y="53" font-size="12.5" fill="#7a8390">Apprentice view · the real parts &amp; the real wire colors landing on the real terminals — every wire traced</text>`);
-  H.push(`<text x="${WIDTH-40}" y="156" text-anchor="end" font-size="13" font-weight="800" fill="#d92b1c">LINE VOLTAGE — 240V</text>`);
-  H.push(`<text x="${WIDTH-40}" y="540" text-anchor="end" font-size="13" font-weight="800" fill="#0f8a7e">CONTROL — 24V</text>`);
+  const pretty=(mk)=>{ const [br,md]=String(mk||'').split(':'); const b=br?br.charAt(0)+br.slice(1).toLowerCase():''; return md?`${b} ${md}`:(b||'Wiring'); };
+  H.push(`<text x="40" y="34" font-size="21" font-weight="800" fill="#0b0d10">${escapeXml(pretty(netlist.model_key))} — how it’s wired</text>`);
+  H.push(`<text x="40" y="53" font-size="12.5" fill="#7a8390">A beginner-friendly map of the real parts and how the wires connect them. The real manual is one tap away.</text>`);
+  // Two-voltage explainer — big, top-LEFT of each band (where the eye starts reading)
+  H.push(`<text x="44" y="138" font-size="14" font-weight="800" fill="#d92b1c">HIGH VOLTAGE · 240V</text>`);
+  H.push(`<text x="214" y="138" font-size="11" fill="#b06a62">— the power that actually runs the compressor &amp; fan</text>`);
+  H.push(`<text x="44" y="539" font-size="14" font-weight="800" fill="#0f8a7e">LOW VOLTAGE · 24V</text>`);
+  H.push(`<text x="205" y="539" font-size="11" fill="#5a9089">— the small signal from inside that switches it on</text>`);
+  // glossary — defines the terminal abbreviations in ONE place (control-zone open area)
+  const gloss=[
+    ['L1 / L2','the two 240-volt power legs coming in'],
+    ['T1 / T2','power leaving the contactor to the parts'],
+    ['C · R · S','compressor terminals: Common / Run / Start'],
+    ['HERM','capacitor → compressor (short for “hermetic”)'],
+    ['FAN','capacitor → the outdoor fan motor'],
+  ];
+  H.push(`<rect x="612" y="552" width="452" height="196" rx="10" fill="#ffffff" stroke="#dfe4e9" stroke-width="1"/>`);
+  H.push(`<text x="632" y="578" font-size="12.5" font-weight="800" fill="#0b0d10">WHAT THE LETTERS MEAN</text>`);
+  gloss.forEach((g,i)=>{ const gy=602+i*22;
+    H.push(`<text x="632" y="${gy}" font-size="11" font-weight="800" fill="#0f5a52">${escapeXml(g[0])}</text>`);
+    H.push(`<text x="736" y="${gy}" font-size="10.5" fill="#4a5058">${escapeXml(g[1])}</text>`); });
+  H.push(`<text x="632" y="726" font-size="10" font-style="italic" fill="#8a94a6">“C” = Common in every spot — but it’s a different wire each place.</text>`);
 
-  // ── WIRE GUIDE — what each wire IS and DOES (apprentice teaching key) ───────────
-  const cleanFn=(s)=>String(s||'').replace(/\s+/g,' ').replace(/^ +| +$/g,'');
-  const seen=new Set(), rows=[];
-  wires.forEach(w=>{ const key=(w.color||'')+'|'+(w.label||w.plain||''); if(!(w.label||w.plain)||seen.has(key)) return; seen.add(key);
-    // PLAIN ENGLISH: prefer the model-authored net.plain; fall back to the deterministic rewriter.
-    const fn = w.plain ? cleanFn(w.plain) : plainEnglish(w.label);
-    rows.push({color:w.color||'—',fn}); });
+  // ── WIRE GUIDE — numbered key: find a wire's number on the drawing, read it here ─
   const L=[]; const GY=HEIGHT-248;
   L.push(`<rect x="24" y="${f1(GY-24)}" width="${WIDTH-48}" height="250" rx="12" fill="#f6f7f9" stroke="#e4e7ec" stroke-width="1"/>`);
   L.push(`<text x="40" y="${f1(GY)}" font-size="14" font-weight="800" fill="#0b0d10">WHAT EACH WIRE DOES</text>`);
-  L.push(`<text x="230" y="${f1(GY)}" font-size="11" fill="#8a94a6">color = the real wire color printed on the unit’s diagram</text>`);
+  L.push(`<text x="232" y="${f1(GY)}" font-size="11" fill="#8a94a6">find a wire’s number ⓘ on the drawing, then read it here · ● = wires joined</text>`);
   const cols=2, colW=(WIDTH-96)/cols;
   rows.slice(0,16).forEach((r,i)=>{ const c=i%cols, rr=Math.floor(i/cols); const gx=44+c*colW, gy=GY+30+rr*27;
     const col=wireColor(r.color), st=wireStripe(r.color);
-    L.push(`<line x1="${f1(gx)}" y1="${f1(gy)}" x2="${f1(gx+30)}" y2="${f1(gy)}" stroke="${col}" stroke-width="5" stroke-linecap="round"/>`);
-    if(st) L.push(`<line x1="${f1(gx)}" y1="${f1(gy)}" x2="${f1(gx+30)}" y2="${f1(gy)}" stroke="${st}" stroke-width="5" stroke-dasharray="3 8" stroke-linecap="round"/>`);
-    L.push(`<text x="${f1(gx+40)}" y="${f1(gy-2)}" font-size="11" font-weight="700" fill="#0b0d10">${escapeXml(String(r.color).toUpperCase())}</text>`);
-    L.push(`<text x="${f1(gx+40)}" y="${f1(gy+12)}" font-size="10.5" fill="#4a5058">${escapeXml(r.fn).slice(0,64)}</text>`);
+    // number badge
+    L.push(`<circle cx="${f1(gx+8)}" cy="${f1(gy-3)}" r="8" fill="#ffffff" stroke="${col}" stroke-width="2"/><text x="${f1(gx+8)}" y="${f1(gy+0.5)}" text-anchor="middle" font-size="10" font-weight="800" fill="#0b0d10">${r.n}</text>`);
+    // color swatch
+    L.push(`<line x1="${f1(gx+22)}" y1="${f1(gy-3)}" x2="${f1(gx+50)}" y2="${f1(gy-3)}" stroke="${col}" stroke-width="5" stroke-linecap="round"/>`);
+    if(st) L.push(`<line x1="${f1(gx+22)}" y1="${f1(gy-3)}" x2="${f1(gx+50)}" y2="${f1(gy-3)}" stroke="${st}" stroke-width="5" stroke-dasharray="3 8" stroke-linecap="round"/>`);
+    L.push(`<text x="${f1(gx+60)}" y="${f1(gy+1)}" font-size="10.5" fill="#333a42">${escapeXml(r.fn).slice(0,70)}</text>`);
   });
 
   const out=[];
@@ -427,6 +467,8 @@ function renderIllustrationSVG(netlist){
   out.push(H.join(''));
   out.push(wireSvg.join(''));
   out.push(partSvg.join(''));
+  out.push(junctionSvg.join('')); // splices on top so a real junction is never hidden
+  out.push(badgeSvg.join('')); // number badges on the very top → never hidden by a part or crossed by a wire
   out.push(L.join(''));
   out.push('</svg>');
   return out.join('');

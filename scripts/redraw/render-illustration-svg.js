@@ -232,8 +232,8 @@ function pSwitch(x,y,comp){
   b.push(`<line x1="${f1(cx-9)}" y1="${f1(cy+4)}" x2="${f1(cx+9)}" y2="${f1(cy-6)}" stroke="#11141a" stroke-width="2.2"/>`);
   b.push(`<circle cx="${f1(cx+9)}" cy="${f1(cy+4)}" r="2.4" fill="#11141a"/>`);
   b.push(`<text x="${f1(cx)}" y="${f1(y-7)}" text-anchor="middle" font-size="11.5" font-weight="800" fill="#0b0d10">${escapeXml(comp.id)}</text>`);
-  const desc=(comp.label||'').replace(/switch/i,'').trim();
-  b.push(`<text x="${f1(cx)}" y="${f1(y+h+13)}" text-anchor="middle" font-size="9" fill="#66707d">${escapeXml(desc).slice(0,22)}</text>`);
+  const desc=(comp.label||'').replace(/switch/i,'').replace(/\*/g,'').replace(/[()]/g,'').replace(/\s+/g,' ').trim();
+  b.push(`<text x="${f1(cx)}" y="${f1(y+h+13)}" text-anchor="middle" font-size="9" fill="#66707d">${escapeXml(desc).slice(0,24)}</text>`);
   return {body:b.join(''),terms:[{key:'1',x:x,y:cy,dir:'left',pad:'small'},{key:'2',x:x+w,y:cy,dir:'right',pad:'small'}]};
 }
 function pCtd(x,y){
@@ -286,15 +286,16 @@ function pSource(x,y){
 const ROLE_BODY={ contactor:pContactor, compressor:pCompressor, runcap:pRunCap, fan:pFan, xfmr:pXfmr, power:pPower, switch:pSwitch, ctd:pCtd, tstat:pTstat, heater:pHeater, solenoid:pSolenoid, source:pSource };
 
 const ZONES={
-  power:{x:44,y:170}, contactor:{x:210,y:150}, runcap:{x:548,y:352}, compressor:{x:904,y:168}, fan:{x:912,y:372},
-  xfmr:{x:250,y:560}, source:{x:240,y:566}, tstat:{x:60,y:576}, ctd:{x:820,y:566}, heater:{x:620,y:170}, solenoid:{x:640,y:452},
+  power:{x:44,y:196}, contactor:{x:210,y:176}, runcap:{x:560,y:380}, compressor:{x:900,y:186}, fan:{x:906,y:404},
+  xfmr:{x:250,y:632}, source:{x:60,y:690}, tstat:{x:60,y:690}, ctd:{x:742,y:664}, heater:{x:640,y:196}, solenoid:{x:470,y:806},
+  startcap:{x:520,y:196}, startrelay:{x:648,y:196}, startsensor:{x:520,y:300},
 };
-const CHS_POS={ x:470, y:178 };            // crankcase heater switch — line zone, next to its heater
-const SWITCH_ROW={ startX:420, y:582, dx:130 };  // LPS / DTS / HPS only
+const CHS_POS={ x:470, y:200 };            // crankcase heater switch — line zone, next to its heater
+const SWITCH_ROW={ startX:288, y:690, dx:158 };  // LPS / DTS / HPS row in the 24V control zone
 
 function renderIllustrationSVG(netlist){
   if(!netlist||!Array.isArray(netlist.components)) throw new TypeError('netlist.components required');
-  const WIDTH=1120, HEIGHT=1010;
+  const WIDTH=1120, HEIGHT=1188;
 
   const netTermsByComp={};
   (netlist.nets||[]).forEach(net=>(net.endpoints||[]).forEach(e=>{ (netTermsByComp[e.component]=netTermsByComp[e.component]||new Set()).add(e.terminal); }));
@@ -418,46 +419,49 @@ function renderIllustrationSVG(netlist){
   const H=[];
   // zone tint bands (behind everything) + labels in the clear top-right of each band
   const zoneBg=[];
-  zoneBg.push(`<rect x="24" y="116" width="${WIDTH-48}" height="384" rx="14" fill="#fdf4f3"/>`);
-  zoneBg.push(`<rect x="24" y="516" width="${WIDTH-48}" height="238" rx="14" fill="#f0f8f6"/>`);
+  zoneBg.push(`<rect x="24" y="116" width="${WIDTH-48}" height="480" rx="14" fill="#fdf4f3"/>`);
+  zoneBg.push(`<rect x="24" y="612" width="${WIDTH-48}" height="252" rx="14" fill="#f0f8f6"/>`);
   const pretty=(mk)=>{ const [br,md]=String(mk||'').split(':'); const b=br?br.charAt(0)+br.slice(1).toLowerCase():''; return md?`${b} ${md}`:(b||'Wiring'); };
   H.push(`<text x="40" y="34" font-size="21" font-weight="800" fill="#0b0d10">${escapeXml(pretty(netlist.model_key))} — how it’s wired</text>`);
   H.push(`<text x="40" y="53" font-size="12.5" fill="#7a8390">A beginner-friendly map of the real parts and how the wires connect them. The real manual is one tap away.</text>`);
   // Two-voltage explainer — big, top-LEFT of each band (where the eye starts reading)
   H.push(`<text x="44" y="138" font-size="14" font-weight="800" fill="#d92b1c">HIGH VOLTAGE · 240V</text>`);
   H.push(`<text x="214" y="138" font-size="11" fill="#b06a62">— the power that actually runs the compressor &amp; fan</text>`);
-  H.push(`<text x="44" y="539" font-size="14" font-weight="800" fill="#0f8a7e">LOW VOLTAGE · 24V</text>`);
-  H.push(`<text x="205" y="539" font-size="11" fill="#5a9089">— the small signal from inside that switches it on</text>`);
-  // glossary — defines the terminal abbreviations in ONE place (control-zone open area)
-  const gloss=[
-    ['L1 / L2','the two 240-volt power legs coming in'],
-    ['T1 / T2','power leaving the contactor to the parts'],
-    ['C · R · S','compressor terminals: Common / Run / Start'],
-    ['HERM','capacitor → compressor (short for “hermetic”)'],
-    ['FAN','capacitor → the outdoor fan motor'],
-  ];
-  H.push(`<rect x="612" y="552" width="452" height="196" rx="10" fill="#ffffff" stroke="#dfe4e9" stroke-width="1"/>`);
-  H.push(`<text x="632" y="578" font-size="12.5" font-weight="800" fill="#0b0d10">WHAT THE LETTERS MEAN</text>`);
-  gloss.forEach((g,i)=>{ const gy=602+i*22;
-    H.push(`<text x="632" y="${gy}" font-size="11" font-weight="800" fill="#0f5a52">${escapeXml(g[0])}</text>`);
-    H.push(`<text x="736" y="${gy}" font-size="10.5" fill="#4a5058">${escapeXml(g[1])}</text>`); });
-  H.push(`<text x="632" y="726" font-size="10" font-style="italic" fill="#8a94a6">“C” = Common in every spot — but it’s a different wire each place.</text>`);
-
-  // ── WIRE GUIDE — numbered key: find a wire's number on the drawing, read it here ─
-  const L=[]; const GY=HEIGHT-248;
-  L.push(`<rect x="24" y="${f1(GY-24)}" width="${WIDTH-48}" height="250" rx="12" fill="#f6f7f9" stroke="#e4e7ec" stroke-width="1"/>`);
+  H.push(`<text x="44" y="635" font-size="14" font-weight="800" fill="#0f8a7e">LOW VOLTAGE · 24V</text>`);
+  H.push(`<text x="205" y="635" font-size="11" fill="#5a9089">— the small signal from inside that switches it on</text>`);
+  // ── BOTTOM REFERENCE PANEL: wire key (left) + letter glossary (right) ───────────
+  const L=[]; const GY=HEIGHT-268;
+  const panelH=288;
+  L.push(`<rect x="24" y="${f1(GY-24)}" width="${WIDTH-48}" height="${panelH}" rx="12" fill="#f6f7f9" stroke="#e4e7ec" stroke-width="1"/>`);
+  const GX=772; // divider between wire key (left) and glossary (right)
+  const wtrunc=(s,n)=>{ s=String(s); if(s.length<=n) return s; let t=s.slice(0,n); const sp=t.lastIndexOf(' '); return (sp>n*0.55?t.slice(0,sp):t)+'…'; };
+  L.push(`<line x1="${GX}" y1="${f1(GY-8)}" x2="${GX}" y2="${f1(GY-24+panelH-12)}" stroke="#e0e4e9" stroke-width="1"/>`);
+  // wire key (left)
   L.push(`<text x="40" y="${f1(GY)}" font-size="14" font-weight="800" fill="#0b0d10">WHAT EACH WIRE DOES</text>`);
-  L.push(`<text x="232" y="${f1(GY)}" font-size="11" fill="#8a94a6">find a wire’s number ⓘ on the drawing, then read it here · ● = wires joined</text>`);
-  const cols=2, colW=(WIDTH-96)/cols;
-  rows.slice(0,16).forEach((r,i)=>{ const c=i%cols, rr=Math.floor(i/cols); const gx=44+c*colW, gy=GY+30+rr*27;
+  L.push(`<text x="234" y="${f1(GY)}" font-size="10" fill="#8a94a6">match a wire’s number on the drawing · ● = wires joined</text>`);
+  const cols=2, colW=366;
+  rows.slice(0,20).forEach((r,i)=>{ const c=i%cols, rr=Math.floor(i/cols); const gx=40+c*colW, gy=GY+28+rr*24;
     const col=wireColor(r.color), st=wireStripe(r.color);
-    // number badge
     L.push(`<circle cx="${f1(gx+8)}" cy="${f1(gy-3)}" r="8" fill="#ffffff" stroke="${col}" stroke-width="2"/><text x="${f1(gx+8)}" y="${f1(gy+0.5)}" text-anchor="middle" font-size="10" font-weight="800" fill="#0b0d10">${r.n}</text>`);
-    // color swatch
-    L.push(`<line x1="${f1(gx+22)}" y1="${f1(gy-3)}" x2="${f1(gx+50)}" y2="${f1(gy-3)}" stroke="${col}" stroke-width="5" stroke-linecap="round"/>`);
-    if(st) L.push(`<line x1="${f1(gx+22)}" y1="${f1(gy-3)}" x2="${f1(gx+50)}" y2="${f1(gy-3)}" stroke="${st}" stroke-width="5" stroke-dasharray="3 8" stroke-linecap="round"/>`);
-    L.push(`<text x="${f1(gx+60)}" y="${f1(gy+1)}" font-size="10.5" fill="#333a42">${escapeXml(r.fn).slice(0,70)}</text>`);
+    L.push(`<line x1="${f1(gx+22)}" y1="${f1(gy-3)}" x2="${f1(gx+46)}" y2="${f1(gy-3)}" stroke="${col}" stroke-width="5" stroke-linecap="round"/>`);
+    if(st) L.push(`<line x1="${f1(gx+22)}" y1="${f1(gy-3)}" x2="${f1(gx+46)}" y2="${f1(gy-3)}" stroke="${st}" stroke-width="5" stroke-dasharray="3 8" stroke-linecap="round"/>`);
+    L.push(`<text x="${f1(gx+56)}" y="${f1(gy+1)}" font-size="9.5" fill="#333a42">${escapeXml(wtrunc(r.fn,58))}</text>`);
   });
+  // letter glossary (right)
+  const gloss=[
+    ['L1 / L2','the two 240-volt power legs in'],
+    ['T1 / T2','power leaving the contactor'],
+    ['C · R · S','compressor: Common / Run / Start'],
+    ['HERM','capacitor → compressor (“hermetic”)'],
+    ['FAN','capacitor → the fan motor'],
+    ['LPS · HPS','low / high-pressure safety switch'],
+    ['DTS · CTD','discharge-temp switch · time-delay'],
+  ];
+  L.push(`<text x="${GX+20}" y="${f1(GY)}" font-size="14" font-weight="800" fill="#0b0d10">WHAT THE LETTERS MEAN</text>`);
+  gloss.forEach((g,i)=>{ const gy=GY+28+i*24;
+    L.push(`<text x="${GX+20}" y="${f1(gy)}" font-size="10.5" font-weight="800" fill="#0f5a52">${escapeXml(g[0])}</text>`);
+    L.push(`<text x="${GX+118}" y="${f1(gy)}" font-size="10" fill="#4a5058">${escapeXml(g[1])}</text>`); });
+  L.push(`<text x="${GX+20}" y="${f1(GY+28+gloss.length*24+6)}" font-size="9.5" font-style="italic" fill="#8a94a6">“C” = Common everywhere — but a different wire each place.</text>`);
 
   const out=[];
   out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" font-family="ui-sans-serif,system-ui,Arial,sans-serif">`);

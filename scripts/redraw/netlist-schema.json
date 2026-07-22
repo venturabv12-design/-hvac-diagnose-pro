@@ -67,6 +67,7 @@
         "properties": {
           "id": { "type": "string", "minLength": 1, "description": "Unique net id, e.g. 'n1'." },
           "label": { "type": "string", "description": "Optional net label, e.g. 'Y call'." },
+          "plain": { "type": "string", "description": "One short PLAIN-ENGLISH sentence a brand-new apprentice (or a homeowner) can read — what this wire actually does, NO abbreviations. Spell everything out: HERM -> 'compressor run terminal', OFM -> 'outdoor fan motor', LPS -> 'low-pressure safety switch', 24V -> '24-volt control power'. E.g. 'Carries the 24-volt call that energizes the contactor coil to start the compressor.'" },
           "voltage_class": {
             "type": "string",
             "description": "Drives color-coding + safety emphasis. line = 208/240V, low = 24V control, start = start-winding/run-cap.",

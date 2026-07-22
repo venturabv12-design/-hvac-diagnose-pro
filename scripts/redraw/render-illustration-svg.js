@@ -25,6 +25,52 @@ function escapeXml(s){ return String(s==null?'':s).split('&').join('&amp;').spli
 const f1=(n)=>Number(n).toFixed(1);
 const epKey=(c,t)=>`${c}/${t}`;
 
+// ── PLAIN ENGLISH: turn HVAC shorthand in a wire's function into apprentice English.
+//    Preferred source is net.plain (model-authored). This is the deterministic FALLBACK
+//    so older netlists (no .plain) still read plain in the "what each wire does" guide.
+//    Whole-phrase rules first (most specific), then standalone-token expansion.
+const PLAIN_PHRASES = [
+  [/fan.*start|start.*fan/i, 'Spins up the outdoor fan (start winding)'],
+  [/fan.*run|run.*fan/i, 'Runs the outdoor fan'],
+  [/compressor\s*run.*herm|herm.*compressor\s*run/i, 'Run capacitor to the compressor (run winding)'],
+  [/compressor\s*start|comp.*start\s*winding/i, 'Kicks the compressor to start (start winding)'],
+  [/compressor\s*run|comp.*run\s*winding/i, 'Powers the compressor to run'],
+  [/contactor\s*coil/i, 'Energizes the contactor coil — pulls it in'],
+  [/24\s*v?\s*(hot|call|control).*saf|saf.*24\s*v/i, '24-volt power through the safety switches'],
+  [/24\s*v?\s*(hot|call|control|power)/i, '24-volt control power'],
+  [/reversing\s*valve/i, 'Energizes the reversing valve (switches heat/cool)'],
+  [/crankcase\s*heat/i, 'Powers the crankcase heater (keeps oil warm)'],
+];
+const PLAIN_TOKENS = [
+  [/\bcap\s*herm\b/gi, 'run capacitor → compressor run terminal'],
+  [/\bcap\s*fan\b/gi, 'run capacitor → outdoor fan'],
+  [/\bherm\b/gi, 'compressor run terminal'],
+  [/\bofm\b/gi, 'outdoor fan motor'],
+  [/\bidm\b/gi, 'indoor blower motor'],
+  [/\blps\b/gi, 'low-pressure safety switch'],
+  [/\bhps\b/gi, 'high-pressure safety switch'],
+  [/\bdts\b/gi, 'discharge-temp safety switch'],
+  [/\bctd\b/gi, 'compressor time-delay'],
+  [/\bcch?\b/gi, 'crankcase heater'],
+  [/\bchs\b/gi, 'crankcase-heater switch'],
+  [/\blls\b/gi, 'liquid-line solenoid'],
+  [/\btxv\b/gi, 'metering valve'],
+  [/\brvs?\b/gi, 'reversing valve'],
+  [/\bl1\b/gi, 'one leg of 240-volt power'],
+  [/\bl2\b/gi, 'other leg of 240-volt power'],
+  [/\b24\s*v(ac)?\b/gi, '24-volt control power'],
+  [/\bcap\b/gi, 'run capacitor'],
+];
+function plainEnglish(label){
+  const s = String(label||'').trim();
+  if(!s) return 'Traced wire';
+  for(const [re,txt] of PLAIN_PHRASES){ if(re.test(s)) return txt; }
+  let out = s;
+  for(const [re,txt] of PLAIN_TOKENS){ out = out.replace(re, txt); }
+  out = out.replace(/\s+/g,' ').trim();
+  return out.charAt(0).toUpperCase() + out.slice(1);
+}
+
 function roleOf(c){
   const k=(c.kind||'').toLowerCase(), id=(c.id||'').toUpperCase(), lbl=(c.label||'').toLowerCase();
   if(k==='contactor'||id==='CONT') return 'contactor';
@@ -222,7 +268,7 @@ function renderIllustrationSVG(netlist){
     for(let i=0;i<eps.length-1;i++){
       const ak=epKey(eps[i].component,eps[i].terminal), bk=epKey(eps[i+1].component,eps[i+1].terminal);
       const A=termXY[ak], B=termXY[bk]; if(!A||!B) continue;
-      wires.push({a:A,b:B,color:net.wire_color,label:net.label,vc:net.voltage_class}); connOut.push(`${ak}|${bk}`);
+      wires.push({a:A,b:B,color:net.wire_color,label:net.label,plain:net.plain,vc:net.voltage_class}); connOut.push(`${ak}|${bk}`);
       liveTerm.add(ak); liveTerm.add(bk);
       // also mark the canonical (aliased) key
       liveTerm.add(epKey(A.comp,A.key)); liveTerm.add(epKey(B.comp,B.key));
@@ -301,7 +347,10 @@ function renderIllustrationSVG(netlist){
   // ── WIRE GUIDE — what each wire IS and DOES (apprentice teaching key) ───────────
   const cleanFn=(s)=>String(s||'').replace(/\s+/g,' ').replace(/^ +| +$/g,'');
   const seen=new Set(), rows=[];
-  wires.forEach(w=>{ const key=(w.color||'')+'|'+(w.label||''); if(!w.label||seen.has(key)) return; seen.add(key); rows.push({color:w.color||'—',fn:cleanFn(w.label)}); });
+  wires.forEach(w=>{ const key=(w.color||'')+'|'+(w.label||w.plain||''); if(!(w.label||w.plain)||seen.has(key)) return; seen.add(key);
+    // PLAIN ENGLISH: prefer the model-authored net.plain; fall back to the deterministic rewriter.
+    const fn = w.plain ? cleanFn(w.plain) : plainEnglish(w.label);
+    rows.push({color:w.color||'—',fn}); });
   const L=[]; const GY=HEIGHT-248;
   L.push(`<rect x="24" y="${f1(GY-24)}" width="${WIDTH-48}" height="250" rx="12" fill="#f6f7f9" stroke="#e4e7ec" stroke-width="1"/>`);
   L.push(`<text x="40" y="${f1(GY)}" font-size="14" font-weight="800" fill="#0b0d10">WHAT EACH WIRE DOES</text>`);
@@ -312,7 +361,7 @@ function renderIllustrationSVG(netlist){
     L.push(`<line x1="${f1(gx)}" y1="${f1(gy)}" x2="${f1(gx+30)}" y2="${f1(gy)}" stroke="${col}" stroke-width="5" stroke-linecap="round"/>`);
     if(st) L.push(`<line x1="${f1(gx)}" y1="${f1(gy)}" x2="${f1(gx+30)}" y2="${f1(gy)}" stroke="${st}" stroke-width="5" stroke-dasharray="3 8" stroke-linecap="round"/>`);
     L.push(`<text x="${f1(gx+40)}" y="${f1(gy-2)}" font-size="11" font-weight="700" fill="#0b0d10">${escapeXml(String(r.color).toUpperCase())}</text>`);
-    L.push(`<text x="${f1(gx+40)}" y="${f1(gy+12)}" font-size="11" fill="#4a5058">${escapeXml(r.fn).slice(0,58)}</text>`);
+    L.push(`<text x="${f1(gx+40)}" y="${f1(gy+12)}" font-size="10.5" fill="#4a5058">${escapeXml(r.fn).slice(0,64)}</text>`);
   });
 
   const out=[];
@@ -328,7 +377,7 @@ function renderIllustrationSVG(netlist){
   return out.join('');
 }
 
-module.exports={ renderIllustrationSVG, wireColor };
+module.exports={ renderIllustrationSVG, wireColor, plainEnglish };
 
 if(require.main===module){
   const fs=require('fs');

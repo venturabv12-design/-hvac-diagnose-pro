@@ -214,7 +214,9 @@ function pPower(x,y){ // DISCONNECT — the real high-voltage source at the cond
   b.push(`<text x="${f1(x+w/2)}" y="${f1(y+74)}" text-anchor="middle" font-size="9" fill="#c9ced6">pull to kill power</text>`);
   b.push(`<text x="${f1(x+w/2)}" y="${f1(y-10)}" text-anchor="middle" font-size="10" font-weight="700" fill="#0b0d10">240V from panel</text>`);
   b.push(`<line x1="${f1(x+w/2-14)}" y1="${f1(y)}" x2="${f1(x+w/2-14)}" y2="${f1(y-6)}" stroke="#d92b1c" stroke-width="3"/><line x1="${f1(x+w/2+14)}" y1="${f1(y)}" x2="${f1(x+w/2+14)}" y2="${f1(y-6)}" stroke="#d92b1c" stroke-width="3"/>`);
-  ['L1','L2'].forEach((k,i)=>{ const ly=y+62+i*24; T.push({key:k,x:x+w,y:ly,dir:'right',pad:'screw',label:k,ldx:14,ldy:4}); });
+  // Two output lugs aligned dead-level with the contactor LINE lugs (spacing 30) so the
+  // two 240V legs run straight across, parallel — no crossing, no duplicate labels.
+  ['L1','L2'].forEach((k,i)=>{ const ly=y+62+i*30; T.push({key:k,x:x+w,y:ly,dir:'right',pad:'screw'}); });
   return {body:b.join(''),terms:T};
 }
 function pSwitch(x,y,comp){
@@ -278,7 +280,7 @@ function pSource(x,y){
 const ROLE_BODY={ contactor:pContactor, compressor:pCompressor, runcap:pRunCap, fan:pFan, xfmr:pXfmr, power:pPower, switch:pSwitch, ctd:pCtd, tstat:pTstat, heater:pHeater, solenoid:pSolenoid, source:pSource };
 
 const ZONES={
-  power:{x:44,y:200}, contactor:{x:210,y:150}, runcap:{x:560,y:270}, compressor:{x:900,y:170}, fan:{x:904,y:360},
+  power:{x:44,y:170}, contactor:{x:210,y:150}, runcap:{x:560,y:270}, compressor:{x:900,y:170}, fan:{x:904,y:360},
   xfmr:{x:250,y:560}, source:{x:240,y:566}, tstat:{x:60,y:576}, ctd:{x:820,y:566}, heater:{x:620,y:170}, solenoid:{x:640,y:452},
 };
 const CHS_POS={ x:470, y:178 };            // crankcase heater switch — line zone, next to its heater

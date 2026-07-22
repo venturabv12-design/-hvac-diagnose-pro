@@ -1,0 +1,87 @@
+{
+  "schema_version": "1",
+  "model_key": "CARRIER:25HPA5",
+  "circuit_type": "full",
+  "sections": [
+    {
+      "id": "line",
+      "title": "LINE VOLTAGE — 240V",
+      "voltage_class": "line",
+      "left_rail": "L1",
+      "right_rail": "L2",
+      "rungs": [
+        {
+          "id": "r1",
+          "label": "Compressor",
+          "elements": [
+            { "kind": "contact", "state": "NO", "label": "CONT", "sub": "contactor" },
+            { "kind": "motor", "label": "COMP", "terminals": ["C", "R", "S"], "windings": true }
+          ]
+        },
+        {
+          "id": "r2",
+          "label": "Outdoor Fan Motor",
+          "elements": [
+            { "kind": "contact", "state": "NO", "label": "CONT", "sub": "contactor" },
+            { "kind": "motor", "label": "OFM", "terminals": ["C", "F"] }
+          ]
+        },
+        {
+          "id": "r3",
+          "label": "Crankcase Heater",
+          "elements": [
+            { "kind": "contact", "state": "NC", "label": "CCHS", "sub": "temp switch" },
+            { "kind": "heater", "label": "CCH" }
+          ]
+        },
+        {
+          "id": "r4",
+          "label": "Control Transformer",
+          "elements": [
+            { "kind": "transformer", "label": "TRAN", "terminals": ["H1", "H2"], "primary": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "control",
+      "title": "CONTROL — 24V",
+      "voltage_class": "low-voltage",
+      "left_rail": "R",
+      "right_rail": "C",
+      "rungs": [
+        {
+          "id": "c1",
+          "label": "Contactor Coil",
+          "elements": [
+            { "kind": "terminal", "label": "Y", "sub": "from t-stat" },
+            { "kind": "contact", "state": "NO", "label": "HPS", "sub": "hi-press" },
+            { "kind": "contact", "state": "NO", "label": "LPS", "sub": "lo-press" },
+            { "kind": "coil", "label": "CONT", "terminals": ["A1", "A2"] }
+          ]
+        },
+        {
+          "id": "c2",
+          "label": "Reversing Valve Solenoid",
+          "elements": [
+            { "kind": "terminal", "label": "O", "sub": "from t-stat" },
+            { "kind": "solenoid", "label": "RVS" }
+          ]
+        },
+        {
+          "id": "c3",
+          "label": "Defrost Control Board",
+          "elements": [
+            { "kind": "terminal", "label": "W2", "sub": "from t-stat" },
+            { "kind": "board", "label": "DEFROST", "terminals": ["R", "C", "O", "W2", "Y"] }
+          ]
+        }
+      ]
+    }
+  ],
+  "bridges": [
+    { "kind": "capacitor", "label": "CAP", "between": ["COMP/S", "COMP/R"], "tap": "HERM", "note": "dual run cap — compressor start/run" },
+    { "kind": "capacitor", "label": "CAP", "between": ["OFM/F", "L2"], "tap": "FAN", "note": "dual run cap — fan" }
+  ],
+  "notes": []
+}

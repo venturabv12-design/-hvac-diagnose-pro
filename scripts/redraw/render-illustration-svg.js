@@ -86,6 +86,9 @@ function roleOf(c){
   if((k==='switch'||k==='sensor')&&['LPS','DTS','HPS'].includes(id)) return 'switch';
   if(k==='board'&&(id==='CTD'||lbl.includes('delay'))) return 'ctd';
   if(id==='LLS'||lbl.includes('liquid line')) return 'solenoid';
+  // heat-pump parts
+  if(id==='RVS'||id==='RV'||/reversing/i.test(lbl)) return 'reversingvalve';
+  if(k==='board'||/defrost|control board/i.test(lbl)) return 'controlboard';
   // OPTION A (Brandon): Mike draws what's ACTUALLY on the equipment. The factory-OPTIONAL asterisked (*)
   // accessories usually NOT installed on the base unit return null (not drawn), for a clean, consistent
   // standard across models: start-assist (SR/SC/ST), crankcase heater + its switch (CH/CHS), indoor fan
@@ -313,6 +316,29 @@ function pIFR(x,y){
   return {body:b.join(''),terms:[{key:'1',x:x,y:y+h/2,dir:'left',pad:'small'},{key:'2',x:x+w,y:y+h/2,dir:'right',pad:'small'}]};
 }
 
+// ── HEAT-PUMP parts ──────────────────────────────────────────────────────────
+// Reversing valve solenoid — shifts the unit between heat and cool (energized by the O signal).
+function pReversingValve(x,y){
+  const w=64,h=40,b=[];
+  b.push(`<rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="6" fill="#eef4fb" stroke="#2b6cd4" stroke-width="2.2"/>`);
+  // solenoid coil
+  b.push(`<rect x="${f1(x+10)}" y="${f1(y+h/2-6)}" width="${w-20}" height="12" rx="3" fill="none" stroke="#2b6cd4" stroke-width="1.4"/>`);
+  for(let i=x+14;i<x+w-10;i+=6) b.push(`<line x1="${f1(i)}" y1="${f1(y+h/2-6)}" x2="${f1(i)}" y2="${f1(y+h/2+6)}" stroke="#2b6cd4" stroke-width="1"/>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y-16)}" text-anchor="middle" font-size="9.5" font-weight="800" fill="#0b0d10">REVERSING VALVE</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y-5)}" text-anchor="middle" font-size="8" fill="#66707d">switches heat ↔ cool</text>`);
+  return {body:b.join(''),terms:[{key:'1',x:x,y:y+h/2,dir:'left',pad:'small'},{key:'2',x:x+w,y:y+h/2,dir:'right',pad:'small'}]};
+}
+// Defrost / control board — runs the reversing valve + defrost cycle. Dynamic terminals from the netlist.
+function pControlBoard(x,y,netTerms){
+  const leads=(netTerms&&netTerms.length)?netTerms.slice(0,8):['1','2'];
+  const h=Math.max(58, 22+leads.length*13), w=110, b=[];
+  b.push(`<rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="7" fill="#eaf3f1" stroke="#0f8a7e" stroke-width="2.2"/>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+18)}" text-anchor="middle" font-size="11" font-weight="800" fill="#0f8a7e">DEFROST</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+30)}" text-anchor="middle" font-size="8.5" fill="#4a8a82">control board</text>`);
+  const T=[]; leads.forEach((k,i)=>{ T.push({key:k,x:x+w,y:y+18+i*13,dir:'right',pad:'small',label:String(k).slice(0,3),ldx:-14,ldy:3,lsize:7.5}); });
+  return {body:b.join(''),terms:T};
+}
+
 // 24V control power arriving FROM THE INDOOR UNIT (no onboard transformer on a straight-cool condenser).
 function pSource(x,y){
   const w=140,h=56,b=[];
@@ -326,12 +352,13 @@ function pSource(x,y){
   return {body:b.join(''),terms:T,alias:{'Y':'R','24V':'R','COM':'C','COMMON':'C'}};
 }
 
-const ROLE_BODY={ contactor:pContactor, compressor:pCompressor, runcap:pRunCap, fan:pFan, xfmr:pXfmr, power:pPower, switch:pSwitch, ctd:pCtd, tstat:pTstat, heater:pHeater, solenoid:pSolenoid, source:pSource, startrelay:pStartRelay, startcap:pStartCap, startsensor:pStartThermistor, ifr:pIFR };
+const ROLE_BODY={ contactor:pContactor, compressor:pCompressor, runcap:pRunCap, fan:pFan, xfmr:pXfmr, power:pPower, switch:pSwitch, ctd:pCtd, tstat:pTstat, heater:pHeater, solenoid:pSolenoid, source:pSource, startrelay:pStartRelay, startcap:pStartCap, startsensor:pStartThermistor, ifr:pIFR, reversingvalve:pReversingValve, controlboard:pControlBoard };
 
 const ZONES={
   power:{x:44,y:196}, contactor:{x:210,y:176}, runcap:{x:560,y:380}, compressor:{x:900,y:186}, fan:{x:906,y:404},
   xfmr:{x:250,y:632}, source:{x:60,y:690}, tstat:{x:60,y:690}, ctd:{x:856,y:664}, heater:{x:640,y:196}, solenoid:{x:512,y:812},
   startrelay:{x:120,y:456}, startcap:{x:264,y:452}, startsensor:{x:352,y:460}, ifr:{x:236,y:786},
+  controlboard:{x:648,y:668}, reversingvalve:{x:432,y:806},
 };
 const CHS_POS={ x:470, y:200 };            // crankcase heater switch — line zone, next to its heater
 const SWITCH_ROW={ startX:308, y:690, dx:188 };  // LPS / DTS / HPS row in the 24V control zone
@@ -362,7 +389,7 @@ function renderIllustrationSVG(netlist){
     }
     if(usedRole[role]) return; usedRole[role]=true;
     if(!ZONES[role]) return;
-    place(c.id,role,ZONES[role], role==='fan'?Array.from(netTermsByComp[c.id]||[]):c);
+    place(c.id,role,ZONES[role], (role==='fan'||role==='controlboard')?Array.from(netTermsByComp[c.id]||[]):c);
   });
   switches.slice(0,3).forEach((c,i)=>{ place(c.id,'switch',{x:SWITCH_ROW.startX+i*SWITCH_ROW.dx,y:SWITCH_ROW.y},c); });
 

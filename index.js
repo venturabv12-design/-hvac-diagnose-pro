@@ -1700,18 +1700,65 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     if (ANTHROPIC_API_KEY && _img && _wantsSimplify) {
       const _s = _img.source;
       const _dataUrl = _s.type === 'base64' ? `data:${_s.media_type};base64,${_s.data}` : String(_s.url || '');
+      const _who = (req.user && (req.user.id || req.user.email)) || null;
+      // (1) Model the tech TYPED (lets us hit the shared library with NO trace = free + instant).
       const _mm = _lastUser.match(/\b([A-Z]{1,5}\d[A-Z0-9-]{2,})\b/i);
-      const _model = _mm ? _mm[1].toUpperCase() : 'UNKNOWN';
-      const _mk = normalizeModelKey('', _model) || ('UNIT:' + _model);
-      const _out = await extractNetlist(_dataUrl, { modelKey: _mk, circuitType: 'full', apiKey: ANTHROPIC_API_KEY });
-      const _nl = sanitizeNetlist(_out.netlist);
-      const _roles = _nl.components.map(c => roleOf(c)).filter(Boolean);
-      const _core = ['contactor', 'compressor', 'runcap', 'fan'].filter(r => _roles.includes(r));
-      if (validateNetlist(_nl).ok && _core.length >= 4) {
-        const _svg = renderIllustrationSVG(_nl);
+      let _model = _mm ? _mm[1].toUpperCase().replace(/[^A-Z0-9-]/g, '') : '';
+      let _brand = _extractBrand(_lastUser) || '';
+      let _mk = _model ? (normalizeModelKey(_brand, _model) || null) : null;
+      const _known = (k) => !!k && !/(^|:)(UNKNOWN|UNIT):/i.test(k) && !/^UNKNOWN:/i.test(k);
+
+      let _svg = null, _fromLibrary = false;
+      // (2) Shared-library check BEFORE spending a trace — only when we already know the model.
+      if (_known(_mk) && SUPABASE_URL) {
+        try {
+          const _hit = await supabase('GET', 'library_diagrams', null,
+            `?model_key=eq.${encodeURIComponent(_mk)}&circuit_type=eq.full&source=eq.mike-svg&order=verified.desc,created_at.desc&limit=1`);
+          if (Array.isArray(_hit) && _hit[0] && _hit[0].svg) { _svg = _hit[0].svg; _fromLibrary = true; }
+        } catch (_le) { /* non-fatal — fall through to a fresh trace */ }
+      }
+
+      if (!_svg) {
+        // (3) Miss → trace the photo. The SAME vision pass also reads the model/brand printed on the sheet.
+        const _out = await extractNetlist(_dataUrl, { modelKey: _mk || 'UNIT:UPLOAD', circuitType: 'full', apiKey: ANTHROPIC_API_KEY });
+        const _nl = sanitizeNetlist(_out.netlist);
+        const _roles = _nl.components.map(c => roleOf(c)).filter(Boolean);
+        const _core = ['contactor', 'compressor', 'runcap', 'fan'].filter(r => _roles.includes(r));
+        if (validateNetlist(_nl).ok && _core.length >= 4) {
+          _svg = renderIllustrationSVG(_nl);
+          // Model read straight off the diagram, if the tech didn't type one.
+          if (!_model && _nl.equipment) {
+            const _rm = String(_nl.equipment.model_id || _nl.equipment.series || '').toUpperCase().replace(/[^A-Z0-9-]/g, '');
+            if (_rm) { _model = _rm; _brand = _brand || _extractBrand(_nl.equipment.brand || '') || (_nl.equipment.brand || ''); _mk = normalizeModelKey(_brand, _model) || null; }
+          }
+          // (4) Save to the SHARED library so the next tech on this model gets it instantly — only when we truly know the model.
+          if (_known(_mk) && SUPABASE_URL) {
+            try {
+              const _have = await supabase('GET', 'library_models', null, `?model_key=eq.${encodeURIComponent(_mk)}&select=model_key&limit=1`);
+              if (!Array.isArray(_have) || !_have.length) {
+                await supabase('POST', 'library_models', { model_key: _mk, model_raw: _model, brand: (_brand || null), family: _extractModelFamily(_model), updated_at: new Date().toISOString(), created_by: _who });
+              }
+              const _dup = await supabase('GET', 'library_diagrams', null, `?model_key=eq.${encodeURIComponent(_mk)}&circuit_type=eq.full&source=eq.mike-svg&limit=1`);
+              if (!Array.isArray(_dup) || !_dup.length) {
+                await supabase('POST', 'library_diagrams', { model_key: _mk, circuit_type: 'full', source: 'mike-svg', svg: _svg, verified: false, created_by: _who });
+              }
+            } catch (_se) { console.error('inline redraw save (non-fatal):', _se.message); }
+          }
+        }
+      }
+
+      if (_svg) {
         const _id = _storeRedraw(_svg);
-        const _reply = "Here's that wiring diagram simplified — same circuit, laid out clean and labeled so it's easy to follow. Always double-check it against the real manual before you work on a live unit."
-          + '\n⟦MIKE_DIAGRAM⟧[{"url":"/diagrams/redraw/' + _id + '","title":"Simplified wiring diagram"}]⟦/MIKE_DIAGRAM⟧';
+        const _label = _known(_mk) ? (_brand ? (_brand.charAt(0).toUpperCase() + _brand.slice(1).toLowerCase() + ' ') : '') + _model : '';
+        let _reply;
+        if (_fromLibrary) {
+          _reply = "Good news — I already had " + (_label || 'this one') + " in the library, so here it is instantly. Same circuit, laid out clean and labeled. Still double-check it against the real manual before you work on a live unit.";
+        } else if (_known(_mk)) {
+          _reply = "Here's that wiring diagram simplified — same circuit, laid out clean and labeled so it's easy to follow. I saved it to the library as " + _label + ", so the next tech on this unit gets it instantly. Always double-check it against the real manual before you work on a live unit.";
+        } else {
+          _reply = "Here's that wiring diagram simplified — same circuit, laid out clean and labeled so it's easy to follow. I couldn't make out the model number on the sheet — tell me the model off the nameplate and I'll save it to the library for the next tech. Always double-check it against the real manual before you work on a live unit.";
+        }
+        _reply += '\n⟦MIKE_DIAGRAM⟧[{"url":"/diagrams/redraw/' + _id + '","title":"Simplified wiring diagram"}]⟦/MIKE_DIAGRAM⟧';
         if (stream) {
           res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
           if (typeof res.flushHeaders === 'function') res.flushHeaders();

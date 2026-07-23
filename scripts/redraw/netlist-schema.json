@@ -96,6 +96,17 @@
         }
       }
     },
+    "equipment": {
+      "type": "object",
+      "description": "Equipment identity READ OFF the diagram sheet itself — the model/series/brand/diagram-number printed on the page. This is how Mike files the redraw in the shared library so the next tech on the same unit gets it instantly. Best-effort ONLY: leave any field null if it is not printed or not clearly legible. NEVER guess or infer a model number — a wrong model files the wrong diagram for the next tech.",
+      "additionalProperties": false,
+      "properties": {
+        "model_id": { "type": "string", "description": "The unit model/spec number printed on the diagram, e.g. '24ABB324A003'. Null if not printed/legible." },
+        "series": { "type": "string", "description": "Series/family if that is what is printed, e.g. '24ABB3'." },
+        "brand": { "type": "string", "description": "Manufacturer name if printed on the sheet, e.g. 'Carrier'." },
+        "diagram_number": { "type": "string", "description": "The wiring-diagram / label part number printed on the sheet, e.g. '338048-751'." }
+      }
+    },
     "notes": {
       "type": "array",
       "description": "Free-text field notes (e.g. 'Factory R-Rc jumper present'). Never load-bearing for the render geometry.",

@@ -1,0 +1,770 @@
+{
+  "model_key": "CARRIER:38ESA",
+  "circuit_type": "full",
+  "schema_version": "1",
+  "components": [
+    {
+      "id": "PS",
+      "kind": "terminal-block",
+      "label": "208/230V 1PH Power Supply",
+      "kind_note": ""
+    },
+    {
+      "id": "CH",
+      "kind": "other",
+      "label": "Crankcase Heater"
+    },
+    {
+      "id": "CHS",
+      "kind": "switch",
+      "label": "Crankcase Heater Switch"
+    },
+    {
+      "id": "CONT",
+      "kind": "contactor",
+      "label": "Contactor"
+    },
+    {
+      "id": "COMP",
+      "kind": "compressor",
+      "label": "Compressor"
+    },
+    {
+      "id": "CAP",
+      "kind": "capacitor",
+      "label": "Dual Run Capacitor"
+    },
+    {
+      "id": "OFM",
+      "kind": "fan-motor",
+      "label": "Outdoor Fan Motor"
+    },
+    {
+      "id": "ST",
+      "kind": "other",
+      "label": "Start Thermistor (PTC)"
+    },
+    {
+      "id": "SC",
+      "kind": "capacitor",
+      "label": "Start Capacitor"
+    },
+    {
+      "id": "SR",
+      "kind": "relay",
+      "label": "Start Relay"
+    },
+    {
+      "id": "HPS",
+      "kind": "switch",
+      "label": "High-Pressure Switch"
+    },
+    {
+      "id": "DTS",
+      "kind": "switch",
+      "label": "Discharge-Temp Switch"
+    },
+    {
+      "id": "LPS",
+      "kind": "switch",
+      "label": "Low-Pressure Switch"
+    },
+    {
+      "id": "CTD",
+      "kind": "relay",
+      "label": "Compressor Time Delay (Logic)"
+    },
+    {
+      "id": "LLS",
+      "kind": "other",
+      "label": "Liquid-Line Solenoid"
+    },
+    {
+      "id": "XFMR",
+      "kind": "transformer",
+      "label": "External 24V Power Supply / Transformer"
+    },
+    {
+      "id": "IBM",
+      "kind": "fan-motor",
+      "label": "Indoor Blower Motor"
+    },
+    {
+      "id": "TSTAT",
+      "kind": "thermostat",
+      "label": "Indoor Thermostat"
+    },
+    {
+      "id": "GND",
+      "kind": "terminal-block",
+      "label": "Equipment Ground"
+    }
+  ],
+  "terminals": [
+    {
+      "component": "PS",
+      "id": "L1"
+    },
+    {
+      "component": "PS",
+      "id": "L2"
+    },
+    {
+      "component": "CH",
+      "id": "1"
+    },
+    {
+      "component": "CH",
+      "id": "2"
+    },
+    {
+      "component": "CHS",
+      "id": "IN"
+    },
+    {
+      "component": "CHS",
+      "id": "OUT"
+    },
+    {
+      "component": "CONT",
+      "id": "11"
+    },
+    {
+      "component": "CONT",
+      "id": "21"
+    },
+    {
+      "component": "CONT",
+      "id": "23L"
+    },
+    {
+      "component": "CONT",
+      "id": "23R"
+    },
+    {
+      "component": "COMP",
+      "id": "C"
+    },
+    {
+      "component": "COMP",
+      "id": "S"
+    },
+    {
+      "component": "COMP",
+      "id": "R"
+    },
+    {
+      "component": "CAP",
+      "id": "H"
+    },
+    {
+      "component": "CAP",
+      "id": "C"
+    },
+    {
+      "component": "CAP",
+      "id": "F"
+    },
+    {
+      "component": "OFM",
+      "id": "BLK"
+    },
+    {
+      "component": "OFM",
+      "id": "BRN"
+    },
+    {
+      "component": "OFM",
+      "id": "YEL"
+    },
+    {
+      "component": "OFM",
+      "id": "GND"
+    },
+    {
+      "component": "ST",
+      "id": "1"
+    },
+    {
+      "component": "ST",
+      "id": "2"
+    },
+    {
+      "component": "SC",
+      "id": "1"
+    },
+    {
+      "component": "SC",
+      "id": "2"
+    },
+    {
+      "component": "SR",
+      "id": "1"
+    },
+    {
+      "component": "SR",
+      "id": "2"
+    },
+    {
+      "component": "SR",
+      "id": "5"
+    },
+    {
+      "component": "HPS",
+      "id": "IN"
+    },
+    {
+      "component": "HPS",
+      "id": "OUT"
+    },
+    {
+      "component": "DTS",
+      "id": "IN"
+    },
+    {
+      "component": "DTS",
+      "id": "OUT"
+    },
+    {
+      "component": "LPS",
+      "id": "IN"
+    },
+    {
+      "component": "LPS",
+      "id": "OUT"
+    },
+    {
+      "component": "CTD",
+      "id": "T1"
+    },
+    {
+      "component": "CTD",
+      "id": "T2"
+    },
+    {
+      "component": "CTD",
+      "id": "T3"
+    },
+    {
+      "component": "LLS",
+      "id": "1"
+    },
+    {
+      "component": "LLS",
+      "id": "2"
+    },
+    {
+      "component": "XFMR",
+      "id": "C"
+    },
+    {
+      "component": "XFMR",
+      "id": "R"
+    },
+    {
+      "component": "IBM",
+      "id": "1"
+    },
+    {
+      "component": "IBM",
+      "id": "2"
+    },
+    {
+      "component": "TSTAT",
+      "id": "Y"
+    },
+    {
+      "component": "TSTAT",
+      "id": "G"
+    },
+    {
+      "component": "TSTAT",
+      "id": "R"
+    },
+    {
+      "component": "GND",
+      "id": "G1"
+    },
+    {
+      "component": "GND",
+      "id": "G2"
+    }
+  ],
+  "nets": [
+    {
+      "id": "n1",
+      "voltage_class": "line",
+      "wire_color": "black/red",
+      "label": "L1 to contactor",
+      "plain": "One leg of the 240-volt power to the contactor.",
+      "endpoints": [
+        {
+          "component": "PS",
+          "terminal": "L1"
+        },
+        {
+          "component": "CONT",
+          "terminal": "11"
+        }
+      ]
+    },
+    {
+      "id": "n2",
+      "voltage_class": "line",
+      "wire_color": "black/red",
+      "label": "L2 to CH / CHS tap",
+      "plain": "Other 240-volt leg feeds the contactor and heater branch.",
+      "endpoints": [
+        {
+          "component": "PS",
+          "terminal": "L2"
+        },
+        {
+          "component": "CH",
+          "terminal": "1"
+        },
+        {
+          "component": "CONT",
+          "terminal": "23L"
+        }
+      ]
+    },
+    {
+      "id": "n3",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "CH to CHS",
+      "plain": "Power from crankcase heater to its switch.",
+      "endpoints": [
+        {
+          "component": "CH",
+          "terminal": "2"
+        },
+        {
+          "component": "CHS",
+          "terminal": "IN"
+        }
+      ]
+    },
+    {
+      "id": "n4",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "CHS to contactor line",
+      "plain": "Heater switch output ties into the contactor line side.",
+      "endpoints": [
+        {
+          "component": "CHS",
+          "terminal": "OUT"
+        },
+        {
+          "component": "CONT",
+          "terminal": "21"
+        }
+      ]
+    },
+    {
+      "id": "n5",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "CONT 11 pole to compressor common",
+      "plain": "Switched power leg to the compressor common terminal.",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "11"
+        },
+        {
+          "component": "COMP",
+          "terminal": "C"
+        }
+      ]
+    },
+    {
+      "id": "n6",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "CONT 21 out to CAP/OFM branch",
+      "plain": "Switched leg feeds the run capacitor and fan branch.",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "21"
+        },
+        {
+          "component": "CAP",
+          "terminal": "H"
+        }
+      ]
+    },
+    {
+      "id": "n7",
+      "voltage_class": "start-winding",
+      "wire_color": "blue",
+      "label": "Compressor run to CAP H",
+      "plain": "Compressor run winding connects to capacitor Herm side.",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "R"
+        },
+        {
+          "component": "CAP",
+          "terminal": "H"
+        },
+        {
+          "component": "ST",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n8",
+      "voltage_class": "start-winding",
+      "wire_color": "blue",
+      "label": "Compressor start to start components",
+      "plain": "Compressor start winding to the start relay and thermistor.",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "S"
+        },
+        {
+          "component": "SR",
+          "terminal": "2"
+        }
+      ]
+    },
+    {
+      "id": "n9",
+      "voltage_class": "start-winding",
+      "wire_color": "brown",
+      "label": "Fan lead on CAP FAN terminal",
+      "plain": "Outdoor fan run wire ties to the capacitor fan terminal.",
+      "endpoints": [
+        {
+          "component": "CAP",
+          "terminal": "F"
+        },
+        {
+          "component": "OFM",
+          "terminal": "BRN"
+        }
+      ]
+    },
+    {
+      "id": "n10",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "OFM line lead",
+      "plain": "Outdoor fan motor power lead to the contactor line side.",
+      "endpoints": [
+        {
+          "component": "OFM",
+          "terminal": "BLK"
+        },
+        {
+          "component": "CONT",
+          "terminal": "23R"
+        }
+      ]
+    },
+    {
+      "id": "n11",
+      "voltage_class": "line",
+      "wire_color": "yellow",
+      "label": "OFM common yellow to CAP C",
+      "plain": "Outdoor fan common wire to the capacitor common side.",
+      "endpoints": [
+        {
+          "component": "OFM",
+          "terminal": "YEL"
+        },
+        {
+          "component": "CAP",
+          "terminal": "C"
+        }
+      ]
+    },
+    {
+      "id": "n12",
+      "voltage_class": "start-winding",
+      "wire_color": "yellow",
+      "label": "Start thermistor to start cap",
+      "plain": "Start thermistor connects to the start capacitor.",
+      "endpoints": [
+        {
+          "component": "ST",
+          "terminal": "2"
+        },
+        {
+          "component": "SC",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n13",
+      "voltage_class": "start-winding",
+      "wire_color": "brown",
+      "label": "Start cap to start relay",
+      "plain": "Start capacitor connects to the start relay contact.",
+      "endpoints": [
+        {
+          "component": "SC",
+          "terminal": "2"
+        },
+        {
+          "component": "SR",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n14",
+      "voltage_class": "start-winding",
+      "wire_color": "yellow",
+      "label": "Start relay coil to run",
+      "plain": "Start relay senses the run winding voltage.",
+      "endpoints": [
+        {
+          "component": "SR",
+          "terminal": "5"
+        },
+        {
+          "component": "COMP",
+          "terminal": "R"
+        }
+      ]
+    },
+    {
+      "id": "n15",
+      "voltage_class": "low-voltage",
+      "wire_color": "blue",
+      "label": "Contactor coil feed (Note 14)",
+      "plain": "24-volt control power to one side of the contactor coil.",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "23L"
+        },
+        {
+          "component": "HPS",
+          "terminal": "IN"
+        }
+      ]
+    },
+    {
+      "id": "n16",
+      "voltage_class": "low-voltage",
+      "wire_color": "blue/pink",
+      "label": "HPS to DTS",
+      "plain": "High-pressure safety switch in series to discharge-temp switch.",
+      "endpoints": [
+        {
+          "component": "HPS",
+          "terminal": "OUT"
+        },
+        {
+          "component": "DTS",
+          "terminal": "IN"
+        }
+      ]
+    },
+    {
+      "id": "n17",
+      "voltage_class": "low-voltage",
+      "wire_color": "black",
+      "label": "DTS to LPS",
+      "plain": "Discharge-temp switch in series to low-pressure switch.",
+      "endpoints": [
+        {
+          "component": "DTS",
+          "terminal": "OUT"
+        },
+        {
+          "component": "LPS",
+          "terminal": "IN"
+        }
+      ]
+    },
+    {
+      "id": "n18",
+      "voltage_class": "low-voltage",
+      "wire_color": "yellow/pink",
+      "label": "LPS to time delay T1",
+      "plain": "Low-pressure switch feeds the compressor time delay.",
+      "endpoints": [
+        {
+          "component": "LPS",
+          "terminal": "OUT"
+        },
+        {
+          "component": "CTD",
+          "terminal": "T1"
+        }
+      ]
+    },
+    {
+      "id": "n19",
+      "voltage_class": "low-voltage",
+      "wire_color": "violet",
+      "label": "Time delay T2 to contactor coil",
+      "plain": "Time delay output energizes the contactor coil.",
+      "endpoints": [
+        {
+          "component": "CTD",
+          "terminal": "T2"
+        },
+        {
+          "component": "CONT",
+          "terminal": "23R"
+        }
+      ]
+    },
+    {
+      "id": "n20",
+      "voltage_class": "low-voltage",
+      "wire_color": "black",
+      "label": "Time delay T3 / logic return",
+      "plain": "Time-delay logic return path in the 24-volt circuit.",
+      "endpoints": [
+        {
+          "component": "CTD",
+          "terminal": "T3"
+        },
+        {
+          "component": "LLS",
+          "terminal": "2"
+        }
+      ]
+    },
+    {
+      "id": "n21",
+      "voltage_class": "low-voltage",
+      "wire_color": "blue",
+      "label": "HPS/LLS branch",
+      "plain": "24-volt branch to the liquid-line solenoid circuit.",
+      "endpoints": [
+        {
+          "component": "HPS",
+          "terminal": "IN"
+        },
+        {
+          "component": "LLS",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n22",
+      "voltage_class": "low-voltage",
+      "wire_color": "brown",
+      "label": "Transformer secondary to time delay",
+      "plain": "24-volt transformer output feeds the control safeties.",
+      "endpoints": [
+        {
+          "component": "XFMR",
+          "terminal": "R"
+        },
+        {
+          "component": "CTD",
+          "terminal": "T3"
+        }
+      ]
+    },
+    {
+      "id": "n23",
+      "voltage_class": "low-voltage",
+      "wire_color": "unknown",
+      "label": "Thermostat Y call",
+      "plain": "Thermostat cooling call into the control circuit.",
+      "endpoints": [
+        {
+          "component": "TSTAT",
+          "terminal": "Y"
+        },
+        {
+          "component": "LLS",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n24",
+      "voltage_class": "low-voltage",
+      "wire_color": "unknown",
+      "label": "Thermostat G to blower",
+      "plain": "Thermostat fan call to the indoor blower motor.",
+      "endpoints": [
+        {
+          "component": "TSTAT",
+          "terminal": "G"
+        },
+        {
+          "component": "IBM",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n25",
+      "voltage_class": "low-voltage",
+      "wire_color": "unknown",
+      "label": "Thermostat R power",
+      "plain": "24-volt power from transformer to thermostat R.",
+      "endpoints": [
+        {
+          "component": "TSTAT",
+          "terminal": "R"
+        },
+        {
+          "component": "XFMR",
+          "terminal": "R"
+        }
+      ]
+    },
+    {
+      "id": "n26",
+      "voltage_class": "low-voltage",
+      "wire_color": "unknown",
+      "label": "Transformer common",
+      "plain": "24-volt common return to the transformer.",
+      "endpoints": [
+        {
+          "component": "XFMR",
+          "terminal": "C"
+        },
+        {
+          "component": "IBM",
+          "terminal": "2"
+        }
+      ]
+    },
+    {
+      "id": "n27",
+      "voltage_class": "ground",
+      "wire_color": "green",
+      "label": "Fan motor ground",
+      "plain": "Outdoor fan motor bonded to equipment ground.",
+      "endpoints": [
+        {
+          "component": "OFM",
+          "terminal": "GND"
+        },
+        {
+          "component": "GND",
+          "terminal": "G1"
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Terminal designations for the *SR start relay (1,2,5) taken from the ladder diagram; connection diagram numbering partially obscured.",
+    "The dashed lines from thermostat Y/G/R and the indoor blower motor to the external 24V supply are drawn as field/interconnect wiring; exact landing terminals at the transformer/blower block are ambiguous — thermostat-to-solenoid and blower interconnect traced conservatively.",
+    "Wire colors on the low-voltage thermostat/blower dashed leads are not labeled in the source; left as unknown.",
+    "Right edge of the page (Note #8, *SR area) and the NOTES column text are cropped/partially illegible.",
+    "CTD internal logic (T1/T2/T3 to LOGIC block) shown schematically; internal contact-to-logic wiring not individually traced beyond the three external terminals.",
+    "COMP internal common tie point between C/S/R windings is the internal motor node, not an added external net."
+  ]
+}

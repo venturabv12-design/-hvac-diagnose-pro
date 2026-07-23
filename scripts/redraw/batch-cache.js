@@ -57,6 +57,10 @@ async function cacheOne(job) {
   const wired = new Set((netlist.nets || []).flatMap(n => (n.endpoints || []).map(e => e.component)));
   const orphan = netlist.components.filter(c => ['contactor', 'compressor', 'runcap', 'fan'].includes(roleOf(c)) && !wired.has(c.id));
   if (orphan.length) return { key, status: 'orphaned', errors: [`unwired core part(s): ${orphan.map(c => c.id).join(',')}`] };
+  // HEAT-PUMP gate: reversing valve / defrost board = a heat pump. The renderer has no HP support yet,
+  // so it would drop those parts and render a misleading "AC". Reject until reversing-valve support is built.
+  const hp = netlist.components.find(c => /revers|defrost|\brvs?\b|\bdft\b|\bo\/b\b/i.test(`${c.id || ''} ${c.label || ''}`));
+  if (hp) return { key, status: 'heat-pump', errors: [`heat pump (${hp.id}) — needs reversing-valve support`] };
 
   const svg = renderIllustrationSVG(netlist);
   fs.writeFileSync(base + '.netlist.json', JSON.stringify(netlist, null, 2));

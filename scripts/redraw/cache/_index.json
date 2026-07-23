@@ -1,60 +1,49 @@
 {
-  "generated_from": "/tmp/lib/batch10.json",
+  "generated_from": "/tmp/lib/batch7.json",
   "counts": {
-    "traced": 3,
-    "incomplete": 7
+    "traced": 6,
+    "incomplete": 1
   },
   "results": [
     {
-      "key": "CARRIER:24SCA4",
-      "status": "traced",
-      "comps": 13,
-      "nets": 12,
-      "tokens": "6563/3547",
-      "notes": 8
-    },
-    {
       "key": "CARRIER:27SPA6",
-      "status": "incomplete",
-      "errors": [
-        "missing core: only [contactor,fan]"
-      ]
+      "status": "traced",
+      "comps": 18,
+      "nets": 31,
+      "tokens": "8558/5009",
+      "notes": 6
     },
     {
       "key": "TEMPSTAR:26SCA4",
-      "status": "incomplete",
-      "errors": [
-        "missing core: only [contactor,fan]"
-      ]
+      "status": "traced",
+      "comps": 19,
+      "nets": 28,
+      "tokens": "8561/5827",
+      "notes": 6
     },
     {
       "key": "TEMPSTAR:26SCA5",
-      "status": "incomplete",
-      "errors": [
-        "missing core: only [fan]"
-      ]
+      "status": "traced",
+      "comps": 19,
+      "nets": 29,
+      "tokens": "8561/5605",
+      "notes": 7
     },
     {
       "key": "HEIL:135SAN",
-      "status": "incomplete",
-      "errors": [
-        "missing core: only [contactor,fan]"
-      ]
-    },
-    {
-      "key": "COMFORTMAKER:146SAN",
       "status": "traced",
-      "comps": 14,
-      "nets": 26,
-      "tokens": "6566/4705",
+      "comps": 19,
+      "nets": 27,
+      "tokens": "8556/4696",
       "notes": 6
     },
     {
       "key": "PAYNE:PA4SAN5",
-      "status": "incomplete",
-      "errors": [
-        "missing core: only [contactor,fan]"
-      ]
+      "status": "traced",
+      "comps": 19,
+      "nets": 29,
+      "tokens": "8560/5684",
+      "notes": 5
     },
     {
       "key": "ICP:N4A",
@@ -64,19 +53,12 @@
       ]
     },
     {
-      "key": "ICP:NXA4",
-      "status": "traced",
-      "comps": 10,
-      "nets": 18,
-      "tokens": "6560/3973",
-      "notes": 4
-    },
-    {
       "key": "CARRIER:38ESA",
-      "status": "incomplete",
-      "errors": [
-        "missing core: only []"
-      ]
+      "status": "traced",
+      "comps": 19,
+      "nets": 27,
+      "tokens": "8557/5342",
+      "notes": 6
     }
   ]
 }

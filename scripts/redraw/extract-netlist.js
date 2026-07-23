@@ -218,7 +218,30 @@ async function extractNetlist(imageRef, opts = {}) {
   };
 }
 
-module.exports = { extractNetlist, validateNetlist, loadImage, SYSTEM };
+// Salvage a mostly-good trace: drop only the malformed nets (unresolvable/ <2 endpoints) and keep the
+// rest. Fail-toward-distrust at the WIRE level, not the whole diagram — an ambiguous wire is omitted
+// (real manual one tap away) instead of throwing away a diagram whose parts + other wires are fine.
+function sanitizeNetlist(nl) {
+  if (!nl || !Array.isArray(nl.components)) return nl;
+  const comps = new Set(nl.components.filter(c => c && c.id).map(c => c.id));
+  const terms = new Set((nl.terminals || []).filter(t => t && t.component && t.id).map(t => `${t.component} ${t.id}`));
+  const nets = (nl.nets || []).map(n => {
+    if (!n || !n.id) return null;
+    const seen = new Set();
+    const eps = (n.endpoints || []).filter(e => {
+      if (!e || !e.component || !e.terminal) return false;
+      if (!comps.has(e.component) || !terms.has(`${e.component} ${e.terminal}`)) return false;
+      const k = `${e.component}/${e.terminal}`; if (seen.has(k)) return false; seen.add(k); return true;
+    });
+    return eps.length >= 2 ? { ...n, endpoints: eps } : null;
+  }).filter(Boolean);
+  const dropped = (nl.nets || []).length - nets.length;
+  const notes = [...(nl.notes || [])];
+  if (dropped > 0) notes.push(`Sanitized: dropped ${dropped} ambiguous/unresolvable wire(s) — omitted rather than guessed; verify against the real manual.`);
+  return { ...nl, nets, notes };
+}
+
+module.exports = { extractNetlist, validateNetlist, sanitizeNetlist, loadImage, SYSTEM };
 
 // ── CLI ───────────────────────────────────────────────────────────────────────
 if (require.main === module) {

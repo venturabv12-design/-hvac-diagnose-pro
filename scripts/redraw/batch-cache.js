@@ -26,8 +26,8 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { extractNetlist } = require('./extract-netlist.js');
-const { renderIllustrationSVG } = require('./render-illustration-svg.js');
+const { extractNetlist, sanitizeNetlist, validateNetlist } = require('./extract-netlist.js');
+const { renderIllustrationSVG, roleOf } = require('./render-illustration-svg.js');
 const { simplifyCoreAC } = require('./simplify-core.js');
 
 // --core: reduce each trace to the clean apprentice core before rendering.
@@ -43,19 +43,27 @@ async function cacheOne(job) {
   if (!job.image) return { key, status: 'no-image' };
 
   const out = await extractNetlist(job.image, { modelKey: key, circuitType: job.circuit || 'full' });
-  if (!out.validation.ok) return { key, status: 'invalid', errors: out.validation.errors };
+  // salvage a mostly-good trace: drop malformed wires, then re-validate
+  let netlist = sanitizeNetlist(out.netlist);
+  const v2 = validateNetlist(netlist);
+  if (!v2.ok) return { key, status: 'invalid', errors: v2.errors };
+  if (CORE) netlist = simplifyCoreAC(netlist);
 
-  const netlist = CORE ? simplifyCoreAC(out.netlist) : out.netlist;
+  // COMPLETENESS gate: a real condenser diagram must draw the core (contactor+compressor+cap+fan)
+  const roles = netlist.components.map(c => roleOf(c)).filter(Boolean);
+  const core = ['contactor', 'compressor', 'runcap', 'fan'].filter(r => roles.includes(r));
+  if (core.length < 4) return { key, status: 'incomplete', errors: [`missing core: only [${core.join(',')}]`] };
+
   const svg = renderIllustrationSVG(netlist);
   fs.writeFileSync(base + '.netlist.json', JSON.stringify(netlist, null, 2));
-  if (CORE) fs.writeFileSync(base + '.full-traced.json', JSON.stringify(out.netlist, null, 2));
+  fs.writeFileSync(base + '.full-traced.json', JSON.stringify(netlist, null, 2));
   fs.writeFileSync(base + '.illustration.svg', svg);
   return {
     key, status: 'traced',
-    comps: out.netlist.components?.length || 0,
-    nets: out.netlist.nets?.length || 0,
+    comps: netlist.components?.length || 0,
+    nets: netlist.nets?.length || 0,
     tokens: out.usage ? `${out.usage.input_tokens}/${out.usage.output_tokens}` : 'n/a',
-    notes: (out.netlist.notes || []).length,
+    notes: (netlist.notes || []).length,
   };
 }
 

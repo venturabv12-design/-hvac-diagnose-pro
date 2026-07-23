@@ -1,0 +1,414 @@
+{
+  "model_key": "GOODMAN:GSX16",
+  "circuit_type": "full",
+  "components": [
+    {
+      "id": "CONTACTOR",
+      "kind": "contactor",
+      "label": "Contactor (Double Pole)"
+    },
+    {
+      "id": "COMP",
+      "kind": "compressor",
+      "label": "Compressor"
+    },
+    {
+      "id": "RCCF",
+      "kind": "capacitor",
+      "label": "Run Capacitor (RCCF)"
+    },
+    {
+      "id": "OFM",
+      "kind": "fan-motor",
+      "label": "Outdoor Fan Motor (CM)"
+    },
+    {
+      "id": "SC",
+      "kind": "other",
+      "label": "Start Component / Crankcase (SC)"
+    },
+    {
+      "id": "SR",
+      "kind": "relay",
+      "label": "Start Relay (SR)"
+    },
+    {
+      "id": "SA",
+      "kind": "other",
+      "label": "Start Assist SA (if used)"
+    },
+    {
+      "id": "GND",
+      "kind": "terminal-block",
+      "label": "Equipment Ground"
+    }
+  ],
+  "terminals": [
+    {
+      "component": "CONTACTOR",
+      "id": "L1"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "L2"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "T1"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "T2"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "C"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "COIL1"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "COIL2"
+    },
+    {
+      "component": "COMP",
+      "id": "C"
+    },
+    {
+      "component": "COMP",
+      "id": "R"
+    },
+    {
+      "component": "COMP",
+      "id": "S"
+    },
+    {
+      "component": "RCCF",
+      "id": "H"
+    },
+    {
+      "component": "RCCF",
+      "id": "C"
+    },
+    {
+      "component": "RCCF",
+      "id": "F"
+    },
+    {
+      "component": "OFM",
+      "id": "MAIN"
+    },
+    {
+      "component": "OFM",
+      "id": "AUX"
+    },
+    {
+      "component": "OFM",
+      "id": "IO"
+    },
+    {
+      "component": "SC",
+      "id": "1"
+    },
+    {
+      "component": "SC",
+      "id": "2"
+    },
+    {
+      "component": "SR",
+      "id": "1"
+    },
+    {
+      "component": "SR",
+      "id": "2"
+    },
+    {
+      "component": "SR",
+      "id": "5"
+    },
+    {
+      "component": "SA",
+      "id": "1"
+    },
+    {
+      "component": "SA",
+      "id": "2"
+    },
+    {
+      "component": "GND",
+      "id": "GND"
+    }
+  ],
+  "nets": [
+    {
+      "id": "n1",
+      "label": "L1 line",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "plain": "One leg of the 240-volt power to the contactor.",
+      "endpoints": [
+        {
+          "component": "CONTACTOR",
+          "terminal": "L1"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T1"
+        }
+      ]
+    },
+    {
+      "id": "n2",
+      "label": "L2 line",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "plain": "Other leg of the 240-volt power to the contactor.",
+      "endpoints": [
+        {
+          "component": "CONTACTOR",
+          "terminal": "L2"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T2"
+        }
+      ]
+    },
+    {
+      "id": "n3",
+      "label": "Compressor common feed",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "plain": "240-volt power from contactor to compressor common.",
+      "endpoints": [
+        {
+          "component": "CONTACTOR",
+          "terminal": "T1"
+        },
+        {
+          "component": "COMP",
+          "terminal": "C"
+        }
+      ]
+    },
+    {
+      "id": "n4",
+      "label": "Compressor run / cap-H",
+      "voltage_class": "line",
+      "wire_color": "red",
+      "plain": "Compressor run terminal to run capacitor HERM side.",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "R"
+        },
+        {
+          "component": "RCCF",
+          "terminal": "H"
+        }
+      ]
+    },
+    {
+      "id": "n5",
+      "label": "Compressor start / cap-C",
+      "voltage_class": "start-winding",
+      "wire_color": "yellow",
+      "plain": "Compressor start winding to run capacitor common side.",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "S"
+        },
+        {
+          "component": "RCCF",
+          "terminal": "C"
+        }
+      ]
+    },
+    {
+      "id": "n6",
+      "label": "Cap common to contactor",
+      "voltage_class": "line",
+      "wire_color": "purple",
+      "plain": "Run capacitor common tied to the 240-volt line side.",
+      "endpoints": [
+        {
+          "component": "RCCF",
+          "terminal": "C"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T2"
+        }
+      ]
+    },
+    {
+      "id": "n7",
+      "label": "Outdoor fan run cap (F)",
+      "voltage_class": "line",
+      "wire_color": "brown",
+      "plain": "Outdoor fan motor run winding to capacitor fan side.",
+      "endpoints": [
+        {
+          "component": "RCCF",
+          "terminal": "F"
+        },
+        {
+          "component": "OFM",
+          "terminal": "AUX"
+        }
+      ]
+    },
+    {
+      "id": "n8",
+      "label": "Outdoor fan main power",
+      "voltage_class": "line",
+      "wire_color": "purple",
+      "plain": "240-volt power to the outdoor fan motor main winding.",
+      "endpoints": [
+        {
+          "component": "OFM",
+          "terminal": "MAIN"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T1"
+        }
+      ]
+    },
+    {
+      "id": "n9",
+      "label": "Outdoor fan common",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "plain": "Outdoor fan motor return to the 240-volt line side.",
+      "endpoints": [
+        {
+          "component": "OFM",
+          "terminal": "IO"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T2"
+        }
+      ]
+    },
+    {
+      "id": "n10",
+      "label": "Start component SC to comp",
+      "voltage_class": "start-winding",
+      "wire_color": "red",
+      "plain": "Start component to compressor circuit.",
+      "endpoints": [
+        {
+          "component": "SC",
+          "terminal": "2"
+        },
+        {
+          "component": "COMP",
+          "terminal": "R"
+        }
+      ]
+    },
+    {
+      "id": "n11",
+      "label": "Start component SC blue",
+      "voltage_class": "start-winding",
+      "wire_color": "blue",
+      "plain": "Start component blue lead to control circuit.",
+      "endpoints": [
+        {
+          "component": "SC",
+          "terminal": "1"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T1"
+        }
+      ]
+    },
+    {
+      "id": "n12",
+      "label": "Start relay coil",
+      "voltage_class": "start-winding",
+      "wire_color": "black",
+      "plain": "Start relay coil terminal to start component.",
+      "endpoints": [
+        {
+          "component": "SR",
+          "terminal": "5"
+        },
+        {
+          "component": "COMP",
+          "terminal": "S"
+        }
+      ]
+    },
+    {
+      "id": "n13",
+      "label": "Start relay contact yellow",
+      "voltage_class": "start-winding",
+      "wire_color": "yellow",
+      "plain": "Start relay contact to start capacitor circuit.",
+      "endpoints": [
+        {
+          "component": "SR",
+          "terminal": "2"
+        },
+        {
+          "component": "RCCF",
+          "terminal": "C"
+        }
+      ]
+    },
+    {
+      "id": "n14",
+      "label": "Start assist SA",
+      "voltage_class": "start-winding",
+      "wire_color": "red",
+      "plain": "Start assist device across the start circuit (if used).",
+      "endpoints": [
+        {
+          "component": "SA",
+          "terminal": "1"
+        },
+        {
+          "component": "RCCF",
+          "terminal": "H"
+        },
+        {
+          "component": "SA",
+          "terminal": "2"
+        }
+      ]
+    },
+    {
+      "id": "n15",
+      "label": "Equipment ground",
+      "voltage_class": "ground",
+      "wire_color": "green",
+      "plain": "Equipment ground connection for safety.",
+      "endpoints": [
+        {
+          "component": "GND",
+          "terminal": "GND"
+        },
+        {
+          "component": "OFM",
+          "terminal": "IO"
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "24-volt control legend (CO/WI blocks) and thermostat/low-voltage terminals at the top of the page are cropped and illegible — the 24V control path to the contactor coil could not be traced.",
+    "Contactor coil terminals (COIL1/COIL2) are declared but their 24V wiring is not visible in the cropped region; left unconnected rather than guessed.",
+    "SA (start assist, 'if used', Note 2) internal polarity is ambiguous; both leads shown tied near capacitor HERM side per dashed lines — traced conservatively.",
+    "Start relay (SR) terminal numbering (1/2/5) read from small print; terminal 1 connection partially obscured.",
+    "Dashed lines indicate optional/alternate wiring (alternate double-pole contactor and start kit); alternate contactor shown as reference only, not separately netlisted.",
+    "Wire colors inferred from printed abbreviations (RD/BK/BL/PU/BR/YL) adjacent to conductors."
+  ],
+  "schema_version": "1"
+}

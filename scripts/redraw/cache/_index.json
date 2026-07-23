@@ -1,57 +1,16 @@
 {
-  "generated_from": "/tmp/lib/batch-ac2.json",
+  "generated_from": "/tmp/lib/goodman.json",
   "counts": {
-    "traced": 5,
-    "invalid": 1
+    "traced": 1
   },
   "results": [
     {
-      "key": "CARRIER:24ACA4",
-      "status": "traced",
-      "comps": 5,
-      "nets": 13,
-      "tokens": "8591/2306",
-      "notes": 4
-    },
-    {
-      "key": "CARRIER:24AHA4",
-      "status": "traced",
-      "comps": 5,
-      "nets": 5,
-      "tokens": "8591/1662",
-      "notes": 4
-    },
-    {
-      "key": "BRYANT:561C",
-      "status": "traced",
-      "comps": 18,
-      "nets": 24,
-      "tokens": "8588/5097",
-      "notes": 8
-    },
-    {
-      "key": "CARRIER:CSA660",
-      "status": "traced",
-      "comps": 17,
-      "nets": 35,
-      "tokens": "8590/5969",
-      "notes": 7
-    },
-    {
       "key": "GOODMAN:GSX16",
-      "status": "invalid",
-      "errors": [
-        "net \"n1\" has <2 endpoints",
-        "net \"n2\" has <2 endpoints"
-      ]
-    },
-    {
-      "key": "YORK:YCG",
       "status": "traced",
-      "comps": 13,
-      "nets": 22,
-      "tokens": "8587/4586",
-      "notes": 5
+      "comps": 8,
+      "nets": 15,
+      "tokens": "8563/3247",
+      "notes": 6
     }
   ]
 }

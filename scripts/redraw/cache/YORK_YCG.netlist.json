@@ -1,0 +1,597 @@
+{
+  "model_key": "YORK:YCG",
+  "circuit_type": "full",
+  "schema_version": "1",
+  "components": [
+    {
+      "id": "FANMOTOR",
+      "kind": "fan-motor",
+      "label": "Condenser Fan Motor"
+    },
+    {
+      "id": "COMP",
+      "kind": "compressor",
+      "label": "Compressor Motor"
+    },
+    {
+      "id": "CAP",
+      "kind": "capacitor",
+      "label": "Dual Run Capacitor"
+    },
+    {
+      "id": "CONTACTOR",
+      "kind": "contactor",
+      "label": "Contactor"
+    },
+    {
+      "id": "SR",
+      "kind": "relay",
+      "label": "Start Relay (optional)"
+    },
+    {
+      "id": "SC",
+      "kind": "capacitor",
+      "label": "Start Capacitor (optional)"
+    },
+    {
+      "id": "CCH",
+      "kind": "other",
+      "label": "Crankcase Heater (optional)"
+    },
+    {
+      "id": "HS",
+      "kind": "switch",
+      "label": "Heater Switch (optional)"
+    },
+    {
+      "id": "LPS",
+      "kind": "switch",
+      "label": "Low Pressure Switch (optional)"
+    },
+    {
+      "id": "HPS",
+      "kind": "switch",
+      "label": "High Pressure Switch (optional)"
+    },
+    {
+      "id": "JBOX",
+      "kind": "terminal-block",
+      "label": "Junction Box"
+    },
+    {
+      "id": "GNDLUG",
+      "kind": "other",
+      "label": "Ground Lug"
+    },
+    {
+      "id": "SUPPLY",
+      "kind": "terminal-block",
+      "label": "208-240V 1-Phase Supply"
+    }
+  ],
+  "terminals": [
+    {
+      "component": "FANMOTOR",
+      "id": "C"
+    },
+    {
+      "component": "FANMOTOR",
+      "id": "S"
+    },
+    {
+      "component": "FANMOTOR",
+      "id": "R"
+    },
+    {
+      "component": "FANMOTOR",
+      "id": "GND"
+    },
+    {
+      "component": "COMP",
+      "id": "R"
+    },
+    {
+      "component": "COMP",
+      "id": "C"
+    },
+    {
+      "component": "COMP",
+      "id": "S"
+    },
+    {
+      "component": "CAP",
+      "id": "FAN"
+    },
+    {
+      "component": "CAP",
+      "id": "HERM"
+    },
+    {
+      "component": "CAP",
+      "id": "C"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "T1"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "L1"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "T2"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "L2"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "CC1"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "CC2"
+    },
+    {
+      "component": "SR",
+      "id": "1"
+    },
+    {
+      "component": "SR",
+      "id": "2"
+    },
+    {
+      "component": "SR",
+      "id": "5"
+    },
+    {
+      "component": "SC",
+      "id": "A"
+    },
+    {
+      "component": "SC",
+      "id": "B"
+    },
+    {
+      "component": "CCH",
+      "id": "1"
+    },
+    {
+      "component": "CCH",
+      "id": "2"
+    },
+    {
+      "component": "HS",
+      "id": "1"
+    },
+    {
+      "component": "HS",
+      "id": "2"
+    },
+    {
+      "component": "LPS",
+      "id": "1"
+    },
+    {
+      "component": "LPS",
+      "id": "2"
+    },
+    {
+      "component": "HPS",
+      "id": "1"
+    },
+    {
+      "component": "HPS",
+      "id": "2"
+    },
+    {
+      "component": "JBOX",
+      "id": "1"
+    },
+    {
+      "component": "JBOX",
+      "id": "2"
+    },
+    {
+      "component": "GNDLUG",
+      "id": "GND"
+    },
+    {
+      "component": "SUPPLY",
+      "id": "L1"
+    },
+    {
+      "component": "SUPPLY",
+      "id": "L2"
+    },
+    {
+      "component": "SUPPLY",
+      "id": "GND"
+    }
+  ],
+  "nets": [
+    {
+      "id": "n1",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "Fan common to contactor line",
+      "plain": "Power leg one runs to the outdoor fan motor.",
+      "endpoints": [
+        {
+          "component": "FANMOTOR",
+          "terminal": "C"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T1"
+        }
+      ]
+    },
+    {
+      "id": "n2",
+      "voltage_class": "start-winding",
+      "wire_color": "brown",
+      "label": "Fan start to cap FAN",
+      "plain": "Outdoor fan start winding to the fan side of the capacitor.",
+      "endpoints": [
+        {
+          "component": "FANMOTOR",
+          "terminal": "S"
+        },
+        {
+          "component": "CAP",
+          "terminal": "FAN"
+        }
+      ]
+    },
+    {
+      "id": "n3",
+      "voltage_class": "ground",
+      "wire_color": "green",
+      "label": "Fan motor ground",
+      "plain": "Grounds the outdoor fan motor for safety.",
+      "endpoints": [
+        {
+          "component": "FANMOTOR",
+          "terminal": "GND"
+        },
+        {
+          "component": "GNDLUG",
+          "terminal": "GND"
+        }
+      ]
+    },
+    {
+      "id": "n4",
+      "voltage_class": "line",
+      "wire_color": "red",
+      "label": "Fan run to contactor T2 side",
+      "plain": "Outdoor fan run winding to power leg two.",
+      "endpoints": [
+        {
+          "component": "FANMOTOR",
+          "terminal": "R"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T2"
+        }
+      ]
+    },
+    {
+      "id": "n5",
+      "voltage_class": "line",
+      "wire_color": "red",
+      "label": "Compressor R to cap HERM",
+      "plain": "Compressor run terminal to the compressor side of the capacitor.",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "R"
+        },
+        {
+          "component": "CAP",
+          "terminal": "HERM"
+        }
+      ]
+    },
+    {
+      "id": "n6",
+      "voltage_class": "start-winding",
+      "wire_color": "brown",
+      "label": "Compressor S to cap HERM",
+      "plain": "Compressor start winding to the compressor side of the capacitor.",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "S"
+        },
+        {
+          "component": "CAP",
+          "terminal": "HERM"
+        }
+      ]
+    },
+    {
+      "id": "n7",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "Compressor common to contactor T1",
+      "plain": "Compressor common terminal to power leg one.",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "C"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T1"
+        }
+      ]
+    },
+    {
+      "id": "n8",
+      "voltage_class": "line",
+      "wire_color": "red",
+      "label": "Cap C to contactor T2",
+      "plain": "Common side of the capacitor to power leg two.",
+      "endpoints": [
+        {
+          "component": "CAP",
+          "terminal": "C"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T2"
+        }
+      ]
+    },
+    {
+      "id": "n9",
+      "voltage_class": "start-winding",
+      "wire_color": "brown",
+      "label": "SR terminal 5 to cap HERM path",
+      "plain": "Start relay to compressor start winding (optional start kit).",
+      "endpoints": [
+        {
+          "component": "SR",
+          "terminal": "5"
+        },
+        {
+          "component": "CAP",
+          "terminal": "HERM"
+        }
+      ]
+    },
+    {
+      "id": "n10",
+      "voltage_class": "start-winding",
+      "wire_color": "black",
+      "label": "SR terminal 1 to compressor common leg",
+      "plain": "Start relay coil to power leg one (optional start kit).",
+      "endpoints": [
+        {
+          "component": "SR",
+          "terminal": "1"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T1"
+        }
+      ]
+    },
+    {
+      "id": "n11",
+      "voltage_class": "start-winding",
+      "wire_color": "yellow",
+      "label": "SR terminal 2 to start capacitor",
+      "plain": "Start relay to the start capacitor (optional start kit).",
+      "endpoints": [
+        {
+          "component": "SR",
+          "terminal": "2"
+        },
+        {
+          "component": "SC",
+          "terminal": "A"
+        }
+      ]
+    },
+    {
+      "id": "n12",
+      "voltage_class": "start-winding",
+      "wire_color": "red",
+      "label": "Start capacitor to cap HERM branch",
+      "plain": "Start capacitor tied into the compressor start branch.",
+      "endpoints": [
+        {
+          "component": "SC",
+          "terminal": "B"
+        },
+        {
+          "component": "CAP",
+          "terminal": "HERM"
+        }
+      ]
+    },
+    {
+      "id": "n13",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "Crankcase heater to contactor L1",
+      "plain": "Crankcase heater fed from power leg one (optional).",
+      "endpoints": [
+        {
+          "component": "CCH",
+          "terminal": "1"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "L1"
+        }
+      ]
+    },
+    {
+      "id": "n14",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "Crankcase heater to heater switch",
+      "plain": "Crankcase heater through the heater switch (optional).",
+      "endpoints": [
+        {
+          "component": "CCH",
+          "terminal": "2"
+        },
+        {
+          "component": "HS",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n15",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "Heater switch to L2 leg",
+      "plain": "Heater switch returns to power leg two (optional).",
+      "endpoints": [
+        {
+          "component": "HS",
+          "terminal": "2"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "L2"
+        }
+      ]
+    },
+    {
+      "id": "n16",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "Supply L1 to contactor L1",
+      "plain": "One leg of the 240-volt supply to the contactor.",
+      "endpoints": [
+        {
+          "component": "SUPPLY",
+          "terminal": "L1"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "L1"
+        }
+      ]
+    },
+    {
+      "id": "n17",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "Supply L2 to contactor L2",
+      "plain": "Other leg of the 240-volt supply to the contactor.",
+      "endpoints": [
+        {
+          "component": "SUPPLY",
+          "terminal": "L2"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "L2"
+        }
+      ]
+    },
+    {
+      "id": "n18",
+      "voltage_class": "ground",
+      "wire_color": "green",
+      "label": "Supply ground to ground lug",
+      "plain": "Ground wire from the supply to the unit ground lug.",
+      "endpoints": [
+        {
+          "component": "SUPPLY",
+          "terminal": "GND"
+        },
+        {
+          "component": "GNDLUG",
+          "terminal": "GND"
+        }
+      ]
+    },
+    {
+      "id": "n19",
+      "voltage_class": "low-voltage",
+      "wire_color": "blue",
+      "label": "Contactor coil to low pressure switch",
+      "plain": "24-volt power from the contactor coil to the low-pressure safety switch.",
+      "endpoints": [
+        {
+          "component": "CONTACTOR",
+          "terminal": "CC1"
+        },
+        {
+          "component": "LPS",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n20",
+      "voltage_class": "low-voltage",
+      "wire_color": "blue",
+      "label": "Low pressure switch to high pressure switch",
+      "plain": "Low-pressure safety switch in series with the high-pressure safety switch.",
+      "endpoints": [
+        {
+          "component": "LPS",
+          "terminal": "2"
+        },
+        {
+          "component": "HPS",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n21",
+      "voltage_class": "low-voltage",
+      "wire_color": "yellow",
+      "label": "High pressure switch to junction box",
+      "plain": "High-pressure safety switch to the 24-volt junction box.",
+      "endpoints": [
+        {
+          "component": "HPS",
+          "terminal": "2"
+        },
+        {
+          "component": "JBOX",
+          "terminal": "2"
+        }
+      ]
+    },
+    {
+      "id": "n22",
+      "voltage_class": "low-voltage",
+      "wire_color": "yellow",
+      "label": "Contactor coil other side to junction box",
+      "plain": "Other side of the contactor coil to the 24-volt junction box.",
+      "endpoints": [
+        {
+          "component": "CONTACTOR",
+          "terminal": "CC2"
+        },
+        {
+          "component": "JBOX",
+          "terminal": "1"
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Optional components (dashed): Start Relay (SR), Start Capacitor (SC), Crankcase Heater (CCH), Heater Switch (HS), Low Pressure Switch (LPS), High Pressure Switch (HPS) traced as drawn.",
+    "24 VAC control circuit (20 VA min) enters via junction box; the thermostat/transformer is remote and not shown on this diagram — control path traced only to the junction box.",
+    "SR internal contact detail (terminals 1/2/5) is drawn in a dashed optional block; exact internal switching orientation is partially schematic — traced terminal-to-terminal as shown.",
+    "Ground jumper between fan motor ground and supply ground/GND lug assumed via the drawn ground symbol path; equipment ground bus continuity to GND. terminal not fully legible.",
+    "Note 5: where supply is 230V + neutral, connect contactor L2 to neutral — not a physical wire on the diagram."
+  ]
+}

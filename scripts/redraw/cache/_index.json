@@ -1,41 +1,56 @@
 {
-  "generated_from": "/tmp/carrier/batch-ac.json",
+  "generated_from": "/tmp/lib/batch-ac2.json",
   "counts": {
-    "traced": 3,
+    "traced": 5,
     "invalid": 1
   },
   "results": [
     {
-      "key": "CARRIER:24ABC6",
+      "key": "CARRIER:24ACA4",
       "status": "traced",
-      "comps": 13,
-      "nets": 18,
-      "tokens": "6485/3835",
+      "comps": 5,
+      "nets": 13,
+      "tokens": "8591/2306",
+      "notes": 4
+    },
+    {
+      "key": "CARRIER:24AHA4",
+      "status": "traced",
+      "comps": 5,
+      "nets": 5,
+      "tokens": "8591/1662",
+      "notes": 4
+    },
+    {
+      "key": "BRYANT:561C",
+      "status": "traced",
+      "comps": 18,
+      "nets": 24,
+      "tokens": "8588/5097",
+      "notes": 8
+    },
+    {
+      "key": "CARRIER:CSA660",
+      "status": "traced",
+      "comps": 17,
+      "nets": 35,
+      "tokens": "8590/5969",
       "notes": 7
     },
     {
-      "key": "CARRIER:24ACB4",
-      "status": "traced",
-      "comps": 15,
-      "nets": 22,
-      "tokens": "6485/3977",
-      "notes": 6
-    },
-    {
-      "key": "PAYNE:PA4SAN5",
+      "key": "GOODMAN:GSX16",
       "status": "invalid",
       "errors": [
-        "net \"n7\" has <2 endpoints",
-        "net \"n8\" has <2 endpoints",
-        "net \"n9\" has <2 endpoints"
+        "net \"n1\" has <2 endpoints",
+        "net \"n2\" has <2 endpoints"
       ]
     },
     {
-      "key": "PAYNE:PA13NA",
+      "key": "YORK:YCG",
       "status": "traced",
-      "comps": 14,
-      "nets": 21,
-      "tokens": "6485/3499",
+      "comps": 13,
+      "nets": 22,
+      "tokens": "8587/4586",
       "notes": 5
     }
   ]

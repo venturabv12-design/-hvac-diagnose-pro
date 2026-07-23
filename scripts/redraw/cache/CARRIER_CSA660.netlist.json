@@ -1,0 +1,942 @@
+{
+  "model_key": "CARRIER:CSA660",
+  "circuit_type": "full",
+  "schema_version": "1",
+  "source_ref": {
+    "doc_title": "345082-101 REV. A — (C,H,T)SA660GKB Split System Horizontal Air Conditioner",
+    "page": 3
+  },
+  "components": [
+    {
+      "id": "PWR",
+      "kind": "terminal-block",
+      "label": "208/230V 1Ph Power Supply"
+    },
+    {
+      "id": "CONT",
+      "kind": "contactor",
+      "label": "Contactor (CONT)"
+    },
+    {
+      "id": "COMP",
+      "kind": "compressor",
+      "label": "Compressor (COMP)"
+    },
+    {
+      "id": "CAP",
+      "kind": "capacitor",
+      "label": "Dual Run Capacitor (CAP)"
+    },
+    {
+      "id": "OFM",
+      "kind": "fan-motor",
+      "label": "Outdoor Fan Motor (ECM)"
+    },
+    {
+      "id": "CH",
+      "kind": "other",
+      "label": "Crankcase Heater (*CH)"
+    },
+    {
+      "id": "CHS",
+      "kind": "switch",
+      "label": "Crankcase Heater Switch (*CHS)"
+    },
+    {
+      "id": "SR",
+      "kind": "relay",
+      "label": "Start Relay (*SR)"
+    },
+    {
+      "id": "SC",
+      "kind": "capacitor",
+      "label": "Start Capacitor (*SC)"
+    },
+    {
+      "id": "ST",
+      "kind": "other",
+      "label": "Start Thermistor (*ST)"
+    },
+    {
+      "id": "BOARD",
+      "kind": "board",
+      "label": "Defrost Control Board (CB)"
+    },
+    {
+      "id": "LPS",
+      "kind": "switch",
+      "label": "Low Pressure Switch (*LPS)"
+    },
+    {
+      "id": "HPS",
+      "kind": "switch",
+      "label": "High Pressure Switch (*HPS)"
+    },
+    {
+      "id": "OCT",
+      "kind": "sensor",
+      "label": "Outdoor Coil Thermistor (OCT)"
+    },
+    {
+      "id": "OAT",
+      "kind": "sensor",
+      "label": "Outdoor Air Thermistor (OAT)"
+    },
+    {
+      "id": "IDU",
+      "kind": "terminal-block",
+      "label": "To Indoor Unit"
+    },
+    {
+      "id": "GND",
+      "kind": "other",
+      "label": "Equipment Ground"
+    }
+  ],
+  "terminals": [
+    {
+      "component": "PWR",
+      "id": "L1"
+    },
+    {
+      "component": "PWR",
+      "id": "L2"
+    },
+    {
+      "component": "CONT",
+      "id": "11"
+    },
+    {
+      "component": "CONT",
+      "id": "21"
+    },
+    {
+      "component": "CONT",
+      "id": "23L"
+    },
+    {
+      "component": "CONT",
+      "id": "23R"
+    },
+    {
+      "component": "CONT",
+      "id": "C1",
+      "label": "C"
+    },
+    {
+      "component": "CONT",
+      "id": "C2",
+      "label": "C"
+    },
+    {
+      "component": "COMP",
+      "id": "C"
+    },
+    {
+      "component": "COMP",
+      "id": "R"
+    },
+    {
+      "component": "COMP",
+      "id": "S"
+    },
+    {
+      "component": "CAP",
+      "id": "H"
+    },
+    {
+      "component": "CAP",
+      "id": "C"
+    },
+    {
+      "component": "CAP",
+      "id": "F"
+    },
+    {
+      "component": "OFM",
+      "id": "L1"
+    },
+    {
+      "component": "OFM",
+      "id": "L2"
+    },
+    {
+      "component": "OFM",
+      "id": "GND"
+    },
+    {
+      "component": "CH",
+      "id": "1"
+    },
+    {
+      "component": "CH",
+      "id": "2"
+    },
+    {
+      "component": "CHS",
+      "id": "1"
+    },
+    {
+      "component": "CHS",
+      "id": "2"
+    },
+    {
+      "component": "SR",
+      "id": "1"
+    },
+    {
+      "component": "SR",
+      "id": "2"
+    },
+    {
+      "component": "SR",
+      "id": "5"
+    },
+    {
+      "component": "SC",
+      "id": "1"
+    },
+    {
+      "component": "SC",
+      "id": "2"
+    },
+    {
+      "component": "ST",
+      "id": "1"
+    },
+    {
+      "component": "ST",
+      "id": "2"
+    },
+    {
+      "component": "BOARD",
+      "id": "L1"
+    },
+    {
+      "component": "BOARD",
+      "id": "L2"
+    },
+    {
+      "component": "BOARD",
+      "id": "C1",
+      "label": "C"
+    },
+    {
+      "component": "BOARD",
+      "id": "C2",
+      "label": "C"
+    },
+    {
+      "component": "BOARD",
+      "id": "CC1",
+      "label": "CC-1"
+    },
+    {
+      "component": "BOARD",
+      "id": "CC3",
+      "label": "CC-3"
+    },
+    {
+      "component": "BOARD",
+      "id": "HPS1",
+      "label": "HPS-1"
+    },
+    {
+      "component": "BOARD",
+      "id": "HPS2",
+      "label": "HPS-2"
+    },
+    {
+      "component": "BOARD",
+      "id": "LPS1",
+      "label": "LPS-1"
+    },
+    {
+      "component": "BOARD",
+      "id": "LPS2",
+      "label": "LPS-2"
+    },
+    {
+      "component": "BOARD",
+      "id": "VS"
+    },
+    {
+      "component": "BOARD",
+      "id": "VR"
+    },
+    {
+      "component": "BOARD",
+      "id": "ODF"
+    },
+    {
+      "component": "BOARD",
+      "id": "OCT-1",
+      "label": "OCT"
+    },
+    {
+      "component": "BOARD",
+      "id": "OCT-2",
+      "label": "OCT"
+    },
+    {
+      "component": "BOARD",
+      "id": "OAT-1",
+      "label": "OAT"
+    },
+    {
+      "component": "BOARD",
+      "id": "OAT-2",
+      "label": "OAT"
+    },
+    {
+      "component": "BOARD",
+      "id": "R",
+      "label": "R"
+    },
+    {
+      "component": "BOARD",
+      "id": "C",
+      "label": "C"
+    },
+    {
+      "component": "BOARD",
+      "id": "Y",
+      "label": "Y"
+    },
+    {
+      "component": "BOARD",
+      "id": "LS",
+      "label": "LS"
+    },
+    {
+      "component": "BOARD",
+      "id": "W2",
+      "label": "W2"
+    },
+    {
+      "component": "BOARD",
+      "id": "O",
+      "label": "O"
+    },
+    {
+      "component": "LPS",
+      "id": "1"
+    },
+    {
+      "component": "LPS",
+      "id": "2"
+    },
+    {
+      "component": "HPS",
+      "id": "1"
+    },
+    {
+      "component": "HPS",
+      "id": "2"
+    },
+    {
+      "component": "OCT",
+      "id": "1"
+    },
+    {
+      "component": "OCT",
+      "id": "2"
+    },
+    {
+      "component": "OAT",
+      "id": "1"
+    },
+    {
+      "component": "OAT",
+      "id": "2"
+    },
+    {
+      "component": "IDU",
+      "id": "R"
+    },
+    {
+      "component": "IDU",
+      "id": "C"
+    },
+    {
+      "component": "IDU",
+      "id": "Y"
+    },
+    {
+      "component": "IDU",
+      "id": "LS"
+    },
+    {
+      "component": "IDU",
+      "id": "W2"
+    },
+    {
+      "component": "IDU",
+      "id": "O"
+    },
+    {
+      "component": "GND",
+      "id": "GND"
+    }
+  ],
+  "nets": [
+    {
+      "id": "n1",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "plain": "One leg of 240-volt power to the contactor",
+      "endpoints": [
+        {
+          "component": "PWR",
+          "terminal": "L1"
+        },
+        {
+          "component": "CONT",
+          "terminal": "11"
+        }
+      ]
+    },
+    {
+      "id": "n2",
+      "voltage_class": "line",
+      "plain": "Other leg of 240-volt power to the contactor",
+      "endpoints": [
+        {
+          "component": "PWR",
+          "terminal": "L2"
+        },
+        {
+          "component": "CONT",
+          "terminal": "21"
+        }
+      ]
+    },
+    {
+      "id": "n3",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "plain": "Switched power leg out of the contactor to the compressor",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "23L"
+        },
+        {
+          "component": "COMP",
+          "terminal": "C"
+        }
+      ]
+    },
+    {
+      "id": "n4",
+      "voltage_class": "line",
+      "wire_color": "yellow",
+      "plain": "Switched power leg out of the contactor to the run capacitor",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "23R"
+        },
+        {
+          "component": "CAP",
+          "terminal": "C"
+        }
+      ]
+    },
+    {
+      "id": "n5",
+      "voltage_class": "start-winding",
+      "wire_color": "yellow",
+      "plain": "Run capacitor to the compressor run terminal",
+      "endpoints": [
+        {
+          "component": "CAP",
+          "terminal": "H"
+        },
+        {
+          "component": "COMP",
+          "terminal": "R"
+        }
+      ]
+    },
+    {
+      "id": "n6",
+      "voltage_class": "start-winding",
+      "wire_color": "blue",
+      "plain": "Run capacitor to the compressor start terminal",
+      "endpoints": [
+        {
+          "component": "CAP",
+          "terminal": "C"
+        },
+        {
+          "component": "COMP",
+          "terminal": "S"
+        }
+      ]
+    },
+    {
+      "id": "n7",
+      "voltage_class": "start-winding",
+      "wire_color": "blue",
+      "plain": "Run capacitor fan terminal to the outdoor fan motor",
+      "endpoints": [
+        {
+          "component": "CAP",
+          "terminal": "F"
+        },
+        {
+          "component": "OFM",
+          "terminal": "L2"
+        }
+      ]
+    },
+    {
+      "id": "n8",
+      "voltage_class": "line",
+      "wire_color": "yellow",
+      "plain": "Power leg to the outdoor fan motor",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "23R"
+        },
+        {
+          "component": "OFM",
+          "terminal": "L1"
+        }
+      ]
+    },
+    {
+      "id": "n9",
+      "voltage_class": "start-winding",
+      "wire_color": "blue",
+      "plain": "Start relay to the compressor start winding branch",
+      "endpoints": [
+        {
+          "component": "SR",
+          "terminal": "1"
+        },
+        {
+          "component": "COMP",
+          "terminal": "S"
+        }
+      ]
+    },
+    {
+      "id": "n10",
+      "voltage_class": "start-winding",
+      "wire_color": "brown",
+      "plain": "Start relay to start capacitor",
+      "endpoints": [
+        {
+          "component": "SR",
+          "terminal": "2"
+        },
+        {
+          "component": "SC",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n11",
+      "voltage_class": "start-winding",
+      "plain": "Start relay coil terminal in the start circuit",
+      "endpoints": [
+        {
+          "component": "SR",
+          "terminal": "5"
+        },
+        {
+          "component": "SC",
+          "terminal": "2"
+        }
+      ]
+    },
+    {
+      "id": "n12",
+      "voltage_class": "start-winding",
+      "wire_color": "yellow",
+      "plain": "Start capacitor / start thermistor branch",
+      "endpoints": [
+        {
+          "component": "SC",
+          "terminal": "2"
+        },
+        {
+          "component": "ST",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n13",
+      "voltage_class": "start-winding",
+      "wire_color": "yellow",
+      "plain": "Start thermistor to the compressor run terminal",
+      "endpoints": [
+        {
+          "component": "ST",
+          "terminal": "2"
+        },
+        {
+          "component": "COMP",
+          "terminal": "R"
+        }
+      ]
+    },
+    {
+      "id": "n14",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "plain": "One line leg to the crankcase heater switch",
+      "endpoints": [
+        {
+          "component": "PWR",
+          "terminal": "L1"
+        },
+        {
+          "component": "CHS",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n15",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "plain": "Crankcase heater switch to the crankcase heater",
+      "endpoints": [
+        {
+          "component": "CHS",
+          "terminal": "2"
+        },
+        {
+          "component": "CH",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n16",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "plain": "Crankcase heater return to the other line leg",
+      "endpoints": [
+        {
+          "component": "CH",
+          "terminal": "2"
+        },
+        {
+          "component": "PWR",
+          "terminal": "L2"
+        }
+      ]
+    },
+    {
+      "id": "n17",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "plain": "Line power leg feeding the defrost control board",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "11"
+        },
+        {
+          "component": "BOARD",
+          "terminal": "L1"
+        }
+      ]
+    },
+    {
+      "id": "n18",
+      "voltage_class": "line",
+      "plain": "Second line leg feeding the defrost control board",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "21"
+        },
+        {
+          "component": "BOARD",
+          "terminal": "L2"
+        }
+      ]
+    },
+    {
+      "id": "n19",
+      "voltage_class": "low-voltage",
+      "plain": "Board contactor-coil output to the contactor coil",
+      "endpoints": [
+        {
+          "component": "BOARD",
+          "terminal": "CC1"
+        },
+        {
+          "component": "CONT",
+          "terminal": "C1"
+        }
+      ]
+    },
+    {
+      "id": "n20",
+      "voltage_class": "low-voltage",
+      "plain": "Contactor coil return to the board",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "C2"
+        },
+        {
+          "component": "BOARD",
+          "terminal": "CC3"
+        }
+      ]
+    },
+    {
+      "id": "n21",
+      "voltage_class": "low-voltage",
+      "wire_color": "blue",
+      "plain": "Low-pressure safety switch to the board",
+      "endpoints": [
+        {
+          "component": "BOARD",
+          "terminal": "LPS1"
+        },
+        {
+          "component": "LPS",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n22",
+      "voltage_class": "low-voltage",
+      "wire_color": "blue",
+      "plain": "Low-pressure safety switch return to the board",
+      "endpoints": [
+        {
+          "component": "LPS",
+          "terminal": "2"
+        },
+        {
+          "component": "BOARD",
+          "terminal": "LPS2"
+        }
+      ]
+    },
+    {
+      "id": "n23",
+      "voltage_class": "low-voltage",
+      "wire_color": "blue/pink",
+      "plain": "High-pressure safety switch to the board",
+      "endpoints": [
+        {
+          "component": "BOARD",
+          "terminal": "HPS1"
+        },
+        {
+          "component": "HPS",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n24",
+      "voltage_class": "low-voltage",
+      "wire_color": "blue/pink",
+      "plain": "High-pressure safety switch return to the board",
+      "endpoints": [
+        {
+          "component": "HPS",
+          "terminal": "2"
+        },
+        {
+          "component": "BOARD",
+          "terminal": "HPS2"
+        }
+      ]
+    },
+    {
+      "id": "n25",
+      "voltage_class": "signal",
+      "wire_color": "brown",
+      "plain": "Outdoor coil temperature sensor to the board",
+      "endpoints": [
+        {
+          "component": "BOARD",
+          "terminal": "OCT-1"
+        },
+        {
+          "component": "OCT",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n26",
+      "voltage_class": "signal",
+      "wire_color": "brown",
+      "plain": "Outdoor coil temperature sensor return to the board",
+      "endpoints": [
+        {
+          "component": "OCT",
+          "terminal": "2"
+        },
+        {
+          "component": "BOARD",
+          "terminal": "OCT-2"
+        }
+      ]
+    },
+    {
+      "id": "n27",
+      "voltage_class": "signal",
+      "wire_color": "black",
+      "plain": "Outdoor air temperature sensor to the board",
+      "endpoints": [
+        {
+          "component": "BOARD",
+          "terminal": "OAT-1"
+        },
+        {
+          "component": "OAT",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n28",
+      "voltage_class": "signal",
+      "wire_color": "black",
+      "plain": "Outdoor air temperature sensor return to the board",
+      "endpoints": [
+        {
+          "component": "OAT",
+          "terminal": "2"
+        },
+        {
+          "component": "BOARD",
+          "terminal": "OAT-2"
+        }
+      ]
+    },
+    {
+      "id": "n29",
+      "voltage_class": "low-voltage",
+      "plain": "24-volt R from indoor unit to the board",
+      "endpoints": [
+        {
+          "component": "IDU",
+          "terminal": "R"
+        },
+        {
+          "component": "BOARD",
+          "terminal": "R"
+        }
+      ]
+    },
+    {
+      "id": "n30",
+      "voltage_class": "low-voltage",
+      "plain": "24-volt common from indoor unit to the board",
+      "endpoints": [
+        {
+          "component": "IDU",
+          "terminal": "C"
+        },
+        {
+          "component": "BOARD",
+          "terminal": "C"
+        }
+      ]
+    },
+    {
+      "id": "n31",
+      "voltage_class": "low-voltage",
+      "plain": "Cooling call Y from indoor unit to the board",
+      "endpoints": [
+        {
+          "component": "IDU",
+          "terminal": "Y"
+        },
+        {
+          "component": "BOARD",
+          "terminal": "Y"
+        }
+      ]
+    },
+    {
+      "id": "n32",
+      "voltage_class": "low-voltage",
+      "plain": "Liquid-line solenoid signal to the board",
+      "endpoints": [
+        {
+          "component": "IDU",
+          "terminal": "LS"
+        },
+        {
+          "component": "BOARD",
+          "terminal": "LS"
+        }
+      ]
+    },
+    {
+      "id": "n33",
+      "voltage_class": "low-voltage",
+      "plain": "Second-stage W2 from indoor unit to the board",
+      "endpoints": [
+        {
+          "component": "IDU",
+          "terminal": "W2"
+        },
+        {
+          "component": "BOARD",
+          "terminal": "W2"
+        }
+      ]
+    },
+    {
+      "id": "n34",
+      "voltage_class": "low-voltage",
+      "plain": "Reversing-valve O signal to the board",
+      "endpoints": [
+        {
+          "component": "IDU",
+          "terminal": "O"
+        },
+        {
+          "component": "BOARD",
+          "terminal": "O"
+        }
+      ]
+    },
+    {
+      "id": "n35",
+      "voltage_class": "ground",
+      "wire_color": "green/yellow",
+      "plain": "Equipment ground to the outdoor fan motor",
+      "endpoints": [
+        {
+          "component": "GND",
+          "terminal": "GND"
+        },
+        {
+          "component": "OFM",
+          "terminal": "GND"
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Diagram contains both a Connection Diagram and a Schematic (ladder) form; the netlist consolidates the visible conductors from both.",
+    "*CH, *CHS, *SR, *SC, *ST, *HPS, *LPS are marked 'may be factory or field installed' — traced as shown.",
+    "Start relay (*SR) internal pin numbering (1,2,5) and its exact tie into the start winding are partly overlapped/illegible in the photo; start-circuit nets n9-n13 are best-effort and should be field-verified.",
+    "Board VS, VR and ODF terminals and the LLSR / K4 / ODFR logic outputs are shown on the schematic but their field wiring destinations were not clearly traceable in this image — omitted rather than guessed.",
+    "PL2/PL3/PL4/PL5 plug connectors and internal board conductor routing (CC, HP, C, RVS, DEFROST TIME, QUIET SHIFT, UTIL headers) are internal to the board and not traced as discrete field nets.",
+    "Optional non-communicating control block (R,C,Y,LS,W2,O per Note 13) and communicating DX+/DX- connections were not fully legible — not traced.",
+    "Exact contactor auxiliary/coil terminal designations (C, 11, 21, 23) read from the drawing; coil supply path through the board (5-minute short-cycle protector) assumed per NOTE text."
+  ]
+}

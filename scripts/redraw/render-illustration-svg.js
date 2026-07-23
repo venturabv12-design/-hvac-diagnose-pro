@@ -87,6 +87,10 @@ function roleOf(c){
   if(k==='board'&&(id==='CTD'||lbl.includes('delay'))) return 'ctd';
   if(id==='CH'||lbl.includes('crankcase heater')) return 'heater';
   if(id==='LLS'||lbl.includes('liquid line')) return 'solenoid';
+  // NOTE: start-assist (SR/SC/ST), crankcase heater, IFR are factory-OPTIONAL (*) parts — usually
+  // NOT on the base unit. Per Brandon (option A), Mike shows what's ACTUALLY on the equipment, so these
+  // return null (not drawn). Drawers pStartRelay/pStartCap/pStartThermistor/pIFR are kept for units that
+  // truly have them, but are off by default.
   return null;
 }
 
@@ -273,6 +277,42 @@ function pSolenoid(x,y,comp){
   return {body:b.join(''),terms:[{key:'1',x:x,y:y+h/2,dir:'left',pad:'small'},{key:'2',x:x+w,y:y+h/2,dir:'right',pad:'small'}]};
 }
 
+// ── START-ASSIST parts (help a compressor start under load; factory-optional) ──
+function pStartRelay(x,y){
+  const w=84,h=52,b=[];
+  b.push(`<rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="6" fill="#fff" stroke="#7a4a1e" stroke-width="2.2"/>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+h/2-3)}" text-anchor="middle" font-size="10.5" font-weight="800" fill="#0b0d10">START</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+h/2+10)}" text-anchor="middle" font-size="8.5" fill="#66707d">relay</text>`);
+  return {body:b.join(''),terms:[
+    {key:'1',x:x,y:y+13,dir:'left',pad:'small',label:'1',ldx:11,ldy:3,lsize:8},
+    {key:'2',x:x,y:y+h-13,dir:'left',pad:'small',label:'2',ldx:11,ldy:3,lsize:8},
+    {key:'5',x:x+w,y:y+h/2,dir:'right',pad:'small',label:'5',ldx:-11,ldy:3,lsize:8},
+  ]};
+}
+function pStartCap(x,y){
+  const w=46,h=54,b=[];
+  b.push(`<rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="9" fill="#eef1f5" stroke="#11141a" stroke-width="2"/>`);
+  b.push(`<line x1="${f1(x+8)}" y1="${f1(y+22)}" x2="${f1(x+w-8)}" y2="${f1(y+22)}" stroke="#11141a" stroke-width="2"/>`);
+  b.push(`<line x1="${f1(x+8)}" y1="${f1(y+30)}" x2="${f1(x+w-8)}" y2="${f1(y+30)}" stroke="#11141a" stroke-width="2"/>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y-6)}" text-anchor="middle" font-size="9" font-weight="800" fill="#0b0d10">START CAP</text>`);
+  return {body:b.join(''),terms:[{key:'1',x:x+w/2,y:y,dir:'up',pad:'small'},{key:'2',x:x+w/2,y:y+h,dir:'down',pad:'small'}]};
+}
+function pStartThermistor(x,y){
+  const w=52,h=40,b=[];
+  b.push(`<rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="6" fill="#fff" stroke="#11141a" stroke-width="2"/>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+h/2+1)}" text-anchor="middle" font-size="10" font-weight="800" fill="#0b0d10">PTC</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y-6)}" text-anchor="middle" font-size="8.5" fill="#66707d">start thermistor</text>`);
+  return {body:b.join(''),terms:[
+    {key:'T1',x:x,y:y+h/2,dir:'left',pad:'small'},{key:'T2',x:x+w,y:y+h/2,dir:'right',pad:'small'}]};
+}
+function pIFR(x,y){
+  const w=84,h=44,b=[];
+  b.push(`<rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="6" fill="#fff" stroke="#0f8a7e" stroke-width="2"/>`);
+  for(let i=8;i<w-6;i+=10) b.push(`<path d="M ${f1(x+i)} ${f1(y+h/2)} q 2.5 -5 5 0" fill="none" stroke="#0f8a7e" stroke-width="1.4"/>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y-6)}" text-anchor="middle" font-size="9" font-weight="800" fill="#0b0d10">INDOOR FAN RELAY</text>`);
+  return {body:b.join(''),terms:[{key:'1',x:x,y:y+h/2,dir:'left',pad:'small'},{key:'2',x:x+w,y:y+h/2,dir:'right',pad:'small'}]};
+}
+
 // 24V control power arriving FROM THE INDOOR UNIT (no onboard transformer on a straight-cool condenser).
 function pSource(x,y){
   const w=140,h=56,b=[];
@@ -286,12 +326,12 @@ function pSource(x,y){
   return {body:b.join(''),terms:T,alias:{'Y':'R','24V':'R','COM':'C','COMMON':'C'}};
 }
 
-const ROLE_BODY={ contactor:pContactor, compressor:pCompressor, runcap:pRunCap, fan:pFan, xfmr:pXfmr, power:pPower, switch:pSwitch, ctd:pCtd, tstat:pTstat, heater:pHeater, solenoid:pSolenoid, source:pSource };
+const ROLE_BODY={ contactor:pContactor, compressor:pCompressor, runcap:pRunCap, fan:pFan, xfmr:pXfmr, power:pPower, switch:pSwitch, ctd:pCtd, tstat:pTstat, heater:pHeater, solenoid:pSolenoid, source:pSource, startrelay:pStartRelay, startcap:pStartCap, startsensor:pStartThermistor, ifr:pIFR };
 
 const ZONES={
   power:{x:44,y:196}, contactor:{x:210,y:176}, runcap:{x:560,y:380}, compressor:{x:900,y:186}, fan:{x:906,y:404},
   xfmr:{x:250,y:632}, source:{x:60,y:690}, tstat:{x:60,y:690}, ctd:{x:856,y:664}, heater:{x:640,y:196}, solenoid:{x:512,y:812},
-  startcap:{x:520,y:196}, startrelay:{x:648,y:196}, startsensor:{x:520,y:300},
+  startrelay:{x:120,y:456}, startcap:{x:264,y:452}, startsensor:{x:352,y:460}, ifr:{x:236,y:786},
 };
 const CHS_POS={ x:470, y:200 };            // crankcase heater switch — line zone, next to its heater
 const SWITCH_ROW={ startX:308, y:690, dx:188 };  // LPS / DTS / HPS row in the 24V control zone

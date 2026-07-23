@@ -24,6 +24,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const fsExistsSafe = (p) => { try { return typeof p === 'string' && p.length < 4096 && fs.existsSync(p); } catch { return false; } };
 
 const SCHEMA = JSON.parse(fs.readFileSync(path.join(__dirname, 'netlist-schema.json'), 'utf8'));
 const MODEL = process.env.MIKE_MODEL || 'claude-opus-4-8';
@@ -66,10 +67,16 @@ const SYSTEM = [
   'Prefer COMPLETE, fully-connected tracing over cosmetic detail — but never invent a connection that is not drawn. Return ONLY the tool call.',
 ].join('\n');
 
-// ── Image loading: local path OR http(s) URL → {media_type, data(base64)} ─────
+// ── Image loading: data-URL / raw base64 / local path / http(s) URL → {media_type, data(base64)} ─────
 async function loadImage(imageRef) {
   let buf, contentType;
-  if (/^https?:\/\//i.test(imageRef)) {
+  // data URL from a client upload: data:image/png;base64,XXXX  (also tolerates raw base64)
+  const dm = typeof imageRef === 'string' && imageRef.match(/^data:(image\/[a-z+]+);base64,(.*)$/i);
+  if (dm) {
+    contentType = dm[1].toLowerCase(); buf = Buffer.from(dm[2], 'base64');
+  } else if (typeof imageRef === 'string' && /^[A-Za-z0-9+/=\s]+$/.test(imageRef) && imageRef.length > 256 && !/^https?:\/\//i.test(imageRef) && !fsExistsSafe(imageRef)) {
+    buf = Buffer.from(imageRef.replace(/\s+/g, ''), 'base64'); contentType = '';
+  } else if (/^https?:\/\//i.test(imageRef)) {
     const r = await fetch(imageRef, {
       headers: {
         // OEM manual hosts (Cloudflare) 520 a bare fetch — send a real UA.

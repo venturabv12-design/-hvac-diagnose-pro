@@ -9,6 +9,10 @@ const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const helmet = require('helmet');
 
+// Diagram-redraw engine — traces an uploaded wiring diagram and renders a clean illustration.
+const { extractNetlist, sanitizeNetlist, validateNetlist } = require('./scripts/redraw/extract-netlist.js');
+const { renderIllustrationSVG, roleOf } = require('./scripts/redraw/render-illustration-svg.js');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -1373,6 +1377,60 @@ app.get('/api/library/admin/unverified', authenticateToken, requireAdmin, async 
   } catch (e) {
     console.error('library admin list error:', e.message);
     res.json({ diagrams: [] });
+  }
+});
+
+// POST /api/redraw — a tech uploads a photo of a wiring diagram; Mike traces it and returns a clean,
+// simplified illustration (SVG). Checks the SHARED library first (do-once — instant + free on a hit);
+// on a miss, runs the redraw engine, SAVES the result to the shared library so the next tech on that
+// model gets it instantly, then returns it. Body: { image (data-URL or base64), brand, model, circuit? }
+app.post('/api/redraw', aiLimiter, authenticateToken, async (req, res) => {
+  if (!ANTHROPIC_API_KEY) return res.status(503).json({ ok: false, error: 'Redraw is unavailable right now.' });
+  try {
+    const { image, brand, model, circuit } = req.body || {};
+    if (!image || !model) return res.json({ ok: false, error: 'A photo of the diagram and the model number are both needed.' });
+    const model_key = normalizeModelKey(brand, model);
+    if (!model_key) return res.json({ ok: false, error: 'Could not read that model number.' });
+    const ct = circuit || 'full';
+
+    // 1) shared-library cache hit → serve instantly (do-once per model, free)
+    if (SUPABASE_URL) {
+      const cached = await supabase('GET', 'library_diagrams', null,
+        `?model_key=eq.${encodeURIComponent(model_key)}&circuit_type=eq.${encodeURIComponent(ct)}&source=eq.mike-svg&order=verified.desc,created_at.desc&limit=1`);
+      if (cached && cached[0] && cached[0].svg) {
+        return res.json({ ok: true, model_key, svg: cached[0].svg, cached: true, verified: !!cached[0].verified });
+      }
+    }
+
+    // 2) miss → trace the uploaded diagram (vision)
+    let out;
+    try { out = await extractNetlist(image, { modelKey: model_key, circuitType: ct, apiKey: ANTHROPIC_API_KEY }); }
+    catch (e) { console.error('redraw trace error:', e.message); return res.json({ ok: false, error: "Couldn't read that photo — try a clearer, straight-on shot of the whole wiring diagram." }); }
+
+    // wire-level fail-toward-distrust + gates (same discipline as the batch library)
+    const netlist = sanitizeNetlist(out.netlist);
+    if (!validateNetlist(netlist).ok) return res.json({ ok: false, error: 'That diagram was too unclear to redraw — try a sharper photo.' });
+    const roles = netlist.components.map(c => roleOf(c)).filter(Boolean);
+    const core = ['contactor', 'compressor', 'runcap', 'fan'].filter(r => roles.includes(r));
+    if (core.length < 4) return res.json({ ok: false, error: 'Not enough of the circuit was legible — get the whole diagram in frame, closer and straight-on.' });
+    const svg = renderIllustrationSVG(netlist);
+
+    // 3) save to the SHARED library (best-effort) so the next tech on this model gets it instant
+    if (SUPABASE_URL) {
+      try {
+        const who = req.user.email || req.user.id;
+        const haveModel = await supabase('GET', 'library_models', null, `?model_key=eq.${encodeURIComponent(model_key)}&select=model_key&limit=1`);
+        if (!(haveModel && haveModel[0])) {
+          await supabase('POST', 'library_models', { model_key, model_raw: model, brand: (brand || null), family: _extractModelFamily(model), updated_at: new Date().toISOString(), created_by: who });
+        }
+        await supabase('POST', 'library_diagrams', { model_key, circuit_type: ct, source: 'mike-svg', svg, verified: false, created_by: who });
+      } catch (e) { console.error('redraw save (non-fatal):', e.message); }
+    }
+
+    res.json({ ok: true, model_key, svg, cached: false });
+  } catch (e) {
+    console.error('redraw error:', e.message);
+    res.json({ ok: false, error: 'Redraw failed — please try again.' });
   }
 });
 

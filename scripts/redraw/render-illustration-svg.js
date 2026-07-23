@@ -456,8 +456,12 @@ function renderIllustrationSVG(netlist){
   });
 
   // ── emit part bodies + ONLY the pads that carry a wire (no dangling terminals) ──
+  //    Skip a part entirely if NONE of its terminals carry a wire — a fully-orphaned
+  //    part (e.g. a safety switch whose 24V wasn't traced) is a floating box that reads
+  //    as broken; better to omit it than draw it disconnected.
   const partSvg=[];
   bodies.forEach(p=>{
+    if(!p.terms.some(t=>liveTerm.has(epKey(p.cid,t.key)))) return;
     partSvg.push(`<g data-part="${escapeXml(p.cid)}">${p.body}`);
     p.terms.forEach(t=>{ if(liveTerm.has(epKey(p.cid,t.key))) partSvg.push(padSvg(t,true)); });
     partSvg.push('</g>');

@@ -1,0 +1,487 @@
+{
+  "model_key": "ICP:NXA4",
+  "circuit_type": "full",
+  "components": [
+    {
+      "id": "SUPPLY",
+      "kind": "terminal-block",
+      "label": "460 3-Phase Power Supply"
+    },
+    {
+      "id": "GND",
+      "kind": "terminal-block",
+      "label": "Equipment Ground"
+    },
+    {
+      "id": "CONTACTOR",
+      "kind": "contactor",
+      "label": "Contactor"
+    },
+    {
+      "id": "COMP",
+      "kind": "compressor",
+      "label": "Compressor"
+    },
+    {
+      "id": "OFM",
+      "kind": "fan-motor",
+      "label": "Outdoor Fan Motor"
+    },
+    {
+      "id": "CAP",
+      "kind": "capacitor",
+      "label": "Fan Run Capacitor"
+    },
+    {
+      "id": "XFMR",
+      "kind": "transformer",
+      "label": "Control Transformer (PRM)"
+    },
+    {
+      "id": "LPS",
+      "kind": "switch",
+      "label": "Low-Pressure Safety Switch"
+    },
+    {
+      "id": "HPS",
+      "kind": "switch",
+      "label": "High-Pressure Safety Switch"
+    },
+    {
+      "id": "CTD",
+      "kind": "switch",
+      "label": "Compressor Time Delay / Temp Switch"
+    }
+  ],
+  "terminals": [
+    {
+      "component": "SUPPLY",
+      "id": "L1"
+    },
+    {
+      "component": "SUPPLY",
+      "id": "L3"
+    },
+    {
+      "component": "GND",
+      "id": "G"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "11"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "21"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "13"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "23"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "A1",
+      "label": "coil-left"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "A2",
+      "label": "coil-right"
+    },
+    {
+      "component": "COMP",
+      "id": "T1"
+    },
+    {
+      "component": "COMP",
+      "id": "T2"
+    },
+    {
+      "component": "COMP",
+      "id": "T3"
+    },
+    {
+      "component": "OFM",
+      "id": "L",
+      "label": "line"
+    },
+    {
+      "component": "OFM",
+      "id": "CAP",
+      "label": "cap-lead"
+    },
+    {
+      "component": "OFM",
+      "id": "N",
+      "label": "neutral"
+    },
+    {
+      "component": "OFM",
+      "id": "G",
+      "label": "ground"
+    },
+    {
+      "component": "CAP",
+      "id": "T1"
+    },
+    {
+      "component": "CAP",
+      "id": "T2"
+    },
+    {
+      "component": "XFMR",
+      "id": "L1",
+      "label": "L1 CONT"
+    },
+    {
+      "component": "XFMR",
+      "id": "L3",
+      "label": "L3 24"
+    },
+    {
+      "component": "XFMR",
+      "id": "L2",
+      "label": "L2 COM"
+    },
+    {
+      "component": "LPS",
+      "id": "1"
+    },
+    {
+      "component": "LPS",
+      "id": "2"
+    },
+    {
+      "component": "HPS",
+      "id": "1"
+    },
+    {
+      "component": "HPS",
+      "id": "2"
+    },
+    {
+      "component": "CTD",
+      "id": "1"
+    },
+    {
+      "component": "CTD",
+      "id": "T2"
+    }
+  ],
+  "nets": [
+    {
+      "id": "n1",
+      "voltage_class": "line",
+      "wire_color": "blue",
+      "label": "L1 to contactor pole 11",
+      "plain": "One leg of the 460-volt power feeds the contactor.",
+      "endpoints": [
+        {
+          "component": "SUPPLY",
+          "terminal": "L1"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "11"
+        }
+      ]
+    },
+    {
+      "id": "n2",
+      "voltage_class": "line",
+      "label": "L3 to contactor pole 13",
+      "plain": "Another leg of the 460-volt power feeds the contactor.",
+      "endpoints": [
+        {
+          "component": "SUPPLY",
+          "terminal": "L3"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "13"
+        }
+      ]
+    },
+    {
+      "id": "n3",
+      "voltage_class": "ground",
+      "label": "Equipment ground",
+      "plain": "Connects the cabinet to earth ground for safety.",
+      "endpoints": [
+        {
+          "component": "SUPPLY",
+          "terminal": "L3"
+        },
+        {
+          "component": "GND",
+          "terminal": "G"
+        }
+      ]
+    },
+    {
+      "id": "n4",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "Contactor 21 to compressor T1",
+      "plain": "Switched power runs to the compressor motor.",
+      "endpoints": [
+        {
+          "component": "CONTACTOR",
+          "terminal": "21"
+        },
+        {
+          "component": "COMP",
+          "terminal": "T1"
+        }
+      ]
+    },
+    {
+      "id": "n5",
+      "voltage_class": "line",
+      "wire_color": "yellow",
+      "label": "Contactor 23 to compressor T3",
+      "plain": "Switched power runs to the compressor motor.",
+      "endpoints": [
+        {
+          "component": "CONTACTOR",
+          "terminal": "23"
+        },
+        {
+          "component": "COMP",
+          "terminal": "T3"
+        }
+      ]
+    },
+    {
+      "id": "n6",
+      "voltage_class": "line",
+      "wire_color": "yellow",
+      "label": "Contactor 23 to fan cap T1",
+      "plain": "Switched power feeds the outdoor fan run capacitor.",
+      "endpoints": [
+        {
+          "component": "CONTACTOR",
+          "terminal": "23"
+        },
+        {
+          "component": "CAP",
+          "terminal": "T1"
+        }
+      ]
+    },
+    {
+      "id": "n7",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "Contactor 21 to outdoor fan motor line",
+      "plain": "Switched power runs to the outdoor fan motor.",
+      "endpoints": [
+        {
+          "component": "CONTACTOR",
+          "terminal": "21"
+        },
+        {
+          "component": "OFM",
+          "terminal": "L"
+        }
+      ]
+    },
+    {
+      "id": "n8",
+      "voltage_class": "start-winding",
+      "wire_color": "brown",
+      "label": "Outdoor fan motor cap lead to fan cap T2",
+      "plain": "Run capacitor wire to the outdoor fan motor start winding.",
+      "endpoints": [
+        {
+          "component": "OFM",
+          "terminal": "CAP"
+        },
+        {
+          "component": "CAP",
+          "terminal": "T2"
+        }
+      ]
+    },
+    {
+      "id": "n9",
+      "voltage_class": "line",
+      "wire_color": "yellow",
+      "label": "Outdoor fan motor neutral to compressor T3 leg",
+      "plain": "Return leg of the outdoor fan motor.",
+      "endpoints": [
+        {
+          "component": "OFM",
+          "terminal": "N"
+        },
+        {
+          "component": "COMP",
+          "terminal": "T3"
+        }
+      ]
+    },
+    {
+      "id": "n10",
+      "voltage_class": "ground",
+      "label": "Outdoor fan motor ground",
+      "plain": "Grounds the outdoor fan motor for safety.",
+      "endpoints": [
+        {
+          "component": "OFM",
+          "terminal": "G"
+        },
+        {
+          "component": "GND",
+          "terminal": "G"
+        }
+      ]
+    },
+    {
+      "id": "n11",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "label": "Transformer primary L1 CONT to contactor line",
+      "plain": "Line power feeds the transformer primary.",
+      "endpoints": [
+        {
+          "component": "XFMR",
+          "terminal": "L1"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "11"
+        }
+      ]
+    },
+    {
+      "id": "n12",
+      "voltage_class": "line",
+      "wire_color": "yellow",
+      "label": "Transformer primary L3 24 to line",
+      "plain": "Second line leg feeds the transformer primary.",
+      "endpoints": [
+        {
+          "component": "XFMR",
+          "terminal": "L3"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "13"
+        }
+      ]
+    },
+    {
+      "id": "n13",
+      "voltage_class": "low-voltage",
+      "wire_color": "blue",
+      "label": "Transformer L2 COM to contactor coil",
+      "plain": "Common side of 24-volt power reaches the contactor coil.",
+      "endpoints": [
+        {
+          "component": "XFMR",
+          "terminal": "L2"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "A2"
+        }
+      ]
+    },
+    {
+      "id": "n14",
+      "voltage_class": "low-voltage",
+      "wire_color": "brown/yellow",
+      "label": "Transformer L2 COM branch",
+      "plain": "Common 24-volt power runs to the safety switch string.",
+      "endpoints": [
+        {
+          "component": "XFMR",
+          "terminal": "L2"
+        },
+        {
+          "component": "HPS",
+          "terminal": "2"
+        }
+      ]
+    },
+    {
+      "id": "n15",
+      "voltage_class": "low-voltage",
+      "wire_color": "yellow/blue",
+      "label": "Transformer L1 CONT to low-pressure switch",
+      "plain": "24-volt call runs to the low-pressure safety switch.",
+      "endpoints": [
+        {
+          "component": "XFMR",
+          "terminal": "L1"
+        },
+        {
+          "component": "LPS",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n16",
+      "voltage_class": "low-voltage",
+      "wire_color": "black",
+      "label": "Contactor coil A1 to time-delay circuit",
+      "plain": "24-volt power to the contactor coil energizes the compressor.",
+      "endpoints": [
+        {
+          "component": "CONTACTOR",
+          "terminal": "A1"
+        },
+        {
+          "component": "CTD",
+          "terminal": "T2"
+        }
+      ]
+    },
+    {
+      "id": "n17",
+      "voltage_class": "low-voltage",
+      "wire_color": "brown/yellow",
+      "label": "Low-pressure switch to high-pressure switch",
+      "plain": "24-volt safety string continues to the high-pressure switch.",
+      "endpoints": [
+        {
+          "component": "LPS",
+          "terminal": "2"
+        },
+        {
+          "component": "HPS",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n18",
+      "voltage_class": "low-voltage",
+      "wire_color": "violet",
+      "label": "Contactor coil to compressor time delay",
+      "plain": "24-volt safety signal to the compressor time delay.",
+      "endpoints": [
+        {
+          "component": "CONTACTOR",
+          "terminal": "A1"
+        },
+        {
+          "component": "CTD",
+          "terminal": "1"
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Diagram is cropped at the bottom: the LPS, HPS and CTD switch bodies and their full contact wiring run below the visible edge — the series path through these safeties (LPS/HPS/CTD) could not be fully traced and is inferred only where wires are clearly visible.",
+    "Compressor T2 terminal is drawn (COM label partly cut off top-right) but its connecting conductor is not clearly visible in the crop; left unwired.",
+    "BRN/YEL and VIO leads at bottom right run off-page to the safety-switch/time-delay assembly; exact terminations beyond the visible edge are uncertain.",
+    "Contactor coil terminals labeled A1/A2 are assumed designations — the diagram shows the coil symbol without printed terminal numbers."
+  ],
+  "schema_version": "1"
+}

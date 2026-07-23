@@ -1,16 +1,82 @@
 {
-  "generated_from": "/tmp/lib/york17.json",
+  "generated_from": "/tmp/lib/batch10.json",
   "counts": {
-    "traced": 1
+    "traced": 3,
+    "incomplete": 7
   },
   "results": [
     {
-      "key": "YORK:YCG17SEER",
+      "key": "CARRIER:24SCA4",
+      "status": "traced",
+      "comps": 13,
+      "nets": 12,
+      "tokens": "6563/3547",
+      "notes": 8
+    },
+    {
+      "key": "CARRIER:27SPA6",
+      "status": "incomplete",
+      "errors": [
+        "missing core: only [contactor,fan]"
+      ]
+    },
+    {
+      "key": "TEMPSTAR:26SCA4",
+      "status": "incomplete",
+      "errors": [
+        "missing core: only [contactor,fan]"
+      ]
+    },
+    {
+      "key": "TEMPSTAR:26SCA5",
+      "status": "incomplete",
+      "errors": [
+        "missing core: only [fan]"
+      ]
+    },
+    {
+      "key": "HEIL:135SAN",
+      "status": "incomplete",
+      "errors": [
+        "missing core: only [contactor,fan]"
+      ]
+    },
+    {
+      "key": "COMFORTMAKER:146SAN",
       "status": "traced",
       "comps": 14,
-      "nets": 23,
-      "tokens": "8065/4401",
-      "notes": 5
+      "nets": 26,
+      "tokens": "6566/4705",
+      "notes": 6
+    },
+    {
+      "key": "PAYNE:PA4SAN5",
+      "status": "incomplete",
+      "errors": [
+        "missing core: only [contactor,fan]"
+      ]
+    },
+    {
+      "key": "ICP:N4A",
+      "status": "incomplete",
+      "errors": [
+        "missing core: only []"
+      ]
+    },
+    {
+      "key": "ICP:NXA4",
+      "status": "traced",
+      "comps": 10,
+      "nets": 18,
+      "tokens": "6560/3973",
+      "notes": 4
+    },
+    {
+      "key": "CARRIER:38ESA",
+      "status": "incomplete",
+      "errors": [
+        "missing core: only []"
+      ]
     }
   ]
 }

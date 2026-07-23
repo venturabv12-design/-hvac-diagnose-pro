@@ -1,16 +1,16 @@
 {
-  "generated_from": "/tmp/lib/goodman.json",
+  "generated_from": "/tmp/lib/york17.json",
   "counts": {
     "traced": 1
   },
   "results": [
     {
-      "key": "GOODMAN:GSX16",
+      "key": "YORK:YCG17SEER",
       "status": "traced",
-      "comps": 8,
-      "nets": 15,
-      "tokens": "8563/3247",
-      "notes": 6
+      "comps": 14,
+      "nets": 23,
+      "tokens": "8065/4401",
+      "notes": 5
     }
   ]
 }

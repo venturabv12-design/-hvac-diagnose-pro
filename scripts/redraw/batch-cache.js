@@ -53,6 +53,10 @@ async function cacheOne(job) {
   const roles = netlist.components.map(c => roleOf(c)).filter(Boolean);
   const core = ['contactor', 'compressor', 'runcap', 'fan'].filter(r => roles.includes(r));
   if (core.length < 4) return { key, status: 'incomplete', errors: [`missing core: only [${core.join(',')}]`] };
+  // ORPHAN gate: no core part may render with zero wires (salvage can drop a part's wires → floating part = looks broken)
+  const wired = new Set((netlist.nets || []).flatMap(n => (n.endpoints || []).map(e => e.component)));
+  const orphan = netlist.components.filter(c => ['contactor', 'compressor', 'runcap', 'fan'].includes(roleOf(c)) && !wired.has(c.id));
+  if (orphan.length) return { key, status: 'orphaned', errors: [`unwired core part(s): ${orphan.map(c => c.id).join(',')}`] };
 
   const svg = renderIllustrationSVG(netlist);
   fs.writeFileSync(base + '.netlist.json', JSON.stringify(netlist, null, 2));

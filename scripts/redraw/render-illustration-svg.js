@@ -237,14 +237,17 @@ function pSwitch(x,y,comp){
   return {body:b.join(''),terms:[{key:'1',x:x,y:cy,dir:'left',pad:'small'},{key:'2',x:x+w,y:cy,dir:'right',pad:'small'}]};
 }
 function pCtd(x,y){
-  const w=80,h=54,b=[];
+  const w=92,h=76,b=[];
   b.push(`<rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="7" fill="#eaf3f1" stroke="#0f8a7e" stroke-width="2.2"/>`);
   b.push(`<text x="${f1(x+w/2)}" y="${f1(y+h/2-4)}" text-anchor="middle" font-size="12" font-weight="800" fill="#0f8a7e">CTD</text>`);
   b.push(`<text x="${f1(x+w/2)}" y="${f1(y+h/2+11)}" text-anchor="middle" font-size="8.5" fill="#4a8a82">time delay</text>`);
+  // ALL terminals exit LEFT — the CTD sits at the right end of the string but everything it
+  // wires to (HPS input, contactor coil, transformer) is to its left. Right-facing terminals
+  // caused dangling stubs + wrap-around. Labels sit just inside the box.
   return {body:b.join(''),terms:[
-    {key:'T1',x:x,y:y+h/2,dir:'left',pad:'small'},
-    {key:'T2',x:x+w,y:y+16,dir:'right',pad:'small',label:'T2',ldx:13,ldy:4,lsize:9},
-    {key:'T3',x:x+w,y:y+h-14,dir:'right',pad:'small',label:'T3',ldx:13,ldy:4,lsize:9},
+    {key:'T1',x:x,y:y+13,dir:'left',pad:'small',label:'T1',ldx:12,ldy:3,lsize:8},
+    {key:'T2',x:x,y:y+h/2,dir:'left',pad:'small',label:'T2',ldx:12,ldy:3,lsize:8},
+    {key:'T3',x:x,y:y+h-13,dir:'left',pad:'small',label:'T3',ldx:12,ldy:3,lsize:8},
   ]};
 }
 function pTstat(x,y){

@@ -12,6 +12,15 @@ const helmet = require('helmet');
 // Diagram-redraw engine — traces an uploaded wiring diagram and renders a clean illustration.
 const { extractNetlist, sanitizeNetlist, validateNetlist } = require('./scripts/redraw/extract-netlist.js');
 const { renderIllustrationSVG, roleOf } = require('./scripts/redraw/render-illustration-svg.js');
+// Small in-memory LRU of freshly-drawn SVGs, served at /diagrams/redraw/:id so the client's existing
+// diagram renderer (which only shows /diagrams/ or supabase URLs) can display them without any client change.
+const _redrawStore = new Map();
+function _storeRedraw(svg) {
+  const id = crypto.randomBytes(6).toString('hex');
+  _redrawStore.set(id, svg);
+  while (_redrawStore.size > 80) _redrawStore.delete(_redrawStore.keys().next().value);
+  return id;
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1380,6 +1389,16 @@ app.get('/api/library/admin/unverified', authenticateToken, requireAdmin, async 
   }
 });
 
+// GET /diagrams/redraw/:id — serve a freshly-drawn simplified SVG (from the in-memory store) so the
+// client's existing in-chat diagram renderer can display it as an image.
+app.get('/diagrams/redraw/:id', (req, res) => {
+  const svg = _redrawStore.get(String(req.params.id || ''));
+  if (!svg) return res.status(404).send('Not found');
+  res.set('Content-Type', 'image/svg+xml; charset=utf-8');
+  res.set('Cache-Control', 'public, max-age=86400');
+  res.send(svg);
+});
+
 // POST /api/redraw — a tech uploads a photo of a wiring diagram; Mike traces it and returns a clean,
 // simplified illustration (SVG). Checks the SHARED library first (do-once — instant + free on a hit);
 // on a miss, runs the redraw engine, SAVES the result to the shared library so the next tech on that
@@ -1668,6 +1687,44 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       break;
     }
   }
+  // ── DIAGRAM REDRAW (conversational — no button) ──────────────────────────────
+  // A tech uploaded a wiring-diagram photo and asked Mike to simplify it → trace it
+  // and hand back the clean illustration IN CHAT. Fail-safe: ANY problem falls through
+  // to Mike's normal reply, so this never breaks the chat. Runs before globalActive++
+  // so an early return leaks nothing.
+  try {
+    const _lastMsg = messages[messages.length - 1];
+    const _img = Array.isArray(_lastMsg?.content) && _lastMsg.content.find(c => c && c.type === 'image' && c.source);
+    const _wantsSimplify = /(simplif|redraw|clean\s*(this|it|up)|make\s*(this|it)?\s*(easi|readable|simple|clear)|break\s*(this|it)?\s*down|read\s*(this|it)\s*for)/i.test(_lastUser)
+      && /(diagram|wiring|schematic|this|it)/i.test(_lastUser);
+    if (ANTHROPIC_API_KEY && _img && _wantsSimplify) {
+      const _s = _img.source;
+      const _dataUrl = _s.type === 'base64' ? `data:${_s.media_type};base64,${_s.data}` : String(_s.url || '');
+      const _mm = _lastUser.match(/\b([A-Z]{1,5}\d[A-Z0-9-]{2,})\b/i);
+      const _model = _mm ? _mm[1].toUpperCase() : 'UNKNOWN';
+      const _mk = normalizeModelKey('', _model) || ('UNIT:' + _model);
+      const _out = await extractNetlist(_dataUrl, { modelKey: _mk, circuitType: 'full', apiKey: ANTHROPIC_API_KEY });
+      const _nl = sanitizeNetlist(_out.netlist);
+      const _roles = _nl.components.map(c => roleOf(c)).filter(Boolean);
+      const _core = ['contactor', 'compressor', 'runcap', 'fan'].filter(r => _roles.includes(r));
+      if (validateNetlist(_nl).ok && _core.length >= 4) {
+        const _svg = renderIllustrationSVG(_nl);
+        const _id = _storeRedraw(_svg);
+        const _reply = "Here's that wiring diagram simplified — same circuit, laid out clean and labeled so it's easy to follow. Always double-check it against the real manual before you work on a live unit."
+          + '\n⟦MIKE_DIAGRAM⟧[{"url":"/diagrams/redraw/' + _id + '","title":"Simplified wiring diagram"}]⟦/MIKE_DIAGRAM⟧';
+        if (stream) {
+          res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
+          if (typeof res.flushHeaders === 'function') res.flushHeaders();
+          res.write(`data: ${JSON.stringify({ delta: _reply })}\n\n`);
+          res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+          return res.end();
+        }
+        return res.json({ response: _reply });
+      }
+      // couldn't read it cleanly → let Mike's normal reply handle it (he'll ask for a clearer photo)
+    }
+  } catch (_e) { console.error('inline diagram redraw (fell through to normal reply):', _e.message); }
+
   let _safetyLead = '';
   // (A) Burner/flame staying lit with no call for heat = stuck-open gas valve.
   if (/(furnace|burner|flame|unit|heat)[^.]{0,70}(keeps? running|still (running|on|lit|burning)|won'?t (shut|turn) off|stays (on|lit|running))[^.]{0,55}(thermostat|t-?stat|call)/i.test(_lastUser)

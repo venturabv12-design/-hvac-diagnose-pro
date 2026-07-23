@@ -333,8 +333,8 @@ function pControlBoard(x,y,netTerms){
   const leads=(netTerms&&netTerms.length)?netTerms.slice(0,8):['1','2'];
   const h=Math.max(58, 22+leads.length*13), w=110, b=[];
   b.push(`<rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="7" fill="#eaf3f1" stroke="#0f8a7e" stroke-width="2.2"/>`);
-  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+18)}" text-anchor="middle" font-size="11" font-weight="800" fill="#0f8a7e">DEFROST</text>`);
-  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+30)}" text-anchor="middle" font-size="8.5" fill="#4a8a82">control board</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+18)}" text-anchor="middle" font-size="11" font-weight="800" fill="#0f8a7e">CONTROL</text>`);
+  b.push(`<text x="${f1(x+w/2)}" y="${f1(y+30)}" text-anchor="middle" font-size="8.5" fill="#4a8a82">board</text>`);
   const T=[]; leads.forEach((k,i)=>{ T.push({key:k,x:x+w,y:y+18+i*13,dir:'right',pad:'small',label:String(k).slice(0,3),ldx:-14,ldy:3,lsize:7.5}); });
   return {body:b.join(''),terms:T};
 }

@@ -1,64 +1,46 @@
 {
-  "generated_from": "/tmp/lib/batch7.json",
+  "generated_from": "/tmp/lib/batch_ac3.json",
   "counts": {
-    "traced": 6,
-    "incomplete": 1
+    "incomplete": 3,
+    "orphaned": 1,
+    "traced": 1
   },
   "results": [
     {
-      "key": "CARRIER:27SPA6",
-      "status": "traced",
-      "comps": 18,
-      "nets": 31,
-      "tokens": "8558/5009",
-      "notes": 6
-    },
-    {
-      "key": "TEMPSTAR:26SCA4",
-      "status": "traced",
-      "comps": 19,
-      "nets": 28,
-      "tokens": "8561/5827",
-      "notes": 6
-    },
-    {
-      "key": "TEMPSTAR:26SCA5",
-      "status": "traced",
-      "comps": 19,
-      "nets": 29,
-      "tokens": "8561/5605",
-      "notes": 7
-    },
-    {
-      "key": "HEIL:135SAN",
-      "status": "traced",
-      "comps": 19,
-      "nets": 27,
-      "tokens": "8556/4696",
-      "notes": 6
-    },
-    {
-      "key": "PAYNE:PA4SAN5",
-      "status": "traced",
-      "comps": 19,
-      "nets": 29,
-      "tokens": "8560/5684",
-      "notes": 5
-    },
-    {
-      "key": "ICP:N4A",
+      "key": "CARRIER:50BY",
       "status": "incomplete",
       "errors": [
         "missing core: only []"
       ]
     },
     {
-      "key": "CARRIER:38ESA",
+      "key": "CARRIER:38CM",
+      "status": "orphaned",
+      "errors": [
+        "unwired core part(s): CONT,COMP,CAP,OFM"
+      ]
+    },
+    {
+      "key": "CARRIER:24TPA7",
+      "status": "incomplete",
+      "errors": [
+        "missing core: only [contactor,compressor,fan]"
+      ]
+    },
+    {
+      "key": "CARRIER:25TPA7",
+      "status": "incomplete",
+      "errors": [
+        "missing core: only [contactor,fan]"
+      ]
+    },
+    {
+      "key": "CARRIER:24ANB6",
       "status": "traced",
-      "comps": 19,
-      "nets": 27,
-      "tokens": "8557/5342",
-      "notes": 6
+      "comps": 13,
+      "nets": 20,
+      "tokens": "6563/3420",
+      "notes": 5
     }
   ]
 }

@@ -1,0 +1,382 @@
+{
+  "model_key": "LENNOX:14ACX",
+  "circuit_type": "full",
+  "schema_version": "1",
+  "source_ref": {
+    "doc_title": "Figure 16. Typical Factory Wiring Diagram (Copeland Compressor)"
+  },
+  "components": [
+    {
+      "id": "FANMOTOR",
+      "label": "Fan Motor",
+      "kind": "fan-motor"
+    },
+    {
+      "id": "CAP",
+      "label": "Capacitor",
+      "kind": "capacitor"
+    },
+    {
+      "id": "CONTACTOR",
+      "label": "Contactor",
+      "kind": "contactor"
+    },
+    {
+      "id": "COMP",
+      "label": "Compressor",
+      "kind": "compressor"
+    },
+    {
+      "id": "HPS",
+      "label": "High Pressure Switch (S4) - Liquid Line",
+      "kind": "switch"
+    },
+    {
+      "id": "CCH",
+      "label": "Crankcase Heater (HR1)",
+      "kind": "other"
+    },
+    {
+      "id": "CCT",
+      "label": "Crankcase Thermostat (S40)",
+      "kind": "switch"
+    },
+    {
+      "id": "GND",
+      "label": "Ground",
+      "kind": "other"
+    }
+  ],
+  "terminals": [
+    {
+      "component": "FANMOTOR",
+      "id": "ORANGE",
+      "label": "Orange"
+    },
+    {
+      "component": "FANMOTOR",
+      "id": "BLACK",
+      "label": "Black"
+    },
+    {
+      "component": "FANMOTOR",
+      "id": "PURPLE",
+      "label": "Purple"
+    },
+    {
+      "component": "CAP",
+      "id": "F",
+      "label": "F"
+    },
+    {
+      "component": "CAP",
+      "id": "C",
+      "label": "C"
+    },
+    {
+      "component": "CAP",
+      "id": "H",
+      "label": "H"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "L1",
+      "label": "L1"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "L2",
+      "label": "L2"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "T1",
+      "label": "T1"
+    },
+    {
+      "component": "CONTACTOR",
+      "id": "T2",
+      "label": "T2"
+    },
+    {
+      "component": "COMP",
+      "id": "R",
+      "label": "R"
+    },
+    {
+      "component": "COMP",
+      "id": "C",
+      "label": "C"
+    },
+    {
+      "component": "COMP",
+      "id": "S",
+      "label": "S"
+    },
+    {
+      "component": "HPS",
+      "id": "1",
+      "label": "1"
+    },
+    {
+      "component": "HPS",
+      "id": "2",
+      "label": "2"
+    },
+    {
+      "component": "CCH",
+      "id": "1",
+      "label": "1"
+    },
+    {
+      "component": "CCH",
+      "id": "2",
+      "label": "2"
+    },
+    {
+      "component": "CCT",
+      "id": "1",
+      "label": "1"
+    },
+    {
+      "component": "CCT",
+      "id": "2",
+      "label": "2"
+    },
+    {
+      "component": "GND",
+      "id": "G",
+      "label": "Ground"
+    }
+  ],
+  "nets": [
+    {
+      "id": "n1",
+      "label": "Fan run winding",
+      "voltage_class": "line",
+      "wire_color": "orange",
+      "endpoints": [
+        {
+          "component": "FANMOTOR",
+          "terminal": "ORANGE"
+        },
+        {
+          "component": "CAP",
+          "terminal": "F"
+        }
+      ],
+      "plain": "Outdoor fan motor to fan capacitor terminal."
+    },
+    {
+      "id": "n2",
+      "label": "Fan power",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "endpoints": [
+        {
+          "component": "FANMOTOR",
+          "terminal": "BLACK"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T1"
+        }
+      ],
+      "plain": "One power leg feeds the outdoor fan motor."
+    },
+    {
+      "id": "n3",
+      "label": "Fan power leg 2",
+      "voltage_class": "line",
+      "wire_color": "purple",
+      "endpoints": [
+        {
+          "component": "FANMOTOR",
+          "terminal": "PURPLE"
+        },
+        {
+          "component": "CAP",
+          "terminal": "C"
+        }
+      ],
+      "plain": "Outdoor fan motor to capacitor common."
+    },
+    {
+      "id": "n4",
+      "label": "Cap H to line",
+      "voltage_class": "start-winding",
+      "wire_color": "red",
+      "endpoints": [
+        {
+          "component": "CAP",
+          "terminal": "H"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T2"
+        }
+      ],
+      "plain": "Capacitor start terminal to compressor power leg."
+    },
+    {
+      "id": "n5",
+      "label": "Line in L1",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "endpoints": [
+        {
+          "component": "CONTACTOR",
+          "terminal": "L1"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T1"
+        }
+      ],
+      "plain": "Line power into the contactor line terminal."
+    },
+    {
+      "id": "n6",
+      "label": "Compressor run",
+      "voltage_class": "line",
+      "wire_color": "red",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "R"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T2"
+        }
+      ],
+      "plain": "Power to the compressor run terminal."
+    },
+    {
+      "id": "n7",
+      "label": "Compressor common",
+      "voltage_class": "line",
+      "wire_color": "black",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "C"
+        },
+        {
+          "component": "HPS",
+          "terminal": "2"
+        }
+      ],
+      "plain": "Compressor common through high-pressure safety switch."
+    },
+    {
+      "id": "n8",
+      "label": "HPS to contactor",
+      "voltage_class": "line",
+      "wire_color": "yellow",
+      "endpoints": [
+        {
+          "component": "HPS",
+          "terminal": "1"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T1"
+        }
+      ],
+      "plain": "High-pressure switch back to the power leg."
+    },
+    {
+      "id": "n9",
+      "label": "Compressor start",
+      "voltage_class": "start-winding",
+      "wire_color": "yellow",
+      "endpoints": [
+        {
+          "component": "COMP",
+          "terminal": "S"
+        },
+        {
+          "component": "CAP",
+          "terminal": "H"
+        }
+      ],
+      "plain": "Compressor start winding to capacitor start terminal."
+    },
+    {
+      "id": "n10",
+      "label": "Crankcase heater",
+      "voltage_class": "line",
+      "wire_color": "gray",
+      "endpoints": [
+        {
+          "component": "CCH",
+          "terminal": "1"
+        },
+        {
+          "component": "CCT",
+          "terminal": "1"
+        }
+      ],
+      "plain": "Crankcase heater fed through crankcase thermostat."
+    },
+    {
+      "id": "n11",
+      "label": "Crankcase thermostat power",
+      "voltage_class": "line",
+      "wire_color": "gray/red",
+      "endpoints": [
+        {
+          "component": "CCT",
+          "terminal": "2"
+        },
+        {
+          "component": "CONTACTOR",
+          "terminal": "T1"
+        }
+      ],
+      "plain": "Crankcase thermostat power leg to compressor line."
+    },
+    {
+      "id": "n12",
+      "label": "Crankcase heater return",
+      "voltage_class": "line",
+      "wire_color": "gray",
+      "endpoints": [
+        {
+          "component": "CCH",
+          "terminal": "2"
+        },
+        {
+          "component": "COMP",
+          "terminal": "C"
+        }
+      ],
+      "plain": "Crankcase heater return to the compressor body."
+    },
+    {
+      "id": "n13",
+      "label": "Ground",
+      "voltage_class": "ground",
+      "wire_color": "green",
+      "endpoints": [
+        {
+          "component": "GND",
+          "terminal": "G"
+        },
+        {
+          "component": "COMP",
+          "terminal": "C"
+        }
+      ],
+      "plain": "Green ground wire bonds the compressor."
+    }
+  ],
+  "notes": [
+    "No control transformer, thermostat, or 24-volt low-voltage circuit is shown on this factory power diagram — only line-voltage compressor/fan wiring is drawn.",
+    "Contactor coil terminals (A1/A2) are not labeled or wired in the visible portion of this figure.",
+    "Exact contactor internal pole mapping (L1/L2/T1/T2) is inferred from wire routing; the red/black/yellow leads at the contactor screws are legible but pole numbering is not printed.",
+    "Crankcase heater and crankcase thermostat apply only to -041, -047, -048, -059, -060 models per the diagram callout.",
+    "Ground wire (green) path is drawn to the compressor base; its other end tie point is not clearly legible."
+  ]
+}

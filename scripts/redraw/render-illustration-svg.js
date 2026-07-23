@@ -76,7 +76,7 @@ function roleOf(c){
   if(k==='contactor'||id==='CONT') return 'contactor';
   if(k==='compressor'||id==='COMP') return 'compressor';
   if(k==='capacitor'&&(id==='CAP'||lbl.includes('run'))) return 'runcap';
-  if(k==='fan-motor'&&(id==='OFM'||lbl.includes('outdoor')||lbl.includes('condenser'))) return 'fan';
+  if(k==='fan-motor'||id==='OFM'||/(outdoor|condenser) fan/.test(lbl)) return 'fan';
   // external 24V supply (straight-cool condensers get 24V from the indoor unit — NO onboard transformer)
   if(lbl.includes('indoor')||lbl.includes('from inside')||id==='IDU') return 'source';
   if((k==='transformer'||id==='XFMR')&&/external|24\s*-?\s*v/i.test(lbl)) return 'source';

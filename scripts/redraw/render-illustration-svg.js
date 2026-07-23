@@ -87,8 +87,8 @@ function roleOf(c){
   if(k==='board'&&(id==='CTD'||lbl.includes('delay'))) return 'ctd';
   if(id==='LLS'||lbl.includes('liquid line')) return 'solenoid';
   // heat-pump parts
-  if(id==='RVS'||id==='RV'||/reversing/i.test(lbl)) return 'reversingvalve';
-  if(k==='board'||/defrost|control board/i.test(lbl)) return 'controlboard';
+  if(id==='RVS'||id==='RV'||id==='REV'||/reversing/i.test(lbl)) return 'reversingvalve';
+  if(k==='board') return 'controlboard'; // an actual control/defrost board (not a defrost thermostat/sensor)
   // OPTION A (Brandon): Mike draws what's ACTUALLY on the equipment. The factory-OPTIONAL asterisked (*)
   // accessories usually NOT installed on the base unit return null (not drawn), for a clean, consistent
   // standard across models: start-assist (SR/SC/ST), crankcase heater + its switch (CH/CHS), indoor fan

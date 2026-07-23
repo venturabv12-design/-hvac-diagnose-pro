@@ -28,9 +28,44 @@
       "kind": "fan-motor"
     },
     {
-      "id": "IDU",
-      "kind": "terminal-block",
-      "label": "24V (from indoor unit)"
+      "id": "ST",
+      "label": "Start Thermistor (*ST)",
+      "kind": "other"
+    },
+    {
+      "id": "SC",
+      "label": "Start Capacitor (*SC)",
+      "kind": "capacitor"
+    },
+    {
+      "id": "SR",
+      "label": "Start Relay (*SR)",
+      "kind": "relay"
+    },
+    {
+      "id": "LPS",
+      "label": "Low-Pressure Switch (*LPS)",
+      "kind": "switch"
+    },
+    {
+      "id": "DTS",
+      "label": "Discharge-Temp Switch (*DTS)",
+      "kind": "switch"
+    },
+    {
+      "id": "HPS",
+      "label": "High-Pressure Switch (*HPS)",
+      "kind": "switch"
+    },
+    {
+      "id": "CTD",
+      "label": "Compressor Time Delay (*CTD)",
+      "kind": "board"
+    },
+    {
+      "id": "GND",
+      "label": "Equipment Ground",
+      "kind": "other"
     }
   ],
   "terminals": [
@@ -111,12 +146,72 @@
       "id": "GND"
     },
     {
-      "component": "IDU",
-      "id": "R"
+      "component": "ST",
+      "id": "1"
     },
     {
-      "component": "IDU",
-      "id": "C"
+      "component": "ST",
+      "id": "2"
+    },
+    {
+      "component": "SC",
+      "id": "1"
+    },
+    {
+      "component": "SC",
+      "id": "2"
+    },
+    {
+      "component": "SR",
+      "id": "1"
+    },
+    {
+      "component": "SR",
+      "id": "2"
+    },
+    {
+      "component": "SR",
+      "id": "5"
+    },
+    {
+      "component": "LPS",
+      "id": "in"
+    },
+    {
+      "component": "LPS",
+      "id": "out"
+    },
+    {
+      "component": "DTS",
+      "id": "in"
+    },
+    {
+      "component": "DTS",
+      "id": "out"
+    },
+    {
+      "component": "HPS",
+      "id": "in"
+    },
+    {
+      "component": "HPS",
+      "id": "out"
+    },
+    {
+      "component": "CTD",
+      "id": "T1"
+    },
+    {
+      "component": "CTD",
+      "id": "T2"
+    },
+    {
+      "component": "CTD",
+      "id": "T3"
+    },
+    {
+      "component": "GND",
+      "id": "lug"
     }
   ],
   "nets": [
@@ -150,6 +245,22 @@
         {
           "component": "CONT",
           "terminal": "23L"
+        }
+      ]
+    },
+    {
+      "id": "n3",
+      "label": "Equipment ground",
+      "voltage_class": "ground",
+      "plain": "Ties the cabinet to earth ground for safety.",
+      "endpoints": [
+        {
+          "component": "PWR",
+          "terminal": "GND"
+        },
+        {
+          "component": "GND",
+          "terminal": "lug"
         }
       ]
     },
@@ -256,36 +367,154 @@
       ]
     },
     {
-      "id": "ctl_call",
-      "voltage_class": "low-voltage",
-      "wire_color": "yellow",
-      "label": "24V call to coil",
-      "plain": "24-volt \"turn on\" signal from indoors to the contactor coil",
+      "id": "n10",
+      "label": "OFM ground",
+      "voltage_class": "ground",
+      "plain": "Grounds the outdoor fan motor frame.",
       "endpoints": [
         {
-          "component": "IDU",
-          "terminal": "R"
+          "component": "OFM",
+          "terminal": "GND"
         },
         {
-          "component": "CONT",
-          "terminal": "COIL1"
+          "component": "GND",
+          "terminal": "lug"
         }
       ]
     },
     {
-      "id": "ctl_com",
-      "voltage_class": "low-voltage",
-      "wire_color": "blue",
-      "label": "24V common",
-      "plain": "24-volt common back to the indoor unit",
+      "id": "n11",
+      "label": "Start thermistor to compressor start",
+      "voltage_class": "start-winding",
+      "wire_color": "yellow",
+      "plain": "Start assist thermistor tied to compressor start winding.",
+      "endpoints": [
+        {
+          "component": "ST",
+          "terminal": "1"
+        },
+        {
+          "component": "CAP",
+          "terminal": "H"
+        }
+      ]
+    },
+    {
+      "id": "n12",
+      "label": "Start cap to start relay",
+      "voltage_class": "start-winding",
+      "wire_color": "yellow",
+      "plain": "Start capacitor tied into the start relay circuit.",
+      "endpoints": [
+        {
+          "component": "SC",
+          "terminal": "1"
+        },
+        {
+          "component": "CAP",
+          "terminal": "C"
+        }
+      ]
+    },
+    {
+      "id": "n13",
+      "label": "Start relay to start cap",
+      "voltage_class": "start-winding",
+      "wire_color": "brown",
+      "plain": "Start relay switches the start capacitor out.",
+      "endpoints": [
+        {
+          "component": "SC",
+          "terminal": "2"
+        },
+        {
+          "component": "SR",
+          "terminal": "1"
+        }
+      ]
+    },
+    {
+      "id": "n14",
+      "label": "Contactor coil to time-delay T2",
+      "voltage_class": "line",
+      "wire_color": "violet",
+      "plain": "Coil power routed through the compressor time delay.",
       "endpoints": [
         {
           "component": "CONT",
-          "terminal": "COIL2"
+          "terminal": "A1"
         },
         {
-          "component": "IDU",
-          "terminal": "C"
+          "component": "CTD",
+          "terminal": "T2"
+        }
+      ]
+    },
+    {
+      "id": "n15",
+      "label": "Contactor coil common",
+      "voltage_class": "low-voltage",
+      "wire_color": "blue",
+      "plain": "Return side of the contactor coil circuit.",
+      "endpoints": [
+        {
+          "component": "CONT",
+          "terminal": "A2"
+        },
+        {
+          "component": "LPS",
+          "terminal": "in"
+        }
+      ]
+    },
+    {
+      "id": "n16",
+      "label": "LPS to DTS",
+      "voltage_class": "low-voltage",
+      "wire_color": "yellow/pink",
+      "plain": "Low-pressure safety switch in series to discharge-temp switch.",
+      "endpoints": [
+        {
+          "component": "LPS",
+          "terminal": "out"
+        },
+        {
+          "component": "DTS",
+          "terminal": "in"
+        }
+      ]
+    },
+    {
+      "id": "n17",
+      "label": "DTS to HPS",
+      "voltage_class": "low-voltage",
+      "wire_color": "red or blue / blue/pink",
+      "plain": "Discharge-temp switch in series to high-pressure switch.",
+      "endpoints": [
+        {
+          "component": "DTS",
+          "terminal": "out"
+        },
+        {
+          "component": "HPS",
+          "terminal": "in"
+        }
+      ]
+    },
+    {
+      "id": "n18",
+      "label": "HPS to time-delay T1",
+      "voltage_class": "low-voltage",
+      "wire_color": "blue/pink",
+      "plain": "High-pressure switch feeds the time-delay logic input.",
+      "endpoints": [
+        {
+          "component": "HPS",
+          "terminal": "out"
+        },
+        {
+          "component": "CTD",
+          "terminal": "T1"
         }
       ]
     }
@@ -297,8 +526,7 @@
     "VIO, BLK, BRN/YEL wires exit to lower/right sections (EXTERNAL POWER, *LLS) that are cropped — those connections omitted.",
     "*LLS liquid-line solenoid at bottom is cropped and not traced.",
     "NOTE #13 and NOTE #14 splice callouts referenced but their annotated meaning is not legible in this crop.",
-    "Series safety string direction (which end returns to contactor coil vs. transformer) is partly inferred from wire colors; ends beyond CTD not confirmed.",
-    "Apprentice CORE view — factory-optional safety/start parts left to the full manual."
+    "Series safety string direction (which end returns to contactor coil vs. transformer) is partly inferred from wire colors; ends beyond CTD not confirmed."
   ],
   "schema_version": "1"
 }

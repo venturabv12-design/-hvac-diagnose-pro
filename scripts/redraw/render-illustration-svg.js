@@ -83,14 +83,14 @@ function roleOf(c){
   if(k==='transformer'||id==='XFMR') return 'xfmr';
   if(k==='terminal-block'&&(id==='PWR'||lbl.includes('power')||lbl.includes('l1'))) return 'power';
   if(k==='thermostat'||id==='TSTAT') return 'tstat';
-  if((k==='switch'||k==='sensor')&&['LPS','DTS','HPS','CHS'].includes(id)) return 'switch';
+  if((k==='switch'||k==='sensor')&&['LPS','DTS','HPS'].includes(id)) return 'switch';
   if(k==='board'&&(id==='CTD'||lbl.includes('delay'))) return 'ctd';
-  if(id==='CH'||lbl.includes('crankcase heater')) return 'heater';
   if(id==='LLS'||lbl.includes('liquid line')) return 'solenoid';
-  // NOTE: start-assist (SR/SC/ST), crankcase heater, IFR are factory-OPTIONAL (*) parts — usually
-  // NOT on the base unit. Per Brandon (option A), Mike shows what's ACTUALLY on the equipment, so these
-  // return null (not drawn). Drawers pStartRelay/pStartCap/pStartThermistor/pIFR are kept for units that
-  // truly have them, but are off by default.
+  // OPTION A (Brandon): Mike draws what's ACTUALLY on the equipment. The factory-OPTIONAL asterisked (*)
+  // accessories usually NOT installed on the base unit return null (not drawn), for a clean, consistent
+  // standard across models: start-assist (SR/SC/ST), crankcase heater + its switch (CH/CHS), indoor fan
+  // relay (IFR). Drawers are kept (pStartRelay/pStartCap/pStartThermistor/pIFR/pHeater) to flip on for a
+  // unit that truly has them, but OFF by default.
   return null;
 }
 

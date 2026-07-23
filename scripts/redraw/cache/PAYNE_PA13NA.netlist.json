@@ -8,6 +8,11 @@
       "kind": "terminal-block"
     },
     {
+      "id": "GND",
+      "label": "Equipment Ground",
+      "kind": "terminal-block"
+    },
+    {
       "id": "CONT",
       "label": "Contactor",
       "kind": "contactor"
@@ -28,9 +33,44 @@
       "kind": "fan-motor"
     },
     {
-      "id": "IDU",
-      "kind": "terminal-block",
-      "label": "24V (from indoor unit)"
+      "id": "ST",
+      "label": "Start Thermistor (*ST)",
+      "kind": "sensor"
+    },
+    {
+      "id": "SC",
+      "label": "Start Capacitor (*SC)",
+      "kind": "capacitor"
+    },
+    {
+      "id": "SR",
+      "label": "Start Relay (*SR)",
+      "kind": "relay"
+    },
+    {
+      "id": "LPS",
+      "label": "Low-Pressure Switch (*LPS)",
+      "kind": "switch"
+    },
+    {
+      "id": "DTS",
+      "label": "Discharge-Temp Switch (*DTS)",
+      "kind": "switch"
+    },
+    {
+      "id": "HPS",
+      "label": "High-Pressure Switch (*HPS)",
+      "kind": "switch"
+    },
+    {
+      "id": "CTD",
+      "label": "Compressor Time-Delay (*CTD LOGIC)",
+      "kind": "board"
+    },
+    {
+      "id": "LLS",
+      "label": "Liquid-Line Solenoid (*LLS)",
+      "kind": "other"
     }
   ],
   "terminals": [
@@ -41,6 +81,10 @@
     {
       "component": "PWR",
       "id": "L2"
+    },
+    {
+      "component": "GND",
+      "id": "GND"
     },
     {
       "component": "CONT",
@@ -99,12 +143,76 @@
       "id": "L2"
     },
     {
-      "component": "IDU",
-      "id": "R"
+      "component": "ST",
+      "id": "1"
     },
     {
-      "component": "IDU",
-      "id": "C"
+      "component": "ST",
+      "id": "2"
+    },
+    {
+      "component": "SC",
+      "id": "1"
+    },
+    {
+      "component": "SC",
+      "id": "2"
+    },
+    {
+      "component": "SR",
+      "id": "1"
+    },
+    {
+      "component": "SR",
+      "id": "2"
+    },
+    {
+      "component": "SR",
+      "id": "5"
+    },
+    {
+      "component": "LPS",
+      "id": "in"
+    },
+    {
+      "component": "LPS",
+      "id": "out"
+    },
+    {
+      "component": "DTS",
+      "id": "in"
+    },
+    {
+      "component": "DTS",
+      "id": "out"
+    },
+    {
+      "component": "HPS",
+      "id": "in"
+    },
+    {
+      "component": "HPS",
+      "id": "out"
+    },
+    {
+      "component": "CTD",
+      "id": "T1"
+    },
+    {
+      "component": "CTD",
+      "id": "T2"
+    },
+    {
+      "component": "CTD",
+      "id": "T3"
+    },
+    {
+      "component": "LLS",
+      "id": "1"
+    },
+    {
+      "component": "LLS",
+      "id": "2"
     }
   ],
   "nets": [
@@ -139,6 +247,22 @@
       ],
       "plain": "Second leg of 240-volt power to the contactor.",
       "wire_color": "black"
+    },
+    {
+      "id": "n3",
+      "voltage_class": "ground",
+      "endpoints": [
+        {
+          "component": "PWR",
+          "terminal": "L2"
+        },
+        {
+          "component": "GND",
+          "terminal": "GND"
+        }
+      ],
+      "plain": "Equipment ground connection.",
+      "wire_color": "green"
     },
     {
       "id": "n4",
@@ -205,6 +329,70 @@
       "wire_color": "blue"
     },
     {
+      "id": "n8",
+      "voltage_class": "start-winding",
+      "endpoints": [
+        {
+          "component": "CAP",
+          "terminal": "H"
+        },
+        {
+          "component": "ST",
+          "terminal": "1"
+        }
+      ],
+      "plain": "Run capacitor to start thermistor.",
+      "wire_color": "yellow"
+    },
+    {
+      "id": "n9",
+      "voltage_class": "start-winding",
+      "endpoints": [
+        {
+          "component": "ST",
+          "terminal": "2"
+        },
+        {
+          "component": "SR",
+          "terminal": "1"
+        }
+      ],
+      "plain": "Start thermistor to start relay.",
+      "wire_color": "yellow"
+    },
+    {
+      "id": "n10",
+      "voltage_class": "start-winding",
+      "endpoints": [
+        {
+          "component": "CAP",
+          "terminal": "C"
+        },
+        {
+          "component": "SC",
+          "terminal": "1"
+        }
+      ],
+      "plain": "Capacitor common to start capacitor.",
+      "wire_color": "yellow"
+    },
+    {
+      "id": "n11",
+      "voltage_class": "start-winding",
+      "endpoints": [
+        {
+          "component": "SC",
+          "terminal": "2"
+        },
+        {
+          "component": "SR",
+          "terminal": "2"
+        }
+      ],
+      "plain": "Start capacitor to start relay.",
+      "wire_color": "brown"
+    },
+    {
       "id": "n12",
       "voltage_class": "line",
       "endpoints": [
@@ -253,38 +441,116 @@
       "wire_color": "black"
     },
     {
-      "id": "ctl_call",
+      "id": "n15",
       "voltage_class": "low-voltage",
-      "wire_color": "yellow",
-      "label": "24V call to coil",
-      "plain": "24-volt \"turn on\" signal from indoors to the contactor coil",
       "endpoints": [
         {
-          "component": "IDU",
-          "terminal": "R"
+          "component": "CONT",
+          "terminal": "A1"
         },
         {
-          "component": "CONT",
-          "terminal": "COIL1"
+          "component": "LPS",
+          "terminal": "in"
         }
-      ]
+      ],
+      "plain": "24-volt path from contactor coil to low-pressure switch.",
+      "wire_color": "blue"
     },
     {
-      "id": "ctl_com",
+      "id": "n16",
       "voltage_class": "low-voltage",
-      "wire_color": "blue",
-      "label": "24V common",
-      "plain": "24-volt common back to the indoor unit",
       "endpoints": [
         {
-          "component": "CONT",
-          "terminal": "COIL2"
+          "component": "LPS",
+          "terminal": "out"
         },
         {
-          "component": "IDU",
-          "terminal": "C"
+          "component": "DTS",
+          "terminal": "in"
         }
-      ]
+      ],
+      "plain": "Low-pressure switch to discharge-temp switch.",
+      "wire_color": "yellow"
+    },
+    {
+      "id": "n17",
+      "voltage_class": "low-voltage",
+      "endpoints": [
+        {
+          "component": "DTS",
+          "terminal": "out"
+        },
+        {
+          "component": "HPS",
+          "terminal": "in"
+        }
+      ],
+      "plain": "Discharge-temp switch to high-pressure switch.",
+      "wire_color": "blue"
+    },
+    {
+      "id": "n18",
+      "voltage_class": "low-voltage",
+      "endpoints": [
+        {
+          "component": "HPS",
+          "terminal": "out"
+        },
+        {
+          "component": "CTD",
+          "terminal": "T1"
+        }
+      ],
+      "plain": "High-pressure switch to time-delay board.",
+      "wire_color": "blue"
+    },
+    {
+      "id": "n19",
+      "voltage_class": "low-voltage",
+      "endpoints": [
+        {
+          "component": "CTD",
+          "terminal": "T2"
+        },
+        {
+          "component": "CONT",
+          "terminal": "A2"
+        }
+      ],
+      "plain": "Time-delay board back to contactor coil (violet).",
+      "wire_color": "violet"
+    },
+    {
+      "id": "n20",
+      "voltage_class": "low-voltage",
+      "endpoints": [
+        {
+          "component": "CTD",
+          "terminal": "T3"
+        },
+        {
+          "component": "LLS",
+          "terminal": "2"
+        }
+      ],
+      "plain": "Time-delay board output to liquid-line solenoid.",
+      "wire_color": "brown"
+    },
+    {
+      "id": "n21",
+      "voltage_class": "low-voltage",
+      "endpoints": [
+        {
+          "component": "LLS",
+          "terminal": "1"
+        },
+        {
+          "component": "LPS",
+          "terminal": "in"
+        }
+      ],
+      "plain": "Liquid-line solenoid tie into control string.",
+      "wire_color": "black"
     }
   ],
   "notes": [
@@ -292,8 +558,7 @@
     "Contactor coil terminal designations (A1/A2) not printed on diagram — inferred from coil symbol at bottom of contactor box (NOTE #14).",
     "*SR start relay terminals 1,2,5 traced but exact 5-terminal internal wiring is partly obscured (NOTE #8).",
     "BLK/BRN/VIO long jump wires along the mid-section were traced to their visible endpoints; some routing crosses behind components and could not be confirmed at every crossing.",
-    "LLS BLK-to-BLK routing near bottom is partly cropped; endpoint into control string is best-effort.",
-    "Apprentice CORE view — factory-optional safety/start parts left to the full manual."
+    "LLS BLK-to-BLK routing near bottom is partly cropped; endpoint into control string is best-effort."
   ],
   "schema_version": "1"
 }

@@ -2737,7 +2737,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div class="auth-migration-body" data-v2i18n="migBody">You were here from the beginning — that matters. Mike's got a whole new home now, and it doesn't carry the old one over. Takes 30 seconds to get back in. Same Mike, better everything.</div>
       <button class="auth-migration-cta" type="button" onclick="authTab('up')" data-v2i18n="migCta">Create My Account</button>
     </div>
-    <div class="auth-trial-pill">🎯 7-day free trial — no credit card required</div>
+    <div class="auth-trial-pill">🎯 14-day free trial — no charge today, cancel anytime</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tabSignIn" onclick="authTab('in')">Sign In</button>
       <button class="auth-tab" id="tabSignUp" onclick="authTab('up')">Create Account</button>
@@ -2861,8 +2861,8 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       </div>
     </div>
   </div>
-  <button class="pw-btn" onclick="goCheckout()">Subscribe Now — Cancel Anytime</button>
-  <div class="pw-note">$100/tech/mo · cancel anytime</div>
+  <button class="pw-btn" onclick="goCheckout()">Start Free Trial — No Charge Today</button>
+  <div class="pw-note">🔒 Free for 14 days — no charge today, we’ll remind you 3 days before, then $100/mo, cancel anytime · Secured by Stripe</div>
   <div style="margin-top:16px;padding:14px 16px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:10px;text-align:left;">
     <div style="font-size:12px;font-weight:700;color:var(--rust);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why techs pay for Pro</div>
     <div style="font-size:13px;color:#9ca3af;line-height:1.7;">
@@ -2971,7 +2971,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   <div class="pdd-item pdd-danger" onclick="authSignOut()"><span class="pdd-ic">🚪</span>Sign Out</div>
 </div>
 </div>
-<div id="trialBanner"><span>🎯 <strong><span id="trialDaysLeft">7</span> days</strong> left in your free trial</span><button class="trial-up-btn" onclick="showPaywall()">Upgrade</button></div>
+<div id="trialBanner"><span>🎯 <strong><span id="trialDaysLeft">14</span> days</strong> left in your free trial</span><button class="trial-up-btn" onclick="showPaywall()">Manage</button></div>
 <nav class="nav">
   <div class="nav-inner">
     <button class="nav-back" data-contractor-only onclick="navBackTap()" aria-label="Back"><i data-lucide="chevron-left"></i></button>
@@ -5100,24 +5100,19 @@ function submitFeedback(){
   closeModal('helpModal');
 }
 function showPaywall(){
-  // PAYWALL TEMPORARILY DISABLED — hard short-circuit. Never display the paywall overlay,
-  // and proactively hide it in case something else already toggled it on.
-  closeProfileDD();
-  var e=document.getElementById('paywallOverlay');
-  if(e){e.classList.remove('show');e.style.display='none';}
-  return;
-}
-function _showPaywall_DISABLED(){
+  // CARD-UPFRONT + 14-DAY TRIAL (new techs only; founding techs are grandfathered server-side
+  // and never see this). Adding a card via Stripe starts the free trial — no charge today.
   closeProfileDD();
   var e=document.getElementById('paywallOverlay');
   if(!e)return;
-  // Homeowner side removed (2026-07-25) — tech/contractor plan only.
+  // Tech-only, one plan ($100/mo). Homeowner side removed 2026-07-25.
   var proDiv=document.getElementById('pwContractor');
   var title=document.getElementById('pwTitle');
   var sub=document.getElementById('pwSub');
   if(proDiv)proDiv.style.display='block';
-  if(title)title.textContent='Trial Ended';
-  if(sub)sub.textContent='Choose your plan and keep Mike on every job.';
+  if(title)title.textContent='Start your 14-day free trial';
+  if(sub)sub.textContent='Add a card to unlock Mike — no charge today. We’ll remind you 3 days before it ends.';
+  e.style.display='';           // clear the leftover inline display:none from the beta short-circuit
   e.classList.add('show');
 }
 var selPlan='pro'; // default plan so goCheckout never reads an UNDECLARED selPlan — tapping "Subscribe" before a plan card was clicked threw ReferenceError and killed checkout

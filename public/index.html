@@ -526,6 +526,20 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
   #onboardingOverlay .ob-frame.ob-out,#onboardingOverlay .ob-frame.ob-in{animation:ob-framein 0.01ms 0.01ms both!important;}
 }
 
+/* NATIVE APP (App Store / Google Play) — SIGN-IN ONLY. Hide every pricing / paywall / purchase
+   surface so the app can't be rejected under Apple 3.1.1 / Play payments policy. Subscriptions
+   happen on the web (trazermike.io). The browser build is UNAFFECTED. JS guards back this up. */
+body.native-app #trialBanner,
+body.native-app .auth-trial-pill,
+body.native-app #tabSignUp,
+body.native-app .auth-migration-cta,
+body.native-app .pdd-trial,
+body.native-app #pddBillingItem,
+body.native-app #paywallOverlay .pw-plans,
+body.native-app #paywallOverlay .pw-plan,
+body.native-app #paywallOverlay .pw-btn,
+body.native-app #paywallOverlay .pw-note{ display:none !important; }
+
 /* Paywall */
 #paywallOverlay{position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,.97);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px;}
 #paywallOverlay.show{display:flex;}
@@ -2957,7 +2971,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   <div class="pdd-item" id="adminMenuItem" style="display:none;color:#3A8B8A;font-weight:700;" onclick="pddStats()"><span class="pdd-ic">📊</span>Admin Stats</div>
   <div class="pdd-item" onclick="closeProfileDD();toggleLangMenu();"><span class="pdd-ic">🌐</span><span data-v2i18n="qaLanguage">Language</span></div>
   <div class="pdd-item" onclick="pddProfile()"><span class="pdd-ic">👤</span>Profile Settings</div>
-  <div class="pdd-item" onclick="pddBilling()"><span class="pdd-ic">💳</span>Billing &amp; Plan</div>
+  <div class="pdd-item" id="pddBillingItem" onclick="pddBilling()"><span class="pdd-ic">💳</span>Billing &amp; Plan</div>
   <div class="pdd-item" onclick="pddWhatsNew()"><span class="pdd-ic">🔔</span>What's New</div>
   <div class="pdd-item" data-contractor-only onclick="pddPerformance()"><span class="pdd-ic">📊</span>My Performance</div>
   <div class="pdd-item" data-contractor-only onclick="pddInvoice()"><span class="pdd-ic">🧾</span>Invoice Generator</div>
@@ -2969,6 +2983,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   <div class="pdd-sep"></div>
   <div class="pdd-item" onclick="clearUserMemory()" style="color:#9499B0;"><span class="pdd-ic">🧹</span>Clear My Memory</div>
   <div class="pdd-item pdd-danger" onclick="authSignOut()"><span class="pdd-ic">🚪</span>Sign Out</div>
+  <div class="pdd-item pdd-danger" onclick="deleteAccount()"><span class="pdd-ic">🗑️</span>Delete Account</div>
 </div>
 </div>
 <div id="trialBanner"><span>🎯 <strong><span id="trialDaysLeft">14</span> days</strong> left in your free trial</span><button class="trial-up-btn" onclick="showPaywall()">Manage</button></div>
@@ -4250,7 +4265,28 @@ function applyModeFromRole() {
   if (homeTab) homeTab.style.display = 'none';
 }
 
+// True when Mike is running INSIDE the native app shell (Capacitor webview). The App Store /
+// Play rules forbid any pricing or in-app-purchase UI there — the app is SIGN-IN ONLY and
+// subscriptions happen on the web (trazermike.io). Multiple signals so detection is robust even
+// though the shell loads the remote site via server.url (query flag is persisted to localStorage
+// because client-side routing can drop the param on later navigations).
+function isNativeApp(){
+  try{
+    if(window.Capacitor){
+      if(typeof window.Capacitor.isNativePlatform==='function' && window.Capacitor.isNativePlatform()) return true;
+      if(window.Capacitor.platform && window.Capacitor.platform!=='web') return true;
+    }
+  }catch(e){}
+  try{ if(/TrazerMike(App)?\//i.test(navigator.userAgent||'')) return true; }catch(e){}
+  try{ if(new URLSearchParams(location.search).get('native')==='1'){ localStorage.setItem('trazer_native','1'); return true; } }catch(e){}
+  try{ if(localStorage.getItem('trazer_native')==='1') return true; }catch(e){}
+  return false;
+}
+
 function tracerInit(){
+  // NATIVE-APP CONTEXT (App Store / Play compliance): tag <body> so CSS + JS hide every pricing/
+  // paywall/purchase surface when running inside the app. Web (trazermike.io) is unaffected.
+  try{ if(isNativeApp()) document.body.classList.add('native-app'); }catch(e){}
   // Hard device signal at load/sign-in — the app KNOWS if this is a phone (Brandon's ask).
   try{ window._isPhone=(typeof isPhone==='function')?isPhone():false; document.body.setAttribute('data-device', window._isPhone?'phone':'desktop'); }catch(e){}
   // Restore saved language preference
@@ -4577,6 +4613,26 @@ function authSignOut(){
   if(_suBtn){_suBtn.disabled=false;_suBtn.textContent='Start Free Trial';}
   authTab('in');
   chatHistory=[];techLocation=null;
+}
+
+// DELETE ACCOUNT (App Store Guideline 5.1.1(v) / Google Play). Irreversible — double-confirm,
+// then hit the JWT-verified server endpoint that wipes the account + personal data + cancels billing.
+async function deleteAccount(){
+  closeProfileDD();
+  if(!currentUser||!currentUser.token){showToast('Please sign in first.','error',2500);return;}
+  if(!confirm('Delete your account?\n\nThis permanently erases your account and all your data (chats, jobs, customers) and cancels any active subscription. This cannot be undone.'))return;
+  if(!confirm('Last check — really delete your account for good?'))return;
+  showToast('Deleting your account…','info',3000);
+  try{
+    var r=await fetch('/api/auth/delete',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentUser.token},body:JSON.stringify({})});
+    var d=await r.json().catch(function(){return{};});
+    if(r.ok&&d.ok){
+      showToast('Your account has been permanently deleted.','success',4000);
+      try{authSignOut();}catch(e){currentUser=null;try{localStorage.removeItem('trazer_user');}catch(_){}location.reload();}
+      return;
+    }
+    showToast(d.error||'Could not delete account — please try again.','error',3500);
+  }catch(e){showToast('Network error — could not delete account.','error',3500);}
 }
 
 function updateProfileUI(){
@@ -5105,6 +5161,18 @@ function showPaywall(){
   closeProfileDD();
   var e=document.getElementById('paywallOverlay');
   if(!e)return;
+  // NATIVE APP: App Store / Play forbid pricing + purchase UI. Show a compliant no-price message
+  // (no $, no plans, no checkout button) — subscribers manage their plan on the web.
+  if(isNativeApp()){
+    var nt=document.getElementById('pwTitle'), ns=document.getElementById('pwSub');
+    var npd=document.getElementById('pwContractor');
+    if(nt)nt.textContent='Subscription required';
+    if(ns)ns.textContent='This account doesn’t have an active Mike subscription yet. Set up your plan at trazermike.io, then sign in here.';
+    if(npd)npd.style.display='none';
+    e.style.display='';
+    e.classList.add('show');
+    return;
+  }
   // Tech-only, one plan ($100/mo). Homeowner side removed 2026-07-25.
   var proDiv=document.getElementById('pwContractor');
   var title=document.getElementById('pwTitle');
@@ -5119,6 +5187,8 @@ var selPlan='pro'; // default plan so goCheckout never reads an UNDECLARED selPl
 function selectPlan(p,el){selPlan=p;document.querySelectorAll('.pw-plan').forEach(function(x){x.classList.remove('sel');});el.classList.add('sel');}
 async function goCheckout(){
   if(!currentUser||!currentUser.token){showToast('Please sign in first.','error',2500);return;}
+  // NATIVE APP: never initiate a purchase in-app (App Store 3.1.1 / Play). Point to the web.
+  if(isNativeApp()){showToast('Manage your subscription at trazermike.io, then sign in here.','info',3500);return;}
   var plan=selPlan||'pro';
   if(plan==='enterprise'){
     showToast('Opening email — tell us your crew size and we\'ll set you up.','info',3500);

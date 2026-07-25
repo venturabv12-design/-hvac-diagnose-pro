@@ -52,7 +52,7 @@ print("\n".join(lines))
 fi
 
 CONTEXT="SESSION-START GREETING (from the trazer SessionStart hook):
-Before anything else this session, open by greeting Brandon and asking whether he wants to CONTINUE what we were working on last session, or start something NEW.
+Before anything else this session, your FIRST line must be exactly: \"Welcome back, Brandon.\" — always greet him by name, every session, no exceptions. Then, in the same short message, ask whether he wants to CONTINUE what we were working on last session, or start something NEW.
 Make the 'continue' option concrete from the LIVE WORK CURSOR below — state the exact thread, its current state, and the next action, so Brandon never has to re-explain or send a screenshot. Fallback pointer if the cursor is empty:
 ${POINTER}
 ${NOW_BLOCK}

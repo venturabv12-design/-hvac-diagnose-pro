@@ -4628,7 +4628,8 @@ async function deleteAccount(){
     var d=await r.json().catch(function(){return{};});
     if(r.ok&&d.ok){
       showToast('Your account has been permanently deleted.','success',4000);
-      try{authSignOut();}catch(e){currentUser=null;try{localStorage.removeItem('trazer_user');}catch(_){}location.reload();}
+      // Let the confirmation register before returning to the signed-out screen.
+      setTimeout(function(){try{authSignOut();}catch(e){currentUser=null;try{localStorage.removeItem('trazer_user');}catch(_){}location.reload();}},1400);
       return;
     }
     showToast(d.error||'Could not delete account — please try again.','error',3500);

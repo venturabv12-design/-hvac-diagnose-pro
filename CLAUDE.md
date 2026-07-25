@@ -92,7 +92,7 @@ These regions must NOT be edited without explicit override. The `.claude/` hooks
 ## Engineering discipline (non-negotiable)
 
 - **Plan Mode** for any change touching ≥3 files or any structural / architectural change. Spec first, approve, then execute.
-- **Feature branch always.** Never push directly to `main` — Hook B blocks `git push origin main` at the bash layer. Merging to main requires explicit approval (PR or `git revert` for rollbacks).
+- **Feature branch first; push to `main` on Brandon's explicit word.** Build on a feature branch, commit there, and pass all pre-ship gates. Pushing/merging to `main` (which auto-deploys prod) is **permitted when Brandon says "push it" / "ship it"** — that phrase IS the approval gate ("if I say push it that means we went through everything and I'm good with the update," 2026-07-25). The operator then pushes to `main` directly, no terminal step for Brandon. Discipline still binds: only push on that explicit word, never autonomously; one clean commit per change; all audit gates green first. Force-push to `main` and locked-file shell writes remain hard-blocked by Hook B. Rollback = `git revert`.
 - **One commit per logical change.** No batched "misc fixes."
 - **Diff before edit.** For edits to `public/index.html`, surface old/new strings before applying; manual approval per edit during active sessions.
 - **Pre-ship audit before every commit** that touches `public/index.html`. Counts must match the snapshot baseline (next section). Hook C reports drift to stderr post-edit.

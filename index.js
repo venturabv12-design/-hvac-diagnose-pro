@@ -841,6 +841,48 @@ app.post('/api/auth/reset-confirm', authLimiter, async (req, res) => {
   }
 });
 
+// ── AUTH: DELETE ACCOUNT ──────────────────────────────────────────────────────
+// Apple Guideline 5.1.1(v) / Google Play: an app that creates accounts MUST let the user delete
+// their account + personal data from INSIDE the app (auto-reject otherwise). JWT-verified — the
+// user can only ever delete THEIR OWN account (id/email come from the token, never client input).
+app.post('/api/auth/delete', authenticateToken, async (req, res) => {
+  if (!SUPABASE_URL) return res.json({ ok: true }); // dev mode — nothing persisted
+  try {
+    const userId = req.user.id;
+    const email = req.user.email;
+
+    // Best-effort: cancel any live Stripe subscription so a deleted account can't keep getting billed.
+    if (STRIPE_SECRET_KEY) {
+      try {
+        const u = await supabase('GET', 'users', null, `?id=eq.${encodeURIComponent(userId)}&select=stripe_subscription_id`);
+        const subId = u && u[0] && u[0].stripe_subscription_id;
+        if (subId) {
+          await fetch(`https://api.stripe.com/v1/subscriptions/${subId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}` },
+          });
+        }
+      } catch (e) { console.error('Delete: stripe cancel failed (continuing):', e.message); }
+    }
+
+    // Wipe the user's OWN data (rows keyed by user_id). The SHARED verified-diagram library
+    // (library_*) is not personal data and is intentionally left intact.
+    for (const table of ['events', 'jobs', 'customers', 'refrigerant_log']) {
+      try { await supabase('DELETE', table, null, `?user_id=eq.${encodeURIComponent(userId)}`); }
+      catch (e) { console.error(`Delete: ${table} cleanup failed (continuing):`, e.message); }
+    }
+
+    // Finally delete the account row itself. null return here = a real failure (past the config check).
+    const del = await supabase('DELETE', 'users', null, `?id=eq.${encodeURIComponent(userId)}`);
+    if (del === null) return res.status(500).json({ error: 'Failed to delete account — please try again.' });
+    console.log(`Account deleted: ${email}`);
+    res.json({ ok: true, message: 'Your account and personal data have been permanently deleted.' });
+  } catch (err) {
+    console.error('Delete account error:', err.message);
+    res.status(500).json({ error: 'Failed to delete account — please try again.' });
+  }
+});
+
 // ── AUTH: CHANGE PASSWORD ─────────────────────────────────────────────────────
 app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
@@ -2208,6 +2250,51 @@ app.post('/api/tts', ttsLimiter, authenticateToken, requirePaidAccess, async (re
   } finally {
     clearTimeout(timeout);
   }
+});
+
+// ── PRIVACY POLICY ────────────────────────────────────────────────────────────
+// Required by both the App Store and Google Play (a live, public privacy-policy URL).
+// Self-contained so it renders even if the SPA is mid-deploy. Covers every third party the
+// app touches + the in-app account/data deletion (Guideline 5.1.1(v)). Registered before the
+// SPA catch-all so /privacy serves this, not index.html.
+app.get('/privacy', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.type('html').send(`<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy Policy · Mike by Trazer Intelligence</title>
+<style>body{font:16px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;max-width:760px;margin:0 auto;padding:32px 20px;color:#1a1a1a;background:#fff}h1{font-size:26px}h2{font-size:18px;margin-top:28px}a{color:#0a7d78}small{color:#666}</style>
+</head><body>
+<h1>Privacy Policy — Mike</h1>
+<small>Trazer Intelligence · Effective July 25, 2026</small>
+<p>Mike is an AI assistant for HVAC technicians and contracting companies. This policy explains what we collect, why, and the choices you have. We do <strong>not</strong> sell your data and we do <strong>not</strong> use it for advertising or cross-app tracking.</p>
+<h2>Information we collect</h2>
+<ul>
+<li><strong>Account info</strong> — your name, email, and (optionally) company name, to create and secure your account.</li>
+<li><strong>Content you provide</strong> — messages, questions, photos of equipment/nameplates/wiring diagrams, and job or customer notes you choose to enter, so Mike can help you diagnose and document work.</li>
+<li><strong>Usage data</strong> — which features you use and basic interaction events, to operate the product and improve it. This is product analytics, not ad tracking.</li>
+<li><strong>Billing</strong> — if you subscribe, payments are processed by Stripe on the web. We store your plan status and Stripe identifiers; we never see or store your full card number.</li>
+</ul>
+<h2>Service providers we share with (only to run Mike)</h2>
+<ul>
+<li><strong>Anthropic</strong> — powers Mike's answers (your questions/photos are sent to generate a response).</li>
+<li><strong>ElevenLabs</strong> — generates Mike's voice from text.</li>
+<li><strong>Supabase</strong> — secure database + storage for your account and content.</li>
+<li><strong>Stripe</strong> — subscription billing (web only).</li>
+<li><strong>Resend</strong> — transactional email (e.g. password reset).</li>
+</ul>
+<p>These providers process data only to deliver their part of the service and under their own security and privacy terms.</p>
+<h2>How we use your information</h2>
+<p>To provide and secure Mike, answer your questions, remember your context across a job, process subscriptions, send account emails, and improve reliability and accuracy. We do not sell personal information or use it for third-party advertising.</p>
+<h2>Data retention &amp; deletion</h2>
+<p>We keep your data while your account is active. You can <strong>delete your account and personal data at any time from inside the app</strong> (Account → Delete Account) or by emailing us. Deletion is permanent and also cancels any active subscription. Shared, non-personal reference material (e.g. anonymized equipment diagrams) may be retained.</p>
+<h2>Security</h2>
+<p>Passwords are hashed (bcrypt), sessions use signed tokens, traffic is encrypted in transit (HTTPS), and access to production data is restricted.</p>
+<h2>Children</h2>
+<p>Mike is a professional tool not directed to children under 13, and we do not knowingly collect their data.</p>
+<h2>Contact</h2>
+<p>Questions or requests: <a href="mailto:venturabv12@gmail.com">venturabv12@gmail.com</a>, Trazer Intelligence, Manassas Park, VA.</p>
+<p><small>We may update this policy; material changes will be posted here with a new effective date.</small></p>
+</body></html>`);
 });
 
 // ── SPA FALLBACK ──────────────────────────────────────────────────────────────

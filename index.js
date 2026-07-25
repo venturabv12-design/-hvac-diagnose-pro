@@ -40,6 +40,18 @@ const STRIPE_PRICE_TEAM      = process.env.STRIPE_PRICE_TEAM;
 const APP_URL = process.env.APP_URL || 'https://nodejs-production-cb99f.up.railway.app';
 const RESEND_API_KEY = process.env.RESEND_API_KEY; // Optional — password reset emails
 
+// ── CARD-UPFRONT + 14-DAY TRIAL (new signups only) ────────────────────────────
+// New techs add a card at signup → 14-day free trial → auto-charge $100/mo.
+// EXISTING/founding techs are grandfathered: any account created before CARD_WALL_CUTOFF
+// is never walled (belt-and-suspenders with the explicit plan='founder' backfill).
+// The cutoff is env-overridable so it can be set to the exact prod-deploy instant at ship.
+const TRIAL_DAYS = 14;
+const CARD_WALL_CUTOFF = process.env.CARD_WALL_CUTOFF || '2026-07-25T23:59:59Z';
+const CARD_WALL_CUTOFF_MS = new Date(CARD_WALL_CUTOFF).getTime();
+// Plans that always have access (paying + legacy/grandfathered free). 'founder' = the
+// grandfathered founding techs; 'beta' = pre-Phase-1 legacy; 'homeowner' = revivable legacy.
+const ALLOWED_PLANS = ['admin', 'pro', 'team', 'starter', 'founder', 'beta', 'homeowner'];
+
 // JWT_SECRET signs every auth token. Must be set in Railway env vars — a missing
 // secret means tokens from a previous deploy would be accepted, which is worse
 // than refusing to start.
@@ -400,10 +412,40 @@ app.post('/api/webhook', express.raw({type: 'application/json'}), async (req, re
       }
     }
 
+    // Trial ends in 3 days (Stripe fires this automatically) → branded reminder, no charge yet.
+    if (event.type === 'customer.subscription.trial_will_end') {
+      const sub = event.data.object;
+      const email = sub.metadata?.email;
+      if (email) {
+        await sendEmail({
+          to: email,
+          subject: 'Your Mike free trial ends in 3 days',
+          html: `<p>Heads up — your 14-day free trial ends in 3 days.</p>
+                 <p>Nothing to do: you'll be charged <strong>$100/mo</strong> and keep full access to Mike.
+                 Want to cancel? Do it anytime from your account, no charge if you cancel before the trial ends.</p>
+                 <p>— Mike @ Trazer</p>`,
+        });
+        console.log(`Trial-ending reminder sent: ${email}`);
+      }
+    }
+
+    // Payment failed → GRACE: Stripe smart-retries over several days and the tech keeps access
+    // during retries. We do NOT downgrade here — only a final failure fires subscription.deleted
+    // (handled above). Just nudge the tech to fix the card.
     if (event.type === 'invoice.payment_failed') {
       const invoice = event.data.object;
-      console.log(`Payment failed for customer: ${invoice.customer}`);
-      // Could send email notification here
+      const email = invoice.customer_email || invoice.metadata?.email;
+      console.log(`Payment failed for customer: ${invoice.customer} (${email || 'no email'}) — grace/retry, access retained`);
+      if (email) {
+        await sendEmail({
+          to: email,
+          subject: 'Your Mike payment didn’t go through — please update your card',
+          html: `<p>We couldn’t process your $100/mo payment. No worries — your access to Mike is still on
+                 while we retry over the next few days.</p>
+                 <p>Please update your card to avoid any interruption: <a href="${APP_URL}">open Mike</a> → Account → Billing.</p>
+                 <p>— Mike @ Trazer</p>`,
+        });
+      }
     }
   } catch(err) {
     console.error('Webhook handler error:', err.message);
@@ -866,6 +908,13 @@ app.post('/api/billing/checkout', authenticateToken, async (req, res) => {
         'metadata[email]': email,
         'metadata[plan]': plan,
         'metadata[name]': name || '',
+        // 14-day free trial: no charge today, auto-charges $100/mo on day 14.
+        'subscription_data[trial_period_days]': String(TRIAL_DAYS),
+        // Require a card even though the trial is free — that's the whole point (card upfront).
+        'payment_method_collection': 'always',
+        // Also stamp the trial on the subscription for our own webhook bookkeeping.
+        'subscription_data[metadata][email]': email,
+        'subscription_data[metadata][plan]': plan,
         'allow_promotion_codes': 'true',
         'billing_address_collection': 'auto',
       }).toString(),
@@ -1469,45 +1518,41 @@ async function checkPaywall(token) {
     return { allowed: false, reason: 'Invalid or expired session' };
   }
 
-  // BETA PHASE: billing is not live yet (no Stripe account), so NOBODY can subscribe —
-  // blocking on trial-expiry or "unknown plan" is pure friction that locks out the founder
-  // and the beta techs. A valid login (verified above) = full access. Auth is still enforced.
-  // When Stripe launches, delete the next return line to re-enable the plan/trial gating below.
-  return { allowed: true };
-
   // No DB → dev mode, allow through
   if (!SUPABASE_URL) return { allowed: true };
 
   try {
     const users = await supabase('GET', 'users', null,
-      `?id=eq.${encodeURIComponent(decoded.id)}&select=plan,trial_start,usage_count`);
+      `?id=eq.${encodeURIComponent(decoded.id)}&select=plan,trial_start,created_at,stripe_subscription_id`);
 
     if (!users || users.length === 0)
       return { allowed: false, reason: 'Account not found' };
 
-    const { plan, trial_start } = users[0];
+    const { plan, created_at, stripe_subscription_id } = users[0];
 
-    // Always-allowed plans
-    if (['admin', 'pro', 'team', 'starter', 'homeowner'].includes(plan))
+    // Paying + legacy/grandfathered-free plans → always allowed.
+    if (ALLOWED_PLANS.includes(plan)) return { allowed: true };
+
+    // GRANDFATHER SAFETY NET: any account created before the card-wall launch is a founding
+    // tech — never walled, even if still carrying the legacy 'trial' plan. Belt-and-suspenders
+    // with the plan='founder' backfill so a missed row can never lock out an early user.
+    if (created_at && new Date(created_at).getTime() < CARD_WALL_CUTOFF_MS)
       return { allowed: true };
 
-    // Trial — check 7-day window
+    // NEW SIGNUPS on 'trial': allowed once a card is on file. Completing Stripe Checkout flips
+    // the account to 'pro' (via webhook) with a subscription in its 14-day trial — Stripe manages
+    // the trial window and the auto-charge. A trial account with a subscription id but not yet
+    // flipped is still card-on-file → allow. No subscription = card wall.
     if (plan === 'trial') {
-      const start = trial_start ? new Date(trial_start).getTime() : Date.now();
-      const daysElapsed = (Date.now() - start) / (1000 * 60 * 60 * 24);
-      if (daysElapsed <= 7) return { allowed: true };
-      return { allowed: false, reason: 'Your 7-day free trial has expired. Upgrade to keep using Trazer.', paywall: true };
+      if (stripe_subscription_id) return { allowed: true };
+      return { allowed: false, reason: 'Start your 14-day free trial — add a card to keep using Mike.', paywall: true };
     }
 
-    // 'beta' = legacy plan from before Phase 1. Treat same as trial — allow through.
-    // These are early users who signed up before billing went live.
-    if (plan === 'beta') return { allowed: true };
-
-    // Any other unknown plan → deny
-    return { allowed: false, reason: 'A subscription is required to use Trazer AI.', paywall: true };
+    // Any other unknown plan → deny.
+    return { allowed: false, reason: 'A subscription is required to use Mike.', paywall: true };
   } catch (err) {
     console.error('Paywall check error:', err.message);
-    // If DB check fails — fail open to avoid blocking paying users during an outage
+    // If DB check fails — fail open to avoid blocking paying/founding techs during an outage.
     return { allowed: true };
   }
 }

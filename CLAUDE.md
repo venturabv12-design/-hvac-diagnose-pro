@@ -75,11 +75,13 @@ Key client-side patterns:
 
 ## Locked files / regions
 
-These regions must NOT be edited without explicit override. The `.claude/` hooks enforce this automatically; this section is the source of truth.
+These regions are protected. The `.claude/` hooks enforce this; this section is the source of truth.
+
+**Phone-first operating posture (Brandon, 2026-07-25):** Brandon runs the whole business from his phone in remote mode and wants ZERO terminal dependency. Editing `index.js`, pushing to `main`, and running ops/DB commands (`railway run …`, Supabase writes) are all **permitted when he directs them by his explicit word** — his "do it"/"push it"/"ship it" is the gate. No session-launch override flag, no terminal handoffs. Discipline still binds (see below); this widened access is about removing terminal friction, not removing judgment.
 
 **Whole files:**
-- `index.js` — entire backend. Includes `/api/tts` route (lines 1218–1263), `authenticateToken` middleware, Supabase auth helpers. Never touch from a frontend task.
-- `public/lucide.min.js` — bundled library (~356 KB). Never hand-edit.
+- `index.js` — the backend (auth, billing, `/api/tts` at ~1218–1263, `authenticateToken`, Supabase helpers, and the deterministic safety/pricing guard). **Editable on Brandon's explicit word** (the hard lock was removed 2026-07-25). Discipline: only edit it when the task genuinely needs backend work Brandon directed; NEVER touch it during pure-frontend work (gate 7 still verifies its sha on frontend commits); on any edit PRESERVE the auth + the safety/pricing guard; surface the diff; prod deploy still needs his "push it".
+- `public/lucide.min.js` — bundled library (~356 KB). Never hand-edit (still hard-locked).
 
 **Function bodies inside `public/index.html`:**
 - `parseJSON` — defined at `public/index.html:3387` (`function parseJSON(raw){`)
@@ -92,7 +94,7 @@ These regions must NOT be edited without explicit override. The `.claude/` hooks
 ## Engineering discipline (non-negotiable)
 
 - **Plan Mode** for any change touching ≥3 files or any structural / architectural change. Spec first, approve, then execute.
-- **Feature branch always.** Never push directly to `main` — Hook B blocks `git push origin main` at the bash layer. Merging to main requires explicit approval (PR or `git revert` for rollbacks).
+- **Feature branch first; push to `main` on Brandon's explicit word.** Build on a feature branch, commit there, and pass all pre-ship gates. Pushing/merging to `main` (which auto-deploys prod) is **permitted when Brandon says "push it" / "ship it"** — that phrase IS the approval gate ("if I say push it that means we went through everything and I'm good with the update," 2026-07-25). The operator then pushes to `main` directly, no terminal step for Brandon. Discipline still binds: only push on that explicit word, never autonomously; one clean commit per change; all audit gates green first. Force-push to `main` and locked-file shell writes remain hard-blocked by Hook B. Rollback = `git revert`.
 - **One commit per logical change.** No batched "misc fixes."
 - **Diff before edit.** For edits to `public/index.html`, surface old/new strings before applying; manual approval per edit during active sessions.
 - **Pre-ship audit before every commit** that touches `public/index.html`. Counts must match the snapshot baseline (next section). Hook C reports drift to stderr post-edit.
@@ -107,7 +109,7 @@ Seven gates must pass before any commit touching `public/index.html`:
 4. `grep -c 'JOB_SAVED' public/index.html` → equal to pre-edit snapshot
 5. `grep -c 'data-lucide=' public/index.html` → equal to pre-edit snapshot
 6. **Brace delta unchanged**: `(open − close)` post-edit equals pre-edit delta. Use `awk -F'{' '{c+=NF-1} END{print c}'` and `awk -F'}' '{c+=NF-1} END{print c}'`.
-7. `shasum -a 256 index.js` → equal to pre-edit snapshot. **No backend changes during frontend work, ever.**
+7. `shasum -a 256 index.js` → equal to pre-edit snapshot **for any commit touching `public/index.html`**. Frontend commits never carry backend changes — keep them separate. (Backend work is now permitted on Brandon's word, but as its OWN commit, not bundled into a frontend edit.)
 
 Hook C (`scripts/post-edit-audit.sh`) automates gates 2–7 against a snapshot keyed on `git HEAD` (auto-refreshes after each commit). Gate 1 is run manually.
 

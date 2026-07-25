@@ -2765,13 +2765,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 
     <!-- SIGN UP FORM — same safe form-wrap; buttons stay type="button". -->
     <form id="authUpForm" onsubmit="event.preventDefault();return false;" style="display:none">
-      <div class="auth-field">
-        <label class="auth-lbl">I am a...</label>
-        <div style="display:flex;gap:8px;margin-top:6px;">
-          <button type="button" id="roleHomeBtn" onclick="selectRoleInline('homeowner')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">🏠 Homeowner</button>
-          <button type="button" id="roleProBtn" onclick="selectRoleInline('contractor')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">🔧 Contractor</button>
-        </div>
-      </div>
+      <!-- Homeowner side removed (2026-07-25) — tech/contractor-only, no role picker. -->
       <div class="auth-field">
         <label class="auth-lbl">Full Name</label>
         <input class="auth-inp" type="text" id="suName" placeholder="Your name" autocomplete="name"/>
@@ -2784,7 +2778,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         <label class="auth-lbl">Password</label>
         <input class="auth-inp" type="password" id="suPass" placeholder="Min 8 characters" autocomplete="new-password"/>
       </div>
-      <div class="auth-field" id="suCompanyField" style="display:none">
+      <div class="auth-field" id="suCompanyField">
         <label class="auth-lbl">Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
         <input class="auth-inp" type="text" id="suCompany" placeholder="Your HVAC company" autocomplete="organization"/>
       </div>
@@ -2836,62 +2830,39 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   <div class="pw-icon">🔐</div>
   <div class="pw-title" id="pwTitle">Trial Ended</div>
   <div class="pw-sub" id="pwSub">One upsell per day pays for the whole year.</div>
-  <!-- Homeowner plan -->
-  <div id="pwHomeowner" style="display:none">
-    <div class="pw-plans" style="justify-content:center;">
-      <div class="pw-plan sel" style="max-width:220px;" onclick="selectPlan('homeowner',this)">
-        <div class="pw-badge">HOMEOWNER</div>
-        <div class="pw-name">Home Plan</div>
-        <div class="pw-price">$19<span style="font-size:16px;font-weight:600">.99</span></div>
-        <div class="pw-period">/month</div>
-        <div class="pw-save" style="margin-top:8px;">Unlimited diagnostics</div>
-      </div>
-    </div>
-  </div>
-  <!-- Contractor plans — clear feature breakdown -->
+  <!-- Homeowner plan removed 2026-07-25 (tech-only). -->
+  <!-- Contractor plans — one plan, $100/mo; Enterprise custom for crews -->
   <div id="pwContractor">
-    <div class="pw-plans">
-      <div class="pw-plan" onclick="selectPlan('starter',this)">
-        <div class="pw-name">Starter</div>
-        <div class="pw-price">$79</div>
-        <div class="pw-period">/tech/mo</div>
-        <div class="pw-features">
-          <div class="pw-feat">✅ Live chat with Mike</div>
-          <div class="pw-feat">✅ Revenue coaching</div>
-          <div class="pw-feat">✅ Parts pricing</div>
-          <div class="pw-feat">✅ Voice mode</div>
-          <div class="pw-feat pw-feat-no">❌ Live camera</div>
-          <div class="pw-feat pw-feat-no">❌ Full diagnostic form</div>
-        </div>
-      </div>
+    <div class="pw-plans" style="justify-content:center;">
       <div class="pw-plan sel" onclick="selectPlan('pro',this)">
-        <div class="pw-badge">MOST POPULAR</div>
-        <div class="pw-name">Pro</div>
-        <div class="pw-price">$149</div>
+        <div class="pw-badge">EVERYTHING INCLUDED</div>
+        <div class="pw-name">Mike Pro</div>
+        <div class="pw-price">$100</div>
         <div class="pw-period">/tech/mo</div>
         <div class="pw-features">
-          <div class="pw-feat">✅ Everything in Starter</div>
+          <div class="pw-feat">✅ Live chat &amp; voice with Mike</div>
           <div class="pw-feat">✅ Live camera diagnosis</div>
           <div class="pw-feat">✅ Full diagnostic form</div>
+          <div class="pw-feat">✅ Revenue coaching &amp; parts pricing</div>
           <div class="pw-feat">✅ Nameplate scanner</div>
-          <div class="pw-feat">✅ SVG diagrams</div>
+          <div class="pw-feat">✅ SVG wiring diagrams</div>
           <div class="pw-feat">✅ Priority support</div>
         </div>
       </div>
       <div class="pw-plan" onclick="selectPlan('enterprise',this)">
-        <div class="pw-name">Team</div>
+        <div class="pw-name">Enterprise</div>
         <div class="pw-price" style="font-size:22px;">Custom</div>
         <div class="pw-period">5+ techs</div>
         <div class="pw-features">
           <div class="pw-feat">✅ Everything in Pro</div>
           <div class="pw-feat">✅ Team dashboard</div>
-          <div class="pw-feat">✅ Volume discount</div>
+          <div class="pw-feat">✅ Volume pricing</div>
         </div>
       </div>
     </div>
   </div>
   <button class="pw-btn" onclick="goCheckout()">Subscribe Now — Cancel Anytime</button>
-  <div class="pw-note">Annual billing saves 20%</div>
+  <div class="pw-note">$100/tech/mo · cancel anytime</div>
   <div style="margin-top:16px;padding:14px 16px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:10px;text-align:left;">
     <div style="font-size:12px;font-weight:700;color:var(--rust);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why techs pay for Pro</div>
     <div style="font-size:13px;color:#9ca3af;line-height:1.7;">
@@ -3049,10 +3020,11 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div class="v2-lnd-pill"><span class="v2-dot"></span><span data-v2i18n="lndLive">MIKE · LIVE</span></div>
     </div>
 
-    <!-- AUDIENCE TOGGLE — drives setMode('pro')/('home') -->
-    <div class="v2-seg" role="tablist" aria-label="Choose your view">
+    <!-- AUDIENCE TOGGLE — removed 2026-07-25 (homeowner side gone, tech-only). Hidden, not
+         deleted, so v2SetAudience/syncV2Landing can still reference #v2SegTech without a null throw. -->
+    <div class="v2-seg" role="tablist" aria-label="Choose your view" style="display:none">
       <button id="v2SegTech" class="on" role="tab" aria-selected="true" onclick="v2SetAudience('tech')"><span class="tk">●</span> <span data-v2i18n="lndImTech">I'M A TECH</span></button>
-      <button id="v2SegHome" role="tab" aria-selected="false" onclick="v2SetAudience('home')"><span data-v2i18n="lndImHome">I'M A HOMEOWNER</span></button>
+      <button id="v2SegHome" role="tab" aria-selected="false" onclick="v2SetAudience('home')" style="display:none"><span data-v2i18n="lndImHome">I'M A HOMEOWNER</span></button>
     </div>
 
     <!-- HEADLINE + LEDE (swap per audience) -->
@@ -4271,18 +4243,11 @@ function applyModeFromRole() {
     return;
   }
   if (avt) avt.style.display = 'none'; // non-admins: single role, no switcher
-  if (role === 'homeowner') {
-    setMode('home');
-    // Hide the contractor tab only — keep the card visible
-    var proTab = document.getElementById('tabPro');
-    if (proTab) proTab.style.display = 'none';
-  } else {
-    setMode('pro');
-    document.body.classList.add('mp-chatting'); document.documentElement.classList.add('mp-chatting'); // chat-first: land in the conversation, not the hero
-    // Hide the homeowner tab only — keep the card visible
-    var homeTab = document.getElementById('tabHome');
-    if (homeTab) homeTab.style.display = 'none';
-  }
+  // Homeowner side removed (2026-07-25) — every non-admin user is tech/contractor.
+  setMode('pro');
+  document.body.classList.add('mp-chatting'); document.documentElement.classList.add('mp-chatting'); // chat-first: land in the conversation, not the hero
+  var homeTab = document.getElementById('tabHome');
+  if (homeTab) homeTab.style.display = 'none';
 }
 
 function tracerInit(){
@@ -4497,11 +4462,10 @@ function authSignUp(){
     return;
   }
   if(pass.length<8){showAuthErr('Password must be at least 8 characters.');return;}
-  // Require an EXPLICIT Homeowner/Contractor choice — never silently default to contractor.
-  // Otherwise a homeowner who skips the toggle lands in contractor mode with no homeowner
-  // protection (no price wall, contractor tools exposed). Cert blocker fix.
-  var selectedRole=window._pendingRole||pendingRole;
-  if(!selectedRole){showAuthErr('One more thing — are you a Homeowner or a Contractor? Tap one above.');return;}
+  // Homeowner side removed (2026-07-25) — everyone signing up is a tech/contractor.
+  // No role picker; default to 'contractor'. (The no-price safety guard is content-based
+  // in the backend, not role-based, so it still fires regardless of role.)
+  var selectedRole=window._pendingRole||pendingRole||'contractor';
   var btn=document.getElementById('suBtn');
   if(btn){btn.disabled=true;btn.textContent='Creating account...';}
   fetch('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,password:pass,company:company,role:selectedRole})})
@@ -5030,11 +4994,9 @@ function saveProfileSettings(){
 
 function pddBilling(){
   closeProfileDD();window._settingsReturn=true;
-  var isHome=currentUser&&currentUser.role==='homeowner';
-  var hc=document.getElementById('billingHomeCards');
+  // Homeowner side removed (2026-07-25) — always show the tech/contractor plan.
   var pc=document.getElementById('billingProCards');
-  if(hc)hc.style.display=isHome?'block':'none';
-  if(pc)pc.style.display=isHome?'none':'flex';
+  if(pc)pc.style.display='flex';
   openModal('billingModal');
 }
 function pddWhatsNew(){
@@ -5149,16 +5111,13 @@ function _showPaywall_DISABLED(){
   closeProfileDD();
   var e=document.getElementById('paywallOverlay');
   if(!e)return;
-  var isHome=currentUser&&currentUser.role==='homeowner';
-  var homeDiv=document.getElementById('pwHomeowner');
+  // Homeowner side removed (2026-07-25) — tech/contractor plan only.
   var proDiv=document.getElementById('pwContractor');
   var title=document.getElementById('pwTitle');
   var sub=document.getElementById('pwSub');
-  if(homeDiv)homeDiv.style.display=isHome?'block':'none';
-  if(proDiv)proDiv.style.display=isHome?'none':'block';
-  if(title)title.textContent=isHome?'Upgrade Your Plan':'Trial Ended';
-  if(sub)sub.textContent=isHome?'Keep Mike helping with your home.':'Choose your plan and keep Mike on every job.';
-  if(isHome)selPlan='homeowner';
+  if(proDiv)proDiv.style.display='block';
+  if(title)title.textContent='Trial Ended';
+  if(sub)sub.textContent='Choose your plan and keep Mike on every job.';
   e.classList.add('show');
 }
 var selPlan='pro'; // default plan so goCheckout never reads an UNDECLARED selPlan — tapping "Subscribe" before a plan card was clicked threw ReferenceError and killed checkout
@@ -6662,24 +6621,25 @@ function populateSelects(){
 }
 
 function setMode(m){
-  mode=m;
-  var isPro=m==='pro';
-  document.body.dataset.mode=isPro?'contractor':'homeowner';
-  document.getElementById('tabHome').className='mode-tab'+(m==='home'?' active':'');
-  document.getElementById('tabPro').className='mode-tab'+(m==='pro'?' active':'');
-  document.getElementById('panelHome').style.display=isPro?'none':'block';
-  document.getElementById('panelDiag').style.display=isPro?'block':'none';
-  // P0-2 — keep these in the user's language. setMode() runs on every login + toggle,
-  // so it must read from i18n (v2t) instead of overwriting with hardcoded English.
-  document.getElementById('heroTitle').textContent=isPro?v2t('heroPro'):v2t('heroHome');
-  document.getElementById('heroSub').textContent=isPro?v2t('heroSubPro'):v2t('heroSubHome');
-  document.getElementById('modeDesc').textContent=isPro?v2t('descPro'):v2t('descHome');
-  // H5 — nav Mike status: techs get the dispatch/CB-radio framing; homeowners get
-  // plain-English consumer copy (no "CH 01" channel jargon).
+  // Homeowner side removed (2026-07-25) — Mike is tech/contractor-only now.
+  // setMode is kept (many callers) but hard-forced to contractor so the entire
+  // tech UI (200+ body[data-mode="contractor"] rules) always has its styling,
+  // regardless of what any legacy caller passes. All element refs are guarded
+  // so removing the old homeowner elements can't throw.
+  mode='pro';
+  document.body.dataset.mode='contractor';
+  var el;
+  el=document.getElementById('tabHome'); if(el)el.className='mode-tab';
+  el=document.getElementById('tabPro'); if(el)el.className='mode-tab active';
+  el=document.getElementById('panelHome'); if(el)el.style.display='none';
+  el=document.getElementById('panelDiag'); if(el)el.style.display='block';
+  el=document.getElementById('heroTitle'); if(el)el.textContent=v2t('heroPro');
+  el=document.getElementById('heroSub'); if(el)el.textContent=v2t('heroSubPro');
+  el=document.getElementById('modeDesc'); if(el)el.textContent=v2t('descPro');
   var nms=document.getElementById('navMikeStatus');
-  if(nms)nms.textContent=isPro?'● On the line':'● Online · ready to help';
+  if(nms)nms.textContent='● On the line';
   // Keep the V2 landing (Frame G) toggle + console in lock-step with the one router.
-  syncV2Landing(isPro?'tech':'home');
+  syncV2Landing('tech');
   // Option B chat-forward: pre-auth shows the tall #v2Landing front door; post-auth
   // collapses it to the 80px #instrStrip so the chat sits at the fold.
   syncAuthSurface();
@@ -6757,7 +6717,7 @@ function syncV2Landing(aud){
 }
 
 // Frame G audience toggle → drives the EXISTING setMode router (tech=contractor/panelDiag, home=panelHome).
-function v2SetAudience(aud){ setMode(aud==='tech'?'pro':'home'); }
+function v2SetAudience(aud){ setMode('pro'); /* homeowner side removed — always tech */ }
 
 // Primary CTA "Ask Mike anything →" — flow into the Phase-B chat for the active audience.
 function v2LandingAsk(){
@@ -13436,34 +13396,20 @@ document.addEventListener('DOMContentLoaded',function(){
     <span class="tz-modal-back" onclick="closeModal('billingModal')">← Back</span>
     <div class="plan-coming-soon">🚀 Billing is coming soon — you are on beta access</div>
     <div class="plan-card-grid">
-      <!-- Homeowner billing -->
-      <div id="billingHomeCards" style="display:none;width:100%;max-width:220px;margin:0 auto;">
-        <div class="plan-card active" onclick="selectBillingPlan('homeowner',this)">
-          <div class="plan-card-badge">HOME PLAN</div>
-          <div class="plan-card-name">Homeowner</div>
-          <div class="plan-card-price">$19.99</div>
-          <div class="plan-card-period">/month</div>
-          <div class="plan-card-save">Unlimited diagnostics</div>
-        </div>
-      </div>
+      <!-- Homeowner billing card removed 2026-07-25 (tech-only). -->
       <!-- Contractor billing -->
       <div id="billingProCards">
-        <div class="plan-card" onclick="selectBillingPlan('starter',this)">
-          <div class="plan-card-name">Starter</div>
-          <div class="plan-card-price">$79</div>
-          <div class="plan-card-period">/tech/mo</div>
-        </div>
         <div class="plan-card active" onclick="selectBillingPlan('pro',this)">
-          <div class="plan-card-badge">BEST VALUE</div>
-          <div class="plan-card-name">Pro</div>
-          <div class="plan-card-price">$149</div>
+          <div class="plan-card-badge">EVERYTHING INCLUDED</div>
+          <div class="plan-card-name">Mike Pro</div>
+          <div class="plan-card-price">$100</div>
           <div class="plan-card-period">/tech/mo</div>
           <div class="plan-card-save">All features</div>
         </div>
         <div class="plan-card" onclick="selectBillingPlan('enterprise',this)">
           <div class="plan-card-name">Enterprise</div>
           <div class="plan-card-price" style="font-size:20px;font-weight:800;">Custom</div>
-          <div class="plan-card-period">11+ techs</div>
+          <div class="plan-card-period">5+ techs</div>
         </div>
       </div>
     </div>

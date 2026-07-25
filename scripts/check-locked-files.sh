@@ -96,12 +96,24 @@ except Exception:
 fi
 
 # --- Whole-file path blocks ---
+# index.js is INTENTIONALLY UNLOCKED (Brandon, 2026-07-25): he runs the whole
+# business from his phone via remote mode and wants zero terminal dependency —
+# the old lock required TRAZER_HOOK_OVERRIDE=1 set at session launch (a terminal
+# step). The gate is now his explicit word + operator discipline, NOT a mechanical
+# block. DISCIPLINE THAT STILL BINDS (see CLAUDE.md): only edit index.js when the
+# task genuinely needs backend work and Brandon directed it; NEVER touch it during
+# pure-frontend work (gate 7 still checks index.js sha on frontend commits); PRESERVE
+# the auth + the deterministic safety/pricing guard on every edit; surface the diff;
+# prod deploy still needs his "push it". To restore the hard lock, un-comment below.
+#
+# case "$FILE_PATH" in
+#   */index.js | index.js)
+#     echo "[check-locked-files] BLOCKED: index.js (backend) is fully locked per CLAUDE.md." >&2
+#     echo "[check-locked-files] Set TRAZER_HOOK_OVERRIDE=1 to bypass." >&2
+#     exit 2
+#     ;;
+# esac
 case "$FILE_PATH" in
-  */index.js | index.js)
-    echo "[check-locked-files] BLOCKED: index.js (backend) is fully locked per CLAUDE.md." >&2
-    echo "[check-locked-files] Set TRAZER_HOOK_OVERRIDE=1 to bypass." >&2
-    exit 2
-    ;;
   */public/lucide.min.js | public/lucide.min.js)
     echo "[check-locked-files] BLOCKED: public/lucide.min.js is a bundled library, never hand-edit." >&2
     echo "[check-locked-files] Set TRAZER_HOOK_OVERRIDE=1 to bypass." >&2

@@ -2845,50 +2845,38 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       </div>
     </div>
   </div>
-  <!-- Contractor plans — clear feature breakdown -->
+  <!-- Contractor plans — one plan, $100/mo; Enterprise custom for crews -->
   <div id="pwContractor">
-    <div class="pw-plans">
-      <div class="pw-plan" onclick="selectPlan('starter',this)">
-        <div class="pw-name">Starter</div>
-        <div class="pw-price">$79</div>
-        <div class="pw-period">/tech/mo</div>
-        <div class="pw-features">
-          <div class="pw-feat">✅ Live chat with Mike</div>
-          <div class="pw-feat">✅ Revenue coaching</div>
-          <div class="pw-feat">✅ Parts pricing</div>
-          <div class="pw-feat">✅ Voice mode</div>
-          <div class="pw-feat pw-feat-no">❌ Live camera</div>
-          <div class="pw-feat pw-feat-no">❌ Full diagnostic form</div>
-        </div>
-      </div>
+    <div class="pw-plans" style="justify-content:center;">
       <div class="pw-plan sel" onclick="selectPlan('pro',this)">
-        <div class="pw-badge">MOST POPULAR</div>
-        <div class="pw-name">Pro</div>
-        <div class="pw-price">$149</div>
+        <div class="pw-badge">EVERYTHING INCLUDED</div>
+        <div class="pw-name">Mike Pro</div>
+        <div class="pw-price">$100</div>
         <div class="pw-period">/tech/mo</div>
         <div class="pw-features">
-          <div class="pw-feat">✅ Everything in Starter</div>
+          <div class="pw-feat">✅ Live chat &amp; voice with Mike</div>
           <div class="pw-feat">✅ Live camera diagnosis</div>
           <div class="pw-feat">✅ Full diagnostic form</div>
+          <div class="pw-feat">✅ Revenue coaching &amp; parts pricing</div>
           <div class="pw-feat">✅ Nameplate scanner</div>
-          <div class="pw-feat">✅ SVG diagrams</div>
+          <div class="pw-feat">✅ SVG wiring diagrams</div>
           <div class="pw-feat">✅ Priority support</div>
         </div>
       </div>
       <div class="pw-plan" onclick="selectPlan('enterprise',this)">
-        <div class="pw-name">Team</div>
+        <div class="pw-name">Enterprise</div>
         <div class="pw-price" style="font-size:22px;">Custom</div>
         <div class="pw-period">5+ techs</div>
         <div class="pw-features">
           <div class="pw-feat">✅ Everything in Pro</div>
           <div class="pw-feat">✅ Team dashboard</div>
-          <div class="pw-feat">✅ Volume discount</div>
+          <div class="pw-feat">✅ Volume pricing</div>
         </div>
       </div>
     </div>
   </div>
   <button class="pw-btn" onclick="goCheckout()">Subscribe Now — Cancel Anytime</button>
-  <div class="pw-note">Annual billing saves 20%</div>
+  <div class="pw-note">$100/tech/mo · cancel anytime</div>
   <div style="margin-top:16px;padding:14px 16px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:10px;text-align:left;">
     <div style="font-size:12px;font-weight:700;color:var(--rust);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why techs pay for Pro</div>
     <div style="font-size:13px;color:#9ca3af;line-height:1.7;">
@@ -13445,22 +13433,17 @@ document.addEventListener('DOMContentLoaded',function(){
       </div>
       <!-- Contractor billing -->
       <div id="billingProCards">
-        <div class="plan-card" onclick="selectBillingPlan('starter',this)">
-          <div class="plan-card-name">Starter</div>
-          <div class="plan-card-price">$79</div>
-          <div class="plan-card-period">/tech/mo</div>
-        </div>
         <div class="plan-card active" onclick="selectBillingPlan('pro',this)">
-          <div class="plan-card-badge">BEST VALUE</div>
-          <div class="plan-card-name">Pro</div>
-          <div class="plan-card-price">$149</div>
+          <div class="plan-card-badge">EVERYTHING INCLUDED</div>
+          <div class="plan-card-name">Mike Pro</div>
+          <div class="plan-card-price">$100</div>
           <div class="plan-card-period">/tech/mo</div>
           <div class="plan-card-save">All features</div>
         </div>
         <div class="plan-card" onclick="selectBillingPlan('enterprise',this)">
           <div class="plan-card-name">Enterprise</div>
           <div class="plan-card-price" style="font-size:20px;font-weight:800;">Custom</div>
-          <div class="plan-card-period">11+ techs</div>
+          <div class="plan-card-period">5+ techs</div>
         </div>
       </div>
     </div>

@@ -46,7 +46,12 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY; // Optional — password rese
 // is never walled (belt-and-suspenders with the explicit plan='founder' backfill).
 // The cutoff is env-overridable so it can be set to the exact prod-deploy instant at ship.
 const TRIAL_DAYS = 14;
-const CARD_WALL_CUTOFF = process.env.CARD_WALL_CUTOFF || '2026-07-25T23:59:59Z';
+// Time-based grandfather safety net. MUST default to a PAST instant so an unset/forgotten env
+// can never future-date the window and let fresh signups slip through the wall (a leak the crew
+// caught). At ship, override CARD_WALL_CUTOFF to the exact prod-deploy instant. The PRIMARY
+// grandfather protection is the explicit plan='founder' backfill (scripts/grandfather-founders.js),
+// which flips every existing account regardless of date — this cutoff is only the belt-and-suspenders.
+const CARD_WALL_CUTOFF = process.env.CARD_WALL_CUTOFF || '2026-07-24T00:00:00Z';
 const CARD_WALL_CUTOFF_MS = new Date(CARD_WALL_CUTOFF).getTime();
 // Plans that always have access (paying + legacy/grandfathered free). 'founder' = the
 // grandfathered founding techs; 'beta' = pre-Phase-1 legacy; 'homeowner' = revivable legacy.
@@ -1452,7 +1457,7 @@ app.get('/diagrams/redraw/:id', (req, res) => {
 // simplified illustration (SVG). Checks the SHARED library first (do-once — instant + free on a hit);
 // on a miss, runs the redraw engine, SAVES the result to the shared library so the next tech on that
 // model gets it instantly, then returns it. Body: { image (data-URL or base64), brand, model, circuit? }
-app.post('/api/redraw', aiLimiter, authenticateToken, async (req, res) => {
+app.post('/api/redraw', aiLimiter, authenticateToken, requirePaidAccess, async (req, res) => {
   if (!ANTHROPIC_API_KEY) return res.status(503).json({ ok: false, error: 'Redraw is unavailable right now.' });
   try {
     const { image, brand, model, circuit } = req.body || {};
@@ -1555,6 +1560,18 @@ async function checkPaywall(token) {
     // If DB check fails — fail open to avoid blocking paying/founding techs during an outage.
     return { allowed: true };
   }
+}
+
+// Paywall middleware for the OTHER AI-cost routes (voice /api/tts, diagram /api/redraw) — same
+// gate as /api/ai so a no-card new account can't burn ElevenLabs/Anthropic spend for free.
+// Token comes from the Authorization: Bearer header (these routes use authenticateToken) or body.
+async function requirePaidAccess(req, res, next) {
+  const token = (req.headers['authorization']?.startsWith('Bearer ') ? req.headers['authorization'].slice(7) : null)
+    || req.body?.token;
+  const access = await checkPaywall(token);
+  if (!access.allowed)
+    return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
+  next();
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -2146,7 +2163,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
 // ── TTS ───────────────────────────────────────────────────────────────────────
 // Auth + rate-limited: token comes from body (existing frontend pattern, same as /api/ai)
 // or Authorization: Bearer header. authenticateToken reads both. (Security fix C3.)
-app.post('/api/tts', ttsLimiter, authenticateToken, async (req, res) => {
+app.post('/api/tts', ttsLimiter, authenticateToken, requirePaidAccess, async (req, res) => {
   const { text } = req.body;
   if (!text || typeof text !== 'string') return res.status(400).json({ error: 'text required' });
   if (!ELEVENLABS_API_KEY) return res.status(503).json({ error: 'TTS not configured' });

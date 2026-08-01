@@ -9534,7 +9534,19 @@ function appendLiveAgentToken(wrap,piece){
   if(!wrap||!piece)return;
   var body=wrap.querySelector('[data-live-body]');
   if(!body)return;
-  body.textContent+=piece;
+  // Streaming used to dump raw tokens straight in as text, so Mike's **bold** headers sat
+  // on screen as literal asterisks for the entire reply before snapping to bold at the end
+  // (the finalized appendMessage render already handles markdown). Accumulate the raw text
+  // and apply the bold pass live. ESCAPE FIRST — model output is never trusted as HTML.
+  var raw=(body.getAttribute('data-raw')||'')+piece;
+  body.setAttribute('data-raw',raw);
+  if(raw.indexOf('**')===-1){
+    body.textContent=raw; // fast path — nothing to format
+  }else{
+    // Only closed **pairs** convert; a half-open marker still streaming in is left as-is
+    // until its closer arrives, so nothing flickers mid-word.
+    body.innerHTML=escapeHtml(raw).replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
+  }
   var cm=document.getElementById('chatMessages');
   if(cm){var nearBottom=(cm.scrollHeight-cm.scrollTop-cm.clientHeight)<120;if(nearBottom)cm.scrollTop=cm.scrollHeight;}
 }
@@ -9780,7 +9792,11 @@ async function sendChat(){
     var _genKind=window._mpPendingGen;window._mpPendingGen=null;
     input.value='';input.style.height='auto';
     appendMessage('user',escapeHtml(text));
-    if(typeof generateAndShowSVG==='function')generateAndShowSVG(text,text.substring(0,40)+'…',_genKind==='illustration');
+    // Record the turn the early return below would otherwise skip — without this the
+    // whole exchange never reaches chatHistory and Mike can't refer back to what he drew.
+    var _tbSubject=resolveDrawSubject(text);
+    recordDrawStart(text,_tbSubject,_genKind==='illustration');
+    if(typeof generateAndShowSVG==='function')generateAndShowSVG(_tbSubject,text.substring(0,40)+'…',_genKind==='illustration');
     return;
   }
   // Free-text "draw / illustrate / sketch X" typed straight into chat (no toolbelt tap)
@@ -9791,7 +9807,11 @@ async function sendChat(){
     var _ill=!/(wiring|schematic|circuit|ladder|control board|sequence)/i.test(text);
     input.value='';input.style.height='auto';
     appendMessage('user',escapeHtml(text));
-    generateAndShowSVG(text,text.substring(0,40)+'…',_ill);
+    // Same continuity fix as the toolbelt path above: put the request + an in-progress
+    // marker into chatHistory, and resolve a bare "it"/"that" against what was last drawn.
+    var _ftSubject=resolveDrawSubject(text);
+    recordDrawStart(text,_ftSubject,_ill);
+    generateAndShowSVG(_ftSubject,text.substring(0,40)+'…',_ill);
     return;
   }
   // Mark state and switch button to Stop mode (so user can abort a long response)
@@ -11250,6 +11270,59 @@ function flagLibraryDiagram(diagramId,modelKey,linkEl){
       if(d&&d.demoted&&typeof showToast==='function')showToast('Diagram flagged for review','info',2500);})
     .catch(function(){});
 }
+// ── Diagram/illustration conversation continuity ─────────────────────────────
+// The draw/illustrate intercepts in sendChat return early, which jumps OVER both
+// chatHistory.push calls every normal turn gets. Net effect: the entire exchange
+// was invisible to Mike — a tech asks for a diagram, then says "illustrate that
+// too" and Mike answers "an illustration of what?" because from his side nothing
+// was ever discussed. Same reason "still waiting?" got a blank-slate reply mid-draw.
+// These helpers put the exchange back into the transcript so Mike carries the thread.
+function _drawKindLabel(isIllustration){return isIllustration?'an illustration':'a wiring diagram';}
+// Purely referential asks ("illustrate it too", "same thing but a picture") carry no
+// subject of their own. Pull the last drawn subject out of the transcript so the
+// generator draws the right thing instead of literally rendering the word "it".
+function resolveDrawSubject(text){
+  if(!text)return text;
+  var referential=/\b(it|that|this|those|them|the same|same thing|same one)\b/i.test(text);
+  var hasSubject=/\b(wiring|thermostat|compressor|contactor|capacitor|furnace|heat pump|condenser|air handler|board|valve|motor|relay|transformer|zone|damper|coil|blower|defrost|schematic|circuit|ladder|txv|reversing|evaporator|refrigerant|duct|plenum)\b/i.test(text);
+  if(!referential||hasSubject)return text;
+  try{
+    if(typeof chatHistory==='undefined'||!chatHistory||!chatHistory.length)return text;
+    for(var i=chatHistory.length-1;i>=0;i--){
+      var m=chatHistory[i];
+      if(!m||m.role!=='assistant'||typeof m.content!=='string')continue;
+      var hit=m.content.match(/\[Mike (?:is drawing|drew) (?:a|an) [a-z ]+?: ([^\].]+)/i);
+      if(hit&&hit[1])return text+' — the subject is: '+hit[1].trim();
+    }
+  }catch(e){}
+  return text;
+}
+// Record the request + an in-progress marker the early return would have skipped, so a
+// follow-up mid-render ("still waiting?") reaches a Mike who knows what he's drawing.
+function recordDrawStart(userText,subject,isIllustration){
+  try{
+    if(typeof chatHistory==='undefined'||!chatHistory||!chatHistory.push)return;
+    chatHistory.push({role:'user',content:String(userText||'')});
+    chatHistory.push({role:'assistant',content:'[Mike is drawing '+_drawKindLabel(isIllustration)+': '+String(subject||'').slice(0,140)+'. It renders straight onto the tech\'s screen. If he asks about it while it is still going, tell him it is on the way.]'});
+    if(chatHistory.length>40)chatHistory=chatHistory.slice(-40);
+  }catch(e){}
+}
+// Flip the in-progress marker to a finished one once it lands (or fails), so later
+// turns can refer back to "it" / "that diagram" and Mike knows exactly what it is.
+function recordDrawDone(subject,isIllustration,ok){
+  try{
+    if(typeof chatHistory==='undefined'||!chatHistory||!chatHistory.length)return;
+    for(var i=chatHistory.length-1;i>=0;i--){
+      var m=chatHistory[i];
+      if(m&&m.role==='assistant'&&typeof m.content==='string'&&m.content.indexOf('[Mike is drawing ')===0){
+        m.content=ok
+          ?'[Mike drew '+_drawKindLabel(isIllustration)+': '+String(subject||'').slice(0,140)+'. It is on the tech\'s screen now — if he says "it", "that" or "that diagram", this is what he means.]'
+          :'[Mike tried to draw '+String(subject||'').slice(0,140)+' but the render failed. Acknowledge it and offer to try again.]';
+        return;
+      }
+    }
+  }catch(e){}
+}
 async function generateAndShowSVG(prompt, caption, isIllustration){
   // Knowledge Library: for WIRING diagrams with a known model, check the shared
   // cache first. A VERIFIED hit is rendered instantly (zero AI cost). Otherwise
@@ -11263,7 +11336,10 @@ async function generateAndShowSVG(prompt, caption, isIllustration){
         var lj=await lr.json();
         if(lj&&lj.found&&lj.diagrams&&lj.diagrams.length){
           var verified=null;for(var vi=0;vi<lj.diagrams.length;vi++){if(lj.diagrams[vi].verified){verified=lj.diagrams[vi];break;}}
-          if(verified&&verified.svg){renderLibraryDiagram(verified.svg,caption,verified.id,libCtx.modelKey,true);return;}
+          // Close the in-progress marker on the cache-hit path too — this returns before the
+          // generation block, so without it a "[Mike is drawing …]" entry would sit in the
+          // transcript forever and Mike would think he's still working on it.
+          if(verified&&verified.svg){renderLibraryDiagram(verified.svg,caption,verified.id,libCtx.modelKey,true);try{recordDrawDone(prompt,isIllustration,true);}catch(e){}return;}
         }
       }
     }catch(e){/* lookup failed → just generate fresh below */}
@@ -11271,12 +11347,29 @@ async function generateAndShowSVG(prompt, caption, isIllustration){
   var container = document.getElementById('chatMessages');
   var loadDiv = document.createElement('div');
   loadDiv.className = 'msg-agent';
-  loadDiv.innerHTML = '<div class="msg-bubble msg-bubble-agent" style="padding:12px 14px;display:flex;align-items:center;gap:10px;"><span style="font-size:20px;">'+(isIllustration?'🎨':'📐')+'</span><span style="font-size:13px;color:#9499B0;" class="pulsing">'+(isIllustration?'Creating illustration…':'Generating diagram…')+'</span></div>';
+  // A real render takes tens of seconds. A motionless "Generating diagram…" for that long
+  // reads as broken (Brandon, 2026-08-01: sat ~3-4 min with no signal it was alive), so show
+  // Mike working + a live elapsed counter. Same wait, completely different feeling.
+  loadDiv.innerHTML = '<div class="msg-bubble msg-bubble-agent" style="padding:12px 14px;display:flex;align-items:center;gap:10px;"><span style="font-size:20px;">'+(isIllustration?'🎨':'📐')+'</span><span style="font-size:13px;color:#9499B0;"><span class="pulsing">'+(isIllustration?'Drawing your illustration…':'Drawing your diagram by hand…')+'</span><span style="display:block;font-size:11px;color:#6B7280;margin-top:3px;" id="drawElapsed">starting up…</span></span></div>';
   container.appendChild(loadDiv);
   container.scrollTop = container.scrollHeight;
+  var _drawT0 = Date.now();
+  var _elapsedTimer = setInterval(function(){
+    try{
+      var el = loadDiv.querySelector('#drawElapsed');
+      if(!el){clearInterval(_elapsedTimer);return;}
+      var s = Math.round((Date.now()-_drawT0)/1000);
+      el.textContent = s + 's — hang tight, this one takes a minute';
+    }catch(e){clearInterval(_elapsedTimer);}
+  }, 1000);
   var svg = null;
   var lastErr = null;
-  for(var attempt=0;attempt<3&&!svg;attempt++){
+  // HARD CEILING. The outer loop used to run 3 attempts, and callAI internally retries 3x
+  // at a 60s timeout each — a 9-minute worst case before the tech was even told it failed.
+  // Two attempts, and never start a fresh one past the deadline.
+  var _DRAW_DEADLINE_MS = 150000;
+  for(var attempt=0;attempt<2&&!svg;attempt++){
+    if(attempt>0&&(Date.now()-_drawT0)>_DRAW_DEADLINE_MS){lastErr='deadline exceeded before retry';break;}
     try{
       var sysPrompt=isIllustration
         ?'You generate SVG illustrations for HVAC technicians. Your ENTIRE response must be valid SVG XML starting with <svg and ending with </svg>. No other text. No markdown. No code blocks. Just the raw SVG code.'
@@ -11294,8 +11387,12 @@ async function generateAndShowSVG(prompt, caption, isIllustration){
     }catch(e){lastErr=e&&e.message?e.message:String(e);console.warn('Diagram attempt '+attempt+' failed:',lastErr);}
   }
   if(lastErr&&!svg)console.warn('Diagram all attempts failed. Last error:',lastErr);
+  try{clearInterval(_elapsedTimer);}catch(e){}
   if(container.contains(loadDiv))container.removeChild(loadDiv);
   var libGenOk=!!svg; // a real generation (not the fallback) — only these get cached
+  // Close the loop opened by recordDrawStart so the transcript reflects what actually
+  // landed. Without this, "can you illustrate that too" has nothing to point at.
+  try{recordDrawDone(prompt,isIllustration,libGenOk);}catch(e){}
   if(!svg){
     // All 3 attempts failed. Show the user a real error instead of a generic-looking fallback
     // (the silent fallback made the feature feel broken). Surface a retry option.

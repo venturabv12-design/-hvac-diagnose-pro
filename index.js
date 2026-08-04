@@ -531,7 +531,12 @@ app.use(helmet({
 const _traffic = { day: null, views: 0, uniques: new Set(), refs: {}, paths: {}, rowId: null };
 let _adminIdCache = null;
 
-function _today() { return new Date().toISOString().slice(0, 10); }
+// Days are bucketed in EASTERN time, not UTC. Brandon reads these numbers, and a UTC
+// day rolls over at 8pm his time — "Today" would appear to reset mid-evening.
+// en-CA formats as YYYY-MM-DD; the timeZone option handles DST by itself.
+const _ET_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' });
+function _dayET(d) { return _ET_DAY.format(d instanceof Date ? d : new Date(d)); }
+function _today() { return _dayET(new Date()); }
 
 function _visitorHash(req) {
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || '';
@@ -1446,9 +1451,10 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
   const users = await supabase('GET', 'users', null, '?select=id,email,name,plan,created_at&limit=500') || [];
   const nameById = Object.fromEntries(users.map(u => [u.id, u.name || u.email]));
 
-  const dayKey = d => String(d).slice(0, 10);
-  const today = new Date().toISOString().slice(0, 10);
-  const ago = n => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+  // Every date below is an EASTERN calendar day so "Today" matches Brandon's clock.
+  const dayKey = d => _dayET(d);
+  const today = _today();
+  const ago = n => _dayET(new Date(Date.now() - n * 86400000));
 
   // ---- traffic (daily aggregate rows) ----
   const tRows = rows.filter(r => r.type === 'site_traffic');

@@ -1448,7 +1448,8 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
     `?select=user_id,type,payload,created_at&created_at=gte.${since}&order=created_at.desc&limit=20000`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
 
-  const users = await supabase('GET', 'users', null, '?select=id,email,name,plan,created_at&limit=500') || [];
+  const users = await supabase('GET', 'users', null,
+    '?select=id,email,name,plan,created_at,stripe_subscription_id&limit=500') || [];
   const nameById = Object.fromEntries(users.map(u => [u.id, u.name || u.email]));
 
   // Every date below is an EASTERN calendar day so "Today" matches Brandon's clock.
@@ -1482,6 +1483,49 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
 
   const signups30 = users.filter(u => u.created_at && dayKey(u.created_at) >= ago(30)).length;
 
+  // ---- THE FUNNEL ----------------------------------------------------------
+  // Endpoint numbers say WHETHER something is wrong; the funnel says WHERE. Each
+  // stage carries the drop-off from the stage above it, so the worst leak is
+  // obvious at a glance and the team can work the right problem instead of
+  // guessing between "not enough traffic" and "they sign up and never use it".
+  const PAID_PLANS = ['pro', 'team', 'starter'];
+  const askedEver = new Set(asks.map(a => a.user_id));
+  const asked7 = new Set(asks.filter(a => dayKey(a.created_at) >= ago(7)).map(a => a.user_id));
+  const paying = users.filter(u => u.stripe_subscription_id || PAID_PLANS.includes(u.plan));
+
+  // Time from signup to first question — how long the product takes to prove itself.
+  const firstAskByUser = {};
+  for (const a of asks) {
+    const t = new Date(a.created_at).getTime();
+    if (!firstAskByUser[a.user_id] || t < firstAskByUser[a.user_id]) firstAskByUser[a.user_id] = t;
+  }
+  const ttfa = users
+    .map(u => (firstAskByUser[u.id] && u.created_at)
+      ? (firstAskByUser[u.id] - new Date(u.created_at).getTime()) / 3600000 : null)
+    .filter(h => h != null && h >= 0)
+    .sort((a, b) => a - b);
+  const medianHoursToFirstAsk = ttfa.length ? +ttfa[Math.floor(ttfa.length / 2)].toFixed(1) : null;
+
+  const stage = (label, count, prev, hint) => ({
+    stage: label,
+    count,
+    // conversion from the previous stage — the drop-off is 100 minus this
+    ofPrevious: prev ? +(count / prev * 100).toFixed(1) : null,
+    lostHere: prev ? prev - count : null,
+    hint,
+  });
+
+  const visitors30 = d30.uniques;
+  const funnel = [
+    stage('Visited the site', visitors30, null, 'unique visitors, 30d'),
+    stage('Created an account', signups30, visitors30, 'the pitch on the page'),
+    stage('Actually asked Mike', users.filter(u => askedEver.has(u.id)).length, users.length,
+      'onboarding — did they ever get value'),
+    stage('Still using it (7d)', asked7.size, users.filter(u => askedEver.has(u.id)).length,
+      'retention — does it stick'),
+    stage('Paying', paying.length, users.length, 'the ask — have they been asked to pay'),
+  ];
+
   res.json({
     traffic: {
       today: byDate[today] || { views: 0, uniques: 0, refs: {} },
@@ -1505,8 +1549,13 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
       signups30,
       // visitors -> signups. The number that says whether the problem is traffic or pitch.
       conversion30: d30.uniques ? +(signups30 / d30.uniques * 100).toFixed(2) : null,
+      activated: users.filter(u => askedEver.has(u.id)).length,
+      activationRate: users.length ? +(users.filter(u => askedEver.has(u.id)).length / users.length * 100).toFixed(1) : null,
+      paying: paying.length,
+      medianHoursToFirstAsk,
     },
-    note: 'mike_ask logging began 2026-08-03 — totals before that date are not captured.',
+    funnel,
+    note: 'mike_ask logging began 2026-08-03 — activation and retention build from that date forward.',
   });
 });
 

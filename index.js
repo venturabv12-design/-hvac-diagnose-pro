@@ -1843,6 +1843,49 @@ async function requirePaidAccess(req, res, next) {
   next();
 }
 
+// How many voice lines a brand-new, not-yet-paying account may hear in Mike's REAL
+// voice. Onboarding is ~6-8 lines; 15 covers it plus a replay.
+const TTS_GRACE_LINES = 15;
+
+// Voice access, with an onboarding exception.
+//
+// WHY THIS EXISTS: /api/tts is card-walled (July 2026) so free accounts can't burn
+// ElevenLabs credits. But onboarding speaks through this same route — so every new
+// signup got a 402, the client silently fell back to the robotic browser voice, and
+// the first 30 seconds of the product (the part that sells it) was degraded for
+// exactly the people who hadn't bought yet. Found 2026-08-04 on Kirk Livingston's
+// signup: he heard a robot, not Mike.
+//
+// Paying/founder accounts are unaffected. Everyone else gets a LIFETIME allowance of
+// TTS_GRACE_LINES calls — enough to hear the real Mike through onboarding — after
+// which the wall resumes. The counter is server-side (events rows), so a client can't
+// spoof it, and it's lifetime-scoped so it can't be farmed by signing out and back in.
+async function requireVoiceAccess(req, res, next) {
+  const token = (req.headers['authorization']?.startsWith('Bearer ') ? req.headers['authorization'].slice(7) : null)
+    || req.body?.token;
+  const access = await checkPaywall(token);
+  if (access.allowed) return next();
+
+  const uid = req.user && req.user.id;
+  if (!uid || !SUPABASE_URL)
+    return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
+
+  try {
+    const used = await supabase('GET', 'events', null,
+      `?user_id=eq.${encodeURIComponent(uid)}&type=eq.tts_grace&select=id&limit=${TTS_GRACE_LINES + 1}`);
+    if (Array.isArray(used) && used.length < TTS_GRACE_LINES) {
+      // Record the grant BEFORE speaking so a burst of parallel requests can't
+      // overshoot the allowance by racing the count.
+      await supabase('POST', 'events', { user_id: uid, type: 'tts_grace', payload: { n: used.length + 1 } });
+      return next();
+    }
+  } catch (e) {
+    // Never let a counter failure hand out unlimited voice — fail closed to the wall.
+    console.error('tts grace check failed (falling back to paywall):', e.message);
+  }
+  return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // Manual-grounded RAG — Mike answers fault-code/spec/wiring questions from real
 // OEM service manuals (Supabase pgvector), with page citations. ENV-GATED: a
@@ -2441,7 +2484,10 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
 // ── TTS ───────────────────────────────────────────────────────────────────────
 // Auth + rate-limited: token comes from body (existing frontend pattern, same as /api/ai)
 // or Authorization: Bearer header. authenticateToken reads both. (Security fix C3.)
-app.post('/api/tts', ttsLimiter, authenticateToken, requirePaidAccess, async (req, res) => {
+// requireVoiceAccess (not requirePaidAccess): paying/founder accounts pass as before;
+// a brand-new account gets a small lifetime allowance so ONBOARDING speaks in Mike's
+// real voice instead of falling back to the browser robot. See the middleware comment.
+app.post('/api/tts', ttsLimiter, authenticateToken, requireVoiceAccess, async (req, res) => {
   const { text } = req.body;
   if (!text || typeof text !== 'string') return res.status(400).json({ error: 'text required' });
   if (!ELEVENLABS_API_KEY) return res.status(503).json({ error: 'TTS not configured' });

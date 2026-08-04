@@ -2916,6 +2916,18 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div class="adm-lbl">Projected MRR <span class="adm-tag">billing not live</span></div>
     </div>
   </div>
+  <div class="adm-grid">
+    <div class="adm-stat"><div class="adm-val" id="admVisToday" style="color:var(--teal)">–</div><div class="adm-lbl">Site Visitors · Today</div></div>
+    <div class="adm-stat"><div class="adm-val" id="admVis7">–</div><div class="adm-lbl">Site Visitors · 7d</div></div>
+    <div class="adm-stat"><div class="adm-val" id="admAsksToday" style="color:var(--teal)">–</div><div class="adm-lbl">Mike Asks · Today</div></div>
+    <div class="adm-stat"><div class="adm-val" id="admAsks7">–</div><div class="adm-lbl">Mike Asks · 7d</div></div>
+  </div>
+  <div class="adm-grid">
+    <div class="adm-stat"><div class="adm-val" id="admAsksTotal">–</div><div class="adm-lbl">Mike Asks · 30d</div></div>
+    <div class="adm-stat"><div class="adm-val" id="admActiveAsk" style="color:var(--teal)">–</div><div class="adm-lbl">Techs Using Mike · 7d</div></div>
+    <div class="adm-stat"><div class="adm-val" id="admConv">–</div><div class="adm-lbl">Visitor → Signup</div></div>
+    <div class="adm-stat"><div class="adm-val" id="admTopRef" style="font-size:18px">–</div><div class="adm-lbl">Top Traffic Source · 30d</div></div>
+  </div>
   <div class="adm-sec">
     <div class="adm-sec-title">Weekly Signups <span style="color:#444;font-weight:600;font-size:11px">· last 12 weeks</span></div>
     <div id="admSpark" class="adm-spark"></div>
@@ -5752,6 +5764,32 @@ function admSetStatus(html,cls){
   s.innerHTML=html;
 }
 
+// Site traffic + real Mike usage, from GET /api/admin/stats. Entirely best-effort:
+// wrapped so that if the endpoint is missing or errors, the tiles just stay '–' and
+// the rest of the dashboard renders exactly as before.
+function admLoadStats(){
+  var token=currentUser&&currentUser.token;
+  if(!token)return;
+  function put(id,val){var el=document.getElementById(id);if(el)el.textContent=val;}
+  fetch('/api/admin/stats',{headers:{'Authorization':'Bearer '+token}})
+    .then(function(r){return r.ok?r.json():null;})
+    .catch(function(){return null;})
+    .then(function(d){
+      if(!d)return;
+      var t=d.traffic||{},u=d.usage||{},a=d.accounts||{};
+      var today=t.today||{},l7=t.last7||{};
+      put('admVisToday',(today.uniques!=null?today.uniques:0));
+      put('admVis7',(l7.uniques!=null?l7.uniques:0));
+      put('admAsksToday',(u.asksToday!=null?u.asksToday:0));
+      put('admAsks7',(u.asks7!=null?u.asks7:0));
+      put('admAsksTotal',(u.asksTotal!=null?u.asksTotal:0));
+      put('admActiveAsk',(u.activeTechs7!=null?u.activeTechs7:0));
+      put('admConv',(a.conversion30!=null?a.conversion30+'%':'–'));
+      var refs=t.topReferrers||[];
+      put('admTopRef',refs.length?(refs[0].source+' ('+refs[0].hits+')'):'no data yet');
+    });
+}
+
 function admRelTime(ts){
   if(!ts)return {txt:'never',recent:false};
   var t=new Date(ts).getTime();
@@ -5789,6 +5827,8 @@ function showAdminDashboard(){
     admSetStatus('<span>Not signed in — your session has no token. Please sign in again.</span>','error');
     return;
   }
+
+  admLoadStats(); // traffic + Mike usage tiles, independent of the roster fetch
 
   fetch('/api/admin/users',{headers:{'Authorization':'Bearer '+token}})
     .then(function(r){

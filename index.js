@@ -513,6 +513,102 @@ app.use(helmet({
   hsts: { maxAge: 31536000, includeSubDomains: true },
 }));
 
+// ── TRAFFIC ANALYTICS ─────────────────────────────────────────────────────────
+// Counts visitors to trazermike.io. Before this, anyone who landed on the site and
+// left without signing up was completely invisible — we could only see people who
+// already had accounts, which told us nothing about whether traffic or the pitch
+// was the problem.
+//
+// Deliberately server-side and cookie-less: no third-party script, no consent
+// banner, no change to public/index.html. Visitors are counted by a SALTED HASH of
+// IP+user-agent that is never stored or reversible — we learn "how many people",
+// never "which person".
+//
+// Storage: the events table requires a real user_id (FK), so per-visit rows aren't
+// possible for anonymous traffic. Instead we keep counters in memory and flush ONE
+// aggregate row per day, owned by the admin account and typed 'site_traffic'. That
+// type is filtered out of the per-tech rollup so it can't distort those numbers.
+const _traffic = { day: null, views: 0, uniques: new Set(), refs: {}, paths: {}, rowId: null };
+let _adminIdCache = null;
+
+function _today() { return new Date().toISOString().slice(0, 10); }
+
+function _visitorHash(req) {
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || '';
+  const ua = req.headers['user-agent'] || '';
+  return crypto.createHmac('sha256', JWT_SECRET).update(ip + '|' + ua).digest('hex').slice(0, 16);
+}
+
+function _rollDay() {
+  const d = _today();
+  if (_traffic.day !== d) {
+    _traffic.day = d; _traffic.views = 0; _traffic.uniques = new Set();
+    _traffic.refs = {}; _traffic.paths = {}; _traffic.rowId = null;
+  }
+}
+
+// Count real page loads only — not API calls, not images, not the service worker.
+app.use((req, res, next) => {
+  try {
+    if (req.method === 'GET'
+        && !req.path.startsWith('/api/')
+        && !/\.[a-z0-9]{2,5}$/i.test(req.path)
+        && String(req.headers.accept || '').includes('text/html')) {
+      _rollDay();
+      _traffic.views++;
+      _traffic.uniques.add(_visitorHash(req));
+      let ref = 'direct';
+      const r = req.headers.referer || req.headers.referrer;
+      if (r) { try { ref = new URL(r).hostname.replace(/^www\./, ''); } catch { ref = 'other'; } }
+      if (ref === 'trazermike.io') ref = 'internal';
+      _traffic.refs[ref] = (_traffic.refs[ref] || 0) + 1;
+      const p = req.path === '/' ? '/' : req.path.slice(0, 60);
+      _traffic.paths[p] = (_traffic.paths[p] || 0) + 1;
+    }
+  } catch { /* analytics must never break a page load */ }
+  next();
+});
+
+async function _adminUserId() {
+  if (_adminIdCache) return _adminIdCache;
+  if (!SUPABASE_URL) return null;
+  const rows = await supabase('GET', 'users', null, `?role=eq.admin&select=id&limit=1`);
+  _adminIdCache = (rows && rows[0] && rows[0].id) || null;
+  return _adminIdCache;
+}
+
+// Persist the running day's counters. Called on a timer; safe to call repeatedly.
+async function flushTraffic() {
+  try {
+    if (!SUPABASE_URL || !_traffic.day || _traffic.views === 0) return;
+    const uid = await _adminUserId();
+    if (!uid) return;
+    const payload = {
+      date: _traffic.day,
+      views: _traffic.views,
+      uniques: _traffic.uniques.size,
+      refs: _traffic.refs,
+      paths: _traffic.paths,
+    };
+    if (_traffic.rowId) {
+      await supabase('PATCH', 'events', { payload }, `?id=eq.${_traffic.rowId}`);
+    } else {
+      const rows = await supabase('POST', 'events',
+        { user_id: uid, type: 'site_traffic', payload, company: '__system' });
+      if (rows && rows[0]) _traffic.rowId = rows[0].id;
+    }
+  } catch (e) { console.error('traffic flush failed (non-fatal):', e.message); }
+}
+setInterval(flushTraffic, 5 * 60 * 1000).unref?.();
+
+// Fire-and-forget usage logging. Never awaited by a request path — a logging
+// failure must never cost a tech their answer.
+function logUsage(userId, type, payload = {}) {
+  if (!userId || !SUPABASE_URL) return;
+  supabase('POST', 'events', { user_id: userId, type, payload })
+    .catch(e => console.error('usage log failed (non-fatal):', e.message));
+}
+
 // Serve manifest with the correct MIME — iOS silently ignores manifests served as
 // application/json. Registered before express.static so this route wins precedence.
 app.get('/manifest.json', (req, res) => {
@@ -1326,10 +1422,86 @@ app.get('/api/admin/events', authenticateToken, requireAdminOrOwner, async (req,
     if (!ids.length) return res.json({ events: [] });
     userFilter = `&user_id=in.(${ids.map(encodeURIComponent).join(',')})`;
   }
+  // Exclude the synthetic site_traffic aggregate rows — they're owned by the admin
+  // account for storage reasons and would otherwise distort the per-tech numbers.
   const rows = await supabase('GET', 'events', null,
-    `?select=user_id,type,amount,created_at&order=created_at.desc&limit=10000${userFilter}`);
+    `?select=user_id,type,amount,created_at&type=neq.site_traffic&order=created_at.desc&limit=10000${userFilter}`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
   res.json({ events: rows || [] });
+});
+
+// ── ADMIN STATS ───────────────────────────────────────────────────────────────
+// The single "how are we doing" endpoint: site traffic (including people who never
+// signed up), how much Mike is actually being used, and the conversion between the
+// two. Before this existed we could not tell a traffic problem from a pitch problem.
+app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+  if (!SUPABASE_URL) return res.json({ traffic: {}, usage: {}, accounts: {} });
+  await flushTraffic(); // make sure today's in-memory counters are included
+
+  const since = new Date(Date.now() - 30 * 86400000).toISOString();
+  const rows = await supabase('GET', 'events', null,
+    `?select=user_id,type,payload,created_at&created_at=gte.${since}&order=created_at.desc&limit=20000`);
+  if (rows === null) return res.status(500).json({ error: 'Database error' });
+
+  const users = await supabase('GET', 'users', null, '?select=id,email,name,plan,created_at&limit=500') || [];
+  const nameById = Object.fromEntries(users.map(u => [u.id, u.name || u.email]));
+
+  const dayKey = d => String(d).slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+  const ago = n => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+
+  // ---- traffic (daily aggregate rows) ----
+  const tRows = rows.filter(r => r.type === 'site_traffic');
+  const byDate = {};
+  for (const r of tRows) {
+    const p = r.payload || {}; const d = p.date || dayKey(r.created_at);
+    byDate[d] = { views: p.views || 0, uniques: p.uniques || 0, refs: p.refs || {} };
+  }
+  const sumRange = days => {
+    let v = 0, u = 0; const refs = {};
+    for (const [d, x] of Object.entries(byDate)) {
+      if (d >= ago(days)) {
+        v += x.views; u += x.uniques;
+        for (const [k, n] of Object.entries(x.refs)) refs[k] = (refs[k] || 0) + n;
+      }
+    }
+    return { views: v, uniques: u, refs };
+  };
+  const d7 = sumRange(7), d30 = sumRange(30);
+
+  // ---- Mike usage ----
+  const asks = rows.filter(r => r.type === 'mike_ask');
+  const perTech = {};
+  for (const a of asks) perTech[a.user_id] = (perTech[a.user_id] || 0) + 1;
+
+  const signups30 = users.filter(u => u.created_at && dayKey(u.created_at) >= ago(30)).length;
+
+  res.json({
+    traffic: {
+      today: byDate[today] || { views: 0, uniques: 0, refs: {} },
+      last7: d7,
+      last30: d30,
+      daily: Object.entries(byDate).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 30)
+        .map(([date, x]) => ({ date, views: x.views, uniques: x.uniques })),
+      topReferrers: Object.entries(d30.refs).sort((a, b) => b[1] - a[1]).slice(0, 10)
+        .map(([source, hits]) => ({ source, hits })),
+    },
+    usage: {
+      asksTotal: asks.length,
+      asksToday: asks.filter(a => dayKey(a.created_at) === today).length,
+      asks7: asks.filter(a => dayKey(a.created_at) >= ago(7)).length,
+      activeTechs7: new Set(asks.filter(a => dayKey(a.created_at) >= ago(7)).map(a => a.user_id)).size,
+      perTech: Object.entries(perTech).sort((a, b) => b[1] - a[1])
+        .map(([id, count]) => ({ tech: nameById[id] || id, count })),
+    },
+    accounts: {
+      total: users.length,
+      signups30,
+      // visitors -> signups. The number that says whether the problem is traffic or pitch.
+      conversion30: d30.uniques ? +(signups30 / d30.uniques * 100).toFixed(2) : null,
+    },
+    note: 'mike_ask logging began 2026-08-03 — totals before that date are not captured.',
+  });
 });
 
 // Promote a customer's owner to a company OWNER — they get a dashboard scoped to just
@@ -1775,6 +1947,15 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   const { messages, system, systemExtra = '', max_tokens = 1024, use_search = false, stream = false } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0)
     return res.status(400).json({ error: 'messages required' });
+
+  // Record that a tech asked Mike something. Until now NOTHING logged this, so
+  // "how many times is Mike actually used" was unanswerable — the events table only
+  // held specific button-presses the frontend chose to send. Fire-and-forget:
+  // this must never delay or fail a tech's answer.
+  try {
+    const _uid = jwt.verify(authToken, JWT_SECRET, { algorithms: ['HS256'] }).id;
+    logUsage(_uid, 'mike_ask', { search: !!use_search });
+  } catch { /* token already validated by checkPaywall; never block on logging */ }
 
   // ── DETERMINISTIC GUARD LAYER ──────────────────────────────────────────────
   // Prompt-tuning failed 3 cert passes on two safety scenarios + replacement-lean

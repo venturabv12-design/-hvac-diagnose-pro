@@ -5515,6 +5515,11 @@ function obFrames(){
 // Frame 0 choice. Records the audience, pre-seeds the signup role so the account is
 // created with the right side of the app, then advances into that audience's sequence.
 function obChooseRole(role){
+  // Ignore taps arriving mid-transition. Without this, hammering the two cards advanced
+  // obStep once per tap while the frame stayed frozen on the picker — the user ended up
+  // on the last index with frame 0 still on screen and a "Next" button that dropped them
+  // straight out of onboarding, having seen none of it.
+  if(window._obSwapping)return;
   window._obRole=(role==='homeowner')?'homeowner':'tech';
   try{localStorage.setItem('trazer_role_choice',window._obRole);}catch(e){}
   window._pendingRole=(window._obRole==='homeowner')?'homeowner':'contractor';
@@ -5533,7 +5538,16 @@ function showOnboarding(){
   // tab or background the app mid-flow; pagehide alone is unreliable on iOS PWA.
   if(!window._obExitMarkInstalled){
     window._obExitMarkInstalled=true;
-    var markObDone=function(){try{localStorage.setItem('trazer_onboarded','1');}catch(e){}};
+    var markObDone=function(){try{
+      // ONLY mark it seen once the audience has actually been chosen. This fires on ANY
+      // tab-hide — a phone call, a text, the screenshot gesture, app-switching — which on
+      // a phone is completely normal behaviour mid-flow. Before this guard, being
+      // interrupted on frame 0 permanently burned the picker: trazer_onboarded='1' with
+      // trazer_role_choice still null, obRole() stuck at '' forever, and NO ui path back
+      // to it. Interrupted-before-choosing now simply re-arms on the next cold load.
+      if(!obRole())return;
+      localStorage.setItem('trazer_onboarded','1');
+    }catch(e){}};
     window.addEventListener('pagehide',markObDone);
     document.addEventListener('visibilitychange',function(){
       if(document.visibilityState==='hidden')markObDone();
@@ -5709,17 +5723,33 @@ function renderOb(){
       wireObMagic(host,isMagic);
       obPostRender(host,type);
     } else {
+      // The innerHTML swap is gated behind this animationend. A second renderOb() arriving
+      // mid-transition used to strip and re-add ob-out, stomping the {once:true} listener
+      // so the swap NEVER ran — leaving the frame visually frozen on the old markup while
+      // obStep advanced underneath. _obSwapping (set here, released below) makes obNext /
+      // obBack / obChooseRole ignore input until the frame has actually changed.
+      window._obSwapping=true;
       host.classList.remove('ob-in','ob-out');void host.offsetWidth;
       host.classList.add('ob-out');
       var _type=type,_pack=pack,_isMagic=isMagic;
-      host.addEventListener('animationend',function _obDollySwap(){
+      var _done=function(){
+        if(_done._ran)return; _done._ran=true;
+        if(window._obSwapTimer){clearTimeout(window._obSwapTimer);window._obSwapTimer=null;}
         host.removeEventListener('animationend',_obDollySwap);
         host.classList.remove('ob-out');void host.offsetWidth;
         host.innerHTML=obFrameHTML(_type,_pack);
         host.classList.add('ob-in');
         wireObMagic(host,_isMagic);
         obPostRender(host,_type);
-      },{once:true});
+        window._obSwapping=false;
+      };
+      function _obDollySwap(){_done();}
+      host.addEventListener('animationend',_obDollySwap,{once:true});
+      // Safety net: if animationend never fires (backgrounded tab, reduced-motion race,
+      // interrupted animation) the swap still completes and the lock still releases —
+      // a stuck lock would freeze onboarding permanently, which is worse than the bug.
+      if(window._obSwapTimer)clearTimeout(window._obSwapTimer);
+      window._obSwapTimer=setTimeout(_done,600);
     }
   }
   // Dock CTA label: cold/magic use their own cta; middle frames say Next.
@@ -5885,6 +5915,7 @@ function runObMoneyCounter(){
   requestAnimationFrame(tick);
 }
 function obBack(){
+  if(window._obSwapping)return;   // see obChooseRole — no input while a frame swap is in flight
   stopObSpeaking();
   if(obStep>0){
     obStep--;
@@ -5898,6 +5929,7 @@ function obBack(){
   }
 }
 function obNext(){
+  if(window._obSwapping)return;   // see obChooseRole — no input while a frame swap is in flight
   stopObSpeaking();
   if(obStep<obFrames().length-1){
     obStep++;

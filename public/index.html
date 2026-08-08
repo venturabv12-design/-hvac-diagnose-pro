@@ -601,7 +601,11 @@ body.native-app #paywallOverlay .pw-btn,
 body.native-app #paywallOverlay .pw-note{ display:none !important; }
 
 /* Paywall */
-#paywallOverlay{position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,.97);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px;}
+/* z-index 100002: the paywall must sit ABOVE every other overlay, or it opens
+   invisibly behind them. It was 9995 while #liveCameraOverlay is 9998 — so a
+   walled tech who tapped the camera got the paywall rendered UNDER the live
+   feed plus a misleading "Connection issue" toast. Found 2026-08-04. */
+#paywallOverlay{position:fixed;inset:0;z-index:100002;background:rgba(0,0,0,.97);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px;}
 #paywallOverlay.show{display:flex;}
 .pw-card{width:100%;max-width:480px;background:#161616;border:1px solid #2a2a2a;border-radius:18px;padding:30px 26px;text-align:center;}
 .pw-icon{font-size:40px;margin-bottom:10px;}
@@ -2944,27 +2948,23 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           <div class="pw-feat">✅ Priority support</div>
         </div>
       </div>
-      <div class="pw-plan" onclick="selectPlan('enterprise',this)">
-        <div class="pw-name">Enterprise</div>
-        <div class="pw-price" style="font-size:22px;">Custom</div>
-        <div class="pw-period">5+ techs</div>
-        <div class="pw-features">
-          <div class="pw-feat">✅ Everything in Pro</div>
-          <div class="pw-feat">✅ Team dashboard</div>
-          <div class="pw-feat">✅ Volume pricing</div>
-        </div>
+      <!-- Enterprise is a LINK, not a selectable card. As a card it hijacked the
+           main button: tapping it left the button reading "Start Free Trial" while
+           actually opening an email draft — same label, different outcome. One
+           buyable plan, one button, one result. -->
       </div>
+      <div style="text-align:center;margin-top:14px;">
+        <a href="#" onclick="contactEnterprise();return false;"
+           style="font-size:13px;color:#9ca3af;text-decoration:underline;text-underline-offset:3px;">
+          Running a crew of 5 or more? Get team pricing
+        </a>
     </div>
   </div>
   <button class="pw-btn" onclick="goCheckout()">Start Free Trial — No Charge Today</button>
   <div class="pw-note">🔒 Free for 14 days — no charge today, we’ll remind you 3 days before, then $100/mo, cancel anytime · Secured by Stripe</div>
-  <div style="margin-top:16px;padding:14px 16px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:10px;text-align:left;">
-    <div style="font-size:12px;font-weight:700;color:var(--rust);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why techs pay for Pro</div>
-    <div style="font-size:13px;color:#9ca3af;line-height:1.7;">
-      "I found 2 upsells on my first job using Mike. Paid for 6 months." — HVAC contractor, TX<br>
-      "I diagnosed a heat exchanger crack I would have missed." — Tech, FL
-    </div>
-  </div>
+  <!-- Testimonials removed 2026-08-04: Brandon confirmed the two quotes here were
+       not from real customers. Placeholder social proof does not go on a live page
+       that takes money. Put real quotes back the moment a paying tech gives one. -->
 </div>
 </div>
 <div id="adminOverlay">
@@ -5304,6 +5304,9 @@ function showPaywall(){
   // CARD-UPFRONT + 14-DAY TRIAL (new techs only; founding techs are grandfathered server-side
   // and never see this). Adding a card via Stripe starts the free trial — no charge today.
   closeProfileDD();
+  // Close the live camera first. Belt-and-suspenders with the z-index fix: a walled tech
+  // who taps the camera must SEE this, not have it open behind a running video feed.
+  try{ if(typeof stopLiveCamera==='function' && typeof cameraActive!=='undefined' && cameraActive) stopLiveCamera(); }catch(e){}
   var e=document.getElementById('paywallOverlay');
   if(!e)return;
   // NATIVE APP: App Store / Play forbid pricing + purchase UI. Show a compliant no-price message
@@ -5335,6 +5338,14 @@ function showPaywall(){
   if(sub)sub.textContent='Add a card to unlock Mike — no charge today. We’ll remind you 3 days before it ends.';
   e.style.display='';           // clear the leftover inline display:none from the beta short-circuit
   e.classList.add('show');
+}
+// Enterprise is its own action now, not a plan you can accidentally select. Keeps the
+// main button honest: it always starts the trial, never silently becomes an email draft.
+function contactEnterprise(){
+  var u=(typeof currentUser!=='undefined'&&currentUser)||{};
+  if(typeof showToast==='function')showToast('Opening email — tell us your crew size and we\'ll set you up.','info',3500);
+  window.location.href='mailto:trazerintelligence@gmail.com?subject='+encodeURIComponent('Trazer team pricing')
+    +'&body='+encodeURIComponent('Name: '+(u.name||'')+'\nEmail: '+(u.email||'')+'\nCrew size: \n\nI want team pricing for Trazer.');
 }
 var selPlan='pro'; // default plan so goCheckout never reads an UNDECLARED selPlan — tapping "Subscribe" before a plan card was clicked threw ReferenceError and killed checkout
 function selectPlan(p,el){selPlan=p;document.querySelectorAll('.pw-plan').forEach(function(x){x.classList.remove('sel');});el.classList.add('sel');}
@@ -12697,12 +12708,14 @@ function checkCameraAccess(){
     if(typeof showToast==='function')showToast('Loading… tap again in a moment.','info',2000);
     return;
   }
-  // Starter plan: chat only, no camera
-  if(currentUser.plan==='starter'){
-    if(typeof showToast==='function')showToast('Live Camera is a Pro feature. Upgrade to unlock.','info');
-    setTimeout(function(){showPaywall();},600);
-    return;
-  }
+  // NOTE — deliberately NO client-side plan gate here.
+  // The old check was `plan==='starter'`, a plan retired in July 2026, so it matched
+  // nobody: a new tech (plan='trial', no card) walked straight past it. The tempting
+  // fix is to gate on plan here, but the client is NOT told whether a card is on file
+  // — so gating on plan='trial' would lock out a tech who HAS paid and is legitimately
+  // mid-trial. The server is the only thing that knows, and it already returns 402 with
+  // paywall:true. callAI turns that into showPaywall(), which now renders ABOVE the
+  // camera (z-index) and closes it. Server stays the single source of truth.
   // Prime audio synchronously inside the user-gesture tick BEFORE the async
   // startLiveCamera so iOS Safari doesn't block the mikeSayCamera greeting
   // that fires later (outside the gesture window).
@@ -12902,6 +12915,10 @@ async function analyzeCameraFrame(userInitiated,userText){
     try{
       response=await callAI(sysPrompt,messages,maxTok,true); // Always allow search in camera
     }catch(camAiErr){
+      // Don't call a paywall a "connection issue". callAI already opened the paywall
+      // on a 402 (and showPaywall closes the camera), so say nothing here — the tech
+      // is now looking at the trial screen, not a broken camera.
+      if(String(camAiErr&&camAiErr.message||'').toLowerCase().indexOf('subscription')>-1){ return; }
       cameraActive&&setCameraResponse('Connection issue — tap Analyze to try again.');
       return;
     }

@@ -2176,10 +2176,32 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       || /5[- ]?flash[^.]{0,90}(flame|gas|no call|thermostat (is )?off|keeps? running)/i.test(_lastUser)) {
     _safetyLead = 'SAFETY FIRST — shut the gas off at the appliance shutoff valve right now. A burner staying lit with no call for heat means the gas valve is stuck open; kill the gas before you diagnose anything else.';
   }
-  // (B) CO air-free at or above 400 ppm = unconditional appliance shutdown.
-  const _coM = _lastUser.match(/(\d{3,4})\s*ppm[^.]{0,24}air[- ]?free/i) || _lastUser.match(/air[- ]?free[^.]{0,24}(\d{3,4})\s*ppm/i);
-  if (_coM && parseInt(_coM[1], 10) >= 400) {
-    _safetyLead = 'SAFETY FIRST — shut the appliance down now. ' + parseInt(_coM[1], 10) + ' ppm CO air-free is above the 400 ppm threshold; the appliance comes off until you find and correct the cause, then check ambient CO in the occupied space.';
+  // ── CO NUMBER PARSING ────────────────────────────────────────────────────────────────
+  // The old pattern was (\d{3,4}) — three or four digits. Against "10000 ppm air free" it
+  // captured "0000" (parseInt 0) and against "1,200 ppm air free" it captured "200", so the
+  // MOST dangerous readings produced total silence. Verified against the live code 2026-08-08.
+  // This accepts comma-grouped and any-length numbers, and strips commas before parseInt.
+  const _PPM = '(\\d{1,3}(?:,\\d{3})+|\\d+)';
+  const _ppmNum = (s) => parseInt(String(s).replace(/,/g, ''), 10);
+
+  // (B) CO air-free at or above the threshold FOR THAT APPLIANCE = shut it down.
+  // ANSI/BPI-1200-S Table 1 sets the limit per appliance; it is NOT a flat 400. A water
+  // heater — the most common CO producer in a house — is 200, half the furnace limit, so a
+  // flat 400 was twice as permissive as the standard on the likeliest offender.
+  // An UNIDENTIFIED appliance defaults to the STRICTER 200: fail toward distrust.
+  const _coM = _lastUser.match(new RegExp(_PPM + '\\s*ppm[^.]{0,24}air[- ]?free', 'i'))
+            || _lastUser.match(new RegExp('air[- ]?free[^.]{0,24}' + _PPM + '\\s*ppm', 'i'));
+  if (_coM) {
+    const _co = _ppmNum(_coM[1]);
+    // 200 ppm: water heater, vented/unvented room heater, BIV wall furnace.
+    const _strict = /(water heater|room heater|unvented|space heater|wall furnace)/i.test(_lastUser)
+                    && !/direct[- ]?vent/i.test(_lastUser);
+    // 400 ppm: central/floor/gravity furnace, boiler, direct-vent wall furnace, clothes dryer.
+    const _loose = /(central furnace|\bfurnace\b|\bboiler\b|floor furnace|gravity furnace|direct[- ]?vent|clothes dryer|\bdryer\b)/i.test(_lastUser);
+    const _lim = _strict ? 200 : (_loose ? 400 : 200);
+    if (_co >= _lim) {
+      _safetyLead = 'SAFETY FIRST — shut the appliance down now. ' + _co + ' ppm CO air-free is at or above the ' + _lim + ' ppm limit for this appliance; it comes off until you find and correct the cause, then check ambient CO in the occupied space.';
+    }
   }
   // (C) Confirmed spillage past 2 minutes under worst-case depressurization.
   if (/spillage[^.]{0,55}(continu|past|over|beyond|exceed|more than|lasting)[^.]{0,16}(2|two)\s*min/i.test(_lastUser)
@@ -2194,6 +2216,51 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   if (/(a2l|r-?454b|r-?32|r-?1234yf|r-?466a)[^.]{0,45}(leak|release|spray|venting|escap|discharg)/i.test(_lastUser)
       || /(refrigerant|charge)[^.]{0,30}(leak|release|spray|venting|escap)[^.]{0,45}(a2l|r-?454b|r-?32|flammab)/i.test(_lastUser)) {
     _safetyLead = 'SAFETY FIRST — eliminate every ignition source first: no light switches, no open flame, no sparking tools in the area. THEN ventilate and clear the space. A2L refrigerant is mildly flammable, so ignition control comes before anything else.';
+  }
+  // (B2) AMBIENT CO in an occupied space — ANSI/BPI-1200-S 7.3.3.3.
+  // BEFORE 2026-08-08 THERE WAS NO AMBIENT RULE AT ALL: the only CO number checked was a
+  // flue/air-free reading, so a tech standing in a hallway with a monitor going off got
+  // nothing deterministic and it fell through to model judgment. Measured on prod, Mike
+  // opened those calls with "this is a dangerous situation" — a description, not an action.
+  // Placed after the equipment rules so an evacuation outranks a shutdown, but before (C4)
+  // so a downed person still wins.
+  const _ambM = _lastUser.match(new RegExp(_PPM + '\\s*ppm', 'i'));
+  // Do not fire on a flue/vent/air-free reading — that is rule (B)'s job, not this one.
+  const _isFlueCtx = /air[- ]?free|\bflue\b|\bvent\b|\bvented\b|stack|exhaust|draft hood|burner|combustion analyzer/i.test(_lastUser);
+  // Require a genuine CO signal or an occupied-space location, so a stray "ppm" can't trip it.
+  const _coSignal = /\bco\b|carbon monoxide|monitor|meter|detector|alarm/i.test(_lastUser);
+  const _spaceSignal = /ambient|hallway|living room|basement|bedroom|kitchen|upstairs|downstairs|\bCAZ\b|in the (house|room|air|space|home)/i.test(_lastUser);
+  if (_ambM && !_isFlueCtx && (_coSignal || _spaceSignal)) {
+    const _amb = _ppmNum(_ambM[1]);
+    if (_amb >= 1200) {
+      _safetyLead = 'GET OUT NOW — ' + _amb + ' ppm is at or above the level that is immediately dangerous to life. Everyone leaves the building right now, you included. Call 911 from outside. Nobody goes back in without the fire department and SCBA.';
+    } else if (_amb >= 70) {
+      _safetyLead = 'STOP AND EVACUATE — ' + _amb + ' ppm ambient CO. Tell every occupant to get out of the building now, and get yourself out with them. Call emergency services from OUTSIDE the house. Do not stay to ventilate and do not keep diagnosing — at 70 ppm and up the standard says you leave.';
+    } else if (_amb >= 36) {
+      _safetyLead = 'SAFETY FIRST — ' + _amb + ' ppm ambient CO is elevated. Tell the occupant, get windows and doors open, and shut off every possible CO source before you go any further.';
+    } else if (_amb >= 9) {
+      _safetyLead = 'SAFETY FIRST — ' + _amb + ' ppm ambient CO is detectable. Tell the occupant, ventilate, and find the source before you move on. If a permanently installed appliance is the suspect, it needs a qualified professional on it.';
+    }
+  }
+  // (C5) OCCUPANT SYMPTOMS + a combustion appliance = treat it as CO until proven otherwise.
+  // Symptoms are now an INDEPENDENT trigger. Previously "headache" only registered if a CO
+  // keyword appeared within 45 characters of it, which is exactly why "180 ppm in the hallway
+  // and the homeowner says she has a headache" produced nothing at all.
+  // This is deliberately OUR rule, not a cited standard — no standard states it numerically.
+  // The reasoning: dose is concentration x time, so a spot reading captures neither the peak
+  // nor the accumulated exposure, and WHO notes the link between measured levels and symptoms
+  // is poor. A symptomatic occupant is a real signal at ANY reading, including zero.
+  if (/(headache|nause|dizzy|light[- ]?headed|confus|disorient|vomit|throwing up|flu[- ]?like)/i.test(_lastUser)
+      && /(furnace|boiler|water heater|gas|combustion|appliance|heater|fireplace|\bco\b|carbon monoxide|ppm)/i.test(_lastUser)) {
+    const _medical = ' Anyone feeling it needs to be checked by a medic — symptoms around a combustion appliance get treated as carbon monoxide until proven otherwise, whatever the meter says, because a spot reading misses both the peak and what they have already breathed in.';
+    // If the ambient reading already produced an evacuation lead, ADD the medical instruction
+    // rather than replacing it — otherwise a symptomatic occupant at 180 ppm would lose the
+    // "call emergency services from outside" step, which is the more urgent of the two.
+    if (/^(STOP AND EVACUATE|GET OUT NOW)/.test(_safetyLead)) {
+      _safetyLead += _medical;
+    } else {
+      _safetyLead = 'SAFETY FIRST — get everyone out into fresh air now, including you.' + _medical + ' Diagnose the equipment after the people are out and safe.';
+    }
   }
   // (C4) MEDICAL EMERGENCY — an occupant is incapacitated (suspected CO or otherwise).
   // Highest-priority lead: a downed person is 911-first, before ANY equipment work, and

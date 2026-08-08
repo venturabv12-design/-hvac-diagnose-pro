@@ -40,8 +40,10 @@ const STRIPE_PRICE_TEAM      = process.env.STRIPE_PRICE_TEAM;
 const APP_URL = process.env.APP_URL || 'https://nodejs-production-cb99f.up.railway.app';
 const RESEND_API_KEY = process.env.RESEND_API_KEY; // Optional — password reset emails
 
-// ── CARD-UPFRONT + 14-DAY TRIAL (new signups only) ────────────────────────────
-// New techs add a card at signup → 14-day free trial → auto-charge $100/mo.
+// ── NO-CARD 14-DAY TRIAL (new signups only) ───────────────────────────────────
+// New techs sign up with NO card → 14 days of full Mike → card collected on day 15.
+// (Was card-upfront until 2026-08-07; the card in front of the product converted 66
+// site visitors into zero signups. The trial now has to earn the card, not precede it.)
 // EXISTING/founding techs are grandfathered: any account created before CARD_WALL_CUTOFF
 // is never walled (belt-and-suspenders with the explicit plan='founder' backfill).
 // The cutoff is env-overridable so it can be set to the exact prod-deploy instant at ship.
@@ -1056,9 +1058,11 @@ app.post('/api/billing/checkout', authenticateToken, async (req, res) => {
         'metadata[email]': email,
         'metadata[plan]': plan,
         'metadata[name]': name || '',
-        // 14-day free trial: no charge today, auto-charges $100/mo on day 14.
-        'subscription_data[trial_period_days]': String(TRIAL_DAYS),
-        // Require a card even though the trial is free — that's the whole point (card upfront).
+        // NO Stripe trial here (Brandon, 2026-08-07). The free window is now served in-app by
+        // checkPaywall off trial_start, BEFORE the tech ever reaches Checkout. Passing
+        // trial_period_days as well would hand them a second free 14 days on top of the 14 they
+        // already used — 28 days free per signup. They arrive here because the free look ended,
+        // so this charges today. Grandfathered/founder accounts never reach this route.
         'payment_method_collection': 'always',
         // Also stamp the trial on the subscription for our own webhook bookkeeping.
         'subscription_data[metadata][email]': email,
@@ -1778,7 +1782,8 @@ app.post('/api/redraw', aiLimiter, authenticateToken, requirePaidAccess, async (
 
 // ── AI ────────────────────────────────────────────────────────────────────────
 // ── SERVER-SIDE PAYWALL CHECK ─────────────────────────────────────────────────
-// Allow-set: admin/pro/team/starter/homeowner/beta (forever) + trial (≤7 days).
+// Allow-set: admin/pro/team/starter/founder/homeowner/beta (forever) + trial (≤TRIAL_DAYS,
+// no card required — the card is collected when the window closes, not before).
 // No token / invalid / expired / unknown plan → denied (402, paywall flag).
 // DB error → fail-open so an outage never locks out paying users/techs.
 async function checkPaywall(token) {
@@ -1802,7 +1807,7 @@ async function checkPaywall(token) {
     if (!users || users.length === 0)
       return { allowed: false, reason: 'Account not found' };
 
-    const { plan, created_at, stripe_subscription_id } = users[0];
+    const { plan, trial_start, created_at, stripe_subscription_id } = users[0];
 
     // Paying + legacy/grandfathered-free plans → always allowed.
     if (ALLOWED_PLANS.includes(plan)) return { allowed: true };
@@ -1813,13 +1818,22 @@ async function checkPaywall(token) {
     if (created_at && new Date(created_at).getTime() < CARD_WALL_CUTOFF_MS)
       return { allowed: true };
 
-    // NEW SIGNUPS on 'trial': allowed once a card is on file. Completing Stripe Checkout flips
-    // the account to 'pro' (via webhook) with a subscription in its 14-day trial — Stripe manages
-    // the trial window and the auto-charge. A trial account with a subscription id but not yet
-    // flipped is still card-on-file → allow. No subscription = card wall.
+    // NEW SIGNUPS on 'trial' — NO CARD UP FRONT (Brandon, 2026-08-07). A tech signs up and gets
+    // TRIAL_DAYS of real, unrestricted Mike with nothing on file. The card is collected at the
+    // END of the window, not the start: "once day 15 hits, credit card and collect."
+    //
+    // Why: 66 visitors converted to zero signups while the card sat in front of the product.
+    // Nobody was refusing the price — they never reached it. The trial now has to earn the card.
+    //
+    // Order matters. Card-on-file wins first (they've already converted; Stripe owns the clock
+    // from there). Otherwise fall back to our own window off trial_start, which /api/auth/signup
+    // stamps on every new row. created_at is the backstop for any legacy row missing trial_start —
+    // without it a null trial_start would read as epoch 0 and wall a brand-new account instantly.
     if (plan === 'trial') {
       if (stripe_subscription_id) return { allowed: true };
-      return { allowed: false, reason: 'Start your 14-day free trial — add a card to keep using Mike.', paywall: true };
+      const startedAt = new Date(trial_start || created_at || 0).getTime();
+      if (startedAt && Date.now() - startedAt < TRIAL_DAYS * 86400000) return { allowed: true };
+      return { allowed: false, reason: 'Your free trial has ended — add a card to keep using Mike.', paywall: true };
     }
 
     // Any other unknown plan → deny.

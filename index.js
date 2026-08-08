@@ -2601,6 +2601,70 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// ── "3 DAYS LEFT" TRIAL REMINDER SWEEP ────────────────────────────────────────
+// Stripe used to send this off customer.subscription.trial_will_end. That event can no
+// longer fire — the free window moved in-app (no Stripe trial, no subscription until the
+// tech actually pays), so the reminder has to come from us or nobody gets warned at all.
+//
+// Fires once per account when 3 days remain. Idempotent via features.trial_reminder_sent,
+// so re-running the sweep — or a redeploy — can't re-mail the same tech. Send happens
+// BEFORE the stamp on purpose: a Resend failure leaves the flag unset so the next sweep
+// retries, and the 11→14 day window gives it several attempts before it matters.
+const TRIAL_REMINDER_DAYS_LEFT = 3;
+const TRIAL_SWEEP_INTERVAL_MS = 6 * 60 * 60 * 1000;   // every 6h — 12 shots at a 3-day window
+
+async function sendTrialReminders() {
+  if (!SUPABASE_URL) return;
+  const now = Date.now();
+  const windowOpens = new Date(now - (TRIAL_DAYS - TRIAL_REMINDER_DAYS_LEFT) * 86400000).toISOString();
+  const windowCloses = new Date(now - TRIAL_DAYS * 86400000).toISOString();
+
+  try {
+    // trial_start older than day 11 but not yet past day 14 = exactly the 3-days-left band.
+    const due = await supabase('GET', 'users', null,
+      `?plan=eq.trial&trial_start=lte.${encodeURIComponent(windowOpens)}` +
+      `&trial_start=gt.${encodeURIComponent(windowCloses)}` +
+      `&select=id,name,email,trial_start,features,stripe_subscription_id`);
+
+    if (!due || !due.length) return;
+
+    for (const u of due) {
+      if (u.stripe_subscription_id) continue;             // already paying — nothing to warn about
+      if (u.features && u.features.trial_reminder_sent) continue;
+
+      const daysLeft = Math.max(1, Math.ceil(
+        (new Date(u.trial_start).getTime() + TRIAL_DAYS * 86400000 - now) / 86400000));
+      const firstName = (u.name || '').trim().split(' ')[0] || 'there';
+
+      const dayWord = daysLeft === 1 ? 'day' : 'days';   // retries can land on "1 day left"
+
+      const sent = await sendEmail({
+        to: u.email,
+        subject: `${daysLeft} ${dayWord} left on your free trial`,
+        html: `<p>${firstName} — you've got <strong>${daysLeft} ${dayWord}</strong> left of Mike on the house.</p>
+               <p>After that, keeping him is <strong>$100/mo</strong>. Cancel whenever.</p>
+               <p><strong>Nothing happens automatically.</strong> We don't have a card for you, so you
+               won't be charged a cent — Mike just stops answering until you add one.</p>
+               <p><a href="${APP_URL}">Keep Mike in your pocket →</a></p>
+               <p>— Mike @ Trazer</p>`,
+      });
+
+      if (!sent) continue;                                // leave unstamped; next sweep retries
+
+      await supabase('PATCH', 'users',
+        { features: { ...(u.features || {}), trial_reminder_sent: true } },
+        `?id=eq.${encodeURIComponent(u.id)}`);
+      console.log(`Trial reminder sent: ${u.email} (${daysLeft}d left)`);
+    }
+  } catch (err) {
+    // Never let a sweep failure touch request handling — it retries in 6 hours.
+    console.error('Trial reminder sweep error:', err.message);
+  }
+}
+
+setInterval(sendTrialReminders, TRIAL_SWEEP_INTERVAL_MS);
+setTimeout(sendTrialReminders, 60000);   // once a minute after boot, not during cold start
+
 // ── NEVER CRASH ───────────────────────────────────────────────────────────────
 process.on('uncaughtException', (err) => { console.error('UNCAUGHT EXCEPTION — staying alive:', err.message); });
 process.on('unhandledRejection', (reason) => { console.error('UNHANDLED REJECTION — staying alive:', reason); });

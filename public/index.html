@@ -4397,7 +4397,28 @@ function isNativeApp(){
   return false;
 }
 
+// ?firstrun=1 — replay the TRUE cold-visitor first run on demand, from any device, without
+// clearing site data. The flow is once-per-device by design, which makes it nearly impossible
+// to review: you get exactly one look and then it's gone forever on that phone. This wipes the
+// three keys that gate it and re-arms the splash, so what plays is the real first-open path
+// (audience picker included) — not the Help > Replay shortcut, which starts mid-flow because
+// an account already exists and the role is already known.
+function armFirstRunFromURL(){
+  try{
+    if(new URLSearchParams(location.search).get('firstrun')!=='1')return false;
+    localStorage.removeItem('trazer_onboarded');
+    localStorage.removeItem('trazer_role_choice');
+    // Force the STRANGER path even when signed in. Without this obRole() reads
+    // currentUser.role and jumps straight past the audience picker into that role's
+    // frames — which is exactly why Help > Replay starts mid-flow and can never show
+    // the fork. Non-destructive: no sign-out, no server call, one page load.
+    window._obForceCold = true;
+    return true;
+  }catch(e){ return false; }
+}
+
 function tracerInit(){
+  var _forceCold = armFirstRunFromURL();
   // NATIVE-APP CONTEXT (App Store / Play compliance): tag <body> so CSS + JS hide every pricing/
   // paywall/purchase surface when running inside the app. Web (trazermike.io) is unaffected.
   try{ if(isNativeApp()) document.body.classList.add('native-app'); }catch(e){}
@@ -4450,6 +4471,7 @@ function tracerInit(){
   // post-authentication, so a first-time visitor never saw the first-run at all. Brandon's
   // ask is that the very first open asks "homeowner or tech", because that answer decides
   // which product they're shown AND pre-fills the signup role.
+  if(_forceCold){ setTimeout(showOnboarding,600); return; }   // ?firstrun=1 — signed in or not
   if(!currentUser)maybeShowFirstRun();
 }
 
@@ -5406,7 +5428,7 @@ var OB_I18N={
       {t:'He tells you if it’s safe',s:"And how urgent. Gas, carbon monoxide, electrical — that comes first."},
       {t:'Share the report',s:"Send it to whoever's coming out so they arrive knowing the problem."}
     ],voice:"Here's everything you can do. Tell me what's going on in plain English, show me your unit with a photo or FaceTime, or just call me. I'll tell you if it's safe and how urgent it is — then share the report with whoever comes out."},
-    cold:{pre:'IN YOUR CORNER',l1:'AN HONEST EXPERT',l2:'IN YOUR',l3:'POCKET.',sub:'A master tech who picks up every time — <b>call him, FaceTime him, text him.</b> He tells you the truth before anyone sells you anything.',cta:'Meet Mike →',voice:"An honest expert in your pocket. A master tech who picks up every time — call him, FaceTime him, text him. I tell you the truth before anyone sells you anything."},
+    cold:{pre:'IN YOUR CORNER',l1:'AN EXPERT',l2:'IN YOUR',l3:'POCKET.',sub:'Ask me what\'s wrong — <b>talk to me, type it, or show me with your camera.</b> You\'ll know what you\'re dealing with before you call anyone.',cta:'Meet Mike →',voice:"An expert in your pocket. Ask me what's wrong — talk to me, type it, or show me with your camera. You'll know what you're dealing with before you call anyone."},
     talkedaround:{k:'01 · ASK HIM',l1:'NO MORE GETTING',l2:'TALKED AROUND.',line:"Mike tells you in plain English — <b>what\'s wrong, if it\'s safe, how urgent it is, and what to ask</b> whoever comes out.",st:'ON THE LINE',q:'“It\'ll run, but that\'s a cracked heat exchanger — don\'t sleep in the house tonight. Ask whoever comes out to show you the crack.”',sig:'— Mike, in plain English',voice:"No more getting talked around. I tell you what's wrong, if it's safe, how urgent it is, and what to ask whoever comes out."},
     facetime:{k:'02 · FACETIME',l1:'SHOW HIM',l2:'YOUR UNIT.',line:"FaceTime him and point your phone at the system. <b>He sees what you see</b> and tells you straight what he\'s looking at.",q:'“That\'s your blower motor — and it\'s safe to run for now. Not an emergency. Get a couple quotes, no rush.”',sig:'— Mike, on FaceTime',voice:"Show me your unit. FaceTime me and point your phone at the system. I see what you see and tell you straight what I'm looking at."},
     magic:{k:'TELL HIM WHAT\'S GOING ON',h1a:'TELL MIKE',h1b:'WHAT\'S GOING ON.',st:'READY · 25 YRS ON EVERY SYSTEM',free:'FREE TASTE',me:'AC stopped cooling last night. It\'s 95 out. Is this an emergency?',mike:'Let\'s find out fast. <b>First — is the outdoor fan spinning?</b> If it\'s humming but not turning, shut it off so you don\'t cook the compressor. Tell me what you see and I\'ll walk you through it…',chip1:'Is it safe to run?',chip2:'How urgent is this?',chip3:'Send a photo of my unit',ph:'Tell Mike what\'s going on…',gate:'First answer\'s on the house · <b>Create your account to keep Mike in your corner</b>',findtech:'Connect to a trusted local tech →',cta:'Start →',voice:"Tell me what's going on. First answer's on the house."}
@@ -5495,6 +5517,8 @@ var OB_I18N={
 // mid-flow doesn't re-ask) is authoritative. A real signed-in account always wins.
 // Returns 'homeowner' | 'tech' | '' (not chosen yet).
 function obRole(){
+  // ?firstrun=1 review mode: ignore the signed-in role so the audience fork actually renders.
+  if(window._obForceCold){ return window._obRole || ''; }
   if(currentUser&&currentUser.role)return currentUser.role==='homeowner'?'homeowner':'tech';
   if(window._obRole)return window._obRole;
   try{var s=localStorage.getItem('trazer_role_choice');if(s==='homeowner'||s==='tech')return s;}catch(e){}

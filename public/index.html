@@ -304,7 +304,10 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
   --ob-rust:#C7553B; --ob-moss:#5B7B5A; --ob-brass:#C9A961;
   --ob-line:rgba(244,239,230,.11); --ob-line2:rgba(244,239,230,.055);
   --ob-mute:rgba(244,239,230,.52); --ob-mute2:rgba(244,239,230,.32);
-  position:fixed;inset:0;z-index:9996;background:#060605;display:none;align-items:center;justify-content:center;
+  /* 10000 = above #authOverlay (9999) so the first-open audience picker actually reaches a
+     cold visitor, but below the language pill (10001) / dropdown (10002) so the flow can
+     still be switched to Spanish etc. while it plays. */
+  position:fixed;inset:0;z-index:10000;background:#060605;display:none;align-items:center;justify-content:center;
   -webkit-font-smoothing:antialiased;
 }
 #onboardingOverlay.show{display:flex;}
@@ -503,6 +506,63 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .ob-gate .lock{opacity:.7;}
 .ob-find-tech{margin-top:10px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(58,139,138,.4);background:rgba(58,139,138,.06);border-radius:14px;padding:13px;font-family:'Archivo',var(--font-ui),sans-serif;font-weight:700;font-size:14px;color:var(--ob-teal);cursor:pointer;animation:ob-rise .6s 1.9s both;}
 
+/* ── AUDIENCE PICKER (frame 0) — homeowner vs tech ──────────────────────────
+   NOTE: .ob-who is already taken by the call-card speaker block, so the picker
+   carries its own .ob-pick* namespace to avoid clobbering it. */
+.ob-pickwrap{display:flex;flex-direction:column;gap:12px;margin-top:22px;}
+.ob-pick{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:18px 16px;border-radius:16px;
+  cursor:pointer;background:rgba(255,255,255,.03);border:1.5px solid var(--ob-line);color:var(--ob-paper);
+  font-family:inherit;transition:border-color .2s,background .2s,transform .12s;animation:ob-rise .6s both;}
+/* Delays land AFTER the subhead's .55s rise, matching the top-to-bottom staging every
+   other frame uses (frame 2's card .7s, frame 5's block 1.25s). Firing at .45s put the
+   cards in motion before the reader reached the line explaining the choice. */
+.ob-pick:nth-of-type(1){animation-delay:.75s;}
+.ob-pick:nth-of-type(2){animation-delay:.9s;}
+/* :hover never fires on a phone, so :active is the ONLY tap feedback here — and for most
+   homeowners this is their first touch in the product. Make it physical. */
+.ob-pick:active{transform:scale(.97);}
+.ob-pick[data-obrole="tech"]:active{border-color:var(--ob-safety);background:rgba(255,180,0,.09);}
+.ob-pick[data-obrole="homeowner"]:active{border-color:var(--ob-teal);background:rgba(58,139,138,.09);}
+/* quiet floor so the dock-less frame doesn't read as still-loading */
+.ob-pickhint{margin-top:18px;text-align:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:11px;letter-spacing:1.4px;color:var(--ob-mute2);animation:ob-rise .6s 1.15s both;}
+.ob-pick .ic{width:52px;height:52px;flex:none;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:25px;}
+.ob-pick[data-obrole="tech"] .ic{background:rgba(255,180,0,.10);border:1px solid rgba(255,180,0,.32);}
+.ob-pick[data-obrole="homeowner"] .ic{background:rgba(58,139,138,.10);border:1px solid rgba(58,139,138,.32);}
+.ob-pick .tx{min-width:0;}
+.ob-pick .t{font-family:'Archivo',var(--font-ui),sans-serif;font-weight:800;font-size:16px;letter-spacing:.2px;margin-bottom:3px;}
+.ob-pick .s{font-size:13px;line-height:1.42;color:var(--ob-mute);}
+.ob-pick[data-obrole="tech"]:hover{border-color:rgba(255,180,0,.55);background:rgba(255,180,0,.05);}
+.ob-pick[data-obrole="homeowner"]:hover{border-color:rgba(58,139,138,.55);background:rgba(58,139,138,.05);}
+
+/* ── HOMEOWNER NAVIGATION TOUR — what a homeowner can actually do, numbered ──
+   SIZED TO FIT: 5 rows + header must clear the 54px CTA dock on a 390x844 phone. Measured
+   2026-08-06 — the first build overflowed by 87px and buried step 5 under the dock. Row
+   padding/gap are tightened and the copy is terse so all five land above the fold; the
+   scroll region + edge fade below stay as the backstop for 320px and large-type users. */
+.ob-tour{display:flex;flex-direction:column;gap:8px;margin-top:12px;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;}
+/* Edge fade ONLY when the list actually overflows (class set in obPostRender) — applying it
+   unconditionally softened the last row's bottom border even when all five rows fit, which
+   read as a clipped card rather than a finished list. */
+.ob-tour.ob-scrolls{
+  -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 18px),transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 calc(100% - 18px),transparent 100%);}
+.ob-tstep{display:flex;align-items:flex-start;gap:12px;padding:11px 13px;border-radius:14px;flex:none;
+  background:rgba(255,255,255,.03);border:1px solid var(--ob-line);animation:ob-rise .55s both;}
+/* staged after the subhead (.55s) like every other frame — see .ob-pick note above */
+.ob-tstep:nth-of-type(1){animation-delay:.75s;}
+.ob-tstep:nth-of-type(2){animation-delay:.87s;}
+.ob-tstep:nth-of-type(3){animation-delay:.99s;}
+.ob-tstep:nth-of-type(4){animation-delay:1.11s;}
+.ob-tstep:nth-of-type(5){animation-delay:1.23s;}
+.ob-tstep .n{width:24px;height:24px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:'Archivo',var(--font-ui),sans-serif;font-weight:800;font-size:12px;
+  background:rgba(58,139,138,.14);border:1px solid rgba(58,139,138,.4);color:var(--ob-teal);}
+.ob-tstep .tt{font-weight:800;font-size:14px;margin-bottom:1px;color:var(--ob-paper);}
+/* 13px/1.38 stays readable for an older homeowner — do not shrink this to win space */
+.ob-tstep .ts{font-size:13px;line-height:1.38;color:var(--ob-mute);}
+
 /* dock — CTA + progress dots (shared) */
 .ob-dock{flex:none;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));animation:ob-rise 1s 1s both;}
 .ob-next-btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:54px;border-radius:14px;
@@ -541,7 +601,11 @@ body.native-app #paywallOverlay .pw-btn,
 body.native-app #paywallOverlay .pw-note{ display:none !important; }
 
 /* Paywall */
-#paywallOverlay{position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,.97);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px;}
+/* z-index 100002: the paywall must sit ABOVE every other overlay, or it opens
+   invisibly behind them. It was 9995 while #liveCameraOverlay is 9998 — so a
+   walled tech who tapped the camera got the paywall rendered UNDER the live
+   feed plus a misleading "Connection issue" toast. Found 2026-08-04. */
+#paywallOverlay{position:fixed;inset:0;z-index:100002;background:rgba(0,0,0,.97);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px;}
 #paywallOverlay.show{display:flex;}
 .pw-card{width:100%;max-width:480px;background:#161616;border:1px solid #2a2a2a;border-radius:18px;padding:30px 26px;text-align:center;}
 .pw-icon{font-size:40px;margin-bottom:10px;}
@@ -2779,7 +2843,15 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 
     <!-- SIGN UP FORM — same safe form-wrap; buttons stay type="button". -->
     <form id="authUpForm" onsubmit="event.preventDefault();return false;" style="display:none">
-      <!-- Homeowner side removed (2026-07-25) — tech/contractor-only, no role picker. -->
+      <!-- Role picker RESTORED (2026-08-06). Pre-selected from the first-open onboarding
+           choice by authTab('up'); the user can still change it here. -->
+      <div class="auth-field">
+        <label class="auth-lbl">I am a...</label>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button type="button" id="roleHomeBtn" onclick="selectRoleInline('homeowner')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">🏠 Homeowner</button>
+          <button type="button" id="roleProBtn" onclick="selectRoleInline('contractor')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">🔧 Contractor</button>
+        </div>
+      </div>
       <div class="auth-field">
         <label class="auth-lbl">Full Name</label>
         <input class="auth-inp" type="text" id="suName" placeholder="Your name" autocomplete="name"/>
@@ -2792,7 +2864,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         <label class="auth-lbl">Password</label>
         <input class="auth-inp" type="password" id="suPass" placeholder="Min 8 characters" autocomplete="new-password"/>
       </div>
-      <div class="auth-field" id="suCompanyField">
+      <div class="auth-field" id="suCompanyField" style="display:none">
         <label class="auth-lbl">Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
         <input class="auth-inp" type="text" id="suCompany" placeholder="Your HVAC company" autocomplete="organization"/>
       </div>
@@ -2844,7 +2916,20 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   <div class="pw-icon">🔐</div>
   <div class="pw-title" id="pwTitle">Trial Ended</div>
   <div class="pw-sub" id="pwSub">One upsell per day pays for the whole year.</div>
-  <!-- Homeowner plan removed 2026-07-25 (tech-only). -->
+  <!-- Homeowner plan — restored 2026-08-06 at its original $19.99. Shown ONLY to
+       role:homeowner (see _showPaywall). Feature lines describe what Mike DOES for a
+       homeowner; none of them quote or imply a repair price. -->
+  <div id="pwHomeowner" style="display:none">
+    <div class="pw-plans" style="justify-content:center;">
+      <div class="pw-plan sel" style="max-width:220px;" onclick="selectPlan('homeowner',this)">
+        <div class="pw-badge">HOMEOWNER</div>
+        <div class="pw-name">Home Plan</div>
+        <div class="pw-price">$19<span style="font-size:16px;font-weight:600">.99</span></div>
+        <div class="pw-period">/month</div>
+        <div class="pw-save" style="margin-top:8px;">Unlimited diagnostics</div>
+      </div>
+    </div>
+  </div>
   <!-- Contractor plans — one plan, $100/mo; Enterprise custom for crews -->
   <div id="pwContractor">
     <div class="pw-plans" style="justify-content:center;">
@@ -2863,27 +2948,23 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           <div class="pw-feat">✅ Priority support</div>
         </div>
       </div>
-      <div class="pw-plan" onclick="selectPlan('enterprise',this)">
-        <div class="pw-name">Enterprise</div>
-        <div class="pw-price" style="font-size:22px;">Custom</div>
-        <div class="pw-period">5+ techs</div>
-        <div class="pw-features">
-          <div class="pw-feat">✅ Everything in Pro</div>
-          <div class="pw-feat">✅ Team dashboard</div>
-          <div class="pw-feat">✅ Volume pricing</div>
-        </div>
+      <!-- Enterprise is a LINK, not a selectable card. As a card it hijacked the
+           main button: tapping it left the button reading "Start Free Trial" while
+           actually opening an email draft — same label, different outcome. One
+           buyable plan, one button, one result. -->
       </div>
+      <div style="text-align:center;margin-top:14px;">
+        <a href="#" onclick="contactEnterprise();return false;"
+           style="font-size:13px;color:#9ca3af;text-decoration:underline;text-underline-offset:3px;">
+          Running a crew of 5 or more? Get team pricing
+        </a>
     </div>
   </div>
   <button class="pw-btn" onclick="goCheckout()">Start Free Trial — No Charge Today</button>
   <div class="pw-note">🔒 Free for 14 days — no charge today, we’ll remind you 3 days before, then $100/mo, cancel anytime · Secured by Stripe</div>
-  <div style="margin-top:16px;padding:14px 16px;background:rgba(199,85,59,.08);border:1px solid rgba(199,85,59,.2);border-radius:10px;text-align:left;">
-    <div style="font-size:12px;font-weight:700;color:var(--rust);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Why techs pay for Pro</div>
-    <div style="font-size:13px;color:#9ca3af;line-height:1.7;">
-      "I found 2 upsells on my first job using Mike. Paid for 6 months." — HVAC contractor, TX<br>
-      "I diagnosed a heat exchanger crack I would have missed." — Tech, FL
-    </div>
-  </div>
+  <!-- Testimonials removed 2026-08-04: Brandon confirmed the two quotes here were
+       not from real customers. Placeholder social proof does not go on a live page
+       that takes money. Put real quotes back the moment a paying tech gives one. -->
 </div>
 </div>
 <div id="adminOverlay">
@@ -3052,11 +3133,10 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div class="v2-lnd-pill"><span class="v2-dot"></span><span data-v2i18n="lndLive">MIKE · LIVE</span></div>
     </div>
 
-    <!-- AUDIENCE TOGGLE — removed 2026-07-25 (homeowner side gone, tech-only). Hidden, not
-         deleted, so v2SetAudience/syncV2Landing can still reference #v2SegTech without a null throw. -->
-    <div class="v2-seg" role="tablist" aria-label="Choose your view" style="display:none">
+    <!-- AUDIENCE TOGGLE — restored 2026-08-06 with the homeowner side. Drives setMode('pro')/('home'). -->
+    <div class="v2-seg" role="tablist" aria-label="Choose your view">
       <button id="v2SegTech" class="on" role="tab" aria-selected="true" onclick="v2SetAudience('tech')"><span class="tk">●</span> <span data-v2i18n="lndImTech">I'M A TECH</span></button>
-      <button id="v2SegHome" role="tab" aria-selected="false" onclick="v2SetAudience('home')" style="display:none"><span data-v2i18n="lndImHome">I'M A HOMEOWNER</span></button>
+      <button id="v2SegHome" role="tab" aria-selected="false" onclick="v2SetAudience('home')"><span data-v2i18n="lndImHome">I'M A HOMEOWNER</span></button>
     </div>
 
     <!-- HEADLINE + LEDE (swap per audience) -->
@@ -4145,6 +4225,11 @@ var pendingRole = null;
 // Uses native <button> elements so iOS Safari fires onclick reliably
 function selectRoleInline(role) {
   pendingRole = role;
+  // Keep the two role holders in lock-step. The first-open onboarding picker writes
+  // window._pendingRole, and authSignUp reads it FIRST — so without this a user who
+  // changed their mind on the signup form would still be created with the onboarding
+  // choice. Last explicit choice always wins.
+  window._pendingRole = role;
   var homeBtn = document.getElementById('roleHomeBtn');
   var proBtn = document.getElementById('roleProBtn');
   var active = 'border:2px solid var(--rust);background:#0a1f1d;color:var(--rust);';
@@ -4275,7 +4360,15 @@ function applyModeFromRole() {
     return;
   }
   if (avt) avt.style.display = 'none'; // non-admins: single role, no switcher
-  // Homeowner side removed (2026-07-25) — every non-admin user is tech/contractor.
+  // Homeowner side RESTORED (2026-08-06). A non-admin account lands on exactly one side
+  // and the other side's tab is hidden — a homeowner must never reach the contractor
+  // surface (it carries repair pricing), and a tech has no use for the homeowner panel.
+  if (role === 'homeowner') {
+    setMode('home');
+    var proTab = document.getElementById('tabPro');
+    if (proTab) proTab.style.display = 'none';
+    return;
+  }
   setMode('pro');
   document.body.classList.add('mp-chatting'); document.documentElement.classList.add('mp-chatting'); // chat-first: land in the conversation, not the hero
   var homeTab = document.getElementById('tabHome');
@@ -4349,6 +4442,27 @@ function tracerInit(){
       }
     }catch(e){localStorage.removeItem('trazer_user');}
   }
+  // COLD VISITOR (2026-08-06) — no account yet. Every other showOnboarding() trigger is
+  // post-authentication, so a first-time visitor never saw the first-run at all. Brandon's
+  // ask is that the very first open asks "homeowner or tech", because that answer decides
+  // which product they're shown AND pre-fills the signup role.
+  if(!currentUser)maybeShowFirstRun();
+}
+
+// Single gate for the anonymous first-run. Two callers race for this moment, so it lives
+// in one place: tracerInit (normal cold load) and mpDismissColdOpen (after the ignition
+// splash is tapped away). The splash is z-index 100000 — far above the onboarding overlay
+// — so firing on a blind timer would start the first-run, and Mike's VOICE, behind a
+// screen the visitor is still looking at. If the splash is up, we do nothing and let its
+// dismissal call us back.
+function maybeShowFirstRun(){
+  try{ if(localStorage.getItem('trazer_onboarded'))return; }catch(e){ return; }
+  if(currentUser)return;                       // post-auth triggers own that path
+  if(window._firstRunQueued)return;            // never double-fire
+  var cold=document.getElementById('mpColdOpen');
+  if(cold&&cold.style.display==='flex'&&!cold.classList.contains('out'))return;
+  window._firstRunQueued=true;
+  setTimeout(function(){window._firstRunQueued=false;showOnboarding();},500);
 }
 
 function showPersonalizedWelcome(){
@@ -4438,6 +4552,14 @@ function authTab(t){
   document.getElementById('authInForm').style.display=t==='in'?'block':'none';
   document.getElementById('authUpForm').style.display=t==='up'?'block':'none';
   var e=document.getElementById('authErr');if(e)e.classList.remove('show');
+  // Carry the first-open onboarding choice onto the signup form so the user isn't asked
+  // the same question twice. They can still change it here — selectRoleInline wins.
+  if(t==='up'&&!pendingRole){
+    try{
+      var r=(typeof obRole==='function')?obRole():'';
+      if(r)selectRoleInline(r==='homeowner'?'homeowner':'contractor');
+    }catch(err){}
+  }
 }
 
 function showAuthErr(m){var e=document.getElementById('authErr');if(e){e.textContent=m;if(m){e.classList.add('show');}else{e.classList.remove('show');}}}
@@ -4515,10 +4637,12 @@ function authSignUp(){
     return;
   }
   if(pass.length<8){showAuthErr('Password must be at least 8 characters.');return;}
-  // Homeowner side removed (2026-07-25) — everyone signing up is a tech/contractor.
-  // No role picker; default to 'contractor'. (The no-price safety guard is content-based
-  // in the backend, not role-based, so it still fires regardless of role.)
-  var selectedRole=window._pendingRole||pendingRole||'contractor';
+  // Require an EXPLICIT Homeowner/Contractor choice — never silently default to contractor.
+  // Restored with the homeowner side (2026-08-06): a homeowner who slipped through as a
+  // contractor would land on the tech surface, which carries repair pricing they must
+  // never see. The first-open picker normally fills this in, so this rarely fires.
+  var selectedRole=window._pendingRole||pendingRole;
+  if(!selectedRole){showAuthErr('One more thing — are you a Homeowner or a Contractor? Tap one above.');return;}
   var btn=document.getElementById('suBtn');
   if(btn){btn.disabled=true;btn.textContent='Creating account...';}
   fetch('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,password:pass,company:company,role:selectedRole})})
@@ -5068,9 +5192,12 @@ function saveProfileSettings(){
 
 function pddBilling(){
   closeProfileDD();window._settingsReturn=true;
-  // Homeowner side removed (2026-07-25) — always show the tech/contractor plan.
+  // Homeowner side restored (2026-08-06) — show exactly one plan set for this account.
+  var isHome=!!(currentUser&&currentUser.role==='homeowner');
+  var hc=document.getElementById('billingHomeCards');
   var pc=document.getElementById('billingProCards');
-  if(pc)pc.style.display='flex';
+  if(hc)hc.style.display=isHome?'block':'none';
+  if(pc)pc.style.display=isHome?'none':'flex';
   openModal('billingModal');
 }
 function pddWhatsNew(){
@@ -5177,6 +5304,9 @@ function showPaywall(){
   // CARD-UPFRONT + 14-DAY TRIAL (new techs only; founding techs are grandfathered server-side
   // and never see this). Adding a card via Stripe starts the free trial — no charge today.
   closeProfileDD();
+  // Close the live camera first. Belt-and-suspenders with the z-index fix: a walled tech
+  // who taps the camera must SEE this, not have it open behind a running video feed.
+  try{ if(typeof stopLiveCamera==='function' && typeof cameraActive!=='undefined' && cameraActive) stopLiveCamera(); }catch(e){}
   var e=document.getElementById('paywallOverlay');
   if(!e)return;
   // NATIVE APP: App Store / Play forbid pricing + purchase UI. Show a compliant no-price message
@@ -5184,22 +5314,38 @@ function showPaywall(){
   if(isNativeApp()){
     var nt=document.getElementById('pwTitle'), ns=document.getElementById('pwSub');
     var npd=document.getElementById('pwContractor');
+    var nhd=document.getElementById('pwHomeowner');
     if(nt)nt.textContent='Subscription required';
     if(ns)ns.textContent='This account doesn’t have an active Mike subscription yet. Set up your plan at trazermike.io, then sign in here.';
     if(npd)npd.style.display='none';
+    if(nhd)nhd.style.display='none'; // both plan sets must stay hidden inside the native shell
     e.style.display='';
     e.classList.add('show');
     return;
   }
-  // Tech-only, one plan ($100/mo). Homeowner side removed 2026-07-25.
+  // Homeowner side restored 2026-08-06 — show the one plan set this account belongs to.
+  // selPlan is forced to match, so goCheckout can never bill a homeowner the $100 tech
+  // plan (or vice versa) just because the default was left on 'pro'.
+  var isHome=!!(currentUser&&currentUser.role==='homeowner');
   var proDiv=document.getElementById('pwContractor');
+  var homeDiv=document.getElementById('pwHomeowner');
   var title=document.getElementById('pwTitle');
   var sub=document.getElementById('pwSub');
-  if(proDiv)proDiv.style.display='block';
+  if(proDiv)proDiv.style.display=isHome?'none':'block';
+  if(homeDiv)homeDiv.style.display=isHome?'block':'none';
+  selPlan=isHome?'homeowner':'pro';
   if(title)title.textContent='Start your 14-day free trial';
   if(sub)sub.textContent='Add a card to unlock Mike — no charge today. We’ll remind you 3 days before it ends.';
   e.style.display='';           // clear the leftover inline display:none from the beta short-circuit
   e.classList.add('show');
+}
+// Enterprise is its own action now, not a plan you can accidentally select. Keeps the
+// main button honest: it always starts the trial, never silently becomes an email draft.
+function contactEnterprise(){
+  var u=(typeof currentUser!=='undefined'&&currentUser)||{};
+  if(typeof showToast==='function')showToast('Opening email — tell us your crew size and we\'ll set you up.','info',3500);
+  window.location.href='mailto:trazerintelligence@gmail.com?subject='+encodeURIComponent('Trazer team pricing')
+    +'&body='+encodeURIComponent('Name: '+(u.name||'')+'\nEmail: '+(u.email||'')+'\nCrew size: \n\nI want team pricing for Trazer.');
 }
 var selPlan='pro'; // default plan so goCheckout never reads an UNDECLARED selPlan — tapping "Subscribe" before a plan card was clicked threw ReferenceError and killed checkout
 function selectPlan(p,el){selPlan=p;document.querySelectorAll('.pw-plan').forEach(function(x){x.classList.remove('sel');});el.classList.add('sel');}
@@ -5237,6 +5383,7 @@ async function goCheckout(){
 // "FACETIME · MIKE") are language-neutral constants and live in the frame renderer.
 var OB_I18N={
   en:{
+    who:{k:'BEFORE WE START',l1:'FIRST —',l2:'WHO ARE YOU?',line:"Mike works differently depending on who's holding the phone. Pick your side and he sets himself up for you.",techT:"I'm a tech",techS:'Diagnostics, part calls, wiring diagrams, and the words that close the job.',homeT:"I'm a homeowner",homeS:"Plain English on what's wrong, whether it's safe, and what to ask whoever comes out.",hint:'SELECT ONE TO CONTINUE',voice:"First — who am I talking to? I work differently depending on who's holding the phone. Are you a tech, or a homeowner?"},
     cold:{pre:'CONNECTING YOU TO',l1:'25 YEARS',l2:'ON EVERY',l3:'SYSTEM.',sub:'A master tech who picks up every time — <b>call him, FaceTime him, text him.</b> Watch what he does before you sign anything.',cta:'Meet Mike →',voice:"25 years on every system. A master tech who picks up every time — call him, FaceTime him, text him. Watch what I do before you sign anything."},
     call:{k:'01 · CALL',l1:'HANDS FULL?',l2:'JUST CALL HIM.',line:"On the roof, in the truck, gloves on — <b>talk it through out loud.</b> He answers like the guy in the next bay.",st:'ON THE LINE',q:'“Before you condemn the board — what\'s your 24 volts at R to C? Read it to me.”',sig:'— Mike, hands-free',voice:"Hands full? Just call me. On the roof, in the truck, gloves on — talk it through out loud. Before you condemn the board, what's your 24 volts at R to C? Read it to me."},
     facetime:{k:'02 · FACETIME',l1:'POINT YOUR',l2:'PHONE AT IT.',line:"FaceTime him and <b>he sees what you see</b> — reads the nameplate, calls the part, helps you close it in front of the customer.",q:'“There it is — see the hairline on the igniter? Show the homeowner that. That\'s your sale.”',sig:'— Mike, on FaceTime',voice:"Point your phone at it. FaceTime me and I see what you see. There it is — see the hairline on the igniter? Show the homeowner that. That's your sale."},
@@ -5245,12 +5392,20 @@ var OB_I18N={
     magic:{k:'YOUR FIRST CALL',h1a:'ASK MIKE',h1b:'ONE THING.',st:'READY · 25 YRS ON EVERY SYSTEM',free:'FREE TASTE',me:'R-410A system, 12° subcool, low suction. What am I looking at?',mike:'12° subcool with low suction? You\'re likely <b>overcharged with a restriction</b> downstream — check the TXV bulb and your liquid line temp first. Tell me the line temps and I\'ll walk you to it…',chip1:'What part do I need?',chip2:'Read me the fault code',chip3:'Send a nameplate photo',ph:'Tell Mike what you\'re working on…',gate:'First answer\'s on the house · <b>Create your account to keep Mike on speed-dial</b>',cta:'Start →',voice:"Ask me one thing. First answer's on the house — tell me what you're working on."}
   },
   homeEn:{
+    tour:{k:'HOW TO USE HIM',l1:'EVERYTHING YOU',l2:'CAN DO.',line:"Five things — that's the whole app. <b>No HVAC words required.</b>",cta:'Get Started →',steps:[
+      {t:'Tell him what’s going on',s:"Type it how you'd say it — “it's blowing warm.” No technical words."},
+      {t:'Show him your unit',s:"Send a photo, or FaceTime him and point your phone at it."},
+      {t:'Or just call him',s:"Hands full, up in the attic — talk it through. He picks up."},
+      {t:'He tells you if it’s safe',s:"And how urgent. Gas, carbon monoxide, electrical — that comes first."},
+      {t:'Share the report',s:"Send it to whoever's coming out so they arrive knowing the problem."}
+    ],voice:"Here's everything you can do. Tell me what's going on in plain English, show me your unit with a photo or FaceTime, or just call me. I'll tell you if it's safe and how urgent it is — then share the report with whoever comes out."},
     cold:{pre:'IN YOUR CORNER',l1:'AN HONEST EXPERT',l2:'IN YOUR',l3:'POCKET.',sub:'A master tech who picks up every time — <b>call him, FaceTime him, text him.</b> He tells you the truth before anyone sells you anything.',cta:'Meet Mike →',voice:"An honest expert in your pocket. A master tech who picks up every time — call him, FaceTime him, text him. I tell you the truth before anyone sells you anything."},
     talkedaround:{k:'01 · ASK HIM',l1:'NO MORE GETTING',l2:'TALKED AROUND.',line:"Mike tells you in plain English — <b>what\'s wrong, if it\'s safe, how urgent it is, and what to ask</b> whoever comes out.",st:'ON THE LINE',q:'“It\'ll run, but that\'s a cracked heat exchanger — don\'t sleep in the house tonight. Ask whoever comes out to show you the crack.”',sig:'— Mike, in plain English',voice:"No more getting talked around. I tell you what's wrong, if it's safe, how urgent it is, and what to ask whoever comes out."},
     facetime:{k:'02 · FACETIME',l1:'SHOW HIM',l2:'YOUR UNIT.',line:"FaceTime him and point your phone at the system. <b>He sees what you see</b> and tells you straight what he\'s looking at.",q:'“That\'s your blower motor — and it\'s safe to run for now. Not an emergency. Get a couple quotes, no rush.”',sig:'— Mike, on FaceTime',voice:"Show me your unit. FaceTime me and point your phone at the system. I see what you see and tell you straight what I'm looking at."},
     magic:{k:'TELL HIM WHAT\'S GOING ON',h1a:'TELL MIKE',h1b:'WHAT\'S GOING ON.',st:'READY · 25 YRS ON EVERY SYSTEM',free:'FREE TASTE',me:'AC stopped cooling last night. It\'s 95 out. Is this an emergency?',mike:'Let\'s find out fast. <b>First — is the outdoor fan spinning?</b> If it\'s humming but not turning, shut it off so you don\'t cook the compressor. Tell me what you see and I\'ll walk you through it…',chip1:'Is it safe to run?',chip2:'How urgent is this?',chip3:'Send a photo of my unit',ph:'Tell Mike what\'s going on…',gate:'First answer\'s on the house · <b>Create your account to keep Mike in your corner</b>',findtech:'Connect to a trusted local tech →',cta:'Start →',voice:"Tell me what's going on. First answer's on the house."}
   },
   es:{
+    who:{k:'ANTES DE EMPEZAR',l1:'PRIMERO —',l2:'¿QUIÉN ERES?',line:"Mike trabaja distinto según quién tenga el teléfono. Elige tu lado y él se acomoda a ti.",techT:'Soy técnico',techS:'Diagnósticos, identificar piezas, diagramas y las palabras para cerrar el trabajo.',homeT:'Soy propietario',homeS:'En palabras claras: qué está mal, si es seguro, y qué preguntarle a quien venga.',hint:'ELIGE UNA PARA CONTINUAR',voice:"Primero — ¿con quién hablo? Trabajo distinto según quién tenga el teléfono. ¿Eres técnico o propietario?"},
     cold:{pre:'TE CONECTAMOS CON',l1:'25 AÑOS',l2:'EN CADA',l3:'SISTEMA.',sub:'Un técnico maestro que siempre contesta — <b>llámalo, hazle FaceTime, escríbele.</b> Mira lo que hace antes de que firmes nada.',cta:'Conoce a Mike →',voice:"25 años en cada sistema. Un técnico maestro que siempre contesta — llámalo, hazle FaceTime, escríbele. Mira lo que hago antes de que firmes nada."},
     call:{k:'01 · LLAMAR',l1:'¿MANOS LLENAS?',l2:'SOLO LLÁMALO.',line:"En el techo, en la troca, con guantes — <b>háblalo en voz alta.</b> Responde como el compa del taller de al lado.",st:'EN LÍNEA',q:'“Antes de condenar la tarjeta — ¿cuántos 24 voltios tienes de R a C? Léemelo.”',sig:'— Mike, manos libres',voice:"¿Manos llenas? Solo llámame. En el techo, en la troca, con guantes — háblalo en voz alta. Antes de condenar la tarjeta, ¿cuántos 24 voltios tienes de R a C? Léemelo."},
     facetime:{k:'02 · FACETIME',l1:'APUNTA TU',l2:'TELÉFONO AHÍ.',line:"Hazle FaceTime y <b>ve lo que tú ves</b> — lee la placa, identifica la pieza, te ayuda a cerrar frente al cliente.",q:'“Ahí está — ¿ves la grieta fina en el encendedor? Muéstrasela al cliente. Esa es tu venta.”',sig:'— Mike, en FaceTime',voice:"Apunta tu teléfono ahí. Hazme FaceTime y veo lo que tú ves. Ahí está — ¿ves la grieta fina en el encendedor? Muéstrasela al cliente. Esa es tu venta."},
@@ -5259,6 +5414,13 @@ var OB_I18N={
     magic:{k:'TU PRIMERA LLAMADA',h1a:'PREGÚNTALE A MIKE',h1b:'UNA COSA.',st:'LISTO · 25 AÑOS EN CADA SISTEMA',free:'PRUEBA GRATIS',me:'Sistema R-410A, 12° de subenfriamiento, baja succión. ¿Qué estoy viendo?',mike:'¿12° de subenfriamiento con baja succión? Probablemente estés <b>sobrecargado con una restricción</b> aguas abajo — revisa el bulbo del TXV y la temperatura de la línea de líquido primero. Dime las temperaturas de línea y te llevo a ello…',chip1:'¿Qué pieza necesito?',chip2:'Léeme el código de falla',chip3:'Enviar foto de placa',ph:'Dile a Mike en qué estás trabajando…',gate:'La primera respuesta va por la casa · <b>Crea tu cuenta para tener a Mike a la mano</b>',cta:'Empezar →',voice:"Pregúntame una cosa. La primera respuesta va por la casa — dime en qué estás trabajando."}
   },
   homeEs:{
+    tour:{k:'CÓMO USARLO',l1:'TODO LO QUE',l2:'PUEDES HACER.',line:"Cinco cosas — eso es toda la app. <b>Sin palabras técnicas.</b>",cta:'Empezar →',steps:[
+      {t:'Dile qué está pasando',s:"Escríbelo como lo dirías — “sale aire caliente”. Sin términos técnicos."},
+      {t:'Muéstrale tu unidad',s:"Manda una foto, o hazle FaceTime y apunta el teléfono."},
+      {t:'O simplemente llámalo',s:"Manos ocupadas, en el ático — cuéntaselo. Siempre contesta."},
+      {t:'Te dice si es seguro',s:"Y qué tan urgente. Gas, monóxido, riesgo eléctrico — eso va primero."},
+      {t:'Comparte el reporte',s:"Envíaselo a quien venga, para que llegue sabiendo el problema."}
+    ],voice:"Esto es todo lo que puedes hacer. Cuéntame qué pasa en palabras claras, muéstrame tu unidad con una foto o FaceTime, o solo llámame. Te digo si es seguro y qué tan urgente es — y luego compartes el reporte con quien venga."},
     cold:{pre:'DE TU LADO',l1:'UN EXPERTO HONESTO',l2:'EN TU',l3:'BOLSILLO.',sub:'Un técnico maestro que siempre contesta — <b>llámalo, hazle FaceTime, escríbele.</b> Te dice la verdad antes de que alguien te venda algo.',cta:'Conoce a Mike →',voice:"Un experto honesto en tu bolsillo. Un técnico maestro que siempre contesta — llámalo, hazle FaceTime, escríbele. Te digo la verdad antes de que alguien te venda algo."},
     talkedaround:{k:'01 · PREGÚNTALE',l1:'YA NO TE',l2:'ENREDAN MÁS.',line:"Mike te dice en palabras claras — <b>qué está mal, si es seguro, qué tan urgente es, y qué preguntar</b> a quien venga.",st:'EN LÍNEA',q:'“Sí prende, pero ese intercambiador está agrietado — no duermas en la casa esta noche. Pídele a quien venga que te muestre la grieta.”',sig:'— Mike, en palabras claras',voice:"Ya no te enredan más. Te digo qué está mal, si es seguro, qué tan urgente es, y qué preguntar a quien venga."},
     facetime:{k:'02 · FACETIME',l1:'MUÉSTRALE',l2:'TU UNIDAD.',line:"Hazle FaceTime y apunta tu teléfono al sistema. <b>Ve lo que tú ves</b> y te dice claro qué está mirando.",q:'“Es el motor del soplador — y es seguro usarlo por ahora. No es emergencia. Pide un par de cotizaciones, sin prisa.”',sig:'— Mike, en FaceTime',voice:"Muéstrale tu unidad. Hazme FaceTime y apunta tu teléfono al sistema. Veo lo que tú ves y te digo claro qué estoy mirando."},
@@ -5321,24 +5483,58 @@ var OB_I18N={
     magic:{k:'CONTA O QUE TÁ ROLANDO',h1a:'CONTA PRO MIKE',h1b:'O QUE TÁ ROLANDO.',st:'PRONTO · 25 ANOS EM TODO SISTEMA',free:'TESTE GRÁTIS',me:'O ar parou de gelar ontem à noite. Tá fazendo 35° lá fora. Isso é emergência?',mike:'Vamos descobrir rápido. <b>Primeiro — o ventilador de fora tá girando?</b> Se tá zunindo mas não gira, desliga pra não queimar o compressor. Me conta o que você vê que eu te guio…',chip1:'É seguro ligar?',chip2:'O quão urgente é isso?',chip3:'Enviar foto da minha unidade',ph:'Conta pro Mike o que tá rolando…',gate:'A primeira resposta é por conta da casa · <b>Crie sua conta pra manter o Mike do seu lado</b>',findtech:'Conectar com um técnico local de confiança →',cta:'Começar →',voice:"Conta o que tá rolando. A primeira resposta é por conta da casa."}
   }
 };
+// Resolve the onboarding audience. BEFORE signup there is no currentUser, so the
+// first-open picker's choice (window._obRole, mirrored to localStorage so a reload
+// mid-flow doesn't re-ask) is authoritative. A real signed-in account always wins.
+// Returns 'homeowner' | 'tech' | '' (not chosen yet).
+function obRole(){
+  if(currentUser&&currentUser.role)return currentUser.role==='homeowner'?'homeowner':'tech';
+  if(window._obRole)return window._obRole;
+  try{var s=localStorage.getItem('trazer_role_choice');if(s==='homeowner'||s==='tech')return s;}catch(e){}
+  return '';
+}
 // Resolve the right per-language pack. Homeowners get the homeXX pack (no money frame);
 // techs get the base lang pack. Falls back to EN packs if a language is missing.
 function getObPack(){
   var lang=(typeof currentLang!=='undefined')?currentLang:'en';
-  var isHome=!!(currentUser&&currentUser.role==='homeowner');
+  var isHome=(obRole()==='homeowner');
   if(isHome){
     var hk='home'+lang.charAt(0).toUpperCase()+lang.slice(1);
     return OB_I18N[hk]||OB_I18N.homeEn;
   }
   return OB_I18N[lang]||OB_I18N.en;
 }
-// Frame SEQUENCES — order = render order. TECH has the money frame; HOME never does
-// (guardrail: revenue/objection coaching is tech-only). Each entry names the pack key
-// the renderer reads its prose from.
-var OB_FRAMES_TECH=['cold','call','facetime','text','money'];
-var OB_FRAMES_HOME=['cold','talkedaround','facetime'];
+// Per-frame prose lookup. The 'who' picker renders BEFORE an audience exists, and each
+// homeXX pack carries only homeowner frames — so a key the active pack doesn't have
+// falls back to the EN packs instead of rendering an empty frame. (Frames added after
+// the original 6-language translation pass — 'who', 'tour' — rely on this.)
+function obProse(pack,type){
+  return (pack&&pack[type])||OB_I18N.en[type]||OB_I18N.homeEn[type]||{};
+}
+// Frame SEQUENCES — order = render order. Both open with the 'who' audience picker.
+// TECH has the money frame; HOME never does (guardrail: revenue/objection coaching is
+// tech-only) and closes on 'tour', the homeowner navigation walkthrough. Each entry
+// names the pack key the renderer reads its prose from.
+var OB_FRAMES_TECH=['who','cold','call','facetime','text','money'];
+var OB_FRAMES_HOME=['who','cold','talkedaround','facetime','tour'];
 function obFrames(){
-  return (currentUser&&currentUser.role==='homeowner')?OB_FRAMES_HOME:OB_FRAMES_TECH;
+  var seq=(obRole()==='homeowner')?OB_FRAMES_HOME.slice():OB_FRAMES_TECH.slice();
+  // A signed-in account already declared its audience — never ask it again.
+  if(currentUser&&currentUser.role)seq.shift();
+  return seq;
+}
+// Frame 0 choice. Records the audience, pre-seeds the signup role so the account is
+// created with the right side of the app, then advances into that audience's sequence.
+function obChooseRole(role){
+  // Ignore taps arriving mid-transition. Without this, hammering the two cards advanced
+  // obStep once per tap while the frame stayed frozen on the picker — the user ended up
+  // on the last index with frame 0 still on screen and a "Next" button that dropped them
+  // straight out of onboarding, having seen none of it.
+  if(window._obSwapping)return;
+  window._obRole=(role==='homeowner')?'homeowner':'tech';
+  try{localStorage.setItem('trazer_role_choice',window._obRole);}catch(e){}
+  window._pendingRole=(window._obRole==='homeowner')?'homeowner':'contractor';
+  obNext();
 }
 var obStep=0;
 
@@ -5353,7 +5549,16 @@ function showOnboarding(){
   // tab or background the app mid-flow; pagehide alone is unreliable on iOS PWA.
   if(!window._obExitMarkInstalled){
     window._obExitMarkInstalled=true;
-    var markObDone=function(){try{localStorage.setItem('trazer_onboarded','1');}catch(e){}};
+    var markObDone=function(){try{
+      // ONLY mark it seen once the audience has actually been chosen. This fires on ANY
+      // tab-hide — a phone call, a text, the screenshot gesture, app-switching — which on
+      // a phone is completely normal behaviour mid-flow. Before this guard, being
+      // interrupted on frame 0 permanently burned the picker: trazer_onboarded='1' with
+      // trazer_role_choice still null, obRole() stuck at '' forever, and NO ui path back
+      // to it. Interrupted-before-choosing now simply re-arms on the next cold load.
+      if(!obRole())return;
+      localStorage.setItem('trazer_onboarded','1');
+    }catch(e){}};
     window.addEventListener('pagehide',markObDone);
     document.addEventListener('visibilitychange',function(){
       if(document.visibilityState==='hidden')markObDone();
@@ -5370,6 +5575,39 @@ function obEsc(s){return String(s==null?'':s);}
 // sequence; `p` is the resolved per-language pack. Technical specimens (part #s, $,
 // model strings, monogram, timer) are language-neutral constants right here.
 function obFrameHTML(type,p){
+  if(type==='who'){
+    // Frame 0 — the audience fork. Renders before any account exists; the choice is the
+    // action, so renderOb hides the dock CTA here. Clicks are wired in obPostRender.
+    var w=obProse(p,'who');
+    return '<div class="ob-kicker" style="color:var(--ob-teal)">'+obEsc(w.k)+'</div>'
+      +'<h1 class="ob-h1"><span class="l1">'+obEsc(w.l1)+'</span><span class="l2">'+obEsc(w.l2)+'</span></h1>'
+      +'<p class="ob-line">'+obEsc(w.line)+'</p>'
+      +'<div class="ob-pickwrap">'
+        +'<button type="button" class="ob-pick" data-obrole="tech">'
+          +'<div class="ic">🔧</div><div class="tx"><div class="t">'+obEsc(w.techT)+'</div><div class="s">'+obEsc(w.techS)+'</div></div>'
+        +'</button>'
+        +'<button type="button" class="ob-pick" data-obrole="homeowner">'
+          +'<div class="ic">🏠</div><div class="tx"><div class="t">'+obEsc(w.homeT)+'</div><div class="s">'+obEsc(w.homeS)+'</div></div>'
+        +'</button>'
+      +'</div>'
+      +(w.hint?'<div class="ob-pickhint">'+obEsc(w.hint)+'</div>':'');
+  }
+  if(type==='tour'){
+    // HOMEOWNER-ONLY navigation walkthrough. Every step maps to a surface a homeowner can
+    // actually reach (chat composer, photo drop zone, voice, FaceTime, Share Report).
+    // GUARDRAIL: nothing here quotes or implies a repair price — homeowners never see one.
+    var t=obProse(p,'tour');
+    var steps=t.steps||[];
+    var rows='';
+    for(var ti=0;ti<steps.length;ti++){
+      rows+='<div class="ob-tstep"><div class="n">'+(ti+1)+'</div>'
+        +'<div class="tx"><div class="tt">'+obEsc(steps[ti].t)+'</div><div class="ts">'+obEsc(steps[ti].s)+'</div></div></div>';
+    }
+    return '<div class="ob-kicker" style="color:var(--ob-teal)">'+obEsc(t.k)+'</div>'
+      +'<h1 class="ob-h1"><span class="l1">'+obEsc(t.l1)+'</span><span class="l2">'+obEsc(t.l2)+'</span></h1>'
+      +'<p class="ob-line">'+obEsc(t.line)+'</p>'
+      +'<div class="ob-tour">'+rows+'</div>';
+  }
   if(type==='cold'){
     var c=p.cold;
     return '<div class="ob-cold">'
@@ -5480,10 +5718,11 @@ function renderOb(){
   var isCold=(type==='cold');
   var rings=document.getElementById('obRings');if(rings)rings.style.display=isCold?'block':'none';
   var scope=document.getElementById('obScope');if(scope)scope.style.display=isCold?'block':'none';
-  // The magic frame is the chat surface itself — it hides the standard dock CTA/dots
-  // because its own composer + gate carry the action. Other frames keep the dock.
+  // The magic frame is the chat surface itself and the 'who' frame is a fork — both hide
+  // the standard dock CTA/dots because their own controls carry the action. Others keep it.
   var isMagic=(type==='magic');
-  var dock=document.getElementById('obDock');if(dock)dock.style.display=isMagic?'none':'block';
+  var noDock=(isMagic||type==='who');
+  var dock=document.getElementById('obDock');if(dock)dock.style.display=noDock?'none':'block';
   var host=document.getElementById('obFrame');
   if(host){
     var pReduce2=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -5495,21 +5734,37 @@ function renderOb(){
       wireObMagic(host,isMagic);
       obPostRender(host,type);
     } else {
+      // The innerHTML swap is gated behind this animationend. A second renderOb() arriving
+      // mid-transition used to strip and re-add ob-out, stomping the {once:true} listener
+      // so the swap NEVER ran — leaving the frame visually frozen on the old markup while
+      // obStep advanced underneath. _obSwapping (set here, released below) makes obNext /
+      // obBack / obChooseRole ignore input until the frame has actually changed.
+      window._obSwapping=true;
       host.classList.remove('ob-in','ob-out');void host.offsetWidth;
       host.classList.add('ob-out');
       var _type=type,_pack=pack,_isMagic=isMagic;
-      host.addEventListener('animationend',function _obDollySwap(){
+      var _done=function(){
+        if(_done._ran)return; _done._ran=true;
+        if(window._obSwapTimer){clearTimeout(window._obSwapTimer);window._obSwapTimer=null;}
         host.removeEventListener('animationend',_obDollySwap);
         host.classList.remove('ob-out');void host.offsetWidth;
         host.innerHTML=obFrameHTML(_type,_pack);
         host.classList.add('ob-in');
         wireObMagic(host,_isMagic);
         obPostRender(host,_type);
-      },{once:true});
+        window._obSwapping=false;
+      };
+      function _obDollySwap(){_done();}
+      host.addEventListener('animationend',_obDollySwap,{once:true});
+      // Safety net: if animationend never fires (backgrounded tab, reduced-motion race,
+      // interrupted animation) the swap still completes and the lock still releases —
+      // a stuck lock would freeze onboarding permanently, which is worse than the bug.
+      if(window._obSwapTimer)clearTimeout(window._obSwapTimer);
+      window._obSwapTimer=setTimeout(_done,600);
     }
   }
   // Dock CTA label: cold/magic use their own cta; middle frames say Next.
-  var cur=pack[type]||{};
+  var cur=obProse(pack,type);
   var nb=document.getElementById('obNextBtn');
   if(nb){
     // Cold/magic frames carry their own localized cta; middle frames use the
@@ -5532,7 +5787,7 @@ function speakOb(){
   var frames=obFrames();
   var type=frames[obStep];
   var pack=getObPack();
-  var cur=(type&&pack[type])||{};
+  var cur=obProse(pack,type);
   if(!cur.voice)return;
   var text=cur.voice;
   var gen=window._obGen=(window._obGen||0)+1;
@@ -5612,6 +5867,28 @@ function obPostRender(host,type){
   },800);
   // Money slide: kick off the → counter
   if(type==='money'){setTimeout(runObMoneyCounter,700);}
+  // Audience picker: wire the two cards. Listener-based (not inline onclick) so the
+  // markup stays CSP-clean, and re-bound on every render since the frame is re-created.
+  if(type==='who'){
+    Array.prototype.forEach.call(host.querySelectorAll('.ob-pick'),function(b){
+      b.addEventListener('click',function(){obChooseRole(b.getAttribute('data-obrole'));});
+    });
+  }
+  // Homeowner tour: flag the list only when it genuinely overflows, so the edge fade means
+  // "there's more below" instead of softening a list that already fits. A SINGLE measurement
+  // is unreliable — the frame's own entrance animation is still resolving its height while
+  // the rows stagger in (last row at 1.23s), so an early read reports phantom overflow.
+  // Re-measure until it settles, and again on rotate/resize.
+  if(type==='tour'){
+    var _sync=function(){
+      var t=host.querySelector('.ob-tour');
+      if(t)t.classList.toggle('ob-scrolls',t.scrollHeight>t.clientHeight+1);
+    };
+    [1500,2000,2600].forEach(function(ms){setTimeout(_sync,ms);});
+    if(window._obTourResize)window.removeEventListener('resize',window._obTourResize);
+    window._obTourResize=function(){setTimeout(_sync,180);};
+    window.addEventListener('resize',window._obTourResize);
+  }
 }
 function animateObBars(){
   var ov=document.getElementById('onboardingOverlay');
@@ -5649,6 +5926,7 @@ function runObMoneyCounter(){
   requestAnimationFrame(tick);
 }
 function obBack(){
+  if(window._obSwapping)return;   // see obChooseRole — no input while a frame swap is in flight
   stopObSpeaking();
   if(obStep>0){
     obStep--;
@@ -5662,6 +5940,7 @@ function obBack(){
   }
 }
 function obNext(){
+  if(window._obSwapping)return;   // see obChooseRole — no input while a frame swap is in flight
   stopObSpeaking();
   if(obStep<obFrames().length-1){
     obStep++;
@@ -6773,25 +7052,26 @@ function populateSelects(){
 }
 
 function setMode(m){
-  // Homeowner side removed (2026-07-25) — Mike is tech/contractor-only now.
-  // setMode is kept (many callers) but hard-forced to contractor so the entire
-  // tech UI (200+ body[data-mode="contractor"] rules) always has its styling,
-  // regardless of what any legacy caller passes. All element refs are guarded
-  // so removing the old homeowner elements can't throw.
-  mode='pro';
-  document.body.dataset.mode='contractor';
+  // Homeowner side RESTORED (2026-08-06) — the 7/25 removal hard-forced this to
+  // contractor; it now routes both audiences again. 'home' is the ONLY value that
+  // gives the homeowner surface; anything else falls through to contractor so a
+  // legacy/garbage caller can never strand a tech in the homeowner panel. Every
+  // element ref stays guarded.
+  var isHome=(m==='home');
+  mode=isHome?'home':'pro';
+  document.body.dataset.mode=isHome?'home':'contractor';
   var el;
-  el=document.getElementById('tabHome'); if(el)el.className='mode-tab';
-  el=document.getElementById('tabPro'); if(el)el.className='mode-tab active';
-  el=document.getElementById('panelHome'); if(el)el.style.display='none';
-  el=document.getElementById('panelDiag'); if(el)el.style.display='block';
-  el=document.getElementById('heroTitle'); if(el)el.textContent=v2t('heroPro');
-  el=document.getElementById('heroSub'); if(el)el.textContent=v2t('heroSubPro');
-  el=document.getElementById('modeDesc'); if(el)el.textContent=v2t('descPro');
+  el=document.getElementById('tabHome'); if(el)el.className=isHome?'mode-tab active':'mode-tab';
+  el=document.getElementById('tabPro'); if(el)el.className=isHome?'mode-tab':'mode-tab active';
+  el=document.getElementById('panelHome'); if(el)el.style.display=isHome?'block':'none';
+  el=document.getElementById('panelDiag'); if(el)el.style.display=isHome?'none':'block';
+  el=document.getElementById('heroTitle'); if(el)el.textContent=v2t(isHome?'heroHome':'heroPro');
+  el=document.getElementById('heroSub'); if(el)el.textContent=v2t(isHome?'heroSubHome':'heroSubPro');
+  el=document.getElementById('modeDesc'); if(el)el.textContent=v2t(isHome?'descHome':'descPro');
   var nms=document.getElementById('navMikeStatus');
   if(nms)nms.textContent='● On the line';
   // Keep the V2 landing (Frame G) toggle + console in lock-step with the one router.
-  syncV2Landing('tech');
+  syncV2Landing(isHome?'home':'tech');
   // Option B chat-forward: pre-auth shows the tall #v2Landing front door; post-auth
   // collapses it to the 80px #instrStrip so the chat sits at the fold.
   syncAuthSurface();
@@ -6869,7 +7149,7 @@ function syncV2Landing(aud){
 }
 
 // Frame G audience toggle → drives the EXISTING setMode router (tech=contractor/panelDiag, home=panelHome).
-function v2SetAudience(aud){ setMode('pro'); /* homeowner side removed — always tech */ }
+function v2SetAudience(aud){ setMode(aud==='home'?'home':'pro'); }
 
 // Primary CTA "Ask Mike anything →" — flow into the Phase-B chat for the active audience.
 function v2LandingAsk(){
@@ -11223,7 +11503,13 @@ function mpDismissColdOpen(){
   var el=document.getElementById('mpColdOpen');if(!el)return;
   if(el._t){clearTimeout(el._t);el._t=null;}
   el.classList.add('out');el.setAttribute('aria-hidden','true');
-  setTimeout(function(){el.style.display='none';},480);
+  setTimeout(function(){
+    el.style.display='none';
+    // Splash is gone — NOW run the anonymous first-run (audience picker). This tap is also
+    // the gesture that unlocks iOS audio, so Mike's voice actually plays for the first
+    // frame instead of being silently blocked.
+    try{ if(typeof maybeShowFirstRun==='function')maybeShowFirstRun(); }catch(e){}
+  },480);
 }
 (function(){try{document.addEventListener('DOMContentLoaded',function(){
   var hasUser=false;try{hasUser=!!localStorage.getItem('trazer_user');}catch(e){}
@@ -12422,12 +12708,14 @@ function checkCameraAccess(){
     if(typeof showToast==='function')showToast('Loading… tap again in a moment.','info',2000);
     return;
   }
-  // Starter plan: chat only, no camera
-  if(currentUser.plan==='starter'){
-    if(typeof showToast==='function')showToast('Live Camera is a Pro feature. Upgrade to unlock.','info');
-    setTimeout(function(){showPaywall();},600);
-    return;
-  }
+  // NOTE — deliberately NO client-side plan gate here.
+  // The old check was `plan==='starter'`, a plan retired in July 2026, so it matched
+  // nobody: a new tech (plan='trial', no card) walked straight past it. The tempting
+  // fix is to gate on plan here, but the client is NOT told whether a card is on file
+  // — so gating on plan='trial' would lock out a tech who HAS paid and is legitimately
+  // mid-trial. The server is the only thing that knows, and it already returns 402 with
+  // paywall:true. callAI turns that into showPaywall(), which now renders ABOVE the
+  // camera (z-index) and closes it. Server stays the single source of truth.
   // Prime audio synchronously inside the user-gesture tick BEFORE the async
   // startLiveCamera so iOS Safari doesn't block the mikeSayCamera greeting
   // that fires later (outside the gesture window).
@@ -12627,6 +12915,10 @@ async function analyzeCameraFrame(userInitiated,userText){
     try{
       response=await callAI(sysPrompt,messages,maxTok,true); // Always allow search in camera
     }catch(camAiErr){
+      // Don't call a paywall a "connection issue". callAI already opened the paywall
+      // on a 402 (and showPaywall closes the camera), so say nothing here — the tech
+      // is now looking at the trial screen, not a broken camera.
+      if(String(camAiErr&&camAiErr.message||'').toLowerCase().indexOf('subscription')>-1){ return; }
       cameraActive&&setCameraResponse('Connection issue — tap Analyze to try again.');
       return;
     }
@@ -13645,7 +13937,16 @@ document.addEventListener('DOMContentLoaded',function(){
     <span class="tz-modal-back" onclick="closeModal('billingModal')">← Back</span>
     <div class="plan-coming-soon">🚀 Billing is coming soon — you are on beta access</div>
     <div class="plan-card-grid">
-      <!-- Homeowner billing card removed 2026-07-25 (tech-only). -->
+      <!-- Homeowner billing — restored 2026-08-06. pddBilling shows this OR the pro cards. -->
+      <div id="billingHomeCards" style="display:none">
+        <div class="plan-card active" onclick="selectBillingPlan('homeowner',this)">
+          <div class="plan-card-badge">HOMEOWNER</div>
+          <div class="plan-card-name">Home Plan</div>
+          <div class="plan-card-price">$19.99</div>
+          <div class="plan-card-period">/month</div>
+          <div class="plan-card-save">Unlimited diagnostics</div>
+        </div>
+      </div>
       <!-- Contractor billing -->
       <div id="billingProCards">
         <div class="plan-card active" onclick="selectBillingPlan('pro',this)">

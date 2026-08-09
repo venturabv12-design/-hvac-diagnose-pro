@@ -2189,10 +2189,16 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // heater — the most common CO producer in a house — is 200, half the furnace limit, so a
   // flat 400 was twice as permissive as the standard on the likeliest offender.
   // An UNIDENTIFIED appliance defaults to the STRICTER 200: fail toward distrust.
-  const _coM = _lastUser.match(new RegExp(_PPM + '\\s*ppm[^.]{0,24}air[- ]?free', 'i'))
-            || _lastUser.match(new RegExp('air[- ]?free[^.]{0,24}' + _PPM + '\\s*ppm', 'i'));
-  if (_coM) {
-    const _co = _ppmNum(_coM[1]);
+  // Take the WORST air-free reading, not the first (fixed 2026-08-09). A tech logging two
+  // appliances — "150 ppm air free on the water heater and 900 on the furnace" — got judged
+  // on 150 and the 900 vanished. Same first-match defect the ambient rule had.
+  let _co = 0;
+  for (const _re of [new RegExp(_PPM + '\\s*ppm[^.]{0,24}air[- ]?free', 'gi'),
+                     new RegExp('air[- ]?free[^.]{0,24}' + _PPM + '\\s*ppm', 'gi')]) {
+    let _h;
+    while ((_h = _re.exec(_lastUser))) { const _v = _ppmNum(_h[1]); if (_v > _co) _co = _v; }
+  }
+  if (_co > 0) {
     // 200 ppm: water heater, vented/unvented room heater, BIV wall furnace.
     const _strict = /(water heater|room heater|unvented|space heater|wall furnace)/i.test(_lastUser)
                     && !/direct[- ]?vent/i.test(_lastUser);
@@ -2224,14 +2230,35 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // opened those calls with "this is a dangerous situation" — a description, not an action.
   // Placed after the equipment rules so an evacuation outranks a shutdown, but before (C4)
   // so a downed person still wins.
-  const _ambM = _lastUser.match(new RegExp(_PPM + '\\s*ppm', 'i'));
-  // Do not fire on a flue/vent/air-free reading — that is rule (B)'s job, not this one.
-  const _isFlueCtx = /air[- ]?free|\bflue\b|\bvent\b|\bvented\b|stack|exhaust|draft hood|burner|combustion analyzer/i.test(_lastUser);
-  // Require a genuine CO signal or an occupied-space location, so a stray "ppm" can't trip it.
-  const _coSignal = /\bco\b|carbon monoxide|monitor|meter|detector|alarm/i.test(_lastUser);
-  const _spaceSignal = /ambient|hallway|living room|basement|bedroom|kitchen|upstairs|downstairs|\bCAZ\b|in the (house|room|air|space|home)/i.test(_lastUser);
-  if (_ambM && !_isFlueCtx && (_coSignal || _spaceSignal)) {
-    const _amb = _ppmNum(_ambM[1]);
+  // PER-CLAUSE, WORST-READING (fixed 2026-08-09). Two defects made this go silent or
+  // understate on the most ordinary combustion-analysis message a tech can type:
+  //   "22 ppm air free on the furnace, but 90 ppm in the hallway on my monitor"
+  // The flue test ran against the WHOLE message, so "air free" anywhere suppressed the
+  // ambient rule entirely — 90 ppm ambient is an evacuation and it said nothing. And
+  // .match() takes the FIRST ppm, so "alarm set at 35 ppm, reading 400 ppm in the bedroom"
+  // acted on 35 and issued the mildest advisory instead of evacuating.
+  // Now: split into clauses, judge each reading in ITS OWN context, act on the WORST
+  // ambient one. Same posture as the rest of this file — the dangerous reading wins.
+  const _FLUE_CTX = /air[- ]?free|\bflue\b|\bvent\b|\bvented\b|stack|exhaust|draft hood|burner|combustion analyzer/i;
+  const _CO_SIG = /\bco\b|carbon monoxide|monitor|meter|detector|alarm/i;
+  const _SPACE_SIG = /ambient|hallway|living room|basement|bedroom|kitchen|upstairs|downstairs|\bCAZ\b|in the (house|room|air|space|home)/i;
+  // Message-level signals let a bare "90 ppm in the hallway" clause still qualify when the
+  // CO word sits in a neighbouring clause; the FLUE test stays clause-local on purpose,
+  // because that is the one that SUPPRESSES a warning.
+  const _coSignal = _CO_SIG.test(_lastUser);
+  const _spaceSignal = _SPACE_SIG.test(_lastUser);
+  let _amb = 0;
+  for (const _cl of _lastUser.split(/[.;,]|\bbut\b|\bhowever\b|\bwhile\b/i)) {
+    if (_FLUE_CTX.test(_cl)) continue;                       // rule (B) owns flue readings
+    if (!(_CO_SIG.test(_cl) || _SPACE_SIG.test(_cl) || _coSignal || _spaceSignal)) continue;
+    const _clRe = new RegExp(_PPM + '\\s*ppm', 'gi');
+    let _hit;
+    while ((_hit = _clRe.exec(_cl))) {
+      const _v = _ppmNum(_hit[1]);
+      if (_v > _amb) _amb = _v;                              // worst ambient reading wins
+    }
+  }
+  if (_amb > 0) {
     if (_amb >= 1200) {
       _safetyLead = 'GET OUT NOW — ' + _amb + ' ppm is at or above the level that is immediately dangerous to life. Everyone leaves the building right now, you included. Call 911 from outside. Nobody goes back in without the fire department and SCBA.';
     } else if (_amb >= 70) {
@@ -2253,13 +2280,25 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   if (/(headache|nause|dizzy|light[- ]?headed|confus|disorient|vomit|throwing up|flu[- ]?like)/i.test(_lastUser)
       && /(furnace|boiler|water heater|gas|combustion|appliance|heater|fireplace|\bco\b|carbon monoxide|ppm)/i.test(_lastUser)) {
     const _medical = ' Anyone feeling it needs to be checked by a medic — symptoms around a combustion appliance get treated as carbon monoxide until proven otherwise, whatever the meter says, because a spot reading misses both the peak and what they have already breathed in.';
-    // If the ambient reading already produced an evacuation lead, ADD the medical instruction
-    // rather than replacing it — otherwise a symptomatic occupant at 180 ppm would lose the
-    // "call emergency services from outside" step, which is the more urgent of the two.
+    // GRADED, so the guard doesn't cry wolf (fixed 2026-08-09). Symptoms became an independent
+    // trigger, which meant "this furnace is giving me a headache" — a tech venting, not a
+    // patient — produced a full building evacuation. That matters: a guard that fires on
+    // frustration is one techs learn to scroll past, and then it isn't there on the day it
+    // counts. So we never go silent, we scale.
+    // CORROBORATED = a real measurement or device, or someone OTHER than the writer described
+    // as feeling it. Those get the full evacuation. A bare appliance word plus a symptom gets
+    // a proportionate check instead — still safety-first, still CO-until-proven-otherwise.
+    const _symptomCorroborated =
+      /\d\s*ppm|\bco\b|carbon monoxide|detector|alarm|monitor/i.test(_lastUser)
+      || /(occupant|homeowner|customer|tenant|resident|wife|husband|kids?|child|children|baby|family|she|he|they|everyone)\b[^.]{0,40}(has|had|have|feels?|felt|is|are|been|complain|says?|said|getting)/i.test(_lastUser);
     if (/^(STOP AND EVACUATE|GET OUT NOW)/.test(_safetyLead)) {
+      // An evacuation already fired — append the medical step, never replace it, or a
+      // symptomatic occupant at 180 ppm loses "call emergency services from outside".
       _safetyLead += _medical;
-    } else {
+    } else if (_symptomCorroborated) {
       _safetyLead = 'SAFETY FIRST — get everyone out into fresh air now, including you.' + _medical + ' Diagnose the equipment after the people are out and safe.';
+    } else {
+      _safetyLead = 'SAFETY FIRST — if that is a real symptom and not just a long day, step outside into fresh air before you go further. Around a combustion appliance, a headache or nausea gets treated as carbon monoxide until proven otherwise — put a meter on the space and check ambient CO before you keep working.';
     }
   }
   // (C4) MEDICAL EMERGENCY — an occupant is incapacitated (suspected CO or otherwise).

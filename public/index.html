@@ -11441,7 +11441,26 @@ function mpEnterChat(){
 function mpGoHome(){document.body.classList.remove('mp-chatting');document.documentElement.classList.remove('mp-chatting');mpClearChatViewport();mpCloseSubsheet();}
 // Toolbelt actions that need one more detail shouldn't dump a half-typed line in the box
 // and stop — Mike asks for what he needs, like he picked up the phone. The tech just answers.
-function mpAskMike(q){window._mpActionDirective=null;mpEnterChat();if(typeof appendMessage==='function')appendMessage('agent',q);try{if(typeof chatHistory!=='undefined'&&chatHistory&&chatHistory.push)chatHistory.push({role:'assistant',content:q});}catch(e){}requestAnimationFrame(function(){if(typeof scrollToBottom==='function')scrollToBottom();});var i=document.getElementById('chatInput');if(i){i.value='';i.focus();}}
+// Re-scroll AFTER the iOS keyboard has finished animating in. Focusing an input scrolls
+// nothing on its own — the keyboard slides up afterwards and covers whatever was just
+// posted. Reported from the field 2026-08-09: tapping Pressures posted Mike's question and
+// the keyboard immediately hid it. Every one of the ~30 quick actions that routes through
+// mpAskMike had this; Warranty looked fine only because it opens a sub-sheet instead.
+// visualViewport.resize is the real keyboard signal on iOS; the timers are the fallback for
+// browsers that don't fire it (and for the case where the keyboard was already up).
+function _scrollAfterKeyboard(){
+  var go=function(){ try{ if(typeof scrollToBottom==='function')scrollToBottom(); }catch(e){} };
+  go();
+  var vv=window.visualViewport;
+  if(vv){
+    var onResize=function(){ go(); };
+    vv.addEventListener('resize',onResize);
+    // one-shot: the keyboard animation is well under a second
+    setTimeout(function(){ try{ vv.removeEventListener('resize',onResize); }catch(e){} },1200);
+  }
+  [180,420,700].forEach(function(ms){ setTimeout(go,ms); });
+}
+function mpAskMike(q){window._mpActionDirective=null;mpEnterChat();if(typeof appendMessage==='function')appendMessage('agent',q);try{if(typeof chatHistory!=='undefined'&&chatHistory&&chatHistory.push)chatHistory.push({role:'assistant',content:q});}catch(e){}var i=document.getElementById('chatInput');if(i){i.value='';i.focus();}requestAnimationFrame(_scrollAfterKeyboard);}
 function mpFindPart(){mpAskMike("What part are you after? Give me the unit — make and model — or just the part if you already know it, and I'll get you the part number and where to grab it near you.");window._mpActionDirective={search:true,text:'ACTION — FIND THE PART: the tech wants a part and where to get it NOW. Lead with the answer. Take what they gave as final — do not re-confirm, do not second-guess, do not interrogate. If they named a universal/multi-tap part (e.g. a Turbo 200 or 200X run capacitor), you do NOT need their exact MFD — give it to them. Use the GPS location on file to SEARCH for real supply houses near them (Ferguson, Johnstone Supply, Baker Distributing, Grainger, RE Michel, local HVAC counters) and return ACTUAL store names, addresses, and which counter is likely to stock it — never "let me pull the counters." Ask at most ONE question, and only if you genuinely cannot proceed. Any safety note goes briefly at the END.'};}
 function mpDrawDiagram(){window._mpPendingGen='diagram';mpAskMike("What should I draw? Name the unit or circuit — like 'Carrier 59TP6 control wiring' or 'a heat-pump defrost circuit' — and I'll sketch it.");}
 function mpIllustrate(){window._mpPendingGen='illustration';mpAskMike("What do you want to see? Name the part — 'reversing valve,' 'TXV,' 'ECM motor' — and I'll draw it up.");}

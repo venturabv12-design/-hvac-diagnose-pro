@@ -2815,7 +2815,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div class="auth-migration-body" data-v2i18n="migBody">You were here from the beginning — that matters. Mike's got a whole new home now, and it doesn't carry the old one over. Takes 30 seconds to get back in. Same Mike, better everything.</div>
       <button class="auth-migration-cta" type="button" onclick="authTab('up')" data-v2i18n="migCta">Create My Account</button>
     </div>
-    <div class="auth-trial-pill">🎯 14-day free trial — no charge today, cancel anytime</div>
+    <div class="auth-trial-pill">🎯 14 days free — no credit card, cancel anytime</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tabSignIn" onclick="authTab('in')">Sign In</button>
       <button class="auth-tab" id="tabSignUp" onclick="authTab('up')">Create Account</button>
@@ -2960,8 +2960,8 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         </a>
     </div>
   </div>
-  <button class="pw-btn" onclick="goCheckout()">Start Free Trial — No Charge Today</button>
-  <div class="pw-note">🔒 Free for 14 days — no charge today, we’ll remind you 3 days before, then $100/mo, cancel anytime · Secured by Stripe</div>
+  <button class="pw-btn" onclick="goCheckout()">Keep Mike — $100/mo</button>
+  <div class="pw-note">🔒 Your 14 free days are up — $100/mo from today, cancel anytime · Secured by Stripe</div>
   <!-- Testimonials removed 2026-08-04: Brandon confirmed the two quotes here were
        not from real customers. Placeholder social proof does not go on a live page
        that takes money. Put real quotes back the moment a paying tech gives one. -->
@@ -3589,8 +3589,12 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         // ── DIAGNOSE ──
         {id:'run-diagnostic',cat:'diagnose',label:'Ask Mike<br>to Diagnose',icon:'zap',cls:'t-diag',badge:'Most Used',sub:'Talk it through with Mike',
           run:function(){closeDrawer();if(typeof mpAskMike==='function')mpAskMike("What unit are you on and what's it doing? I'll walk you down it step by step.");}},
-        {id:'diagnose-tools',cat:'diagnose',hub:true,label:'Diagnostic<br>Tools',icon:'activity',cls:'t-pricing',sub:'Guided fault-find menu',
-          run:function(){closeDrawer();if(typeof mpOpenTool==='function')mpOpenTool('diagnose');}},
+        // 'diagnose-tools' hub REMOVED 2026-08-08 — it was 100% redundant. All four of its rows
+        // (Scan Nameplate, Find Upsells, Beat Competitor Quote, Get Google Review) already exist as
+        // direct tiles, so it added a second menu level that led only to duplicates. It was also
+        // mislabelled: "Guided fault-find menu" containing upsells, competitor quotes and reviews.
+        // Safe to drop: it is not in DEFAULT_FAVS, and getFavTools() already discards ids that no
+        // longer resolve via toolById(), so a tech who had pinned it simply loses that one pin.
         {id:'live-camera',cat:'diagnose',label:'Live<br>Camera',icon:'video',cls:'t-cam',badge:'Live',sub:'Mike sees what you see',
           run:function(){closeDrawer();if(typeof startLiveCamera==='function')startLiveCamera();}},
         {id:'scan-nameplate',cat:'diagnose',label:'Scan<br>Nameplate',icon:'scan-line',cls:'t-find',badge:'OCR',sub:'Read the data plate',
@@ -4393,7 +4397,28 @@ function isNativeApp(){
   return false;
 }
 
+// ?firstrun=1 — replay the TRUE cold-visitor first run on demand, from any device, without
+// clearing site data. The flow is once-per-device by design, which makes it nearly impossible
+// to review: you get exactly one look and then it's gone forever on that phone. This wipes the
+// three keys that gate it and re-arms the splash, so what plays is the real first-open path
+// (audience picker included) — not the Help > Replay shortcut, which starts mid-flow because
+// an account already exists and the role is already known.
+function armFirstRunFromURL(){
+  try{
+    if(new URLSearchParams(location.search).get('firstrun')!=='1')return false;
+    localStorage.removeItem('trazer_onboarded');
+    localStorage.removeItem('trazer_role_choice');
+    // Force the STRANGER path even when signed in. Without this obRole() reads
+    // currentUser.role and jumps straight past the audience picker into that role's
+    // frames — which is exactly why Help > Replay starts mid-flow and can never show
+    // the fork. Non-destructive: no sign-out, no server call, one page load.
+    window._obForceCold = true;
+    return true;
+  }catch(e){ return false; }
+}
+
 function tracerInit(){
+  var _forceCold = armFirstRunFromURL();
   // NATIVE-APP CONTEXT (App Store / Play compliance): tag <body> so CSS + JS hide every pricing/
   // paywall/purchase surface when running inside the app. Web (trazermike.io) is unaffected.
   try{ if(isNativeApp()) document.body.classList.add('native-app'); }catch(e){}
@@ -4446,6 +4471,7 @@ function tracerInit(){
   // post-authentication, so a first-time visitor never saw the first-run at all. Brandon's
   // ask is that the very first open asks "homeowner or tech", because that answer decides
   // which product they're shown AND pre-fills the signup role.
+  if(_forceCold){ setTimeout(showOnboarding,600); return; }   // ?firstrun=1 — signed in or not
   if(!currentUser)maybeShowFirstRun();
 }
 
@@ -5301,8 +5327,8 @@ function submitFeedback(){
   closeModal('helpModal');
 }
 function showPaywall(){
-  // CARD-UPFRONT + 14-DAY TRIAL (new techs only; founding techs are grandfathered server-side
-  // and never see this). Adding a card via Stripe starts the free trial — no charge today.
+  // END-OF-TRIAL WALL (new techs only; founding techs are grandfathered server-side and never
+  // see this). The 14 free days run with NO card — this only appears once they're spent.
   closeProfileDD();
   // Close the live camera first. Belt-and-suspenders with the z-index fix: a walled tech
   // who taps the camera must SEE this, not have it open behind a running video feed.
@@ -5334,8 +5360,11 @@ function showPaywall(){
   if(proDiv)proDiv.style.display=isHome?'none':'block';
   if(homeDiv)homeDiv.style.display=isHome?'block':'none';
   selPlan=isHome?'homeowner':'pro';
-  if(title)title.textContent='Start your 14-day free trial';
-  if(sub)sub.textContent='Add a card to unlock Mike — no charge today. We’ll remind you 3 days before it ends.';
+  // This modal is now END-of-trial only. checkPaywall lets a no-card account through for the
+  // full 14 days, so anyone reaching this screen has already had the free look and WILL be
+  // charged on adding a card. The old "no charge today" copy would be a false billing promise.
+  if(title)title.textContent='Your 14 free days are up';
+  if(sub)sub.textContent='Add a card to keep Mike in your pocket — $100/mo, cancel anytime.';
   e.style.display='';           // clear the leftover inline display:none from the beta short-circuit
   e.classList.add('show');
 }
@@ -5399,7 +5428,7 @@ var OB_I18N={
       {t:'He tells you if it’s safe',s:"And how urgent. Gas, carbon monoxide, electrical — that comes first."},
       {t:'Share the report',s:"Send it to whoever's coming out so they arrive knowing the problem."}
     ],voice:"Here's everything you can do. Tell me what's going on in plain English, show me your unit with a photo or FaceTime, or just call me. I'll tell you if it's safe and how urgent it is — then share the report with whoever comes out."},
-    cold:{pre:'IN YOUR CORNER',l1:'AN HONEST EXPERT',l2:'IN YOUR',l3:'POCKET.',sub:'A master tech who picks up every time — <b>call him, FaceTime him, text him.</b> He tells you the truth before anyone sells you anything.',cta:'Meet Mike →',voice:"An honest expert in your pocket. A master tech who picks up every time — call him, FaceTime him, text him. I tell you the truth before anyone sells you anything."},
+    cold:{pre:'IN YOUR CORNER',l1:'AN EXPERT',l2:'IN YOUR',l3:'POCKET.',sub:'Ask me what\'s wrong — <b>talk to me, type it, or show me with your camera.</b> You\'ll know what you\'re dealing with before you call anyone.',cta:'Meet Mike →',voice:"An expert in your pocket. Ask me what's wrong — talk to me, type it, or show me with your camera. You'll know what you're dealing with before you call anyone."},
     talkedaround:{k:'01 · ASK HIM',l1:'NO MORE GETTING',l2:'TALKED AROUND.',line:"Mike tells you in plain English — <b>what\'s wrong, if it\'s safe, how urgent it is, and what to ask</b> whoever comes out.",st:'ON THE LINE',q:'“It\'ll run, but that\'s a cracked heat exchanger — don\'t sleep in the house tonight. Ask whoever comes out to show you the crack.”',sig:'— Mike, in plain English',voice:"No more getting talked around. I tell you what's wrong, if it's safe, how urgent it is, and what to ask whoever comes out."},
     facetime:{k:'02 · FACETIME',l1:'SHOW HIM',l2:'YOUR UNIT.',line:"FaceTime him and point your phone at the system. <b>He sees what you see</b> and tells you straight what he\'s looking at.",q:'“That\'s your blower motor — and it\'s safe to run for now. Not an emergency. Get a couple quotes, no rush.”',sig:'— Mike, on FaceTime',voice:"Show me your unit. FaceTime me and point your phone at the system. I see what you see and tell you straight what I'm looking at."},
     magic:{k:'TELL HIM WHAT\'S GOING ON',h1a:'TELL MIKE',h1b:'WHAT\'S GOING ON.',st:'READY · 25 YRS ON EVERY SYSTEM',free:'FREE TASTE',me:'AC stopped cooling last night. It\'s 95 out. Is this an emergency?',mike:'Let\'s find out fast. <b>First — is the outdoor fan spinning?</b> If it\'s humming but not turning, shut it off so you don\'t cook the compressor. Tell me what you see and I\'ll walk you through it…',chip1:'Is it safe to run?',chip2:'How urgent is this?',chip3:'Send a photo of my unit',ph:'Tell Mike what\'s going on…',gate:'First answer\'s on the house · <b>Create your account to keep Mike in your corner</b>',findtech:'Connect to a trusted local tech →',cta:'Start →',voice:"Tell me what's going on. First answer's on the house."}
@@ -5488,6 +5517,8 @@ var OB_I18N={
 // mid-flow doesn't re-ask) is authoritative. A real signed-in account always wins.
 // Returns 'homeowner' | 'tech' | '' (not chosen yet).
 function obRole(){
+  // ?firstrun=1 review mode: ignore the signed-in role so the audience fork actually renders.
+  if(window._obForceCold){ return window._obRole || ''; }
   if(currentUser&&currentUser.role)return currentUser.role==='homeowner'?'homeowner':'tech';
   if(window._obRole)return window._obRole;
   try{var s=localStorage.getItem('trazer_role_choice');if(s==='homeowner'||s==='tech')return s;}catch(e){}
@@ -11419,45 +11450,39 @@ function mpWiringDiagram(){
   if(typeof mpEnterChat==='function')mpEnterChat();
   mpAskMike("Tell me the unit or the circuit — thermostat hookup, contactor, defrost board, low-voltage controls — and I'll draw you a clean, simple wiring diagram that's easier to read than the manufacturer's. Want the exact factory print instead? Point the camera at the diagram inside the panel and I'll read that one.");
 }
+// DE-DUPLICATED 2026-08-08. A tech reported the drawer as "a lot of tabs and a bit confusing"; the
+// cause was not the number of tools, it was the same action appearing in two places. Every row below
+// that duplicated a direct tile has been removed so ONE ACTION HAS ONE HOME — the invariant the
+// comment above FAV_REGISTRY already claimed but did not hold. Removed: the whole 'parts' hub (dead
+// code — nothing called mpOpenTool('parts') — and all 3 rows duplicated find-part / ahri /
+// close-the-sale), Maintenance Agreement (ma-agreement), Pressures (pressures), Safety Check
+// (safety-check), Handle Objection (handle-objection), Pitch Maintenance (pitch-maintenance),
+// Load Calc (load-calc). No tool was lost — each is still one tap away as its own tile.
 var MP_TOOLS={
-  parts:{title:'Parts Lookup',pip:'var(--safety)',actions:[
-    {label:'Find a Part',sub:'Mike pulls the part #',fn:function(){mpFindPart();}},
-    {label:'AHRI Lookup',sub:'SEER2 / EER2 / rebates',fn:function(){mpEnterChat();askMikeAHRI();}},
-    {label:'Repair vs Replace',sub:'5000-rule calculator',fn:function(){showRepairReplaceCalc();}}
-  ]},
   warranty:{title:'Warranty Check',pip:'var(--moss)',actions:[
     {label:'Check Warranty Status',sub:'Brand / model / install date',fn:function(){mpAskMike("Give me the model and install date and I'll check where the warranty stands.");window._mpActionDirective={search:true,text:'ACTION — WARRANTY CHECK: the tech just gave you the brand, model, and install date. Search the manufacturer warranty terms for this exact equipment and tell them what is covered (parts / compressor / labor), the length, and whether registration was required to keep it. Use real searched info, not a guess.'};}},
-    {label:'File a Warranty Claim',sub:'Prep the claim',fn:function(){mpAskMike("What's the model and what failed? I'll prep the claim — grab the install date too if it's handy.");}},
-    {label:'Maintenance Agreement',sub:'Build an MA',fn:function(){mpEnterChat();askMikeMaintenanceAgreement();}}
+    {label:'File a Warranty Claim',sub:'Prep the claim',fn:function(){mpAskMike("What's the model and what failed? I'll prep the claim — grab the install date too if it's handy.");}}
   ]},
   wiring:{title:'Wiring & Diagrams',pip:'var(--rust)',actions:[
     {label:'Terminal Guide',sub:'Labels & wire colors',fn:function(){mpAskMike("What are you wiring — thermostat, contactor, a board? Tell me what you've got, or point the camera at it, and I'll walk the terminals with you.");}},
     {label:'Wiring Diagram',sub:'Read the real one off your panel',fn:function(){mpWiringDiagram();}},
     {label:'Draw a Diagram',sub:'Concept sketch — not the OEM diagram',fn:function(){mpDrawDiagram();}},
-    {label:'Illustrate It',sub:'See how a part works',fn:function(){mpIllustrate();}},
-    {label:'Pressures',sub:'Target suction & head',fn:function(){mpAskMike("What refrigerant are you on, and what's the outdoor temp at the job? I'll get you your target suction and head.");}},
-    {label:'Safety Check',sub:'Pre-job checklist',fn:function(){mpEnterChat();askMikeSafetyChecklist();}}
+    {label:'Illustrate It',sub:'See how a part works',fn:function(){mpIllustrate();}}
   ]},
   jobs:{title:'Close This Job',pip:'var(--brass)',actions:[
     {label:'Job Summary',sub:'Problem · fix · invoice',fn:function(){mpAskMike("Walk me through it — what happened and what'd you put in? I'll write the summary and the invoice line.");}},
     {label:'Invoice Generator',sub:'Build & copy invoice',fn:function(){generateInvoice();}},
     {label:'Customer Sign-Off',sub:'Capture signature',fn:function(){showJobSignOff();}},
-    {label:'Save Customer',sub:'Add to customer list',fn:function(){saveCurrentJobAsCustomer();}},
-    {label:'Handle Objection',sub:'Price too high?',fn:function(){mpAskMike("What are they balking at — the price, or whether they really need it? Tell me what they said and I'll give you the words.");}},
-    {label:'Pitch Maintenance',sub:'~10-yr system',fn:function(){mpAskMike("What system are they on and how old is it? I'll give you the maintenance-plan pitch that lands.");}}
+    {label:'Save Customer',sub:'Add to customer list',fn:function(){saveCurrentJobAsCustomer();}}
   ]},
   manual:{title:'Tech Docs',pip:'rgba(244,239,230,.5)',actions:[
     {label:'Install Manual',sub:'Startup & commissioning',fn:function(){mpAskMike("What's the make and model? I'll pull the install and startup procedure.");window._mpActionDirective={search:true,text:'ACTION — INSTALL/STARTUP PROCEDURE: the tech gave the make and model. Search the manufacturer install/IOM startup and commissioning procedure for this exact unit and give the real steps plus the document reference. Searched, not from memory.'};}},
     {label:'Service Manual',sub:'Specs & procedures',fn:function(){mpAskMike("Give me the make and model and I'll pull the service specs.");window._mpActionDirective={search:true,text:'ACTION — SERVICE SPECS: the tech gave the make and model. Search the manufacturer service literature for this exact unit and give the real specs (charge, target pressures, electrical, clearances) plus the document reference.'};}},
-    {label:'Error / Fault Codes',sub:'Decode a code',fn:function(){mpAskMike("Give me the code or flash count and the model off the data plate — I'll decode it for that exact unit.");window._mpActionDirective={search:true,text:'ACTION — FAULT CODE DECODE: the tech is giving brand + EXACT model + the code/flash count. Decode it for THIS exact model (codes shift across generations) and search the model service literature to confirm. Give the meaning, the most likely cause, and the check. Never guess across brands; use the exact model.'};}},
-    {label:'Load Calc',sub:'Size the equipment',fn:function(){mpEnterChat();askMikeLoadCalc();}}
+    {label:'Error / Fault Codes',sub:'Decode a code',fn:function(){mpAskMike("Give me the code or flash count and the model off the data plate — I'll decode it for that exact unit.");window._mpActionDirective={search:true,text:'ACTION — FAULT CODE DECODE: the tech is giving brand + EXACT model + the code/flash count. Decode it for THIS exact model (codes shift across generations) and search the model service literature to confirm. Give the meaning, the most likely cause, and the check. Never guess across brands; use the exact model.'};}}
   ]},
-  diagnose:{title:'Diagnose',pip:'var(--teal)',actions:[
-    {label:'📷 Scan Nameplate',sub:'Camera reads the unit + Mike reads it',fn:function(){scanNameplate();}},
-    {label:'Find Upsells',sub:'After the repair',fn:function(){mpAskMike("What'd you just do on this unit? I'll show you what's worth offering — and how to frame it.");}},
-    {label:'Beat Competitor Quote',sub:'Win the job',fn:function(){mpEnterChat();askMikeCompetitor();}},
-    {label:'Get Google Review',sub:'Ask for a review',fn:function(){mpEnterChat();askMikeReviewRequest();}}
-  ]}
+  // MP_TOOLS.diagnose REMOVED 2026-08-08 alongside its 'diagnose-tools' tile — every one of its four
+  // rows duplicated a direct tile (scan-nameplate, find-upsells, beat-competitor, google-review), so
+  // it was a whole extra menu level that led only to things already one tap away.
 };
 function mpEnsureSubsheet(){
   var s=document.getElementById('mpSubsheet');

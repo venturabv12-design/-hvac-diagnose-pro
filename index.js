@@ -40,8 +40,10 @@ const STRIPE_PRICE_TEAM      = process.env.STRIPE_PRICE_TEAM;
 const APP_URL = process.env.APP_URL || 'https://nodejs-production-cb99f.up.railway.app';
 const RESEND_API_KEY = process.env.RESEND_API_KEY; // Optional — password reset emails
 
-// ── CARD-UPFRONT + 14-DAY TRIAL (new signups only) ────────────────────────────
-// New techs add a card at signup → 14-day free trial → auto-charge $100/mo.
+// ── NO-CARD 14-DAY TRIAL (new signups only) ───────────────────────────────────
+// New techs sign up with NO card → 14 days of full Mike → card collected on day 15.
+// (Was card-upfront until 2026-08-07; the card in front of the product converted 66
+// site visitors into zero signups. The trial now has to earn the card, not precede it.)
 // EXISTING/founding techs are grandfathered: any account created before CARD_WALL_CUTOFF
 // is never walled (belt-and-suspenders with the explicit plan='founder' backfill).
 // The cutoff is env-overridable so it can be set to the exact prod-deploy instant at ship.
@@ -1056,9 +1058,11 @@ app.post('/api/billing/checkout', authenticateToken, async (req, res) => {
         'metadata[email]': email,
         'metadata[plan]': plan,
         'metadata[name]': name || '',
-        // 14-day free trial: no charge today, auto-charges $100/mo on day 14.
-        'subscription_data[trial_period_days]': String(TRIAL_DAYS),
-        // Require a card even though the trial is free — that's the whole point (card upfront).
+        // NO Stripe trial here (Brandon, 2026-08-07). The free window is now served in-app by
+        // checkPaywall off trial_start, BEFORE the tech ever reaches Checkout. Passing
+        // trial_period_days as well would hand them a second free 14 days on top of the 14 they
+        // already used — 28 days free per signup. They arrive here because the free look ended,
+        // so this charges today. Grandfathered/founder accounts never reach this route.
         'payment_method_collection': 'always',
         // Also stamp the trial on the subscription for our own webhook bookkeeping.
         'subscription_data[metadata][email]': email,
@@ -1778,7 +1782,8 @@ app.post('/api/redraw', aiLimiter, authenticateToken, requirePaidAccess, async (
 
 // ── AI ────────────────────────────────────────────────────────────────────────
 // ── SERVER-SIDE PAYWALL CHECK ─────────────────────────────────────────────────
-// Allow-set: admin/pro/team/starter/homeowner/beta (forever) + trial (≤7 days).
+// Allow-set: admin/pro/team/starter/founder/homeowner/beta (forever) + trial (≤TRIAL_DAYS,
+// no card required — the card is collected when the window closes, not before).
 // No token / invalid / expired / unknown plan → denied (402, paywall flag).
 // DB error → fail-open so an outage never locks out paying users/techs.
 async function checkPaywall(token) {
@@ -1802,7 +1807,7 @@ async function checkPaywall(token) {
     if (!users || users.length === 0)
       return { allowed: false, reason: 'Account not found' };
 
-    const { plan, created_at, stripe_subscription_id } = users[0];
+    const { plan, trial_start, created_at, stripe_subscription_id } = users[0];
 
     // Paying + legacy/grandfathered-free plans → always allowed.
     if (ALLOWED_PLANS.includes(plan)) return { allowed: true };
@@ -1813,13 +1818,22 @@ async function checkPaywall(token) {
     if (created_at && new Date(created_at).getTime() < CARD_WALL_CUTOFF_MS)
       return { allowed: true };
 
-    // NEW SIGNUPS on 'trial': allowed once a card is on file. Completing Stripe Checkout flips
-    // the account to 'pro' (via webhook) with a subscription in its 14-day trial — Stripe manages
-    // the trial window and the auto-charge. A trial account with a subscription id but not yet
-    // flipped is still card-on-file → allow. No subscription = card wall.
+    // NEW SIGNUPS on 'trial' — NO CARD UP FRONT (Brandon, 2026-08-07). A tech signs up and gets
+    // TRIAL_DAYS of real, unrestricted Mike with nothing on file. The card is collected at the
+    // END of the window, not the start: "once day 15 hits, credit card and collect."
+    //
+    // Why: 66 visitors converted to zero signups while the card sat in front of the product.
+    // Nobody was refusing the price — they never reached it. The trial now has to earn the card.
+    //
+    // Order matters. Card-on-file wins first (they've already converted; Stripe owns the clock
+    // from there). Otherwise fall back to our own window off trial_start, which /api/auth/signup
+    // stamps on every new row. created_at is the backstop for any legacy row missing trial_start —
+    // without it a null trial_start would read as epoch 0 and wall a brand-new account instantly.
     if (plan === 'trial') {
       if (stripe_subscription_id) return { allowed: true };
-      return { allowed: false, reason: 'Start your 14-day free trial — add a card to keep using Mike.', paywall: true };
+      const startedAt = new Date(trial_start || created_at || 0).getTime();
+      if (startedAt && Date.now() - startedAt < TRIAL_DAYS * 86400000) return { allowed: true };
+      return { allowed: false, reason: 'Your free trial has ended — add a card to keep using Mike.', paywall: true };
     }
 
     // Any other unknown plan → deny.
@@ -2162,10 +2176,38 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       || /5[- ]?flash[^.]{0,90}(flame|gas|no call|thermostat (is )?off|keeps? running)/i.test(_lastUser)) {
     _safetyLead = 'SAFETY FIRST — shut the gas off at the appliance shutoff valve right now. A burner staying lit with no call for heat means the gas valve is stuck open; kill the gas before you diagnose anything else.';
   }
-  // (B) CO air-free at or above 400 ppm = unconditional appliance shutdown.
-  const _coM = _lastUser.match(/(\d{3,4})\s*ppm[^.]{0,24}air[- ]?free/i) || _lastUser.match(/air[- ]?free[^.]{0,24}(\d{3,4})\s*ppm/i);
-  if (_coM && parseInt(_coM[1], 10) >= 400) {
-    _safetyLead = 'SAFETY FIRST — shut the appliance down now. ' + parseInt(_coM[1], 10) + ' ppm CO air-free is above the 400 ppm threshold; the appliance comes off until you find and correct the cause, then check ambient CO in the occupied space.';
+  // ── CO NUMBER PARSING ────────────────────────────────────────────────────────────────
+  // The old pattern was (\d{3,4}) — three or four digits. Against "10000 ppm air free" it
+  // captured "0000" (parseInt 0) and against "1,200 ppm air free" it captured "200", so the
+  // MOST dangerous readings produced total silence. Verified against the live code 2026-08-08.
+  // This accepts comma-grouped and any-length numbers, and strips commas before parseInt.
+  const _PPM = '(\\d{1,3}(?:,\\d{3})+|\\d+)';
+  const _ppmNum = (s) => parseInt(String(s).replace(/,/g, ''), 10);
+
+  // (B) CO air-free at or above the threshold FOR THAT APPLIANCE = shut it down.
+  // ANSI/BPI-1200-S Table 1 sets the limit per appliance; it is NOT a flat 400. A water
+  // heater — the most common CO producer in a house — is 200, half the furnace limit, so a
+  // flat 400 was twice as permissive as the standard on the likeliest offender.
+  // An UNIDENTIFIED appliance defaults to the STRICTER 200: fail toward distrust.
+  // Take the WORST air-free reading, not the first (fixed 2026-08-09). A tech logging two
+  // appliances — "150 ppm air free on the water heater and 900 on the furnace" — got judged
+  // on 150 and the 900 vanished. Same first-match defect the ambient rule had.
+  let _co = 0;
+  for (const _re of [new RegExp(_PPM + '\\s*ppm[^.]{0,24}air[- ]?free', 'gi'),
+                     new RegExp('air[- ]?free[^.]{0,24}' + _PPM + '\\s*ppm', 'gi')]) {
+    let _h;
+    while ((_h = _re.exec(_lastUser))) { const _v = _ppmNum(_h[1]); if (_v > _co) _co = _v; }
+  }
+  if (_co > 0) {
+    // 200 ppm: water heater, vented/unvented room heater, BIV wall furnace.
+    const _strict = /(water heater|room heater|unvented|space heater|wall furnace)/i.test(_lastUser)
+                    && !/direct[- ]?vent/i.test(_lastUser);
+    // 400 ppm: central/floor/gravity furnace, boiler, direct-vent wall furnace, clothes dryer.
+    const _loose = /(central furnace|\bfurnace\b|\bboiler\b|floor furnace|gravity furnace|direct[- ]?vent|clothes dryer|\bdryer\b)/i.test(_lastUser);
+    const _lim = _strict ? 200 : (_loose ? 400 : 200);
+    if (_co >= _lim) {
+      _safetyLead = 'SAFETY FIRST — shut the appliance down now. ' + _co + ' ppm CO air-free is at or above the ' + _lim + ' ppm limit for this appliance; it comes off until you find and correct the cause, then check ambient CO in the occupied space.';
+    }
   }
   // (C) Confirmed spillage past 2 minutes under worst-case depressurization.
   if (/spillage[^.]{0,55}(continu|past|over|beyond|exceed|more than|lasting)[^.]{0,16}(2|two)\s*min/i.test(_lastUser)
@@ -2180,6 +2222,84 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   if (/(a2l|r-?454b|r-?32|r-?1234yf|r-?466a)[^.]{0,45}(leak|release|spray|venting|escap|discharg)/i.test(_lastUser)
       || /(refrigerant|charge)[^.]{0,30}(leak|release|spray|venting|escap)[^.]{0,45}(a2l|r-?454b|r-?32|flammab)/i.test(_lastUser)) {
     _safetyLead = 'SAFETY FIRST — eliminate every ignition source first: no light switches, no open flame, no sparking tools in the area. THEN ventilate and clear the space. A2L refrigerant is mildly flammable, so ignition control comes before anything else.';
+  }
+  // (B2) AMBIENT CO in an occupied space — ANSI/BPI-1200-S 7.3.3.3.
+  // BEFORE 2026-08-08 THERE WAS NO AMBIENT RULE AT ALL: the only CO number checked was a
+  // flue/air-free reading, so a tech standing in a hallway with a monitor going off got
+  // nothing deterministic and it fell through to model judgment. Measured on prod, Mike
+  // opened those calls with "this is a dangerous situation" — a description, not an action.
+  // Placed after the equipment rules so an evacuation outranks a shutdown, but before (C4)
+  // so a downed person still wins.
+  // PER-CLAUSE, WORST-READING (fixed 2026-08-09). Two defects made this go silent or
+  // understate on the most ordinary combustion-analysis message a tech can type:
+  //   "22 ppm air free on the furnace, but 90 ppm in the hallway on my monitor"
+  // The flue test ran against the WHOLE message, so "air free" anywhere suppressed the
+  // ambient rule entirely — 90 ppm ambient is an evacuation and it said nothing. And
+  // .match() takes the FIRST ppm, so "alarm set at 35 ppm, reading 400 ppm in the bedroom"
+  // acted on 35 and issued the mildest advisory instead of evacuating.
+  // Now: split into clauses, judge each reading in ITS OWN context, act on the WORST
+  // ambient one. Same posture as the rest of this file — the dangerous reading wins.
+  const _FLUE_CTX = /air[- ]?free|\bflue\b|\bvent\b|\bvented\b|stack|exhaust|draft hood|burner|combustion analyzer/i;
+  const _CO_SIG = /\bco\b|carbon monoxide|monitor|meter|detector|alarm/i;
+  const _SPACE_SIG = /ambient|hallway|living room|basement|bedroom|kitchen|upstairs|downstairs|\bCAZ\b|in the (house|room|air|space|home)/i;
+  // Message-level signals let a bare "90 ppm in the hallway" clause still qualify when the
+  // CO word sits in a neighbouring clause; the FLUE test stays clause-local on purpose,
+  // because that is the one that SUPPRESSES a warning.
+  const _coSignal = _CO_SIG.test(_lastUser);
+  const _spaceSignal = _SPACE_SIG.test(_lastUser);
+  let _amb = 0;
+  for (const _cl of _lastUser.split(/[.;,]|\bbut\b|\bhowever\b|\bwhile\b/i)) {
+    if (_FLUE_CTX.test(_cl)) continue;                       // rule (B) owns flue readings
+    if (!(_CO_SIG.test(_cl) || _SPACE_SIG.test(_cl) || _coSignal || _spaceSignal)) continue;
+    const _clRe = new RegExp(_PPM + '\\s*ppm', 'gi');
+    let _hit;
+    while ((_hit = _clRe.exec(_cl))) {
+      const _v = _ppmNum(_hit[1]);
+      if (_v > _amb) _amb = _v;                              // worst ambient reading wins
+    }
+  }
+  if (_amb > 0) {
+    if (_amb >= 1200) {
+      _safetyLead = 'GET OUT NOW — ' + _amb + ' ppm is at or above the level that is immediately dangerous to life. Everyone leaves the building right now, you included. Call 911 from outside. Nobody goes back in without the fire department and SCBA.';
+    } else if (_amb >= 70) {
+      _safetyLead = 'STOP AND EVACUATE — ' + _amb + ' ppm ambient CO. Tell every occupant to get out of the building now, and get yourself out with them. Call emergency services from OUTSIDE the house. Do not stay to ventilate and do not keep diagnosing — at 70 ppm and up the standard says you leave.';
+    } else if (_amb >= 36) {
+      _safetyLead = 'SAFETY FIRST — ' + _amb + ' ppm ambient CO is elevated. Tell the occupant, get windows and doors open, and shut off every possible CO source before you go any further.';
+    } else if (_amb >= 9) {
+      _safetyLead = 'SAFETY FIRST — ' + _amb + ' ppm ambient CO is detectable. Tell the occupant, ventilate, and find the source before you move on. If a permanently installed appliance is the suspect, it needs a qualified professional on it.';
+    }
+  }
+  // (C5) OCCUPANT SYMPTOMS + a combustion appliance = treat it as CO until proven otherwise.
+  // Symptoms are now an INDEPENDENT trigger. Previously "headache" only registered if a CO
+  // keyword appeared within 45 characters of it, which is exactly why "180 ppm in the hallway
+  // and the homeowner says she has a headache" produced nothing at all.
+  // This is deliberately OUR rule, not a cited standard — no standard states it numerically.
+  // The reasoning: dose is concentration x time, so a spot reading captures neither the peak
+  // nor the accumulated exposure, and WHO notes the link between measured levels and symptoms
+  // is poor. A symptomatic occupant is a real signal at ANY reading, including zero.
+  if (/(headache|nause|dizzy|light[- ]?headed|confus|disorient|vomit|throwing up|flu[- ]?like)/i.test(_lastUser)
+      && /(furnace|boiler|water heater|gas|combustion|appliance|heater|fireplace|\bco\b|carbon monoxide|ppm)/i.test(_lastUser)) {
+    const _medical = ' Anyone feeling it needs to be checked by a medic — symptoms around a combustion appliance get treated as carbon monoxide until proven otherwise, whatever the meter says, because a spot reading misses both the peak and what they have already breathed in.';
+    // GRADED, so the guard doesn't cry wolf (fixed 2026-08-09). Symptoms became an independent
+    // trigger, which meant "this furnace is giving me a headache" — a tech venting, not a
+    // patient — produced a full building evacuation. That matters: a guard that fires on
+    // frustration is one techs learn to scroll past, and then it isn't there on the day it
+    // counts. So we never go silent, we scale.
+    // CORROBORATED = a real measurement or device, or someone OTHER than the writer described
+    // as feeling it. Those get the full evacuation. A bare appliance word plus a symptom gets
+    // a proportionate check instead — still safety-first, still CO-until-proven-otherwise.
+    const _symptomCorroborated =
+      /\d\s*ppm|\bco\b|carbon monoxide|detector|alarm|monitor/i.test(_lastUser)
+      || /(occupant|homeowner|customer|tenant|resident|wife|husband|kids?|child|children|baby|family|she|he|they|everyone)\b[^.]{0,40}(has|had|have|feels?|felt|is|are|been|complain|says?|said|getting)/i.test(_lastUser);
+    if (/^(STOP AND EVACUATE|GET OUT NOW)/.test(_safetyLead)) {
+      // An evacuation already fired — append the medical step, never replace it, or a
+      // symptomatic occupant at 180 ppm loses "call emergency services from outside".
+      _safetyLead += _medical;
+    } else if (_symptomCorroborated) {
+      _safetyLead = 'SAFETY FIRST — get everyone out into fresh air now, including you.' + _medical + ' Diagnose the equipment after the people are out and safe.';
+    } else {
+      _safetyLead = 'SAFETY FIRST — if that is a real symptom and not just a long day, step outside into fresh air before you go further. Around a combustion appliance, a headache or nausea gets treated as carbon monoxide until proven otherwise — put a meter on the space and check ambient CO before you keep working.';
+    }
   }
   // (C4) MEDICAL EMERGENCY — an occupant is incapacitated (suspected CO or otherwise).
   // Highest-priority lead: a downed person is 911-first, before ANY equipment work, and
@@ -2586,6 +2706,70 @@ app.get('*', (req, res) => {
   res.set('Expires', '0');
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// ── "3 DAYS LEFT" TRIAL REMINDER SWEEP ────────────────────────────────────────
+// Stripe used to send this off customer.subscription.trial_will_end. That event can no
+// longer fire — the free window moved in-app (no Stripe trial, no subscription until the
+// tech actually pays), so the reminder has to come from us or nobody gets warned at all.
+//
+// Fires once per account when 3 days remain. Idempotent via features.trial_reminder_sent,
+// so re-running the sweep — or a redeploy — can't re-mail the same tech. Send happens
+// BEFORE the stamp on purpose: a Resend failure leaves the flag unset so the next sweep
+// retries, and the 11→14 day window gives it several attempts before it matters.
+const TRIAL_REMINDER_DAYS_LEFT = 3;
+const TRIAL_SWEEP_INTERVAL_MS = 6 * 60 * 60 * 1000;   // every 6h — 12 shots at a 3-day window
+
+async function sendTrialReminders() {
+  if (!SUPABASE_URL) return;
+  const now = Date.now();
+  const windowOpens = new Date(now - (TRIAL_DAYS - TRIAL_REMINDER_DAYS_LEFT) * 86400000).toISOString();
+  const windowCloses = new Date(now - TRIAL_DAYS * 86400000).toISOString();
+
+  try {
+    // trial_start older than day 11 but not yet past day 14 = exactly the 3-days-left band.
+    const due = await supabase('GET', 'users', null,
+      `?plan=eq.trial&trial_start=lte.${encodeURIComponent(windowOpens)}` +
+      `&trial_start=gt.${encodeURIComponent(windowCloses)}` +
+      `&select=id,name,email,trial_start,features,stripe_subscription_id`);
+
+    if (!due || !due.length) return;
+
+    for (const u of due) {
+      if (u.stripe_subscription_id) continue;             // already paying — nothing to warn about
+      if (u.features && u.features.trial_reminder_sent) continue;
+
+      const daysLeft = Math.max(1, Math.ceil(
+        (new Date(u.trial_start).getTime() + TRIAL_DAYS * 86400000 - now) / 86400000));
+      const firstName = (u.name || '').trim().split(' ')[0] || 'there';
+
+      const dayWord = daysLeft === 1 ? 'day' : 'days';   // retries can land on "1 day left"
+
+      const sent = await sendEmail({
+        to: u.email,
+        subject: `${daysLeft} ${dayWord} left on your free trial`,
+        html: `<p>${firstName} — you've got <strong>${daysLeft} ${dayWord}</strong> left of Mike on the house.</p>
+               <p>After that, keeping him is <strong>$100/mo</strong>. Cancel whenever.</p>
+               <p><strong>Nothing happens automatically.</strong> We don't have a card for you, so you
+               won't be charged a cent — Mike just stops answering until you add one.</p>
+               <p><a href="${APP_URL}">Keep Mike in your pocket →</a></p>
+               <p>— Mike @ Trazer</p>`,
+      });
+
+      if (!sent) continue;                                // leave unstamped; next sweep retries
+
+      await supabase('PATCH', 'users',
+        { features: { ...(u.features || {}), trial_reminder_sent: true } },
+        `?id=eq.${encodeURIComponent(u.id)}`);
+      console.log(`Trial reminder sent: ${u.email} (${daysLeft}d left)`);
+    }
+  } catch (err) {
+    // Never let a sweep failure touch request handling — it retries in 6 hours.
+    console.error('Trial reminder sweep error:', err.message);
+  }
+}
+
+setInterval(sendTrialReminders, TRIAL_SWEEP_INTERVAL_MS);
+setTimeout(sendTrialReminders, 60000);   // once a minute after boot, not during cold start
 
 // ── NEVER CRASH ───────────────────────────────────────────────────────────────
 process.on('uncaughtException', (err) => { console.error('UNCAUGHT EXCEPTION — staying alive:', err.message); });

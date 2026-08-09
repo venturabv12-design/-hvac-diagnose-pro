@@ -10200,7 +10200,12 @@ async function sendChat(){
   // routes to the SAME generator — otherwise Mike text-answers and falsely claims an
   // image is appearing when nothing renders (Brandon field report 2026-06-18). Skip when
   // a photo is attached (that path is image analysis, not generation).
-  if(currentUser&&text&&!chatAttachment&&typeof generateAndShowSVG==='function'&&(/\b(illustrate|sketch)\b|\bdraw\s+(me|a|an|the|it|up|out)\b|\b(picture|illustration|drawing|sketch)\s+of\b|\b(show|create|make|give|need)\s+(me\s+)?(a|an|the|my)\s+(picture|illustration|drawing|sketch|image)\b/i).test(text)){
+  // ASKING IF he can is not asking him to. "Hey Mike if I send you a picture of a diagram
+  // can you simplify it?" matched "picture of" here and drew a generic diagram — this is
+  // the path that actually fires on send, ahead of needsDiagram/needsIllustration.
+  // Field report 2026-08-09. When the request is hypothetical there is nothing to draw yet;
+  // let it fall through to Mike, who answers "yeah, send it over."
+  if(currentUser&&text&&!chatAttachment&&typeof generateAndShowSVG==='function'&&!(typeof _isAskingIfMikeCan==='function'&&_isAskingIfMikeCan(text))&&(/\b(illustrate|sketch)\b|\bdraw\s+(me|a|an|the|it|up|out)\b|\b(picture|illustration|drawing|sketch)\s+of\b|\b(show|create|make|give|need)\s+(me\s+)?(a|an|the|my)\s+(picture|illustration|drawing|sketch|image)\b/i).test(text)){
     var _ill=!/(wiring|schematic|circuit|ladder|control board|sequence)/i.test(text);
     input.value='';input.style.height='auto';
     appendMessage('user',escapeHtml(text));

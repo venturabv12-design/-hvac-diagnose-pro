@@ -11564,11 +11564,31 @@ function mpDismissColdOpen(){
   }catch(e){}
 })();
 
+// A question ABOUT a capability is not a request FOR one. Brandon typed
+// "Hey Mike if send you a picture of a diagram can you simplify it for me?" — a yes/no
+// question with nothing attached — and Mike answered by drawing a generic diagram, because
+// the matchers below fire on the bare words "diagram" and "picture of". The right answer
+// was "Yeah, send it over." A real person hears the question; a keyword matcher hears a noun.
+// Suppresses ONLY the hypothetical/permission framing — a direct "draw me the defrost
+// circuit" still matches exactly as before.
+function _isAskingIfMikeCan(text){
+  if(!text)return false;
+  var t=String(text);
+  // ONLY the hypothetical framing: "if I send you...", "when I upload...". The thing does
+  // not exist yet, so there is nothing to work from and the honest answer is "yeah, send it."
+  // Deliberately NOT suppressing polite phrasing — "can you draw me a diagram?" is a real
+  // request with a real subject, and Mike should just draw it rather than answer the
+  // grammar of the question.
+  return /\b(if|when|once|after)\b[^.?!]{0,40}\b(i\s+)?(send|sent|upload|show|give|share|snap|take)\b/i.test(t);
+}
+
 function needsDiagram(text){
+  if(_isAskingIfMikeCan(text))return false;
   return !!(text&&text.match(/diagram|wiring|schematic|connect|hook.?up|install|sequence|flow|pressure chart|charge|superheat|subcooling|step.?by.?step|how to wire|procedure|walk me|draw|circuit|layout|heat pump cycle|furnace|gauges|manifold|refriger|illustrat|visual|show me|picture|what does.*look|draw me|explain.*visual|can you show|detailed visual|create.*diagram/i));
 }
 
 function needsIllustration(text){
+  if(_isAskingIfMikeCan(text))return false;
   return !!(text&&text.match(/illustrat|show me what|what does.*look like|draw me|create.*image|make.*image|generate.*image|picture of|visual of|detailed visual|create.*visual|can you illustrate|can you draw/i));
 }
 

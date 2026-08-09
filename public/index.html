@@ -2982,6 +2982,29 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     <button class="dev-tab" id="devTabBtnDev" onclick="devSetTab('dev')">TECH DEVELOPMENT</button>
   </div>
   <div id="admContent">
+  <!-- ══ THE TOP OF THE SCREEN ANSWERS ONE QUESTION: IS THIS WORKING? ══════════
+       Brandon reads this on a phone. The 16 detail tiles below are unchanged and
+       still there — this sits above them so the answer is visible before any
+       scrolling, and the worst drop in the funnel calls itself out in red instead
+       of making him do the arithmetic. -->
+  <div id="admHero" style="display:none;margin:0 0 18px;">
+    <div style="font-size:11px;letter-spacing:1.4px;color:#5b6672;font-weight:800;margin:0 0 10px;">IS THIS WORKING?</div>
+    <div id="admHeroRow" style="display:flex;gap:8px;align-items:stretch;"></div>
+    <div id="admHeroLeak" style="margin-top:10px;font-size:13px;line-height:1.45;color:#e0917f;font-weight:600;"></div>
+  </div>
+
+  <!-- Movement — a flat number can't say whether you're winning. -->
+  <div id="admMove" style="display:none;margin:0 0 18px;">
+    <div style="font-size:11px;letter-spacing:1.4px;color:#5b6672;font-weight:800;margin:0 0 10px;">THIS WEEK vs LAST WEEK</div>
+    <div id="admMoveRow" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+  </div>
+
+  <!-- Churn as names, not a percentage. This is the to-do list. -->
+  <div id="admAttention" style="display:none;margin:0 0 20px;">
+    <div style="font-size:11px;letter-spacing:1.4px;color:#5b6672;font-weight:800;margin:0 0 10px;">WHO NEEDS YOU</div>
+    <div id="admAttentionBody"></div>
+  </div>
+
   <div class="adm-grid">
     <div class="adm-stat"><div class="adm-val" id="admTotal">0</div><div class="adm-lbl">Total Techs</div></div>
     <div class="adm-stat"><div class="adm-val" id="admActive" style="color:var(--teal)">0</div><div class="adm-lbl">Active · 7d</div></div>
@@ -6082,6 +6105,87 @@ function admSetStatus(html,cls){
 // Site traffic + real Mike usage, from GET /api/admin/stats. Entirely best-effort:
 // wrapped so that if the endpoint is missing or errors, the tiles just stay '–' and
 // the rest of the dashboard renders exactly as before.
+// ══ THE READABLE SUMMARY ABOVE THE TILES ═══════════════════════════════════
+// Three blocks, in the order Brandon actually needs them on a phone:
+//   1. the funnel as four numbers, with the worst drop named in plain English
+//   2. this week vs last week, so a flat number can say whether it's improving
+//   3. WHO to contact, by name — churn as a to-do list, not a percentage
+// Everything is defensive: a missing field renders nothing rather than throwing,
+// because this runs above the 16 detail tiles that already worked.
+function admRenderHero(d){
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+
+  // ── 1. the funnel ────────────────────────────────────────────────────────
+  var f=d.funnel||[];
+  if(f.length){
+    // The worst stage is the biggest percentage drop, ignoring the first stage
+    // (which has nothing above it to drop from).
+    var worst=null;
+    f.forEach(function(s,i){ if(i>0&&s.ofPrevious!=null&&(worst===null||s.ofPrevious<f[worst].ofPrevious))worst=i; });
+    var SHORT=['Visited','Signed up','Used it','Still using','Paying'];
+    var html='';
+    f.forEach(function(s,i){
+      var bad=(i===worst);
+      html+='<div style="flex:1;min-width:0;background:'+(bad?'rgba(199,85,59,.10)':'#0d1117')+';border:1px solid '+(bad?'rgba(199,85,59,.45)':'#1a1a2a')+';border-radius:12px;padding:12px 8px;text-align:center;">'
+         +  '<div style="font-size:26px;font-weight:800;color:'+(bad?'#e0917f':'#fff')+';line-height:1;">'+esc(s.count)+'</div>'
+         +  '<div style="font-size:10px;letter-spacing:.5px;color:#6b7684;margin-top:6px;text-transform:uppercase;font-weight:700;">'+esc(SHORT[i]||s.stage)+'</div>'
+         +  (s.ofPrevious!=null?'<div style="font-size:11px;margin-top:5px;color:'+(bad?'#e0917f':'#3A8B8A')+';font-weight:700;">'+esc(s.ofPrevious)+'%</div>':'')
+         +'</div>';
+    });
+    document.getElementById('admHeroRow').innerHTML=html;
+    var leak=document.getElementById('admHeroLeak');
+    if(worst!==null&&f[worst].lostHere){
+      leak.textContent='Biggest leak: '+f[worst].lostHere+' lost at “'+f[worst].stage+'” — '+(f[worst].hint||'');
+    } else { leak.textContent=''; }
+    document.getElementById('admHero').style.display='block';
+  }
+
+  // ── 2. movement ──────────────────────────────────────────────────────────
+  var m=d.movement;
+  if(m){
+    var LBL={visitors:'Visitors',signups:'Signups',asks:'Questions',activeTechs:'Active techs'};
+    var row='';
+    ['visitors','signups','asks','activeTechs'].forEach(function(k){
+      var x=m[k]; if(!x)return;
+      var up=x.change>0,flat=x.change===0;
+      var col=flat?'#6b7684':(up?'#3A8B8A':'#e0917f');
+      row+='<div style="flex:1;min-width:78px;background:#0d1117;border:1px solid #1a1a2a;border-radius:11px;padding:11px 9px;">'
+        +'<div style="font-size:10px;color:#6b7684;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">'+LBL[k]+'</div>'
+        +'<div style="font-size:21px;font-weight:800;color:#fff;line-height:1.1;margin-top:4px;">'+esc(x.now)+'</div>'
+        +'<div style="font-size:11px;font-weight:700;color:'+col+';margin-top:3px;">'+(flat?'no change':(up?'▲ ':'▼ ')+Math.abs(x.change)+'%')+'<span style="color:#4a5560;font-weight:600;"> vs '+esc(x.prev)+'</span></div>'
+        +'</div>';
+    });
+    document.getElementById('admMoveRow').innerHTML=row;
+    document.getElementById('admMove').style.display='block';
+  }
+
+  // ── 3. who needs you ─────────────────────────────────────────────────────
+  var at=d.attention;
+  if(at){
+    var block=function(title,list,tone,detail){
+      if(!list||!list.length)return '';
+      var h='<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:800;color:'+tone+';margin-bottom:7px;">'+title+' ('+list.length+')</div>';
+      list.slice(0,12).forEach(function(p){
+        h+='<a href="mailto:'+esc(p.email)+'" style="display:flex;justify-content:space-between;align-items:center;gap:10px;text-decoration:none;background:#0d1117;border:1px solid #1a1a2a;border-radius:10px;padding:10px 12px;margin-bottom:6px;">'
+          +'<span style="min-width:0;"><span style="display:block;font-size:14px;color:#fff;font-weight:700;">'+esc(p.name)+'</span>'
+          +'<span style="display:block;font-size:11px;color:#6b7684;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(p.email)+(p.company?' · '+esc(p.company):'')+'</span></span>'
+          +'<span style="flex:none;font-size:11px;color:'+tone+';font-weight:700;text-align:right;">'+esc(detail(p))+'</span></a>';
+      });
+      if(list.length>12)h+='<div style="font-size:11px;color:#6b7684;">+'+(list.length-12)+' more</div>';
+      return h+'</div>';
+    };
+    var body=block('Signed up, never used it',at.neverUsed,'#e0917f',function(p){return p.daysSinceSignup!=null?p.daysSinceSignup+'d ago':'';})
+           + block('Was using it, went quiet',at.wentQuiet,'#FFB400',function(p){return p.daysSinceLastUse+'d silent';});
+    if(at.churnRate!=null){
+      body+='<div style="font-size:11px;color:#6b7684;line-height:1.5;">Churn '+at.churnRate+'% — '+esc(at.churnBasis||'')+'.</div>';
+    }
+    if(body.trim()){
+      document.getElementById('admAttentionBody').innerHTML=body;
+      document.getElementById('admAttention').style.display='block';
+    }
+  }
+}
+
 function admLoadStats(){
   var token=currentUser&&currentUser.token;
   if(!token)return;
@@ -6091,6 +6195,7 @@ function admLoadStats(){
     .catch(function(){return null;})
     .then(function(d){
       if(!d)return;
+      try{ admRenderHero(d); }catch(e){}   // best-effort: never let the summary break the tiles below
       var t=d.traffic||{},u=d.usage||{},a=d.accounts||{};
       var today=t.today||{},l7=t.last7||{};
       put('admVisToday',(today.uniques!=null?today.uniques:0));

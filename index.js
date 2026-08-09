@@ -1530,7 +1530,73 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
     stage('Paying', paying.length, users.length, 'the ask — have they been asked to pay'),
   ];
 
+  // ---- MOVEMENT: this week vs last week -------------------------------------
+  // A flat number can't tell you if you're winning. Every headline gets a
+  // direction so the dashboard answers "better or worse than last week".
+  const inWindow = (d, fromDaysAgo, toDaysAgo) => {
+    const k = dayKey(d);
+    return k >= ago(fromDaysAgo) && k < ago(toDaysAgo);
+  };
+  const sumTraffic = (from, to) => {
+    let u = 0;
+    for (const [d, x] of Object.entries(byDate)) if (d >= ago(from) && d < ago(to)) u += x.uniques || 0;
+    return u;
+  };
+  const delta = (now, prev) => ({
+    now, prev,
+    change: prev ? +(((now - prev) / prev) * 100).toFixed(0) : (now ? 100 : 0),
+  });
+  const movement = {
+    visitors: delta(sumTraffic(7, 0), sumTraffic(14, 7)),
+    signups: delta(
+      users.filter(u => u.created_at && inWindow(u.created_at, 7, 0)).length,
+      users.filter(u => u.created_at && inWindow(u.created_at, 14, 7)).length),
+    asks: delta(
+      asks.filter(a => inWindow(a.created_at, 7, 0)).length,
+      asks.filter(a => inWindow(a.created_at, 14, 7)).length),
+    activeTechs: delta(
+      new Set(asks.filter(a => inWindow(a.created_at, 7, 0)).map(a => a.user_id)).size,
+      new Set(asks.filter(a => inWindow(a.created_at, 14, 7)).map(a => a.user_id)).size),
+  };
+
+  // ---- WHO NEEDS YOU: churn and dead signups, as NAMES not percentages ------
+  // A churn rate tells you that you have a problem. A list of names tells you
+  // who to text. Brandon runs this from his phone, so the list is the product.
+  const lastAskByUser = {};
+  for (const a of asks) {
+    const t = new Date(a.created_at).getTime();
+    if (!lastAskByUser[a.user_id] || t > lastAskByUser[a.user_id]) lastAskByUser[a.user_id] = t;
+  }
+  const daysAgoFrom = ms => Math.floor((Date.now() - ms) / 86400000);
+  const contact = u => ({ name: u.name || '(no name)', email: u.email, company: u.company || null, plan: u.plan });
+
+  // Signed up and NEVER asked a single question. The most expensive failure there
+  // is: they took the trouble to create an account and got nothing out of it.
+  const neverUsed = users
+    .filter(u => !askedEver.has(u.id))
+    .map(u => Object.assign(contact(u), { daysSinceSignup: u.created_at ? daysAgoFrom(new Date(u.created_at).getTime()) : null }))
+    .sort((a, b) => (b.daysSinceSignup || 0) - (a.daysSinceSignup || 0));
+
+  // Used it, then stopped. 14 days silent is the churn signal at this volume.
+  const wentQuiet = users
+    .filter(u => askedEver.has(u.id) && lastAskByUser[u.id] && daysAgoFrom(lastAskByUser[u.id]) >= 14)
+    .map(u => Object.assign(contact(u), { daysSinceLastUse: daysAgoFrom(lastAskByUser[u.id]) }))
+    .sort((a, b) => b.daysSinceLastUse - a.daysSinceLastUse);
+
+  const activatedCount = users.filter(u => askedEver.has(u.id)).length;
+
   res.json({
+    movement,
+    attention: {
+      neverUsed,
+      wentQuiet,
+      // Churn here means "used it, then went silent" — at $0 revenue there are no
+      // cancellations to count, so silence is the only honest churn signal we have.
+      churnRate: activatedCount ? +((wentQuiet.length / activatedCount) * 100).toFixed(1) : null,
+      churnBasis: 'used it at least once, then no questions for 14+ days',
+    },
+    // How hard the people who DO use it lean on it: active this week / ever activated.
+    stickiness: activatedCount ? +((asked7.size / activatedCount) * 100).toFixed(1) : null,
     traffic: {
       today: byDate[today] || { views: 0, uniques: 0, refs: {} },
       last7: d7,

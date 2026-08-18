@@ -304,7 +304,14 @@ async function sendEmail({ to, subject, html }) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Trazer Intelligence <noreply@trazerintelligence.com>',
+        // 2026-08-18 — WAS HARDCODED TO AN UNREGISTERED DOMAIN. trazerintelligence.com is
+        // not registered by anyone, so even with a mail provider connected every send would
+        // be rejected or spam-filed. Password reset has therefore NEVER worked in production:
+        // sendEmail() logs "skipped" and returns false, while the UI still says "check your
+        // email" — a paying tech who forgets his password is locked out permanently with no
+        // other way in. Default is now trazermike.io, which we actually own (Cloudflare,
+        // paid through 2027). Overridable so the sending identity can change without a deploy.
+        from: process.env.MAIL_FROM || 'Mike at Trazer <noreply@trazermike.io>',
         to,
         subject,
         html,

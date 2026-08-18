@@ -237,6 +237,13 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 /* Auth */
 #authOverlay{position:fixed;inset:0;z-index:9999;background:#0A0A0A;display:flex;align-items:flex-start;justify-content:center;padding:max(20px,env(safe-area-inset-top,20px)) 20px max(20px,env(safe-area-inset-bottom,20px));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
 #authOverlay.hidden{display:none;}
+/* Returning techs need a way in now that the landing — not the sign-in box — is the front
+   door. Deliberately quiet: strangers get the demo, returners get this. */
+.v2-lnd-signin{display:block;width:100%;margin-top:14px;padding:10px;background:none;border:none;
+  font-family:var(--font-ui);font-size:13.5px;color:#8c867c;cursor:pointer;letter-spacing:.01em;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.v2-lnd-signin b{color:#c8c2b8;font-weight:700;}
+.v2-lnd-signin:active{opacity:.7;}
 .auth-wrap{width:100%;max-width:400px;}
 .auth-logo-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:26px;}
 .auth-logo-icon{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,var(--rust),var(--rust-deep));display:flex;align-items:center;justify-content:center;font-size:23px;}
@@ -2787,7 +2794,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 <div id="toastContainer"></div>
 <div id="jobTimer" onclick="toggleJobTimer()" title="Tap to stop timer"></div>
 
-<div id="authOverlay">
+<div id="authOverlay" class="hidden">
 <!-- C-BUG1/3 — pre-login language chooser. Without a trigger inside the auth overlay
      (z-index 9999), the nav lang switcher sits behind the overlay and is unreachable,
      so a non-English visitor can't pick a language before signing in. This globe opens
@@ -3236,6 +3243,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <button class="v2-cta prime" onclick="v2LandingAsk()"><span class="v2-aud-tech" data-v2i18n="lndTechCtaPrime">Ask Mike anything →</span><span class="v2-aud-home" data-v2i18n="lndHomeCtaPrime">Ask Mike anything →</span></button>
       <button class="v2-cta ghost v2-aud-tech" onclick="v2LandingDemo()" data-v2i18n="lndTechCtaGhost">See a real diagnosis →</button>
       <button class="v2-cta ghost v2-aud-home" onclick="findLocalTech()" data-v2i18n="lndHomeCtaGhost">Find a trusted local tech</button>
+      <button class="v2-lnd-signin" onclick="openAuth('in')">Already have an account? <b>Sign in</b></button>
       <div class="v2-lnd-foot"><span class="v2-aud-tech" data-v2i18n="lndTechFoot">EPA 608 · NATE · ASHRAE · 25 YEARS ON EVERY SYSTEM</span><span class="v2-aud-home" data-v2i18n="lndHomeFoot">HONEST READ · NO GUESSWORK · NEVER IN THE DARK</span></div>
     </div>
   </div>
@@ -4458,7 +4466,19 @@ function tracerInit(){
   }catch(e){}
   // Keep the Frame G landing toggle/console in sync with the app's default mode on load,
   // before any role is applied — landing, mode-tabs, and panels never disagree.
-  try{if(typeof syncV2Landing==='function')syncV2Landing(mode==='pro'?'tech':'home');}catch(e){}
+  // 2026-08-18 — the landing used to open on the HOMEOWNER side for everyone, because the
+  // global `mode` defaults to "home" (:7077). The "See a real diagnosis" demo is tagged
+  // .v2-aud-tech, so a technician arriving cold got homeowner copy AND no demo button —
+  // the paying audience was shown the wrong pitch with the proof hidden. A cold visitor now
+  // opens on TECH unless they have previously chosen homeowner; the toggle is right there
+  // either way, and a signed-in account is still resolved by applyModeFromRole().
+  try{
+    if(typeof syncV2Landing==='function'){
+      var _coldAud='tech';
+      try{ if(localStorage.getItem('trazer_role_choice')==='home')_coldAud='home'; }catch(e){}
+      syncV2Landing(localStorage.getItem('trazer_user') ? (mode==='pro'?'tech':'home') : _coldAud);
+    }
+  }catch(e){}
   var s=localStorage.getItem('trazer_user');
   if(s){
     try{
@@ -4470,9 +4490,12 @@ function tracerInit(){
         // Old token — force re-login to get a proper JWT
         localStorage.removeItem('trazer_user');
         currentUser=null;
-        // Auth overlay stays visible — user will sign in fresh. B5: a stale/old
-        // (pre-V2) token IS the signal this is a returning user — reveal the
-        // migration card so they understand why they need a fresh account.
+        // 2026-08-18: the overlay is now HIDDEN by default (the landing page is the front
+        // door), so a stale token must reveal it EXPLICITLY. Before this, "stays visible"
+        // was true by accident of the markup; now it would strand a returning user on the
+        // landing with no way in. B5: a stale/old (pre-V2) token IS the signal this is a
+        // returning user — reveal the migration card so they understand the fresh account.
+        openAuth('in');
         var _mig=document.getElementById('authMigration');if(_mig)_mig.style.display='';
       } else {
         document.getElementById('authOverlay').classList.add('hidden');
@@ -4646,6 +4669,7 @@ function authSignIn(){
       localStorage.setItem('trazer_user',JSON.stringify(user));
       currentUser=user;
       document.getElementById('authOverlay').classList.add('hidden');
+      restorePendingQuestion();
       updateProfileUI();checkTrial();loadUserHistory();applyModeFromRole();
       showPersonalizedWelcome();
       // 8-question conversational intake (startOnboarding) is RETIRED from routing. New
@@ -4704,6 +4728,7 @@ function authSignUp(){
       localStorage.setItem('trazer_user',JSON.stringify(user));
       currentUser=user;
       document.getElementById('authOverlay').classList.add('hidden');
+      restorePendingQuestion();
       updateProfileUI();checkTrial();loadUserHistory();applyModeFromRole();
       showPersonalizedWelcome();
       // CINEMATIC ONBOARDING (Brandon-approved 2026-06-01): every new account — tech
@@ -7411,11 +7436,30 @@ function closeV2Demo(){
 
 // End-CTA after the wow: route the visitor into the signup flow. Shows the auth overlay
 // (logged-out front door) and flips it to the Create-Account tab.
+// ONE way to open the signup/sign-in box, now that it is no longer the default state.
+// 'up' = create account, 'in' = sign in. Everything that needs an account routes here.
+// A stranger who typed a question, then signed up, should find it waiting — not have to
+// remember and retype it. Never auto-sends: they see it and press send themselves.
+function restorePendingQuestion(){
+  try{
+    var q=window._pendingFirstQuestion;if(!q)return;
+    window._pendingFirstQuestion=null;
+    var ci=document.getElementById('chatInput');if(!ci)return;
+    setTimeout(function(){
+      if(!ci.value.trim()){ci.value=q;try{ci.focus();}catch(e){}}
+    },900);
+  }catch(e){}
+}
+
+function openAuth(tab){
+  var au=document.getElementById('authOverlay');if(au)au.classList.remove('hidden');
+  if(typeof authTab==='function')authTab(tab==='in'?'in':'up');
+  try{window.scrollTo(0,0);}catch(e){}
+}
+
 function v2DemoSignup(){
   closeV2Demo();
-  var au=document.getElementById('authOverlay');if(au)au.classList.remove('hidden');
-  if(typeof authTab==='function')authTab('up');
-  try{window.scrollTo(0,0);}catch(e){}
+  openAuth('up');
 }
 
 // Reach-mode tiles on the landing → the same three ways to reach Mike used in-chat.
@@ -10248,7 +10292,18 @@ async function sendChat(){
     stopChatStream();
     return;
   }
-  if(!isAccessAllowed())return;
+  if(!isAccessAllowed()){
+    // Signed out: they typed a real question at the front door. Don't swallow it —
+    // keep the text, show them the account box, and put the question back after signup.
+    if(!currentUser){
+      try{
+        var _pend=(document.getElementById('chatInput')||{}).value||'';
+        if(_pend.trim())window._pendingFirstQuestion=_pend.trim();
+      }catch(e){}
+      openAuth('up');
+    }
+    return;
+  }
   // Request/refresh location on every chat until we have a good one
   if(!window._locationDenied){
     try{

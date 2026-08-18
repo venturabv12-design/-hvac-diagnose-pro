@@ -544,6 +544,9 @@ app.use(helmet({
 // aggregate row per day, owned by the admin account and typed 'site_traffic'. That
 // type is filtered out of the per-tech rollup so it can't distort those numbers.
 const _traffic = { day: null, views: 0, uniques: new Set(), refs: {}, paths: {}, rowId: null };
+// Max visitor hashes stored per day (16 chars each). 5000 ≈ 80KB — far above current
+// traffic, and the union math degrades gracefully to per-day counts above it.
+const TRAFFIC_HASH_CAP = 5000;
 let _adminIdCache = null;
 
 // Days are bucketed in EASTERN time, not UTC. Brandon reads these numbers, and a UTC
@@ -603,13 +606,41 @@ async function flushTraffic() {
     if (!SUPABASE_URL || !_traffic.day || _traffic.views === 0) return;
     const uid = await _adminUserId();
     if (!uid) return;
+    // 2026-08-18 — `uniques` is a PER-DAY count, and the dashboard used to SUM it across
+    // a range. A tech who opens Mike every day for 30 days counted as 30 unique visitors,
+    // so our own users inflated the top of the funnel and made conversion read far worse
+    // than it is. Persist the day's hashes (already salted + irreversible) so a 7d/30d
+    // figure can be a real UNION instead of a sum. Capped so the payload can't grow
+    // unbounded on a traffic spike; over the cap we degrade to the old count and say so.
+    const hashList = [..._traffic.uniques];
     const payload = {
       date: _traffic.day,
       views: _traffic.views,
       uniques: _traffic.uniques.size,
+      hashes: hashList.length <= TRAFFIC_HASH_CAP ? hashList : null,
+      hashesTruncated: hashList.length > TRAFFIC_HASH_CAP,
       refs: _traffic.refs,
       paths: _traffic.paths,
     };
+    if (!_traffic.rowId) {
+      // A redeploy wipes rowId but NOT the day's row. Adopt it and absorb its counters ONCE,
+      // otherwise every restart forks the day into another row and the reader has to guess.
+      const existing = await supabase('GET', 'events', null,
+        `?type=eq.site_traffic&payload->>date=eq.${_traffic.day}&select=id,payload&limit=1`);
+      if (existing && existing[0]) {
+        const ep = existing[0].payload || {};
+        payload.views += ep.views || 0;
+        for (const h of (Array.isArray(ep.hashes) ? ep.hashes : [])) _traffic.uniques.add(h);
+        for (const [k, n] of Object.entries(ep.refs || {})) payload.refs[k] = (payload.refs[k] || 0) + n;
+        for (const [k, n] of Object.entries(ep.paths || {})) payload.paths[k] = (payload.paths[k] || 0) + n;
+        const merged = [..._traffic.uniques];
+        payload.uniques = merged.length;
+        payload.hashes = merged.length <= TRAFFIC_HASH_CAP ? merged : null;
+        payload.hashesTruncated = merged.length > TRAFFIC_HASH_CAP;
+        _traffic.views = payload.views;
+        _traffic.rowId = existing[0].id;
+      }
+    }
     if (_traffic.rowId) {
       await supabase('PATCH', 'events', { payload }, `?id=eq.${_traffic.rowId}`);
     } else {
@@ -1506,22 +1537,47 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
   const byDate = {};
   for (const r of tRows) {
     const p = r.payload || {}; const d = p.date || dayKey(r.created_at);
-    byDate[d] = { views: p.views || 0, uniques: p.uniques || 0, refs: p.refs || {} };
+    // 2026-08-18 — THIS USED TO ASSIGN, NOT ACCUMULATE. Every Railway restart begins a new
+    // row for the same day (the writer's rowId lives in memory), so most days carry 2+ rows
+    // — 14 of 16 days did. Keeping one and dropping the rest silently UNDER-reported traffic
+    // by whatever the discarded rows held (Aug 11: kept 2 visitors, discarded 11).
+    const cur = byDate[d] || { views: 0, uniques: 0, refs: {}, hashes: null };
+    cur.views += p.views || 0;
+    cur.uniques += p.uniques || 0;   // fallback path only; hashes below are authoritative
+    if (Array.isArray(p.hashes)) cur.hashes = (cur.hashes || []).concat(p.hashes);
+    for (const [k, n] of Object.entries(p.refs || {})) cur.refs[k] = (cur.refs[k] || 0) + n;
+    byDate[d] = cur;
   }
+  // Union the per-day hash sets so one person visiting 30 days in a row is ONE visitor.
+  // Days recorded before this shipped have no hash list; for those we fall back to the
+  // old per-day count and flag the range as approximate rather than quietly mixing the
+  // two methods and reporting a number nobody can trust.
   const sumRange = days => {
-    let v = 0, u = 0; const refs = {};
+    let v = 0, fallback = 0; const refs = {}; const seen = new Set(); let exact = true;
     for (const [d, x] of Object.entries(byDate)) {
       if (d >= ago(days)) {
-        v += x.views; u += x.uniques;
+        v += x.views;
+        if (x.hashes) { for (const h of x.hashes) seen.add(h); }
+        else { fallback += x.uniques; exact = false; }
         for (const [k, n] of Object.entries(x.refs)) refs[k] = (refs[k] || 0) + n;
       }
     }
-    return { views: v, uniques: u, refs };
+    return { views: v, uniques: seen.size + fallback, exactUniques: exact,
+             dedupedVisitors: seen.size, refs };
   };
   const d7 = sumRange(7), d30 = sumRange(30);
 
   // ---- Mike usage ----
+  // `rows` is capped at 30 days, so anything derived from it is a 30-DAY view. Activation
+  // ("has this tech ever asked Mike anything?") is a LIFETIME question — judging it on a
+  // 30-day slice put every tech who used Mike in June onto the "signed up, never used it"
+  // list, i.e. the list Brandon actually texts. Pull ask history unbounded for that.
   const asks = rows.filter(r => r.type === 'mike_ask');
+  const asksAll = await supabase('GET', 'events', null,
+    `?select=user_id,created_at&type=eq.mike_ask&order=created_at.asc&limit=20000`) || [];
+  // The day ask-logging went live. Before it, silence means "not instrumented", NOT
+  // "never used Mike" — every metric below that would otherwise read the gap as failure.
+  const ASK_LOG_START = asksAll.length ? asksAll[0].created_at : null;
   const perTech = {};
   for (const a of asks) perTech[a.user_id] = (perTech[a.user_id] || 0) + 1;
 
@@ -1533,17 +1589,22 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
   // obvious at a glance and the team can work the right problem instead of
   // guessing between "not enough traffic" and "they sign up and never use it".
   const PAID_PLANS = ['pro', 'team', 'starter'];
-  const askedEver = new Set(asks.map(a => a.user_id));
+  const askedEver = new Set(asksAll.map(a => a.user_id));
   const asked7 = new Set(asks.filter(a => dayKey(a.created_at) >= ago(7)).map(a => a.user_id));
   const paying = users.filter(u => u.stripe_subscription_id || PAID_PLANS.includes(u.plan));
 
   // Time from signup to first question — how long the product takes to prove itself.
   const firstAskByUser = {};
-  for (const a of asks) {
+  for (const a of asksAll) {
     const t = new Date(a.created_at).getTime();
     if (!firstAskByUser[a.user_id] || t < firstAskByUser[a.user_id]) firstAskByUser[a.user_id] = t;
   }
+  // Only techs who signed up AFTER ask-logging began have a real number here. For anyone
+  // older, "first ask" is just the day we switched logging on, so the median measured our
+  // own deploy date (it read 664.5h ≈ 27 days) rather than how fast Mike proves himself.
+  const logStartMs = ASK_LOG_START ? new Date(ASK_LOG_START).getTime() : null;
   const ttfa = users
+    .filter(u => u.created_at && logStartMs && new Date(u.created_at).getTime() >= logStartMs)
     .map(u => (firstAskByUser[u.id] && u.created_at)
       ? (firstAskByUser[u.id] - new Date(u.created_at).getTime()) / 3600000 : null)
     .filter(h => h != null && h >= 0)
@@ -1559,14 +1620,28 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
     hint,
   });
 
+  // 2026-08-18 — THE FUNNEL USED TO COMPARE DIFFERENT GROUPS OF PEOPLE. Steps 1-2 were
+  // 30-day; steps 3-5 were all-time. That is how it rendered "Created an account: 9"
+  // followed by "Actually asked Mike: 10" — ten out of nine — and reported "lost 19" at a
+  // stage only 9 people had entered. A funnel whose stages don't share a population isn't
+  // a funnel. Split into the two questions it was really trying to answer, each internally
+  // consistent, each labelled with its own window.
   const visitors30 = d30.uniques;
+  const activatedAll = users.filter(u => askedEver.has(u.id)).length;
+
+  // (1) ACQUISITION — strangers arriving vs strangers signing up. Both 30d.
   const funnel = [
-    stage('Visited the site', visitors30, null, 'unique visitors, 30d'),
-    stage('Created an account', signups30, visitors30, 'the pitch on the page'),
-    stage('Actually asked Mike', users.filter(u => askedEver.has(u.id)).length, users.length,
-      'onboarding — did they ever get value'),
-    stage('Still using it (7d)', asked7.size, users.filter(u => askedEver.has(u.id)).length,
-      'retention — does it stick'),
+    stage('Visited the site', visitors30, null,
+      d30.exactUniques ? 'unique visitors, 30d' : 'visitors, 30d (part of this range predates de-duplication)'),
+    stage('Created an account', signups30, visitors30, 'the pitch on the page · 30d'),
+  ];
+
+  // (2) ACTIVATION + RETENTION — what happens to accounts once they exist. All-time
+  // population, so every stage below divides into the same 19 (or however many) people.
+  const lifecycle = [
+    stage('Accounts created', users.length, null, 'all time'),
+    stage('Actually asked Mike', activatedAll, users.length, 'onboarding — did they ever get value'),
+    stage('Still using it (7d)', asked7.size, activatedAll, 'retention — does it stick'),
     stage('Paying', paying.length, users.length, 'the ask — have they been asked to pay'),
   ];
 
@@ -1603,7 +1678,7 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
   // A churn rate tells you that you have a problem. A list of names tells you
   // who to text. Brandon runs this from his phone, so the list is the product.
   const lastAskByUser = {};
-  for (const a of asks) {
+  for (const a of asksAll) {
     const t = new Date(a.created_at).getTime();
     if (!lastAskByUser[a.user_id] || t > lastAskByUser[a.user_id]) lastAskByUser[a.user_id] = t;
   }
@@ -1624,6 +1699,8 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
     .sort((a, b) => b.daysSinceLastUse - a.daysSinceLastUse);
 
   const activatedCount = users.filter(u => askedEver.has(u.id)).length;
+  const askLogDays = ASK_LOG_START
+    ? Math.floor((Date.now() - new Date(ASK_LOG_START).getTime()) / 86400000) : null;
 
   res.json({
     movement,
@@ -1632,8 +1709,16 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
       wentQuiet,
       // Churn here means "used it, then went silent" — at $0 revenue there are no
       // cancellations to count, so silence is the only honest churn signal we have.
-      churnRate: activatedCount ? +((wentQuiet.length / activatedCount) * 100).toFixed(1) : null,
+      // A tech only counts as churned after 14 SILENT days, so churn cannot be measured
+      // until ask-logging has been running longer than that. Reporting "0%" off a shorter
+      // history isn't zero churn, it's no data — and it reads as good news. Withhold it.
+      churnRate: (activatedCount && askLogDays != null && askLogDays >= 14 + 7)
+        ? +((wentQuiet.length / activatedCount) * 100).toFixed(1) : null,
+      churnMeasurable: askLogDays != null && askLogDays >= 14 + 7,
       churnBasis: 'used it at least once, then no questions for 14+ days',
+      churnNote: (askLogDays != null && askLogDays < 14 + 7)
+        ? `not measurable yet — question logging has only been on for ${askLogDays} days; churn needs 14 silent days to register`
+        : null,
     },
     // How hard the people who DO use it lean on it: active this week / ever activated.
     stickiness: activatedCount ? +((asked7.size / activatedCount) * 100).toFixed(1) : null,
@@ -1643,8 +1728,12 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
       last30: d30,
       daily: Object.entries(byDate).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 30)
         .map(([date, x]) => ({ date, views: x.views, uniques: x.uniques })),
+      // NOTE THE UNIT: refs count PAGE VIEWS, not people. Shown next to a visitor count
+      // this produced "direct (257)" beside "240 visited" and looked like a contradiction.
+      // The unit ships with the number so the UI can't render them as comparable.
       topReferrers: Object.entries(d30.refs).sort((a, b) => b[1] - a[1]).slice(0, 10)
-        .map(([source, hits]) => ({ source, hits })),
+        .map(([source, hits]) => ({ source, views: hits, hits, unit: 'views' })),
+      referrerUnit: 'views',
     },
     usage: {
       asksTotal: asks.length,
@@ -1664,7 +1753,10 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
       paying: paying.length,
       medianHoursToFirstAsk,
     },
-    funnel,
+    funnel,          // acquisition — visitors -> signups, both 30d
+    lifecycle,       // activation + retention + revenue, all-time population
+    askLogStart: ASK_LOG_START,
+    askLogDays,
     note: 'mike_ask logging began 2026-08-03 — activation and retention build from that date forward.',
   });
 });

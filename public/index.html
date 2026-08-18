@@ -219,7 +219,7 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .lang-option{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;font-family:var(--font);font-size:14px;font-weight:500;color:var(--gray-600);transition:background .12s;border:none;background:transparent;width:100%;text-align:left;}
 .lang-option:hover{background:var(--gray-50);color:var(--black);}
 .lang-option.active{color:var(--teal);font-weight:700;background:var(--teal-lt);}
-.lang-flag{font-size:18px;}
+.lang-flag{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.06em;color:inherit;opacity:.45;min-width:22px;text-align:center;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .footer{text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid var(--gray-200);}
 .rec-card{background:var(--white);border:1.5px solid var(--gray-200);border-radius:var(--radius);padding:16px;margin-bottom:8px;cursor:pointer;transition:all .12s;box-shadow:var(--shadow-sm);}
@@ -2801,7 +2801,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
      the SAME #langDropdown (z-index lifted above the overlay) so it's a real chooser. -->
 <button id="authLangBtn" type="button" aria-label="Language" onclick="toggleLangMenu()"
   style="position:fixed;top:max(14px,env(safe-area-inset-top,14px));right:14px;z-index:10001;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 12px;color:#fff;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;">
-  <span id="authLangFlag">🇺🇸</span><span id="authLangCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span>
+  <span id="authLangFlag" aria-hidden="true">🌐</span><span id="authLangCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span>
 </button>
 <div class="auth-wrap">
   <div class="auth-logo-row">
@@ -3127,7 +3127,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     </div>
     <div class="nav-actions">
       <div class="nav-status" data-homeowner-only><div class="status-dot red" id="statusDot"></div><span id="statusText" style="font-size:12px;color:var(--gray-500);">Connecting</span></div>
-      <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn" data-homeowner-only><span id="langFlag">🇺🇸</span><span id="langCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span></button>
+      <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn" data-homeowner-only><span id="langFlag" aria-hidden="true">🌐</span><span id="langCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span></button>
       <button onclick="newChat()" class="nav-icon-btn" id="navRefreshBtn" data-homeowner-only title="New chat — full intro in current language">&#x21BB;</button>
       <button class="nav-profile-btn" id="navProfileBtn" data-homeowner-only onclick="toggleProfileDD()">?</button>
       <button class="nav-globe" data-contractor-only aria-label="Language" onclick="toggleLangMenu()"><i data-lucide="globe"></i><span id="navGlobeLangCode" class="nav-globe-lc">EN</span></button>
@@ -3143,12 +3143,12 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 </div>
 <!-- Lang dropdown lifted out of .nav-actions: position:fixed (mirrors .profile-dd) so it anchors viewport-right and is reachable from both homeowner #langBtn and contractor .nav-globe triggers. -->
 <div class="lang-dropdown" id="langDropdown">
-  <button class="lang-option active" onclick="setLang('en')" id="langOpt-en"><span class="lang-flag">🇺🇸</span>English</button>
-  <button class="lang-option" onclick="setLang('es')" id="langOpt-es"><span class="lang-flag">🇲🇽</span>Español</button>
-  <button class="lang-option" onclick="setLang('zh')" id="langOpt-zh"><span class="lang-flag">🇨🇳</span>中文</button>
-  <button class="lang-option" onclick="setLang('vi')" id="langOpt-vi"><span class="lang-flag">🇻🇳</span>Tiếng Việt</button>
-  <button class="lang-option" onclick="setLang('fr')" id="langOpt-fr"><span class="lang-flag">🇫🇷</span>Français</button>
-  <button class="lang-option" onclick="setLang('pt')" id="langOpt-pt"><span class="lang-flag">🇧🇷</span>Português</button>
+  <button class="lang-option active" onclick="setLang('en')" id="langOpt-en"><span class="lang-flag">EN</span>English</button>
+  <button class="lang-option" onclick="setLang('es')" id="langOpt-es"><span class="lang-flag">ES</span>Español</button>
+  <button class="lang-option" onclick="setLang('zh')" id="langOpt-zh"><span class="lang-flag">ZH</span>中文</button>
+  <button class="lang-option" onclick="setLang('vi')" id="langOpt-vi"><span class="lang-flag">VI</span>Tiếng Việt</button>
+  <button class="lang-option" onclick="setLang('fr')" id="langOpt-fr"><span class="lang-flag">FR</span>Français</button>
+  <button class="lang-option" onclick="setLang('pt')" id="langOpt-pt"><span class="lang-flag">PT</span>Português</button>
 </div>
 <div id="pullRefreshIndicator"><div class="ptr-spinner"></div><span>Refreshing…</span></div>
 
@@ -13480,15 +13480,18 @@ function toggleLangMenu(){
 function setLang(lang){
   currentLang=lang;
   try{localStorage.setItem('trazer_lang',lang);}catch(e){}
-  var flags={en:'🇺🇸',es:'🇲🇽',zh:'🇨🇳',vi:'🇻🇳',fr:'🇫🇷',pt:'🇧🇷'};
+  // 2026-08-18 — A FLAG IS A COUNTRY, NOT A LANGUAGE. 🇲🇽 told a Colombian tech this
+  // wasn't his Spanish; 🇧🇷 said the same to someone in Portugal; 🇺🇸 to a Brit. Worse,
+  // the control looked DIFFERENT depending on where you were in the app (flag here,
+  // globe on the tech header), so someone who switched to a language they couldn't read
+  // had to hunt for a symbol that had changed. One globe everywhere: 🌐 means "language"
+  // in every language, and the code beside it says which one you're currently in.
   var codes={en:'EN',es:'ES',zh:'ZH',vi:'VI',fr:'FR',pt:'PT'};
-  var flagEl=document.getElementById('langFlag');
   var codeEl=document.getElementById('langCode');
-  if(flagEl)flagEl.textContent=flags[lang]||'🇺🇸';
   if(codeEl)codeEl.textContent=codes[lang]||'EN';
   var ngc=document.getElementById('navGlobeLangCode');if(ngc)ngc.textContent=codes[lang]||'EN';
   // Keep the pre-login auth-overlay language switcher (C-BUG1/3) in sync too.
-  var aFlag=document.getElementById('authLangFlag');if(aFlag)aFlag.textContent=flags[lang]||'🇺🇸';
+  // authLangFlag is a static 🌐 now — only the code changes.
   var aCode=document.getElementById('authLangCode');if(aCode)aCode.textContent=codes[lang]||'EN';
   // Update active state in dropdown
   document.querySelectorAll('.lang-option').forEach(function(b){

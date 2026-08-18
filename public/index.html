@@ -2893,10 +2893,10 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   <div class="ob-canvas">
     <div class="ob-top">
       <div class="ob-top-left">
-        <button class="ob-back-btn" id="obBackBtn" onclick="obBack()" style="display:none;">← BACK</button>
+        <button class="ob-back-btn" id="obBackBtn" onclick="obBack()" style="display:none;" data-v2i18n="obBackLbl">← BACK</button>
         <div class="ob-brand">TRAZER <i>INTELLIGENCE</i></div>
       </div>
-      <button class="ob-skip-btn" onclick="stopObSpeaking();obFinish()">SKIP</button>
+      <button class="ob-skip-btn" onclick="stopObSpeaking();obFinish()" data-v2i18n="obSkipLbl">SKIP</button>
     </div>
     <div class="ob-frame" id="obFrame"></div>
     <div class="ob-dock" id="obDock">
@@ -9512,7 +9512,7 @@ var V2_I18N={
     qaBtn:'Quick Actions',qaFavs:'Your Favorites',qaCustomize:'Customize',qaMostUsed:'Most Used',qaLive:'Live',qaRevenue:'Revenue',
     qaDiagSub:'Full system check, 5 min',qaCamSub:'Mike sees what you see',qaShieldSub:'Pre-close 5-pt check',qaCloseSale:'Close<br>The Sale',qaCloseSaleSub:'Repair vs. replace math',
     qaAllTools:'All Tools',qaPinHint:'tap pin to favorite',qaManual:'Manual<br>Lookup',qaHistory:'Job<br>History',qaWarranty:'Warranty<br>Claim',qaPriceBook:'Price<br>Book',qaSafety:'Safety<br>Check',qaRecap:'Recap<br>Video',
-    qaTodaysCalls:'Today’s Calls',qaJobDone:'Done',qaJobOpen:'Open',qaJobProg:'In Prog',qaLanguage:'Language',
+    qaTodaysCalls:'Today’s Calls',qaJobDone:'Done',qaJobOpen:'Open',qaJobProg:'In Prog',qaLanguage:'Language',obBackLbl:'← BACK',obSkipLbl:'SKIP',
     lndLive:'MIKE · LIVE',lndImTech:"I'M A TECH",lndImHome:"I'M A HOMEOWNER",lndReachText:'TEXT',lndMentorSig:'— Mike · 25 yrs',
     isReady:'READY · NEW SESSION',isWaiting:'WAITING FOR YOU',isStatusReady:'READY',isSession:'SESSION · READY',isIdle:'● IDLE',
     lndTechH1a:'WATCH MIKE',lndTechH1b:'WORK',lndTechH1c:'A CALL',lndTechH1d:'IN REAL TIME.',
@@ -9543,7 +9543,7 @@ var V2_I18N={
     qaBtn:'Acciones Rápidas',qaFavs:'Tus Favoritos',qaCustomize:'Personalizar',qaMostUsed:'Más Usado',qaLive:'En Vivo',qaRevenue:'Ingresos',
     qaDiagSub:'Chequeo completo, 5 min',qaCamSub:'Mike ve lo que tú ves',qaShieldSub:'Chequeo de 5 puntos',qaCloseSale:'Cerrar<br>la Venta',qaCloseSaleSub:'Reparar vs. reemplazar',
     qaAllTools:'Todas las Herramientas',qaPinHint:'toca el pin para favorito',qaManual:'Buscar<br>Manual',qaHistory:'Historial<br>de Trabajos',qaWarranty:'Reclamo de<br>Garantía',qaPriceBook:'Lista de<br>Precios',qaSafety:'Chequeo de<br>Seguridad',qaRecap:'Video<br>Resumen',
-    qaTodaysCalls:'Llamadas de Hoy',qaJobDone:'Hecho',qaJobOpen:'Abierto',qaJobProg:'En Curso',qaLanguage:'Idioma',
+    qaTodaysCalls:'Llamadas de Hoy',qaJobDone:'Hecho',qaJobOpen:'Abierto',qaJobProg:'En Curso',qaLanguage:'Idioma',obBackLbl:'← ATRÁS',obSkipLbl:'OMITIR',
     lndLive:'MIKE · EN VIVO',lndImTech:'SOY TÉCNICO',lndImHome:'SOY PROPIETARIO',lndReachText:'TEXTO',lndMentorSig:'— Mike · 25 años',
     isReady:'LISTO · NUEVA SESIÓN',isWaiting:'TE ESCUCHO',isStatusReady:'LISTO',isSession:'SESIÓN · LISTO',isIdle:'● INACTIVO',
     lndTechH1a:'MIRA A MIKE',lndTechH1b:'TRABAJAR',lndTechH1c:'UNA LLAMADA',lndTechH1d:'EN TIEMPO REAL.',
@@ -9574,7 +9574,7 @@ var V2_I18N={
     qaBtn:'快捷操作',qaFavs:'你的收藏',qaCustomize:'自定义',qaMostUsed:'最常用',qaLive:'实时',qaRevenue:'营收',
     qaDiagSub:'系统全检，5 分钟',qaCamSub:'Mike 看到你看到的',qaShieldSub:'收尾前 5 项检查',qaCloseSale:'促成<br>成交',qaCloseSaleSub:'维修对比更换',
     qaAllTools:'所有工具',qaPinHint:'点图钉以收藏',qaManual:'手册<br>查询',qaHistory:'工单<br>记录',qaWarranty:'保修<br>理赔',qaPriceBook:'价目<br>表',qaSafety:'安全<br>检查',qaRecap:'回顾<br>视频',
-    qaTodaysCalls:'今日工单',qaJobDone:'完成',qaJobOpen:'待处理',qaJobProg:'进行中',qaLanguage:'语言',
+    qaTodaysCalls:'今日工单',qaJobDone:'完成',qaJobOpen:'待处理',qaJobProg:'进行中',qaLanguage:'语言',obBackLbl:'← 返回',obSkipLbl:'跳过',
     lndLive:'MIKE · 在线',lndImTech:'我是技师',lndImHome:'我是业主',lndReachText:'文字',lndMentorSig:'— Mike · 25 年',
     isReady:'就绪 · 新会话',isWaiting:'等待您',isStatusReady:'就绪',isSession:'会话 · 就绪',isIdle:'● 空闲',
     lndTechH1a:'看 MIKE',lndTechH1b:'实时',lndTechH1c:'处理',lndTechH1d:'一次维修。',
@@ -9605,7 +9605,7 @@ var V2_I18N={
     qaBtn:'Thao Tác Nhanh',qaFavs:'Yêu Thích',qaCustomize:'Tùy Chỉnh',qaMostUsed:'Dùng Nhiều',qaLive:'Trực Tiếp',qaRevenue:'Doanh Thu',
     qaDiagSub:'Kiểm tra toàn hệ, 5 phút',qaCamSub:'Mike thấy điều bạn thấy',qaShieldSub:'Kiểm tra 5 điểm trước khi xong',qaCloseSale:'Chốt<br>Đơn',qaCloseSaleSub:'Sửa hay thay máy',
     qaAllTools:'Tất Cả Công Cụ',qaPinHint:'chạm ghim để yêu thích',qaManual:'Tra<br>Tài Liệu',qaHistory:'Lịch Sử<br>Công Việc',qaWarranty:'Yêu Cầu<br>Bảo Hành',qaPriceBook:'Bảng<br>Giá',qaSafety:'Kiểm Tra<br>An Toàn',qaRecap:'Video<br>Tóm Tắt',
-    qaTodaysCalls:'Ca Hôm Nay',qaJobDone:'Xong',qaJobOpen:'Đang Mở',qaJobProg:'Đang Làm',qaLanguage:'Ngôn Ngữ',
+    qaTodaysCalls:'Ca Hôm Nay',qaJobDone:'Xong',qaJobOpen:'Đang Mở',qaJobProg:'Đang Làm',qaLanguage:'Ngôn Ngữ',obBackLbl:'← QUAY LẠI',obSkipLbl:'BỎ QUA',
     lndLive:'MIKE · TRỰC TIẾP',lndImTech:'TÔI LÀ THỢ',lndImHome:'TÔI LÀ CHỦ NHÀ',lndReachText:'NHẮN',lndMentorSig:'— Mike · 25 năm',
     isReady:'SẴN SÀNG · PHIÊN MỚI',isWaiting:'ĐANG CHỜ BẠN',isStatusReady:'SẴN SÀNG',isSession:'PHIÊN · SẴN SÀNG',isIdle:'● CHỜ',
     lndTechH1a:'XEM MIKE',lndTechH1b:'XỬ LÝ',lndTechH1c:'MỘT CA',lndTechH1d:'NGAY TỨC THÌ.',
@@ -9636,7 +9636,7 @@ var V2_I18N={
     qaBtn:'Actions Rapides',qaFavs:'Vos Favoris',qaCustomize:'Personnaliser',qaMostUsed:'Plus Utilisé',qaLive:'En Direct',qaRevenue:'Revenus',
     qaDiagSub:'Contrôle complet, 5 min',qaCamSub:'Mike voit ce que vous voyez',qaShieldSub:'Contrôle 5 points avant clôture',qaCloseSale:'Conclure<br>la Vente',qaCloseSaleSub:'Réparer ou remplacer',
     qaAllTools:'Tous les Outils',qaPinHint:'touchez l’épingle pour favori',qaManual:'Recherche<br>Manuel',qaHistory:'Historique<br>des Jobs',qaWarranty:'Demande de<br>Garantie',qaPriceBook:'Grille de<br>Prix',qaSafety:'Contrôle<br>Sécurité',qaRecap:'Vidéo<br>Récap',
-    qaTodaysCalls:'Appels du Jour',qaJobDone:'Terminé',qaJobOpen:'Ouvert',qaJobProg:'En Cours',qaLanguage:'Langue',
+    qaTodaysCalls:'Appels du Jour',qaJobDone:'Terminé',qaJobOpen:'Ouvert',qaJobProg:'En Cours',qaLanguage:'Langue',obBackLbl:'← RETOUR',obSkipLbl:'PASSER',
     lndLive:'MIKE · EN DIRECT',lndImTech:'JE SUIS TECH',lndImHome:'JE SUIS PROPRIÉTAIRE',lndReachText:'TEXTO',lndMentorSig:'— Mike · 25 ans',
     isReady:'PRÊT · NOUVELLE SESSION',isWaiting:'À VOTRE ÉCOUTE',isStatusReady:'PRÊT',isSession:'SESSION · PRÊT',isIdle:'● INACTIF',
     lndTechH1a:'REGARDEZ MIKE',lndTechH1b:'TRAITER',lndTechH1c:'UN APPEL',lndTechH1d:'EN TEMPS RÉEL.',
@@ -9667,7 +9667,7 @@ var V2_I18N={
     qaBtn:'Ações Rápidas',qaFavs:'Seus Favoritos',qaCustomize:'Personalizar',qaMostUsed:'Mais Usado',qaLive:'Ao Vivo',qaRevenue:'Receita',
     qaDiagSub:'Checagem completa, 5 min',qaCamSub:'Mike vê o que você vê',qaShieldSub:'Checagem de 5 pontos',qaCloseSale:'Fechar<br>a Venda',qaCloseSaleSub:'Consertar vs. trocar',
     qaAllTools:'Todas as Ferramentas',qaPinHint:'toque no pino para favoritar',qaManual:'Buscar<br>Manual',qaHistory:'Histórico<br>de Serviços',qaWarranty:'Pedido de<br>Garantia',qaPriceBook:'Tabela de<br>Preços',qaSafety:'Checagem de<br>Segurança',qaRecap:'Vídeo<br>Resumo',
-    qaTodaysCalls:'Chamados de Hoje',qaJobDone:'Concluído',qaJobOpen:'Aberto',qaJobProg:'Em Andamento',qaLanguage:'Idioma',
+    qaTodaysCalls:'Chamados de Hoje',qaJobDone:'Concluído',qaJobOpen:'Aberto',qaJobProg:'Em Andamento',qaLanguage:'Idioma',obBackLbl:'← VOLTAR',obSkipLbl:'PULAR',
     lndLive:'MIKE · AO VIVO',lndImTech:'SOU TÉCNICO',lndImHome:'SOU PROPRIETÁRIO',lndReachText:'TEXTO',lndMentorSig:'— Mike · 25 anos',
     isReady:'PRONTO · NOVA SESSÃO',isWaiting:'À SUA ESPERA',isStatusReady:'PRONTO',isSession:'SESSÃO · PRONTO',isIdle:'● OCIOSO',
     lndTechH1a:'VEJA O MIKE',lndTechH1b:'RESOLVER',lndTechH1c:'UMA CHAMADA',lndTechH1d:'EM TEMPO REAL.',

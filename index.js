@@ -312,6 +312,11 @@ async function sendEmail({ to, subject, html }) {
         // other way in. Default is now trazermike.io, which we actually own (Cloudflare,
         // paid through 2027). Overridable so the sending identity can change without a deploy.
         from: process.env.MAIL_FROM || 'Mike at Trazer <noreply@trazermike.io>',
+        // A no-reply sender that black-holes replies is how you lose the one tech who
+        // WAS trying to tell you something. He can't send FROM the Gmail (nobody owns
+        // gmail.com but Google, and mail forging it gets binned), but a reply should
+        // still reach a box Brandon actually reads.
+        reply_to: process.env.MAIL_REPLY_TO || 'trazerintelligence@gmail.com',
         to,
         subject,
         html,

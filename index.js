@@ -628,6 +628,33 @@ function logUsage(userId, type, payload = {}) {
     .catch(e => console.error('usage log failed (non-fatal):', e.message));
 }
 
+// ── COMPANY SITE (trazerintelligence.com) ───────────────────────────────────────
+// Apple's Individual→Organization migration requires "a publicly available organization
+// website whose domain is associated with the organization". trazermike.io is the PRODUCT;
+// this serves the ENTITY site — company, products, privacy policy, terms — off the same
+// deploy so there is no second host to pay for, monitor, or forget to renew. The privacy
+// and terms URLs are also required by App Store submission, so one build covers three
+// requirements.
+//
+// Host-matched, so it cannot affect trazermike.io: every other hostname falls straight
+// through to the product below. Registered BEFORE express.static and before the SPA
+// catch-all, or the app's own index.html would win.
+const COMPANY_HOSTS = new Set(['trazerintelligence.com', 'www.trazerintelligence.com']);
+const COMPANY_PAGES = { '/': 'index.html', '/index.html': 'index.html',
+                        '/privacy': 'privacy.html', '/privacy.html': 'privacy.html',
+                        '/terms': 'terms.html', '/terms.html': 'terms.html' };
+app.use((req, res, next) => {
+  const host = String(req.headers.host || '').split(':')[0].toLowerCase();
+  if (!COMPANY_HOSTS.has(host)) return next();
+  const page = COMPANY_PAGES[req.path];
+  if (page) {
+    res.set('Cache-Control', 'public, max-age=300');
+    return res.sendFile(path.join(__dirname, 'public', 'company', page));
+  }
+  // Anything else on the company host goes home rather than falling into the product SPA.
+  return res.redirect(302, '/');
+});
+
 // Serve manifest with the correct MIME — iOS silently ignores manifests served as
 // application/json. Registered before express.static so this route wins precedence.
 app.get('/manifest.json', (req, res) => {

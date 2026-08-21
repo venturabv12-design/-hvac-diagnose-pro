@@ -2183,6 +2183,16 @@ function _needsManualRetrieval(text) {
   if (/\b(\d{1,2}[\s-]?(?:flash|blink)(?:es|s)?|error\s+code|fault\s+code|status\s+code|diagnostic\s+code|\bE\d{1,3}\b|\bF\d{1,3}\b|\bP\d{1,2}\b|code\s+\d{1,3})\b/i.test(text)) return true;
   if (/wiring\s+(diagram|schematic|harness)|wire\s+color|terminal\s+(label|designation|layout)|connector\s+pin|ladder\s+diagram/i.test(text)) return true;
   if (/(spec|capacity|rating|\bamps?\b|\bfla\b|\brla\b|\blra\b|\bmca\b|\bmocp\b|charge|superheat|subcool|sequence\s+of\s+operation|defrost\s+(cycle|timing)|gas\s+pressure)/i.test(text) && /\b[a-z0-9]{2,}\d[a-z0-9]{2,}\b/i.test(text)) return true;
+  // 2026-08-21 — THE BLIND SPOT THAT LET "cap reads 28 on a 45" ANSWER FROM MEMORY.
+  // Every rule above needs a brand, a fault code, or a model-ish token. A tech standing at
+  // a unit reading numbers off a meter usually types none of those — measured on 217 real
+  // production questions, 74% ran with no verification of any kind. A component name next
+  // to a number IS a spec question and belongs against the manuals.
+  // Safe to widen: match_manual_chunks treats a NULL brand as "search all 43,290 chunks",
+  // and a miss returns null and falls through exactly as it does today.
+  if (/\b(cap(?:acitor)?s?|contactor|txv|txv|metering device|superheat|subcool(?:ing)?|delta[\s-]?t|static(?:\s+pressure)?|micron|megohm|amp\s*draw|\bfla\b|\brla\b|\blra\b|\bmfd\b|µf|\buf\b|head\s*pressure|suction|liquid\s*line|compressor|blower|igniter|inducer|limit|pressure\s*switch)\b/i.test(text)
+      && /\d/.test(text)) return true;
+
   // High-recall: any known HVAC brand named + a technical/diagnostic intent → check the manuals
   // (retrieval is cheap and falls through gracefully on a miss).
   if (_extractBrand(text) && /(manual|service|fault|error|\bcode\b|flash|blink|check|test|diagnos|troublesho|lockout|short.?cycl|wiring|terminal|sequence|\bspec|pressure|charge|superheat|subcool|replace|inspect|megohm|\bohm|capacitor|igniter|ignition|flame|limit|board|sensor|valve|how (do|to)|what (does|do|should|to)|install|setup|set up|hook.?up|connect|mount|\bwire\b|schematic|diagram|reversing|defrost|c.?wire|\brc\b|\brh\b|humidist|dehumidif|thermostat|ventilat|\berv\b|\bhrv\b|filter|\buv\b|commission)/i.test(text)) return true;
@@ -2629,12 +2639,22 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     let _ragContext = '';
     let _ragDiagrams = [];
     if (_RAG_ENABLED && _needsManualRetrieval(_lastUser)) {
+      const _t0 = Date.now();
       const _mc = await retrieveManualContext(_lastUser);
+      const _ragMs = Date.now() - _t0;
+      // There was NO timing instrumentation on this path, so "how much slower does verifying
+      // make Mike" was unanswerable — and that is the one question that decides whether this
+      // is usable by a tech standing in an attic. Measure it.
+      try { if (_askUid) logUsage(_askUid, 'rag_timing', { ms: _ragMs, hit: !!(_mc && _mc.text) }); } catch {}
       if (_mc && _mc.text) {
         _ragContext = '\n\n=== MANUFACTURER SERVICE MANUAL EXCERPTS (authoritative) ===\n'
           + 'Answer fault-code, wiring, and spec questions ONLY from these excerpts and cite the [Source: ...] tag in your reply. '
           + 'If the answer is not in these excerpts, say so plainly and use web search.\n\n'
           + _mc.text + '\n=== END MANUAL EXCERPTS ===\n';
+        // When the manual and Mike's instinct disagree, the manual wins — but say so out
+        // loud. Silently overriding reads as a personality change; naming the surprise reads
+        // as a tech who checked.
+        _ragContext += 'If an excerpt contradicts what you would have said from memory, TRUST THE EXCERPT and name the surprise plainly ("unusual for this brand, but this unit\'s manual says X"). Never override a manual silently.\n';
         if (Array.isArray(_mc.diagrams)) _ragDiagrams = _mc.diagrams;
         // When an actual wiring-diagram image is being shown to the tech, tell Mike so
         // his prose matches the screen — present it, don't deny having it. He cites the
@@ -2646,6 +2666,21 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
             + 'Reference it naturally and walk them through the relevant terminals/connections, and name the source. '
             + 'Do NOT say you lack a wiring diagram — it is on their screen. If it is a closely related model rather than the exact one, say so briefly but still use it.\n';
         }
+      } else {
+        // WE LOOKED AND FOUND NOTHING — SAY SO. Until now a miss fell silently through to
+        // raw model memory, and the tech could not tell a manual-backed answer from a guess.
+        // Six brands the code claims to support have ZERO chunks ingested (payne, luxaire,
+        // armstrong, arcoaire, keeprite, burnham), so this path is not theoretical: name one
+        // of those and retrieval runs, finds nothing, and Mike used to answer as if he'd checked.
+        // AGENT_SYSTEM already carries the honesty rule ("I do not know, look it up beats a
+        // guess every single time") — it just never had a signal to fire on. This is the signal.
+        _ragContext = '\n\n=== NO VERIFIED SOURCE FOR THIS ONE ===\n'
+          + 'This looked like a spec/manual question, the service-manual library was searched, and nothing matched. '
+          + 'You are answering from training knowledge alone, NOT from a manual. Say so in your own words — one short clause, '
+          + 'not a disclaimer paragraph ("no manual on that exact unit, but from experience..."). '
+          + 'Give your best field answer anyway; never refuse to help. If the number genuinely matters, tell them where to confirm it '
+          + '(nameplate, the unit\'s own manual, the manufacturer). Never imply you checked a manual when you did not.\n'
+          + '=== END ===\n';
       }
     }
     // ── PROMPT CACHING ─────────────────────────────────────────────────────────

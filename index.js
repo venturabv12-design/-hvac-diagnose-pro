@@ -2,6 +2,7 @@
 
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -2712,7 +2713,74 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
 // requireVoiceAccess (not requirePaidAccess): paying/founder accounts pass as before;
 // a brand-new account gets a small lifetime allowance so ONBOARDING speaks in Mike's
 // real voice instead of falling back to the browser robot. See the middleware comment.
-app.post('/api/tts', ttsLimiter, authenticateToken, requireVoiceAccess, async (req, res) => {
+// ── ONBOARDING VOICE FOR VISITORS WITHOUT AN ACCOUNT ────────────────────────────
+// The cinematic first-run plays BEFORE anyone signs up, but /api/tts sat behind
+// authenticateToken — so a cold visitor got 401 and the client fell back to
+// speakObBrowser(), the phone's built-in synthesiser. The first eight seconds of the
+// product, the part that actually sells it, was a robot reading Mike's lines. There is
+// already a note in this file about catching exactly this on a signup in August; that
+// fix covered signed-in-but-unpaid users and never covered signed-OUT visitors at all.
+//
+// The allowlist is EXTRACTED FROM public/index.html AT STARTUP rather than copied here.
+// 64 lines across six languages would drift the moment Edwin rewrites a line, and stale
+// audio that no longer matches the words on screen is worse than the robot. One source
+// of truth: change the copy, the allowlist follows on the next deploy.
+//
+// Why an allowlist and not simply "allow anonymous TTS": this endpoint spends real money
+// at ElevenLabs. Matched against a fixed script, the worst an abuser can do is make Mike
+// say his own onboarding lines — no arbitrary text, so the bill cannot be run up.
+const _OB_VOICE_LINES = (() => {
+  try {
+    const html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+    const start = html.search(/var OB_I18N\s*=/);
+    if (start < 0) return new Set();
+    let i = html.indexOf('{', start), depth = 0, j = i;
+    for (; j < html.length; j++) {
+      if (html[j] === '{') depth++;
+      else if (html[j] === '}' && --depth === 0) break;
+    }
+    const block = html.slice(i, j + 1);
+    const out = new Set();
+    const re = /voice\s*:\s*(['"`])((?:\\.|(?!\1).)*)\1/gs;
+    let m;
+    while ((m = re.exec(block))) {
+      const line = m[2].replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/\\n/g, ' ').trim();
+      if (line) out.add(line);
+    }
+    return out;
+  } catch (e) {
+    console.error('onboarding voice allowlist failed to build:', e.message);
+    return new Set();
+  }
+})();
+console.log(`Onboarding voice: ${_OB_VOICE_LINES.size} lines playable without an account`);
+
+// Tighter than ttsLimiter: a real first-run is ~7 lines. 30/15min per IP leaves room to
+// replay it a few times and still caps a scripted caller hard.
+const obVoiceLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Voice rate limit exceeded — please wait a moment' },
+});
+
+// Runs BEFORE authenticateToken. Only an exact match on a known onboarding line skips
+// auth; everything else falls through to the normal gate untouched.
+function allowOnboardingVoice(req, res, next) {
+  const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+  const hasToken = !!(req.headers['authorization'] || req.body?.token);
+  if (!hasToken && text && _OB_VOICE_LINES.has(text)) {
+    req._obVoice = true;
+    return obVoiceLimiter(req, res, next);
+  }
+  return next();
+}
+
+app.post('/api/tts', ttsLimiter, allowOnboardingVoice,
+  (req, res, next) => (req._obVoice ? next() : authenticateToken(req, res, next)),
+  (req, res, next) => (req._obVoice ? next() : requireVoiceAccess(req, res, next)),
+  async (req, res) => {
   const { text } = req.body;
   if (!text || typeof text !== 'string') return res.status(400).json({ error: 'text required' });
   if (!ELEVENLABS_API_KEY) return res.status(503).json({ error: 'TTS not configured' });

@@ -5303,13 +5303,31 @@ function showHelpFeedback(){
 function submitHelpFeedback(){
   var text=(document.getElementById('helpFeedbackText')||{}).value;
   if(!text||!text.trim()){showToast('Please write your feedback first.','error',2500);return;}
-  var all=JSON.parse(localStorage.getItem('trazer_feedback')||'[]');
-  all.push({user:currentUser?currentUser.name:'Anonymous',email:currentUser?currentUser.email:'',text:text.trim(),date:new Date().toISOString()});
-  localStorage.setItem('trazer_feedback',JSON.stringify(all));
-  document.getElementById('helpFeedbackText').value='';
-  document.getElementById('helpFeedbackSection').style.display='none';
-  closeModal('helpModal');
-  showToast('Thank you for your feedback ❤️','success',3000);
+  // 2026-08-21 — THIS USED TO WRITE TO THE TECH'S OWN localStorage AND STOP THERE, while
+  // showing "Thank you for your feedback ❤️". Every tech who took the trouble to write
+  // something got a thank-you for filing it into their own browser. Nobody ever read one.
+  if(!currentUser||!currentUser.token){showToast('Sign in to send feedback','error',2500);return;}
+  var _fbText=text.trim();
+  fetch('/api/feedback',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentUser.token},
+    body:JSON.stringify({text:_fbText})
+  }).then(function(r){
+    if(!r.ok)throw new Error('http '+r.status);
+    document.getElementById('helpFeedbackText').value='';
+    document.getElementById('helpFeedbackSection').style.display='none';
+    closeModal('helpModal');
+    showToast('Thank you — that reached the team ❤️','success',3000);
+  }).catch(function(){
+    // Keep it rather than lose it: hold locally and say so honestly instead of
+    // claiming it sent.
+    try{
+      var q=JSON.parse(localStorage.getItem('trazer_feedback_queue')||'[]');
+      q.push({text:_fbText,date:new Date().toISOString()});
+      localStorage.setItem('trazer_feedback_queue',JSON.stringify(q));
+    }catch(e){}
+    showToast('Saved — we could not send it just now, it will be here when you have signal','info',3200);
+  });
 }
 
 function pddHelp(){closeProfileDD();window._settingsReturn=true;document.getElementById('feedbackSection').style.display='none';openModal('helpModal');}
@@ -13779,6 +13797,47 @@ function thumbsUpMessage(btn){
   btn.classList.toggle('reacted');haptic('light');
   if(btn.classList.contains('reacted')){showToast('Feedback saved','success',2000);trackUsage('thumbs_up');}
 }
+
+// Read back the exchange this button belongs to: Mike's answer, and the tech's question
+// immediately above it. A rating without the question attached can't be graded later —
+// you'd know an answer was wrong and never know what was asked.
+function _exchangeFor(btn){
+  var b=btn.closest('.msg-agent');if(!b)return null;
+  var bub=b.querySelector('.msg-bubble');if(!bub)return null;
+  var q='',n=b.previousElementSibling;
+  while(n){
+    if(n.classList&&n.classList.contains('msg-user')){
+      var ub=n.querySelector('.msg-bubble');
+      if(ub){q=(ub.textContent||'').trim();}
+      break;
+    }
+    n=n.previousElementSibling;
+  }
+  return {q:q,a:(bub.textContent||'').trim()};
+}
+
+function flagWrongAnswer(btn){
+  if(btn.disabled)return;
+  var ex=_exchangeFor(btn);
+  if(!ex||!ex.a){showToast('Could not read that answer','error',2000);return;}
+  if(!currentUser||!currentUser.token){showToast('Sign in to report an answer','error',2500);return;}
+  haptic('light');
+  // Ask WHY, but never require it — a one-tap flag with no note still beats silence.
+  var note=window.prompt('What did Mike get wrong? (optional — tap OK to send either way)','')||'';
+  btn.disabled=true;btn.textContent='Sending…';
+  fetch('/api/flag-answer',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentUser.token},
+    body:JSON.stringify({question:ex.q,answer:ex.a,note:note})
+  }).then(function(r){
+    if(!r.ok)throw new Error('http '+r.status);
+    btn.textContent='✅ Reported';btn.classList.add('reacted');
+    showToast('Thanks — that goes straight to the team','success',2600);
+  }).catch(function(){
+    btn.disabled=false;btn.textContent='👎 Wrong';
+    showToast('Could not send — check your signal and try again','error',2600);
+  });
+}
 function shareMessage(btn){
   var b=btn.closest('.msg-agent');if(!b)return;
   var bub=b.querySelector('.msg-bubble');if(!bub)return;
@@ -13880,7 +13939,15 @@ function addMessageActions(div){
   thumbBtn.className='msg-action-btn haptic-tap';
   thumbBtn.textContent='👍';
   thumbBtn.addEventListener('click',function(){thumbsUpMessage(this);});
-  a.appendChild(copyBtn);a.appendChild(shareBtn);a.appendChild(thumbBtn);
+  // 2026-08-21 — the signal that makes Mike improvable. Written feedback buried in a help
+  // menu is high-effort and almost nobody sends it; one tap on the answer that just failed
+  // is effortless, and it is the ONLY signal that says WHICH answer was wrong. Question +
+  // what Mike said + a working tech saying "no" IS the training example.
+  var wrongBtn=document.createElement('button');
+  wrongBtn.className='msg-action-btn haptic-tap';
+  wrongBtn.textContent='👎 Wrong';
+  wrongBtn.addEventListener('click',function(){flagWrongAnswer(this);});
+  a.appendChild(copyBtn);a.appendChild(shareBtn);a.appendChild(thumbBtn);a.appendChild(wrongBtn);
   div.appendChild(a);
 }
 

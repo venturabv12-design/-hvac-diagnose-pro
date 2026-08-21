@@ -1204,6 +1204,62 @@ app.post('/api/billing/notify', async (req, res) => {
 // ── ADMIN: GET ALL USERS ──────────────────────────────────────────────────────
 // authenticateToken verifies the JWT; requireAdmin checks role === 'admin' in DB.
 // Previously this checked plan === 'admin' — plan is billing data, not an auth level.
+// ── FEEDBACK + WRONG-ANSWER FLAGS ───────────────────────────────────────────────
+// The Help > Feedback box wrote to the TECH'S OWN localStorage and showed "Thank you for
+// your feedback ❤️". It never sent anything anywhere. Every tech who took the trouble to
+// write something got a thank-you for filing it into their own browser, and Brandon has
+// never seen a word of it. These two routes are where that goes now.
+app.post('/api/feedback', authenticateToken, async (req, res) => {
+  const text = String(req.body?.text || '').trim();
+  if (!text) return res.status(400).json({ error: 'text required' });
+  logUsage(req.user.id, 'feedback', { text: text.slice(0, 4000) });
+  res.json({ ok: true });
+});
+
+// A wrong answer flagged IN THE MOMENT, with the exchange attached. Written feedback in a
+// help menu is a high-effort action almost nobody takes; one tap next to the answer that
+// just failed is effortless — and it is the only signal that says WHICH answer was wrong.
+// That pairing (question + what Mike said + a tech saying "no") is the training data.
+app.post('/api/flag-answer', authenticateToken, async (req, res) => {
+  const { question = '', answer = '', note = '' } = req.body || {};
+  if (!answer) return res.status(400).json({ error: 'answer required' });
+  logUsage(req.user.id, 'answer_flag', {
+    q: String(question).slice(0, 2000),
+    a: String(answer).slice(0, 8000),
+    note: String(note).slice(0, 1000),
+  });
+  res.json({ ok: true });
+});
+
+// What Brandon reads. Flags first — a flagged answer is a tech telling you Mike was wrong
+// on a real call, which outranks everything else in the table.
+app.get('/api/admin/audit', authenticateToken, requireAdminOrOwner, async (req, res) => {
+  if (!SUPABASE_URL) return res.json({ flags: [], feedback: [], recent: [] });
+  const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+  const rows = await supabase('GET', 'events', null,
+    `?type=in.(answer_flag,feedback,mike_ask,mike_answer)&select=id,user_id,type,payload,created_at&order=created_at.desc&limit=${limit * 6}`);
+  if (rows === null) return res.status(500).json({ error: 'Database error' });
+  const users = await supabase('GET', 'users', null, '?select=id,name,email&limit=500') || [];
+  const who = Object.fromEntries(users.map(u => [u.id, u.name || u.email]));
+  const shape = r => ({ id: r.id, tech: who[r.user_id] || 'unknown', at: r.created_at, ...(r.payload || {}) });
+  res.json({
+    flags: rows.filter(r => r.type === 'answer_flag').slice(0, limit).map(shape),
+    feedback: rows.filter(r => r.type === 'feedback').slice(0, limit).map(shape),
+    // Question/answer rows are separate events; pair them per tech in time order so the
+    // transcript reads as exchanges rather than two disconnected columns.
+    recent: (() => {
+      const asks = rows.filter(r => r.type === 'mike_ask').slice(0, limit);
+      const answers = rows.filter(r => r.type === 'mike_answer');
+      return asks.map(q => {
+        const a = answers.find(x => x.user_id === q.user_id && new Date(x.created_at) >= new Date(q.created_at));
+        return { at: q.created_at, tech: who[q.user_id] || 'unknown',
+                 q: (q.payload || {}).q || '', a: a ? ((a.payload || {}).a || '') : '',
+                 image: !!(q.payload || {}).image, search: !!(q.payload || {}).search };
+      });
+    })(),
+  });
+});
+
 app.get('/api/admin/users', authenticateToken, requireAdminOrOwner, async (req, res) => {
   try {
     if (!SUPABASE_URL) return res.json({ users: [] });
@@ -2262,9 +2318,32 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // "how many times is Mike actually used" was unanswerable — the events table only
   // held specific button-presses the frontend chose to send. Fire-and-forget:
   // this must never delay or fail a tech's answer.
+  // 2026-08-21 — UNTIL NOW THE PAYLOAD WAS `{search:true}` AND NOTHING ELSE. We knew how
+  // MANY questions were asked and never a single one of them. Chat history lives in the
+  // tech's own localStorage, trimmed to 40 messages, so every wrong answer Mike has ever
+  // given was unauditable and is already gone. Brandon's ask: audit Mike against real field
+  // use and let him improve from it. That is impossible without the transcript, so store it.
+  // Truncated, fire-and-forget, and never allowed to delay or break a tech's answer.
+  let _askUid = null;
   try {
-    const _uid = jwt.verify(authToken, JWT_SECRET, { algorithms: ['HS256'] }).id;
-    logUsage(_uid, 'mike_ask', { search: !!use_search });
+    _askUid = jwt.verify(authToken, JWT_SECRET, { algorithms: ['HS256'] }).id;
+    const _last = messages[messages.length - 1];
+    let _q = '';
+    if (_last && typeof _last.content === 'string') _q = _last.content;
+    else if (_last && Array.isArray(_last.content))
+      _q = _last.content.filter(c => c && c.type === 'text').map(c => c.text || '').join(' ');
+    const _hasImage = !!(_last && Array.isArray(_last.content) && _last.content.some(c => c && c.type === 'image'));
+    logUsage(_askUid, 'mike_ask', {
+      search: !!use_search,
+      image: _hasImage,
+      // Whether Mike's PERSONA was attached. /api/ai takes AGENT_SYSTEM from the CLIENT, so
+      // a request without it is raw Claude wearing Mike's URL — it will ask for
+      // clarification on "cap reads 28 on a 45" instead of answering it. Without this flag
+      // an audit cannot tell a genuine Mike failure from a call that never had a persona,
+      // and we would end up "fixing" a prompt that was never loaded.
+      sys: !!(system && String(system).length > 500),
+      q: String(_q || '').slice(0, 2000),
+    });
   } catch { /* token already validated by checkPaywall; never block on logging */ }
 
   // ── DETERMINISTIC GUARD LAYER ──────────────────────────────────────────────
@@ -2636,6 +2715,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       let buf = '';
       let sentAny = false;
       const send = (obj) => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch (_) {} };
+      let _streamed = '';
 
       try {
         for await (const chunk of upstream.body) {
@@ -2654,7 +2734,11 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
             try { evt = JSON.parse(payload); } catch (_) { continue; }
             if (evt.type === 'content_block_delta' && evt.delta) {
               const piece = evt.delta.text || '';
-              if (piece) { sentAny = true; send({ delta: piece }); }
+              // Accumulate a copy for the audit trail. Most answers STREAM, so logging only
+              // the non-streaming branch would have captured a small unrepresentative slice —
+              // and the ones that skip streaming are exactly the safety-guarded ones, which
+              // would have biased the audit toward Mike's most careful replies.
+              if (piece) { sentAny = true; _streamed += piece; send({ delta: piece }); }
             } else if (evt.type === 'message_stop') {
               send({ done: true });
             } else if (evt.type === 'error') {
@@ -2665,6 +2749,9 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         if (!sentAny) send({ delta: '' });
         send({ done: true });
         res.end();
+        try {
+          if (_askUid && _streamed) logUsage(_askUid, 'mike_answer', { a: _streamed.slice(0, 8000), streamed: true });
+        } catch { /* never let logging affect a delivered answer */ }
       } catch (streamErr) {
         if (streamErr.name === 'AbortError') send({ error: 'Request timed out — please try again.' });
         else { console.error('AI stream pipe error:', streamErr.message); send({ error: 'Connection error — please try again.' }); }
@@ -2788,6 +2875,12 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     if (_ragDiagrams && _ragDiagrams.length && _wiringDiagramIntent) {
       try { outText += '\n\n⟦MIKE_DIAGRAM⟧' + JSON.stringify(_ragDiagrams) + '⟦/MIKE_DIAGRAM⟧'; } catch (_) {}
     }
+    // Store what the tech ACTUALLY SAW — after the safety and pricing guards have rewritten
+    // it — not the raw model output. Auditing the pre-guard text would grade a reply nobody
+    // ever read. Separate row from the question so a slow write can never delay the answer.
+    try {
+      if (_askUid) logUsage(_askUid, 'mike_answer', { a: String(outText || '').slice(0, 8000) });
+    } catch { /* never block a tech's answer on logging */ }
     res.json({ response: outText, usage: data.usage });
 
   } catch (err) {

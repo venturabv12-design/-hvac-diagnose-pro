@@ -24,6 +24,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800&family=DM+Mono:wght@500&display=swap&subset=latin" rel="stylesheet" media="print" onload="this.media='all'"/>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
 <script src="/lucide.min.js" defer></script>
+<!-- Mike's offline field reference. Loaded eagerly (NOT deferred) and precached by the
+     service worker: it has to already be on the phone before the tech walks into the
+     basement, because that is the moment it exists for. -->
+<script src="/fieldbrain.js"></script>
 <noscript></noscript>
 <style>
 
@@ -10332,7 +10336,23 @@ async function sendChat(){
   }
   if(!navigator.onLine){
     var _offText=(document.getElementById('chatInput').value||'').trim();
-    if(_offText){queueOfflineMessage(_offText);document.getElementById('chatInput').value='';}
+    if(_offText){
+      // A tech in a basement used to type a real question and get silence — the message
+      // queued and that was it. Mike's brain needs the network, but the standard specs
+      // don't: capacitor tolerance, superheat and subcool targets, saturation temps,
+      // target split, static, RLA/FLA. Answer what can be answered offline, and still
+      // queue the question so the full answer lands when he walks out.
+      appendMessage('user',_offText);
+      document.getElementById('chatInput').value='';
+      var _fb=(typeof MikeFieldBrain!=='undefined')?MikeFieldBrain.answer(_offText):null;
+      if(_fb){
+        appendMessage('agent',_fb.text);
+        queueOfflineMessage(_offText);
+      }else{
+        appendMessage('agent','No signal right now, so I can\'t get you a full answer — but I\'ve got your question saved and I\'ll come back with it the second you\'re back online.\n\nIf it\'s a spec you need this minute — capacitor tolerance, superheat or subcool targets, target split, static pressure, RLA — ask it that way and I can answer from the field reference on your phone.');
+        queueOfflineMessage(_offText);
+      }
+    }
     else{showToast('You’re offline. Check your connection.','error',3000);}
     return;
   }
@@ -13630,7 +13650,10 @@ function initOfflineDetection(){
     var banner=document.getElementById('offlineBanner');
     if(!banner)return;
     if(!navigator.onLine){
-      banner.textContent='📡 No internet connection — Mike needs to be online to respond';
+      // No longer true: the field reference on the phone answers standard specs with no
+      // signal at all. Saying he can't respond would send a tech in a basement away from
+      // the one thing that still works down there.
+      banner.textContent='📡 No signal — Mike can still answer standard specs from your phone';
       banner.classList.add('show');
     } else {
       banner.classList.remove('show');

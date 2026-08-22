@@ -27,12 +27,13 @@
 'use strict';
 
 // Bump this string to invalidate ALL cached static assets on next deploy.
-var CACHE_VERSION = 'trazer-static-v1';
+var CACHE_VERSION = 'trazer-static-v2';   // v2: adds /fieldbrain.js to the precache
 var STATIC_CACHE  = CACHE_VERSION;
 
 // Minimal precache: things we want available offline on a brand-new install.
 // Kept tiny + non-fatal — a failed precache must NOT abort the install.
 var PRECACHE_URLS = [
+  '/fieldbrain.js',   // Mike's offline answers — must survive losing signal
   '/lucide.min.js',
   '/manifest.json',
   '/icon-192.png',

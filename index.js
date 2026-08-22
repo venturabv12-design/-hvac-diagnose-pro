@@ -2866,7 +2866,32 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       // touch it") move to a TAIL note so Mike answers the tech's actual question first,
       // for ANY experience level (Brandon field note 2026-06-16).
       if (_safetyLead) outText = _safetyLead + '\n\n' + outText;
-      const _tail = [_capacitorWarn, _inverterWarn].filter(Boolean);
+      // 2026-08-22 — TWO AUDIENCE/DUPLICATION DEFECTS IN THE CAPACITOR TAIL, found by a
+      // 36-scenario stress test before the F.H. Furr demo. NEITHER is a safety weakening:
+      //
+      // (1) IT WAS NOT AUDIENCE-GATED. A HOMEOWNER asking "what's a fair price to replace a
+      //     capacitor" got handed a tech-depth procedure — bleed it across a ~20k ohm resistor,
+      //     terminal pairs — which reads as an invitation to do it themselves. A homeowner
+      //     should NOT be discharging a capacitor at all, so the correct warning for them is
+      //     "do not touch this, it can kill you, that's a licensed tech's job." Replacing the
+      //     procedure with a hard do-not-touch is SAFER for that audience, not softer.
+      //
+      // (2) IT DUPLICATED MIKE'S OWN PROSE. When a tech asks "how do I not get zapped", Mike
+      //     already answers with the discharge procedure in his own voice, and this fixed
+      //     string then repeated it — two paragraphs saying the same thing, which reads like
+      //     two systems answered. Suppressed ONLY when his own text demonstrably covers BOTH
+      //     halves (kill the power AND bleed with a resistor). A partial answer still gets the
+      //     full boilerplate — the dedupe fails toward saying it twice, never toward silence.
+      let _capTail = _capacitorWarn;
+      if (_capTail && _homeownerFramed) {
+        _capTail = 'SAFETY — do not open the unit or touch that capacitor yourself. It holds a lethal charge even with the power off, and it can injure or kill someone who is not trained and equipped to discharge it. This one is a licensed technician\'s job, and it is not an expensive part for them to handle.';
+      } else if (_capTail) {
+        const _saidPowerOff = /(kill|cut|shut|turn)\s+(off\s+)?(the\s+)?(disconnect|breaker|power)|power\s+off|disconnect\s+pulled/i.test(outText);
+        const _saidBleed = /(\d+\s*k\s*ohm|resistor|bleed\s+(it|the\s+cap)|discharge\s+(it|the\s+cap))/i.test(outText);
+        const _saidNotScrewdriver = /never\s+short|not\s+with\s+a\s+screwdriver|don'?t\s+short/i.test(outText);
+        if (_saidPowerOff && _saidBleed && _saidNotScrewdriver) _capTail = '';
+      }
+      const _tail = [_capTail, _inverterWarn].filter(Boolean);
       if (_tail.length) outText = outText + '\n\n' + _tail.join('\n\n');
     } catch (_) {}
 

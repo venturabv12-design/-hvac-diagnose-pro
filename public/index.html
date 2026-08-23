@@ -188,7 +188,6 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .scan-preview{width:100%;max-height:200px;object-fit:contain;display:block;background:var(--gray-50);}
 .pitch-section{background:var(--white);border-radius:var(--radius-sm);border:1px solid var(--gray-200);border-left:3px solid var(--teal);padding:16px;margin-bottom:10px;}
 .quick-chip{background:var(--white);border:1.5px solid var(--gray-200);border-radius:99px;padding:7px 14px;font-size:12px;font-family:var(--font);font-weight:600;color:var(--gray-600);cursor:pointer;transition:all .12s;white-space:nowrap;}
-.chips-bar{position:relative;z-index:10;}
 .quick-chip:hover{border-color:var(--teal);color:var(--teal-dark);background:var(--teal-lt);}
 .qa-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;background:transparent;border:none;border-radius:8px;font-family:var(--font);font-size:14px;font-weight:500;color:#dbe1e8 !important;cursor:pointer;text-align:left;transition:background .12s;}
 .qa-item:hover{background:#202327;}
@@ -967,11 +966,6 @@ body[data-device="phone"] .dev-filter-row{gap:12px;}
 .share-option-icon{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;}
 .share-option-label{font-size:11px;color:#6B7190;font-weight:600;}
 .share-cancel{width:100%;padding:14px;background:#F5F6FA;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);}
-#quickReplies{display:none;padding:6px 12px;background:#F5F6FA;border-top:1px solid #E2E4ED;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
-#quickReplies::-webkit-scrollbar{display:none;}
-#quickReplies.show{display:block;}
-.qr-chip{display:inline-block;background:rgba(255,255,255,0.05);border:1.5px solid rgba(58,139,138,0.28);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;letter-spacing:0.2px;color:rgba(255,255,255,0.85);cursor:pointer;margin-right:6px;white-space:nowrap;transition:all .15s;}
-.qr-chip:hover,.qr-chip:active{background:rgba(58,139,138,0.1);border-color:rgba(58,139,138,0.55);color:rgba(255,255,255,0.85);}
 #pullRefreshIndicator{height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:height .2s;font-size:13px;color:#9499B0;gap:8px;}
 #pullRefreshIndicator.visible{height:44px;}
 .ptr-spinner{width:18px;height:18px;border:2px solid #E2E4ED;border-top-color:var(--rust);border-radius:50%;animation:ptrSpin .7s linear infinite;}
@@ -1003,9 +997,6 @@ body[data-mode="contractor"] .lang-option.active{color:var(--teal);background:rg
 [data-theme="dark"] #chatInput{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#e5e7eb !important;}
 [data-theme="dark"] #chatInput::placeholder{color:#4b5563 !important;}
 [data-theme="dark"] .quick-chip{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#9ca3af !important;}
-[data-theme="dark"] #quickReplies{background:#0f0f0f;border-top-color:#1f1f1f;}
-[data-theme="dark"] .qr-chip{background:#1a1a1a;border-color:#2a2a2a;color:#9ca3af;}
-[data-theme="dark"] .qr-chip:hover{background:#1e2e2e;border-color:var(--rust);color:var(--rust);}
 [data-theme="dark"] #trialBanner{background:rgba(245,158,11,.12);border-bottom-color:rgba(245,158,11,.25);}
 [data-theme="dark"] #offlineBanner{background:#1a0a0a;border-bottom-color:#E8354A;}
 [data-theme="dark"] #voiceModeBar{background:#0f0f0f;border-color:#1f1f1f;}
@@ -1162,10 +1153,6 @@ body[data-mode="contractor"] select:-webkit-autofill{-webkit-box-shadow:0 0 0 10
 #chatSearchBar{background:#111 !important;border-bottom-color:#1f1f1f !important;}
 #chatSearchInput{background:#1a1a1a !important;border-color:#2a2a2a !important;color:#e5e7eb !important;}
 #chatSearchInput::placeholder{color:#666;}
-/* P0-3: chat suggestion chips bar (#quickReplies) was a light strip with white pills */
-#quickReplies{background:#0f0f0f !important;border-top-color:#1f1f1f !important;}
-.qr-chip{background:rgba(255,255,255,0.05) !important;border:1.5px solid rgba(58,139,138,0.28) !important;color:rgba(255,255,255,0.85) !important;font-size:12px !important;font-weight:700 !important;letter-spacing:0.2px !important;border-radius:20px !important;padding:6px 14px !important;}
-.qr-chip:hover,.qr-chip:active{background:rgba(58,139,138,0.1) !important;border-color:rgba(58,139,138,0.55) !important;color:rgba(255,255,255,0.85) !important;}
 /* P1-1: chat-header subhead was wrapping to 3 lines and cramping the row */
 body[data-mode="contractor"] .v2-hsub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
@@ -2079,25 +2066,6 @@ body[data-mode="contractor"] .v2-hbtn.face .v2-hbtn-label,body[data-mode="contra
   -webkit-tap-highlight-color:transparent;
 }
 
-/* Chips bar */
-.chips-bar{
-  background:#0d0d0d;
-  padding:8px 12px;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
-}
-.chips-bar::-webkit-scrollbar{display:none;}
-.chips-bar .quick-chip{
-  background:#1a1a1a !important;
-  border-color:#2a2a2a !important;
-  color:#9ca3af !important;
-  font-size:12px;
-  white-space:nowrap;
-  flex-shrink:0;
-}
-.chips-bar .quick-chip:active{transform:scale(.95);}
 
 /* Chat messages */
 .chat-messages{
@@ -2446,7 +2414,6 @@ body[data-mode="contractor"] .v2-hbtn.face .v2-hbtn-label,body[data-mode="contra
 [data-theme="dark"] .chat-input-area{background:#0a0a0a;border-top-color:rgba(255,255,255,.04);}
 [data-theme="dark"] .example-prompt{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.06);}
 [data-theme="dark"] #examplePrompts{background:rgba(199,85,59,.04);border-color:rgba(199,85,59,.12);}
-[data-theme="dark"] .chips-bar{background:#080808;}
 
 /* Plan feature list in paywall */
 .pw-features{margin-top:10px;text-align:left;}
@@ -3469,12 +3436,6 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         </div>
       </div>
 
-      <!-- QUICK CHIPS -->
-      <!-- ONE TOOLBELT step 4: the Quick Actions dropdown pill is retired. The drawer
-           (peek bar + #actionDrawer) is now the single home for every tool. -->
-      <div class="chips-bar">
-        <div id="quickReplies"></div>
-      </div>
 <!-- CHAT SEARCH BAR -->
       <div id="chatSearchBar">
         <input id="chatSearchInput" placeholder="Search messages&hellip;" oninput="searchMessages(this.value)" type="text"/>
@@ -9517,14 +9478,6 @@ var WELCOME_I18N={
     noteMaster:"Toque em Voz para mãos livres, câmera para diagnóstico visual ao vivo."}
 };
 // P1-4 — localized suggested follow-up chips, keyed by detected topic category.
-var QR_I18N={
-  en:{pressure:['What are normal pressures for this temp?','Should I add refrigerant?','What is my subcooling?'],capacitor:['How much does replacement cost?','Show me how to wire it','What brand do you recommend?'],warranty:['How do I find the serial number?','Is labor covered?','What if it is expired?'],furnace:['Walk me through the sequence','How do I test the flame sensor?','What causes limit trips?'],compressor:['How do I test it?','What does a new one cost?','Could it be the capacitor?'],upsell:['Give me the exact words to say','What is a fair price?','Help me close this sale'],objection:['What if they say no?','Give me a value anchor','How do I close this?']},
-  es:{pressure:['¿Cuáles son las presiones normales para esta temperatura?','¿Debo agregar refrigerante?','¿Cuál es mi subenfriamiento?'],capacitor:['¿Cuánto cuesta el reemplazo?','Muéstrame cómo conectarlo','¿Qué marca recomiendas?'],warranty:['¿Cómo encuentro el número de serie?','¿Cubre la mano de obra?','¿Y si ya expiró?'],furnace:['Explícame la secuencia','¿Cómo pruebo el sensor de llama?','¿Qué causa los cortes por límite?'],compressor:['¿Cómo lo pruebo?','¿Cuánto cuesta uno nuevo?','¿Podría ser el capacitor?'],upsell:['Dame las palabras exactas','¿Cuál es un precio justo?','Ayúdame a cerrar la venta'],objection:['¿Y si dicen que no?','Dame un anclaje de valor','¿Cómo cierro esto?']},
-  zh:{pressure:['这个温度下正常压力是多少？','需要加制冷剂吗？','我的过冷度是多少？'],capacitor:['更换要多少钱？','教我怎么接线','你推荐什么牌子？'],warranty:['怎么找序列号？','工时费包含吗？','过保了怎么办？'],furnace:['带我走一遍时序','怎么测火焰传感器？','什么导致限位跳闸？'],compressor:['怎么测试它？','换新的多少钱？','会不会是电容？'],upsell:['给我具体怎么说','合理价格是多少？','帮我促成这单'],objection:['他们拒绝怎么办？','给我一个价值锚点','我怎么成交？']},
-  vi:{pressure:['Áp suất bình thường ở nhiệt độ này là bao nhiêu?','Tôi có nên thêm gas không?','Độ quá lạnh của tôi là bao nhiêu?'],capacitor:['Thay thế tốn bao nhiêu?','Chỉ tôi cách đấu dây','Bạn khuyên hãng nào?'],warranty:['Tìm số sê-ri ở đâu?','Có bao công không?','Nếu hết hạn thì sao?'],furnace:['Hướng dẫn tôi trình tự','Kiểm tra cảm biến lửa thế nào?','Cái gì gây nhảy giới hạn?'],compressor:['Kiểm tra nó thế nào?','Cái mới giá bao nhiêu?','Có thể là tụ điện không?'],upsell:['Cho tôi lời nói chính xác','Giá hợp lý là bao nhiêu?','Giúp tôi chốt đơn này'],objection:['Nếu họ từ chối thì sao?','Cho tôi một mức neo giá trị','Tôi chốt thế nào?']},
-  fr:{pressure:['Quelles sont les pressions normales à cette température ?','Dois-je ajouter du fluide ?','Quel est mon sous-refroidissement ?'],capacitor:['Combien coûte le remplacement ?','Montrez-moi comment le câbler','Quelle marque recommandez-vous ?'],warranty:['Où trouver le numéro de série ?','La main-d’œuvre est-elle couverte ?','Et si c’est expiré ?'],furnace:['Expliquez-moi la séquence','Comment tester le capteur de flamme ?','Qu’est-ce qui cause les coupures de limiteur ?'],compressor:['Comment le tester ?','Combien coûte un neuf ?','Serait-ce le condensateur ?'],upsell:['Donnez-moi les mots exacts','Quel est un prix juste ?','Aidez-moi à conclure'],objection:['Et s’ils disent non ?','Donnez-moi un ancrage de valeur','Comment conclure ?']},
-  pt:{pressure:['Quais são as pressões normais para esta temperatura?','Devo adicionar gás?','Qual é o meu sub-resfriamento?'],capacitor:['Quanto custa a troca?','Mostra como ligar os fios','Qual marca você recomenda?'],warranty:['Como acho o número de série?','Cobre mão de obra?','E se já venceu?'],furnace:['Me explica a sequência','Como testo o sensor de chama?','O que causa o corte por limite?'],compressor:['Como testo ele?','Quanto custa um novo?','Será que é o capacitor?'],upsell:['Me dá as palavras exatas','Qual é um preço justo?','Me ajuda a fechar a venda'],objection:['E se disserem não?','Me dá uma âncora de valor','Como fecho isso?']}
-};
 var V2_I18N={
   en:{reachCall:'CALL',reachFace:'FACETIME',clear:'CLEAR',mikeName:'MIKE',headRole:'MASTER TECH',headStatus:'ALWAYS ON',diagHead:'FAULT IDENTIFIED',mentorSig:'— Mike',composer:'Ask Mike anything…',
     heroPro:'Professional HVAC Field Intelligence',heroHome:'Is Your AC or Heat Not Working?',
@@ -10358,7 +10311,6 @@ async function sendChat(){
   }
   trackUsage("chat");
   if(typeof haptic==="function"){haptic("light");animateSendBtn();}
-  if(typeof hideQuickReplies==="function")hideQuickReplies();
   var input=document.getElementById('chatInput'),text=input.value.trim();
   if(text.length>8000){showToast('Message too long — please shorten it.','error',3000);return;}
   if(!text&&!chatAttachment)return;
@@ -10532,7 +10484,7 @@ async function sendChat(){
     } else {
       response=await callAI(sysPrompt,apiHistory,_maxTok,needsSearch);
     }
-    hideTyping();response=checkAndLearn(response);response=checkAndSaveJob(response);appendMessage('agent',response);if(!voiceMode)setTimeout(function(){generateQuickReplies(response);},300);
+    hideTyping();response=checkAndLearn(response);response=checkAndSaveJob(response);appendMessage('agent',response);
     // Mike draws on request — when the tech EXPLICITLY asks Mike to draw/sketch/create a
     // diagram or illustration, generate the visual after his reply. Narrow verbs only, so a
     // normal question ("what's this code") never trips it. (The broad camera-side detector
@@ -13903,46 +13855,6 @@ function searchMessages(q){
   });
   if(c)c.textContent=matches?matches+' found':'No results';
   if(first)first.scrollIntoView({behavior:'smooth',block:'center'});
-}
-
-function showQuickReplies(list){
-  var qr=document.getElementById('quickReplies');if(!qr)return;
-  if(!list||!list.length){qr.classList.remove('show');return;}
-  var qrFrag=document.createDocumentFragment();
-  list.forEach(function(s,idx){
-    var chip=document.createElement('span');
-    chip.className='qr-chip haptic-tap';
-    chip.textContent=(s.length>35?s.substring(0,33)+'…':s);
-    chip.addEventListener('click',function(){useQuickReply(this,s);});
-    qrFrag.appendChild(chip);
-  });
-  qr.innerHTML='';
-  qr.appendChild(qrFrag);
-  qr.classList.add('show');
-}
-function useQuickReply(el,text){
-  var inp=document.getElementById('chatInput');
-  if(inp){inp.value=text;inp.focus();inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,120)+'px';}
-  haptic('light');
-  var qr=document.getElementById('quickReplies');if(qr)qr.classList.remove('show');
-}
-function hideQuickReplies(){var qr=document.getElementById('quickReplies');if(qr)qr.classList.remove('show');}
-function generateQuickReplies(resp){
-  // P1-4 — suggested follow-up chips translate with the active language. The detection
-  // keys off Mike's English response text (his brain answers in-language but the trigger
-  // words below stay reliable on the English path); the chip LABELS shown to the tech are
-  // localized via QR_I18N so a non-English tech reads them in their language.
-  var r=resp.toLowerCase(),cat=null;
-  if(r.indexOf('pressure')>=0||r.indexOf('psi')>=0)cat='pressure';
-  else if(r.indexOf('capacitor')>=0)cat='capacitor';
-  else if(r.indexOf('warranty')>=0)cat='warranty';
-  else if(r.indexOf('furnace')>=0||r.indexOf('heat exchanger')>=0)cat='furnace';
-  else if(r.indexOf('compressor')>=0)cat='compressor';
-  else if(r.indexOf('upsell')>=0||r.indexOf('maintenance')>=0)cat='upsell';
-  else if(r.indexOf('objection')>=0||r.indexOf('too high')>=0)cat='objection';
-  var lang=(typeof currentLang!=='undefined')?currentLang:'en';
-  var tbl=(QR_I18N[lang]||QR_I18N.en);
-  showQuickReplies(cat?(tbl[cat]||QR_I18N.en[cat]||[]):[]);
 }
 
 function showVoiceWaveform(on){var w=document.getElementById('voiceWaveform');if(w)w.classList.toggle('active',on);}

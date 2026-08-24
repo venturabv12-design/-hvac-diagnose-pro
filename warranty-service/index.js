@@ -127,6 +127,20 @@ app.get('/health', (req, res) => {
 
 app.get('/brands', (req, res) => res.json({ brands: brands.catalogue() }));
 
+// What does THIS manufacturer need before we can look anything up?
+//
+// Every brand's form wants a different set of fields, so Mike asks the tech for
+// exactly that brand's fields rather than demanding the same set from everyone.
+// Trane needs the serial alone; Goodman will not submit without the model; Carrier
+// wants to know if the homeowner is the original purchaser. Lennox returns an empty
+// list with canCheck:false — no amount of information gets a Lennox answer, and Mike
+// should say that instead of collecting inputs he can't use.
+app.get('/requirements', (req, res) => {
+  const r = brands.requirements(req.query.brand || '');
+  if (!r) return res.json({ ok: true, known: false, ask: 'brand' });
+  res.json(Object.assign({ ok: true, known: true }, r));
+});
+
 app.post('/lookup', async (req, res) => {
   // Only Mike calls this. It rides Railway's private network, but the shared token
   // means an accidental public exposure isn't an open proxy into manufacturer sites.

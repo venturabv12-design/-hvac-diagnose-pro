@@ -146,6 +146,11 @@ module.exports = {
   label: 'Trane / American Standard',
   aliases: ['trane', 'american standard', 'americanstandard', 'runtru', 'run tru'],
   supported: true,
+  // Confirmed end to end against a real unit, from Railway, not just locally.
+  verified: true,
+  // Trane needs nothing but the serial — the lookup form's own last-name field is
+  // explicitly optional. This is what Mike asks the tech for.
+  requires: [{ key: 'serial', label: 'serial number', hint: 'off the data plate' }],
   origin: 'https://www.trane.com',
   lookup,
   // exported for unit-testing the parser without a browser

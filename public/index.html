@@ -10346,6 +10346,17 @@ async function sendChat(){
     if(typeof generateAndShowSVG==='function')generateAndShowSVG(_tbSubject,text.substring(0,40)+'…',_genKind==='illustration');
     return;
   }
+  // Toolbelt one-shot: tech tapped Check Warranty Status and Mike asked for the unit
+  // details — THIS reply carries them. Route it to the real registry lookup rather than
+  // to Mike's brain, because the brain can only describe warranty TERMS; only the
+  // registry knows whether THIS serial was actually registered.
+  if(currentUser&&text&&window._mpPendingWarranty){
+    window._mpPendingWarranty=false;
+    input.value='';input.style.height='auto';
+    appendMessage('user',escapeHtml(text));
+    mpWarrantyLookup(text);
+    return;
+  }
   // Free-text "draw / illustrate / sketch X" typed straight into chat (no toolbelt tap)
   // routes to the SAME generator — otherwise Mike text-answers and falsely claims an
   // image is appearing when nothing renders (Brandon field report 2026-06-18). Skip when
@@ -11624,6 +11635,111 @@ function mpWiringDiagram(){
   if(typeof mpEnterChat==='function')mpEnterChat();
   mpAskMike("Tell me the unit or the circuit — thermostat hookup, contactor, defrost board, low-voltage controls — and I'll draw you a clean, simple wiring diagram that's easier to read than the manufacturer's. Want the exact factory print instead? Point the camera at the diagram inside the panel and I'll read that one.");
 }
+// ── REAL WARRANTY REGISTRY ──────────────────────────────────────────────────────
+// Mike used to say "I'll check where the warranty stands" and then search the
+// manufacturer's warranty TERMS — the policy, not this unit. A tech reading that
+// reasonably believed he'd looked the unit up. He hadn't, and couldn't.
+// These read the manufacturer's actual registration: registered vs base, active or
+// not, real end date. If the registry can't be reached, Mike says so. He never
+// invents a warranty — a wrong "covered through 2033" is how a tech quotes warranty
+// work on a unit that isn't covered, standing in front of the customer.
+var MP_BRANDS=[
+  ['trane','Trane'],['american standard','American Standard'],['runtru','RunTru'],
+  ['goodman','Goodman'],['amana','Amana'],['daikin','Daikin'],
+  ['carrier','Carrier'],['bryant','Bryant'],['payne','Payne'],
+  ['rheem','Rheem'],['ruud','Ruud'],['lennox','Lennox'],
+  ['york','York'],['mitsubishi','Mitsubishi'],['fujitsu','Fujitsu'],['bosch','Bosch']
+];
+function mpParseUnit(text){
+  var t=String(text||''),low=t.toLowerCase(),out={brand:null,model:null,serial:null};
+  for(var i=0;i<MP_BRANDS.length;i++){ if(low.indexOf(MP_BRANDS[i][0])>=0){out.brand=MP_BRANDS[i][1];break;} }
+  var ms=t.match(/serial\s*(?:number|no\.?|#)?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9-]{3,})/i);
+  if(ms)out.serial=ms[1];
+  var mm=t.match(/model\s*(?:number|no\.?|#)?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9-]{3,})/i);
+  if(mm)out.model=mm[1];
+  // Unlabelled fallback: a tech types "Carrier 2119Q27445" as often as anything
+  // labelled, so split on whitespace as well as commas — and throw out the brand
+  // word itself, or "carrier" comes back as the serial and we send a manufacturer
+  // its own name to look up. Every HVAC serial carries digits; a token with none is
+  // a word, not a serial.
+  if(!out.serial){
+    var isBrandWord=function(s){
+      var l=s.toLowerCase();
+      for(var j=0;j<MP_BRANDS.length;j++){ if(MP_BRANDS[j][0].indexOf(l)>=0||l===MP_BRANDS[j][0])return true; }
+      return false;
+    };
+    var toks=t.split(/[\s,\n]+/).map(function(s){return s.replace(/[.;:#]+$/,'').trim();})
+      .filter(function(s){return /^[A-Za-z0-9][A-Za-z0-9-]{4,}$/.test(s);})
+      .filter(function(s){return /[0-9]/.test(s);})
+      .filter(function(s){return !isBrandWord(s);});
+    if(out.model)toks=toks.filter(function(s){return s.toUpperCase()!==String(out.model).toUpperCase();});
+    if(toks.length===1){out.serial=toks[0];}
+    else if(toks.length>1){
+      var score=function(s){return (s.replace(/[^0-9]/g,'').length)/s.length;};
+      toks.sort(function(a,b){return score(b)-score(a);});
+      out.serial=toks[0]; if(!out.model)out.model=toks[1];
+    }
+  }
+  return out;
+}
+function mpWarrantyCheck(){
+  window._mpPendingWarranty=true;
+  if(typeof mpEnterChat==='function')mpEnterChat();
+  mpAskMike("Give me the brand and the serial number off the data plate and I'll pull the actual warranty registration — not the general terms, the real status on that unit. Grab the model number too if it's on there; Goodman needs it. Or just snap a photo of the plate.");
+}
+function mpWarrantyLookup(text){
+  var u=mpParseUnit(text);
+  if(!u.brand){ mpAskMike("Who makes it? Trane, Carrier, Goodman, Rheem — I need the brand before I can pull the registration."); window._mpPendingWarranty=true; return; }
+  if(!u.serial){ mpAskMike("I've got the brand — now the serial number off the data plate. That's the one the manufacturer keys the registration to."); window._mpPendingWarranty=true; return; }
+  // appendMessage escapes agent text (XSS guard) then renders markdown — so these
+  // use **bold** and newlines, never HTML, and never pre-escape or it double-escapes.
+  if(/lennox/i.test(u.brand)){
+    appendMessage('agent',"Lennox doesn't publish a warranty registry — registration status only lives behind their dealer portal, so I can't verify it the way I can with Trane. Nobody can, without a LennoxPros login.\n\nWhat I'd do: pull it up on LennoxPros if you've got access, or call the distributor with that serial. Don't quote it as covered until somebody confirms it.");
+    return;
+  }
+  if(typeof showTyping==='function')showTyping();
+  fetch('/api/warranty',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({token:(currentUser||{}).token,brand:u.brand,serial:u.serial,model:u.model})})
+    .then(function(r){return r.json().catch(function(){return null;});})
+    .then(function(d){
+      if(typeof hideTyping==='function')hideTyping();
+      if(!d||d.ok===false){
+        appendMessage('agent',"Couldn't reach the manufacturer's registry just now — that's on my end, not your unit. Try again in a minute, or check it directly with the serial. I'm not going to guess at a warranty and have you quote it wrong.");
+        return;
+      }
+      if(d.supported===false){
+        if(d.reason==='no_public_registry'){
+          appendMessage('agent',(d.brandLabel||u.brand)+" doesn't publish a public warranty registry — registration status sits behind their dealer portal"+(d.where?" ("+d.where+")":"")+". I can't verify it, and I won't pretend to. Confirm it there before you quote it as covered.");
+        } else {
+          appendMessage('agent',"I don't have "+(d.brandLabel||u.brand)+" wired into the registry yet"+(d.where?" — their lookup lives at "+d.where:"")+". Check it there with that serial. I'd rather tell you that than hand you a number I made up.");
+        }
+        return;
+      }
+      if(!d.found){
+        appendMessage('agent',"No registration came back for serial "+u.serial+" on that "+(d.brandLabel||u.brand)+".\n\nTwo usual reasons: the serial's off by a character, or the unit was never registered — and that second one matters on its own, because unregistered normally means the shorter base term instead of the extended one. Worth another look at the plate.");
+        return;
+      }
+      var reg=d.registered===true;
+      var lines=[];
+      lines.push(reg
+        ? "**Registered — extended coverage.**"+(d.termLabel?" ("+d.termLabel+")":"")
+        : "**Base coverage — this one was never registered** for the extended term.");
+      lines.push("");
+      if(d.category||d.model) lines.push([d.category,d.model].filter(Boolean).join(" · "));
+      if(d.installDate) lines.push("Installed "+d.installDate);
+      if(d.endDate) lines.push("**Covered through "+d.endDate+"**"+(d.status?" · "+d.status:""));
+      lines.push("");
+      lines.push(reg
+        ? "That's straight off the manufacturer's registration — not an estimate off the build date. If the failed part falls under it, the customer shouldn't be paying for the part."
+        : "Base term only. Worth telling the customer plainly — registration had to happen within the window after install, and it didn't.");
+      appendMessage('agent',lines.join("\n"));
+      if(typeof haptic==='function')haptic('light');
+    })
+    .catch(function(){
+      if(typeof hideTyping==='function')hideTyping();
+      appendMessage('agent',"Couldn't reach the registry — that's my end. Check it with the serial directly rather than taking my word for it.");
+    });
+}
 // DE-DUPLICATED 2026-08-08. A tech reported the drawer as "a lot of tabs and a bit confusing"; the
 // cause was not the number of tools, it was the same action appearing in two places. Every row below
 // that duplicated a direct tile has been removed so ONE ACTION HAS ONE HOME — the invariant the
@@ -11634,7 +11750,7 @@ function mpWiringDiagram(){
 // Load Calc (load-calc). No tool was lost — each is still one tap away as its own tile.
 var MP_TOOLS={
   warranty:{title:'Warranty Check',pip:'var(--moss)',actions:[
-    {label:'Check Warranty Status',sub:'Brand / model / install date',fn:function(){mpAskMike("Give me the model and install date and I'll check where the warranty stands.");window._mpActionDirective={search:true,text:'ACTION — WARRANTY CHECK: the tech just gave you the brand, model, and install date. Search the manufacturer warranty terms for this exact equipment and tell them what is covered (parts / compressor / labor), the length, and whether registration was required to keep it. Use real searched info, not a guess.'};}},
+    {label:'Check Warranty Status',sub:'Real registration, by serial',fn:function(){mpWarrantyCheck();}},
     {label:'File a Warranty Claim',sub:'Prep the claim',fn:function(){mpAskMike("What's the model and what failed? I'll prep the claim — grab the install date too if it's handy.");}}
   ]},
   wiring:{title:'Wiring & Diagrams',pip:'var(--rust)',actions:[

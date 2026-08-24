@@ -4652,6 +4652,28 @@ document.addEventListener('visibilitychange',function(){
   var siBtn=document.getElementById('siBtn');var suBtn=document.getElementById('suBtn');
   if(siBtn&&siBtn.disabled&&!siBtn.textContent.includes('Signing'))siBtn.disabled=false;
   if(suBtn&&suBtn.disabled&&!suBtn.textContent.includes('Creating'))suBtn.disabled=false;
+
+  // ── COMING BACK TO A CALL ───────────────────────────────────────────────────
+  // Leaving the app mid-call suspends the AudioContext and strands whatever Mike was
+  // saying. Nothing used to recover it: you'd return to "Mike is talking…" with no
+  // audio, and hanging up and hitting call again wouldn't help because the speaking
+  // state was still latched on. On return: wake the audio context, and if we still
+  // claim to be speaking with nothing actually playing, put the UI back to rest so the
+  // tech can just talk again.
+  if(document.visibilityState!=='visible')return;
+  try{
+    if(sharedAudioCtx&&(sharedAudioCtx.state==='suspended'||sharedAudioCtx.state==='interrupted')){
+      sharedAudioCtx.resume().catch(function(){});
+    }
+  }catch(e){}
+  // Small delay so a genuinely-resuming clip gets its chance before we call it stuck.
+  setTimeout(function(){
+    try{
+      if(typeof isMikeSpeaking!=='undefined'&&isMikeSpeaking&&!mikeAudio){
+        resetMikeSpeakingUI();
+      }
+    }catch(e){}
+  },1200);
 });
 
 function authSignUp(){
@@ -12971,7 +12993,7 @@ function mikeSay(text){
       return res.arrayBuffer();
     })
     .then(function(arrayBuf){
-      if(stale()){return;} // user pressed stop / opened camera — drop this audio
+      if(stale()){resetMikeSpeakingUI();return;} // user pressed stop / opened camera — drop this audio
       if(!arrayBuf||arrayBuf.byteLength<500){
         // ElevenLabs returned nothing — go silent rather than fall back to robot voice.
         // Robot speechSynthesis was causing "two Mikes talking" when it overlapped real Mike.
@@ -12991,9 +13013,9 @@ function mikeSay(text){
       }
       var ctx=sharedAudioCtx||(sharedAudioCtx=new AudioCtx());
       var play=function(){
-        if(stale()){return;} // double-check right before decode
+        if(stale()){resetMikeSpeakingUI();return;} // double-check right before decode
         ctx.decodeAudioData(arrayBuf.slice(0),function(decoded){
-          if(stale()){return;} // and right before playback
+          if(stale()){resetMikeSpeakingUI();return;} // and right before playback
           var src=ctx.createBufferSource();
           var gainNode=ctx.createGain();
           gainNode.gain.value=1.0;
@@ -13022,7 +13044,14 @@ function mikeSay(text){
           if(stopBtn)stopBtn.style.display='none';
         });
       };
-      if(ctx.state==='suspended'||ctx.state==='interrupted'){ctx.resume().then(play).catch(function(){isMikeSpeaking=false;});}
+      // iOS suspends the context when the app backgrounds. If resume() never settles
+      // (it can hang while backgrounded) nothing below ever runs, so reset on failure
+      // AND arm a watchdog — otherwise the call is stuck on 'Mike is talking…'.
+      if(ctx.state==='suspended'||ctx.state==='interrupted'){
+        var _resumed=false;
+        setTimeout(function(){ if(!_resumed&&isMikeSpeaking&&!mikeAudio) resetMikeSpeakingUI(); },6000);
+        ctx.resume().then(function(){_resumed=true;play();}).catch(function(){resetMikeSpeakingUI();});
+      }
       else play();
     })
     .catch(function(err){
@@ -13047,8 +13076,29 @@ function mikeSayBrowser(clean){
   if(voiceMode&&!isListening)setTimeout(function(){if(voiceMode&&!isListening)startListening();},1200);
 }
 
+// Single place that puts the voice UI back to rest. Every path that stops Mike talking —
+// finished, stopped, aborted, decode failed, went stale, app backgrounded — has to land
+// here, or the UI keeps claiming "Mike is talking…" with nothing playing and the call
+// looks broken. That was the bug: three stale() early-returns bailed out without touching
+// any of this, so backgrounding the app mid-sentence left the status stuck forever.
+function resetMikeSpeakingUI(){
+  isMikeSpeaking=false;
+  try{ if(typeof showVoiceWaveform==='function')showVoiceWaveform(false); }catch(e){}
+  try{
+    var _mb=document.getElementById('micBtn');
+    if(_mb){_mb.classList.remove('mic-speaking');_mb.textContent='🎙️';}
+    var _sb=document.getElementById('stopSpeakBtn');
+    if(_sb)_sb.style.display='none';
+  }catch(e){}
+  // Clear the stuck label. In an active call hand the turn back to the tech; otherwise
+  // blank it so a dead call doesn't sit there insisting Mike is mid-sentence.
+  try{ if(typeof setVoiceStatus==='function')setVoiceStatus(voiceMode?'Go ahead…':'',''); }catch(e){}
+}
+
 function stopMikeSpeaking(){
   isMikeSpeaking=false;
+  // Put the UI back too — clearing the flag alone left "Mike is talking…" on screen.
+  try{ resetMikeSpeakingUI(); }catch(e){}
   // Abort any in-flight TTS fetches (both voice mode and camera) so slow downloads
   // never start playing AFTER stop. This is the fix for "Mike keeps talking after stop".
   try{if(window._voiceTTSAbort){window._voiceTTSAbort.abort();window._voiceTTSAbort=null;}}catch(e){}

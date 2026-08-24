@@ -1,0 +1,14 @@
+{
+  "name": "trazer-warranty-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reads manufacturer warranty registration status for a serial number. Runs as its own Railway service so a headless browser can never destabilise Mike.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "playwright": "1.52.0"
+  }
+}

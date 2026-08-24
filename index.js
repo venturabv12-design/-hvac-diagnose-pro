@@ -1396,6 +1396,77 @@ app.get('/api/weather', async (req, res) => {
 });
 
 
+// ── WARRANTY REGISTRY ─────────────────────────────────────────────────────────
+// Reads the manufacturer's ACTUAL warranty registration for a serial — registered
+// vs base, active or not, real term end date. Not the "likely warranty" estimate
+// every other tech app gives you by decoding a build date out of the serial.
+//
+// The lookup needs a real browser (manufacturers refuse plain server-side calls at
+// the edge), so it lives in its own Railway service and Mike talks to it over the
+// private network. If that service is down, deleted, or never provisioned, these
+// routes degrade to "couldn't check" and NOTHING ELSE IN MIKE IS AFFECTED. That
+// isolation is the whole reason the browser isn't in this process.
+const WARRANTY_URL = process.env.WARRANTY_SERVICE_URL || 'http://warranty-service.railway.internal:8080';
+const WARRANTY_TOKEN = process.env.WARRANTY_SERVICE_TOKEN || '';
+
+// What does this manufacturer require before a lookup is even possible? Each brand
+// wants different inputs (Trane: serial alone; Goodman: serial + model; Carrier:
+// serial + original-purchaser), so Mike asks the tech for that brand's fields
+// instead of demanding the same set from everyone.
+app.get('/api/warranty/requirements', authenticateToken, async (req, res) => {
+  try {
+    const r = await fetch(`${WARRANTY_URL}/requirements?brand=${encodeURIComponent(req.query.brand || '')}`, {
+      headers: { 'x-warranty-token': WARRANTY_TOKEN },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) throw new Error(`requirements ${r.status}`);
+    return res.json(await r.json());
+  } catch (err) {
+    console.error('Warranty requirements error:', err.message);
+    // Fail soft — Mike falls back to asking for brand + model + serial, which is
+    // enough for every manufacturer we support.
+    return res.json({ ok: false, known: false, degraded: true });
+  }
+});
+
+app.post('/api/warranty', authenticateToken, aiLimiter, async (req, res) => {
+  const { brand, serial, model, originalPurchaser } = req.body || {};
+  if (!brand || !serial) return res.status(400).json({ ok: false, error: 'brand_and_serial_required' });
+
+  try {
+    const r = await fetch(`${WARRANTY_URL}/lookup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-warranty-token': WARRANTY_TOKEN },
+      body: JSON.stringify({ brand, serial, model, originalPurchaser }),
+      // A cold lookup launches a browser; the service's own ceiling is 45s, so give
+      // it room past that rather than cutting a good answer off at the knees.
+      signal: AbortSignal.timeout(60000),
+    });
+    const data = await r.json().catch(() => null);
+    if (!r.ok || !data) throw new Error(`lookup ${r.status}`);
+
+    // Usage spine — same events table the admin dashboard reads. Serial only; the
+    // upstream payload's homeowner address is stripped in the service and must not
+    // reappear here.
+    try {
+      logUsage(req.user && req.user.id, 'warranty_lookup', {
+        brand: data.brand || brand,
+        found: !!data.found,
+        registered: data.registered === true,
+        supported: data.supported !== false,
+      });
+    } catch (_) {}
+
+    return res.json(data);
+  } catch (err) {
+    console.error('Warranty lookup error:', err.message);
+    // Never invent a warranty. A wrong "covered through 2033" is how a tech quotes
+    // warranty work on a unit that isn't covered.
+    return res.status(502).json({ ok: false, error: 'registry_unreachable', brand });
+  }
+});
+
+
 // ── CUSTOMERS ─────────────────────────────────────────────────────────────────
 // All five data endpoints (customers/jobs/refrigerant-log/reminders/knowledge)
 // derive user_id from req.user.id (verified JWT) — never from client input.

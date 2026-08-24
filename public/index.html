@@ -6025,6 +6025,16 @@ function obFinish(){
   // We PRE-FILL the composer (do NOT auto-send) so the very first thing the user sees
   // after onboarding is an open conversation with Mike, one tap from their first reply.
   // No /api/ai call is fired here — safe, no paywall/cost surprise, no double-send risk.
+  //
+  // ENTER THE CHAT FIRST. Without this, a SIGNED-OUT visitor finished onboarding and got
+  // dropped back on the marketing landing page — the one selling them on Mike they had
+  // just sat through onboarding for — while seedFirstPrompt quietly typed a starter into
+  // a composer that wasn't on screen. Signed-in users were already in chat mode so it
+  // only ever hit new visitors, i.e. exactly the people we need to convert.
+  // syncAuthSurface() already ran at page load, before the flag above was written, so
+  // it has to run again now or the landing stays put for a signed-out visitor.
+  try{ if(typeof syncAuthSurface==='function') syncAuthSurface(); }catch(e){}
+  try{ if(typeof mpEnterChat==='function') mpEnterChat(); }catch(e){}
   try{seedFirstPrompt();}catch(e){}
 }
 
@@ -7229,8 +7239,18 @@ function setMode(m){
 function syncAuthSurface(){
   var _lnd=document.getElementById('v2Landing');
   var _strip=document.getElementById('instrStrip');
-  if(_lnd)_lnd.style.display=currentUser?'none':'';
-  if(_strip)_strip.style.display=currentUser?'':'none';
+  // FINISHING ONBOARDING COUNTS AS COMING THROUGH THE FRONT DOOR.
+  // Keying this on currentUser alone meant a signed-out visitor sat through the whole
+  // onboarding — being sold on Mike — and was then dropped back onto the landing page
+  // that sells them on Mike, with "Already have an account? Sign in" underneath. They
+  // earned the chat; give them the chat. The landing still greets anyone who arrives
+  // cold and hasn't been through onboarding, so the front door is untouched.
+  // Checked here rather than in obFinish() because setMode() re-runs this on every
+  // audience toggle and would otherwise put the landing straight back.
+  var _past=!!currentUser;
+  if(!_past){ try{ _past=localStorage.getItem('trazer_onboarded')==='1'; }catch(e){} }
+  if(_lnd)_lnd.style.display=_past?'none':'';
+  if(_strip)_strip.style.display=_past?'':'none';
 }
 
 // Populate the instrument strip from a parsed diagnosis (same shape detectV2Diagnosis

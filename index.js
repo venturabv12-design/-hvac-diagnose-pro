@@ -9,6 +9,7 @@ const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const helmet = require('helmet');
+const nightlyLearn = require('./lib/nightly-learn');
 
 // Diagram-redraw engine — traces an uploaded wiring diagram and renders a clean illustration.
 const { extractNetlist, sanitizeNetlist, validateNetlist } = require('./scripts/redraw/extract-netlist.js');
@@ -2808,6 +2809,16 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       // make Mike" was unanswerable — and that is the one question that decides whether this
       // is usable by a tech standing in an attic. Measure it.
       try { if (_askUid) logUsage(_askUid, 'rag_timing', { ms: _ragMs, hit: !!(_mc && _mc.text) }); } catch {}
+      // A miss is the most valuable signal Mike produces: a real tech, on a real job,
+      // asked about a unit he has no verified manual for. Logged with the brand and
+      // model so the nightly learner can go find exactly that document tonight.
+      // Only the identifiers are stored — never the tech's question text.
+      try {
+        if (_askUid && !(_mc && _mc.text)) {
+          const _mBrand = _extractBrand(_lastUser), _mModel = _extractModelFamily(_lastUser);
+          if (_mBrand && _mModel) logUsage(_askUid, 'rag_miss', { brand: _mBrand, model: _mModel });
+        }
+      } catch {}
       if (_mc && _mc.text) {
         _ragContext = '\n\n=== MANUFACTURER SERVICE MANUAL EXCERPTS (authoritative) ===\n'
           + 'Answer fault-code, wiring, and spec questions ONLY from these excerpts and cite the [Source: ...] tag in your reply. '
@@ -3361,7 +3372,38 @@ process.on('uncaughtException', (err) => { console.error('UNCAUGHT EXCEPTION —
 process.on('unhandledRejection', (reason) => { console.error('UNHANDLED REJECTION — staying alive:', reason); });
 
 // ── START ─────────────────────────────────────────────────────────────────────
+// ── WHAT MIKE LEARNED ─────────────────────────────────────────────────────────
+// The receipt behind "Mike gets new information every day and keeps it". Admin-only:
+// it reports the fleet the techs are actually asking about, which is competitive
+// information about how the company runs, not just product telemetry.
+app.get('/api/admin/learning', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const since = new Date(Date.now() - 30 * 86400000).toISOString();
+    const rows = await supabase('GET', 'events',
+      null, `?select=payload,created_at&type=eq.learned_manuals&created_at=gte.${since}&order=created_at.desc&limit=60`);
+    const openGaps = await nightlyLearn.findGaps().catch(() => []);
+    res.json({
+      ok: true,
+      lastRun: nightlyLearn.status(),
+      running: nightlyLearn.isRunning(),
+      openGaps: (openGaps || []).map(g => ({ brand: g.brand, model: g.model, techsAsked: g.hits })),
+      history: (rows || []).map(r => ({ at: r.created_at, learned: (r.payload && r.payload.learned) || [] })),
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Manual trigger — so a night's work can be demonstrated on demand instead of
+// waiting for 3am. `?dry=1` finds and verifies documents without writing any.
+app.post('/api/admin/learning/run', authenticateToken, requireAdmin, async (req, res) => {
+  if (nightlyLearn.isRunning()) return res.status(409).json({ ok: false, error: 'already running' });
+  try { res.json({ ok: true, result: await nightlyLearn.runOnce({ dryRun: req.query.dry === '1' }) }); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 app.listen(PORT, () => {
+  try { nightlyLearn.start(); } catch (e) { console.error('learn scheduler failed (non-fatal):', e.message); }
   console.log(`Trazer Intelligence running on port ${PORT}`);
   console.log(`AI: ${ANTHROPIC_API_KEY?'ready':'MISSING'} | TTS: ${ELEVENLABS_API_KEY?'ready':'not set'} | DB: ${SUPABASE_URL?'ready':'not set'} | Billing: ${STRIPE_SECRET_KEY?'ready':'not set'}`);
 });

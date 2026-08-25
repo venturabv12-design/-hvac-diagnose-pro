@@ -3296,6 +3296,36 @@ app.get('/privacy', (req, res) => {
 });
 
 // ── SPA FALLBACK ──────────────────────────────────────────────────────────────
+// ── WHAT MIKE LEARNED ─────────────────────────────────────────────────────────
+// The receipt behind "Mike gets new information every day and keeps it". Admin-only:
+// it reports the fleet the techs are actually asking about, which is competitive
+// information about how the company runs, not just product telemetry.
+app.get('/api/admin/learning', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const since = new Date(Date.now() - 30 * 86400000).toISOString();
+    const rows = await supabase('GET', 'events',
+      null, `?select=payload,created_at&type=eq.learned_manuals&created_at=gte.${since}&order=created_at.desc&limit=60`);
+    const openGaps = await nightlyLearn.findGaps().catch(() => []);
+    res.json({
+      ok: true,
+      lastRun: nightlyLearn.status(),
+      running: nightlyLearn.isRunning(),
+      openGaps: (openGaps || []).map(g => ({ brand: g.brand, model: g.model, techsAsked: g.hits })),
+      history: (rows || []).map(r => ({ at: r.created_at, learned: (r.payload && r.payload.learned) || [] })),
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Manual trigger — so a night's work can be demonstrated on demand instead of
+// waiting for 3am. `?dry=1` finds and verifies documents without writing any.
+app.post('/api/admin/learning/run', authenticateToken, requireAdmin, async (req, res) => {
+  if (nightlyLearn.isRunning()) return res.status(409).json({ ok: false, error: 'already running' });
+  try { res.json({ ok: true, result: await nightlyLearn.runOnce({ dryRun: req.query.dry === '1' }) }); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 app.get('*', (req, res) => {
   res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.set('Pragma', 'no-cache');
@@ -3372,36 +3402,6 @@ process.on('uncaughtException', (err) => { console.error('UNCAUGHT EXCEPTION —
 process.on('unhandledRejection', (reason) => { console.error('UNHANDLED REJECTION — staying alive:', reason); });
 
 // ── START ─────────────────────────────────────────────────────────────────────
-// ── WHAT MIKE LEARNED ─────────────────────────────────────────────────────────
-// The receipt behind "Mike gets new information every day and keeps it". Admin-only:
-// it reports the fleet the techs are actually asking about, which is competitive
-// information about how the company runs, not just product telemetry.
-app.get('/api/admin/learning', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const since = new Date(Date.now() - 30 * 86400000).toISOString();
-    const rows = await supabase('GET', 'events',
-      null, `?select=payload,created_at&type=eq.learned_manuals&created_at=gte.${since}&order=created_at.desc&limit=60`);
-    const openGaps = await nightlyLearn.findGaps().catch(() => []);
-    res.json({
-      ok: true,
-      lastRun: nightlyLearn.status(),
-      running: nightlyLearn.isRunning(),
-      openGaps: (openGaps || []).map(g => ({ brand: g.brand, model: g.model, techsAsked: g.hits })),
-      history: (rows || []).map(r => ({ at: r.created_at, learned: (r.payload && r.payload.learned) || [] })),
-    });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
-
-// Manual trigger — so a night's work can be demonstrated on demand instead of
-// waiting for 3am. `?dry=1` finds and verifies documents without writing any.
-app.post('/api/admin/learning/run', authenticateToken, requireAdmin, async (req, res) => {
-  if (nightlyLearn.isRunning()) return res.status(409).json({ ok: false, error: 'already running' });
-  try { res.json({ ok: true, result: await nightlyLearn.runOnce({ dryRun: req.query.dry === '1' }) }); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
 app.listen(PORT, () => {
   try { nightlyLearn.start(); } catch (e) { console.error('learn scheduler failed (non-fatal):', e.message); }
   console.log(`Trazer Intelligence running on port ${PORT}`);

@@ -91,6 +91,91 @@ async function fetchWithRetry(url, options, retries = 2) {
   }
 }
 
+// ── MODEL FAILOVER ────────────────────────────────────────────────────────────
+// 2026-06-24 Mike went fully dark for a day: claude-opus-4-8 — the single model he
+// runs on — had an upstream incident and every tech got "error, try again". The key
+// was fine, the bill was fine, the code was fine. One model was down and Mike had
+// nowhere else to go.
+//
+// This is the answer to that specific failure. The chain is tried in order and the
+// FIRST model that responds wins. Ordering is deliberate: the primary first, then
+// the nearest-capability sibling, so a degraded Mike still sounds like Mike.
+//
+// Scope, honestly: this survives ONE MODEL being down, which is what actually
+// happened. It does not survive the whole vendor being down — that needs a second
+// provider (Claude on Bedrock/Vertex) and a second credential, which is a separate
+// build. Named so nobody mistakes this for more coverage than it gives.
+//
+// Safety note: every model's output still passes through the deterministic
+// safety/pricing guard downstream — the guard runs on `outText`, after the call, so
+// a fallback model cannot route around the homeowner-pricing rule or the capacitor
+// strip. Failover changes WHO answers, never WHAT is allowed through.
+const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+const PRIMARY_MODEL = process.env.MIKE_MODEL || 'claude-opus-4-8';
+const MODEL_CHAIN = (function () {
+  const extra = (process.env.MIKE_MODEL_FALLBACKS || 'claude-opus-4-7,claude-sonnet-4-6')
+    .split(',').map(m => m.trim()).filter(Boolean);
+  return [PRIMARY_MODEL].concat(extra.filter(m => m !== PRIMARY_MODEL));
+})();
+
+// Retry-the-next-model statuses. 429 is included because a per-model rate ceiling
+// leaves a tech just as stuck as an outage does. 4xx like 400/401/404 are OUR bug
+// (bad request, bad key) — trying another model would just fail three times slower.
+function isFailoverStatus(code) {
+  return code === 429 || code === 500 || code === 502 || code === 503 || code === 504 || code === 529;
+}
+
+// Reports which model answered so a degraded state is visible instead of silent.
+let lastModelUsed = PRIMARY_MODEL;
+let failoverCount = 0;
+
+// Walks MODEL_CHAIN until one answers. `opts.stream` picks the raw fetch (SSE needs
+// the live body) over fetchWithRetry. Returns the winning response plus the model
+// that produced it. An aborted request (client hung up / 55s timeout) stops the walk
+// immediately — the tech is already gone, so burning their wait on another model is
+// worse than failing fast.
+async function callModelWithFailover(baseBody, fetchOpts, opts) {
+  const useStream = !!(opts && opts.stream);
+  let lastRes = null, lastErr = null;
+
+  for (let i = 0; i < MODEL_CHAIN.length; i++) {
+    const model = MODEL_CHAIN[i];
+    const attemptOpts = Object.assign({}, fetchOpts, {
+      body: JSON.stringify(Object.assign({}, baseBody, { model })),
+    });
+
+    try {
+      const res = useStream
+        ? await fetch(ANTHROPIC_URL, attemptOpts)
+        : await fetchWithRetry(ANTHROPIC_URL, attemptOpts);
+
+      if (res && res.ok) {
+        lastModelUsed = model;
+        if (i > 0) {
+          failoverCount++;
+          console.warn(`[failover] ${MODEL_CHAIN[0]} unavailable — answered on ${model} (fallback #${i})`);
+        }
+        return { res, model, degraded: i > 0 };
+      }
+
+      lastRes = res;
+      if (!res || !isFailoverStatus(res.status) || i === MODEL_CHAIN.length - 1) {
+        return { res, model, degraded: i > 0 };
+      }
+      console.warn(`[failover] ${model} returned ${res.status} — trying ${MODEL_CHAIN[i + 1]}`);
+    } catch (err) {
+      // Don't keep walking a chain the caller already abandoned.
+      if (err && (err.name === 'AbortError' || err.code === 'ABORT_ERR')) throw err;
+      lastErr = err;
+      if (i === MODEL_CHAIN.length - 1) throw err;
+      console.warn(`[failover] ${model} threw "${err.message}" — trying ${MODEL_CHAIN[i + 1]}`);
+    }
+  }
+
+  if (lastRes) return { res: lastRes, model: MODEL_CHAIN[MODEL_CHAIN.length - 1], degraded: true };
+  throw lastErr || new Error('all models unavailable');
+}
+
 // ── SUPABASE HELPER ───────────────────────────────────────────────────────────
 async function supabase(method, table, body, query = '') {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return null;
@@ -726,6 +811,12 @@ app.get('/api/health', (req, res) => {
     ok: true,
     activeRequests: globalActive,
     uptime: Math.floor(process.uptime()),
+    // Failover visibility. `degraded` true means the primary model is failing and
+    // Mike is answering on a fallback — an outage that would previously have been
+    // silent (or total). Deliberately does NOT expose the chain itself.
+    models: MODEL_CHAIN.length,
+    degraded: lastModelUsed !== PRIMARY_MODEL,
+    failovers: failoverCount,
   });
 });
 
@@ -2790,22 +2881,27 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     // already gates use_search off for streamed chat).
     if (stream && !_forceNonStream) {
       body.stream = true;
-      const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+      // Failover happens BEFORE the first byte reaches the client. Once SSE headers
+      // are written we're committed to this model — a mid-stream switch would replay
+      // half an answer. The client already falls back to the non-stream path on a
+      // stream error, and that path walks the chain again.
+      const _fo = await callModelWithFailover(body, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': ANTHROPIC_API_KEY,
           'anthropic-version': '2023-06-01',
         },
-        body: JSON.stringify(body),
         signal: controller.signal,
-      });
+      }, { stream: true });
+      const upstream = _fo.res;
 
-      if (!upstream.ok || !upstream.body) {
-        let msg = `API error ${upstream.status}`;
+      if (!upstream || !upstream.ok || !upstream.body) {
+        const _st = upstream ? upstream.status : 502;
+        let msg = `API error ${_st}`;
         try { const ed = await upstream.json(); msg = ed?.error?.message || msg; } catch (_) {}
-        console.error('Anthropic stream error:', upstream.status, msg);
-        return res.status(upstream.status === 429 ? 429 : 502).json({ error: msg });
+        console.error('Anthropic stream error:', _st, msg, `(last model: ${_fo.model})`);
+        return res.status(_st === 429 ? 429 : 502).json({ error: msg });
       }
 
       // Client SSE headers.
@@ -2867,22 +2963,22 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     }
     // ── NON-STREAM (default fallback path, unchanged) ─────────────────────────
 
-    const response = await fetchWithRetry('https://api.anthropic.com/v1/messages', {
+    const _foNS = await callModelWithFailover(body, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify(body),
       signal: controller.signal,
-    });
+    }, { stream: false });
+    const response = _foNS.res;
 
     const data = await response.json();
 
     if (!response.ok) {
       const msg = data?.error?.message || `API error ${response.status}`;
-      console.error('Anthropic error:', response.status, msg);
+      console.error('Anthropic error:', response.status, msg, `(last model: ${_foNS.model})`);
       return res.status(response.status === 429 ? 429 : 502).json({ error: msg });
     }
 

@@ -3296,6 +3296,97 @@ app.get('/privacy', (req, res) => {
 });
 
 // ── SPA FALLBACK ──────────────────────────────────────────────────────────────
+// ── FIELD WATCH — the phone reports what the server cannot see ────────────────
+// 2026-08-26: a tech asked Mike twice and saw nothing both times. Every server-side
+// signal said SUCCESS — health green, no 5xx, and the events table shows a mike_answer
+// logged for BOTH of his questions. The answers were generated and delivered; his
+// browser threw them away. The uptime watchdog pinged /api/health 76,000 times through
+// it and reported "up".
+//
+// That is the whole lesson: uptime is not the product. A tech getting his answer is the
+// product, and only his phone knows whether that happened. So the phone tells us.
+//
+// Deliberately cheap and unblocking: fire-and-forget from the client, bounded payloads,
+// rate limited, no message text and no customer data — a failure signature, not a
+// transcript. If this endpoint disappeared entirely Mike would be unaffected.
+const watchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,                       // a genuinely broken phone loops; don't let it flood
+  standardHeaders: true, legacyHeaders: false,
+  message: { ok: false },
+});
+
+app.post('/api/client-error', watchLimiter, async (req, res) => {
+  // Always 204 — a reporting endpoint must never become a source of errors itself,
+  // and the client must never wait on it.
+  res.status(204).end();
+  try {
+    const b = req.body || {};
+    const clip = (v, n) => (v == null ? null : String(v).slice(0, n));
+    const kind = clip(b.kind, 40);
+    if (!kind) return;
+
+    // Identify the tech only if their token is valid. Never trust a claimed id.
+    let uid = null;
+    try {
+      const t = b.token || (req.headers.authorization || '').replace(/^Bearer /, '');
+      if (t) uid = (jwt.verify(t, JWT_SECRET) || {}).id || null;
+    } catch (_) {}
+
+    const payload = {
+      kind,                                   // no_answer | js_error | promise_rejection | api_error
+      detail: clip(b.detail, 300),            // message/signature only
+      where: clip(b.where, 120),              // file:line or a named flow
+      waitedMs: Number(b.waitedMs) || null,   // how long the tech stared at nothing
+      ua: clip(req.headers['user-agent'], 180),
+      online: b.online === false ? false : true,
+      build: clip(b.build, 40),
+    };
+    await supabase('POST', 'events',
+      { user_id: uid || null, type: 'client_error', payload },
+      '');
+    console.warn(`[field-watch] ${kind} — ${payload.detail || ''} (${payload.where || 'n/a'})`);
+  } catch (e) {
+    console.error('client-error log failed (non-fatal):', e.message);
+  }
+});
+
+// What is actually breaking in the field, grouped so a pattern is obvious at a glance.
+app.get('/api/admin/incidents', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const hours = Math.min(parseInt(req.query.hours || '24', 10) || 24, 24 * 30);
+    const since = new Date(Date.now() - hours * 3600000).toISOString();
+    const rows = await supabase('GET', 'events', null,
+      `?select=user_id,payload,created_at&type=eq.client_error&created_at=gte.${since}&order=created_at.desc&limit=1000`) || [];
+
+    const groups = {};
+    for (const r of rows) {
+      const p = r.payload || {};
+      const key = `${p.kind}|${(p.detail || '').slice(0, 80)}`;
+      const g = groups[key] || (groups[key] = {
+        kind: p.kind, detail: p.detail, where: p.where,
+        count: 0, techs: new Set(), first: r.created_at, last: r.created_at,
+      });
+      g.count++;
+      if (r.user_id) g.techs.add(r.user_id);
+      if (r.created_at < g.first) g.first = r.created_at;
+      if (r.created_at > g.last) g.last = r.created_at;
+    }
+    const incidents = Object.values(groups)
+      .map(g => ({ ...g, techsAffected: g.techs.size, techs: undefined }))
+      .sort((a, b) => b.techsAffected - a.techsAffected || b.count - a.count);
+
+    res.json({
+      ok: true, hours,
+      totalReports: rows.length,
+      techsAffected: new Set(rows.map(r => r.user_id).filter(Boolean)).size,
+      incidents,
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // ── WHAT MIKE LEARNED ─────────────────────────────────────────────────────────
 // The receipt behind "Mike gets new information every day and keeps it". Admin-only:
 // it reports the fleet the techs are actually asking about, which is competitive

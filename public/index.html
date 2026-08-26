@@ -10273,6 +10273,24 @@ function detectInlineCorrection(userText){
 var chatAbortController=null;
 
 function stopChatStream(){
+  // FIELD BUG (Rob, 2026-08-26): while Mike is answering, this control occupies the exact
+  // position Send lives in the rest of the time — same button, rewritten onclick. A tech
+  // types his next question, taps where Send has always been, and instead of asking he
+  // kills Mike's answer AND the question he just typed is never sent. He sees "(stopped)"
+  // twice and assumes Mike is broken.
+  //
+  // Nobody composes a question and then taps a button to cancel. If there is text in the
+  // box, the tap means ASK, not abort. Stop the current reply and send what he wrote.
+  var _hadInflight=!!chatAbortController;
+  var _pending='';
+  try{
+    var _inp=document.getElementById('chatInput');
+    if(_hadInflight&&_inp&&_inp.value.trim())_pending=_inp.value;
+  }catch(e){}
+  // Set BEFORE abort(): the fetch rejects on a microtask, which runs before the timeout
+  // below, and the catch must already know not to print "(stopped)".
+  if(_pending)window._chatResendPending=true;
+
   if(chatAbortController){
     try{chatAbortController.abort();}catch(e){}
     chatAbortController=null;
@@ -10280,6 +10298,16 @@ function stopChatStream(){
   if(typeof hideTyping==='function')hideTyping();
   resetChatSendButton();
   chatSending=false;
+
+  if(_pending){
+    setTimeout(function(){
+      try{
+        var i=document.getElementById('chatInput');
+        if(i&&!i.value.trim())i.value=_pending;   // restore if anything cleared it
+        sendChat();
+      }catch(e){ window._chatResendPending=false; }
+    },0);
+  }
 }
 
 function resetChatSendButton(){
@@ -10586,8 +10614,11 @@ async function sendChat(){
     hideTyping();
     var em=(e&&e.message)||'';
     if(e&&e.name==='AbortError'){
-      // User pressed Stop. Don't show an error — they did this on purpose.
-      appendMessage('agent','(stopped)');
+      // Only a deliberate cancel prints this. When the abort came from the tech tapping
+      // the button to ASK his next question, the resend is already queued — printing
+      // "(stopped)" there is what made Mike look broken in the field.
+      if(window._chatResendPending){ window._chatResendPending=false; }
+      else appendMessage('agent','(stopped)');
     } else if(em.includes('timed out')||em.includes('abort')||em.toLowerCase().includes('network')){
       appendMessage('agent','Taking a bit longer than usual. Check your connection and tap send again.');
     } else if(em.includes('high demand')||em.includes('Busy right now')||em.toLowerCase().includes('rate limit')){

@@ -9847,7 +9847,87 @@ function buildV2Mentor(mb){
     +'<span class="sig">'+escapeHtml(v2t('mentorSig'))+'</span></div>';
 }
 
+// ── FIELD WATCH — the phone is the only witness ───────────────────────────────
+// A tech asked Mike twice on 2026-08-26 and saw nothing. Every server signal said
+// SUCCESS: health green, no errors, and a mike_answer logged for BOTH questions. The
+// answers were generated and delivered — his browser discarded them. The uptime
+// watchdog pinged /api/health 76,000 times straight through it and reported "up".
+//
+// So we stop asking "is the server alive" and start asking the only question that
+// matters: DID THIS TECH GET HIS ANSWER? Only this device can answer that.
+//
+// Rules: never block the UI, never send message text or customer data (a signature,
+// not a transcript), and never let the reporter itself throw.
+(function(){
+  var SENT=0, MAX_PER_SESSION=12;   // a broken phone loops; don't flood the tech or us
+
+  function report(kind,detail,where,extra){
+    try{
+      if(SENT>=MAX_PER_SESSION)return; SENT++;
+      var body=Object.assign({
+        kind:kind,
+        detail:String(detail||'').slice(0,300),
+        where:String(where||'').slice(0,120),
+        online:(typeof navigator!=='undefined')?navigator.onLine!==false:true,
+        token:(typeof currentUser!=='undefined'&&currentUser&&currentUser.token)?currentUser.token:undefined
+      },extra||{});
+      var json=JSON.stringify(body);
+      // sendBeacon survives the page being closed or backgrounded mid-report, which is
+      // exactly when a field failure happens. fetch is the fallback.
+      if(navigator.sendBeacon&&navigator.sendBeacon('/api/client-error',new Blob([json],{type:'application/json'})))return;
+      fetch('/api/client-error',{method:'POST',headers:{'Content-Type':'application/json'},body:json,keepalive:true}).catch(function(){});
+    }catch(e){}
+  }
+  window.fieldWatchReport=report;
+
+  window.addEventListener('error',function(e){
+    if(!e)return;
+    report('js_error',(e.message||'script error'),((e.filename||'')+':'+(e.lineno||0)));
+  });
+  window.addEventListener('unhandledrejection',function(e){
+    var r=e&&e.reason;
+    report('promise_rejection',(r&&(r.message||r))||'unhandled rejection','');
+  });
+
+  // THE ONE THAT WOULD HAVE CAUGHT ROB.
+  // A send opens a watch. Rendering Mike's reply closes it. If a watch is still open
+  // when it expires, a tech asked a question and never got an answer — and that is a
+  // defect whether or not a single line of code threw.
+  var openWatch=null;
+  window.fieldWatchAsked=function(){
+    try{
+      if(openWatch&&openWatch.timer)clearTimeout(openWatch.timer);
+      var t0=Date.now();
+      openWatch={t0:t0,timer:setTimeout(function(){
+        if(openWatch&&openWatch.t0===t0){
+          report('no_answer','tech asked and no answer ever rendered','chat',{waitedMs:Date.now()-t0});
+          openWatch=null;
+        }
+      },95000)};   // past the 90s search ceiling, so a slow answer is not a false alarm
+    }catch(e){}
+  };
+  window.fieldWatchAnswered=function(why){
+    try{
+      if(!openWatch)return;
+      clearTimeout(openWatch.timer);
+      var waited=Date.now()-openWatch.t0;
+      openWatch=null;
+      // Closed, but with nothing useful in it — the tech still walked away empty.
+      if(why)report('no_answer',why,'chat',{waitedMs:waited});
+    }catch(e){}
+  };
+})();
+
 function appendMessage(role,text){
+  // A real agent reply is the only thing that closes a field watch cleanly.
+  try{
+    if(role==='agent'&&window.fieldWatchAnswered){
+      var _t=String(text||'');
+      var _empty=(!_t.trim()||_t.indexOf('(stopped)')>=0||_t.indexOf('Something went wrong')>=0
+                  ||_t.indexOf('Taking a bit longer')>=0||_t.indexOf('Tap send again')>=0);
+      window.fieldWatchAnswered(_empty?('tech got "'+_t.slice(0,60)+'" instead of an answer'):null);
+    }
+  }catch(e){}
   // Phase 2 (wiring diagrams): peel Mike's diagram-image sentinel off the reply
   // BEFORE any text processing (TTS, safety scan, markdown) so it's never spoken
   // or shown as raw text. Server format, appended on wiring questions only:
@@ -10457,6 +10537,7 @@ async function sendChat(){
   }
   // Mark state and switch button to Stop mode (so user can abort a long response)
   chatSending=true;
+  try{ if(window.fieldWatchAsked)window.fieldWatchAsked(); }catch(e){}
   stopMikeSpeaking();
   setChatSendButtonStopMode();
   chatAbortController=(typeof AbortController!=='undefined')?new AbortController():null;

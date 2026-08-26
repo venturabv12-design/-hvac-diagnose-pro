@@ -3296,6 +3296,20 @@ app.get('/privacy', (req, res) => {
 });
 
 // ── SPA FALLBACK ──────────────────────────────────────────────────────────────
+// events.user_id is NOT NULL, so a report from a signed-out phone — or one whose token
+// just expired, which is precisely the device most likely to be failing — was silently
+// dropped on insert. Anonymous reports get filed under the system account and flagged
+// anon:true so they are still visible and still distinguishable from a known tech.
+let _sysOwnerId = null;
+async function systemOwnerId() {
+  if (_sysOwnerId) return _sysOwnerId;
+  try {
+    const rows = await supabase('GET', 'users', null, '?select=id&role=eq.admin&limit=1');
+    _sysOwnerId = (rows && rows[0] && rows[0].id) || null;
+  } catch (_) {}
+  return _sysOwnerId;
+}
+
 // ── FIELD WATCH — the phone reports what the server cannot see ────────────────
 // 2026-08-26: a tech asked Mike twice and saw nothing both times. Every server-side
 // signal said SUCCESS — health green, no 5xx, and the events table shows a mike_answer
@@ -3342,9 +3356,11 @@ app.post('/api/client-error', watchLimiter, async (req, res) => {
       online: b.online === false ? false : true,
       build: clip(b.build, 40),
     };
-    await supabase('POST', 'events',
-      { user_id: uid || null, type: 'client_error', payload },
-      '');
+    if (!uid) { uid = await systemOwnerId(); payload.anon = true; }
+    if (!uid) { console.warn('[field-watch] dropped — no owner available'); return; }
+    const wrote = await supabase('POST', 'events',
+      { user_id: uid, type: 'client_error', payload }, '');
+    if (wrote === null) console.error('[field-watch] STORE FAILED — a real failure went unrecorded');
     console.warn(`[field-watch] ${kind} — ${payload.detail || ''} (${payload.where || 'n/a'})`);
   } catch (e) {
     console.error('client-error log failed (non-fatal):', e.message);
@@ -3365,10 +3381,14 @@ app.get('/api/admin/incidents', authenticateToken, requireAdmin, async (req, res
       const key = `${p.kind}|${(p.detail || '').slice(0, 80)}`;
       const g = groups[key] || (groups[key] = {
         kind: p.kind, detail: p.detail, where: p.where,
-        count: 0, techs: new Set(), first: r.created_at, last: r.created_at,
+        count: 0, anon: 0, techs: new Set(), first: r.created_at, last: r.created_at,
       });
       g.count++;
-      if (r.user_id) g.techs.add(r.user_id);
+      // An anonymous report is a real failure but not an identified tech — counting the
+      // shared system account as "a tech" would make one signed-out phone look like a
+      // fleet-wide outage.
+      if (p.anon) g.anon++;
+      else if (r.user_id) g.techs.add(r.user_id);
       if (r.created_at < g.first) g.first = r.created_at;
       if (r.created_at > g.last) g.last = r.created_at;
     }
@@ -3379,7 +3399,8 @@ app.get('/api/admin/incidents', authenticateToken, requireAdmin, async (req, res
     res.json({
       ok: true, hours,
       totalReports: rows.length,
-      techsAffected: new Set(rows.map(r => r.user_id).filter(Boolean)).size,
+      techsAffected: new Set(rows.filter(r => !(r.payload || {}).anon).map(r => r.user_id).filter(Boolean)).size,
+      anonymousReports: rows.filter(r => (r.payload || {}).anon).length,
       incidents,
     });
   } catch (e) {

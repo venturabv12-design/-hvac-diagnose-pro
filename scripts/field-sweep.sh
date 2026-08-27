@@ -74,24 +74,56 @@ sys.exit(1 if bad else 0)
 
 # ── 3. asked but never answered ──────────────────────────────────────────────
 SINCE=$(python3 -c "import datetime;print((datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(hours=2)).isoformat().replace('+00:00','Z'))")
-E=$(/usr/bin/curl -s -m 30 "$SU/rest/v1/events?select=user_id,type&type=in.(mike_ask,mike_answer)&created_at=gte.$SINCE&limit=500" \
+E=$(/usr/bin/curl -s -m 30 "$SU/rest/v1/events?select=user_id,type,created_at&type=in.(mike_ask,mike_answer)&created_at=gte.$SINCE&limit=500" \
       -H "apikey: $SK" -H "Authorization: Bearer $SK")
 echo "$E" | python3 -c "
-import sys,json,collections
+import sys,json,collections,datetime
 raw=sys.stdin.read()
 try: r=json.loads(raw)
 except Exception: print('ALERT db_unreadable',raw[:120]); sys.exit(1)
 # THE BUG THIS FILE EXISTS FOR: an error object is a dict, iterating it yields
 # strings, and x['user_id'] raised TypeError and killed the sweep silently.
 if not isinstance(r,list): print('ALERT db_error',str(r)[:160]); sys.exit(1)
-per=collections.defaultdict(lambda:[0,0])
+
+def ts(v):
+    try: return datetime.datetime.fromisoformat(str(v).replace('Z','+00:00'))
+    except Exception: return None
+now=datetime.datetime.now(datetime.timezone.utc)
+
+# Pair each ask to the next answer from the same tech. Counting totals over the
+# whole window re-alerted on an outage that was already diagnosed, reported and
+# FIXED — every hour until it aged out. A monitor that keeps shouting about a
+# resolved incident is the same disease as one that shouts when nothing is wrong.
+byuser=collections.defaultdict(list)
 for x in r:
     if not isinstance(x,dict): continue
-    per[x.get('user_id')][0 if x.get('type')=='mike_ask' else 1]+=1
-gaps=[(u,a,b) for u,(a,b) in per.items() if a>b]
-print('askanswer techs=%d gaps=%d'%(len(per),len(gaps)))
-for u,a,b in gaps: print('ALERT unanswered tech=%s asked=%d answered=%d'%(str(u)[:8],a,b))
-sys.exit(1 if gaps else 0)
+    t=ts(x.get('created_at'))
+    if t: byuser[x.get('user_id')].append((t,x.get('type')))
+
+live=[]
+for u,ev in byuser.items():
+    ev.sort()
+    # Match each ask to an answer that lands SHORTLY AFTER IT. Pairing FIFO across the
+    # whole window was wrong: answers from 16:43 were being credited to asks that died
+    # at 15:55, which left the freshly-answered question looking stuck. A request either
+    # answers within a couple of minutes or it failed.
+    answers=[t for t,typ in ev if typ=='mike_answer']
+    pending=[]
+    for t,typ in ev:
+        if typ!='mike_ask': continue
+        if not any(0 <= (a-t).total_seconds() <= 180 for a in answers): pending.append(t)
+    # Only an ask still open AND recent is a tech stuck right now. Anything older
+    # already resolved or was reported when it happened.
+    for t in pending:
+        age=(now-t).total_seconds()/60.0
+        if age <= 30: live.append((u,age))
+# If rows came back but none carried a usable timestamp, the query changed shape and
+# this check is blind. Blind must never print clean.
+if r and not byuser:
+    print('ALERT sweep_broken %d events returned but none had a parseable created_at'%len(r)); sys.exit(1)
+print('askanswer techs=%d live_gaps=%d'%(len(byuser),len(live)))
+for u,age in live: print('ALERT unanswered tech=%s asked %.0f min ago, still no answer'%(str(u)[:8],age))
+sys.exit(1 if live else 0)
 " || RC=1
 
 [ $RC -eq 0 ] && echo "SWEEP_CLEAN"

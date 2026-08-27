@@ -3427,9 +3427,14 @@ app.get('/api/admin/incidents', authenticateToken, requireAdmin, async (req, res
     const rows = await supabase('GET', 'events', null,
       `?select=user_id,payload,created_at&type=eq.client_error&created_at=gte.${since}&order=created_at.desc&limit=1000`) || [];
 
+    // Failures only. A success event landing here (a 'free answer delivered' telemetry
+    // ping did, on day one) makes the incident list noisy, and a noisy alarm is one
+    // nobody reads — which is the exact failure this system exists to prevent.
+    const FAILURE_KINDS = new Set(['no_answer', 'js_error', 'promise_rejection', 'api_error']);
     const groups = {};
     for (const r of rows) {
       const p = r.payload || {};
+      if (!FAILURE_KINDS.has(p.kind)) continue;
       const key = `${p.kind}|${(p.detail || '').slice(0, 80)}`;
       const g = groups[key] || (groups[key] = {
         kind: p.kind, detail: p.detail, where: p.where,
@@ -3450,9 +3455,9 @@ app.get('/api/admin/incidents', authenticateToken, requireAdmin, async (req, res
 
     res.json({
       ok: true, hours,
-      totalReports: rows.length,
-      techsAffected: new Set(rows.filter(r => !(r.payload || {}).anon).map(r => r.user_id).filter(Boolean)).size,
-      anonymousReports: rows.filter(r => (r.payload || {}).anon).length,
+      totalReports: rows.filter(r => FAILURE_KINDS.has((r.payload || {}).kind)).length,
+      techsAffected: new Set(rows.filter(r => FAILURE_KINDS.has((r.payload || {}).kind) && !(r.payload || {}).anon).map(r => r.user_id).filter(Boolean)).size,
+      anonymousReports: rows.filter(r => FAILURE_KINDS.has((r.payload || {}).kind) && (r.payload || {}).anon).length,
       incidents,
     });
   } catch (e) {

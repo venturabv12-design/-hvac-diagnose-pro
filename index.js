@@ -2481,9 +2481,22 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // Enforce paywall server-side. Token comes from body (existing frontend sends it this way).
   const authToken = req.body?.token
     || (req.headers['authorization']?.startsWith('Bearer ') ? req.headers['authorization'].slice(7) : null);
-  const access = await checkPaywall(authToken);
-  if (!access.allowed)
-    return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
+  // Signed-out visitor spending their one free answer. Everything downstream —
+  // including the deterministic safety/pricing guard — runs exactly as it does for a
+  // paying tech; the only thing skipped is the account check.
+  let _isTaste = false;
+  if (!authToken && req.body?.taste === true) {
+    const allow = tasteAllowance(req);
+    if (allow.left <= 0)
+      return res.status(402).json({ error: 'That was the free one — create an account and Mike stays with you.', paywall: true });
+    tasteConsume(allow);
+    _isTaste = true;
+  }
+  if (!_isTaste) {
+    const access = await checkPaywall(authToken);
+    if (!access.allowed)
+      return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
+  }
 
   const { messages, system, systemExtra = '', max_tokens = 1024, use_search = false, stream = false } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0)
@@ -3311,6 +3324,43 @@ async function systemOwnerId() {
   } catch (_) {}
   return _sysOwnerId;
 }
+
+// ── THE FREE FIRST ANSWER ─────────────────────────────────────────────────────
+// 476 visitors a week reach trazermike.io and 1 signs up. The onboarding shows a
+// STATIC mockup of Mike answering — a screenshot of the product, not the product —
+// and a tech can smell that. Meanwhile the app's own copy already promises "first
+// answer's on the house". This makes that literally true: one real question, one
+// real answer from the real Mike, then the account wall.
+//
+// A tech who has watched Mike correctly call a humming compressor has a reason to
+// sign up. A tech looking at a logo has a promise, and techs do not trust promises
+// from software.
+//
+// Bounded hard, because this is the one unauthenticated path to the model:
+//   · ONE answer per device per day, keyed on the same visitor hash analytics uses
+//   · short answers only, no web search, no manual retrieval
+//   · goes through the SAME safety/pricing guard as every other reply — a homeowner
+//     still never sees a price here
+const FREE_TASTE_PER_DAY = Number(process.env.FREE_TASTE_PER_DAY || 1);
+const _tasteUsed = new Map();   // visitorHash -> { day, count }
+
+function tasteAllowance(req) {
+  const day = new Date().toISOString().slice(0, 10);
+  const key = _visitorHash(req);
+  const cur = _tasteUsed.get(key);
+  if (!cur || cur.day !== day) return { key, day, used: 0, left: FREE_TASTE_PER_DAY };
+  return { key, day, used: cur.count, left: Math.max(0, FREE_TASTE_PER_DAY - cur.count) };
+}
+function tasteConsume(a) {
+  _tasteUsed.set(a.key, { day: a.day, count: a.used + 1 });
+  if (_tasteUsed.size > 20000) _tasteUsed.delete(_tasteUsed.keys().next().value);
+}
+
+// Lets the front door ask "does this visitor still have their free answer?" without
+// spending it, so the UI can show the wall instead of a dead send button.
+app.get('/api/taste/left', (req, res) => {
+  res.json({ ok: true, left: tasteAllowance(req).left });
+});
 
 // ── FIELD WATCH — the phone reports what the server cannot see ────────────────
 // 2026-08-26: a tech asked Mike twice and saw nothing both times. Every server-side

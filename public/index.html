@@ -482,6 +482,10 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .ob-say b{color:#fff;}
 
 /* FRAME 6 — DROP INTO THE MAGIC */
+.ob-live{display:flex;flex-direction:column;gap:8px;margin:10px 0 4px}
+.ob-live:empty{display:none}
+.ob-dots{opacity:.6}
+.ob-gate-hot{background:rgba(199,85,59,.14);border-color:rgba(199,85,59,.5)!important;transform:scale(1.02);transition:all .3s ease}
 .ob-magic-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px;}
 /* magic frame: drop 3D depth, camera-push scale entrance */
 .ob-frame.ob-in .ob-magic-top,.ob-frame.ob-in .ob-magic-head,.ob-frame.ob-in .ob-chat,.ob-frame.ob-in .ob-chips,.ob-frame.ob-in .ob-composer,.ob-frame.ob-in .ob-gate{transform:none;}
@@ -5599,8 +5603,8 @@ function obProse(pack,type){
 // TECH has the money frame; HOME never does (guardrail: revenue/objection coaching is
 // tech-only) and closes on 'tour', the homeowner navigation walkthrough. Each entry
 // names the pack key the renderer reads its prose from.
-var OB_FRAMES_TECH=['who','cold','call','facetime','text','money'];
-var OB_FRAMES_HOME=['who','cold','talkedaround','facetime','tour'];
+var OB_FRAMES_TECH=['who','magic','call','facetime','text','money'];
+var OB_FRAMES_HOME=['who','magic','talkedaround','facetime','tour'];
 function obFrames(){
   var seq=(obRole()==='homeowner')?OB_FRAMES_HOME.slice():OB_FRAMES_TECH.slice();
   // A signed-in account already declared its audience — never ask it again.
@@ -5786,7 +5790,11 @@ function obFrameHTML(type,p){
       +'<div class="ob-chips"><span class="ob-chip"><span class="a">↳</span> '+obEsc(c.chip1)+'</span>'
         +'<span class="ob-chip"><span class="a">↳</span> '+obEsc(c.chip2)+'</span>'
         +'<span class="ob-chip"><span class="a">📷</span> '+obEsc(c.chip3)+'</span></div>'
-      +'<div class="ob-composer"><div class="ph">'+obEsc(c.ph)+'</div><div class="send">↑</div></div>'
+      +'<div class="ob-live" id="obLive"></div>'
+      +'<div class="ob-composer" id="obComposer"><input id="obTasteInput" class="ph" type="text" '
+        +'placeholder="'+obEsc(c.ph)+'" autocomplete="off" autocapitalize="sentences" '
+        +'style="flex:1;background:none;border:none;outline:none;color:inherit;font:inherit;min-width:0"/>'
+        +'<div class="send" id="obTasteSend" role="button" tabindex="0">↑</div></div>'
       +findTech
       +'<div class="ob-gate"><span class="lock">🔒</span> '+obEsc(c.gate)+'</div>';
   }
@@ -5935,12 +5943,67 @@ function stopObSpeaking(){
 }
 
 function wireObMagic(host,isMagic){
-  if(isMagic){
-    Array.prototype.forEach.call(host.querySelectorAll('.ob-chip,.ob-composer,.ob-find-tech'),function(n){
-      n.style.cursor='pointer';
-      n.addEventListener('click',function(){obFinish();});
+  if(!isMagic)return;
+  // The gate and the "find a tech" line still just exit — those ARE the exits.
+  Array.prototype.forEach.call(host.querySelectorAll('.ob-find-tech,.ob-gate'),function(n){
+    n.style.cursor='pointer';
+    n.addEventListener('click',function(){obFinish();});
+  });
+  var input=host.querySelector('#obTasteInput');
+  var send=host.querySelector('#obTasteSend');
+  var live=host.querySelector('#obLive');
+  if(!input||!send||!live)return;
+
+  // Chips prefill a real question rather than dumping him out. He came to see Mike
+  // work; the whole point of this screen is that he gets to watch it happen.
+  Array.prototype.forEach.call(host.querySelectorAll('.ob-chip'),function(n){
+    n.style.cursor='pointer';
+    n.addEventListener('click',function(){
+      input.value=(n.textContent||'').replace(/^[^A-Za-z0-9]+/,'').trim();
+      input.focus();
     });
+  });
+
+  var spent=false;
+  function ask(){
+    var q=(input.value||'').trim();
+    if(!q||spent)return;
+    spent=true;
+    input.disabled=true; send.style.opacity='.4';
+    live.innerHTML='<div class="bubble me">'+obEsc(q)+'</div>'
+      +'<div class="bubble mike" id="obLiveMike"><div class="who2">MIKE · 25 YRS</div>'
+      +'<span class="ob-dots">Mike\u2019s looking at it\u2026</span></div>';
+    try{live.scrollIntoView({behavior:'smooth',block:'end'});}catch(e){}
+
+    // Send Mike's REAL brain, not a stripped-down one — a weaker answer here is worse
+    // than no free answer at all, because this IS the product demo.
+    var sys=(typeof AGENT_SYSTEM==='string'&&AGENT_SYSTEM)?AGENT_SYSTEM:'You are Mike, a master HVAC technician with 25 years in the field. Answer a working tech directly and briefly.';
+    fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({taste:true,system:sys,max_tokens:700,messages:[{role:'user',content:q}]})})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var box=document.getElementById('obLiveMike');
+        if(!box)return;
+        var text=d&&(d.response||d.text);
+        if(!text){
+          box.innerHTML='<div class="who2">MIKE · 25 YRS</div>'+obEsc((d&&d.error)||'Give that another go in a second.');
+          input.disabled=false; send.style.opacity=''; spent=false;
+          return;
+        }
+        box.innerHTML='<div class="who2">MIKE · 25 YRS</div>'+(typeof renderDemoAnswer==='function'?renderDemoAnswer(text):obEsc(text));
+        // He has now SEEN it work. That is the moment the ask is worth making.
+        var gate=host.querySelector('.ob-gate');
+        if(gate){ gate.classList.add('ob-gate-hot'); try{gate.scrollIntoView({behavior:'smooth',block:'end'});}catch(e){} }
+        try{ if(window.fieldWatchReport)window.fieldWatchReport('taste_answered','free first answer delivered','onboarding'); }catch(e){}
+      })
+      .catch(function(){
+        var box=document.getElementById('obLiveMike');
+        if(box)box.innerHTML='<div class="who2">MIKE · 25 YRS</div>Connection dropped \u2014 try that again.';
+        input.disabled=false; send.style.opacity=''; spent=false;
+      });
   }
+  send.addEventListener('click',ask);
+  input.addEventListener('keydown',function(e){ if(e.key==='Enter'){e.preventDefault();ask();} });
 }
 function obPostRender(host,type){
   // Add float class to cards after they've risen in

@@ -11,6 +11,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const nightlyLearn = require('./lib/nightly-learn');
 const fieldAlert = require('./lib/field-alert');
+const dailyDigest = require('./lib/daily-digest');
 
 // Diagram-redraw engine — traces an uploaded wiring diagram and renders a clean illustration.
 const { extractNetlist, sanitizeNetlist, validateNetlist } = require('./scripts/redraw/extract-netlist.js');
@@ -3415,6 +3416,11 @@ app.post('/api/admin/alert-check', authenticateToken, requireAdmin, async (req, 
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+app.post('/api/admin/digest', authenticateToken, requireAdmin, async (req, res) => {
+  try { res.json({ ok: true, result: await dailyDigest.sendOnce({ dryRun: req.query.dry === '1' }) }); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // ── WHAT MIKE LEARNED ─────────────────────────────────────────────────────────
 // The receipt behind "Mike gets new information every day and keeps it". Admin-only:
 // it reports the fleet the techs are actually asking about, which is competitive
@@ -3524,6 +3530,7 @@ process.on('unhandledRejection', (reason) => { console.error('UNHANDLED REJECTIO
 app.listen(PORT, () => {
   try { nightlyLearn.start(); } catch (e) { console.error('learn scheduler failed (non-fatal):', e.message); }
   try { fieldAlert.start(); } catch (e) { console.error('field alert failed (non-fatal):', e.message); }
+  try { dailyDigest.start(); } catch (e) { console.error('daily digest failed (non-fatal):', e.message); }
   console.log(`Trazer Intelligence running on port ${PORT}`);
   console.log(`AI: ${ANTHROPIC_API_KEY?'ready':'MISSING'} | TTS: ${ELEVENLABS_API_KEY?'ready':'not set'} | DB: ${SUPABASE_URL?'ready':'not set'} | Billing: ${STRIPE_SECRET_KEY?'ready':'not set'}`);
 });

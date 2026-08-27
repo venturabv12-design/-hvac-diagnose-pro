@@ -5994,7 +5994,6 @@ function wireObMagic(host,isMagic){
         // He has now SEEN it work. That is the moment the ask is worth making.
         var gate=host.querySelector('.ob-gate');
         if(gate){ gate.classList.add('ob-gate-hot'); try{gate.scrollIntoView({behavior:'smooth',block:'end'});}catch(e){} }
-        try{ if(window.fieldWatchReport)window.fieldWatchReport('taste_answered','free first answer delivered','onboarding'); }catch(e){}
       })
       .catch(function(){
         var box=document.getElementById('obLiveMike');

@@ -48,6 +48,20 @@ let idleTimer = null;
 let busy = false;
 const waiters = [];
 
+// Promise.race does NOT cancel the loser. A timed-out lookup keeps driving the one
+// shared page below, and the extraction step reads whatever that page happens to be
+// showing — so an abandoned lookup can read the NEXT tech's result page and return it
+// under the FIRST tech's serial, which then gets cached for 24 hours as a confident
+// "covered" / "not covered" on a unit it never saw. Releasing the queue while that is
+// still running is what makes it possible. Throwing the browser away is the only way
+// to actually stop it: the orphan's next page call throws "Target closed" and dies.
+async function discardBrowser(why) {
+  const b = browser;
+  browser = null; page = null;
+  if (b) { try { await b.close(); } catch (_) {} }
+  console.warn(`[browser] discarded after ${why} — a stale automation cannot be allowed to keep driving the shared page`);
+}
+
 async function ensureBrowser() {
   if (browser && page && !page.isClosed()) return page;
   if (browser) { try { await browser.close(); } catch (_) {} }
@@ -133,6 +147,12 @@ function rateOk() {
 const SERIAL_RE = /^[A-Za-z0-9][A-Za-z0-9-]{3,29}$/;
 
 // ── APP ──────────────────────────────────────────────────────────────────────
+// Backstop. A single orphaned Playwright promise rejecting must never take the
+// service down and drop every tech queued behind it — the resilience posture Mike's
+// own server has had since the start.
+process.on('unhandledRejection', (e) => console.error('[unhandled rejection]', e && e.message));
+process.on('uncaughtException', (e) => console.error('[uncaught exception]', e && e.message));
+
 const app = express();
 app.use(express.json({ limit: '8kb' }));
 app.disable('x-powered-by');
@@ -185,16 +205,26 @@ app.post('/lookup', async (req, res) => {
     try {
       await acquire(); acquiredA = true;
       const p = await ensureBrowser();
+      const running = agentLookup(p, brand, serial, req.body && req.body.extra);
+      // The loser of the race still settles. Swallow its rejection here or it lands as
+      // an unhandled rejection and takes the whole service down with every tech queued
+      // behind it.
+      running.catch(() => {});
+      let _atimer;
       const out = await Promise.race([
-        agentLookup(p, brand, serial, req.body && req.body.extra),
-        new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('timeout'), { code: 'TIMEOUT' })), AGENT_TIMEOUT_MS)),
+        running,
+        new Promise((_, rej) => { _atimer = setTimeout(() => rej(Object.assign(new Error('timeout'), { code: 'TIMEOUT' })), AGENT_TIMEOUT_MS); }),
       ]);
+      clearTimeout(_atimer);
       const payload = Object.assign({ brand: brand.id, brandLabel: brand.label, serial }, out);
       if (out.found) cacheSet(cacheKey(brand.id, serial), payload);
       console.log(`[lookup] ${brand.id} ${serial} via=agent found=${!!out.found} registered=${out.registered}`);
       return res.json(Object.assign({ ok: true, supported: true, cached: false }, payload));
     } catch (err) {
       console.error(`[lookup] ${brand.id} ${serial} AGENT FAILED: ${err.message}`);
+      // Must happen BEFORE the finally releases the queue, or the next tech starts
+      // driving a page an abandoned lookup is still reading from.
+      if (err.code === 'TIMEOUT') await discardBrowser('agent timeout');
       // Say WHOSE problem it is. "Couldn't check" makes a tech distrust Mike; "their
       // site is down" tells him to stop trying and go around it.
       if (err.code === 'SITE_DOWN' || err.code === 'SITE_MOVED') {
@@ -240,10 +270,14 @@ app.post('/lookup', async (req, res) => {
     acquired = true;
 
     const p = await ensureBrowser();
+    const running = brand.lookup(p, serial);
+    running.catch(() => {});   // the race loser still settles; see discardBrowser
+    let _dtimer;
     const result = await Promise.race([
-      brand.lookup(p, serial),
-      new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('timeout'), { code: 'TIMEOUT' })), LOOKUP_TIMEOUT_MS)),
+      running,
+      new Promise((_, rej) => { _dtimer = setTimeout(() => rej(Object.assign(new Error('timeout'), { code: 'TIMEOUT' })), LOOKUP_TIMEOUT_MS); }),
     ]);
+    clearTimeout(_dtimer);
 
     const payload = Object.assign({ brand: brand.id, brandLabel: brand.label, serial }, result);
     if (result.found) cacheSet(key, payload);
@@ -255,6 +289,22 @@ app.post('/lookup', async (req, res) => {
   } catch (err) {
     const code = err.code === 'TIMEOUT' ? 'timeout' : err.code === 'BUSY' ? 'busy' : 'lookup_failed';
     console.error(`[lookup] ${brand.id} ${serial} FAILED: ${code} ${err.message}`);
+    if (err.code === 'TIMEOUT') await discardBrowser('lookup timeout');
+    // Trane is the one verified, highest-volume brand and it threw a bare Error on any
+    // non-200, so a Trane outage reached the tech as "couldn't reach the registry" —
+    // our fault — instead of "Trane's site is down". Same honesty the agent path got.
+    if (err.code === 'SITE_DOWN' || err.code === 'SITE_MOVED') {
+      return res.json({
+        ok: true, supported: true, found: false,
+        brand: brand.id, brandLabel: brand.label, serial,
+        siteDown: true,
+        reason: err.code === 'SITE_DOWN' ? 'manufacturer_site_down' : 'manufacturer_page_moved',
+        summary: err.code === 'SITE_DOWN'
+          ? `Can't check that one right now — ${brand.label}'s warranty site is down. Nothing wrong on your end. Try again later, or call your distributor if you need it today.`
+          : `Can't check that one right now — ${brand.label} moved their warranty page. I'll get it updated.`,
+        where: brand.where,
+      });
+    }
     // Fail soft and say so plainly. Mike turns this into "couldn't reach the
     // registry" rather than inventing a warranty.
     return res.status(code === 'busy' ? 503 : 502).json({ ok: false, error: code, brand: brand.id });

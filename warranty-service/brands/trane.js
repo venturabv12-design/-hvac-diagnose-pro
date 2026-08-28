@@ -135,6 +135,12 @@ async function lookup(page, serial) {
   if (out.status !== 200) {
     const err = new Error(`trane lookup returned ${out.status}`);
     err.upstreamStatus = out.status;
+    // Say whose problem it is. Without a code this fell through to the generic
+    // "couldn't reach the registry", which reads to a tech as OUR tool being broken —
+    // on the one brand he checks most. A 5xx is their outage; a 404 means they moved
+    // the endpoint and that is ours to fix, not his to retry.
+    if (out.status >= 500) err.code = 'SITE_DOWN';
+    else if (out.status === 404 || out.status === 410) err.code = 'SITE_MOVED';
     throw err;
   }
 

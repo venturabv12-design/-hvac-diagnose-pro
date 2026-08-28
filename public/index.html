@@ -7755,9 +7755,17 @@ async function handleNameplateScan(e){
       return;
     }
     renderNameplateCard(data);
-    mikeProactiveFromNameplate(data);
+    // Sequenced, not fired side by side. Both post chat messages and both drive the
+    // same typing indicator, and the warranty call is much faster than Mike's read of
+    // the plate — racing them let the warranty question land BEFORE Mike had said
+    // anything about the unit, with the typing dots blinking out mid-thought. The
+    // await is also what makes this catch real: an unawaited async call rejects its
+    // own promise and never throws to the try around it.
+    try{
+      await mikeProactiveFromNameplate(data);
+    }catch(_p){}
     // The card's warrantyStatus is an estimate off the build date. Go get the real one.
-    try{ mpWarrantyFromNameplate(data); }catch(_w){}
+    try{ await mpWarrantyFromNameplate(data); }catch(_w){}
   }catch(_err){
     if(ov)ov.classList.remove('show');
     appendMessage('agent','Scan hiccup — try that one more time, or just tell me the brand and model off the plate.');
@@ -10570,15 +10578,35 @@ async function sendChat(){
   if(currentUser&&window._mpPendingWarranty&&(text||chatAttachment)){
     window._mpPendingWarranty=false;
     input.value='';input.style.height='auto';
+    // What the nameplate scan already read, and which fields Mike asked for. Without
+    // this the reply went to mpParseUnit alone, which knows nothing about a homeowner
+    // name or zip — so "Weiler, 22192" parsed to an empty unit and Mike asked "who
+    // makes it?" about the plate he had just read. The tech retyped everything.
+    var _wpend=window._mpWarrantyPending||null;
+    window._mpWarrantyPending=null;
+    var _wneed=(_wpend&&_wpend.need)||[];
     // Photo of the plate beats typing it — fewer characters for a tech in gloves to
     // get wrong, and a mistyped serial reads back as "not covered".
     if(chatAttachment&&chatAttachment.type&&chatAttachment.type.indexOf('image/')===0){
       var _wf=chatAttachment;
       clearChatAttach();
-      mpWarrantyFromPhoto(_wf);
+      if(text)appendMessage('user',escapeHtml(text));
+      mpWarrantyFromPhoto(_wf,_mpWarrantyExtras(text,_wneed));
       return;
     }
+    // A video is an accepted attachment type but this path cannot read one. Say so and
+    // drop it — leaving it attached silently re-sent it on the tech's NEXT message.
+    if(chatAttachment){
+      clearChatAttach();
+      appendMessage('agent',"I can't read a data plate off a video — send me a still photo of it, or just type the serial.");
+      if(!text){window._mpPendingWarranty=true;window._mpWarrantyPending=_wpend;return;}
+    }
     appendMessage('user',escapeHtml(text));
+    // Merge in that order deliberately: the plate Mike READ outranks anything parsed
+    // out of this sentence, and both outrank nothing.
+    var _wu=Object.assign({},_wpend?{brand:_wpend.brand,serial:_wpend.serial,model:_wpend.model}:{},
+                          _mpStripEmpty(mpParseUnit(text)),_mpWarrantyExtras(text,_wneed));
+    if(_wu.brand&&_wu.serial){ mpWarrantyRun(_wu); return; }
     mpWarrantyLookup(text);
     return;
   }
@@ -10592,6 +10620,15 @@ async function sendChat(){
       var _wp=chatAttachment; clearChatAttach();
       appendMessage('user',escapeHtml(text));
       mpWarrantyFromPhoto(_wp,_wx);
+      return;
+    }
+    // Video reaches here too — chatFileInput accepts it. Clear it rather than leaving
+    // it stuck on the composer to ride along on the tech's next, unrelated message.
+    if(chatAttachment){
+      clearChatAttach();
+      appendMessage('user',escapeHtml(text));
+      appendMessage('agent',"I can't read a data plate off a video — send a still photo of it, or type the serial and I'll pull the registration.");
+      window._mpPendingWarranty=true;
       return;
     }
     appendMessage('user',escapeHtml(text));
@@ -11935,28 +11972,64 @@ function mpParseUnit(text){
 //
 // A tech does not tap a tile first. He says "check this warranty" and sends a photo.
 // That has to reach the registry.
+// Object.assign happily overwrites a real serial with null. mpParseUnit returns
+// {brand:null,model:null,serial:null} for a message like "Weiler, 22192", so its
+// nulls have to be dropped before they can wipe out what the scan read.
+function _mpStripEmpty(o){
+  var r={}; for(var k in o){ if(o[k]!==null&&o[k]!==undefined&&o[k]!=='')r[k]=o[k]; } return r;
+}
 function _mpWantsWarranty(t){
   t=String(t||'');
-  if(!/\bwarrant|registrat|covered|coverage\b/i.test(t))return false;
+  // Each alternative carries its own boundary. Without that, "covered" matched
+  // INSIDE recovered / discovered / uncovered — so "I recovered 3 lbs of refrigerant"
+  // plus a photo hijacked an ordinary diagnostic question into a warranty lookup.
+  if(!/\bwarrant|\bregistrat|\bcovered\b|\bcoverage\b/i.test(t))return false;
   // "what is a warranty" is a question about terms, not a lookup on a unit.
   if(/^\s*(what|how|why|when)\b/i.test(t)&&!/\bthis\b|\bmy\b|\bcheck\b/i.test(t))return false;
   return true;
 }
 // Pull the human details a manufacturer form needs out of plain speech —
 // "the last name of the homeowner is Weiler", "zip 20109", "state VA".
-function _mpWarrantyExtras(t){
-  t=String(t||''); var out={};
+function _mpWarrantyExtras(t,expect){
+  t=String(t||''); var out={}; expect=expect||[];
+  function wants(k){ return expect.indexOf(k)>=0; }
   // The name comes AFTER the verb, not straight after the label. A first pass grabbed
   // "of" from "the last name of the homeowner is Weiler" and "last" from "homeowner
   // last name is Weiler" — both would have queried the manufacturer for a customer
   // called Of, and come back "no registration found" on a covered unit.
-  var STOP=/^(of|the|is|a|an|for|my|our|his|her|their|homeowner|customer|owner|name|last|first|this|that|it)$/i;
-  var ln=t.match(/(?:last\s*name|homeowner|customer|owner)[^.!?\n]{0,40}?\b(?:is|:|=)\s*([A-Za-z][A-Za-z'-]{1,24})/i)
-       || t.match(/\b(?:last\s*name|surname)\s*[:=]\s*([A-Za-z][A-Za-z'-]{1,24})/i);
-  if(ln&&!STOP.test(ln[1]))out.lastName=ln[1];
-  var z=t.match(/\b(?:zip|postal)\s*(?:code)?\s*[:=]?\s*(\d{5})\b/i)||t.match(/\b(\d{5})\b/);
+  var STOP=/^(of|the|is|a|an|for|my|our|his|her|their|homeowner|customer|owner|name|last|first|this|that|it|and|but|so|yes|no|ok|okay|sure|here|there|its|serial|model|brand|zip|code|state|unit|system|number)$/i;
+  // Every "<label> is <word>" in the message, not just the first. A message can name
+  // two people — "the last name of the technician is Brandon and the homeowner last
+  // name is Weiler" — and the first match is the WRONG one. Score by who the label
+  // is attached to and take the best.
+  var RE=/(?:last\s*name|surname|homeowner|customer|owner)[^.!?\n]{0,40}?\b(?:is|:|=)\s*([A-Za-z][A-Za-z'-]{1,24})/gi;
+  var best=null,bestScore=-99,m;
+  while((m=RE.exec(t))!==null){
+    if(STOP.test(m[1]))continue;
+    var lead=t.slice(Math.max(0,m.index-24),m.index+m[0].length-m[1].length);
+    var score=0;
+    if(/\b(homeowner|customer|owner)\b/i.test(lead))score+=2;
+    // The tech's own name is not the name on the registration.
+    if(/\b(tech|technician|installer|contractor|my|me|i'?m)\b/i.test(lead))score-=5;
+    if(score>bestScore){bestScore=score;best=m[1];}
+  }
+  if(best&&bestScore>-5)out.lastName=best;
+  // Mike asked for the last name and the tech answered "Weiler, 22192" — no label,
+  // because he is answering a question, not filling a form. Only trust a bare word
+  // as a name when we are the ones who asked for it.
+  if(!out.lastName&&wants('lastName')){
+    var bare=t.match(/(^|[\s,])([A-Z][a-z'-]{1,24})(?=$|[\s,.])/);
+    if(bare&&!STOP.test(bare[2]))out.lastName=bare[2];
+  }
+  var z=t.match(/\b(?:zip|postal)\s*(?:code)?\s*[:=]?\s*(\d{5})\b/i);
+  // An unlabelled 5-digit run is only a zip when we asked for one. Otherwise it grabs
+  // the tail of a model number — "model 48TFE 20109" read as zip 20109 — and a wrong
+  // zip comes back from Rheem or Lennox as "no registration found" on a covered unit,
+  // which is the same false "not covered" this parser exists to prevent.
+  if(!z&&wants('zip'))z=t.match(/\b(\d{5})\b/);
   if(z)out.zip=z[1];
-  var st=t.match(/\bstate\s*(?:is|:|=)?\s*([A-Z]{2})\b/i);
+  var st=t.match(/\bstate\s*(?:is|:|=)?\s*([A-Za-z]{2})\b/i);
+  if(!st&&wants('state'))st=t.match(/(?:^|[\s,])([A-Za-z]{2})(?=$|[\s,.])/);
   if(st)out.state=st[1].toUpperCase();
   return out;
 }

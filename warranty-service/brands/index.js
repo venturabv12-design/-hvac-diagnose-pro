@@ -47,11 +47,17 @@ const PENDING = [
     id: 'goodman',
     label: 'Goodman / Amana / Daikin',
     aliases: ['goodman', 'amana', 'daikin'],
-    publicRegistry: true,
-    where: 'warranty.goodmanmfg.com',
-    requires: [FIELD.serial, FIELD.model],
-    note: 'Their form resolves the model from the serial first, then looks up entitlement. ' +
-          'Having the model from the tech skips a step.',
+    // VERIFIED 2026-08-28 by opening it: warranty.goodmanmfg.com redirects to
+    // /WCS/Account/Login.aspx — "Warranty Express", username and password, distributor
+    // accounts only. The public goodmanmfg.com and daikincomfort.com pages are
+    // REGISTRATION forms (register a new unit), not status lookups. There is no public
+    // way to check registration for this brand family.
+    publicRegistry: false,
+    where: 'Warranty Express (distributor login)',
+    requires: [],
+    note: 'No public lookup. Goodman, Amana and Daikin all sit behind the Warranty ' +
+          'Express distributor portal — the public pages only REGISTER a unit, they ' +
+          'do not report status. A distributor can check it; a tech in the field cannot.',
   },
   {
     id: 'carrier',
@@ -66,9 +72,15 @@ const PENDING = [
     id: 'rheem',
     label: 'Rheem / Ruud',
     aliases: ['rheem', 'ruud'],
-    publicRegistry: true,
-    where: 'rheem.registermyunit.com',
-    requires: [FIELD.serial],
+    // VERIFIED 2026-08-28: registermyunit.com is a REGISTRATION portal — "choose a
+    // brand to begin your registration" — behind a Member Login. No serial-status
+    // lookup field exists on it.
+    publicRegistry: false,
+    where: 'MyRheem (member login)',
+    requires: [],
+    note: 'No public status lookup. Rheem and Ruud registration lives behind a member ' +
+          'login; the public site registers a unit but will not tell you what a serial ' +
+          'is already covered for.',
   },
   {
     id: 'lennox',

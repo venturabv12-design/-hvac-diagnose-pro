@@ -7753,6 +7753,8 @@ async function handleNameplateScan(e){
     }
     renderNameplateCard(data);
     mikeProactiveFromNameplate(data);
+    // The card's warrantyStatus is an estimate off the build date. Go get the real one.
+    try{ mpWarrantyFromNameplate(data); }catch(_w){}
   }catch(_err){
     if(ov)ov.classList.remove('show');
     appendMessage('agent','Scan hiccup — try that one more time, or just tell me the brand and model off the plate.');
@@ -11942,16 +11944,57 @@ async function mpWarrantyFromPhoto(file){
   }
 }
 function mpWarrantyLookup(text){ mpWarrantyRun(mpParseUnit(text)); }
+
+// ── SCAN THE PLATE → REAL WARRANTY, NO EXTRA TAPS ────────────────────────────
+// The nameplate scan already reads brand, model and serial. It also printed a
+// warrantyStatus, but that was Mike ESTIMATING from the serial's build date — the
+// exact "likely warranty" guess the registry feature exists to replace. A tech who
+// quotes off a guess and is wrong eats the part.
+//
+// So the scan now goes and actually checks. Brands that only need a serial come back
+// with a real answer before the tech has put his phone away. Brands that need the
+// homeowner's last name (Goodman, Rheem, Lennox) can't be answered from a photo
+// alone, so Mike asks for exactly those fields and nothing more — asking for a zip
+// when the manufacturer doesn't want one is how a good flow starts feeling like
+// paperwork.
+async function mpWarrantyFromNameplate(data){
+  try{
+    if(!data||!data.brand||!data.serial)return;          // nothing to look up
+    if(!currentUser||!currentUser.token)return;           // signed-out front door
+    var res=await fetch('/api/warranty/requirements?brand='+encodeURIComponent(data.brand),
+      {headers:{'Authorization':'Bearer '+currentUser.token}}).then(function(r){return r.json();}).catch(function(){return null;});
+    if(!res||!res.known){
+      appendMessage('agent',"I don't have "+data.brand+" wired into the registry, so I can't pull the real registration on this one. The age off the plate is the best I've got — don't quote it as covered without confirming.");
+      return;
+    }
+    if(res.canCheck===false){
+      appendMessage('agent',(res.brandLabel||data.brand)+" keeps registration behind their dealer portal"+(res.note?" — "+res.note:"")+" I can't verify it and I won't pretend to.");
+      return;
+    }
+    var have={serial:data.serial,model:data.model};
+    var missing=(res.requires||[]).filter(function(f){ return !have[f.key]; });
+    if(!missing.length){
+      appendMessage('agent',"Got the plate — checking the actual registration with "+(res.brandLabel||data.brand)+" now.");
+      mpWarrantyRun({brand:data.brand,serial:data.serial,model:data.model});
+      return;
+    }
+    // Hold what we read so the tech only has to supply the human details.
+    window._mpWarrantyPending={brand:data.brand,serial:data.serial,model:data.model,need:missing.map(function(f){return f.key;})};
+    window._mpPendingWarranty=true;
+    appendMessage('agent',"I can pull the real registration on this one — "+(res.brandLabel||data.brand)+" just needs "+
+      missing.map(function(f){return f.label;}).join(' and ')+" alongside the serial.\n\nGive me that and I'll tell you whether it's registered for the extended term or sitting on base coverage.");
+  }catch(e){ /* never let this break the scan card */ }
+}
 function mpWarrantyRun(u){
   u=u||{};
   if(!u.brand){ mpAskMike("Who makes it? Trane, Carrier, Goodman, Rheem — I need the brand before I can pull the registration."); window._mpPendingWarranty=true; return; }
   if(!u.serial){ mpAskMike("I've got the brand — now the serial number off the data plate. That's the one the manufacturer keys the registration to."); window._mpPendingWarranty=true; return; }
   // appendMessage escapes agent text (XSS guard) then renders markdown — so these
   // use **bold** and newlines, never HTML, and never pre-escape or it double-escapes.
-  if(/lennox/i.test(u.brand)){
-    appendMessage('agent',"Lennox doesn't publish a warranty registry — registration status only lives behind their dealer portal, so I can't verify it the way I can with Trane. Nobody can, without a LennoxPros login.\n\nWhat I'd do: pull it up on LennoxPros if you've got access, or call the distributor with that serial. Don't quote it as covered until somebody confirms it.");
-    return;
-  }
+  // The Lennox dead-end that used to live here was wrong. lennox.com publishes a
+  // public warranty lookup that needs no dealer login — Brandon uses it daily. Every
+  // brand now goes through the registry, which answers honestly per manufacturer
+  // instead of this file guessing on their behalf.
   if(typeof showTyping==='function')showTyping();
   fetch('/api/warranty',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({token:(currentUser||{}).token,brand:u.brand,serial:u.serial,model:u.model})})
@@ -11960,6 +12003,13 @@ function mpWarrantyRun(u){
       if(typeof hideTyping==='function')hideTyping();
       if(!d||d.ok===false){
         appendMessage('agent',"Couldn't reach the manufacturer's registry just now — that's on my end, not your unit. Try again in a minute, or check it directly with the serial. I'm not going to guess at a warranty and have you quote it wrong.");
+        return;
+      }
+      // A manufacturer outage is THEIR problem, and a tech needs to know that. Told
+      // "couldn't check", he decides the tool is broken and stops opening it; told
+      // "their site is down", he works around it and comes back.
+      if(d.siteDown){
+        appendMessage('agent',(d.summary||("Can't check that one right now — "+(d.brandLabel||u.brand)+"'s warranty site is down. Nothing wrong on your end."))+"\n\nDon't quote it as covered until somebody confirms it.");
         return;
       }
       if(d.supported===false){

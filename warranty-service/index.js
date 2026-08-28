@@ -21,6 +21,7 @@
 const express = require('express');
 const { chromium } = require('playwright');
 const brands = require('./brands');
+const { agentLookup } = require('./brands/agent');
 
 const PORT = process.env.PORT || 3000;
 const TOKEN = process.env.WARRANTY_SERVICE_TOKEN || '';
@@ -29,6 +30,10 @@ const IDLE_SHUTDOWN_MS = Number(process.env.IDLE_SHUTDOWN_MS || 120000);
 const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS || 24 * 60 * 60 * 1000);
 const MAX_QUEUE = Number(process.env.MAX_QUEUE || 20);
 const RATE_PER_MIN = Number(process.env.RATE_PER_MIN || 30);
+const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || '';
+// The agent drives a real form and asks a model twice — give it more room than the
+// direct-API path, which answers in about three seconds.
+const AGENT_TIMEOUT_MS = Number(process.env.AGENT_TIMEOUT_MS || 120000);
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
            '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
@@ -159,6 +164,31 @@ app.post('/lookup', async (req, res) => {
   if (!brand) {
     return res.json({ ok: true, supported: false, reason: 'unknown_brand', brand: brandName || null });
   }
+  // A brand with a PUBLIC lookup page but no hand-written module used to dead-end at
+  // "not wired yet". We have a real browser — point it at the manufacturer's own form
+  // and read the answer. Only brands with genuinely no public registry (Lennox: dealer
+  // login) still refuse, because no amount of browsing gets past a login wall.
+  if (!brand.supported && brand.publicRegistry && brand.where && ANTHROPIC_KEY) {
+    if (!rateOk()) return res.status(429).json({ ok: false, error: 'rate_limited' });
+    let acquiredA = false;
+    try {
+      await acquire(); acquiredA = true;
+      const p = await ensureBrowser();
+      const out = await Promise.race([
+        agentLookup(p, brand, serial, req.body && req.body.extra),
+        new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('timeout'), { code: 'TIMEOUT' })), AGENT_TIMEOUT_MS)),
+      ]);
+      const payload = Object.assign({ brand: brand.id, brandLabel: brand.label, serial }, out);
+      if (out.found) cacheSet(cacheKey(brand.id, serial), payload);
+      console.log(`[lookup] ${brand.id} ${serial} via=agent found=${!!out.found} registered=${out.registered}`);
+      return res.json(Object.assign({ ok: true, supported: true, cached: false }, payload));
+    } catch (err) {
+      console.error(`[lookup] ${brand.id} ${serial} AGENT FAILED: ${err.message}`);
+      // Fall through to the honest "here is where to look yourself" answer rather
+      // than inventing a warranty.
+    } finally { if (acquiredA) release(); }
+  }
+
   if (!brand.supported) {
     // Honest, specific answer — "no public registry" and "not wired yet" are
     // different things and Mike says which one it is.

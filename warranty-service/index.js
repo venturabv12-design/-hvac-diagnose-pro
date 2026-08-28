@@ -184,6 +184,20 @@ app.post('/lookup', async (req, res) => {
       return res.json(Object.assign({ ok: true, supported: true, cached: false }, payload));
     } catch (err) {
       console.error(`[lookup] ${brand.id} ${serial} AGENT FAILED: ${err.message}`);
+      // Say WHOSE problem it is. "Couldn't check" makes a tech distrust Mike; "their
+      // site is down" tells him to stop trying and go around it.
+      if (err.code === 'SITE_DOWN' || err.code === 'SITE_MOVED') {
+        return res.json({
+          ok: true, supported: true, found: false,
+          brand: brand.id, brandLabel: brand.label, serial,
+          siteDown: true,
+          reason: err.code === 'SITE_DOWN' ? 'manufacturer_site_down' : 'manufacturer_page_moved',
+          summary: err.code === 'SITE_DOWN'
+            ? `Can't check that one right now — ${brand.label}'s warranty site is down. Nothing wrong on your end. Try again later, or call your distributor if you need it today.`
+            : `Can't check that one right now — ${brand.label} moved their warranty page. I'll get it updated.`,
+          where: brand.where,
+        });
+      }
       // Fall through to the honest "here is where to look yourself" answer rather
       // than inventing a warranty.
     } finally { if (acquiredA) release(); }

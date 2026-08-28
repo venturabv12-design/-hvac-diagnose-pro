@@ -34,6 +34,11 @@ const trane = require('./trane');
 const FIELD = {
   serial: { key: 'serial', label: 'serial number', hint: 'off the data plate' },
   model: { key: 'model', label: 'model number', hint: 'same plate, usually the line above' },
+  zip: {
+    key: 'zip',
+    label: "the property's zip code",
+    hint: 'Lennox and Goodman both ask for it',
+  },
   state: {
     key: 'state',
     label: "the property's state",
@@ -68,7 +73,7 @@ const PENDING = [
     // last name — worth asking for up front rather than failing after the fact.
     publicRegistry: true,
     where: 'https://www.goodmanmfg.com/warranty-lookup',
-    requires: [FIELD.serial, FIELD.model, FIELD.lastName],
+    requires: [FIELD.serial, FIELD.model, FIELD.lastName, FIELD.zip],
     note: 'Public lookup, no login. Goodman needs the homeowner LAST NAME to return ' +
           'full coverage — serial and model alone will not do it. Install type ' +
           'defaults to Residential.',  },
@@ -97,13 +102,18 @@ const PENDING = [
           'alongside the serial. Ruud and Rheem share the portal.',  },
   {
     id: 'lennox',
-    label: 'Lennox',
+    label: 'Lennox / Armstrong Air / Ducane',
     aliases: ['lennox', 'armstrong air', 'ducane'],
-    publicRegistry: false,
-    where: 'LennoxPros dealer portal',
-    requires: [],
-    note: 'No public registry. Registration status requires a dealer login, so no ' +
-          'amount of information from the tech will get it. Say so plainly.',
+    // CORRECTED 2026-08-28 — Brandon: "I don't need a login for Lennox either."
+    // He is right. lennox.com/residential/owners/assistance/warranty/ is a public
+    // "Lennox Warranty Lookup" with a serial field and a Search button. The dealer
+    // portal exists, but it is not the only way in, and the note here previously told
+    // technicians the opposite.
+    publicRegistry: true,
+    where: 'https://www.lennox.com/residential/owners/assistance/warranty/',
+    requires: [FIELD.serial, FIELD.lastName, FIELD.zip],
+    note: 'Public lookup, no login. Serial alone gets a result; last name and zip ' +
+          'sharpen it.',
   },
 ];
 

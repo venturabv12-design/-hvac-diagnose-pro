@@ -10604,7 +10604,13 @@ async function sendChat(){
     appendMessage('user',escapeHtml(text));
     // Merge in that order deliberately: the plate Mike READ outranks anything parsed
     // out of this sentence, and both outrank nothing.
-    var _wu=Object.assign({},_wpend?{brand:_wpend.brand,serial:_wpend.serial,model:_wpend.model}:{},
+    // Carry EVERY field held from before, not just the plate. Goodman needs a last
+    // name and a zip; if the tech supplies them one at a time and the round-trip only
+    // preserves brand/serial/model, the name is lost the moment he answers the zip and
+    // Mike asks for the name again — forever.
+    var _wu=Object.assign({},_wpend?_mpStripEmpty({brand:_wpend.brand,serial:_wpend.serial,model:_wpend.model,
+                            lastName:_wpend.lastName,zip:_wpend.zip,state:_wpend.state,
+                            originalPurchaser:_wpend.originalPurchaser}):{},
                           _mpStripEmpty(mpParseUnit(text)),_mpWarrantyExtras(text,_wneed));
     if(_wu.brand&&_wu.serial){ mpWarrantyRun(_wu); return; }
     mpWarrantyLookup(text);
@@ -12002,18 +12008,31 @@ function _mpWarrantyExtras(t,expect){
   // two people — "the last name of the technician is Brandon and the homeowner last
   // name is Weiler" — and the first match is the WRONG one. Score by who the label
   // is attached to and take the best.
-  var RE=/(?:last\s*name|surname|homeowner|customer|owner)[^.!?\n]{0,40}?\b(?:is|:|=)\s*([A-Za-z][A-Za-z'-]{1,24})/gi;
-  var best=null,bestScore=-99,m;
-  while((m=RE.exec(t))!==null){
-    if(STOP.test(m[1]))continue;
-    var lead=t.slice(Math.max(0,m.index-24),m.index+m[0].length-m[1].length);
-    var score=0;
-    if(/\b(homeowner|customer|owner)\b/i.test(lead))score+=2;
-    // The tech's own name is not the name on the registration.
-    if(/\b(tech|technician|installer|contractor|my|me|i'?m)\b/i.test(lead))score-=5;
-    if(score>bestScore){bestScore=score;best=m[1];}
+  // Two shapes, because a tech writes both. With a verb — "homeowner last name IS
+  // Weiler", "the last name of the homeowner is Weiler". And without one — "homeowner
+  // last name Weiler", which a field tester typed and which silently dropped the name
+  // from the request entirely: no name sent, no name asked for, and the manufacturer
+  // answered "no registration found" on a unit that may well be covered.
+  var PATS=[/(?:last\s*name|surname|homeowner|customer|owner)[^.!?\n]{0,40}?\b(?:is|:|=)\s*([A-Za-z][A-Za-z'-]{1,24})/gi,
+            /(?:last\s*name|surname)\s*[:=]?\s*([A-Za-z][A-Za-z'-]{1,24})/gi];
+  var best=null,bestScore=-99,m,pi;
+  for(pi=0;pi<PATS.length;pi++){
+    var RE=PATS[pi]; RE.lastIndex=0;
+    while((m=RE.exec(t))!==null){
+      if(STOP.test(m[1]))continue;
+      var lead=t.slice(Math.max(0,m.index-24),m.index+m[0].length-m[1].length);
+      var isOwner=/\b(homeowner|customer|owner)\b/i.test(lead);
+      // The tech's own name is not the name on the registration. Skip it outright
+      // rather than score it down — sending the technician's surname to the
+      // manufacturer returns "no registration found" on a unit that may well be
+      // covered, and a tech reads that as NOT COVERED. Being asked again costs
+      // him one line; a false "not covered" costs him the part.
+      if(!isOwner&&/\b(tech|technician|installer|contractor|my|me|i'?m)\b/i.test(lead))continue;
+      var score=(pi===0?1:0)+(isOwner?2:0);   // an explicit verb beats bare adjacency
+      if(score>bestScore){bestScore=score;best=m[1];}
+    }
   }
-  if(best&&bestScore>-5)out.lastName=best;
+  if(best)out.lastName=best;
   // Mike asked for the last name and the tech answered "Weiler, 22192" — no label,
   // because he is answering a question, not filling a form. Only trust a bare word
   // as a name when we are the ones who asked for it.
@@ -12110,10 +12129,32 @@ async function mpWarrantyFromNameplate(data){
       missing.map(function(f){return f.label;}).join(' and ')+" alongside the serial.\n\nGive me that and I'll tell you whether it's registered for the extended term or sitting on base coverage.");
   }catch(e){ /* never let this break the scan card */ }
 }
-function mpWarrantyRun(u){
+async function mpWarrantyRun(u){
   u=u||{};
   if(!u.brand){ mpAskMike("Who makes it? Trane, Carrier, Goodman, Rheem — I need the brand before I can pull the registration."); window._mpPendingWarranty=true; return; }
   if(!u.serial){ mpAskMike("I've got the brand — now the serial number off the data plate. That's the one the manufacturer keys the registration to."); window._mpPendingWarranty=true; return; }
+  // Ask for what this manufacturer actually requires BEFORE spending a lookup on it.
+  // Goodman will not return full coverage without the homeowner's last name and
+  // Rheem wants the state — run without them and the form answers "no registration
+  // found", which a tech reads as NOT COVERED on a unit that may be covered. The
+  // nameplate path already did this check; the typed path did not.
+  try{
+    var _rq=await fetch('/api/warranty/requirements?brand='+encodeURIComponent(u.brand),
+      {headers:{'Authorization':'Bearer '+((currentUser||{}).token||'')}})
+      .then(function(r){return r.json();}).catch(function(){return null;});
+    if(_rq&&_rq.known&&_rq.canCheck!==false&&_rq.requires){
+      var _miss=_rq.requires.filter(function(f){ return !u[f.key]; });
+      if(_miss.length){
+        window._mpWarrantyPending={brand:u.brand,serial:u.serial,model:u.model,
+          lastName:u.lastName,zip:u.zip,state:u.state,
+          need:_miss.map(function(f){return f.key;})};
+        window._mpPendingWarranty=true;
+        appendMessage('agent',"Got the "+(_rq.brandLabel||u.brand)+" and the serial. "+(_rq.brandLabel||u.brand)+" also needs "+
+          _miss.map(function(f){return f.label;}).join(' and ')+" before they'll return the real coverage.\n\nGive me that and I'll pull it.");
+        return;
+      }
+    }
+  }catch(_rqe){ /* requirements are a courtesy — never block the lookup on them */ }
   // appendMessage escapes agent text (XSS guard) then renders markdown — so these
   // use **bold** and newlines, never HTML, and never pre-escape or it double-escapes.
   // The Lennox dead-end that used to live here was wrong. lennox.com publishes a
@@ -12141,6 +12182,11 @@ function mpWarrantyRun(u){
       if(d.supported===false){
         if(d.reason==='no_public_registry'){
           appendMessage('agent',(d.brandLabel||u.brand)+" doesn't publish a public warranty registry — registration status sits behind their dealer portal"+(d.where?" ("+d.where+")":"")+". I can't verify it, and I won't pretend to. Confirm it there before you quote it as covered.");
+        } else if(d.reason==='lookup_failed'){
+          // We ARE wired to this brand and the lookup broke. Saying "not wired"
+          // here teaches a tech the brand is unsupported and he stops asking —
+          // for a lookup that works the next time he tries it.
+          appendMessage('agent',"I couldn't get "+(d.brandLabel||u.brand)+"'s lookup to answer just now — that's my end, not your unit, and not the brand. Give it another shot in a minute"+(d.where?", or check it directly at "+d.where:"")+". I'm not going to guess at coverage.");
         } else {
           appendMessage('agent',"I don't have "+(d.brandLabel||u.brand)+" wired into the registry yet"+(d.where?" — their lookup lives at "+d.where:"")+". Check it there with that serial. I'd rather tell you that than hand you a number I made up.");
         }

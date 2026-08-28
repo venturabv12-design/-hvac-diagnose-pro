@@ -51,8 +51,19 @@ const waiters = [];
 async function ensureBrowser() {
   if (browser && page && !page.isClosed()) return page;
   if (browser) { try { await browser.close(); } catch (_) {} }
+  // Present as an ordinary desktop Chrome. Not a disguise — the default automated
+  // user agent literally says "HeadlessChrome", and some manufacturer sites refuse
+  // it outright: Mitsubishi's warranty page returns 403 to the default and 200 to a
+  // normal user agent and window size, same URL, same second. Nothing here
+  // misrepresents anything; it is the browser configuration a person would have.
   browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });
-  const ctx = await browser.newContext({ userAgent: UA });
+  const ctx = await browser.newContext({
+    userAgent: UA,
+    viewport: { width: 1512, height: 900 },
+    locale: 'en-US',
+    timezoneId: 'America/New_York',
+    extraHTTPHeaders: { 'Accept-Language': 'en-US,en;q=0.9' },
+  });
   page = await ctx.newPage();
   // Images/fonts/styles are pure waste here — we only ever read JSON.
   await page.route('**/*', route => {

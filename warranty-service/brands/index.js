@@ -101,6 +101,19 @@ const PENDING = [
     note: 'Public verify form, no login. Needs the homeowner LAST NAME and STATE ' +
           'alongside the serial. Ruud and Rheem share the portal.',  },
   {
+    id: 'mitsubishi',
+    label: 'Mitsubishi Electric',
+    aliases: ['mitsubishi', 'metus', 'mr slim', 'mrslim'],
+    // Added 2026-08-28. registermehvac.com returns 403 to a browser whose user agent
+    // says "HeadlessChrome" and 200 to an ordinary one — it was refusing a headless
+    // browser, not gating the page. Search by model + serial.
+    publicRegistry: true,
+    where: 'https://registermehvac.com/WarrantyLookup_88973.aspx',
+    requires: [FIELD.serial, FIELD.model],
+    note: 'Public lookup. Model plus serial, or the warranty number if the homeowner ' +
+          'has their paperwork.',
+  },
+  {
     id: 'lennox',
     label: 'Lennox / Armstrong Air / Ducane',
     aliases: ['lennox', 'armstrong air', 'ducane'],

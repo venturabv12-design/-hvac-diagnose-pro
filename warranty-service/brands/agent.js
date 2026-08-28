@@ -205,9 +205,7 @@ async function agentLookup(page, brand, serial, extra) {
   if (!best.score) log(`  warning: no serial-like field in any frame — the plan will probably come back unconfident`);
 
   const known = Object.assign({ serial }, extra || {});
-  const plan = firstJson(await ask([{
-    role: 'user',
-    content: `This is a manufacturer HVAC warranty-lookup page for ${brand.label}.
+  const planPrompt = `This is a manufacturer HVAC warranty-lookup page for ${brand.label}.
 
 FIELDS ON THE PAGE:
 ${JSON.stringify(form.inputs, null, 1)}
@@ -223,8 +221,21 @@ Decide which field each value goes in. Ignore newsletter signups, search boxes, 
 Reply with ONLY JSON:
 {"fill":[{"selector":"...","value":"..."}],"submit":"<selector of the submit button>","confident":true}
 
-If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confident":false}.`,
-  }], 800), { fill: [], submit: null, confident: false });
+If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confident":false}.`;
+
+  // Ask twice before giving up. Production proved this step is FLAKY, not broken: two
+  // consecutive lookups for the same serial on the same build, same frame, same fields —
+  // the first rejected the plan, the second returned a complete correct answer. Nothing
+  // environmental, just a model that occasionally declines a form it usually reads fine.
+  // One retry turns a coin flip into a near-certainty and costs a few seconds only on
+  // the runs that would otherwise have failed outright.
+  let plan = { fill: [], submit: null, confident: false };
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    plan = firstJson(await ask([{ role: 'user', content: planPrompt }], 800),
+                     { fill: [], submit: null, confident: false });
+    if (plan.confident && (plan.fill || []).length) break;
+    if (attempt === 1) log(`  plan attempt 1 came back unusable (confident=${plan.confident} fill=${(plan.fill||[]).length}) — asking once more`);
+  }
 
   // A missing submit selector must not throw away a form we already know how to fill.
   // Goodman's control is <input type="button" value="Search"> and it has been invisible

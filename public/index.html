@@ -13521,7 +13521,11 @@ async function analyzeCameraFrame(userInitiated,userText){
     // image-content override. The English camera-session block above otherwise
     // overpowers the earlier directive and Claude mirrors the English text on
     // the nameplate. Last-in-system-prompt wins for Claude's response language.
-    var sysPrompt=AGENT_SYSTEM+buildKnowledgeContext()+verifiedPtBlock+'\n\nYou are on a LIVE CAMERA SESSION. Analyze what you see. Identify the unit, brand, model, condition, issues. If a part: identify it, read part numbers, search pricing. You have full web search, parts lookup, and all your regular capabilities. If asked about temperature or weather -- search current conditions for the tech location in the TECH PROFILE above. Keep auto-analysis to 2-3 sentences. For direct questions: answer fully.\n\nLANGUAGE — CRITICAL: '+langNote+' Even if the image contains English text (nameplates, labels, manuals), respond ENTIRELY in this language. Do NOT mix languages or switch to English mid-response.';
+    // The camera being open is NOT a standing instruction to narrate the room. Before
+    // this, every spoken turn re-sent "analyze what you see", so asking Mike how he was
+    // doing got a description of the couch and the toys on the floor first. The tech is
+    // holding a camera, not asking for commentary — he says when he wants the picture read.
+    var sysPrompt=AGENT_SYSTEM+buildKnowledgeContext()+verifiedPtBlock+'\n\nThe tech has his camera open and you can see through it. DO NOT describe, mention, or comment on what you see unless he actually asks about it. If he asks you something that is not about the image — how you are doing, a spec, a code, anything conversational — just answer him. Say nothing about the picture.\n\nWhen he DOES ask what you are looking at, or points at a part, or taps Analyze: read it properly. Identify the unit, brand, model, condition, issues. If a part: identify it, read part numbers, search pricing. You have full web search, parts lookup, and all your regular capabilities. If asked about temperature or weather -- search current conditions for the tech location in the TECH PROFILE above.\n\nLANGUAGE — CRITICAL: '+langNote+' Even if the image contains English text (nameplates, labels, manuals), respond ENTIRELY in this language. Do NOT mix languages or switch to English mid-response.';
     // Default snap-and-analyze prompt — localized so the 📸 button doesn't
     // inject English into a Spanish/etc. session and bias Claude back to English.
     var SNAP_DEFAULT={en:'What do you see? Analyze this.',es:'¿Qué ves? Analiza esto.',zh:'你看到了什么？分析一下这个。',vi:'Bạn thấy gì? Phân tích cái này.',fr:'Que vois-tu? Analyse ceci.',pt:'O que você vê? Analise isto.'};
@@ -13548,7 +13552,15 @@ async function analyzeCameraFrame(userInitiated,userText){
     chatHistory.push({role:'assistant',content:response});
     if(chatHistory.length>40)chatHistory=chatHistory.slice(-40); // Keep 40 in memory
     // Push 7.3 — single append with 📷 prefix; before this fix Mike's response posted twice (plain at line 7459 + prefixed at 7465) with a dangling var apiHistory between them
-    if(typeof appendMessage==='function')appendMessage('agent','📷 '+response);
+    // FaceTime was a one-sided transcript. What the tech SAID went into chatHistory —
+    // Mike's memory — but never onto the screen, so scrolling back showed only Mike
+    // talking, with no record of the question that prompted it. His words belong in the
+    // thread. (The 📸 button appends the frame itself as the user turn and passes no
+    // userText, so this cannot double up.)
+    if(typeof appendMessage==='function'){
+      if(userText)appendMessage('user',userText);
+      appendMessage('agent','📷 '+response);
+    }
     if(userInitiated&&userText&&needsDiagram(userText))generateAndShowDiagram(userText,response);
   }catch(e){
     document.getElementById('cameraAnalyzing').style.display='none';

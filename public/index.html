@@ -10608,10 +10608,23 @@ async function sendChat(){
     // name and a zip; if the tech supplies them one at a time and the round-trip only
     // preserves brand/serial/model, the name is lost the moment he answers the zip and
     // Mike asks for the name again — forever.
-    var _wu=Object.assign({},_wpend?_mpStripEmpty({brand:_wpend.brand,serial:_wpend.serial,model:_wpend.model,
-                            lastName:_wpend.lastName,zip:_wpend.zip,state:_wpend.state,
-                            originalPurchaser:_wpend.originalPurchaser}):{},
-                          _mpStripEmpty(mpParseUnit(text)),_mpWarrantyExtras(text,_wneed));
+    var _prior=_wpend?_mpStripEmpty({brand:_wpend.brand,serial:_wpend.serial,model:_wpend.model,
+                        lastName:_wpend.lastName,zip:_wpend.zip,state:_wpend.state,
+                        originalPurchaser:_wpend.originalPurchaser}):{};
+    var _fresh=Object.assign({},_mpStripEmpty(mpParseUnit(text)),_mpWarrantyExtras(text,_wneed));
+    // A five-digit zip is also a valid-looking serial token. mpParseUnit's unlabelled
+    // fallback takes any 5+ character run containing a digit, so answering "model is
+    // GSX140361, last name Weiler, zip 22192" made 22192 the serial.
+    if(_fresh.serial&&_fresh.zip&&String(_fresh.serial)===String(_fresh.zip))delete _fresh.serial;
+    // WHAT WE ALREADY KNOW WINS. This is a reply to a question Mike asked about a unit
+    // he has already identified — it is not a new lookup. Merging fresh-over-prior let
+    // a zip code overwrite the real serial off the data plate, and the lookup then ran
+    // against a serial the tech never gave.
+    var _wu=Object.assign({},_fresh,_prior);
+    // ...except the specific fields Mike just asked for, which is the whole point of
+    // the round trip, and an explicitly labelled serial, which is a tech correcting it.
+    _wneed.forEach(function(k){ if(_fresh[k])_wu[k]=_fresh[k]; });
+    if(_fresh.serial&&/\bserial\s*(?:number|no\.?|#)?\s*[:\-]?\s*[A-Za-z0-9]/i.test(text))_wu.serial=_fresh.serial;
     if(_wu.brand&&_wu.serial){ mpWarrantyRun(_wu); return; }
     mpWarrantyLookup(text);
     return;

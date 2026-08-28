@@ -166,17 +166,37 @@ async function agentLookup(page, brand, serial, extra) {
   // The form is often in an IFRAME — Goodman's whole lookup is. Reading only the top
   // document reported "no form fields" on a page that plainly has one, which is how a
   // working public lookup got written off as a login wall.
-  let target = page, form = await describeForm(page);
-  if (!form.inputs.length) {
-    for (const fr of page.frames()) {
-      if (fr === page.mainFrame()) continue;
-      try {
-        const f = await describeForm(fr);
-        if (f.inputs.length) { target = fr; form = f; log(`form found in iframe: ${fr.url().slice(0, 60)}`); break; }
-      } catch (_) {}
-    }
+  // Pick the frame that holds a WARRANTY form, not merely the first frame holding any
+  // input at all. Goodman's outer page carries 36 controls of cookie banner and site
+  // search while the real lookup sits in an iframe with 15 — so "main frame has inputs,
+  // stop looking" meant the model was shown a search box, correctly answered that there
+  // was no warranty form on it, and every Goodman lookup died at "could not identify
+  // the lookup form" without the iframe ever being opened.
+  const looksLikeLookup = (f) => {
+    const hay = (f.inputs || []).map(i =>
+      `${i.id || ''} ${i.name || ''} ${i.placeholder || ''} ${i.label || ''}`).join(' ').toLowerCase();
+    let score = 0;
+    if (/serial/.test(hay)) score += 10;          // the one field every registry needs
+    if (/model/.test(hay)) score += 3;
+    if (/warrant|registrat/.test(hay)) score += 3;
+    if (/last\s*name|lastname|surname/.test(hay)) score += 2;
+    if (/zip|postal|state/.test(hay)) score += 1;
+    return score;
+  };
+  const candidates = [];
+  for (const fr of page.frames()) {
+    try {
+      const f = await describeForm(fr);
+      if (f.inputs.length) candidates.push({ fr, f, score: looksLikeLookup(f), main: fr === page.mainFrame() });
+    } catch (_) {}
   }
-  if (!form.inputs.length) throw new Error('no form fields found on the lookup page');
+  if (!candidates.length) throw new Error('no form fields found on the lookup page');
+  // Ties go to the main frame, so brands whose form is already there are unaffected.
+  candidates.sort((a, b) => (b.score - a.score) || (Number(b.main) - Number(a.main)));
+  const best = candidates[0];
+  let target = best.fr, form = best.f;
+  log(`form frame: ${best.main ? 'main' : best.fr.url().slice(0, 60)} (score ${best.score} of ${candidates.length} candidates)`);
+  if (!best.score) log(`  warning: no serial-like field in any frame — the plan will probably come back unconfident`);
 
   const known = Object.assign({ serial }, extra || {});
   const plan = firstJson(await ask([{

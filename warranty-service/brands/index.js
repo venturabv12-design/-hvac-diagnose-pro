@@ -34,6 +34,16 @@ const trane = require('./trane');
 const FIELD = {
   serial: { key: 'serial', label: 'serial number', hint: 'off the data plate' },
   model: { key: 'model', label: 'model number', hint: 'same plate, usually the line above' },
+  state: {
+    key: 'state',
+    label: "the property's state",
+    hint: 'two letters, e.g. VA — Rheem asks for it with the last name',
+  },
+  lastName: {
+    key: 'lastName',
+    label: "the homeowner's last name",
+    hint: 'Goodman will not return full coverage without it',
+  },
   originalPurchaser: {
     key: 'originalPurchaser',
     label: 'is the homeowner the original purchaser',
@@ -47,18 +57,21 @@ const PENDING = [
     id: 'goodman',
     label: 'Goodman / Amana / Daikin',
     aliases: ['goodman', 'amana', 'daikin'],
-    // VERIFIED 2026-08-28 by opening it: warranty.goodmanmfg.com redirects to
-    // /WCS/Account/Login.aspx — "Warranty Express", username and password, distributor
-    // accounts only. The public goodmanmfg.com and daikincomfort.com pages are
-    // REGISTRATION forms (register a new unit), not status lookups. There is no public
-    // way to check registration for this brand family.
-    publicRegistry: false,
-    where: 'Warranty Express (distributor login)',
-    requires: [],
-    note: 'No public lookup. Goodman, Amana and Daikin all sit behind the Warranty ' +
-          'Express distributor portal — the public pages only REGISTER a unit, they ' +
-          'do not report status. A distributor can check it; a tech in the field cannot.',
-  },
+    // CORRECTED 2026-08-28 — Brandon caught this. I tested warranty.goodmanmfg.com,
+    // which IS a distributor login, and wrongly concluded the brand had no public
+    // lookup. The public form is at goodmanmfg.com/warranty-lookup and needs no
+    // account. It also lives inside an IFRAME, which is why a first pass reported
+    // "no form fields" even on the right URL.
+    //
+    // Their note on the page: "Homeowner last name must be entered and verified to
+    // display complete limited warranty coverage." So the tech needs the customer's
+    // last name — worth asking for up front rather than failing after the fact.
+    publicRegistry: true,
+    where: 'https://www.goodmanmfg.com/warranty-lookup',
+    requires: [FIELD.serial, FIELD.model, FIELD.lastName],
+    note: 'Public lookup, no login. Goodman needs the homeowner LAST NAME to return ' +
+          'full coverage — serial and model alone will not do it. Install type ' +
+          'defaults to Residential.',  },
   {
     id: 'carrier',
     label: 'Carrier / Bryant / Payne',
@@ -72,16 +85,16 @@ const PENDING = [
     id: 'rheem',
     label: 'Rheem / Ruud',
     aliases: ['rheem', 'ruud'],
-    // VERIFIED 2026-08-28: registermyunit.com is a REGISTRATION portal — "choose a
-    // brand to begin your registration" — behind a Member Login. No serial-status
-    // lookup field exists on it.
-    publicRegistry: false,
-    where: 'MyRheem (member login)',
-    requires: [],
-    note: 'No public status lookup. Rheem and Ruud registration lives behind a member ' +
-          'login; the public site registers a unit but will not tell you what a serial ' +
-          'is already covered for.',
-  },
+    // CORRECTED 2026-08-28 — Brandon again. The bare domain lands on a REGISTRATION
+    // flow, which is what I tested and wrongly wrote off. The verify form is at
+    // /en-US/warranty/brand?brand=ruud&verify=true and is fully public:
+    // tbSerialNumber, tbHomeOwnerLastName, tbHomeOwnerState, "Verify Warranty
+    // Registration". Rheem-branded units use the same path with brand=rheem.
+    publicRegistry: true,
+    where: 'https://ruud.registermyunit.com/en-US/warranty/brand?brand=ruud&verify=true',
+    requires: [FIELD.serial, FIELD.lastName, FIELD.state],
+    note: 'Public verify form, no login. Needs the homeowner LAST NAME and STATE ' +
+          'alongside the serial. Ruud and Rheem share the portal.',  },
   {
     id: 'lennox',
     label: 'Lennox',

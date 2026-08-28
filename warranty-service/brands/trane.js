@@ -49,22 +49,28 @@ function normalise(json, serial) {
   let component = null;
   let installDate = null;
 
+  // Compare on alphanumerics only. Trane echoes serials back with dashes and spacing
+  // that the plate does not have, and a formatting difference must not read as a
+  // different unit.
+  const key = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const want = key(serial);
+  let matched = false;
+
   for (const reg of regs) {
     for (const system of reg.systems || []) {
       for (const asset of system.assets || []) {
         const c = asset.component || {};
         // Only take the asset matching the serial we asked about — a registration
         // can cover a whole system (condenser + air handler + furnace).
-        const sameSerial = String(c['serial-number'] || '').toUpperCase() === String(serial).toUpperCase();
-        if (!component || sameSerial) {
-          if (sameSerial || !component) {
-            component = {
-              model: c['model-number'] || null,
-              category: c['warranty-category'] || null,
-              serial: c['serial-number'] || serial,
-            };
-            installDate = normaliseInstallDate(asset['install-date']);
-          }
+        const sameSerial = !!want && key(c['serial-number']) === want;
+        if (sameSerial) {
+          matched = true;
+          component = {
+            model: c['model-number'] || null,
+            category: c['warranty-category'] || null,
+            serial: c['serial-number'] || serial,
+          };
+          installDate = normaliseInstallDate(asset['install-date']);
         }
         if (!sameSerial) continue;
         for (const p of (asset['warranty-term'] || {}).policies || []) {
@@ -82,6 +88,15 @@ function normalise(json, serial) {
     }
   }
 
+  // Nothing in this registration is the unit the tech asked about. Previously the
+  // loop seeded `component` from the FIRST asset whenever it had none yet, so a
+  // household with a condenser and a furnace registered together answered a serial
+  // that matched NEITHER with found:true, the condenser's model, the condenser's
+  // install date, and no policies at all — which the phone renders as a flat "Base
+  // coverage, this one was never registered". A confident sentence about the wrong
+  // unit, off a mistyped digit. Trane is the serial-only brand, so a typo has
+  // nothing else to catch it.
+  if (!matched) return { found: false, reason: 'serial_not_in_registration' };
   if (!component && !policies.length) return { found: false };
 
   const active = policies.filter(p => String(p.status).toLowerCase() === 'active');

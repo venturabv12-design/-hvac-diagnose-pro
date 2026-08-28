@@ -121,7 +121,25 @@ async function agentLookup(page, brand, serial, extra) {
   const url = brand.where && /^https?:/i.test(brand.where) ? brand.where : `https://${brand.where}`;
   log(`${brand.id}: opening ${url}`);
 
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+  // Distinguish "the manufacturer's site is down" from "we couldn't do it". A tech
+  // needs to know WHOSE fault it is: if Goodman is down he stops trying and calls the
+  // distributor, instead of assuming Mike is broken and losing faith in the tool.
+  let resp;
+  try {
+    resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+  } catch (e) {
+    const err = new Error(`${brand.label}'s warranty site did not respond`);
+    err.code = 'SITE_DOWN'; err.brandLabel = brand.label; throw err;
+  }
+  const code = resp ? resp.status() : 0;
+  if (code >= 500 || code === 0) {
+    const err = new Error(`${brand.label}'s warranty site is returning an error (${code})`);
+    err.code = 'SITE_DOWN'; err.brandLabel = brand.label; throw err;
+  }
+  if (code === 404) {
+    const err = new Error(`${brand.label} moved their warranty page (404)`);
+    err.code = 'SITE_MOVED'; err.brandLabel = brand.label; throw err;
+  }
   await page.waitForTimeout(3000);
 
   // Cookie banners sit on top of the form and swallow clicks. Dismiss before reading.

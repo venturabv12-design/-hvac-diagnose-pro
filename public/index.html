@@ -10575,6 +10575,27 @@ async function sendChat(){
   // details — THIS reply carries them. Route it to the real registry lookup rather than
   // to Mike's brain, because the brain can only describe warranty TERMS; only the
   // registry knows whether THIS serial was actually registered.
+  // ESCAPE HATCH, evaluated BEFORE the branch is entered. This branch used to swallow
+  // EVERY following message. If a tech never supplies a field Mike asked for — because
+  // he does not have it, or he simply moved on — the pending flag stayed set and
+  // hijacked every unrelated question with the same canned prompt. It survived Clear
+  // Chat, because it is a global and not part of the thread, and only a page reload
+  // cleared it. A tech has no way to know that; he concludes the app is broken.
+  if(currentUser&&window._mpPendingWarranty&&text&&!chatAttachment){
+    var _pw=window._mpWarrantyPending||null;
+    var _pneed=(_pw&&_pw.need)||[];
+    var _gave=Object.keys(_mpWarrantyExtras(text,_pneed)).length>0;
+    var _pu=mpParseUnit(text);
+    if(!_gave&&!_pu.serial&&!_pu.brand&&!_pu.model){
+      // Nothing in this message answers the question. It is a new question.
+      window._mpPendingWarranty=false; window._mpWarrantyPending=null; window._mpWarrantyAsks=0;
+    }
+    // And an explicit abandon always wins, even if the sentence happens to contain a
+    // token that parses as a model number.
+    if(/\b(forget|never\s*mind|nevermind|skip it|cancel|stop asking)\b/i.test(text)){
+      window._mpPendingWarranty=false; window._mpWarrantyPending=null; window._mpWarrantyAsks=0;
+    }
+  }
   if(currentUser&&window._mpPendingWarranty&&(text||chatAttachment)){
     window._mpPendingWarranty=false;
     input.value='';input.style.height='auto';
@@ -10583,8 +10604,8 @@ async function sendChat(){
     // name or zip — so "Weiler, 22192" parsed to an empty unit and Mike asked "who
     // makes it?" about the plate he had just read. The tech retyped everything.
     var _wpend=window._mpWarrantyPending||null;
-    window._mpWarrantyPending=null;
     var _wneed=(_wpend&&_wpend.need)||[];
+    window._mpWarrantyPending=null;
     // Photo of the plate beats typing it — fewer characters for a tech in gloves to
     // get wrong, and a mistyped serial reads back as "not covered".
     if(chatAttachment&&chatAttachment.type&&chatAttachment.type.indexOf('image/')===0){
@@ -12063,6 +12084,13 @@ function _mpWarrantyExtras(t,expect){
   var st=t.match(/\bstate\s*(?:is|:|=)?\s*([A-Za-z]{2})\b/i);
   if(!st&&wants('state'))st=t.match(/(?:^|[\s,])([A-Za-z]{2})(?=$|[\s,.])/);
   if(st)out.state=st[1].toUpperCase();
+  // Carrier will not answer without knowing whether the homeowner bought the unit new.
+  // Nothing parsed this field, anywhere — so Carrier's requirement could never be
+  // satisfied, and Mike asked the same question forever no matter what the tech said.
+  if(/\b(original\s*(?:purchaser|owner)|bought\s*it\s*new|first\s*owner)\b/i.test(t)||wants('originalPurchaser')){
+    if(/\b(no|nope|not|resold|resale|second\s*owner|bought\s*the\s*house|new\s*owner)\b/i.test(t))out.originalPurchaser=false;
+    else if(/\b(yes|yeah|yep|yup|correct|they\s*are|he\s*is|she\s*is|original)\b/i.test(t))out.originalPurchaser=true;
+  }
   return out;
 }
 function mpWarrantyCheck(){
@@ -12157,7 +12185,19 @@ async function mpWarrantyRun(u){
       .then(function(r){return r.json();}).catch(function(){return null;});
     if(_rq&&_rq.known&&_rq.canCheck!==false&&_rq.requires){
       var _miss=_rq.requires.filter(function(f){ return !u[f.key]; });
+      // Ask at most twice. A field the tech cannot give — Carrier's original-purchaser
+      // question when he has no idea who bought the unit — must not become a loop that
+      // eats every following message. After two asks, run the lookup with what we have
+      // and let the manufacturer answer honestly rather than trapping him.
+      window._mpWarrantyAsks=(window._mpWarrantyAsks||0);
+      if(_miss.length&&window._mpWarrantyAsks>=2){
+        window._mpWarrantyAsks=0;
+        appendMessage('agent',"Going ahead without "+_miss.map(function(f){return f.label;}).join(' and ')+
+          " — "+(_rq.brandLabel||u.brand)+" may only give me the base terms without it, and I'll tell you if that's all I get.");
+        _miss=[];
+      }
       if(_miss.length){
+        window._mpWarrantyAsks++;
         window._mpWarrantyPending={brand:u.brand,serial:u.serial,model:u.model,
           lastName:u.lastName,zip:u.zip,state:u.state,
           need:_miss.map(function(f){return f.key;})};
@@ -12174,6 +12214,7 @@ async function mpWarrantyRun(u){
   // public warranty lookup that needs no dealer login — Brandon uses it daily. Every
   // brand now goes through the registry, which answers honestly per manufacturer
   // instead of this file guessing on their behalf.
+  window._mpWarrantyAsks=0;   // we have everything; the next lookup starts fresh
   if(typeof showTyping==='function')showTyping();
   fetch('/api/warranty',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({token:(currentUser||{}).token,brand:u.brand,serial:u.serial,model:u.model,
@@ -12948,6 +12989,10 @@ function buildConvoMemory(){
   }catch(e){window._convoMemory='';}
 }
 function clearChat(){
+  // A pending warranty question belongs to the conversation being cleared. It lived in
+  // globals, so starting a new chat left it armed and the very next unrelated question
+  // got hijacked by the old thread's prompt — in a chat that visibly no longer existed.
+  window._mpPendingWarranty=false; window._mpWarrantyPending=null; window._mpWarrantyAsks=0;
   // Push 6 commit 6: archive-not-delete — preserve the current chat to localStorage
   // before clearing so users can recover it from the Chats history. archiveCurrentChat()
   // enriches the entry (id + title + type) and rebuilds Mike's conversation memory.

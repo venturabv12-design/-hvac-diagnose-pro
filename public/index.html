@@ -12087,8 +12087,17 @@ function _mpWarrantyExtras(t,expect){
   // Carrier will not answer without knowing whether the homeowner bought the unit new.
   // Nothing parsed this field, anywhere — so Carrier's requirement could never be
   // satisfied, and Mike asked the same question forever no matter what the tech said.
-  if(/\b(original\s*(?:purchaser|owner)|bought\s*it\s*new|first\s*owner)\b/i.test(t)||wants('originalPurchaser')){
-    if(/\b(no|nope|not|resold|resale|second\s*owner|bought\s*the\s*house|new\s*owner)\b/i.test(t))out.originalPurchaser=false;
+  // Two ways in, and the second one is deliberately narrow. A bare yes/no is only read
+  // as this answer when the message is SHAPED like an answer — the word first, and a
+  // handful of words at most. Matching "no" or "not" anywhere swallowed the most common
+  // sentences a technician types: "no cool call, compressor not starting" and "why does
+  // the blower motor hum but not spin" both parsed as "not the original purchaser",
+  // which made the reply look like an answer and re-armed the trap this exists to open.
+  var _saysPurchaser=/\b(original\s*(?:purchaser|owner)|bought\s*it\s*new|first\s*owner|bought\s*the\s*house)\b/i.test(t);
+  var _answerShaped=wants('originalPurchaser')&&t.trim().split(/\s+/).length<=5&&
+                    /^\s*(yes|yeah|yep|yup|no|nope|nah|correct|he\s*is|she\s*is|they\s*are)\b/i.test(t);
+  if(_saysPurchaser||_answerShaped){
+    if(/\b(no|nope|nah|not|resold|resale|second\s*owner|bought\s*the\s*house|new\s*owner)\b/i.test(t))out.originalPurchaser=false;
     else if(/\b(yes|yeah|yep|yup|correct|they\s*are|he\s*is|she\s*is|original)\b/i.test(t))out.originalPurchaser=true;
   }
   return out;
@@ -13062,6 +13071,11 @@ async function wipeChat(){
 
   // Archive the current thread before resetting so nothing is ever lost.
   try{archiveCurrentChat();}catch(e){}
+  // A pending warranty question belongs to the thread being wiped. This is the button
+  // the CLEAR CHAT control actually calls — clearChat() is a different function, and
+  // putting the reset only there meant tapping Clear Chat to escape a stuck warranty
+  // prompt landed the tech straight back in it, in a conversation that no longer existed.
+  window._mpPendingWarranty=false; window._mpWarrantyPending=null; window._mpWarrantyAsks=0;
   // Reset conversation state
   if(typeof chatHistory!=='undefined')chatHistory=[];
   var cm=document.getElementById('chatMessages');

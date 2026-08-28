@@ -10612,7 +10612,7 @@ async function sendChat(){
       var _wf=chatAttachment;
       clearChatAttach();
       if(text)appendMessage('user',escapeHtml(text));
-      mpWarrantyFromPhoto(_wf,_mpWarrantyExtras(text,_wneed));
+      mpWarrantyFromPhoto(_wf,_mpWarrantyExtras(text,_wneed),_wpend);
       return;
     }
     // A video is an accepted attachment type but this path cannot read one. Say so and
@@ -10659,7 +10659,7 @@ async function sendChat(){
     if(chatAttachment&&chatAttachment.type&&chatAttachment.type.indexOf('image/')===0){
       var _wp=chatAttachment; clearChatAttach();
       appendMessage('user',escapeHtml(text));
-      mpWarrantyFromPhoto(_wp,_wx);
+      mpWarrantyFromPhoto(_wp,_wx,window._mpWarrantyPending);
       return;
     }
     // Video reaches here too — chatFileInput accepts it. Clear it rather than leaving
@@ -12113,7 +12113,7 @@ function mpWarrantyCheck(){
 // only what is physically printed, never guess the brand — a guessed brand sends us
 // to the wrong manufacturer's registry and comes back "no registration found",
 // which reads to a tech like the unit isn't covered.
-async function mpWarrantyFromPhoto(file,extras){
+async function mpWarrantyFromPhoto(file,extras,prior){
   appendMessage('user','📷 Data plate');
   if(typeof showTyping==='function')showTyping();
   try{
@@ -12130,14 +12130,23 @@ async function mpWarrantyFromPhoto(file,extras){
       window._mpPendingWarranty=true;
       return;
     }
-    mpWarrantyRun(Object.assign({brand:d.brand||null,model:d.model||null,serial:d.serial},extras||{}));
+    // Order matters: what is legible ON THE PLATE outranks what we were told, and both
+    // outrank nothing. Without the prior, a plate whose brand is scratched off made Mike
+    // ask "who makes it?" about a brand the tech had already typed.
+    var _pp=_mpStripEmpty(prior||window._mpWarrantyPending||{}); delete _pp.need;
+    mpWarrantyRun(Object.assign({},_pp,
+      _mpStripEmpty({brand:d.brand||null,model:d.model||null,serial:d.serial}),extras||{}));
   }catch(_err){
     if(typeof hideTyping==='function')hideTyping();
     appendMessage('agent',"Something went sideways reading that photo. Type me the brand and serial off the plate and I'll pull it.");
     window._mpPendingWarranty=true;
   }
 }
-function mpWarrantyLookup(text){ mpWarrantyRun(mpParseUnit(text)); }
+function mpWarrantyLookup(text){
+  // Same rule for a typed reply: merge onto whatever Mike is already holding.
+  var _p=_mpStripEmpty(window._mpWarrantyPending||{}); delete _p.need;
+  mpWarrantyRun(Object.assign({},_p,_mpStripEmpty(mpParseUnit(text)),_mpWarrantyExtras(text)));
+}
 
 // ── SCAN THE PLATE → REAL WARRANTY, NO EXTRA TAPS ────────────────────────────
 // The nameplate scan already reads brand, model and serial. It also printed a
@@ -12181,8 +12190,18 @@ async function mpWarrantyFromNameplate(data){
 }
 async function mpWarrantyRun(u){
   u=u||{};
-  if(!u.brand){ mpAskMike("Who makes it? Trane, Carrier, Goodman, Rheem — I need the brand before I can pull the registration."); window._mpPendingWarranty=true; return; }
-  if(!u.serial){ mpAskMike("I've got the brand — now the serial number off the data plate. That's the one the manufacturer keys the registration to."); window._mpPendingWarranty=true; return; }
+  // HOLD WHAT WE ALREADY HAVE. This asked for the missing field and threw away the
+  // rest in the same breath: Brandon typed "Carrier", Mike said "I've got the brand —
+  // now the serial", and dropped Carrier on the floor. He then sent a photo of the
+  // plate and Mike asked "Who makes it?" about a brand he had been given twice.
+  // Saying "I've got the brand" and then forgetting it is worse than never claiming it.
+  function _hold(need){
+    var k=_mpStripEmpty({brand:u.brand,model:u.model,serial:u.serial,lastName:u.lastName,
+                         zip:u.zip,state:u.state,originalPurchaser:u.originalPurchaser});
+    k.need=need; window._mpWarrantyPending=k; window._mpPendingWarranty=true;
+  }
+  if(!u.brand){ _hold(['brand']); mpAskMike("Who makes it? Trane, Carrier, Goodman, Rheem — I need the brand before I can pull the registration."); return; }
+  if(!u.serial){ _hold(['serial']); mpAskMike("I've got the brand — now the serial number off the data plate. That's the one the manufacturer keys the registration to."); return; }
   // Ask for what this manufacturer actually requires BEFORE spending a lookup on it.
   // Goodman will not return full coverage without the homeowner's last name and
   // Rheem wants the state — run without them and the form answers "no registration

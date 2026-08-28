@@ -51,7 +51,10 @@ const FIELD = {
   },
   originalPurchaser: {
     key: 'originalPurchaser',
-    label: 'is the homeowner the original purchaser',
+    // Reads inside a sentence: "Carrier just needs <label> alongside the serial."
+    // The old phrasing was a question, which concatenated to "just needs is the
+    // homeowner the original purchaser alongside the serial."
+    label: 'whether the homeowner is the original purchaser',
     hint: 'yes or no — Carrier asks because coverage changes on resale',
     type: 'boolean',
   },

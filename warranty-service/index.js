@@ -199,6 +199,7 @@ app.post('/lookup', async (req, res) => {
   // "not wired yet". We have a real browser — point it at the manufacturer's own form
   // and read the answer. Only brands with genuinely no public registry (Lennox: dealer
   // login) still refuse, because no amount of browsing gets past a login wall.
+  let agentAttemptFailed = false;
   if (!brand.supported && brand.publicRegistry && brand.where && ANTHROPIC_KEY) {
     if (!rateOk()) return res.status(429).json({ ok: false, error: 'rate_limited' });
     let acquiredA = false;
@@ -240,17 +241,24 @@ app.post('/lookup', async (req, res) => {
         });
       }
       // Fall through to the honest "here is where to look yourself" answer rather
-      // than inventing a warranty.
+      // than inventing a warranty — but remember that we TRIED. Falling through
+      // silently made the next branch tell the tech "I don't have Goodman wired
+      // into the registry yet", which is false: it is wired, the lookup failed.
+      // Mike blaming a missing feature for a broken one teaches a tech the brand
+      // is unsupported and he stops asking.
+      agentAttemptFailed = true;
     } finally { if (acquiredA) release(); }
   }
 
   if (!brand.supported) {
-    // Honest, specific answer — "no public registry" and "not wired yet" are
-    // different things and Mike says which one it is.
+    // Honest, specific answer — "no public registry", "not wired yet" and "wired,
+    // but the lookup just failed" are three different things and Mike says which.
     return res.json({
       ok: true,
       supported: false,
-      reason: brand.publicRegistry ? 'not_wired_yet' : 'no_public_registry',
+      reason: agentAttemptFailed ? 'lookup_failed'
+            : brand.publicRegistry ? 'not_wired_yet'
+            : 'no_public_registry',
       brand: brand.id,
       brandLabel: brand.label,
       where: brand.where || null,

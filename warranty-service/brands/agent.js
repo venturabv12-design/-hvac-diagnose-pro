@@ -121,9 +121,15 @@ async function describeForm(page) {
         placeholder: el.placeholder || '', label: labelFor(el),
         options: el.tagName === 'SELECT' ? [...el.options].slice(0, 12).map(o => o.value) : undefined,
       }));
-    const buttons = [...document.querySelectorAll('button, input[type=submit], a[role=button]')]
+    // input[type=button] MUST be here. It is excluded from `inputs` above (correctly —
+    // it is not a field to fill), and it was not matched here either, so Goodman's
+    // <input type="button" id="Search"> was invisible to the model: it saw a complete
+    // form with no way to submit it, returned submit:null, and the lookup died at
+    // "could not identify the lookup form" having never pressed anything.
+    const buttons = [...document.querySelectorAll(
+      'button, input[type=submit], input[type=button], input[type=image], a[role=button], [role=button]')]
       .filter(vis).slice(0, 15)
-      .map(el => ({ selector: sel(el), text: (el.innerText || el.value || '').trim().slice(0, 50) }));
+      .map(el => ({ selector: sel(el), text: (el.innerText || el.value || el.getAttribute('aria-label') || '').trim().slice(0, 50) }));
     return { inputs, buttons, title: document.title };
   });
 }

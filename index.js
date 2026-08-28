@@ -1537,9 +1537,15 @@ app.post('/api/warranty', authenticateToken, aiLimiter, async (req, res) => {
       headers: { 'Content-Type': 'application/json', 'x-warranty-token': WARRANTY_TOKEN },
       body: JSON.stringify({ brand, serial, model, originalPurchaser,
         extra: { model, lastName, zip, state, originalPurchaser } }),
-      // A cold lookup launches a browser; the service's own ceiling is 45s, so give
-      // it room past that rather than cutting a good answer off at the knees.
-      signal: AbortSignal.timeout(60000),
+      // A cold lookup launches a browser and drives the manufacturer's own form. That
+      // agent path documents its normal case as 20-60s and the service gives it a 120s
+      // ceiling (AGENT_TIMEOUT_MS); only Trane's direct path uses the old 45s number.
+      // Cutting at 60s meant that for five of six brands Mike gave up BEFORE the
+      // service did — the tech got "couldn't reach the registry" while the lookup ran
+      // on to a good answer nobody received, burning tokens and hitting the
+      // manufacturer for nothing. Sit just past the service's own ceiling so the
+      // service is always the one that decides a lookup has failed.
+      signal: AbortSignal.timeout(135000),
     });
     const data = await r.json().catch(() => null);
     if (!r.ok || !data) throw new Error(`lookup ${r.status}`);

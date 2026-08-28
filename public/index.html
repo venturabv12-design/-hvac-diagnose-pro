@@ -6132,13 +6132,16 @@ function seedFirstPrompt(){
   var isHome=!!(currentUser&&currentUser.role==='homeowner');
   var seed=v2t(isHome?'seedHome':'seedTech');
   if(!seed)return;
-  ci.value=seed;
-  // Grow to fit the seed. seedFirstPrompt can run before the composer is laid out, so
-  // scrollHeight is wrong on the first pass — re-grow on the next frame and pin scroll to
-  // the top so the box never opens scrolled to a mid-sentence fragment.
-  var _grow=function(){try{ci.style.height='auto';ci.style.height=Math.min(ci.scrollHeight,120)+'px';}catch(e){}};
-  _grow();requestAnimationFrame(function(){_grow();try{ci.scrollTop=0;}catch(e){}});
-  try{ci.focus();ci.setSelectionRange(seed.length,seed.length);}catch(e){}
+  // HINT, DON'T TYPE FOR HIM. This used to write the sentence into the box as real
+  // text. Brandon opened his own admin account and found "Hey Mike — got a nameplate
+  // here, what do you make of it?" sitting there waiting to be sent — words he never
+  // wrote, on an account that has used Mike hundreds of times. It reads as a bug, and
+  // a tech who has to clear the box before he can ask his own question is worse off
+  // than one who opened an empty one.
+  //
+  // A placeholder does the same job honestly: it suggests what to ask, it is visibly
+  // grey rather than typed, and it disappears the moment he starts typing.
+  ci.placeholder=seed;
 }
 
 // ── ADMIN DASHBOARD ─────────────────────────────────────────────

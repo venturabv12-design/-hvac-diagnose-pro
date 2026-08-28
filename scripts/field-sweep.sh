@@ -73,11 +73,26 @@ sys.exit(1 if bad else 0)
 " || RC=1
 
 # ── 3. asked but never answered ──────────────────────────────────────────────
+# Our own accounts are not technicians. Brandon's admin login and the QA signups the
+# test agents create (trazertest+...@gmail.com) generate heavy, deliberately weird
+# traffic, and on 2026-08-28 a QA account triggered a page about a "technician" who
+# was nobody. Matched by EMAIL, not by a hardcoded id list — every new test run makes
+# a new account, and a list of ids goes stale the first time someone signs up.
+HOUSE=$(/usr/bin/curl -s -m 25 "$SU/rest/v1/users?select=id,email" -H "apikey: $SK" -H "Authorization: Bearer $SK" \
+        | python3 -c "
+import sys,json,re
+try: r=json.load(sys.stdin)
+except Exception: print(''); raise SystemExit
+if not isinstance(r,list): print(''); raise SystemExit
+pat=re.compile(r'^(trazertest\+|qa@|test@)|@trazer\.test\$|^venturabv12@gmail\.com\$',re.I)
+print(','.join(u['id'] for u in r if u.get('email') and pat.search(u['email'])))
+" 2>/dev/null)
+
 SINCE=$(python3 -c "import datetime;print((datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(hours=2)).isoformat().replace('+00:00','Z'))")
 E=$(/usr/bin/curl -s -m 30 "$SU/rest/v1/events?select=user_id,type,created_at&type=in.(mike_ask,mike_answer)&created_at=gte.$SINCE&limit=500" \
       -H "apikey: $SK" -H "Authorization: Bearer $SK")
-echo "$E" | python3 -c "
-import sys,json,collections,datetime
+echo "$E" | HOUSE="$HOUSE" python3 -c "
+import sys,json,collections,datetime,re
 raw=sys.stdin.read()
 try: r=json.loads(raw)
 except Exception: print('ALERT db_unreadable',raw[:120]); sys.exit(1)
@@ -85,8 +100,17 @@ except Exception: print('ALERT db_unreadable',raw[:120]); sys.exit(1)
 # strings, and x['user_id'] raised TypeError and killed the sweep silently.
 if not isinstance(r,list): print('ALERT db_error',str(r)[:160]); sys.exit(1)
 
+# Python 3.9's fromisoformat accepts ONLY 3 or 6 fractional-second digits, and
+# Postgres trims trailing zeros — so '...40.96802+00:00' (five digits) raised, the
+# except returned None, and that event was silently dropped. Roughly one row in ten.
+# When the dropped row was an ANSWER, its question looked unanswered forever and this
+# sweep paged about a technician who had been answered in six seconds. A monitor that
+# invents outages gets muted, and then it is watching nothing.
 def ts(v):
-    try: return datetime.datetime.fromisoformat(str(v).replace('Z','+00:00'))
+    t=str(v).replace('Z','+00:00')
+    m=re.match(r'^(.*\.)(\d+)(.*)$', t)
+    if m: t=m.group(1)+(m.group(2)+'000000')[:6]+m.group(3)
+    try: return datetime.datetime.fromisoformat(t)
     except Exception: return None
 now=datetime.datetime.now(datetime.timezone.utc)
 
@@ -94,11 +118,20 @@ now=datetime.datetime.now(datetime.timezone.utc)
 # whole window re-alerted on an outage that was already diagnosed, reported and
 # FIXED — every hour until it aged out. A monitor that keeps shouting about a
 # resolved incident is the same disease as one that shouts when nothing is wrong.
+import os
+HOUSE=set(f for f in (os.environ.get('HOUSE') or '').split(',') if f)
 byuser=collections.defaultdict(list)
+dropped=0
 for x in r:
     if not isinstance(x,dict): continue
+    if x.get('user_id') in HOUSE: continue     # our own accounts are not technicians
     t=ts(x.get('created_at'))
     if t: byuser[x.get('user_id')].append((t,x.get('type')))
+    else: dropped+=1
+# Never drop rows quietly. A partial drop is exactly how this sweep invented an
+# outage; the old blind-guard only caught the case where EVERY row failed.
+if dropped:
+    print('ALERT sweep_broken %d of %d events had an unparseable created_at'%(dropped,len(r)))
 
 live=[]
 for u,ev in byuser.items():
@@ -119,7 +152,7 @@ for u,ev in byuser.items():
         if age <= 30: live.append((u,age))
 # If rows came back but none carried a usable timestamp, the query changed shape and
 # this check is blind. Blind must never print clean.
-if r and not byuser:
+if r and not byuser and not HOUSE:
     print('ALERT sweep_broken %d events returned but none had a parseable created_at'%len(r)); sys.exit(1)
 print('askanswer techs=%d live_gaps=%d'%(len(byuser),len(live)))
 for u,age in live: print('ALERT unanswered tech=%s asked %.0f min ago, still no answer'%(str(u)[:8],age))

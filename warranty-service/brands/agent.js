@@ -334,13 +334,14 @@ found:false if the page says no record, invalid serial, or shows the empty form 
   const serialOnPage = norm(serial).length >= 5 && norm(raw).includes(norm(serial));
   let registered = result.registered === null || result.registered === undefined ? null : !!result.registered;
   let summary = result.summary || null;
-  // OBSERVE-ONLY until we have seen real result pages. Every warranty result page
-  // should echo the serial you searched, but we have zero live samples to prove it,
-  // and a guard that wrongly downgrades a genuine "covered" to "I can't confirm"
-  // would break the exact answer a tech is standing in a basement waiting for. So it
-  // logs what it WOULD have refused. Flip WARRANTY_CORROBORATE=enforce once the logs
-  // show serials landing on the page as expected — the refusal branch is already
-  // written and tested.
+  // OBSERVE-ONLY, and a live run has now proved that was the right call. Driving
+  // Goodman's real form end to end against a real unit returned a correct, complete
+  // answer with serialOnPage=FALSE — Goodman's result page reports the model, the
+  // manufacture date and the coverage terms, but never echoes the serial you searched.
+  // Enforcing on that evidence would refuse a genuine "registered" on Goodman and tell
+  // a tech "I can't confirm" about an answer we had correctly in hand.
+  // Do NOT set WARRANTY_CORROBORATE=enforce globally. If this becomes worth enforcing
+  // it has to be per brand, on brands whose pages are known to echo the serial.
   if (registered === true && !serialOnPage) {
     log(`${brand.id}: CORROBORATION MISS — model said registered=true but serial ${serial} is not on the result page`);
     if (process.env.WARRANTY_CORROBORATE === 'enforce') {

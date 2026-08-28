@@ -321,7 +321,13 @@ app.post('/lookup', async (req, res) => {
   }
 });
 
-const server = app.listen(PORT, '0.0.0.0', () => console.log(`warranty-service listening on ${PORT}`));
+// Say WHICH build this is. Two Goodman fixes were reported as "still failing" purely
+// because nobody could tell from the logs whether the running container predated them —
+// the same lookup, the same error, two different builds, and no way to distinguish.
+// Railway injects the commit; print it at boot so a log line is never ambiguous again.
+const BUILD = (process.env.RAILWAY_GIT_COMMIT_SHA || 'unknown').slice(0, 7);
+const server = app.listen(PORT, '0.0.0.0', () =>
+  console.log(`warranty-service listening on ${PORT} — build ${BUILD}`));
 
 function bye(sig) {
   return async () => {

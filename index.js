@@ -1524,14 +1524,19 @@ app.get('/api/warranty/requirements', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/warranty', authenticateToken, aiLimiter, async (req, res) => {
-  const { brand, serial, model, originalPurchaser } = req.body || {};
+  // Goodman and Lennox will not return coverage without the homeowner's last name;
+  // Rheem also wants the state. Those cannot come off a photo, so they arrive from
+  // whatever the tech told Mike and have to be forwarded, or the lookup runs with
+  // half the form filled and reports "no registration found" on a covered unit.
+  const { brand, serial, model, originalPurchaser, lastName, zip, state } = req.body || {};
   if (!brand || !serial) return res.status(400).json({ ok: false, error: 'brand_and_serial_required' });
 
   try {
     const r = await fetch(`${WARRANTY_URL}/lookup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-warranty-token': WARRANTY_TOKEN },
-      body: JSON.stringify({ brand, serial, model, originalPurchaser }),
+      body: JSON.stringify({ brand, serial, model, originalPurchaser,
+        extra: { model, lastName, zip, state, originalPurchaser } }),
       // A cold lookup launches a browser; the service's own ceiling is 45s, so give
       // it room past that rather than cutting a good answer off at the knees.
       signal: AbortSignal.timeout(60000),

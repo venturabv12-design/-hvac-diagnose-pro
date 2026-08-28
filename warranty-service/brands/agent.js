@@ -204,11 +204,56 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
     throw new Error('could not identify the lookup form');
   }
 
+  // Order matters, and it is not cosmetic. Goodman's model dropdown is EMPTY when the
+  // page loads and populates FROM the serial — enter serial 2103456789 and the list
+  // becomes exactly one option, GSZ140241, because Goodman derives the model from the
+  // serial. The form was read once at load, so the plan tried to select a model out of
+  // an empty list, threw, was swallowed, and the lookup submitted with no model at
+  // all. Goodman answered with nothing and Mike reported the brand as unsupported.
+  // Text fields first, then let dependent fields fill themselves in, then the selects.
+  const selects = [], texts = [];
   for (const f of plan.fill) {
+    const tag = (form.inputs.find(i => i.selector === f.selector) || {}).tag;
+    (tag === 'select' ? selects : texts).push(f);
+  }
+  for (const f of texts) {
     try {
-      const isSelect = (form.inputs.find(i => i.selector === f.selector) || {}).tag === 'select';
-      if (isSelect) await target.selectOption(f.selector, String(f.value));
-      else await target.fill(f.selector, String(f.value));
+      await target.fill(f.selector, String(f.value));
+      // Some forms only react to a real change/blur, not to a programmatic value set.
+      await target.evaluate((sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return;
+        el.dispatchEvent(new Event('input',  { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        el.dispatchEvent(new Event('blur',   { bubbles: true }));
+      }, f.selector).catch(() => {});
+    } catch (_) { log(`  could not set ${f.selector}`); }
+  }
+  if (selects.length) await page.waitForTimeout(5000);   // let dependent lists populate
+  for (const f of selects) {
+    try {
+      const norm = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const options = await target.evaluate((sel) => {
+        const el = document.querySelector(sel);
+        return el ? [...el.options].map(o => o.value).filter(Boolean) : [];
+      }, f.selector).catch(() => []);
+      const exact = options.find(o => norm(o) === norm(f.value));
+      // Fall back to the only real option. When a list is derived from the serial the
+      // manufacturer has already told us the answer, and refusing it because the tech
+      // typed the model slightly differently throws away a working lookup.
+      const pick = exact || (options.length === 1 ? options[0] : null);
+      if (!pick) { log(`  ${f.selector}: no match for "${f.value}" among ${options.length} options`); continue; }
+      if (!exact) log(`  ${f.selector}: using the only option "${pick}" (asked for "${f.value}")`);
+      const current = await target.evaluate((sel) => {
+        const el = document.querySelector(sel); return el ? el.value : null;
+      }, f.selector).catch(() => null);
+      // Goodman's page sets this itself once the serial resolves, and the element is
+      // not actionable, so selectOption sat there for its full 30s and returned
+      // nothing — 30 seconds of a 120s budget spent re-setting a value that was
+      // already correct. If it is already right, leave it alone; if not, do not let
+      // one uncooperative control eat the lookup.
+      if (norm(current) === norm(pick)) { log(`  ${f.selector}: already "${pick}"`); continue; }
+      await target.selectOption(f.selector, pick, { timeout: 8000 });
     } catch (_) { log(`  could not set ${f.selector}`); }
   }
   await Promise.allSettled([

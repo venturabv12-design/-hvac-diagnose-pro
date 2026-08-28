@@ -122,9 +122,29 @@ async function agentLookup(page, brand, serial, extra) {
   log(`${brand.id}: opening ${url}`);
 
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(3000);
 
-  const form = await describeForm(page);
+  // Cookie banners sit on top of the form and swallow clicks. Dismiss before reading.
+  for (const label of ['Accept All Optional Cookies', 'Accept All Cookies', 'Accept All', 'I Accept', 'Accept', 'Agree']) {
+    try {
+      const btn = await page.$(`button:has-text("${label}")`);
+      if (btn) { await btn.click({ timeout: 3000 }); log('dismissed cookie banner'); await page.waitForTimeout(1200); break; }
+    } catch (_) {}
+  }
+
+  // The form is often in an IFRAME — Goodman's whole lookup is. Reading only the top
+  // document reported "no form fields" on a page that plainly has one, which is how a
+  // working public lookup got written off as a login wall.
+  let target = page, form = await describeForm(page);
+  if (!form.inputs.length) {
+    for (const fr of page.frames()) {
+      if (fr === page.mainFrame()) continue;
+      try {
+        const f = await describeForm(fr);
+        if (f.inputs.length) { target = fr; form = f; log(`form found in iframe: ${fr.url().slice(0, 60)}`); break; }
+      } catch (_) {}
+    }
+  }
   if (!form.inputs.length) throw new Error('no form fields found on the lookup page');
 
   const known = Object.assign({ serial }, extra || {});
@@ -154,17 +174,23 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
   }
 
   for (const f of plan.fill) {
-    try { await page.fill(f.selector, String(f.value)); }
-    catch (_) { log(`  could not fill ${f.selector}`); }
+    try {
+      const isSelect = (form.inputs.find(i => i.selector === f.selector) || {}).tag === 'select';
+      if (isSelect) await target.selectOption(f.selector, String(f.value));
+      else await target.fill(f.selector, String(f.value));
+    } catch (_) { log(`  could not set ${f.selector}`); }
   }
   await Promise.allSettled([
-    page.click(plan.submit),
+    target.click(plan.submit),
     page.waitForLoadState('networkidle', { timeout: 25000 }).catch(() => {}),
   ]);
   await page.waitForTimeout(3500);
 
   // Read the answer. Scrubbed before it leaves the process.
-  const raw = await page.evaluate(() => (document.body.innerText || '').slice(0, 6000));
+  // Result may render in the frame OR the parent; take whichever actually has content.
+  const rawFrame = await target.evaluate(() => (document.body.innerText || '').slice(0, 6000)).catch(() => '');
+  const rawPage = await page.evaluate(() => (document.body.innerText || '').slice(0, 6000)).catch(() => '');
+  const raw = (rawFrame && rawFrame.length > 200) ? rawFrame : (rawPage || rawFrame);
   const result = firstJson(await ask([{
     role: 'user',
     content: `This is the RESULT page after submitting an HVAC warranty lookup for ${brand.label}, serial ${serial}.

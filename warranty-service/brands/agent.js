@@ -226,7 +226,23 @@ Reply with ONLY JSON:
 If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confident":false}.`,
   }], 800), { fill: [], submit: null, confident: false });
 
+  // A missing submit selector must not throw away a form we already know how to fill.
+  // Goodman's control is <input type="button" value="Search"> and it has been invisible
+  // to this code in more than one way; a deterministic fallback is cheaper than another
+  // deploy cycle every time a manufacturer uses a control we did not anticipate.
+  if (plan.confident && plan.fill.length && !plan.submit) {
+    const guess = (form.buttons || []).find(b => /search|submit|look\s?up|check|find|go\b/i.test(b.text || ''))
+               || (form.buttons || [])[0];
+    if (guess) { plan.submit = guess.selector; log(`  no submit in plan — falling back to "${guess.text || guess.selector}"`); }
+  }
   if (!plan.confident || !plan.fill.length || !plan.submit) {
+    // Say WHY, with the evidence. This exact error was reported as "still failing"
+    // across three different builds and the log could not distinguish a missing submit
+    // button from an unrecognised form from a model that simply said no.
+    log(`  PLAN REJECTED confident=${plan.confident} fill=${(plan.fill||[]).length} submit=${plan.submit || 'null'}`);
+    log(`  page had ${form.inputs.length} fields, ${(form.buttons || []).length} buttons`);
+    log(`  fields:  ${JSON.stringify((form.inputs || []).map(i => i.selector))}`);
+    log(`  buttons: ${JSON.stringify((form.buttons || []).map(b => ({ s: b.selector, t: b.text })))}`);
     throw new Error('could not identify the lookup form');
   }
 

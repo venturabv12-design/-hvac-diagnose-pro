@@ -3352,7 +3352,11 @@ async function systemOwnerId() {
 //   · short answers only, no web search, no manual retrieval
 //   · goes through the SAME safety/pricing guard as every other reply — a homeowner
 //     still never sees a price here
-const FREE_TASTE_PER_DAY = Number(process.env.FREE_TASTE_PER_DAY || 1);
+// Brandon, 2026-08-29: ten questions before the wall, not one. One answer proves
+// nothing — a tech's first message is usually a clarifier, so the wall was landing
+// before Mike had done anything worth paying for. 513 visitors produced 9 signups and
+// 0 paying customers, and none of them ever saw the product work.
+const FREE_TASTE_PER_DAY = Number(process.env.FREE_TASTE_PER_DAY || 10);
 const _tasteUsed = new Map();   // visitorHash -> { day, count }
 
 function tasteAllowance(req) {

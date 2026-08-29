@@ -131,9 +131,35 @@ const PENDING = [
     note: 'Public lookup, no login. Serial alone gets a result; last name and zip ' +
           'sharpen it.',
   },
+  {
+    id: 'trane',
+    label: 'Trane / American Standard',
+    aliases: ['trane', 'american standard', 'americanstandard', 'runtru', 'run tru'],
+    publicRegistry: true,
+    where: 'https://www.trane.com/residential/en/resources/warranty-and-registration/lookup/',
+    // Their form shows a last-name field next to the serial. Serial alone still
+    // completes, so we do not make a tech hunt for a name he may not have — but if he
+    // has already given one it gets filled in.
+    requires: [FIELD.serial],
+    note: 'Public lookup, no login. Serial alone works; a last name sharpens it.',
+  },
 ];
 
-const IMPLEMENTED = [trane];
+// Trane's hand-written integration is retired. It posted a fixed payload shape to
+// their private warranty-registration API, and Trane changed the form — their lookup
+// page now carries a last-name field alongside the serial — so our old shape stopped
+// matching and every Trane lookup came back as "they moved their warranty page". The
+// page had not moved at all; we were calling it wrong. Their API still answers 200
+// when their own page calls it.
+//
+// The generic agent reads whatever form is actually on the page, which is why the
+// other five brands survived changes like this untouched. Verified against Trane's
+// live form: reaches it and completes, with and without a last name. Keeping a
+// bespoke integration for one brand bought us nothing and cost us the brand.
+//
+// trane.js is retained for its serial parser and its unit tests, but is no longer
+// the lookup path.
+const IMPLEMENTED = [];
 
 function resolve(brandName) {
   const q = String(brandName || '').trim().toLowerCase();

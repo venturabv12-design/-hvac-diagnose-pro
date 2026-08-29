@@ -24,8 +24,10 @@
  */
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 const brands = require('./brands');
-const { agentLookup } = require('./brands/agent');
+const { agentLookup, scrub } = require('./brands/agent');
 
 const SERVICE = process.env.SERVICE_URL || 'https://trazermike.io';
 const PREFIX  = process.env.WORKER_PATH || '/api/warranty-worker';
@@ -34,6 +36,7 @@ const PORT    = Number(process.env.LOCAL_CDP_PORT || 9223);
 const CHROME  = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const PROFILE = process.env.LOCAL_PROFILE || `${process.env.HOME}/.trazer-worker-chrome`;
 const JOB_MS  = Number(process.env.WORKER_JOB_TIMEOUT_MS || 110000);
+const DIAG_DIR = process.env.WORKER_DIAG_DIR || `${process.env.HOME}/Library/Logs/trazer-warranty-failures`;
 
 let browser = null;
 
@@ -91,6 +94,30 @@ async function runJob(job) {
     clearTimeout(t);
     return Object.assign({}, out, { via: 'worker' });   // label wins over the engine's own
   } catch (e) {
+    // KEEP ENOUGH TO FIX IT. A failure a technician hit in the field is the only chance
+    // we get at some brands — Lennox needs the homeowner's last name and zip, so it
+    // cannot be reproduced later from our own side, and that data is deliberately never
+    // stored. Without this, the alert says "lennox broke" and the trail ends there.
+    //
+    // What is kept is the PAGE, scrubbed through the same redactor the model's input
+    // goes through, plus a screenshot. That is what shows whether their form moved,
+    // renamed a field or added a step. The customer's details are not written down.
+    try {
+      // The homeowner's name and zip are redacted; the SERIAL is deliberately kept.
+      // A serial is equipment, not a person, and a diagnostic without it cannot be
+      // replayed against the manufacturer — which is the entire point of keeping one.
+      const text = scrub(await page.evaluate(() => document.body.innerText).catch(() => ''),
+                         [(job.extra && job.extra.lastName) || '', (job.extra && job.extra.zip) || '']);
+      fs.mkdirSync(DIAG_DIR, { recursive: true });
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const base = path.join(DIAG_DIR, `${job.brand}-${stamp}`);
+      fs.writeFileSync(`${base}.txt`,
+        `brand=${job.brand}\nfailure=${e.code || 'lookup_failed'}\nmessage=${e.message}\n` +
+        `url=${page.url()}\nfields_supplied=${Object.keys(job.extra || {}).filter(k => (job.extra || {})[k]).join(',')}\n` +
+        `\n----- page as the worker saw it (scrubbed) -----\n${text.slice(0, 20000)}\n`);
+      await page.screenshot({ path: `${base}.png`, fullPage: false }).catch(() => {});
+      console.log(`[worker] kept a diagnostic for ${job.brand}: ${base}.txt`);
+    } catch (de) { console.log('[worker] could not keep a diagnostic:', de.message); }
     // Report the SHAPE of the failure, never a guess. The server turns these into an
     // honest "I couldn't check" — it must never read as "this unit isn't covered".
     return { error: e.code || 'lookup_failed', message: e.message };

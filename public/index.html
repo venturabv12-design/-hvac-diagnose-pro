@@ -12505,7 +12505,30 @@ async function mpWarrantyRun(u){
         // error. An unregistered unit is not a failure, it is the single most common
         // real result and it tells a tech exactly what he needs: base coverage only,
         // do not quote the extended term. Say that first, then say why.
-        appendMessage('agent',"Treat that one as **base coverage** — "+_mpSayBrand((d.brandLabel||u.brand))+" has no registration on serial "+u.serial+".\n\nUnregistered is the usual reason, and it means the shorter base parts term, not the extended one. The other possibility is the serial being off by a character, so it's worth a second look at the plate before you quote it.\n\nEither way: don't quote extended coverage on this one.");
+        appendMessage('agent',"Treat that one as **base coverage** — "+_mpSayBrand((d.brandLabel||u.brand))+" has no registration on serial "+u.serial+". Let me give you the actual terms.");
+        // "Not registered" is a dead end. A tech needs the NUMBER: what the base term
+        // actually is, and whether this unit is still inside it. Brandon: "he should at
+        // least give the standard warranty that it has, not just say it's not
+        // registered." Mike knows the published terms and can date a serial — so use
+        // him for exactly that, and label it as the published term rather than a
+        // registry result, because we did not read these off the manufacturer.
+        (async function(){
+          try{
+            if(typeof showTyping==='function')showTyping();
+            var _sys=(typeof AGENT_SYSTEM==='string'?AGENT_SYSTEM:'')+
+              "\n\nANSWER FORMAT — a technician needs numbers, not a shrug. Be brief.\n"+
+              "1) The manufacturer's PUBLISHED base parts term for this brand and product type when the unit was never registered, and the registered/extended term for comparison.\n"+
+              "2) Decode the manufacture date from the serial if you genuinely recognise the format. If you do not, say so and skip it — never invent a date.\n"+
+              "3) If you have a date, say whether the unit is still inside that base term today, and roughly when it runs out.\n"+
+              "4) One line on what to quote.\n"+
+              "Say plainly that these are the published terms, not a lookup on this unit — the registry had no record. Never state coverage as confirmed.";
+            var _q="Unit: "+(u.brand||'')+" "+(u.model||'')+", serial "+u.serial+
+              ". The manufacturer's registry returned no registration for it. What is the standard base warranty on this, and is it still in it?";
+            var _ans=await callAI(_sys,[{role:'user',content:_q}],520);
+            if(typeof hideTyping==='function')hideTyping();
+            if(_ans)appendMessage('agent',_ans);
+          }catch(_te){ if(typeof hideTyping==='function')hideTyping(); }
+        })();
         return;
       }
       var reg=d.registered===true;

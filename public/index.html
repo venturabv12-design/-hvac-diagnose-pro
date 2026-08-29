@@ -12542,6 +12542,13 @@ async function mpWarrantyRun(u){
         }
         return;
       }
+      // "I couldn't run it" must never render as "not registered". A tech acting on a
+      // false not-covered eats the part.
+      if(d.inconclusive){
+        appendMessage('agent',(d.summary||("I couldn't get "+_mpSayBrand((d.brandLabel||u.brand))+"'s lookup to run just now — that's my end. Don't treat it as not covered."))
+          +(d.where?"\n\nCheck it directly: "+d.where:""));
+        return;
+      }
       if(!d.found){
         // LEAD WITH THE ANSWER. This used to open "No registration came back", which
         // reads as the tool failing — Brandon watched the whole lookup work end to end

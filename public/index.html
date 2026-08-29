@@ -10611,8 +10611,7 @@ async function sendChat(){
     if(chatAttachment&&chatAttachment.type&&chatAttachment.type.indexOf('image/')===0){
       var _wf=chatAttachment;
       clearChatAttach();
-      if(text)appendMessage('user',escapeHtml(text));
-      mpWarrantyFromPhoto(_wf,_mpWarrantyExtras(text,_wneed),_wpend);
+      mpWarrantyFromPhoto(_wf,_mpWarrantyExtras(text,_wneed),_wpend,text);
       return;
     }
     // A video is an accepted attachment type but this path cannot read one. Say so and
@@ -10658,8 +10657,7 @@ async function sendChat(){
     var _wx=_mpWarrantyExtras(text);
     if(chatAttachment&&chatAttachment.type&&chatAttachment.type.indexOf('image/')===0){
       var _wp=chatAttachment; clearChatAttach();
-      appendMessage('user',escapeHtml(text));
-      mpWarrantyFromPhoto(_wp,_wx,window._mpWarrantyPending);
+      mpWarrantyFromPhoto(_wp,_wx,window._mpWarrantyPending,text);
       return;
     }
     // Video reaches here too — chatFileInput accepts it. Clear it rather than leaving
@@ -12113,8 +12111,17 @@ function mpWarrantyCheck(){
 // only what is physically printed, never guess the brand — a guessed brand sends us
 // to the wrong manufacturer's registry and comes back "no registration found",
 // which reads to a tech like the unit isn't covered.
-async function mpWarrantyFromPhoto(file,extras,prior){
-  appendMessage('user','📷 Data plate');
+async function mpWarrantyFromPhoto(file,extras,prior,caption){
+  // Show the tech HIS OWN PHOTO, not the words "Data plate". Every other path in the
+  // app renders a thumbnail; this one printed a label, so a tech who attached a plate
+  // with a question saw two text bubbles and no picture — no way to tell whether the
+  // shot he sent was even in focus, which is the first thing he'd want to check when
+  // Mike says he can't read it. Same markup as the normal chat path, same escaping.
+  try{
+    var _b64=await blobToBase64Display(file);
+    appendMessage('user',(caption?'<p style="margin-bottom:8px;">'+escapeHtml(caption)+'</p>':'')
+      +'<img src="'+_b64+'" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;cursor:pointer;" onclick="openImgOverlay(\''+_b64+'\')"/>');
+  }catch(_pe){ appendMessage('user',(caption?escapeHtml(caption)+'\n':'')+'📷 Data plate'); }
   if(typeof showTyping==='function')showTyping();
   try{
     var mime=file.type||'image/jpeg', b64=await blobToBase64(file);

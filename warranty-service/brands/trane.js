@@ -51,6 +51,18 @@ function normaliseInstallDate(s) {
   return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
 }
 
+// A 404 from Trane is ambiguous: their endpoint moving and a serial simply not being
+// registered both return one. Only the explicit message means "not registered"; anything
+// else is still treated as their page having moved, which is ours to fix.
+function serialNotFound(body) {
+  if (!body) return false;
+  const msg = [
+    body.error,
+    body.details && body.details['response-status'] && body.details['response-status'].message,
+  ].filter(Boolean).join(' ').toLowerCase();
+  return msg.includes('serial number not found');
+}
+
 function normalise(json, serial) {
   const regs = (json && json.registrations) || [];
   const policies = [];
@@ -154,6 +166,16 @@ async function lookup(page, serial, extra) {
     await page.goto(LOOKUP_PAGE, { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(1500);
     out = await call();
+  }
+
+  // Trane answers an UNREGISTERED serial with a 404 whose body says
+  // "serial number not found" — verified live 2026-08-29. That is a real, useful
+  // answer, not an outage: it means the unit was never registered, so it sits on base
+  // coverage. Reading it as SITE_MOVED told the tech "Trane moved their page, I'll get
+  // it updated" on the single most common Trane outcome, which reads as our tool being
+  // broken and hides the answer he actually needed.
+  if (out.status === 404 && serialNotFound(out.body)) {
+    return { found: false, reason: 'serial_not_in_registration' };
   }
 
   if (out.status !== 200) {

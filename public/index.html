@@ -12021,15 +12021,39 @@ function mpParseUnit(text){
 // the old behaviour, which is why the same bug kept coming back wearing a different
 // hat. Everything reads from here and writes through mpUnitLearn now.
 var _MP_UNIT_KEYS=['brand','model','serial','lastName','zip','state','originalPurchaser'];
+function _mpUnitPlain(){ var u=mpUnit(),o={}; _MP_UNIT_KEYS.forEach(function(k){ if(u[k]!==undefined&&u[k]!==null&&u[k]!=='')o[k]=u[k]; }); return o; }
 function mpUnit(){ return (window._mpUnitState=window._mpUnitState||{}); }
-function mpUnitLearn(src){
+// Where a value came from. Something READ OFF THE EQUIPMENT outranks something
+// parsed out of a sentence — mpParseUnit matches a brand name anywhere in the text
+// and treats any digit-bearing token as a possible serial, so "it's not a Trane, I
+// did the Carrier one already" or a work-order number in a follow-up could otherwise
+// overwrite what was printed on the plate.
+var _MP_SRC_RANK={plate:3,scan:3,stated:2,typed:1};
+function _mpKey(v){ return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+function mpUnitLearn(src,source){
   var u=mpUnit(); if(!src)return u;
-  // Never let an empty value erase something we already know. A follow-up sentence
-  // that mentions no serial must not wipe the serial off the data plate.
+  source=source||'typed';
+  u._src=u._src||{};
+  // A DIFFERENT serial is a DIFFERENT piece of equipment. On a multi-rooftop job a
+  // tech checks unit A, gets asked for the homeowner's name, then walks to unit B —
+  // and the name, zip and state from unit A were surviving onto unit B's lookup,
+  // because "never erase a non-empty field" is exactly what makes that silent. The
+  // manufacturer then answers about the wrong unit and nothing looks uncertain.
+  if(src.serial&&u.serial&&_mpKey(src.serial)!==_mpKey(u.serial)){
+    ['brand','model','lastName','zip','state','originalPurchaser'].forEach(function(k){
+      delete u[k]; delete u._src[k];
+    });
+    window._mpWarrantyAsks=0; window._mpWarrantyPending=null;
+  }
   _MP_UNIT_KEYS.forEach(function(k){
     var v=src[k];
     if(v===null||v===undefined||v==='')return;
-    u[k]=v;
+    // Never let a weaker source overwrite a stronger one for the equipment fields.
+    if(k==='brand'||k==='model'||k==='serial'){
+      var had=_MP_SRC_RANK[u._src[k]]||0, now=_MP_SRC_RANK[source]||0;
+      if(u[k]&&now<had)return;
+    }
+    u[k]=v; u._src[k]=source;
   });
   return u;
 }
@@ -12125,6 +12149,10 @@ function _mpWarrantyExtras(t,expect){
   return out;
 }
 function mpWarrantyCheck(){
+  // Tapping this tile always means "the unit I am standing at right now", never a
+  // continuation of the last one. Without this the previous unit's homeowner name
+  // and zip survive into this lookup.
+  mpUnitClear();
   window._mpPendingWarranty=true;
   if(typeof mpEnterChat==='function')mpEnterChat();
   mpAskMike("Give me the brand and the serial number off the data plate and I'll pull the actual warranty registration — not the general terms, the real status on that unit. Grab the model number too if it's on there; Goodman needs it. Or just snap a photo of the plate.");
@@ -12135,6 +12163,10 @@ function mpWarrantyCheck(){
 // only what is physically printed, never guess the brand — a guessed brand sends us
 // to the wrong manufacturer's registry and comes back "no registration found",
 // which reads to a tech like the unit isn't covered.
+function _hold_after_photo(){
+  var k=_mpUnitPlain(); k.need=['brand'];
+  window._mpWarrantyPending=k; window._mpPendingWarranty=true;
+}
 async function mpWarrantyFromPhoto(file,extras,prior,caption){
   // Show the tech HIS OWN PHOTO, not the words "Data plate". Every other path in the
   // app renders a thumbnail; this one printed a label, so a tech who attached a plate
@@ -12182,17 +12214,29 @@ async function mpWarrantyFromPhoto(file,extras,prior,caption){
     // outrank nothing. Without the prior, a plate whose brand is scratched off made Mike
     // ask "who makes it?" about a brand the tech had already typed.
     if(prior){ var _pp=_mpStripEmpty(prior); delete _pp.need; mpUnitLearn(_pp); }
-    mpUnitLearn({brand:d.brand||null,model:d.model||null,serial:d.serial});
+    mpUnitLearn({brand:d.brand||null,model:d.model||null,serial:d.serial},'plate');
     mpUnitLearn(extras||{});
     // Say what we concluded and HOW, so he can correct it in one word instead of
     // being interrogated. "That's a Carrier — 25HCE is theirs" is what his senior guy
     // would say. A silent assumption is what loses his trust when it is wrong.
     var _u=mpUnit();
+    // A brand identified from a model prefix is judgement, not print. If it is not a
+    // manufacturer we can actually query, do not announce it and do not send it —
+    // a confident wrong brand returns "no registration found", which a tech reads as
+    // NOT COVERED on a unit that may well be covered.
+    if(_u.brand&&d.brandSource==='model'&&!mpParseUnit(String(_u.brand)).brand){
+      delete _u.brand; if(_u._src)delete _u._src.brand;
+      appendMessage('agent',"I can read "+_u.serial+" off that plate but I can't pin the manufacturer from it. Who makes it? That's the last thing I need.");
+      _hold_after_photo();
+      return;
+    }
     if(d.brandSource==='model'&&_u.brand){
-      appendMessage('agent',"That's a "+escapeHtml(_u.brand)+(_u.model?" — "+escapeHtml(_u.model)+" is theirs":"")+
-        ". Pulling the registration on "+escapeHtml(_u.serial)+" now. Shout if that's not right.");
+      // appendMessage escapes agent text itself (see the comment on its escapeHtml
+      // call) — pre-escaping here renders a model containing & as &amp; on screen.
+      appendMessage('agent',"That's a "+_u.brand+(_u.model?" — "+_u.model+" is theirs":"")+
+        ". Pulling the registration on "+_u.serial+" now. Shout if that's not right.");
     }else if(_u.serial){
-      appendMessage('agent',"Got it — "+escapeHtml(_u.serial)+(_u.brand?" on that "+escapeHtml(_u.brand):"")+". Pulling the registration now.");
+      appendMessage('agent',"Got it — "+_u.serial+(_u.brand?" on that "+_u.brand:"")+". Pulling the registration now.");
     }
     mpWarrantyRun(_u);
   }catch(_err){
@@ -12219,6 +12263,8 @@ function mpWarrantyLookup(text){
 // when the manufacturer doesn't want one is how a good flow starts feeling like
 // paperwork.
 async function mpWarrantyFromNameplate(data){
+  // A nameplate scan is always a new unit — he is pointing the camera at it.
+  mpUnitClear();
   try{
     if(!data||!data.brand||!data.serial)return;          // nothing to look up
     if(!currentUser||!currentUser.token)return;           // signed-out front door
@@ -12236,11 +12282,11 @@ async function mpWarrantyFromNameplate(data){
     var missing=(res.requires||[]).filter(function(f){ return !have[f.key]; });
     if(!missing.length){
       appendMessage('agent',"Got the plate — checking the actual registration with "+(res.brandLabel||data.brand)+" now.");
-      mpWarrantyRun(mpUnitLearn({brand:data.brand,serial:data.serial,model:data.model}));
+      mpWarrantyRun(mpUnitLearn({brand:data.brand,serial:data.serial,model:data.model},'scan'));
       return;
     }
     // Hold what we read so the tech only has to supply the human details.
-    mpUnitLearn({brand:data.brand,serial:data.serial,model:data.model});
+    mpUnitLearn({brand:data.brand,serial:data.serial,model:data.model},'scan');
     var _k=_mpStripEmpty(mpUnit()); _k.need=missing.map(function(f){return f.key;});
     window._mpWarrantyPending=_k;
     window._mpPendingWarranty=true;

@@ -281,6 +281,23 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
   }
   for (const f of texts) {
     try {
+      // A radio or a checkbox cannot be FILLED — fill() throws on them, which is why
+      // Carrier's "is the homeowner the original purchaser" control was logged as
+      // "could not set #isOriginal1" and the lookup ran without a field Carrier
+      // REQUIRES. Every Carrier result was therefore produced from an incomplete form.
+      // Tick them instead.
+      const kind = (form.inputs.find(i => i.selector === f.selector) || {}).type;
+      if (kind === 'radio' || kind === 'checkbox') {
+        const want = !/^(false|no|0|off)$/i.test(String(f.value));
+        if (kind === 'checkbox') { if (want) await target.check(f.selector, { timeout: 8000 }); }
+        else await target.check(f.selector, { timeout: 8000 });
+        await target.evaluate((sel) => {
+          const el = document.querySelector(sel);
+          if (el) el.dispatchEvent(new Event('change', { bubbles: true }));
+        }, f.selector).catch(() => {});
+        log(`  ${f.selector}: ticked (${kind})`);
+        continue;
+      }
       await target.fill(f.selector, String(f.value));
       // Some forms only react to a real change/blur, not to a programmatic value set.
       await target.evaluate((sel) => {

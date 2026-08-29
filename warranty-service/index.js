@@ -200,6 +200,49 @@ function release(slot) {
   if (!pool.some(s => s.busy)) { busy = false; scheduleIdleShutdown(); }
 }
 
+// ── LOCAL WORKER HANDOFF ─────────────────────────────────────────────────────
+// Carrier's lookup is behind invisible reCAPTCHA and Google scores the NETWORK the
+// request comes from. The identical code and browser get a token from Brandon's home
+// connection and are refused from a Railway datacenter address — verified both ways on
+// the same day. Nothing about the browser fixes that.
+//
+// So Carrier is handed to a worker running on his own machine, on his own connection.
+// The worker POLLS this service, so there is no tunnel, no port forwarding and no
+// inbound access to his laptop — it only ever makes outbound calls.
+//
+// SAFETY: if no worker has checked in recently, nothing changes. Carrier falls straight
+// through to the existing path and reports honestly. The laptop being asleep can never
+// be worse than today.
+// 'all' is the intended production setting: the always-on Mac is a residential
+// connection, so EVERY manufacturer is better checked from there than from a
+// datacenter. A comma list still works for narrowing it to specific brands.
+const WORKER_BRANDS_RAW = (process.env.WORKER_BRANDS || 'all').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+const WORKER_ALL = WORKER_BRANDS_RAW.includes('all');
+const WORKER_BRANDS = new Set(WORKER_BRANDS_RAW);
+function workerHandles(brandId) { return WORKER_ALL || WORKER_BRANDS.has(brandId); }
+const WORKER_TOKEN = process.env.WORKER_TOKEN || '';
+const WORKER_STALE_MS = Number(process.env.WORKER_STALE_MS || 90 * 1000);
+const WORKER_WAIT_MS = Number(process.env.WORKER_WAIT_MS || 75 * 1000);
+let workerSeenAt = 0;
+const jobs = new Map();            // id -> { brand, serial, extra, resolve, done, result }
+let jobSeq = 0;
+
+function workerOnline() { return Date.now() - workerSeenAt < WORKER_STALE_MS; }
+
+// Ask the laptop, but never wait forever and never depend on it.
+function askWorker(brand, serial, extra) {
+  return new Promise((resolve) => {
+    const id = `j${++jobSeq}`;
+    const j = { brand, serial, extra, claimed: false, done: false, resolve };
+    jobs.set(id, j);
+    setTimeout(() => {
+      if (!j.done) { j.done = true; jobs.delete(id); resolve(null); }
+    }, WORKER_WAIT_MS).unref?.();
+    const cleanup = setTimeout(() => jobs.delete(id), WORKER_WAIT_MS + 5000);
+    cleanup.unref?.();
+  });
+}
+
 // ── CACHE ────────────────────────────────────────────────────────────────────
 // Registration status changes at most once in a unit's life, so a day is
 // conservative. The cache is also what keeps us from hammering a manufacturer.
@@ -262,6 +305,34 @@ app.get('/requirements', (req, res) => {
   res.json(Object.assign({ ok: true, known: true }, r));
 });
 
+// The worker asks for something to do. Long-ish poll so it is not hammering us.
+app.get('/worker/next', (req, res) => {
+  if (WORKER_TOKEN && req.get('x-worker-token') !== WORKER_TOKEN) return res.status(401).json({ error: 'bad token' });
+  workerSeenAt = Date.now();
+  for (const [id, j] of jobs) {
+    if (!j.claimed && !j.done) {
+      j.claimed = true;
+      return res.json({ id, brand: j.brand, serial: j.serial, extra: j.extra });
+    }
+  }
+  res.json({ id: null });
+});
+
+// The worker hands back what the manufacturer said.
+app.post('/worker/result', (req, res) => {
+  if (WORKER_TOKEN && req.get('x-worker-token') !== WORKER_TOKEN) return res.status(401).json({ error: 'bad token' });
+  workerSeenAt = Date.now();
+  const { id, result, error } = req.body || {};
+  const j = jobs.get(id);
+  if (!j) return res.json({ ok: true, note: 'job already gone' });
+  j.done = true;
+  j.result = error ? { error } : result;
+  if (j.resolve) j.resolve(j.result);
+  res.json({ ok: true });
+});
+
+app.get('/worker/status', (req, res) => res.json({ online: workerOnline(), lastSeen: workerSeenAt || null, pending: jobs.size }));
+
 app.post('/lookup', async (req, res) => {
   // Only Mike calls this. It rides Railway's private network, but the shared token
   // means an accidental public exposure isn't an open proxy into manufacturer sites.
@@ -284,6 +355,32 @@ app.post('/lookup', async (req, res) => {
   // "not wired yet". We have a real browser — point it at the manufacturer's own form
   // and read the answer. Only brands with genuinely no public registry (Lennox: dealer
   // login) still refuse, because no amount of browsing gets past a login wall.
+  // Hand it to the laptop when this brand needs a residential connection and the
+  // worker is actually checked in. If anything about that fails we fall through to the
+  // normal path below, so this can only ever add an answer, never remove one.
+  if (workerHandles(brand.id) && workerOnline()) {
+    const wkey = cacheKey(brand.id, serial);
+    const wcached = cacheGet(wkey);
+    if (wcached) return res.json(Object.assign({ ok: true, supported: true, cached: true }, wcached));
+    try {
+      const w = await askWorker(brand.id, serial, req.body && req.body.extra);
+      // Accept ANY well-formed answer, including found:false. "This serial was never
+      // registered" is a real answer a tech acts on — it means base coverage — and
+      // requiring found/registered here silently discarded it and fell through to a
+      // path that could only fail. The worker signals its own failures with .error,
+      // so that is the only thing that should make us fall through.
+      if (w && !w.error && typeof w.found === 'boolean') {
+        const payload = Object.assign({ brand: brand.id, brandLabel: brand.label, serial }, w);
+        cacheSet(cacheKey(brand.id, serial), payload, w.found ? CACHE_TTL_MS : RETRY_TTL_MS);
+        console.log(`[lookup] ${brand.id} ${serial} via=worker found=${!!w.found} registered=${w.registered}`);
+        return res.json(Object.assign({ ok: true, supported: true, cached: false, via: 'worker' }, payload));
+      }
+      console.log(`[lookup] ${brand.id} ${serial} worker gave nothing — falling through`);
+    } catch (e) {
+      console.log(`[lookup] ${brand.id} worker error: ${e.message} — falling through`);
+    }
+  }
+
   let agentAttemptFailed = false;
   if (!brand.supported && brand.publicRegistry && brand.where && ANTHROPIC_KEY) {
     if (!rateOk()) return res.status(429).json({ ok: false, error: 'rate_limited' });

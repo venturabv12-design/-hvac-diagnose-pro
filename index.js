@@ -1523,6 +1523,36 @@ app.get('/api/warranty/requirements', authenticateToken, async (req, res) => {
   }
 });
 
+// ── CARRIER WORKER RELAY ─────────────────────────────────────────────────────
+// Carrier's lookup is behind invisible reCAPTCHA and Google scores the network the
+// request comes from — a home connection gets a token, a datacenter does not. So
+// Carrier is done by a small worker on Brandon's own machine, on his own connection.
+//
+// The warranty service sits on Railway's PRIVATE network and nothing outside can reach
+// it, so these two routes are the only door: the laptop polls Mike, Mike asks the
+// warranty service. The laptop only ever makes outbound calls — nothing is opened on
+// his router and nothing listens on his machine.
+app.all('/api/warranty-worker/:action', async (req, res) => {
+  const action = String(req.params.action || '').replace(/[^a-z]/gi, '');
+  if (!['next', 'result', 'status'].includes(action)) return res.status(404).json({ error: 'unknown' });
+  try {
+    const r = await fetch(`${WARRANTY_URL}/worker/${action}`, {
+      method: req.method === 'GET' ? 'GET' : 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-warranty-token': WARRANTY_TOKEN,
+        'x-worker-token': req.get('x-worker-token') || '',
+      },
+      body: req.method === 'GET' ? undefined : JSON.stringify(req.body || {}),
+      signal: AbortSignal.timeout(90000),
+    });
+    const text = await r.text();
+    res.status(r.status).type('application/json').send(text);
+  } catch (e) {
+    res.status(502).json({ error: 'warranty service unreachable' });
+  }
+});
+
 app.post('/api/warranty', authenticateToken, aiLimiter, async (req, res) => {
   // Goodman and Lennox will not return coverage without the homeowner's last name;
   // Rheem also wants the state. Those cannot come off a photo, so they arrive from

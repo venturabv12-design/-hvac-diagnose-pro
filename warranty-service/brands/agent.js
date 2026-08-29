@@ -23,7 +23,16 @@
 // only, and nothing raw is cached or logged.
 
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || '';
-const MODEL = process.env.WARRANTY_AGENT_MODEL || 'claude-opus-4-8';
+// Reading a form and pulling fields out of a result page is MECHANICAL work. It was
+// running on Opus — the most expensive model there is — at roughly five times the cost
+// of Haiku for a job Haiku does identically. Measured against the live Goodman form,
+// the hardest one we have (iframe, a model list that populates from the serial, a
+// non-standard submit control): Haiku 3/3 correct, same model number, same coverage,
+// and faster than Opus. Verified reaching and driving the Carrier and Rheem forms too.
+// ESCALATE_MODEL is the safety net — if the cheap model returns a plan it is not
+// confident in, the retry asks a stronger one rather than failing the tech.
+const MODEL = process.env.WARRANTY_AGENT_MODEL || 'claude-haiku-4-5';
+const ESCALATE_MODEL = process.env.WARRANTY_AGENT_ESCALATE || 'claude-sonnet-4-6';
 
 const log = (...a) => console.log('[agent]', ...a);
 
@@ -65,7 +74,7 @@ function scrub(text, secrets) {
     .replace(/\b[\w.+-]+@[\w-]+\.[\w.]+\b/g, '[email]');
 }
 
-async function ask(messages, maxTokens) {
+async function ask(messages, maxTokens, model) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     signal: AbortSignal.timeout(60000),
@@ -74,7 +83,7 @@ async function ask(messages, maxTokens) {
       'x-api-key': ANTHROPIC_KEY,
       'anthropic-version': '2023-06-01',
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens || 900, messages }),
+    body: JSON.stringify({ model: model || MODEL, max_tokens: maxTokens || 900, messages }),
   });
   if (!r.ok) throw new Error('model ' + r.status + ' ' + (await r.text()).slice(0, 120));
   const d = await r.json();
@@ -231,10 +240,11 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
   // the runs that would otherwise have failed outright.
   let plan = { fill: [], submit: null, confident: false };
   for (let attempt = 1; attempt <= 2; attempt++) {
-    plan = firstJson(await ask([{ role: 'user', content: planPrompt }], 800),
+    const m = attempt === 1 ? MODEL : ESCALATE_MODEL;
+    plan = firstJson(await ask([{ role: 'user', content: planPrompt }], 800, m),
                      { fill: [], submit: null, confident: false });
     if (plan.confident && (plan.fill || []).length) break;
-    if (attempt === 1) log(`  plan attempt 1 came back unusable (confident=${plan.confident} fill=${(plan.fill||[]).length}) — asking once more`);
+    if (attempt === 1) log(`  plan unusable on ${MODEL} (confident=${plan.confident} fill=${(plan.fill||[]).length}) — escalating to ${ESCALATE_MODEL}`);
   }
 
   // A missing submit selector must not throw away a form we already know how to fill.

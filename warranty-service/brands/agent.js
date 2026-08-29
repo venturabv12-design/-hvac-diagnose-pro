@@ -144,11 +144,19 @@ async function describeForm(page) {
       if (!tag) { tag = 'mp' + (++_mpN); el.setAttribute('data-mp-sel', tag); }
       return `[data-mp-sel="${tag}"]`;
     };
+    // WHICH FORM a control belongs to is load-bearing, not metadata. A manufacturer
+    // page carries several unrelated forms — Lennox's warranty page has the dealer
+    // finder's ZIP box in the header, a site search, the serial-only warranty lookup,
+    // and a separate certificate form wanting a last name. Enumerating every visible
+    // field as one flat list let a plan fill three of them at once and press a button
+    // belonging to none, which is why every Lennox lookup since launch did nothing.
+    const _forms = [...document.querySelectorAll('form')];
+    const formOf = (el) => { const f = el.closest('form'); return f ? _forms.indexOf(f) : -1; };
     const inputs = [...document.querySelectorAll('input, select, textarea')]
       .filter(el => vis(el) && !['hidden', 'submit', 'button', 'image'].includes(el.type))
       .slice(0, 25)
       .map(el => ({
-        selector: sel(el), tag: el.tagName.toLowerCase(), type: el.type || '',
+        selector: sel(el), form: formOf(el), tag: el.tagName.toLowerCase(), type: el.type || '',
         name: el.name || '', id: el.id || '',
         placeholder: el.placeholder || '', label: labelFor(el),
         options: el.tagName === 'SELECT' ? [...el.options].slice(0, 12).map(o => o.value) : undefined,
@@ -173,7 +181,7 @@ async function describeForm(page) {
       })
       .slice(0, 15)
       .map(el => ({
-        selector: sel(el),
+        selector: sel(el), form: formOf(el),
         text: (el.innerText || el.value || '').trim().slice(0, 50),
         // Half the buttons on a manufacturer page render no text at all — nav arrows,
         // carousel controls, icon buttons. Without a label the model is choosing blind
@@ -330,7 +338,48 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
       plan.submit = _named.selector;
     }
   }
-  if (!plan.confident || !plan.fill.length || !plan.submit) {
+  // ── ONE FORM, OR NONE ──────────────────────────────────────────────────────
+  // Keep only the fields that live in the SAME form as the serial, and submit with a
+  // control from that form. A plan that reaches across forms cannot work: the browser
+  // submits one form, so the other fields are never sent and the button belongs to
+  // something else entirely. Lennox failed this way on every lookup since launch — the
+  // plan filled the header's dealer-finder ZIP, the warranty form's serial and the
+  // certificate form's last name, then clicked a control from a fourth place.
+  const _bySel = new Map((form.inputs || []).map(i => [i.selector, i]));
+  const _norm = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const _serialFill = (plan.fill || []).find(f => _norm(f.value) === _norm(serial));
+  const _serialForm = _serialFill && _bySel.has(_serialFill.selector)
+    ? _bySel.get(_serialFill.selector).form : null;
+  if (_serialForm !== null && _serialForm !== undefined && _serialForm >= 0) {
+    const dropped = (plan.fill || []).filter(f => {
+      const i = _bySel.get(f.selector);
+      return i && i.form >= 0 && i.form !== _serialForm;
+    });
+    if (dropped.length) {
+      plan.fill = plan.fill.filter(f => !dropped.includes(f));
+      log(`  dropped ${dropped.length} field(s) from other forms: ${JSON.stringify(dropped.map(d => d.selector))}`);
+    }
+    const inForm = (sel) => {
+      const b = (form.buttons || []).find(x => x.selector === sel);
+      return b && (b.form === _serialForm || b.form === -1);
+    };
+    if (plan.submit && !inForm(plan.submit)) {
+      const own = (form.buttons || []).filter(b => b.form === _serialForm);
+      const pick = own.find(b => SUBMITISH.test((b.text || '') + ' ' + (b.label || ''))) || own[0] || null;
+      if (pick) {
+        log(`  submit was outside the serial's form — using "${pick.text || pick.label || pick.selector}"`);
+        plan.submit = pick.selector;
+      } else {
+        // Lennox's warranty form has NO button element of its own. Pressing Enter in
+        // the field is what a person does, and it is what the form listens for.
+        log(`  the serial's form has no submit control — pressing Enter in the field instead`);
+        plan.submit = null;
+        plan.enterOn = _serialFill.selector;
+      }
+    }
+  }
+
+  if (!plan.confident || !plan.fill.length || (!plan.submit && !plan.enterOn)) {
     // Say WHY, with the evidence. This exact error was reported as "still failing"
     // across three different builds and the log could not distinguish a missing submit
     // button from an unrecognised form from a model that simply said no.
@@ -436,7 +485,7 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
   const beforeText = await target.evaluate(() => (document.body.innerText || '')).catch(() => '');
 
   await Promise.allSettled([
-    target.click(plan.submit),
+    plan.submit ? target.click(plan.submit) : target.press(plan.enterOn, 'Enter'),
     page.waitForLoadState('networkidle', { timeout: 25000 }).catch(() => {}),
   ]);
   await page.waitForTimeout(6000);   // the result call can land after networkidle

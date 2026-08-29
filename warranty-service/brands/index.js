@@ -131,9 +131,15 @@ const PENDING = [
     // technicians the opposite.
     publicRegistry: true,
     where: 'https://www.lennox.com/residential/owners/assistance/warranty/',
-    requires: [FIELD.serial, FIELD.lastName, FIELD.zip],
-    note: 'Public lookup, no login. Serial alone gets a result; last name and zip ' +
-          'sharpen it.',
+    // VERIFIED against the live page 2026-08-29 by enumerating its forms: the
+    // "Lennox Warranty Lookup" takes the SERIAL AND NOTHING ELSE. The last name
+    // belongs to a different form further down the page ("Need a Product Warranty
+    // Certificate?") and the zip belongs to the dealer finder in the site header —
+    // neither is part of this lookup. Asking a technician for them made him hunt down
+    // the homeowner's details for no reason, and worse, it fed the planner fields from
+    // three separate forms, which is what stopped Lennox ever submitting.
+    requires: [FIELD.serial],
+    note: 'Public lookup, no login. Serial only.',
   },
 ];
 

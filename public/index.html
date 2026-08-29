@@ -5603,8 +5603,13 @@ function obProse(pack,type){
 // TECH has the money frame; HOME never does (guardrail: revenue/objection coaching is
 // tech-only) and closes on 'tour', the homeowner navigation walkthrough. Each entry
 // names the pack key the renderer reads its prose from.
-var OB_FRAMES_TECH=['who','cold','call','facetime','text','money'];
-var OB_FRAMES_HOME=['who','cold','talkedaround','facetime','tour'];
+// Brandon, 2026-08-29: onboarding is TEXT ONLY. The call and FaceTime frames are out.
+// A visitor who has not signed up cannot use either of them — checkCameraAccess returns
+// early with "Loading… tap again in a moment" when there is no account, which is a door
+// that never opens — so selling them in the intro promises something the next tap cannot
+// deliver. Show the one thing he CAN do here, and do it well.
+var OB_FRAMES_TECH=['who','cold','text','money'];
+var OB_FRAMES_HOME=['who','cold','talkedaround','tour'];
 function obFrames(){
   var seq=(obRole()==='homeowner')?OB_FRAMES_HOME.slice():OB_FRAMES_TECH.slice();
   // A signed-in account already declared its audience — never ask it again.

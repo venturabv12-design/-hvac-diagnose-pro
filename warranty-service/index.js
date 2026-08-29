@@ -20,6 +20,7 @@
 
 const express = require('express');
 const { chromium } = require('playwright');
+const { spawn } = require('child_process');
 const brands = require('./brands');
 const { agentLookup } = require('./brands/agent');
 
@@ -53,6 +54,10 @@ const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 '
 // a time keeps memory flat and predictable rather than fast and spiky.
 let browser = null;
 let page = null;
+// The browser now runs as its own process so it is not started in automation mode.
+let _proc = null;
+const CDP_PORT = Number(process.env.CDP_PORT || 9222);
+const CDP_PROFILE = process.env.CDP_PROFILE || '/tmp/mp-chrome-profile';
 let idleTimer = null;
 let busy = false;
 const waiters = [];
@@ -68,6 +73,9 @@ async function discardBrowser(why) {
   const b = browser;
   browser = null; page = null;
   if (b) { try { await b.close(); } catch (_) {} }
+  // We started the process ourselves, so we have to stop it ourselves — closing the
+  // CDP connection alone leaves the browser running and the port held.
+  if (_proc) { try { _proc.kill('SIGKILL'); } catch (_) {} _proc = null; }
   console.warn(`[browser] discarded after ${why} — a stale automation cannot be allowed to keep driving the shared page`);
 }
 
@@ -79,15 +87,47 @@ async function ensureBrowser() {
   // it outright: Mitsubishi's warranty page returns 403 to the default and 200 to a
   // normal user agent and window size, same URL, same second. Nothing here
   // misrepresents anything; it is the browser configuration a person would have.
-  browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });
-  const ctx = await browser.newContext({
-    userAgent: UA,
-    viewport: { width: 1512, height: 900 },
-    locale: 'en-US',
-    timezoneId: 'America/New_York',
-    extraHTTPHeaders: { 'Accept-Language': 'en-US,en;q=0.9' },
-  });
-  page = await ctx.newPage();
+  // START THE BROWSER AS AN ORDINARY PROCESS, THEN ATTACH.
+  // chromium.launch() starts the browser in automation mode — navigator.webdriver is
+  // true and the automation switches are set — and invisible reCAPTCHA refuses it.
+  // Carrier's lookup runs grecaptcha.execute() on submit and only searches inside the
+  // callback, so a refused token meant the form NEVER RAN and we reported "no
+  // registration found" on units nobody had looked up. Verified 2026-08-29 on the
+  // identical page: launched -> webdriver true, token 0 chars, page unchanged.
+  // Attached to a normally-started browser -> webdriver false, token 1337 chars, a
+  // real warranty record. Nothing is spoofed; the browser simply is not started in
+  // automation mode, so there is nothing false to detect.
+  const _exe = chromium.executablePath();
+  _proc = spawn(_exe, [
+    `--remote-debugging-port=${CDP_PORT}`,
+    `--user-data-dir=${CDP_PROFILE}`,
+    // --headless=new is NOT what reCAPTCHA objects to. What it detects is automation
+    // mode: navigator.webdriver and the --enable-automation switch, which
+    // chromium.launch() adds and we do not. Railway has no display, so headless is
+    // required there; set CDP_HEADED=1 to watch it run locally.
+    ...(process.env.CDP_HEADED ? [] : ['--headless=new']),
+    '--no-first-run', '--no-default-browser-check',
+    '--no-sandbox', '--disable-dev-shm-usage', 'about:blank',
+  ], { stdio: 'ignore', detached: false });
+  _proc.on('exit', () => { _proc = null; });
+
+  // Wait for the debugging endpoint rather than guessing at a sleep.
+  let _ready = false;
+  for (let i = 0; i < 40 && !_ready; i++) {
+    try {
+      const r = await fetch(`http://127.0.0.1:${CDP_PORT}/json/version`, { signal: AbortSignal.timeout(1000) });
+      if (r.ok) _ready = true;
+    } catch (_) { await new Promise(r => setTimeout(r, 250)); }
+  }
+  if (!_ready) throw new Error('browser did not expose its debugging port');
+  browser = await chromium.connectOverCDP(`http://127.0.0.1:${CDP_PORT}`);
+  // Use the browser's OWN default context. A freshly created context behaves like an
+  // incognito session; the run that actually got a reCAPTCHA token used the default
+  // one, so that is what ships. The user agent needs no override either — this is a
+  // real Chrome, so it already reports itself as one.
+  const ctx = browser.contexts()[0] || await browser.newContext();
+  page = (ctx.pages().find(p => !p.isClosed())) || await ctx.newPage();
+  await page.setViewportSize({ width: 1512, height: 900 }).catch(() => {});
   // Images/fonts/styles are pure waste here — we only ever read JSON.
   await page.route('**/*', route => {
     const t = route.request().resourceType();

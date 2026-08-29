@@ -12597,6 +12597,43 @@ async function mpWarrantyRun(u){
         : "Base term only. Worth telling the customer plainly — registration had to happen within the window after install, and it didn't.");
       appendMessage('agent',lines.join("\n"));
       if(typeof haptic==='function')haptic('light');
+      // A TECH NEEDS THE NUMBER. Everything above says registered-or-not and never says
+      // how many YEARS, and the registry's own sentence (which often carries it — "5-year
+      // standard parts warranty") was being built over and dropped on the floor. Brandon,
+      // repeatedly: "if it's not registered it's five, if it is it's ten." Give both, so
+      // he can tell the customer what registering would have been worth.
+      (function(){
+        var yrs=(d.parts&&d.parts.years)||null;
+        var known=[];
+        if(yrs) known.push("**Parts: "+yrs+" year"+(yrs===1?"":"s")+"** from install"+(reg?" under the registered term":" on the base term")+".");
+        if(d.compressor&&d.compressor.years) known.push("Compressor: "+d.compressor.years+" years.");
+        if(d.labor&&d.labor.years) known.push("Labor: "+d.labor.years+" years.");
+        // d.summary is the registry-derived sentence. Show it only when it adds a term we
+        // did not already print, or it just repeats the header in longer words.
+        if(!known.length&&d.summary) known.push(d.summary);
+        if(known.length) appendMessage('agent',known.join("\n"));
+        // The comparison is the part that changes what he tells the customer, and it is
+        // NOT on the registry page — it is the manufacturer's published schedule. Ask for
+        // it only when it is actionable: the unit is unregistered and we have no term yet,
+        // or we have the base term and he needs to know what the extended one would be.
+        (async function(){
+          try{
+            if(typeof showTyping==='function')showTyping();
+            var _sys=(typeof AGENT_SYSTEM==='string'?AGENT_SYSTEM:'')+
+              "\n\nANSWER FORMAT — two lines, no preamble. A technician is standing at the unit.\n"+
+              "1) This brand and product type's PUBLISHED parts term unregistered, and registered. Give both numbers plainly (e.g. \"5 years base, 10 registered\").\n"+
+              "2) Decode the manufacture date from the serial ONLY if you genuinely recognise the format; if not, skip it and say nothing about age. Never invent a date.\n"+
+              "Label these as the manufacturer's published terms, not a lookup on this unit. Do not repeat what the registry already reported. No safety preamble.";
+            var _q="Unit: "+(u.brand||'')+" "+(d.model||u.model||'')+", serial "+u.serial+
+              ". The registry shows it "+(reg?"REGISTERED for the extended term":"NOT registered — base coverage only")+
+              (yrs?(", parts "+yrs+" years"):"")+
+              ". What are the published base and registered parts terms for this brand and product type?";
+            var _ans=await callAI(_sys,[{role:'user',content:_q}],320);
+            if(typeof hideTyping==='function')hideTyping();
+            if(_ans)appendMessage('agent',_ans);
+          }catch(_te){ if(typeof hideTyping==='function')hideTyping(); }
+        })();
+      })();
     })
     .catch(function(){
       if(typeof hideTyping==='function')hideTyping();

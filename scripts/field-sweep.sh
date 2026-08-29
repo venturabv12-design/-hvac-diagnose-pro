@@ -159,5 +159,40 @@ for u,age in live: print('ALERT unanswered tech=%s asked %.0f min ago, still no 
 sys.exit(1 if live else 0)
 " || RC=1
 
+# ── 4. warranty lookups that gave a tech nothing ─────────────────────────────
+# This sweep watched Mike's chat and NOTHING ELSE, so the warranty layer — six brand
+# families, each driving someone else's form that can change without warning — could be
+# dead for every technician and this file would still print SWEEP_CLEAN. A monitor with
+# a hole that size is worse than none, because the silence reads as health.
+#
+# found:false is NOT the alert. A unit that was never registered is the most common real
+# result and it is the answer a tech needs. The alert is INCONCLUSIVE: the tech asked,
+# and we could not get the manufacturer's form to run at all.
+W=$(/usr/bin/curl -s -m 30 "$SU/rest/v1/events?select=user_id,payload,created_at&type=eq.warranty_lookup&created_at=gte.$SINCE&limit=300" \
+      -H "apikey: $SK" -H "Authorization: Bearer $SK")
+echo "$W" | HOUSE="$HOUSE" python3 -c "
+import sys,json,collections,os
+raw=sys.stdin.read()
+try: r=json.loads(raw)
+except Exception: print('ALERT warranty_unreadable',raw[:120]); sys.exit(1)
+if not isinstance(r,list): print('ALERT warranty_db_error',str(r)[:160]); sys.exit(1)
+HOUSE=set(f for f in (os.environ.get('HOUSE') or '').split(',') if f)
+rows=[x for x in r if isinstance(x,dict) and x.get('user_id') not in HOUSE]
+bad=collections.defaultdict(lambda:{'techs':set(),'n':0,'why':''})
+for x in rows:
+    p=x.get('payload') or {}
+    if not isinstance(p,dict): continue
+    b=p.get('brand') or 'unknown'
+    # An unsupported brand is an honest 'I do not have that one', not a failure.
+    if p.get('inconclusive') is True or p.get('reason')=='lookup_did_not_run':
+        e=bad[b]; e['techs'].add(x.get('user_id')); e['n']+=1
+        e['why']=p.get('reason') or 'inconclusive'
+print('warranty lookups=%d brands_failing=%d'%(len(rows),len(bad)))
+for b,e in bad.items():
+    print('ALERT warranty_dead brand=%s techs=%d lookups=%d reason=%s — a tech asked and got no answer'
+          %(b,len(e['techs']),e['n'],e['why']))
+sys.exit(1 if bad else 0)
+" || RC=1
+
 [ $RC -eq 0 ] && echo "SWEEP_CLEAN"
 exit $RC

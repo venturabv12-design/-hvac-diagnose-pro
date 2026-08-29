@@ -1589,6 +1589,14 @@ app.post('/api/warranty', authenticateToken, aiLimiter, async (req, res) => {
         found: !!data.found,
         registered: data.registered === true,
         supported: data.supported !== false,
+        // found:false alone is ambiguous and that ambiguity is the whole problem: it
+        // covers BOTH "the registry answered, this unit was never registered" (a good
+        // result) and "we could not get their form to run" (our failure). Without these
+        // two fields the field-watch cannot tell a working brand from a broken one, so a
+        // brand could be silently dead for days while the log looked normal.
+        inconclusive: data.inconclusive === true,
+        reason: data.reason || null,
+        via: data.via || null,
       });
     } catch (_) {}
 

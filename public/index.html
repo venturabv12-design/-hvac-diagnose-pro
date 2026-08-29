@@ -10849,6 +10849,20 @@ async function sendChat(){
         if(typeof generateAndShowDiagram==='function')generateAndShowDiagram(text,response);
       }
     }catch(_dgErr){}
+    // THE MONEY LEAK. chatHistory keeps the full base64 image, and every following
+    // message ships the last 10 entries back to the model — so ONE photo was billed
+    // eleven times, at Opus rates, for nothing: Mike already read it and his answer is
+    // right there in the history. Swap the image for a short note now the turn is done.
+    // Context is preserved; the picture stops being re-uploaded ten more times.
+    try{
+      if(chatMsg&&Array.isArray(chatMsg.content)){
+        var _cap='';
+        for(var _ci=0;_ci<chatMsg.content.length;_ci++){
+          if(chatMsg.content[_ci]&&chatMsg.content[_ci].type==='text'){_cap=chatMsg.content[_ci].text||'';break;}
+        }
+        chatMsg.content='[photo the tech sent]'+(_cap?' '+String(_cap).slice(0,180):'');
+      }
+    }catch(_ce){}
     chatHistory.push({role:'assistant',content:response});
     saveUserHistory();
     extractMemoryCues(text||'',response);

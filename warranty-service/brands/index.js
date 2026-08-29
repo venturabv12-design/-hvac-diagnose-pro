@@ -119,7 +119,11 @@ const PENDING = [
   {
     id: 'lennox',
     label: 'Lennox / Armstrong Air / Ducane',
-    aliases: ['lennox', 'armstrong air', 'ducane'],
+    // 'armstrong air' alone never matched a tech typing just "Armstrong" — resolve()
+    // asks whether the TECH'S words contain the alias, so the shorter form has to be
+    // listed too. Our own label says "Lennox / Armstrong / Ducane" while Mike was
+    // telling anyone who typed Armstrong that the brand was not wired.
+    aliases: ['lennox', 'armstrong', 'armstrong air', 'ducane', 'aire-flo', 'aireflo'],
     // CORRECTED 2026-08-28 — Brandon: "I don't need a login for Lennox either."
     // He is right. lennox.com/residential/owners/assistance/warranty/ is a public
     // "Lennox Warranty Lookup" with a serial field and a Search button. The dealer

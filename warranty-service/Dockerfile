@@ -27,7 +27,6 @@ RUN apt-get update \
 ENV NODE_ENV=production \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
     DISPLAY=:99 \
-    CDP_HEADED=1 \
     PORT=3000
 
 WORKDIR /app
@@ -38,6 +37,11 @@ RUN npm install --omit=dev
 COPY warranty-service/ ./
 
 EXPOSE 3000
-# Start the virtual display, then the service. xvfb-run wraps the process so the
-# display is up before Chrome ever launches and is torn down with it.
-CMD ["xvfb-run", "-a", "--server-args=-screen 0 1512x900x24", "node", "index.js"]
+# Start the display ourselves and WAIT for it, then start the service. xvfb-run wrapping
+# CMD did not boot in this image — the container never reached "listening on" and Mike's
+# warranty went degraded. Doing it explicitly means the failure is visible in the log and
+# the service still starts (headless) if the display cannot come up, instead of the whole
+# container dying.
+COPY warranty-service/start.sh /start.sh
+RUN chmod +x /start.sh
+CMD ["/start.sh"]

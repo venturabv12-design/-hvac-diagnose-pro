@@ -12257,8 +12257,11 @@ async function mpWarrantyFromPhoto(file,extras,prior,caption,autoDetect){
       +'<img src="'+_b64+'" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;cursor:pointer;" onclick="openImgOverlay(\''+_b64+'\')"/>');
   }catch(_pe){ appendMessage('user',(caption?escapeHtml(caption)+'\n':'')+'📷 Data plate'); }
   // Answer him like a person would. A tech texts his senior guy a plate and gets
-  // "yep, on it" before the answer — not silence, and not a form.
-  appendMessage('agent',"On it — reading the plate now.");
+  // "yep, on it" before the answer — not silence, and not a form. But only call it a
+  // plate when he TOLD us it is one: on a bare photo we are guessing, and Cruz sent a
+  // capacitor and got "reading the plate now" back. A senior tech says "let me look"
+  // until he knows what he is looking at.
+  appendMessage('agent',autoDetect?"On it — let me take a look.":"On it — reading the plate now.");
   if(typeof showTyping==='function')showTyping();
   try{
     var mime=file.type||'image/jpeg', b64=await blobToBase64(file);

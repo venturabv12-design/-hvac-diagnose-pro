@@ -12499,7 +12499,13 @@ async function mpWarrantyRun(u){
         return;
       }
       if(!d.found){
-        appendMessage('agent',"No registration came back for serial "+u.serial+" on that "+_mpSayBrand((d.brandLabel||u.brand))+".\n\nTwo usual reasons: the serial's off by a character, or the unit was never registered — and that second one matters on its own, because unregistered normally means the shorter base term instead of the extended one. Worth another look at the plate.");
+        // LEAD WITH THE ANSWER. This used to open "No registration came back", which
+        // reads as the tool failing — Brandon watched the whole lookup work end to end
+        // and still thought it was broken, because the first four words sounded like an
+        // error. An unregistered unit is not a failure, it is the single most common
+        // real result and it tells a tech exactly what he needs: base coverage only,
+        // do not quote the extended term. Say that first, then say why.
+        appendMessage('agent',"Treat that one as **base coverage** — "+_mpSayBrand((d.brandLabel||u.brand))+" has no registration on serial "+u.serial+".\n\nUnregistered is the usual reason, and it means the shorter base parts term, not the extended one. The other possibility is the serial being off by a character, so it's worth a second look at the plate before you quote it.\n\nEither way: don't quote extended coverage on this one.");
         return;
       }
       var reg=d.registered===true;

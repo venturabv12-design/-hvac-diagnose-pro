@@ -505,7 +505,32 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
   let raw = (rawFrame && rawFrame.length > 200) ? rawFrame : (rawPage || rawFrame);
   // Did anything actually happen? Unchanged page AND no API traffic means the submit
   // never went through.
-  const afterText = await target.evaluate(() => (document.body.innerText || '')).catch(() => '');
+  let afterText = await target.evaluate(() => (document.body.innerText || '')).catch(() => '');
+  if (!apiBodies.length && afterText && beforeText && afterText === beforeText) {
+    // SECOND ATTEMPT BEFORE GIVING UP. A click that changes nothing usually means the
+    // control we pressed is not the one wired to the form — Lennox's lookup has an
+    // unlabelled button that does nothing, and the form only responds to Enter in the
+    // field, which is what a person does anyway. One retry costs a few seconds and is
+    // the difference between an answer and telling a technician we could not check.
+    const _serialSel = (plan.fill || []).find(f => norm0(f.value) === norm0(serial));
+    if (_serialSel && !plan.enterOn) {
+      log(`  submit produced no change — pressing Enter in the serial field and retrying`);
+      page.on('response', _grab);
+      await Promise.allSettled([
+        target.press(_serialSel.selector, 'Enter'),
+        page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {}),
+      ]);
+      await page.waitForTimeout(6000);
+      page.off('response', _grab);
+      const retryText = await target.evaluate(() => (document.body.innerText || '')).catch(() => '');
+      if (apiBodies.length || (retryText && retryText !== beforeText)) {
+        log(`  Enter worked — the form ran on the retry`);
+        raw = (retryText && retryText.length > 200) ? retryText.slice(0, 6000)
+            : (await page.evaluate(() => (document.body.innerText || '').slice(0, 6000)).catch(() => raw));
+        afterText = retryText;
+      }
+    }
+  }
   if (!apiBodies.length && afterText && beforeText && afterText === beforeText) {
     log(`  submit produced NO change and no API call — the form did not run`);
     const err = new Error(`${brand.label}'s lookup form did not submit`);

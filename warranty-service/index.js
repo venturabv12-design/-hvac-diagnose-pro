@@ -289,8 +289,11 @@ app.post('/lookup', async (req, res) => {
     if (!rateOk()) return res.status(429).json({ ok: false, error: 'rate_limited' });
     let acquiredA = false, slotA = null;
     try {
-      slotA = await acquire(); acquiredA = true;
+      // The browser MUST exist before we ask for a slot. Asking first deadlocks: the
+      // pool is empty, poolFree() returns nothing, the caller is parked in the queue,
+      // and nothing ever releases because no slot was ever created. Every lookup hung.
       await ensureBrowser();
+      slotA = await acquire(); acquiredA = true;
       const p = slotA.page;
       const running = agentLookup(p, brand, serial, req.body && req.body.extra);
       // The loser of the race still settles. Swallow its rejection here or it lands as
@@ -372,10 +375,11 @@ app.post('/lookup', async (req, res) => {
 
   let acquired = false, slot = null;
   try {
+    // Browser first, then a slot — see the note on the agent path. Reversing these
+    // deadlocks the very first request.
+    await ensureBrowser();
     slot = await acquire();
     acquired = true;
-
-    await ensureBrowser();
     const p = slot.page;
     const running = brand.lookup(p, serial);
     running.catch(() => {});   // the race loser still settles; see discardBrowser

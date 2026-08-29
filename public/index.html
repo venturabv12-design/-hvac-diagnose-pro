@@ -482,6 +482,10 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .ob-say b{color:#fff;}
 
 /* FRAME 6 — DROP INTO THE MAGIC */
+.ob-live{display:flex;flex-direction:column;gap:8px;margin:10px 0 4px}
+.ob-live:empty{display:none}
+.ob-dots{opacity:.6}
+.ob-gate-hot{background:rgba(199,85,59,.14);border-color:rgba(199,85,59,.5)!important;transform:scale(1.02);transition:all .3s ease}
 .ob-magic-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px;}
 /* magic frame: drop 3D depth, camera-push scale entrance */
 .ob-frame.ob-in .ob-magic-top,.ob-frame.ob-in .ob-magic-head,.ob-frame.ob-in .ob-chat,.ob-frame.ob-in .ob-chips,.ob-frame.ob-in .ob-composer,.ob-frame.ob-in .ob-gate{transform:none;}
@@ -3363,9 +3367,9 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           <div class="mp-cred">MASTER TECH</div>
         </div>
         <div class="mp-reach">
-          <button class="mp-reach-btn call" onclick="mpEnterChat();toggleVoiceMode();" aria-label="Call Mike — hands-free voice"><span class="mp-rico">&#x1F4DE;</span>CALL</button>
+          <button class="mp-reach-btn call" onclick="if(!mpNeedAccount('call')){mpEnterChat();toggleVoiceMode();}" aria-label="Call Mike — hands-free voice"><span class="mp-rico">&#x1F4DE;</span>CALL</button>
           <button class="mp-reach-btn chat" onclick="mpEnterChat();setTimeout(function(){var i=document.getElementById('chatInput');if(i)i.focus();},60);" aria-label="Text Mike — chat"><span class="mp-rico">&#x1F4AC;</span>TEXT</button>
-          <button class="mp-reach-btn face" onclick="checkCameraAccess();" aria-label="FaceTime Mike — live visual"><span class="mp-rico">&#x1F4F7;</span>FACETIME</button>
+          <button class="mp-reach-btn face" onclick="if(!mpNeedAccount('face'))checkCameraAccess();" aria-label="FaceTime Mike — live visual"><span class="mp-rico">&#x1F4F7;</span>FACETIME</button>
         </div>
         <div id="jobBar" class="job-bar"></div>
       </div>
@@ -3397,11 +3401,11 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
-          <button id="voiceModeBtn" onclick="toggleVoiceMode()" class="v2-hbtn call" title="Call Mike" aria-label="Call Mike — hands-free voice conversation">
+          <button id="voiceModeBtn" onclick="if(!mpNeedAccount('call'))toggleVoiceMode()" class="v2-hbtn call" title="Call Mike" aria-label="Call Mike — hands-free voice conversation">
             <span class="v2-hbtn-ic"><i data-lucide="phone"></i></span>
             <span id="voiceModeBtnLabel" class="v2-hbtn-label" data-v2i18n="reachCall">CALL</span>
           </button>
-          <button onclick="checkCameraAccess()" class="v2-hbtn face" title="FaceTime Mike — live visual diagnostics" aria-label="FaceTime Mike — live visual diagnostics">
+          <button onclick="if(!mpNeedAccount('face'))checkCameraAccess()" class="v2-hbtn face" title="FaceTime Mike — live visual diagnostics" aria-label="FaceTime Mike — live visual diagnostics">
             <span class="v2-hbtn-ic">&#x1F4F9;</span>
             <span class="v2-hbtn-label" data-v2i18n="reachFace">FACETIME</span>
           </button>
@@ -4652,6 +4656,28 @@ document.addEventListener('visibilitychange',function(){
   var siBtn=document.getElementById('siBtn');var suBtn=document.getElementById('suBtn');
   if(siBtn&&siBtn.disabled&&!siBtn.textContent.includes('Signing'))siBtn.disabled=false;
   if(suBtn&&suBtn.disabled&&!suBtn.textContent.includes('Creating'))suBtn.disabled=false;
+
+  // ── COMING BACK TO A CALL ───────────────────────────────────────────────────
+  // Leaving the app mid-call suspends the AudioContext and strands whatever Mike was
+  // saying. Nothing used to recover it: you'd return to "Mike is talking…" with no
+  // audio, and hanging up and hitting call again wouldn't help because the speaking
+  // state was still latched on. On return: wake the audio context, and if we still
+  // claim to be speaking with nothing actually playing, put the UI back to rest so the
+  // tech can just talk again.
+  if(document.visibilityState!=='visible')return;
+  try{
+    if(sharedAudioCtx&&(sharedAudioCtx.state==='suspended'||sharedAudioCtx.state==='interrupted')){
+      sharedAudioCtx.resume().catch(function(){});
+    }
+  }catch(e){}
+  // Small delay so a genuinely-resuming clip gets its chance before we call it stuck.
+  setTimeout(function(){
+    try{
+      if(typeof isMikeSpeaking!=='undefined'&&isMikeSpeaking&&!mikeAudio){
+        resetMikeSpeakingUI();
+      }
+    }catch(e){}
+  },1200);
 });
 
 function authSignUp(){
@@ -5577,8 +5603,13 @@ function obProse(pack,type){
 // TECH has the money frame; HOME never does (guardrail: revenue/objection coaching is
 // tech-only) and closes on 'tour', the homeowner navigation walkthrough. Each entry
 // names the pack key the renderer reads its prose from.
-var OB_FRAMES_TECH=['who','cold','call','facetime','text','money'];
-var OB_FRAMES_HOME=['who','cold','talkedaround','facetime','tour'];
+// Brandon, 2026-08-29: onboarding is TEXT ONLY. The call and FaceTime frames are out.
+// A visitor who has not signed up cannot use either of them — checkCameraAccess returns
+// early with "Loading… tap again in a moment" when there is no account, which is a door
+// that never opens — so selling them in the intro promises something the next tap cannot
+// deliver. Show the one thing he CAN do here, and do it well.
+var OB_FRAMES_TECH=['who','cold','text','money'];
+var OB_FRAMES_HOME=['who','cold','talkedaround','tour'];
 function obFrames(){
   var seq=(obRole()==='homeowner')?OB_FRAMES_HOME.slice():OB_FRAMES_TECH.slice();
   // A signed-in account already declared its audience — never ask it again.
@@ -5764,7 +5795,11 @@ function obFrameHTML(type,p){
       +'<div class="ob-chips"><span class="ob-chip"><span class="a">↳</span> '+obEsc(c.chip1)+'</span>'
         +'<span class="ob-chip"><span class="a">↳</span> '+obEsc(c.chip2)+'</span>'
         +'<span class="ob-chip"><span class="a">📷</span> '+obEsc(c.chip3)+'</span></div>'
-      +'<div class="ob-composer"><div class="ph">'+obEsc(c.ph)+'</div><div class="send">↑</div></div>'
+      +'<div class="ob-live" id="obLive"></div>'
+      +'<div class="ob-composer" id="obComposer"><input id="obTasteInput" class="ph" type="text" '
+        +'placeholder="'+obEsc(c.ph)+'" autocomplete="off" autocapitalize="sentences" '
+        +'style="flex:1;background:none;border:none;outline:none;color:inherit;font:inherit;min-width:0"/>'
+        +'<div class="send" id="obTasteSend" role="button" tabindex="0">↑</div></div>'
       +findTech
       +'<div class="ob-gate"><span class="lock">🔒</span> '+obEsc(c.gate)+'</div>';
   }
@@ -5913,12 +5948,66 @@ function stopObSpeaking(){
 }
 
 function wireObMagic(host,isMagic){
-  if(isMagic){
-    Array.prototype.forEach.call(host.querySelectorAll('.ob-chip,.ob-composer,.ob-find-tech'),function(n){
-      n.style.cursor='pointer';
-      n.addEventListener('click',function(){obFinish();});
+  if(!isMagic)return;
+  // The gate and the "find a tech" line still just exit — those ARE the exits.
+  Array.prototype.forEach.call(host.querySelectorAll('.ob-find-tech,.ob-gate'),function(n){
+    n.style.cursor='pointer';
+    n.addEventListener('click',function(){obFinish();});
+  });
+  var input=host.querySelector('#obTasteInput');
+  var send=host.querySelector('#obTasteSend');
+  var live=host.querySelector('#obLive');
+  if(!input||!send||!live)return;
+
+  // Chips prefill a real question rather than dumping him out. He came to see Mike
+  // work; the whole point of this screen is that he gets to watch it happen.
+  Array.prototype.forEach.call(host.querySelectorAll('.ob-chip'),function(n){
+    n.style.cursor='pointer';
+    n.addEventListener('click',function(){
+      input.value=(n.textContent||'').replace(/^[^A-Za-z0-9]+/,'').trim();
+      input.focus();
     });
+  });
+
+  var spent=false;
+  function ask(){
+    var q=(input.value||'').trim();
+    if(!q||spent)return;
+    spent=true;
+    input.disabled=true; send.style.opacity='.4';
+    live.innerHTML='<div class="bubble me">'+obEsc(q)+'</div>'
+      +'<div class="bubble mike" id="obLiveMike"><div class="who2">MIKE · 25 YRS</div>'
+      +'<span class="ob-dots">Mike\u2019s looking at it\u2026</span></div>';
+    try{live.scrollIntoView({behavior:'smooth',block:'end'});}catch(e){}
+
+    // Send Mike's REAL brain, not a stripped-down one — a weaker answer here is worse
+    // than no free answer at all, because this IS the product demo.
+    var sys=(typeof AGENT_SYSTEM==='string'&&AGENT_SYSTEM)?AGENT_SYSTEM:'You are Mike, a master HVAC technician with 25 years in the field. Answer a working tech directly and briefly.';
+    fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({taste:true,system:sys,max_tokens:700,messages:[{role:'user',content:q}]})})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var box=document.getElementById('obLiveMike');
+        if(!box)return;
+        var text=d&&(d.response||d.text);
+        if(!text){
+          box.innerHTML='<div class="who2">MIKE · 25 YRS</div>'+obEsc((d&&d.error)||'Give that another go in a second.');
+          input.disabled=false; send.style.opacity=''; spent=false;
+          return;
+        }
+        box.innerHTML='<div class="who2">MIKE · 25 YRS</div>'+(typeof renderDemoAnswer==='function'?renderDemoAnswer(text):obEsc(text));
+        // He has now SEEN it work. That is the moment the ask is worth making.
+        var gate=host.querySelector('.ob-gate');
+        if(gate){ gate.classList.add('ob-gate-hot'); try{gate.scrollIntoView({behavior:'smooth',block:'end'});}catch(e){} }
+      })
+      .catch(function(){
+        var box=document.getElementById('obLiveMike');
+        if(box)box.innerHTML='<div class="who2">MIKE · 25 YRS</div>Connection dropped \u2014 try that again.';
+        input.disabled=false; send.style.opacity=''; spent=false;
+      });
   }
+  send.addEventListener('click',ask);
+  input.addEventListener('keydown',function(e){ if(e.key==='Enter'){e.preventDefault();ask();} });
 }
 function obPostRender(host,type){
   // Add float class to cards after they've risen in
@@ -6025,6 +6114,16 @@ function obFinish(){
   // We PRE-FILL the composer (do NOT auto-send) so the very first thing the user sees
   // after onboarding is an open conversation with Mike, one tap from their first reply.
   // No /api/ai call is fired here — safe, no paywall/cost surprise, no double-send risk.
+  //
+  // ENTER THE CHAT FIRST. Without this, a SIGNED-OUT visitor finished onboarding and got
+  // dropped back on the marketing landing page — the one selling them on Mike they had
+  // just sat through onboarding for — while seedFirstPrompt quietly typed a starter into
+  // a composer that wasn't on screen. Signed-in users were already in chat mode so it
+  // only ever hit new visitors, i.e. exactly the people we need to convert.
+  // syncAuthSurface() already ran at page load, before the flag above was written, so
+  // it has to run again now or the landing stays put for a signed-out visitor.
+  try{ if(typeof syncAuthSurface==='function') syncAuthSurface(); }catch(e){}
+  try{ if(typeof mpEnterChat==='function') mpEnterChat(); }catch(e){}
   try{seedFirstPrompt();}catch(e){}
 }
 
@@ -6038,13 +6137,16 @@ function seedFirstPrompt(){
   var isHome=!!(currentUser&&currentUser.role==='homeowner');
   var seed=v2t(isHome?'seedHome':'seedTech');
   if(!seed)return;
-  ci.value=seed;
-  // Grow to fit the seed. seedFirstPrompt can run before the composer is laid out, so
-  // scrollHeight is wrong on the first pass — re-grow on the next frame and pin scroll to
-  // the top so the box never opens scrolled to a mid-sentence fragment.
-  var _grow=function(){try{ci.style.height='auto';ci.style.height=Math.min(ci.scrollHeight,120)+'px';}catch(e){}};
-  _grow();requestAnimationFrame(function(){_grow();try{ci.scrollTop=0;}catch(e){}});
-  try{ci.focus();ci.setSelectionRange(seed.length,seed.length);}catch(e){}
+  // HINT, DON'T TYPE FOR HIM. This used to write the sentence into the box as real
+  // text. Brandon opened his own admin account and found "Hey Mike — got a nameplate
+  // here, what do you make of it?" sitting there waiting to be sent — words he never
+  // wrote, on an account that has used Mike hundreds of times. It reads as a bug, and
+  // a tech who has to clear the box before he can ask his own question is worse off
+  // than one who opened an empty one.
+  //
+  // A placeholder does the same job honestly: it suggests what to ask, it is visibly
+  // grey rather than typed, and it disappears the moment he starts typing.
+  ci.placeholder=seed;
 }
 
 // ── ADMIN DASHBOARD ─────────────────────────────────────────────
@@ -7229,8 +7331,18 @@ function setMode(m){
 function syncAuthSurface(){
   var _lnd=document.getElementById('v2Landing');
   var _strip=document.getElementById('instrStrip');
-  if(_lnd)_lnd.style.display=currentUser?'none':'';
-  if(_strip)_strip.style.display=currentUser?'':'none';
+  // FINISHING ONBOARDING COUNTS AS COMING THROUGH THE FRONT DOOR.
+  // Keying this on currentUser alone meant a signed-out visitor sat through the whole
+  // onboarding — being sold on Mike — and was then dropped back onto the landing page
+  // that sells them on Mike, with "Already have an account? Sign in" underneath. They
+  // earned the chat; give them the chat. The landing still greets anyone who arrives
+  // cold and hasn't been through onboarding, so the front door is untouched.
+  // Checked here rather than in obFinish() because setMode() re-runs this on every
+  // audience toggle and would otherwise put the landing straight back.
+  var _past=!!currentUser;
+  if(!_past){ try{ _past=localStorage.getItem('trazer_onboarded')==='1'; }catch(e){} }
+  if(_lnd)_lnd.style.display=_past?'none':'';
+  if(_strip)_strip.style.display=_past?'':'none';
 }
 
 // Populate the instrument strip from a parsed diagnosis (same shape detectV2Diagnosis
@@ -7449,10 +7561,26 @@ function v2DemoSignup(){
 // Tech gets the full call/FaceTime/text rig (those live in the contractor chat surface).
 // Homeowner has no voice rig wired, so Call/Text route into their ask flow; FaceTime opens
 // the camera (a shared, app-wide capability) — nothing dead, nothing half-wired.
+// Call and FaceTime need an account. Without one the camera path returned early with
+// "Loading… tap again in a moment" — a door that never opens no matter how many times
+// he taps it, and the first thing a visitor learns is that a button lied to him. Text
+// stays open: ten questions, no account, per Brandon 2026-08-29. Say the true thing and
+// put the signup one tap away.
+function mpNeedAccount(what){
+  if(currentUser)return false;
+  var label=(what==='face')?'FaceTime':'a call';
+  if(typeof appendMessage==='function'&&document.body.classList.contains('mp-chatting')){
+    appendMessage('agent',"Create an account and sign in to use "+label+" — it's free to start. You can keep texting me right here either way.");
+  }else if(typeof showToast==='function'){
+    showToast('Sign in or create an account to use '+label+'. Texting works without one.','info',3600);
+  }
+  try{ if(typeof openAuth==='function')openAuth('signup'); }catch(_){}
+  return true;
+}
 function v2Reach(kind){
   var aud=document.getElementById('v2Landing').getAttribute('data-aud');
-  if(kind==='face'){ if(typeof checkCameraAccess==='function')checkCameraAccess(); return; }
-  if(kind==='call'&&aud==='tech'){ setMode('pro'); if(typeof toggleVoiceMode==='function')toggleVoiceMode(); return; }
+  if(kind==='face'){ if(mpNeedAccount('face'))return; if(typeof checkCameraAccess==='function')checkCameraAccess(); return; }
+  if(kind==='call'&&aud==='tech'){ if(mpNeedAccount('call'))return; setMode('pro'); if(typeof toggleVoiceMode==='function')toggleVoiceMode(); return; }
   // TEXT for a tech must land in the tech chat — never let it fall through to a
   // homeowner-mode flip. Mirror the call guard so the audience is explicit.
   if(kind==='text'&&aud==='tech'){ setMode('pro'); }
@@ -7573,7 +7701,7 @@ async function handleDiagNameplateScan(e){
   statusEl.style.display="flex";successEl.style.display="none";
   var prev=document.getElementById("diagNameplateResultCard");if(prev)prev.remove();
   try{
-    var mime=file.type||"image/jpeg",b64=await blobToBase64(file);
+    var mime=sentMime(file),b64=await blobToBase64(file);
     var SYSTEM='You are a certified HVAC master technician. Current year: 2026. Read ONLY what is physically printed on the nameplate. NEVER guess the brand.\n\nSERIAL DECODING RULES:\nCarrier/Bryant: pos 1-2=week, 3-4=year\nTrane post-2002: pos 1-2=year, 3-4=week\nLennox: first 2=year, next 2=week\nGoodman/Amana: first 2=year, next 2=month\nRheem/Ruud: first 2=year, next 2=week\nYork/Coleman: letter=decade (H=2010s, J=2020s), digit=year within decade\nMitsubishi: first 4 digits = year+month\n\nReturn ONLY valid compact JSON, no markdown:\n{"brand":"","model":"","serial":"","refrigerant":"","voltage":"","tonnage":"","seer":"","manufactureYear":0,"ageYears":0,"warrantyStatus":"Active|Likely Active|Likely Expired|Expired|Unknown","warrantyNote":"","warrantyExpireYear":0,"confidence":"High|Medium|Low"}';
     var raw=await callAI(SYSTEM,[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:"Read this HVAC nameplate. Decode the serial number to find manufacture year. Return JSON only."}]}],400);
     var data=parseJSON(raw);
@@ -7638,7 +7766,7 @@ async function handleNameplateScan(e){
   if(ov)ov.classList.add('show');
   if(typeof stopMikeSpeaking==='function')stopMikeSpeaking();
   try{
-    var mime=file.type||'image/jpeg',b64=await blobToBase64(file);
+    var mime=sentMime(file),b64=await blobToBase64(file);
     var SYSTEM='You are a certified HVAC master technician. Current year: 2026. Read ONLY what is physically printed on the nameplate. NEVER guess the brand.\n\nSERIAL DECODING RULES:\nCarrier/Bryant: pos 1-2=week, 3-4=year\nTrane post-2002: pos 1-2=year, 3-4=week\nLennox: first 2=year, next 2=week\nGoodman/Amana: first 2=year, next 2=month\nRheem/Ruud: first 2=year, next 2=week\nYork/Coleman: letter=decade (H=2010s, J=2020s), digit=year within decade\nMitsubishi: first 4 digits = year+month\n\nReturn ONLY valid compact JSON, no markdown:\n{"brand":"","model":"","serial":"","refrigerant":"","voltage":"","tonnage":"","seer":"","rla":"","manufactureYear":0,"ageYears":0,"warrantyStatus":"Active|Likely Active|Likely Expired|Expired|Unknown","confidence":"High|Medium|Low"}';
     var raw=await callAI(SYSTEM,[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mime,data:b64}},{type:'text',text:'Read this HVAC nameplate. Decode the serial number to find manufacture year and age. Return JSON only.'}]}],500);
     var data=null;try{var s=String(raw||'').replace(/```json|```/gi,'').trim();var mm=s.match(/\{[\s\S]*\}/);if(mm)data=JSON.parse(mm[0]);}catch(_pe){data=null;}
@@ -7648,7 +7776,17 @@ async function handleNameplateScan(e){
       return;
     }
     renderNameplateCard(data);
-    mikeProactiveFromNameplate(data);
+    // Sequenced, not fired side by side. Both post chat messages and both drive the
+    // same typing indicator, and the warranty call is much faster than Mike's read of
+    // the plate — racing them let the warranty question land BEFORE Mike had said
+    // anything about the unit, with the typing dots blinking out mid-thought. The
+    // await is also what makes this catch real: an unawaited async call rejects its
+    // own promise and never throws to the try around it.
+    try{
+      await mikeProactiveFromNameplate(data);
+    }catch(_p){}
+    // The card's warrantyStatus is an estimate off the build date. Go get the real one.
+    try{ await mpWarrantyFromNameplate(data); }catch(_w){}
   }catch(_err){
     if(ov)ov.classList.remove('show');
     appendMessage('agent','Scan hiccup — try that one more time, or just tell me the brand and model off the plate.');
@@ -7876,8 +8014,20 @@ function blobToBase64Display(blob){
     reader.readAsDataURL(blob);
   });
 }
+// Any image over this is re-encoded to JPEG below. ONE definition, because the
+// media_type we declare has to agree with the bytes we actually send.
+var IMG_RESIZE_KB=1500;
+// What media_type did blobToBase64 ACTUALLY produce for this blob? Six call sites
+// were pairing the re-encoded JPEG with the original file's type, so a PNG screenshot
+// over 1.5MB went to the API declared image/png carrying JPEG bytes. The API rejects
+// that, and the tech gets "Something went sideways reading that photo" — on a photo
+// that is perfectly readable. Brandon sends screenshots constantly; this hit him.
+function sentMime(blob){
+  if(blob&&blob.type&&blob.type.indexOf('image/')===0&&blob.size>IMG_RESIZE_KB*1024)return 'image/jpeg';
+  return (blob&&blob.type)||'image/jpeg';
+}
 async function blobToBase64(blob){
-  var maxSizeKB=1500;
+  var maxSizeKB=IMG_RESIZE_KB;
   if(blob.type&&blob.type.startsWith('image/')&&blob.size>maxSizeKB*1024){
     return new Promise(function(res,rej){
       var img=new Image(),url=URL.createObjectURL(blob);
@@ -7932,7 +8082,7 @@ async function runHomeownerDiagnostic(){
     if(homeUploadedFile){
       var isImg=homeUploadedFile.type.startsWith("image/");
       var b64=isImg?await blobToBase64(homeUploadedFile):await grabVideoFrame(homeUploadedFile);
-      var mime=isImg?homeUploadedFile.type:"image/jpeg";
+      var mime=isImg?sentMime(homeUploadedFile):"image/jpeg";
       messages=[{role:"user",content:[
         {type:"image",source:{type:"base64",media_type:mime,data:b64}},
         {type:"text",text:prompt}
@@ -8047,7 +8197,7 @@ async function runDiagnostic(){
       btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing">Reading file…</span>';
       var isImg=uploadedFile.type.startsWith("image/");
       var b64=isImg?await blobToBase64(uploadedFile):await grabVideoFrame(uploadedFile);
-      var mime=isImg?uploadedFile.type:"image/jpeg";
+      var mime=isImg?sentMime(uploadedFile):"image/jpeg";
       messages=[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:prompt}]}];
     }else{messages=[{role:"user",content:prompt}];}
     btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing">Analyzing your system…</span>';
@@ -9805,7 +9955,87 @@ function buildV2Mentor(mb){
     +'<span class="sig">'+escapeHtml(v2t('mentorSig'))+'</span></div>';
 }
 
+// ── FIELD WATCH — the phone is the only witness ───────────────────────────────
+// A tech asked Mike twice on 2026-08-26 and saw nothing. Every server signal said
+// SUCCESS: health green, no errors, and a mike_answer logged for BOTH questions. The
+// answers were generated and delivered — his browser discarded them. The uptime
+// watchdog pinged /api/health 76,000 times straight through it and reported "up".
+//
+// So we stop asking "is the server alive" and start asking the only question that
+// matters: DID THIS TECH GET HIS ANSWER? Only this device can answer that.
+//
+// Rules: never block the UI, never send message text or customer data (a signature,
+// not a transcript), and never let the reporter itself throw.
+(function(){
+  var SENT=0, MAX_PER_SESSION=12;   // a broken phone loops; don't flood the tech or us
+
+  function report(kind,detail,where,extra){
+    try{
+      if(SENT>=MAX_PER_SESSION)return; SENT++;
+      var body=Object.assign({
+        kind:kind,
+        detail:String(detail||'').slice(0,300),
+        where:String(where||'').slice(0,120),
+        online:(typeof navigator!=='undefined')?navigator.onLine!==false:true,
+        token:(typeof currentUser!=='undefined'&&currentUser&&currentUser.token)?currentUser.token:undefined
+      },extra||{});
+      var json=JSON.stringify(body);
+      // sendBeacon survives the page being closed or backgrounded mid-report, which is
+      // exactly when a field failure happens. fetch is the fallback.
+      if(navigator.sendBeacon&&navigator.sendBeacon('/api/client-error',new Blob([json],{type:'application/json'})))return;
+      fetch('/api/client-error',{method:'POST',headers:{'Content-Type':'application/json'},body:json,keepalive:true}).catch(function(){});
+    }catch(e){}
+  }
+  window.fieldWatchReport=report;
+
+  window.addEventListener('error',function(e){
+    if(!e)return;
+    report('js_error',(e.message||'script error'),((e.filename||'')+':'+(e.lineno||0)));
+  });
+  window.addEventListener('unhandledrejection',function(e){
+    var r=e&&e.reason;
+    report('promise_rejection',(r&&(r.message||r))||'unhandled rejection','');
+  });
+
+  // THE ONE THAT WOULD HAVE CAUGHT ROB.
+  // A send opens a watch. Rendering Mike's reply closes it. If a watch is still open
+  // when it expires, a tech asked a question and never got an answer — and that is a
+  // defect whether or not a single line of code threw.
+  var openWatch=null;
+  window.fieldWatchAsked=function(){
+    try{
+      if(openWatch&&openWatch.timer)clearTimeout(openWatch.timer);
+      var t0=Date.now();
+      openWatch={t0:t0,timer:setTimeout(function(){
+        if(openWatch&&openWatch.t0===t0){
+          report('no_answer','tech asked and no answer ever rendered','chat',{waitedMs:Date.now()-t0});
+          openWatch=null;
+        }
+      },95000)};   // past the 90s search ceiling, so a slow answer is not a false alarm
+    }catch(e){}
+  };
+  window.fieldWatchAnswered=function(why){
+    try{
+      if(!openWatch)return;
+      clearTimeout(openWatch.timer);
+      var waited=Date.now()-openWatch.t0;
+      openWatch=null;
+      // Closed, but with nothing useful in it — the tech still walked away empty.
+      if(why)report('no_answer',why,'chat',{waitedMs:waited});
+    }catch(e){}
+  };
+})();
+
 function appendMessage(role,text){
+  // A real agent reply is the only thing that closes a field watch cleanly.
+  try{
+    if(role==='agent'&&window.fieldWatchAnswered){
+      var _t=String(text||'');
+      var _empty=(!_t.trim()||_t.indexOf('(stopped)')>=0||_t.indexOf('Something went wrong')>=0
+                  ||_t.indexOf('Taking a bit longer')>=0||_t.indexOf('Tap send again')>=0);
+      window.fieldWatchAnswered(_empty?('tech got "'+_t.slice(0,60)+'" instead of an answer'):null);
+    }
+  }catch(e){}
   // Phase 2 (wiring diagrams): peel Mike's diagram-image sentinel off the reply
   // BEFORE any text processing (TTS, safety scan, markdown) so it's never spoken
   // or shown as raw text. Server format, appended on wiring questions only:
@@ -10231,6 +10461,24 @@ function detectInlineCorrection(userText){
 var chatAbortController=null;
 
 function stopChatStream(){
+  // FIELD BUG (Rob, 2026-08-26): while Mike is answering, this control occupies the exact
+  // position Send lives in the rest of the time — same button, rewritten onclick. A tech
+  // types his next question, taps where Send has always been, and instead of asking he
+  // kills Mike's answer AND the question he just typed is never sent. He sees "(stopped)"
+  // twice and assumes Mike is broken.
+  //
+  // Nobody composes a question and then taps a button to cancel. If there is text in the
+  // box, the tap means ASK, not abort. Stop the current reply and send what he wrote.
+  var _hadInflight=!!chatAbortController;
+  var _pending='';
+  try{
+    var _inp=document.getElementById('chatInput');
+    if(_hadInflight&&_inp&&_inp.value.trim())_pending=_inp.value;
+  }catch(e){}
+  // Set BEFORE abort(): the fetch rejects on a microtask, which runs before the timeout
+  // below, and the catch must already know not to print "(stopped)".
+  if(_pending)window._chatResendPending=true;
+
   if(chatAbortController){
     try{chatAbortController.abort();}catch(e){}
     chatAbortController=null;
@@ -10238,6 +10486,16 @@ function stopChatStream(){
   if(typeof hideTyping==='function')hideTyping();
   resetChatSendButton();
   chatSending=false;
+
+  if(_pending){
+    setTimeout(function(){
+      try{
+        var i=document.getElementById('chatInput');
+        if(i&&!i.value.trim())i.value=_pending;   // restore if anything cleared it
+        sendChat();
+      }catch(e){ window._chatResendPending=false; }
+    },0);
+  }
 }
 
 function resetChatSendButton(){
@@ -10350,19 +10608,115 @@ async function sendChat(){
   // details — THIS reply carries them. Route it to the real registry lookup rather than
   // to Mike's brain, because the brain can only describe warranty TERMS; only the
   // registry knows whether THIS serial was actually registered.
+  // ESCAPE HATCH, evaluated BEFORE the branch is entered. This branch used to swallow
+  // EVERY following message. If a tech never supplies a field Mike asked for — because
+  // he does not have it, or he simply moved on — the pending flag stayed set and
+  // hijacked every unrelated question with the same canned prompt. It survived Clear
+  // Chat, because it is a global and not part of the thread, and only a page reload
+  // cleared it. A tech has no way to know that; he concludes the app is broken.
+  if(currentUser&&window._mpPendingWarranty&&text&&!chatAttachment){
+    var _pw=window._mpWarrantyPending||null;
+    var _pneed=(_pw&&_pw.need)||[];
+    var _gave=Object.keys(_mpWarrantyExtras(text,_pneed)).length>0;
+    var _pu=mpParseUnit(text);
+    if(!_gave&&!_pu.serial&&!_pu.brand&&!_pu.model){
+      // Nothing in this message answers the question. It is a new question.
+      window._mpPendingWarranty=false; window._mpWarrantyPending=null; window._mpWarrantyAsks=0;
+    }
+    // And an explicit abandon always wins, even if the sentence happens to contain a
+    // token that parses as a model number.
+    if(/\b(forget|never\s*mind|nevermind|skip it|cancel|stop asking)\b/i.test(text)){
+      window._mpPendingWarranty=false; window._mpWarrantyPending=null; window._mpWarrantyAsks=0;
+    }
+  }
   if(currentUser&&window._mpPendingWarranty&&(text||chatAttachment)){
     window._mpPendingWarranty=false;
     input.value='';input.style.height='auto';
+    // What the nameplate scan already read, and which fields Mike asked for. Without
+    // this the reply went to mpParseUnit alone, which knows nothing about a homeowner
+    // name or zip — so "Weiler, 22192" parsed to an empty unit and Mike asked "who
+    // makes it?" about the plate he had just read. The tech retyped everything.
+    var _wpend=window._mpWarrantyPending||null;
+    var _wneed=(_wpend&&_wpend.need)||[];
+    window._mpWarrantyPending=null;
     // Photo of the plate beats typing it — fewer characters for a tech in gloves to
     // get wrong, and a mistyped serial reads back as "not covered".
     if(chatAttachment&&chatAttachment.type&&chatAttachment.type.indexOf('image/')===0){
       var _wf=chatAttachment;
       clearChatAttach();
-      mpWarrantyFromPhoto(_wf);
+      mpWarrantyFromPhoto(_wf,_mpWarrantyExtras(text,_wneed),_wpend,text);
+      return;
+    }
+    // A video is an accepted attachment type but this path cannot read one. Say so and
+    // drop it — leaving it attached silently re-sent it on the tech's NEXT message.
+    if(chatAttachment){
+      clearChatAttach();
+      appendMessage('agent',"I can't read a data plate off a video — send me a still photo of it, or just type the serial.");
+      if(!text){window._mpPendingWarranty=true;window._mpWarrantyPending=_wpend;return;}
+    }
+    appendMessage('user',escapeHtml(text));
+    // Merge in that order deliberately: the plate Mike READ outranks anything parsed
+    // out of this sentence, and both outrank nothing.
+    // Carry EVERY field held from before, not just the plate. Goodman needs a last
+    // name and a zip; if the tech supplies them one at a time and the round-trip only
+    // preserves brand/serial/model, the name is lost the moment he answers the zip and
+    // Mike asks for the name again — forever.
+    var _prior=_wpend?_mpStripEmpty({brand:_wpend.brand,serial:_wpend.serial,model:_wpend.model,
+                        lastName:_wpend.lastName,zip:_wpend.zip,state:_wpend.state,
+                        originalPurchaser:_wpend.originalPurchaser}):{};
+    var _fresh=Object.assign({},_mpStripEmpty(mpParseUnit(text)),_mpWarrantyExtras(text,_wneed));
+    // A five-digit zip is also a valid-looking serial token. mpParseUnit's unlabelled
+    // fallback takes any 5+ character run containing a digit, so answering "model is
+    // GSX140361, last name Weiler, zip 22192" made 22192 the serial.
+    if(_fresh.serial&&_fresh.zip&&String(_fresh.serial)===String(_fresh.zip))delete _fresh.serial;
+    // WHAT WE ALREADY KNOW WINS. This is a reply to a question Mike asked about a unit
+    // he has already identified — it is not a new lookup. Merging fresh-over-prior let
+    // a zip code overwrite the real serial off the data plate, and the lookup then ran
+    // against a serial the tech never gave.
+    var _wu=Object.assign({},_fresh,_prior);
+    // ...except the specific fields Mike just asked for, which is the whole point of
+    // the round trip, and an explicitly labelled serial, which is a tech correcting it.
+    _wneed.forEach(function(k){ if(_fresh[k])_wu[k]=_fresh[k]; });
+    if(_fresh.serial&&/\bserial\s*(?:number|no\.?|#)?\s*[:\-]?\s*[A-Za-z0-9]/i.test(text))_wu.serial=_fresh.serial;
+    if(_wu.brand&&_wu.serial){ mpWarrantyRun(_wu); return; }
+    mpWarrantyLookup(text);
+    return;
+  }
+  // Asked for a warranty in plain chat — with or without a photo. Route it to the
+  // registry instead of letting the brain talk about warranty TERMS, which is all it
+  // can do. The brain believing Carrier is login-gated is exactly why this matters.
+  // A photo with NO words is the most natural way a tech uses this: hold the phone
+  // up to the plate, hit send. It was falling through to general photo analysis and
+  // he got a chatty nameplate breakdown with no warranty in it — the exact thing this
+  // feature exists to do. If a bare image turns out to be a data plate we run the
+  // registry; if it is a part or an install shot, mpWarrantyFromPhoto hands it back
+  // and the normal analysis takes over.
+  if(currentUser&&!text&&chatAttachment&&chatAttachment.type&&chatAttachment.type.indexOf('image/')===0&&!window._mpSkipPlateCheck){
+    var _bp=chatAttachment; clearChatAttach();
+    input.value='';input.style.height='auto';
+    mpWarrantyFromPhoto(_bp,{},window._mpWarrantyPending,'',true);
+    return;
+  }
+  window._mpSkipPlateCheck=false;   // one-shot: only skips the plate read once
+  if(currentUser&&_mpWantsWarranty(text)&&(chatAttachment||mpParseUnit(text).serial)){
+    input.value='';input.style.height='auto';
+    var _wx=_mpWarrantyExtras(text);
+    if(chatAttachment&&chatAttachment.type&&chatAttachment.type.indexOf('image/')===0){
+      var _wp=chatAttachment; clearChatAttach();
+      mpWarrantyFromPhoto(_wp,_wx,window._mpWarrantyPending,text);
+      return;
+    }
+    // Video reaches here too — chatFileInput accepts it. Clear it rather than leaving
+    // it stuck on the composer to ride along on the tech's next, unrelated message.
+    if(chatAttachment){
+      clearChatAttach();
+      appendMessage('user',escapeHtml(text));
+      appendMessage('agent',"I can't read a data plate off a video — send a still photo of it, or type the serial and I'll pull the registration.");
+      window._mpPendingWarranty=true;
       return;
     }
     appendMessage('user',escapeHtml(text));
-    mpWarrantyLookup(text);
+    mpWarrantyRun(mpUnitLearn(Object.assign({},_mpStripEmpty(mpParseUnit(text)),_wx)));
     return;
   }
   // Free-text "draw / illustrate / sketch X" typed straight into chat (no toolbelt tap)
@@ -10387,6 +10741,7 @@ async function sendChat(){
   }
   // Mark state and switch button to Stop mode (so user can abort a long response)
   chatSending=true;
+  try{ if(window.fieldWatchAsked)window.fieldWatchAsked(); }catch(e){}
   stopMikeSpeaking();
   setChatSendButtonStopMode();
   chatAbortController=(typeof AbortController!=='undefined')?new AbortController():null;
@@ -10409,7 +10764,7 @@ async function sendChat(){
   var chatMsg={role:'user',content:text||'What do you see in this photo? Is the installation correct? Any issues or concerns?'};
   if(chatAttachment&&chatAttachment.type.startsWith('image/')){
     try{
-      var chatMime=chatAttachment.type||'image/jpeg',chatB64=await blobToBase64(chatAttachment);
+      var chatMime=sentMime(chatAttachment),chatB64=await blobToBase64(chatAttachment);
       chatMsg={role:'user',content:[{type:'image',source:{type:'base64',media_type:chatMime,data:chatB64}},{type:'text',text:text||'Look at this photo. If this is a part — identify it, read any part numbers or specs visible, then search for current pricing and availability from Grainger, Johnstone, or Ferguson. If this is an installation or system — tell me if it looks correct, flag any issues or safety concerns, and suggest any improvements.'}]};
     }catch(ae){chatMsg={role:'user',content:text};}
   }
@@ -10527,6 +10882,20 @@ async function sendChat(){
         if(typeof generateAndShowDiagram==='function')generateAndShowDiagram(text,response);
       }
     }catch(_dgErr){}
+    // THE MONEY LEAK. chatHistory keeps the full base64 image, and every following
+    // message ships the last 10 entries back to the model — so ONE photo was billed
+    // eleven times, at Opus rates, for nothing: Mike already read it and his answer is
+    // right there in the history. Swap the image for a short note now the turn is done.
+    // Context is preserved; the picture stops being re-uploaded ten more times.
+    try{
+      if(chatMsg&&Array.isArray(chatMsg.content)){
+        var _cap='';
+        for(var _ci=0;_ci<chatMsg.content.length;_ci++){
+          if(chatMsg.content[_ci]&&chatMsg.content[_ci].type==='text'){_cap=chatMsg.content[_ci].text||'';break;}
+        }
+        chatMsg.content='[photo the tech sent]'+(_cap?' '+String(_cap).slice(0,180):'');
+      }
+    }catch(_ce){}
     chatHistory.push({role:'assistant',content:response});
     saveUserHistory();
     extractMemoryCues(text||'',response);
@@ -10544,8 +10913,11 @@ async function sendChat(){
     hideTyping();
     var em=(e&&e.message)||'';
     if(e&&e.name==='AbortError'){
-      // User pressed Stop. Don't show an error — they did this on purpose.
-      appendMessage('agent','(stopped)');
+      // Only a deliberate cancel prints this. When the abort came from the tech tapping
+      // the button to ASK his next question, the resend is already queued — printing
+      // "(stopped)" there is what made Mike look broken in the field.
+      if(window._chatResendPending){ window._chatResendPending=false; }
+      else appendMessage('agent','(stopped)');
     } else if(em.includes('timed out')||em.includes('abort')||em.toLowerCase().includes('network')){
       appendMessage('agent','Taking a bit longer than usual. Check your connection and tap send again.');
     } else if(em.includes('high demand')||em.includes('Busy right now')||em.toLowerCase().includes('rate limit')){
@@ -11690,7 +12062,191 @@ function mpParseUnit(text){
   }
   return out;
 }
+// Does this message want a REAL warranty answer? Brandon attached a data plate in
+// normal chat and asked Mike to check the warranty. That went to the general chat
+// brain, which has no idea the registry tool exists — so Mike answered from training,
+// wrongly said Carrier's record "lives behind Carrier's login", and handed him a link
+// to go do it himself. The tool was two taps away and never fired.
+//
+// A tech does not tap a tile first. He says "check this warranty" and sends a photo.
+// That has to reach the registry.
+// Object.assign happily overwrites a real serial with null. mpParseUnit returns
+// {brand:null,model:null,serial:null} for a message like "Weiler, 22192", so its
+// nulls have to be dropped before they can wipe out what the scan read.
+// ── THE UNIT ─────────────────────────────────────────────────────────────────
+// ONE place owns "what does Mike know about the unit in front of this tech".
+// There used to be five: the tile, the nameplate scan, a typed message, a photo,
+// and the follow-up merge — each building the same object its own way with its own
+// Object.assign. So every fix landed in one of five places and the other four kept
+// the old behaviour, which is why the same bug kept coming back wearing a different
+// hat. Everything reads from here and writes through mpUnitLearn now.
+var _MP_UNIT_KEYS=['brand','model','serial','lastName','zip','state','originalPurchaser'];
+function _mpUnitPlain(){ var u=mpUnit(),o={}; _MP_UNIT_KEYS.forEach(function(k){ if(u[k]!==undefined&&u[k]!==null&&u[k]!=='')o[k]=u[k]; }); return o; }
+function mpUnit(){ return (window._mpUnitState=window._mpUnitState||{}); }
+// Where a value came from. Something READ OFF THE EQUIPMENT outranks something
+// parsed out of a sentence — mpParseUnit matches a brand name anywhere in the text
+// and treats any digit-bearing token as a possible serial, so "it's not a Trane, I
+// did the Carrier one already" or a work-order number in a follow-up could otherwise
+// overwrite what was printed on the plate.
+var _MP_SRC_RANK={plate:3,scan:3,stated:2,typed:1};
+function _mpKey(v){ return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+function mpUnitLearn(src,source){
+  var u=mpUnit(); if(!src)return u;
+  source=source||'typed';
+  u._src=u._src||{};
+  // A DIFFERENT serial is a DIFFERENT piece of equipment. On a multi-rooftop job a
+  // tech checks unit A, gets asked for the homeowner's name, then walks to unit B —
+  // and the name, zip and state from unit A were surviving onto unit B's lookup,
+  // because "never erase a non-empty field" is exactly what makes that silent. The
+  // manufacturer then answers about the wrong unit and nothing looks uncertain.
+  if(src.serial&&u.serial&&_mpKey(src.serial)!==_mpKey(u.serial)){
+    ['brand','model','lastName','zip','state','originalPurchaser'].forEach(function(k){
+      delete u[k]; delete u._src[k];
+    });
+    window._mpWarrantyAsks=0; window._mpWarrantyPending=null;
+  }
+  _MP_UNIT_KEYS.forEach(function(k){
+    var v=src[k];
+    if(v===null||v===undefined||v==='')return;
+    // Never let a weaker source overwrite a stronger one for the equipment fields.
+    if(k==='brand'||k==='model'||k==='serial'){
+      var had=_MP_SRC_RANK[u._src[k]]||0, now=_MP_SRC_RANK[source]||0;
+      if(u[k]&&now<had)return;
+    }
+    u[k]=v; u._src[k]=source;
+  });
+  return u;
+}
+function mpUnitClear(){
+  window._mpUnitState={}; window._mpPendingWarranty=false;
+  window._mpWarrantyPending=null; window._mpWarrantyAsks=0;
+}
+// Real US states, so a two-letter word can never masquerade as one.
+var _MP_STATES={alabama:'AL',alaska:'AK',arizona:'AZ',arkansas:'AR',california:'CA',colorado:'CO',
+connecticut:'CT',delaware:'DE',florida:'FL',georgia:'GA',hawaii:'HI',idaho:'ID',illinois:'IL',
+indiana:'IN',iowa:'IA',kansas:'KS',kentucky:'KY',louisiana:'LA',maine:'ME',maryland:'MD',
+massachusetts:'MA',michigan:'MI',minnesota:'MN',mississippi:'MS',missouri:'MO',montana:'MT',
+nebraska:'NE',nevada:'NV','new hampshire':'NH','new jersey':'NJ','new mexico':'NM','new york':'NY',
+'north carolina':'NC','north dakota':'ND',ohio:'OH',oklahoma:'OK',oregon:'OR',pennsylvania:'PA',
+'rhode island':'RI','south carolina':'SC','south dakota':'SD',tennessee:'TN',texas:'TX',utah:'UT',
+vermont:'VT',virginia:'VA',washington:'WA','west virginia':'WV',wisconsin:'WI',wyoming:'WY',
+'district of columbia':'DC'};
+var _MP_STATE_CODES=Object.keys(_MP_STATES).map(function(k){return _MP_STATES[k];});
+// A manufacturer's name is never the homeowner's name.
+function _mpIsBrandWord(w){
+  var l=String(w||'').toLowerCase();
+  for(var i=0;i<MP_BRANDS.length;i++){ if(MP_BRANDS[i][0]===l||l.indexOf(MP_BRANDS[i][0])>=0)return true; }
+  return false;
+}
+function _mpStripEmpty(o){
+  var r={}; for(var k in o){ if(o[k]!==null&&o[k]!==undefined&&o[k]!=='')r[k]=o[k]; } return r;
+}
+function _mpWantsWarranty(t){
+  t=String(t||'');
+  // Each alternative carries its own boundary. Without that, "covered" matched
+  // INSIDE recovered / discovered / uncovered — so "I recovered 3 lbs of refrigerant"
+  // plus a photo hijacked an ordinary diagnostic question into a warranty lookup.
+  if(!/\bwarrant|\bregistrat|\bcovered\b|\bcoverage\b/i.test(t))return false;
+  // "what is a warranty" is a question about terms, not a lookup on a unit.
+  if(/^\s*(what|how|why|when)\b/i.test(t)&&!/\bthis\b|\bmy\b|\bcheck\b/i.test(t))return false;
+  return true;
+}
+// Pull the human details a manufacturer form needs out of plain speech —
+// "the last name of the homeowner is Weiler", "zip 20109", "state VA".
+function _mpWarrantyExtras(t,expect){
+  t=String(t||''); var out={}; expect=expect||[];
+  function wants(k){ return expect.indexOf(k)>=0; }
+  // The name comes AFTER the verb, not straight after the label. A first pass grabbed
+  // "of" from "the last name of the homeowner is Weiler" and "last" from "homeowner
+  // last name is Weiler" — both would have queried the manufacturer for a customer
+  // called Of, and come back "no registration found" on a covered unit.
+  var STOP=/^(of|the|is|a|an|for|my|our|his|her|their|homeowner|customer|owner|name|last|first|this|that|it|and|but|so|yes|no|ok|okay|sure|here|there|its|serial|model|brand|zip|code|state|unit|system|number)$/i;
+  // Every "<label> is <word>" in the message, not just the first. A message can name
+  // two people — "the last name of the technician is Brandon and the homeowner last
+  // name is Weiler" — and the first match is the WRONG one. Score by who the label
+  // is attached to and take the best.
+  // Two shapes, because a tech writes both. With a verb — "homeowner last name IS
+  // Weiler", "the last name of the homeowner is Weiler". And without one — "homeowner
+  // last name Weiler", which a field tester typed and which silently dropped the name
+  // from the request entirely: no name sent, no name asked for, and the manufacturer
+  // answered "no registration found" on a unit that may well be covered.
+  var PATS=[/(?:last\s*name|surname|homeowner|customer|owner)[^.!?\n]{0,40}?\b(?:is|:|=)\s*([A-Za-z][A-Za-z'-]{1,24})/gi,
+            /(?:last\s*name|surname)\s*[:=]?\s*([A-Za-z][A-Za-z'-]{1,24})/gi];
+  var best=null,bestScore=-99,m,pi;
+  for(pi=0;pi<PATS.length;pi++){
+    var RE=PATS[pi]; RE.lastIndex=0;
+    while((m=RE.exec(t))!==null){
+      if(STOP.test(m[1]))continue;
+      var lead=t.slice(Math.max(0,m.index-24),m.index+m[0].length-m[1].length);
+      var isOwner=/\b(homeowner|customer|owner)\b/i.test(lead);
+      // The tech's own name is not the name on the registration. Skip it outright
+      // rather than score it down — sending the technician's surname to the
+      // manufacturer returns "no registration found" on a unit that may well be
+      // covered, and a tech reads that as NOT COVERED. Being asked again costs
+      // him one line; a false "not covered" costs him the part.
+      if(!isOwner&&/\b(tech|technician|installer|contractor|my|me|i'?m)\b/i.test(lead))continue;
+      var score=(pi===0?1:0)+(isOwner?2:0);   // an explicit verb beats bare adjacency
+      if(score>bestScore){bestScore=score;best=m[1];}
+    }
+  }
+  if(best)out.lastName=best;
+  // Mike asked for the last name and the tech answered "Weiler, 22192" — no label,
+  // because he is answering a question, not filling a form. Only trust a bare word
+  // as a name when we are the ones who asked for it.
+  if(!out.lastName&&wants('lastName')){
+    // ONLY when the message is shaped like an answer. This used to take the first
+    // capitalised word in any sentence, so "it's not a Trane job, I already did the
+    // Carrier one" set the homeowner's last name to "Trane" — a name the tech never
+    // gave — and submitted it to the manufacturer, who answered about a customer who
+    // does not exist. A tech answering "what's the last name?" types a name, not a
+    // paragraph.
+    var words=t.trim().split(/\s+/);
+    if(words.length<=4){
+      var bare=t.match(/(^|[\s,])([A-Z][a-z'-]{1,24})(?=$|[\s,.])/);
+      if(bare&&!STOP.test(bare[2])&&!_mpIsBrandWord(bare[2]))out.lastName=bare[2];
+    }
+  }
+  var z=t.match(/\b(?:zip|postal)\s*(?:code)?\s*[:=]?\s*(\d{5})\b/i);
+  // An unlabelled 5-digit run is only a zip when we asked for one. Otherwise it grabs
+  // the tail of a model number — "model 48TFE 20109" read as zip 20109 — and a wrong
+  // zip comes back from Rheem or Lennox as "no registration found" on a covered unit,
+  // which is the same false "not covered" this parser exists to prevent.
+  if(!z&&wants('zip'))z=t.match(/\b(\d{5})\b/);
+  if(z)out.zip=z[1];
+  // A state must actually BE a state. The old pattern took any two letters after the
+  // word "state", so "state is Virginia" submitted "IS", and the bare fallback took
+  // any two-letter word in the sentence. Rheem and Lennox key coverage off this, and
+  // a garbage state comes back "no registration found" on a covered unit.
+  var _stName=t.match(new RegExp('\\b('+Object.keys(_MP_STATES).join('|')+')\\b','i'));
+  if(_stName)out.state=_MP_STATES[_stName[1].toLowerCase()];
+  if(!out.state){
+    var st=t.match(/\bstate\s*(?:is|:|=)?\s*([A-Za-z]{2})\b/i)
+        || (wants('state')?t.match(/(?:^|[\s,])([A-Za-z]{2})(?=$|[\s,.])/):null);
+    if(st&&_MP_STATE_CODES.indexOf(st[1].toUpperCase())>=0)out.state=st[1].toUpperCase();
+  }
+  // Carrier will not answer without knowing whether the homeowner bought the unit new.
+  // Nothing parsed this field, anywhere — so Carrier's requirement could never be
+  // satisfied, and Mike asked the same question forever no matter what the tech said.
+  // Two ways in, and the second one is deliberately narrow. A bare yes/no is only read
+  // as this answer when the message is SHAPED like an answer — the word first, and a
+  // handful of words at most. Matching "no" or "not" anywhere swallowed the most common
+  // sentences a technician types: "no cool call, compressor not starting" and "why does
+  // the blower motor hum but not spin" both parsed as "not the original purchaser",
+  // which made the reply look like an answer and re-armed the trap this exists to open.
+  var _saysPurchaser=/\b(original\s*(?:purchaser|owner)|bought\s*it\s*new|first\s*owner|bought\s*the\s*house)\b/i.test(t);
+  var _answerShaped=wants('originalPurchaser')&&t.trim().split(/\s+/).length<=5&&
+                    /^\s*(yes|yeah|yep|yup|no|nope|nah|correct|he\s*is|she\s*is|they\s*are)\b/i.test(t);
+  if(_saysPurchaser||_answerShaped){
+    if(/\b(no|nope|nah|not|resold|resale|second\s*owner|bought\s*the\s*house|new\s*owner)\b/i.test(t))out.originalPurchaser=false;
+    else if(/\b(yes|yeah|yep|yup|correct|they\s*are|he\s*is|she\s*is|original)\b/i.test(t))out.originalPurchaser=true;
+  }
+  return out;
+}
 function mpWarrantyCheck(){
+  // Tapping this tile always means "the unit I am standing at right now", never a
+  // continuation of the last one. Without this the previous unit's homeowner name
+  // and zip survive into this lookup.
+  mpUnitClear();
   window._mpPendingWarranty=true;
   if(typeof mpEnterChat==='function')mpEnterChat();
   mpAskMike("Give me the brand and the serial number off the data plate and I'll pull the actual warranty registration — not the general terms, the real status on that unit. Grab the model number too if it's on there; Goodman needs it. Or just snap a photo of the plate.");
@@ -11701,12 +12257,100 @@ function mpWarrantyCheck(){
 // only what is physically printed, never guess the brand — a guessed brand sends us
 // to the wrong manufacturer's registry and comes back "no registration found",
 // which reads to a tech like the unit isn't covered.
-async function mpWarrantyFromPhoto(file){
-  appendMessage('user','📷 Data plate');
+// Not a data plate. Give the photo back to the ordinary image analysis — the part
+// identifier, the install review — instead of telling a tech to retake a picture he
+// never meant as a nameplate. The flag stops us re-reading it as a plate forever.
+function _mpFallbackPhoto(file){
+  try{
+    chatAttachment=file;
+    window._mpSkipPlateCheck=true;
+    var i=document.getElementById('chatInput'); if(i)i.value='';
+    return sendChat();
+  }catch(_fe){
+    appendMessage('agent',"That one isn't a data plate — tell me what you want me to look at and I'll take another run at it.");
+  }
+}
+// Say the brand the way a tech says it. The registry groups families as
+// "Carrier / Bryant / Payne" and Mike was reading that taxonomy string out loud in
+// every branded reply. Nobody talks like that — he says "that Carrier".
+// A warranty lookup holds one connection open for 40-90 seconds while a browser drives
+// the manufacturer's form. On a phone that is a long time to keep a socket alive — the
+// screen locks, the app backgrounds, the cell hands off — and the answer is lost even
+// though the server produced it. Brandon watched exactly that on his own Trane: the
+// service logged a clean result and his phone said "couldn't reach the registry".
+// Retry instead of discarding it. The service now remembers every completed lookup for
+// 15 minutes, so the retry comes back immediately rather than driving a browser again.
+function _warrantyFetch(body,tries){
+  tries=tries||0;
+  return fetch('/api/warranty',{method:'POST',headers:{'Content-Type':'application/json'},body:body})
+    .catch(function(e){
+      if(tries>=2)throw e;
+      return new Promise(function(res){setTimeout(res,1200*(tries+1));})
+        .then(function(){ return _warrantyFetch(body,tries+1); });
+    });
+}
+function _mpSayBrand(b){ return String(b||'').split('/')[0].trim(); }
+// A model number names its manufacturer to any tech in the trade. The plate reader
+// was taught this; the TYPED path was not — so "model 25HCE430A300 serial 3921E11748"
+// got "Who makes it?" while Mike was holding the answer, which is the same defect the
+// photo path had. Validated against the brands we can actually query, so a guess we
+// cannot look up is never announced or sent.
+async function _mpBrandFromModel(model){
+  try{
+    if(!model||String(model).length<4)return null;
+    var raw=await callAI(
+      'You are a master HVAC technician. Given a model number, name the MANUFACTURER if the '+
+      'model prefix genuinely identifies one to anyone in the trade (25HCE/24ABC=Carrier, '+
+      '4TTR/4TWR=Trane, GSX/GSZ=Goodman, XC/XP=Lennox, RA/RP=Rheem, MSZ/MUZ=Mitsubishi). '+
+      'If you do not actually recognise it, answer UNKNOWN. Reply with ONLY the manufacturer '+
+      'name or UNKNOWN — no other words.',
+      [{role:'user',content:'Model number: '+String(model).slice(0,40)}],24);
+    var name=String(raw||'').trim().replace(/[^A-Za-z \/-]/g,'');
+    if(!name||/unknown/i.test(name))return null;
+    // only trust it if it resolves to a brand we can actually query
+    var known=mpParseUnit(name).brand;
+    return known||null;
+  }catch(_e){ return null; }
+}
+function _hold_after_photo(){
+  var k=_mpUnitPlain(); k.need=['brand'];
+  window._mpWarrantyPending=k; window._mpPendingWarranty=true;
+}
+async function mpWarrantyFromPhoto(file,extras,prior,caption,autoDetect){
+  // Show the tech HIS OWN PHOTO, not the words "Data plate". Every other path in the
+  // app renders a thumbnail; this one printed a label, so a tech who attached a plate
+  // with a question saw two text bubbles and no picture — no way to tell whether the
+  // shot he sent was even in focus, which is the first thing he'd want to check when
+  // Mike says he can't read it. Same markup as the normal chat path, same escaping.
+  try{
+    var _b64=await blobToBase64Display(file);
+    appendMessage('user',(caption?'<p style="margin-bottom:8px;">'+escapeHtml(caption)+'</p>':'')
+      +'<img src="'+_b64+'" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;cursor:pointer;" onclick="openImgOverlay(\''+_b64+'\')"/>');
+  }catch(_pe){ appendMessage('user',(caption?escapeHtml(caption)+'\n':'')+'📷 Data plate'); }
+  // Answer him like a person would. A tech texts his senior guy a plate and gets
+  // "yep, on it" before the answer — not silence, and not a form. But only call it a
+  // plate when he TOLD us it is one: on a bare photo we are guessing, and Cruz sent a
+  // capacitor and got "reading the plate now" back. A senior tech says "let me look"
+  // until he knows what he is looking at.
+  appendMessage('agent',autoDetect?"On it — let me take a look.":"On it — reading the plate now.");
   if(typeof showTyping==='function')showTyping();
   try{
-    var mime=file.type||'image/jpeg', b64=await blobToBase64(file);
-    var SYSTEM='You are reading an HVAC equipment data plate. Return ONLY what is physically printed on it. NEVER guess or infer the brand, model or serial — if a field is not legible, return it as an empty string.\n\nReturn ONLY valid compact JSON, no markdown:\n{"brand":"","model":"","serial":"","confidence":"High|Medium|Low"}';
+    var mime=sentMime(file), b64=await blobToBase64(file);
+    // Recognising a brand from its model number is not guessing — it is the single
+    // most basic thing a master tech does. 25HCE430A300 is a Carrier and every tech in
+    // the trade knows it on sight. The old prompt forbade this outright, so a Carrier
+    // plate that does not print the word "Carrier" came back with no brand and Mike
+    // asked "who makes it?" while holding the answer. Serial is still read-only-if-
+    // printed: inventing a serial sends the wrong unit to the registry.
+    var SYSTEM='You are a master HVAC technician reading an equipment data plate.\n\n'
+      +'MODEL and SERIAL: return ONLY what is physically printed. If not legible, empty string. Never invent them.\n\n'
+      +'BRAND: if the manufacturer name is printed, use it and set brandSource "printed". '
+      +'If it is NOT printed but the MODEL NUMBER identifies the manufacturer to any tech in the trade '
+      +'(e.g. 25HCE/24ABC = Carrier, 4TTR/4TWR = Trane, GSX/GSZ = Goodman, XC/XP = Lennox, RA/RP = Rheem), '
+      +'name that manufacturer and set brandSource "model". If neither, leave brand empty and brandSource "unknown". '
+      +'Do NOT reach past a model prefix you actually recognise.\n\n'
+      +'Return ONLY valid compact JSON, no markdown:\n'
+      +'{"brand":"","model":"","serial":"","brandSource":"printed|model|unknown","confidence":"High|Medium|Low"}';
     var raw=await callAI(SYSTEM,[{role:'user',content:[
       {type:'image',source:{type:'base64',media_type:mime,data:b64}},
       {type:'text',text:'Read the brand, model number and serial number off this data plate. JSON only.'}
@@ -11714,31 +12358,163 @@ async function mpWarrantyFromPhoto(file){
     var d=null;try{var s=String(raw||'').replace(/```json|```/gi,'').trim();var mm=s.match(/\{[\s\S]*\}/);if(mm)d=JSON.parse(mm[0]);}catch(_e){d=null;}
     if(typeof hideTyping==='function')hideTyping();
     if(!d||!d.serial||d.confidence==='Low'){
+      // We went looking for a plate on our own initiative and this is not one — a
+      // part, an install shot, a wiring photo. Hand it back to the normal analysis
+      // instead of telling him to retake a photo he never meant as a plate.
+      if(autoDetect)return _mpFallbackPhoto(file);
       appendMessage('agent',"Couldn't read that plate well enough to trust it — and I'm not going to run a half-read serial against the registry and tell you it's not covered when it might be.\n\nGet a bit closer in better light and snap it again, or just type me the brand and serial.");
       window._mpPendingWarranty=true;
       return;
     }
-    mpWarrantyRun({brand:d.brand||null,model:d.model||null,serial:d.serial});
+    // Order matters: what is legible ON THE PLATE outranks what we were told, and both
+    // outrank nothing. Without the prior, a plate whose brand is scratched off made Mike
+    // ask "who makes it?" about a brand the tech had already typed.
+    if(prior){ var _pp=_mpStripEmpty(prior); delete _pp.need; mpUnitLearn(_pp); }
+    mpUnitLearn({brand:d.brand||null,model:d.model||null,serial:d.serial},'plate');
+    mpUnitLearn(extras||{});
+    // Say what we concluded and HOW, so he can correct it in one word instead of
+    // being interrogated. "That's a Carrier — 25HCE is theirs" is what his senior guy
+    // would say. A silent assumption is what loses his trust when it is wrong.
+    var _u=mpUnit();
+    // A brand identified from a model prefix is judgement, not print. If it is not a
+    // manufacturer we can actually query, do not announce it and do not send it —
+    // a confident wrong brand returns "no registration found", which a tech reads as
+    // NOT COVERED on a unit that may well be covered.
+    if(_u.brand&&d.brandSource==='model'&&!mpParseUnit(String(_u.brand)).brand){
+      delete _u.brand; if(_u._src)delete _u._src.brand;
+      appendMessage('agent',"I can read "+_u.serial+" off that plate but I can't pin the manufacturer from it. Who makes it? That's the last thing I need.");
+      _hold_after_photo();
+      return;
+    }
+    if(d.brandSource==='model'&&_u.brand){
+      // appendMessage escapes agent text itself (see the comment on its escapeHtml
+      // call) — pre-escaping here renders a model containing & as &amp; on screen.
+      appendMessage('agent',"That's a "+_mpSayBrand(_u.brand)+(_u.model?" — "+_u.model+" is theirs":"")+
+        ". Pulling the registration on "+_u.serial+" now. Shout if that's not right.");
+    }else if(_u.serial&&_u.brand){
+      appendMessage('agent',"Got it — "+_u.serial+" on that "+_mpSayBrand(_u.brand)+". Pulling the registration now.");
+    }
+    mpWarrantyRun(_u);
   }catch(_err){
     if(typeof hideTyping==='function')hideTyping();
     appendMessage('agent',"Something went sideways reading that photo. Type me the brand and serial off the plate and I'll pull it.");
     window._mpPendingWarranty=true;
   }
 }
-function mpWarrantyLookup(text){ mpWarrantyRun(mpParseUnit(text)); }
-function mpWarrantyRun(u){
+function mpWarrantyLookup(text){
+  // A typed reply just teaches the unit. No local merge — there is one owner now.
+  mpWarrantyRun(mpUnitLearn(Object.assign({},_mpStripEmpty(mpParseUnit(text)),_mpWarrantyExtras(text))));
+}
+
+// ── SCAN THE PLATE → REAL WARRANTY, NO EXTRA TAPS ────────────────────────────
+// The nameplate scan already reads brand, model and serial. It also printed a
+// warrantyStatus, but that was Mike ESTIMATING from the serial's build date — the
+// exact "likely warranty" guess the registry feature exists to replace. A tech who
+// quotes off a guess and is wrong eats the part.
+//
+// So the scan now goes and actually checks. Brands that only need a serial come back
+// with a real answer before the tech has put his phone away. Brands that need the
+// homeowner's last name (Goodman, Rheem, Lennox) can't be answered from a photo
+// alone, so Mike asks for exactly those fields and nothing more — asking for a zip
+// when the manufacturer doesn't want one is how a good flow starts feeling like
+// paperwork.
+async function mpWarrantyFromNameplate(data){
+  // A nameplate scan is always a new unit — he is pointing the camera at it.
+  mpUnitClear();
+  try{
+    if(!data||!data.brand||!data.serial)return;          // nothing to look up
+    if(!currentUser||!currentUser.token)return;           // signed-out front door
+    var res=await fetch('/api/warranty/requirements?brand='+encodeURIComponent(data.brand),
+      {headers:{'Authorization':'Bearer '+currentUser.token}}).then(function(r){return r.json();}).catch(function(){return null;});
+    if(!res||!res.known){
+      appendMessage('agent',"I don't have "+data.brand+" wired into the registry, so I can't pull the real registration on this one. The age off the plate is the best I've got — don't quote it as covered without confirming.");
+      return;
+    }
+    if(res.canCheck===false){
+      appendMessage('agent',_mpSayBrand((res.brandLabel||data.brand))+" keeps registration behind their dealer portal"+(res.note?" — "+res.note:"")+" I can't verify it and I won't pretend to.");
+      return;
+    }
+    var have={serial:data.serial,model:data.model};
+    var missing=(res.requires||[]).filter(function(f){ return !have[f.key]; });
+    if(!missing.length){
+      appendMessage('agent',"Got the plate — checking the actual registration with "+_mpSayBrand((res.brandLabel||data.brand))+" now.");
+      mpWarrantyRun(mpUnitLearn({brand:data.brand,serial:data.serial,model:data.model},'scan'));
+      return;
+    }
+    // Hold what we read so the tech only has to supply the human details.
+    mpUnitLearn({brand:data.brand,serial:data.serial,model:data.model},'scan');
+    var _k=_mpStripEmpty(mpUnit()); _k.need=missing.map(function(f){return f.key;});
+    window._mpWarrantyPending=_k;
+    window._mpPendingWarranty=true;
+    appendMessage('agent',"I can pull the real registration on this one — "+_mpSayBrand((res.brandLabel||data.brand))+" just needs "+
+      missing.map(function(f){return f.label;}).join(' and ')+" alongside the serial.\n\nGive me that and I'll tell you whether it's registered for the extended term or sitting on base coverage.");
+  }catch(e){ /* never let this break the scan card */ }
+}
+async function mpWarrantyRun(u){
   u=u||{};
-  if(!u.brand){ mpAskMike("Who makes it? Trane, Carrier, Goodman, Rheem — I need the brand before I can pull the registration."); window._mpPendingWarranty=true; return; }
-  if(!u.serial){ mpAskMike("I've got the brand — now the serial number off the data plate. That's the one the manufacturer keys the registration to."); window._mpPendingWarranty=true; return; }
+  // HOLD WHAT WE ALREADY HAVE. This asked for the missing field and threw away the
+  // rest in the same breath: Brandon typed "Carrier", Mike said "I've got the brand —
+  // now the serial", and dropped Carrier on the floor. He then sent a photo of the
+  // plate and Mike asked "Who makes it?" about a brand he had been given twice.
+  // Saying "I've got the brand" and then forgetting it is worse than never claiming it.
+  u=mpUnitLearn(u);   // everything Mike knows, in one place
+  function _hold(need){
+    var k=_mpStripEmpty(mpUnit()); k.need=need;
+    window._mpWarrantyPending=k; window._mpPendingWarranty=true;
+  }
+  if(!u.brand&&u.model){
+    var _fromModel=await _mpBrandFromModel(u.model);
+    if(_fromModel){
+      mpUnitLearn({brand:_fromModel},'model'); u=mpUnit();
+      appendMessage('agent',"That "+u.model+" is a "+_mpSayBrand(_fromModel)+" — going with that. Shout if it's not.");
+    }
+  }
+  if(!u.brand){ _hold(['brand']); mpAskMike("Who makes it? Trane, Carrier, Goodman, Rheem — I need the brand before I can pull the registration."); return; }
+  if(!u.serial){ _hold(['serial']); mpAskMike("I've got the brand — now the serial number off the data plate. That's the one the manufacturer keys the registration to."); return; }
+  // Ask for what this manufacturer actually requires BEFORE spending a lookup on it.
+  // Goodman will not return full coverage without the homeowner's last name and
+  // Rheem wants the state — run without them and the form answers "no registration
+  // found", which a tech reads as NOT COVERED on a unit that may be covered. The
+  // nameplate path already did this check; the typed path did not.
+  try{
+    var _rq=await fetch('/api/warranty/requirements?brand='+encodeURIComponent(u.brand),
+      {headers:{'Authorization':'Bearer '+((currentUser||{}).token||'')}})
+      .then(function(r){return r.json();}).catch(function(){return null;});
+    if(_rq&&_rq.known&&_rq.canCheck!==false&&_rq.requires){
+      var _miss=_rq.requires.filter(function(f){ return !u[f.key]; });
+      // Ask at most twice. A field the tech cannot give — Carrier's original-purchaser
+      // question when he has no idea who bought the unit — must not become a loop that
+      // eats every following message. After two asks, run the lookup with what we have
+      // and let the manufacturer answer honestly rather than trapping him.
+      window._mpWarrantyAsks=(window._mpWarrantyAsks||0);
+      if(_miss.length&&window._mpWarrantyAsks>=2){
+        window._mpWarrantyAsks=0;
+        appendMessage('agent',"Going ahead without "+_miss.map(function(f){return f.label;}).join(' and ')+
+          " — "+_mpSayBrand((_rq.brandLabel||u.brand))+" may only give me the base terms without it, and I'll tell you if that's all I get.");
+        _miss=[];
+      }
+      if(_miss.length){
+        window._mpWarrantyAsks++;
+        var _k2=_mpStripEmpty(mpUnit()); _k2.need=_miss.map(function(f){return f.key;});
+        window._mpWarrantyPending=_k2;
+        window._mpPendingWarranty=true;
+        appendMessage('agent',"Got the "+_mpSayBrand((_rq.brandLabel||u.brand))+" and the serial. "+_mpSayBrand((_rq.brandLabel||u.brand))+" also needs "+
+          _miss.map(function(f){return f.label;}).join(' and ')+" before they'll return the real coverage.\n\nGive me that and I'll pull it.");
+        return;
+      }
+    }
+  }catch(_rqe){ /* requirements are a courtesy — never block the lookup on them */ }
   // appendMessage escapes agent text (XSS guard) then renders markdown — so these
   // use **bold** and newlines, never HTML, and never pre-escape or it double-escapes.
-  if(/lennox/i.test(u.brand)){
-    appendMessage('agent',"Lennox doesn't publish a warranty registry — registration status only lives behind their dealer portal, so I can't verify it the way I can with Trane. Nobody can, without a LennoxPros login.\n\nWhat I'd do: pull it up on LennoxPros if you've got access, or call the distributor with that serial. Don't quote it as covered until somebody confirms it.");
-    return;
-  }
+  // The Lennox dead-end that used to live here was wrong. lennox.com publishes a
+  // public warranty lookup that needs no dealer login — Brandon uses it daily. Every
+  // brand now goes through the registry, which answers honestly per manufacturer
+  // instead of this file guessing on their behalf.
+  window._mpWarrantyAsks=0;   // we have everything; the next lookup starts fresh
+  window._mpWarrantyPending=null;
   if(typeof showTyping==='function')showTyping();
-  fetch('/api/warranty',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({token:(currentUser||{}).token,brand:u.brand,serial:u.serial,model:u.model})})
+  _warrantyFetch(JSON.stringify({token:(currentUser||{}).token,brand:u.brand,serial:u.serial,model:u.model,
+      lastName:u.lastName,zip:u.zip,state:u.state,originalPurchaser:u.originalPurchaser}))
     .then(function(r){return r.json().catch(function(){return null;});})
     .then(function(d){
       if(typeof hideTyping==='function')hideTyping();
@@ -11746,16 +12522,57 @@ function mpWarrantyRun(u){
         appendMessage('agent',"Couldn't reach the manufacturer's registry just now — that's on my end, not your unit. Try again in a minute, or check it directly with the serial. I'm not going to guess at a warranty and have you quote it wrong.");
         return;
       }
+      // A manufacturer outage is THEIR problem, and a tech needs to know that. Told
+      // "couldn't check", he decides the tool is broken and stops opening it; told
+      // "their site is down", he works around it and comes back.
+      if(d.siteDown){
+        appendMessage('agent',(d.summary||("Can't check that one right now — "+_mpSayBrand((d.brandLabel||u.brand))+"'s warranty site is down. Nothing wrong on your end."))+"\n\nDon't quote it as covered until somebody confirms it.");
+        return;
+      }
       if(d.supported===false){
         if(d.reason==='no_public_registry'){
-          appendMessage('agent',(d.brandLabel||u.brand)+" doesn't publish a public warranty registry — registration status sits behind their dealer portal"+(d.where?" ("+d.where+")":"")+". I can't verify it, and I won't pretend to. Confirm it there before you quote it as covered.");
+          appendMessage('agent',_mpSayBrand((d.brandLabel||u.brand))+" doesn't publish a public warranty registry — registration status sits behind their dealer portal"+(d.where?" ("+d.where+")":"")+". I can't verify it, and I won't pretend to. Confirm it there before you quote it as covered.");
+        } else if(d.reason==='lookup_failed'){
+          // We ARE wired to this brand and the lookup broke. Saying "not wired"
+          // here teaches a tech the brand is unsupported and he stops asking —
+          // for a lookup that works the next time he tries it.
+          appendMessage('agent',"I couldn't get "+_mpSayBrand((d.brandLabel||u.brand))+"'s lookup to answer just now — that's my end, not your unit, and not the brand. Give it another shot in a minute"+(d.where?", or check it directly at "+d.where:"")+". I'm not going to guess at coverage.");
         } else {
-          appendMessage('agent',"I don't have "+(d.brandLabel||u.brand)+" wired into the registry yet"+(d.where?" — their lookup lives at "+d.where:"")+". Check it there with that serial. I'd rather tell you that than hand you a number I made up.");
+          appendMessage('agent',"I don't have "+_mpSayBrand((d.brandLabel||u.brand))+" wired into the registry yet"+(d.where?" — their lookup lives at "+d.where:"")+". Check it there with that serial. I'd rather tell you that than hand you a number I made up.");
         }
         return;
       }
       if(!d.found){
-        appendMessage('agent',"No registration came back for serial "+u.serial+" on that "+(d.brandLabel||u.brand)+".\n\nTwo usual reasons: the serial's off by a character, or the unit was never registered — and that second one matters on its own, because unregistered normally means the shorter base term instead of the extended one. Worth another look at the plate.");
+        // LEAD WITH THE ANSWER. This used to open "No registration came back", which
+        // reads as the tool failing — Brandon watched the whole lookup work end to end
+        // and still thought it was broken, because the first four words sounded like an
+        // error. An unregistered unit is not a failure, it is the single most common
+        // real result and it tells a tech exactly what he needs: base coverage only,
+        // do not quote the extended term. Say that first, then say why.
+        appendMessage('agent',"Treat that one as **base coverage** — "+_mpSayBrand((d.brandLabel||u.brand))+" has no registration on serial "+u.serial+". Let me give you the actual terms.");
+        // "Not registered" is a dead end. A tech needs the NUMBER: what the base term
+        // actually is, and whether this unit is still inside it. Brandon: "he should at
+        // least give the standard warranty that it has, not just say it's not
+        // registered." Mike knows the published terms and can date a serial — so use
+        // him for exactly that, and label it as the published term rather than a
+        // registry result, because we did not read these off the manufacturer.
+        (async function(){
+          try{
+            if(typeof showTyping==='function')showTyping();
+            var _sys=(typeof AGENT_SYSTEM==='string'?AGENT_SYSTEM:'')+
+              "\n\nANSWER FORMAT — a technician needs numbers, not a shrug. Be brief.\n"+
+              "1) The manufacturer's PUBLISHED base parts term for this brand and product type when the unit was never registered, and the registered/extended term for comparison.\n"+
+              "2) Decode the manufacture date from the serial if you genuinely recognise the format. If you do not, say so and skip it — never invent a date.\n"+
+              "3) If you have a date, say whether the unit is still inside that base term today, and roughly when it runs out.\n"+
+              "4) One line on what to quote.\n"+
+              "Say plainly that these are the published terms, not a lookup on this unit — the registry had no record. Never state coverage as confirmed.";
+            var _q="Unit: "+(u.brand||'')+" "+(u.model||'')+", serial "+u.serial+
+              ". The manufacturer's registry returned no registration for it. What is the standard base warranty on this, and is it still in it?";
+            var _ans=await callAI(_sys,[{role:'user',content:_q}],520);
+            if(typeof hideTyping==='function')hideTyping();
+            if(_ans)appendMessage('agent',_ans);
+          }catch(_te){ if(typeof hideTyping==='function')hideTyping(); }
+        })();
         return;
       }
       var reg=d.registered===true;
@@ -11776,7 +12593,7 @@ function mpWarrantyRun(u){
     })
     .catch(function(){
       if(typeof hideTyping==='function')hideTyping();
-      appendMessage('agent',"Couldn't reach the registry — that's my end. Check it with the serial directly rather than taking my word for it.");
+      appendMessage('agent',"Couldn't reach the registry — that's my end, not your unit. Ask me once more; if it already went through I'll have the answer instantly.");
     });
 }
 // DE-DUPLICATED 2026-08-08. A tech reported the drawer as "a lot of tabs and a bit confusing"; the
@@ -12497,6 +13314,10 @@ function buildConvoMemory(){
   }catch(e){window._convoMemory='';}
 }
 function clearChat(){
+  // A pending warranty question belongs to the conversation being cleared. It lived in
+  // globals, so starting a new chat left it armed and the very next unrelated question
+  // got hijacked by the old thread's prompt — in a chat that visibly no longer existed.
+  mpUnitClear();
   // Push 6 commit 6: archive-not-delete — preserve the current chat to localStorage
   // before clearing so users can recover it from the Chats history. archiveCurrentChat()
   // enriches the entry (id + title + type) and rebuilds Mike's conversation memory.
@@ -12566,6 +13387,11 @@ async function wipeChat(){
 
   // Archive the current thread before resetting so nothing is ever lost.
   try{archiveCurrentChat();}catch(e){}
+  // A pending warranty question belongs to the thread being wiped. This is the button
+  // the CLEAR CHAT control actually calls — clearChat() is a different function, and
+  // putting the reset only there meant tapping Clear Chat to escape a stuck warranty
+  // prompt landed the tech straight back in it, in a conversation that no longer existed.
+  mpUnitClear();
   // Reset conversation state
   if(typeof chatHistory!=='undefined')chatHistory=[];
   var cm=document.getElementById('chatMessages');
@@ -12951,7 +13777,7 @@ function mikeSay(text){
       return res.arrayBuffer();
     })
     .then(function(arrayBuf){
-      if(stale()){return;} // user pressed stop / opened camera — drop this audio
+      if(stale()){resetMikeSpeakingUI();return;} // user pressed stop / opened camera — drop this audio
       if(!arrayBuf||arrayBuf.byteLength<500){
         // ElevenLabs returned nothing — go silent rather than fall back to robot voice.
         // Robot speechSynthesis was causing "two Mikes talking" when it overlapped real Mike.
@@ -12971,9 +13797,9 @@ function mikeSay(text){
       }
       var ctx=sharedAudioCtx||(sharedAudioCtx=new AudioCtx());
       var play=function(){
-        if(stale()){return;} // double-check right before decode
+        if(stale()){resetMikeSpeakingUI();return;} // double-check right before decode
         ctx.decodeAudioData(arrayBuf.slice(0),function(decoded){
-          if(stale()){return;} // and right before playback
+          if(stale()){resetMikeSpeakingUI();return;} // and right before playback
           var src=ctx.createBufferSource();
           var gainNode=ctx.createGain();
           gainNode.gain.value=1.0;
@@ -13002,7 +13828,14 @@ function mikeSay(text){
           if(stopBtn)stopBtn.style.display='none';
         });
       };
-      if(ctx.state==='suspended'||ctx.state==='interrupted'){ctx.resume().then(play).catch(function(){isMikeSpeaking=false;});}
+      // iOS suspends the context when the app backgrounds. If resume() never settles
+      // (it can hang while backgrounded) nothing below ever runs, so reset on failure
+      // AND arm a watchdog — otherwise the call is stuck on 'Mike is talking…'.
+      if(ctx.state==='suspended'||ctx.state==='interrupted'){
+        var _resumed=false;
+        setTimeout(function(){ if(!_resumed&&isMikeSpeaking&&!mikeAudio) resetMikeSpeakingUI(); },6000);
+        ctx.resume().then(function(){_resumed=true;play();}).catch(function(){resetMikeSpeakingUI();});
+      }
       else play();
     })
     .catch(function(err){
@@ -13027,8 +13860,29 @@ function mikeSayBrowser(clean){
   if(voiceMode&&!isListening)setTimeout(function(){if(voiceMode&&!isListening)startListening();},1200);
 }
 
+// Single place that puts the voice UI back to rest. Every path that stops Mike talking —
+// finished, stopped, aborted, decode failed, went stale, app backgrounded — has to land
+// here, or the UI keeps claiming "Mike is talking…" with nothing playing and the call
+// looks broken. That was the bug: three stale() early-returns bailed out without touching
+// any of this, so backgrounding the app mid-sentence left the status stuck forever.
+function resetMikeSpeakingUI(){
+  isMikeSpeaking=false;
+  try{ if(typeof showVoiceWaveform==='function')showVoiceWaveform(false); }catch(e){}
+  try{
+    var _mb=document.getElementById('micBtn');
+    if(_mb){_mb.classList.remove('mic-speaking');_mb.textContent='🎙️';}
+    var _sb=document.getElementById('stopSpeakBtn');
+    if(_sb)_sb.style.display='none';
+  }catch(e){}
+  // Clear the stuck label. In an active call hand the turn back to the tech; otherwise
+  // blank it so a dead call doesn't sit there insisting Mike is mid-sentence.
+  try{ if(typeof setVoiceStatus==='function')setVoiceStatus(voiceMode?'Go ahead…':'',''); }catch(e){}
+}
+
 function stopMikeSpeaking(){
   isMikeSpeaking=false;
+  // Put the UI back too — clearing the flag alone left "Mike is talking…" on screen.
+  try{ resetMikeSpeakingUI(); }catch(e){}
   // Abort any in-flight TTS fetches (both voice mode and camera) so slow downloads
   // never start playing AFTER stop. This is the fix for "Mike keeps talking after stop".
   try{if(window._voiceTTSAbort){window._voiceTTSAbort.abort();window._voiceTTSAbort=null;}}catch(e){}
@@ -13277,7 +14131,11 @@ async function analyzeCameraFrame(userInitiated,userText){
     // image-content override. The English camera-session block above otherwise
     // overpowers the earlier directive and Claude mirrors the English text on
     // the nameplate. Last-in-system-prompt wins for Claude's response language.
-    var sysPrompt=AGENT_SYSTEM+buildKnowledgeContext()+verifiedPtBlock+'\n\nYou are on a LIVE CAMERA SESSION. Analyze what you see. Identify the unit, brand, model, condition, issues. If a part: identify it, read part numbers, search pricing. You have full web search, parts lookup, and all your regular capabilities. If asked about temperature or weather -- search current conditions for the tech location in the TECH PROFILE above. Keep auto-analysis to 2-3 sentences. For direct questions: answer fully.\n\nLANGUAGE — CRITICAL: '+langNote+' Even if the image contains English text (nameplates, labels, manuals), respond ENTIRELY in this language. Do NOT mix languages or switch to English mid-response.';
+    // The camera being open is NOT a standing instruction to narrate the room. Before
+    // this, every spoken turn re-sent "analyze what you see", so asking Mike how he was
+    // doing got a description of the couch and the toys on the floor first. The tech is
+    // holding a camera, not asking for commentary — he says when he wants the picture read.
+    var sysPrompt=AGENT_SYSTEM+buildKnowledgeContext()+verifiedPtBlock+'\n\nThe tech has his camera open and you can see through it. DO NOT describe, mention, or comment on what you see unless he actually asks about it. If he asks you something that is not about the image — how you are doing, a spec, a code, anything conversational — just answer him. Say nothing about the picture.\n\nWhen he DOES ask what you are looking at, or points at a part, or taps Analyze: read it properly. Identify the unit, brand, model, condition, issues. If a part: identify it, read part numbers, search pricing. You have full web search, parts lookup, and all your regular capabilities. If asked about temperature or weather -- search current conditions for the tech location in the TECH PROFILE above.\n\nLANGUAGE — CRITICAL: '+langNote+' Even if the image contains English text (nameplates, labels, manuals), respond ENTIRELY in this language. Do NOT mix languages or switch to English mid-response.';
     // Default snap-and-analyze prompt — localized so the 📸 button doesn't
     // inject English into a Spanish/etc. session and bias Claude back to English.
     var SNAP_DEFAULT={en:'What do you see? Analyze this.',es:'¿Qué ves? Analiza esto.',zh:'你看到了什么？分析一下这个。',vi:'Bạn thấy gì? Phân tích cái này.',fr:'Que vois-tu? Analyse ceci.',pt:'O que você vê? Analise isto.'};
@@ -13304,7 +14162,15 @@ async function analyzeCameraFrame(userInitiated,userText){
     chatHistory.push({role:'assistant',content:response});
     if(chatHistory.length>40)chatHistory=chatHistory.slice(-40); // Keep 40 in memory
     // Push 7.3 — single append with 📷 prefix; before this fix Mike's response posted twice (plain at line 7459 + prefixed at 7465) with a dangling var apiHistory between them
-    if(typeof appendMessage==='function')appendMessage('agent','📷 '+response);
+    // FaceTime was a one-sided transcript. What the tech SAID went into chatHistory —
+    // Mike's memory — but never onto the screen, so scrolling back showed only Mike
+    // talking, with no record of the question that prompted it. His words belong in the
+    // thread. (The 📸 button appends the frame itself as the user turn and passes no
+    // userText, so this cannot double up.)
+    if(typeof appendMessage==='function'){
+      if(userText)appendMessage('user',userText);
+      appendMessage('agent','📷 '+response);
+    }
     if(userInitiated&&userText&&needsDiagram(userText))generateAndShowDiagram(userText,response);
   }catch(e){
     document.getElementById('cameraAnalyzing').style.display='none';

@@ -28,6 +28,15 @@ const TOKEN = process.env.WARRANTY_SERVICE_TOKEN || '';
 const LOOKUP_TIMEOUT_MS = Number(process.env.LOOKUP_TIMEOUT_MS || 45000);
 const IDLE_SHUTDOWN_MS = Number(process.env.IDLE_SHUTDOWN_MS || 120000);
 const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS || 24 * 60 * 60 * 1000);
+// A lookup takes 40-90 seconds and the phone holds one connection open the whole time.
+// On a roof or in a mechanical room that connection dies — screen locks, app
+// backgrounds, cell hands off — and the tech is told "couldn't reach the registry"
+// about an answer the server already has. Brandon hit exactly this on his own Trane:
+// the service logged found=false and his phone showed a failure.
+// So EVERY completed lookup is remembered briefly, not just the successful ones. A
+// retry after a dropped connection returns instantly from here instead of driving a
+// browser again — and instead of losing the answer.
+const RETRY_TTL_MS = Number(process.env.RETRY_TTL_MS || 15 * 60 * 1000);
 const MAX_QUEUE = Number(process.env.MAX_QUEUE || 20);
 const RATE_PER_MIN = Number(process.env.RATE_PER_MIN || 30);
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || '';
@@ -127,8 +136,8 @@ function cacheGet(k) {
   if (Date.now() > hit.expires) { cache.delete(k); return null; }
   return hit.value;
 }
-function cacheSet(k, value) {
-  cache.set(k, { value, expires: Date.now() + CACHE_TTL_MS });
+function cacheSet(k, value, ttl) {
+  cache.set(k, { value, expires: Date.now() + (ttl || CACHE_TTL_MS) });
   if (cache.size > 5000) cache.delete(cache.keys().next().value);
 }
 
@@ -218,7 +227,7 @@ app.post('/lookup', async (req, res) => {
       ]);
       clearTimeout(_atimer);
       const payload = Object.assign({ brand: brand.id, brandLabel: brand.label, serial }, out);
-      if (out.found) cacheSet(cacheKey(brand.id, serial), payload);
+      cacheSet(cacheKey(brand.id, serial), payload, out.found ? CACHE_TTL_MS : RETRY_TTL_MS);
       console.log(`[lookup] ${brand.id} ${serial} via=agent found=${!!out.found} registered=${out.registered}`);
       return res.json(Object.assign({ ok: true, supported: true, cached: false }, payload));
     } catch (err) {
@@ -288,7 +297,7 @@ app.post('/lookup', async (req, res) => {
     clearTimeout(_dtimer);
 
     const payload = Object.assign({ brand: brand.id, brandLabel: brand.label, serial }, result);
-    if (result.found) cacheSet(key, payload);
+    cacheSet(key, payload, result.found ? CACHE_TTL_MS : RETRY_TTL_MS);
 
     // Log the outcome only. The upstream payload contains the homeowner's install
     // address; it must not reach the logs any more than it reaches the phone.

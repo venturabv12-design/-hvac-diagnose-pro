@@ -9,6 +9,9 @@ const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const helmet = require('helmet');
+const nightlyLearn = require('./lib/nightly-learn');
+const fieldAlert = require('./lib/field-alert');
+const dailyDigest = require('./lib/daily-digest');
 
 // Diagram-redraw engine — traces an uploaded wiring diagram and renders a clean illustration.
 const { extractNetlist, sanitizeNetlist, validateNetlist } = require('./scripts/redraw/extract-netlist.js');
@@ -89,6 +92,91 @@ async function fetchWithRetry(url, options, retries = 2) {
       await sleep(1000*(i+1));
     }
   }
+}
+
+// ── MODEL FAILOVER ────────────────────────────────────────────────────────────
+// 2026-06-24 Mike went fully dark for a day: claude-opus-4-8 — the single model he
+// runs on — had an upstream incident and every tech got "error, try again". The key
+// was fine, the bill was fine, the code was fine. One model was down and Mike had
+// nowhere else to go.
+//
+// This is the answer to that specific failure. The chain is tried in order and the
+// FIRST model that responds wins. Ordering is deliberate: the primary first, then
+// the nearest-capability sibling, so a degraded Mike still sounds like Mike.
+//
+// Scope, honestly: this survives ONE MODEL being down, which is what actually
+// happened. It does not survive the whole vendor being down — that needs a second
+// provider (Claude on Bedrock/Vertex) and a second credential, which is a separate
+// build. Named so nobody mistakes this for more coverage than it gives.
+//
+// Safety note: every model's output still passes through the deterministic
+// safety/pricing guard downstream — the guard runs on `outText`, after the call, so
+// a fallback model cannot route around the homeowner-pricing rule or the capacitor
+// strip. Failover changes WHO answers, never WHAT is allowed through.
+const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+const PRIMARY_MODEL = process.env.MIKE_MODEL || 'claude-opus-4-8';
+const MODEL_CHAIN = (function () {
+  const extra = (process.env.MIKE_MODEL_FALLBACKS || 'claude-opus-4-7,claude-sonnet-4-6')
+    .split(',').map(m => m.trim()).filter(Boolean);
+  return [PRIMARY_MODEL].concat(extra.filter(m => m !== PRIMARY_MODEL));
+})();
+
+// Retry-the-next-model statuses. 429 is included because a per-model rate ceiling
+// leaves a tech just as stuck as an outage does. 4xx like 400/401/404 are OUR bug
+// (bad request, bad key) — trying another model would just fail three times slower.
+function isFailoverStatus(code) {
+  return code === 429 || code === 500 || code === 502 || code === 503 || code === 504 || code === 529;
+}
+
+// Reports which model answered so a degraded state is visible instead of silent.
+let lastModelUsed = PRIMARY_MODEL;
+let failoverCount = 0;
+
+// Walks MODEL_CHAIN until one answers. `opts.stream` picks the raw fetch (SSE needs
+// the live body) over fetchWithRetry. Returns the winning response plus the model
+// that produced it. An aborted request (client hung up / 55s timeout) stops the walk
+// immediately — the tech is already gone, so burning their wait on another model is
+// worse than failing fast.
+async function callModelWithFailover(baseBody, fetchOpts, opts) {
+  const useStream = !!(opts && opts.stream);
+  let lastRes = null, lastErr = null;
+
+  for (let i = 0; i < MODEL_CHAIN.length; i++) {
+    const model = MODEL_CHAIN[i];
+    const attemptOpts = Object.assign({}, fetchOpts, {
+      body: JSON.stringify(Object.assign({}, baseBody, { model })),
+    });
+
+    try {
+      const res = useStream
+        ? await fetch(ANTHROPIC_URL, attemptOpts)
+        : await fetchWithRetry(ANTHROPIC_URL, attemptOpts);
+
+      if (res && res.ok) {
+        lastModelUsed = model;
+        if (i > 0) {
+          failoverCount++;
+          console.warn(`[failover] ${MODEL_CHAIN[0]} unavailable — answered on ${model} (fallback #${i})`);
+        }
+        return { res, model, degraded: i > 0 };
+      }
+
+      lastRes = res;
+      if (!res || !isFailoverStatus(res.status) || i === MODEL_CHAIN.length - 1) {
+        return { res, model, degraded: i > 0 };
+      }
+      console.warn(`[failover] ${model} returned ${res.status} — trying ${MODEL_CHAIN[i + 1]}`);
+    } catch (err) {
+      // Don't keep walking a chain the caller already abandoned.
+      if (err && (err.name === 'AbortError' || err.code === 'ABORT_ERR')) throw err;
+      lastErr = err;
+      if (i === MODEL_CHAIN.length - 1) throw err;
+      console.warn(`[failover] ${model} threw "${err.message}" — trying ${MODEL_CHAIN[i + 1]}`);
+    }
+  }
+
+  if (lastRes) return { res: lastRes, model: MODEL_CHAIN[MODEL_CHAIN.length - 1], degraded: true };
+  throw lastErr || new Error('all models unavailable');
 }
 
 // ── SUPABASE HELPER ───────────────────────────────────────────────────────────
@@ -726,6 +814,12 @@ app.get('/api/health', (req, res) => {
     ok: true,
     activeRequests: globalActive,
     uptime: Math.floor(process.uptime()),
+    // Failover visibility. `degraded` true means the primary model is failing and
+    // Mike is answering on a fallback — an outage that would previously have been
+    // silent (or total). Deliberately does NOT expose the chain itself.
+    models: MODEL_CHAIN.length,
+    degraded: lastModelUsed !== PRIMARY_MODEL,
+    failovers: failoverCount,
   });
 });
 
@@ -1430,17 +1524,28 @@ app.get('/api/warranty/requirements', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/warranty', authenticateToken, aiLimiter, async (req, res) => {
-  const { brand, serial, model, originalPurchaser } = req.body || {};
+  // Goodman and Lennox will not return coverage without the homeowner's last name;
+  // Rheem also wants the state. Those cannot come off a photo, so they arrive from
+  // whatever the tech told Mike and have to be forwarded, or the lookup runs with
+  // half the form filled and reports "no registration found" on a covered unit.
+  const { brand, serial, model, originalPurchaser, lastName, zip, state } = req.body || {};
   if (!brand || !serial) return res.status(400).json({ ok: false, error: 'brand_and_serial_required' });
 
   try {
     const r = await fetch(`${WARRANTY_URL}/lookup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-warranty-token': WARRANTY_TOKEN },
-      body: JSON.stringify({ brand, serial, model, originalPurchaser }),
-      // A cold lookup launches a browser; the service's own ceiling is 45s, so give
-      // it room past that rather than cutting a good answer off at the knees.
-      signal: AbortSignal.timeout(60000),
+      body: JSON.stringify({ brand, serial, model, originalPurchaser,
+        extra: { model, lastName, zip, state, originalPurchaser } }),
+      // A cold lookup launches a browser and drives the manufacturer's own form. That
+      // agent path documents its normal case as 20-60s and the service gives it a 120s
+      // ceiling (AGENT_TIMEOUT_MS); only Trane's direct path uses the old 45s number.
+      // Cutting at 60s meant that for five of six brands Mike gave up BEFORE the
+      // service did — the tech got "couldn't reach the registry" while the lookup ran
+      // on to a good answer nobody received, burning tokens and hitting the
+      // manufacturer for nothing. Sit just past the service's own ceiling so the
+      // service is always the one that decides a lookup has failed.
+      signal: AbortSignal.timeout(135000),
     });
     const data = await r.json().catch(() => null);
     if (!r.ok || !data) throw new Error(`lookup ${r.status}`);
@@ -2387,9 +2492,22 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // Enforce paywall server-side. Token comes from body (existing frontend sends it this way).
   const authToken = req.body?.token
     || (req.headers['authorization']?.startsWith('Bearer ') ? req.headers['authorization'].slice(7) : null);
-  const access = await checkPaywall(authToken);
-  if (!access.allowed)
-    return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
+  // Signed-out visitor spending their one free answer. Everything downstream —
+  // including the deterministic safety/pricing guard — runs exactly as it does for a
+  // paying tech; the only thing skipped is the account check.
+  let _isTaste = false;
+  if (!authToken && req.body?.taste === true) {
+    const allow = tasteAllowance(req);
+    if (allow.left <= 0)
+      return res.status(402).json({ error: 'That was the free one — create an account and Mike stays with you.', paywall: true });
+    tasteConsume(allow);
+    _isTaste = true;
+  }
+  if (!_isTaste) {
+    const access = await checkPaywall(authToken);
+    if (!access.allowed)
+      return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
+  }
 
   const { messages, system, systemExtra = '', max_tokens = 1024, use_search = false, stream = false } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0)
@@ -2717,6 +2835,16 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       // make Mike" was unanswerable — and that is the one question that decides whether this
       // is usable by a tech standing in an attic. Measure it.
       try { if (_askUid) logUsage(_askUid, 'rag_timing', { ms: _ragMs, hit: !!(_mc && _mc.text) }); } catch {}
+      // A miss is the most valuable signal Mike produces: a real tech, on a real job,
+      // asked about a unit he has no verified manual for. Logged with the brand and
+      // model so the nightly learner can go find exactly that document tonight.
+      // Only the identifiers are stored — never the tech's question text.
+      try {
+        if (_askUid && !(_mc && _mc.text)) {
+          const _mBrand = _extractBrand(_lastUser), _mModel = _extractModelFamily(_lastUser);
+          if (_mBrand && _mModel) logUsage(_askUid, 'rag_miss', { brand: _mBrand, model: _mModel });
+        }
+      } catch {}
       if (_mc && _mc.text) {
         _ragContext = '\n\n=== MANUFACTURER SERVICE MANUAL EXCERPTS (authoritative) ===\n'
           + 'Answer fault-code, wiring, and spec questions ONLY from these excerpts and cite the [Source: ...] tag in your reply. '
@@ -2790,22 +2918,27 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     // already gates use_search off for streamed chat).
     if (stream && !_forceNonStream) {
       body.stream = true;
-      const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+      // Failover happens BEFORE the first byte reaches the client. Once SSE headers
+      // are written we're committed to this model — a mid-stream switch would replay
+      // half an answer. The client already falls back to the non-stream path on a
+      // stream error, and that path walks the chain again.
+      const _fo = await callModelWithFailover(body, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': ANTHROPIC_API_KEY,
           'anthropic-version': '2023-06-01',
         },
-        body: JSON.stringify(body),
         signal: controller.signal,
-      });
+      }, { stream: true });
+      const upstream = _fo.res;
 
-      if (!upstream.ok || !upstream.body) {
-        let msg = `API error ${upstream.status}`;
+      if (!upstream || !upstream.ok || !upstream.body) {
+        const _st = upstream ? upstream.status : 502;
+        let msg = `API error ${_st}`;
         try { const ed = await upstream.json(); msg = ed?.error?.message || msg; } catch (_) {}
-        console.error('Anthropic stream error:', upstream.status, msg);
-        return res.status(upstream.status === 429 ? 429 : 502).json({ error: msg });
+        console.error('Anthropic stream error:', _st, msg, `(last model: ${_fo.model})`);
+        return res.status(_st === 429 ? 429 : 502).json({ error: msg });
       }
 
       // Client SSE headers.
@@ -2867,22 +3000,22 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     }
     // ── NON-STREAM (default fallback path, unchanged) ─────────────────────────
 
-    const response = await fetchWithRetry('https://api.anthropic.com/v1/messages', {
+    const _foNS = await callModelWithFailover(body, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify(body),
       signal: controller.signal,
-    });
+    }, { stream: false });
+    const response = _foNS.res;
 
     const data = await response.json();
 
     if (!response.ok) {
       const msg = data?.error?.message || `API error ${response.status}`;
-      console.error('Anthropic error:', response.status, msg);
+      console.error('Anthropic error:', response.status, msg, `(last model: ${_foNS.model})`);
       return res.status(response.status === 429 ? 429 : 502).json({ error: msg });
     }
 
@@ -3189,6 +3322,205 @@ app.get('/privacy', (req, res) => {
 });
 
 // ── SPA FALLBACK ──────────────────────────────────────────────────────────────
+// events.user_id is NOT NULL, so a report from a signed-out phone — or one whose token
+// just expired, which is precisely the device most likely to be failing — was silently
+// dropped on insert. Anonymous reports get filed under the system account and flagged
+// anon:true so they are still visible and still distinguishable from a known tech.
+let _sysOwnerId = null;
+async function systemOwnerId() {
+  if (_sysOwnerId) return _sysOwnerId;
+  try {
+    const rows = await supabase('GET', 'users', null, '?select=id&role=eq.admin&limit=1');
+    _sysOwnerId = (rows && rows[0] && rows[0].id) || null;
+  } catch (_) {}
+  return _sysOwnerId;
+}
+
+// ── THE FREE FIRST ANSWER ─────────────────────────────────────────────────────
+// 476 visitors a week reach trazermike.io and 1 signs up. The onboarding shows a
+// STATIC mockup of Mike answering — a screenshot of the product, not the product —
+// and a tech can smell that. Meanwhile the app's own copy already promises "first
+// answer's on the house". This makes that literally true: one real question, one
+// real answer from the real Mike, then the account wall.
+//
+// A tech who has watched Mike correctly call a humming compressor has a reason to
+// sign up. A tech looking at a logo has a promise, and techs do not trust promises
+// from software.
+//
+// Bounded hard, because this is the one unauthenticated path to the model:
+//   · ONE answer per device per day, keyed on the same visitor hash analytics uses
+//   · short answers only, no web search, no manual retrieval
+//   · goes through the SAME safety/pricing guard as every other reply — a homeowner
+//     still never sees a price here
+// Brandon, 2026-08-29: ten questions before the wall, not one. One answer proves
+// nothing — a tech's first message is usually a clarifier, so the wall was landing
+// before Mike had done anything worth paying for. 513 visitors produced 9 signups and
+// 0 paying customers, and none of them ever saw the product work.
+const FREE_TASTE_PER_DAY = Number(process.env.FREE_TASTE_PER_DAY || 10);
+const _tasteUsed = new Map();   // visitorHash -> { day, count }
+
+function tasteAllowance(req) {
+  const day = new Date().toISOString().slice(0, 10);
+  const key = _visitorHash(req);
+  const cur = _tasteUsed.get(key);
+  if (!cur || cur.day !== day) return { key, day, used: 0, left: FREE_TASTE_PER_DAY };
+  return { key, day, used: cur.count, left: Math.max(0, FREE_TASTE_PER_DAY - cur.count) };
+}
+function tasteConsume(a) {
+  _tasteUsed.set(a.key, { day: a.day, count: a.used + 1 });
+  if (_tasteUsed.size > 20000) _tasteUsed.delete(_tasteUsed.keys().next().value);
+}
+
+// Lets the front door ask "does this visitor still have their free answer?" without
+// spending it, so the UI can show the wall instead of a dead send button.
+app.get('/api/taste/left', (req, res) => {
+  res.json({ ok: true, left: tasteAllowance(req).left });
+});
+
+// ── FIELD WATCH — the phone reports what the server cannot see ────────────────
+// 2026-08-26: a tech asked Mike twice and saw nothing both times. Every server-side
+// signal said SUCCESS — health green, no 5xx, and the events table shows a mike_answer
+// logged for BOTH of his questions. The answers were generated and delivered; his
+// browser threw them away. The uptime watchdog pinged /api/health 76,000 times through
+// it and reported "up".
+//
+// That is the whole lesson: uptime is not the product. A tech getting his answer is the
+// product, and only his phone knows whether that happened. So the phone tells us.
+//
+// Deliberately cheap and unblocking: fire-and-forget from the client, bounded payloads,
+// rate limited, no message text and no customer data — a failure signature, not a
+// transcript. If this endpoint disappeared entirely Mike would be unaffected.
+const watchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,                       // a genuinely broken phone loops; don't let it flood
+  standardHeaders: true, legacyHeaders: false,
+  message: { ok: false },
+});
+
+app.post('/api/client-error', watchLimiter, async (req, res) => {
+  // Always 204 — a reporting endpoint must never become a source of errors itself,
+  // and the client must never wait on it.
+  res.status(204).end();
+  try {
+    const b = req.body || {};
+    const clip = (v, n) => (v == null ? null : String(v).slice(0, n));
+    const kind = clip(b.kind, 40);
+    if (!kind) return;
+
+    // Identify the tech only if their token is valid. Never trust a claimed id.
+    let uid = null;
+    try {
+      const t = b.token || (req.headers.authorization || '').replace(/^Bearer /, '');
+      if (t) uid = (jwt.verify(t, JWT_SECRET) || {}).id || null;
+    } catch (_) {}
+
+    const payload = {
+      kind,                                   // no_answer | js_error | promise_rejection | api_error
+      detail: clip(b.detail, 300),            // message/signature only
+      where: clip(b.where, 120),              // file:line or a named flow
+      waitedMs: Number(b.waitedMs) || null,   // how long the tech stared at nothing
+      ua: clip(req.headers['user-agent'], 180),
+      online: b.online === false ? false : true,
+      build: clip(b.build, 40),
+    };
+    if (!uid) { uid = await systemOwnerId(); payload.anon = true; }
+    if (!uid) { console.warn('[field-watch] dropped — no owner available'); return; }
+    const wrote = await supabase('POST', 'events',
+      { user_id: uid, type: 'client_error', payload }, '');
+    if (wrote === null) console.error('[field-watch] STORE FAILED — a real failure went unrecorded');
+    console.warn(`[field-watch] ${kind} — ${payload.detail || ''} (${payload.where || 'n/a'})`);
+  } catch (e) {
+    console.error('client-error log failed (non-fatal):', e.message);
+  }
+});
+
+// What is actually breaking in the field, grouped so a pattern is obvious at a glance.
+app.get('/api/admin/incidents', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const hours = Math.min(parseInt(req.query.hours || '24', 10) || 24, 24 * 30);
+    const since = new Date(Date.now() - hours * 3600000).toISOString();
+    const rows = await supabase('GET', 'events', null,
+      `?select=user_id,payload,created_at&type=eq.client_error&created_at=gte.${since}&order=created_at.desc&limit=1000`) || [];
+
+    // Failures only. A success event landing here (a 'free answer delivered' telemetry
+    // ping did, on day one) makes the incident list noisy, and a noisy alarm is one
+    // nobody reads — which is the exact failure this system exists to prevent.
+    const FAILURE_KINDS = new Set(['no_answer', 'js_error', 'promise_rejection', 'api_error']);
+    const groups = {};
+    for (const r of rows) {
+      const p = r.payload || {};
+      if (!FAILURE_KINDS.has(p.kind)) continue;
+      const key = `${p.kind}|${(p.detail || '').slice(0, 80)}`;
+      const g = groups[key] || (groups[key] = {
+        kind: p.kind, detail: p.detail, where: p.where,
+        count: 0, anon: 0, techs: new Set(), first: r.created_at, last: r.created_at,
+      });
+      g.count++;
+      // An anonymous report is a real failure but not an identified tech — counting the
+      // shared system account as "a tech" would make one signed-out phone look like a
+      // fleet-wide outage.
+      if (p.anon) g.anon++;
+      else if (r.user_id) g.techs.add(r.user_id);
+      if (r.created_at < g.first) g.first = r.created_at;
+      if (r.created_at > g.last) g.last = r.created_at;
+    }
+    const incidents = Object.values(groups)
+      .map(g => ({ ...g, techsAffected: g.techs.size, techs: undefined }))
+      .sort((a, b) => b.techsAffected - a.techsAffected || b.count - a.count);
+
+    res.json({
+      ok: true, hours,
+      totalReports: rows.filter(r => FAILURE_KINDS.has((r.payload || {}).kind)).length,
+      techsAffected: new Set(rows.filter(r => FAILURE_KINDS.has((r.payload || {}).kind) && !(r.payload || {}).anon).map(r => r.user_id).filter(Boolean)).size,
+      anonymousReports: rows.filter(r => FAILURE_KINDS.has((r.payload || {}).kind) && (r.payload || {}).anon).length,
+      incidents,
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Force a field-alert check on demand. ?dry=1 finds problems without emailing.
+app.post('/api/admin/alert-check', authenticateToken, requireAdmin, async (req, res) => {
+  try { res.json({ ok: true, result: await fieldAlert.checkOnce({ dryRun: req.query.dry === '1' }) }); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/admin/digest', authenticateToken, requireAdmin, async (req, res) => {
+  try { res.json({ ok: true, result: await dailyDigest.sendOnce({ dryRun: req.query.dry === '1' }) }); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ── WHAT MIKE LEARNED ─────────────────────────────────────────────────────────
+// The receipt behind "Mike gets new information every day and keeps it". Admin-only:
+// it reports the fleet the techs are actually asking about, which is competitive
+// information about how the company runs, not just product telemetry.
+app.get('/api/admin/learning', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const since = new Date(Date.now() - 30 * 86400000).toISOString();
+    const rows = await supabase('GET', 'events',
+      null, `?select=payload,created_at&type=eq.learned_manuals&created_at=gte.${since}&order=created_at.desc&limit=60`);
+    const openGaps = await nightlyLearn.findGaps().catch(() => []);
+    res.json({
+      ok: true,
+      lastRun: nightlyLearn.status(),
+      running: nightlyLearn.isRunning(),
+      openGaps: (openGaps || []).map(g => ({ brand: g.brand, model: g.model, techsAsked: g.hits })),
+      history: (rows || []).map(r => ({ at: r.created_at, learned: (r.payload && r.payload.learned) || [] })),
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Manual trigger — so a night's work can be demonstrated on demand instead of
+// waiting for 3am. `?dry=1` finds and verifies documents without writing any.
+app.post('/api/admin/learning/run', authenticateToken, requireAdmin, async (req, res) => {
+  if (nightlyLearn.isRunning()) return res.status(409).json({ ok: false, error: 'already running' });
+  try { res.json({ ok: true, result: await nightlyLearn.runOnce({ dryRun: req.query.dry === '1' }) }); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 app.get('*', (req, res) => {
   res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.set('Pragma', 'no-cache');
@@ -3266,6 +3598,9 @@ process.on('unhandledRejection', (reason) => { console.error('UNHANDLED REJECTIO
 
 // ── START ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
+  try { nightlyLearn.start(); } catch (e) { console.error('learn scheduler failed (non-fatal):', e.message); }
+  try { fieldAlert.start(); } catch (e) { console.error('field alert failed (non-fatal):', e.message); }
+  try { dailyDigest.start(); } catch (e) { console.error('daily digest failed (non-fatal):', e.message); }
   console.log(`Trazer Intelligence running on port ${PORT}`);
   console.log(`AI: ${ANTHROPIC_API_KEY?'ready':'MISSING'} | TTS: ${ELEVENLABS_API_KEY?'ready':'not set'} | DB: ${SUPABASE_URL?'ready':'not set'} | Billing: ${STRIPE_SECRET_KEY?'ready':'not set'}`);
 });

@@ -7701,7 +7701,7 @@ async function handleDiagNameplateScan(e){
   statusEl.style.display="flex";successEl.style.display="none";
   var prev=document.getElementById("diagNameplateResultCard");if(prev)prev.remove();
   try{
-    var mime=file.type||"image/jpeg",b64=await blobToBase64(file);
+    var mime=sentMime(file),b64=await blobToBase64(file);
     var SYSTEM='You are a certified HVAC master technician. Current year: 2026. Read ONLY what is physically printed on the nameplate. NEVER guess the brand.\n\nSERIAL DECODING RULES:\nCarrier/Bryant: pos 1-2=week, 3-4=year\nTrane post-2002: pos 1-2=year, 3-4=week\nLennox: first 2=year, next 2=week\nGoodman/Amana: first 2=year, next 2=month\nRheem/Ruud: first 2=year, next 2=week\nYork/Coleman: letter=decade (H=2010s, J=2020s), digit=year within decade\nMitsubishi: first 4 digits = year+month\n\nReturn ONLY valid compact JSON, no markdown:\n{"brand":"","model":"","serial":"","refrigerant":"","voltage":"","tonnage":"","seer":"","manufactureYear":0,"ageYears":0,"warrantyStatus":"Active|Likely Active|Likely Expired|Expired|Unknown","warrantyNote":"","warrantyExpireYear":0,"confidence":"High|Medium|Low"}';
     var raw=await callAI(SYSTEM,[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:"Read this HVAC nameplate. Decode the serial number to find manufacture year. Return JSON only."}]}],400);
     var data=parseJSON(raw);
@@ -7766,7 +7766,7 @@ async function handleNameplateScan(e){
   if(ov)ov.classList.add('show');
   if(typeof stopMikeSpeaking==='function')stopMikeSpeaking();
   try{
-    var mime=file.type||'image/jpeg',b64=await blobToBase64(file);
+    var mime=sentMime(file),b64=await blobToBase64(file);
     var SYSTEM='You are a certified HVAC master technician. Current year: 2026. Read ONLY what is physically printed on the nameplate. NEVER guess the brand.\n\nSERIAL DECODING RULES:\nCarrier/Bryant: pos 1-2=week, 3-4=year\nTrane post-2002: pos 1-2=year, 3-4=week\nLennox: first 2=year, next 2=week\nGoodman/Amana: first 2=year, next 2=month\nRheem/Ruud: first 2=year, next 2=week\nYork/Coleman: letter=decade (H=2010s, J=2020s), digit=year within decade\nMitsubishi: first 4 digits = year+month\n\nReturn ONLY valid compact JSON, no markdown:\n{"brand":"","model":"","serial":"","refrigerant":"","voltage":"","tonnage":"","seer":"","rla":"","manufactureYear":0,"ageYears":0,"warrantyStatus":"Active|Likely Active|Likely Expired|Expired|Unknown","confidence":"High|Medium|Low"}';
     var raw=await callAI(SYSTEM,[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mime,data:b64}},{type:'text',text:'Read this HVAC nameplate. Decode the serial number to find manufacture year and age. Return JSON only.'}]}],500);
     var data=null;try{var s=String(raw||'').replace(/```json|```/gi,'').trim();var mm=s.match(/\{[\s\S]*\}/);if(mm)data=JSON.parse(mm[0]);}catch(_pe){data=null;}
@@ -8014,8 +8014,20 @@ function blobToBase64Display(blob){
     reader.readAsDataURL(blob);
   });
 }
+// Any image over this is re-encoded to JPEG below. ONE definition, because the
+// media_type we declare has to agree with the bytes we actually send.
+var IMG_RESIZE_KB=1500;
+// What media_type did blobToBase64 ACTUALLY produce for this blob? Six call sites
+// were pairing the re-encoded JPEG with the original file's type, so a PNG screenshot
+// over 1.5MB went to the API declared image/png carrying JPEG bytes. The API rejects
+// that, and the tech gets "Something went sideways reading that photo" — on a photo
+// that is perfectly readable. Brandon sends screenshots constantly; this hit him.
+function sentMime(blob){
+  if(blob&&blob.type&&blob.type.indexOf('image/')===0&&blob.size>IMG_RESIZE_KB*1024)return 'image/jpeg';
+  return (blob&&blob.type)||'image/jpeg';
+}
 async function blobToBase64(blob){
-  var maxSizeKB=1500;
+  var maxSizeKB=IMG_RESIZE_KB;
   if(blob.type&&blob.type.startsWith('image/')&&blob.size>maxSizeKB*1024){
     return new Promise(function(res,rej){
       var img=new Image(),url=URL.createObjectURL(blob);
@@ -8070,7 +8082,7 @@ async function runHomeownerDiagnostic(){
     if(homeUploadedFile){
       var isImg=homeUploadedFile.type.startsWith("image/");
       var b64=isImg?await blobToBase64(homeUploadedFile):await grabVideoFrame(homeUploadedFile);
-      var mime=isImg?homeUploadedFile.type:"image/jpeg";
+      var mime=isImg?sentMime(homeUploadedFile):"image/jpeg";
       messages=[{role:"user",content:[
         {type:"image",source:{type:"base64",media_type:mime,data:b64}},
         {type:"text",text:prompt}
@@ -8185,7 +8197,7 @@ async function runDiagnostic(){
       btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing">Reading file…</span>';
       var isImg=uploadedFile.type.startsWith("image/");
       var b64=isImg?await blobToBase64(uploadedFile):await grabVideoFrame(uploadedFile);
-      var mime=isImg?uploadedFile.type:"image/jpeg";
+      var mime=isImg?sentMime(uploadedFile):"image/jpeg";
       messages=[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:prompt}]}];
     }else{messages=[{role:"user",content:prompt}];}
     btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing">Analyzing your system…</span>';
@@ -10752,7 +10764,7 @@ async function sendChat(){
   var chatMsg={role:'user',content:text||'What do you see in this photo? Is the installation correct? Any issues or concerns?'};
   if(chatAttachment&&chatAttachment.type.startsWith('image/')){
     try{
-      var chatMime=chatAttachment.type||'image/jpeg',chatB64=await blobToBase64(chatAttachment);
+      var chatMime=sentMime(chatAttachment),chatB64=await blobToBase64(chatAttachment);
       chatMsg={role:'user',content:[{type:'image',source:{type:'base64',media_type:chatMime,data:chatB64}},{type:'text',text:text||'Look at this photo. If this is a part — identify it, read any part numbers or specs visible, then search for current pricing and availability from Grainger, Johnstone, or Ferguson. If this is an installation or system — tell me if it looks correct, flag any issues or safety concerns, and suggest any improvements.'}]};
     }catch(ae){chatMsg={role:'user',content:text};}
   }
@@ -12285,7 +12297,7 @@ async function mpWarrantyFromPhoto(file,extras,prior,caption,autoDetect){
   appendMessage('agent',autoDetect?"On it — let me take a look.":"On it — reading the plate now.");
   if(typeof showTyping==='function')showTyping();
   try{
-    var mime=file.type||'image/jpeg', b64=await blobToBase64(file);
+    var mime=sentMime(file), b64=await blobToBase64(file);
     // Recognising a brand from its model number is not guessing — it is the single
     // most basic thing a master tech does. 25HCE430A300 is a Carrier and every tech in
     // the trade knows it on sight. The old prompt forbade this outright, so a Carrier

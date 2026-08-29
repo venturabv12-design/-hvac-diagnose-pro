@@ -58,6 +58,7 @@ let page = null;
 let _proc = null;
 const CDP_PORT = Number(process.env.CDP_PORT || 9222);
 const CDP_PROFILE = process.env.CDP_PROFILE || '/tmp/mp-chrome-profile';
+const CDP_HEADED_NOTE = process.env.CDP_HEADED ? 'headed on a real display' : 'headless';
 let idleTimer = null;
 let busy = false;
 const waiters = [];
@@ -71,7 +72,7 @@ const waiters = [];
 // to actually stop it: the orphan's next page call throws "Target closed" and dies.
 async function discardBrowser(why) {
   const b = browser;
-  browser = null; page = null;
+  browser = null; page = null; pool.length = 0;
   if (b) { try { await b.close(); } catch (_) {} }
   // We started the process ourselves, so we have to stop it ourselves — closing the
   // CDP connection alone leaves the browser running and the port held.
@@ -80,7 +81,8 @@ async function discardBrowser(why) {
 }
 
 async function ensureBrowser() {
-  if (browser && page && !page.isClosed()) return page;
+  // Healthy when the browser is up and every slot still has a live tab.
+  if (browser && pool.length === POOL_SIZE && pool.every(s => s.page && !s.page.isClosed())) return pool;
   if (browser) { try { await browser.close(); } catch (_) {} }
   // Present as an ordinary desktop Chrome. Not a disguise — the default automated
   // user agent literally says "HeadlessChrome", and some manufacturer sites refuse
@@ -126,23 +128,36 @@ async function ensureBrowser() {
   // one, so that is what ships. The user agent needs no override either — this is a
   // real Chrome, so it already reports itself as one.
   const ctx = browser.contexts()[0] || await browser.newContext();
-  page = (ctx.pages().find(p => !p.isClosed())) || await ctx.newPage();
-  await page.setViewportSize({ width: 1512, height: 900 }).catch(() => {});
+  // Build the pool. The browser's own first tab is reused as slot 0 — it is the tab
+  // that was verified to get a reCAPTCHA token — and the rest are opened alongside it.
+  pool.length = 0;
+  const first = ctx.pages().find(p => !p.isClosed()) || await ctx.newPage();
+  pool.push({ page: first, busy: false });
+  for (let i = 1; i < POOL_SIZE; i++) pool.push({ page: await ctx.newPage(), busy: false });
+  for (const s of pool) await s.page.setViewportSize({ width: 1512, height: 900 }).catch(() => {});
+  page = first;   // kept for the idle-shutdown and discard paths
   // Images/fonts/styles are pure waste here — we only ever read JSON.
-  await page.route('**/*', route => {
-    const t = route.request().resourceType();
-    if (t === 'image' || t === 'font' || t === 'media' || t === 'stylesheet') return route.abort();
-    route.continue();
-  });
-  return page;
+  // Images, fonts and stylesheets are pure waste here — we only ever read text and
+  // JSON. Applied to EVERY tab in the pool, not just the first.
+  for (const s of pool) {
+    await s.page.route('**/*', route => {
+      const t = route.request().resourceType();
+      if (t === 'image' || t === 'font' || t === 'media' || t === 'stylesheet') return route.abort();
+      route.continue();
+    }).catch(() => {});
+  }
+  console.log(`[browser] ready — ${pool.length} lookup tabs, ${CDP_HEADED_NOTE}`);
+  return pool;
 }
 
 async function shutdownBrowser() {
   idleTimer = null;
   if (busy) return scheduleIdleShutdown();
   const b = browser;
-  browser = null; page = null;
-  if (b) { try { await b.close(); } catch (_) {} console.log('[browser] idle — shut down'); }
+  browser = null; page = null; pool.length = 0;
+  if (b) { try { await b.close(); } catch (_) {} }
+  if (_proc) { try { _proc.kill('SIGKILL'); } catch (_) {} _proc = null; }
+  if (b) console.log('[browser] idle — shut down');
 }
 
 function scheduleIdleShutdown() {
@@ -151,17 +166,38 @@ function scheduleIdleShutdown() {
   if (idleTimer.unref) idleTimer.unref();
 }
 
-// Simple FIFO mutex so concurrent requests don't fight over the shared page.
+// A POOL of pages, not one.
+//
+// This used to be a single page behind a single mutex, so every lookup in the world
+// ran one at a time. At the measured ~35s average that is roughly 100 an hour, but the
+// real ceiling is much lower and it is about WAITING, not volume: the tech in position
+// four waits 105 seconds and Mike gives up at 135. Three simultaneous techs was the
+// practical limit, and the fourth did not see "busy" — he saw a timeout, which reads
+// as broken.
+//
+// POOL_SIZE pages run side by side, each with its own tab, so N techs are served at
+// once and the queue behind them drains N times faster. Each tab costs roughly 150MB,
+// which is the thing to raise or lower with the container's memory.
+const POOL_SIZE = Number(process.env.POOL_SIZE || 6);
+const pool = [];          // { page, busy }
+function poolFree() { return pool.find(s => !s.busy) || null; }
+
 function acquire() {
-  if (!busy) { busy = true; return Promise.resolve(); }
+  const free = poolFree();
+  if (free) { free.busy = true; busy = true; return Promise.resolve(free); }
   if (waiters.length >= MAX_QUEUE) return Promise.reject(Object.assign(new Error('busy'), { code: 'BUSY' }));
   return new Promise(res => waiters.push(res));
 }
-function release() {
+function release(slot) {
+  if (slot) slot.busy = false;
   const next = waiters.shift();
-  if (next) return next();
-  busy = false;
-  scheduleIdleShutdown();
+  if (next) {
+    const free = poolFree();
+    if (free) { free.busy = true; return next(free); }
+    waiters.unshift(next);   // nothing free yet; keep his place in line
+    return;
+  }
+  if (!pool.some(s => s.busy)) { busy = false; scheduleIdleShutdown(); }
 }
 
 // ── CACHE ────────────────────────────────────────────────────────────────────
@@ -251,10 +287,11 @@ app.post('/lookup', async (req, res) => {
   let agentAttemptFailed = false;
   if (!brand.supported && brand.publicRegistry && brand.where && ANTHROPIC_KEY) {
     if (!rateOk()) return res.status(429).json({ ok: false, error: 'rate_limited' });
-    let acquiredA = false;
+    let acquiredA = false, slotA = null;
     try {
-      await acquire(); acquiredA = true;
-      const p = await ensureBrowser();
+      slotA = await acquire(); acquiredA = true;
+      await ensureBrowser();
+      const p = slotA.page;
       const running = agentLookup(p, brand, serial, req.body && req.body.extra);
       // The loser of the race still settles. Swallow its rejection here or it lands as
       // an unhandled rejection and takes the whole service down with every tech queued
@@ -308,7 +345,7 @@ app.post('/lookup', async (req, res) => {
       // Mike blaming a missing feature for a broken one teaches a tech the brand
       // is unsupported and he stops asking.
       agentAttemptFailed = true;
-    } finally { if (acquiredA) release(); }
+    } finally { if (acquiredA) release(slotA); }
   }
 
   if (!brand.supported) {
@@ -333,12 +370,13 @@ app.post('/lookup', async (req, res) => {
 
   if (!rateOk()) return res.status(429).json({ ok: false, error: 'rate_limited' });
 
-  let acquired = false;
+  let acquired = false, slot = null;
   try {
-    await acquire();
+    slot = await acquire();
     acquired = true;
 
-    const p = await ensureBrowser();
+    await ensureBrowser();
+    const p = slot.page;
     const running = brand.lookup(p, serial);
     running.catch(() => {});   // the race loser still settles; see discardBrowser
     let _dtimer;
@@ -378,7 +416,7 @@ app.post('/lookup', async (req, res) => {
     // registry" rather than inventing a warranty.
     return res.status(code === 'busy' ? 503 : 502).json({ ok: false, error: code, brand: brand.id });
   } finally {
-    if (acquired) release();
+    if (acquired) release(slot);
   }
 });
 

@@ -12074,6 +12074,23 @@ function mpUnitClear(){
   window._mpUnitState={}; window._mpPendingWarranty=false;
   window._mpWarrantyPending=null; window._mpWarrantyAsks=0;
 }
+// Real US states, so a two-letter word can never masquerade as one.
+var _MP_STATES={alabama:'AL',alaska:'AK',arizona:'AZ',arkansas:'AR',california:'CA',colorado:'CO',
+connecticut:'CT',delaware:'DE',florida:'FL',georgia:'GA',hawaii:'HI',idaho:'ID',illinois:'IL',
+indiana:'IN',iowa:'IA',kansas:'KS',kentucky:'KY',louisiana:'LA',maine:'ME',maryland:'MD',
+massachusetts:'MA',michigan:'MI',minnesota:'MN',mississippi:'MS',missouri:'MO',montana:'MT',
+nebraska:'NE',nevada:'NV','new hampshire':'NH','new jersey':'NJ','new mexico':'NM','new york':'NY',
+'north carolina':'NC','north dakota':'ND',ohio:'OH',oklahoma:'OK',oregon:'OR',pennsylvania:'PA',
+'rhode island':'RI','south carolina':'SC','south dakota':'SD',tennessee:'TN',texas:'TX',utah:'UT',
+vermont:'VT',virginia:'VA',washington:'WA','west virginia':'WV',wisconsin:'WI',wyoming:'WY',
+'district of columbia':'DC'};
+var _MP_STATE_CODES=Object.keys(_MP_STATES).map(function(k){return _MP_STATES[k];});
+// A manufacturer's name is never the homeowner's name.
+function _mpIsBrandWord(w){
+  var l=String(w||'').toLowerCase();
+  for(var i=0;i<MP_BRANDS.length;i++){ if(MP_BRANDS[i][0]===l||l.indexOf(MP_BRANDS[i][0])>=0)return true; }
+  return false;
+}
 function _mpStripEmpty(o){
   var r={}; for(var k in o){ if(o[k]!==null&&o[k]!==undefined&&o[k]!=='')r[k]=o[k]; } return r;
 }
@@ -12130,8 +12147,17 @@ function _mpWarrantyExtras(t,expect){
   // because he is answering a question, not filling a form. Only trust a bare word
   // as a name when we are the ones who asked for it.
   if(!out.lastName&&wants('lastName')){
-    var bare=t.match(/(^|[\s,])([A-Z][a-z'-]{1,24})(?=$|[\s,.])/);
-    if(bare&&!STOP.test(bare[2]))out.lastName=bare[2];
+    // ONLY when the message is shaped like an answer. This used to take the first
+    // capitalised word in any sentence, so "it's not a Trane job, I already did the
+    // Carrier one" set the homeowner's last name to "Trane" — a name the tech never
+    // gave — and submitted it to the manufacturer, who answered about a customer who
+    // does not exist. A tech answering "what's the last name?" types a name, not a
+    // paragraph.
+    var words=t.trim().split(/\s+/);
+    if(words.length<=4){
+      var bare=t.match(/(^|[\s,])([A-Z][a-z'-]{1,24})(?=$|[\s,.])/);
+      if(bare&&!STOP.test(bare[2])&&!_mpIsBrandWord(bare[2]))out.lastName=bare[2];
+    }
   }
   var z=t.match(/\b(?:zip|postal)\s*(?:code)?\s*[:=]?\s*(\d{5})\b/i);
   // An unlabelled 5-digit run is only a zip when we asked for one. Otherwise it grabs
@@ -12140,9 +12166,17 @@ function _mpWarrantyExtras(t,expect){
   // which is the same false "not covered" this parser exists to prevent.
   if(!z&&wants('zip'))z=t.match(/\b(\d{5})\b/);
   if(z)out.zip=z[1];
-  var st=t.match(/\bstate\s*(?:is|:|=)?\s*([A-Za-z]{2})\b/i);
-  if(!st&&wants('state'))st=t.match(/(?:^|[\s,])([A-Za-z]{2})(?=$|[\s,.])/);
-  if(st)out.state=st[1].toUpperCase();
+  // A state must actually BE a state. The old pattern took any two letters after the
+  // word "state", so "state is Virginia" submitted "IS", and the bare fallback took
+  // any two-letter word in the sentence. Rheem and Lennox key coverage off this, and
+  // a garbage state comes back "no registration found" on a covered unit.
+  var _stName=t.match(new RegExp('\\b('+Object.keys(_MP_STATES).join('|')+')\\b','i'));
+  if(_stName)out.state=_MP_STATES[_stName[1].toLowerCase()];
+  if(!out.state){
+    var st=t.match(/\bstate\s*(?:is|:|=)?\s*([A-Za-z]{2})\b/i)
+        || (wants('state')?t.match(/(?:^|[\s,])([A-Za-z]{2})(?=$|[\s,.])/):null);
+    if(st&&_MP_STATE_CODES.indexOf(st[1].toUpperCase())>=0)out.state=st[1].toUpperCase();
+  }
   // Carrier will not answer without knowing whether the homeowner bought the unit new.
   // Nothing parsed this field, anywhere — so Carrier's requirement could never be
   // satisfied, and Mike asked the same question forever no matter what the tech said.

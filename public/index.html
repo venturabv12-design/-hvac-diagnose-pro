@@ -12274,6 +12274,28 @@ function _mpFallbackPhoto(file){
 // "Carrier / Bryant / Payne" and Mike was reading that taxonomy string out loud in
 // every branded reply. Nobody talks like that — he says "that Carrier".
 function _mpSayBrand(b){ return String(b||'').split('/')[0].trim(); }
+// A model number names its manufacturer to any tech in the trade. The plate reader
+// was taught this; the TYPED path was not — so "model 25HCE430A300 serial 3921E11748"
+// got "Who makes it?" while Mike was holding the answer, which is the same defect the
+// photo path had. Validated against the brands we can actually query, so a guess we
+// cannot look up is never announced or sent.
+async function _mpBrandFromModel(model){
+  try{
+    if(!model||String(model).length<4)return null;
+    var raw=await callAI(
+      'You are a master HVAC technician. Given a model number, name the MANUFACTURER if the '+
+      'model prefix genuinely identifies one to anyone in the trade (25HCE/24ABC=Carrier, '+
+      '4TTR/4TWR=Trane, GSX/GSZ=Goodman, XC/XP=Lennox, RA/RP=Rheem, MSZ/MUZ=Mitsubishi). '+
+      'If you do not actually recognise it, answer UNKNOWN. Reply with ONLY the manufacturer '+
+      'name or UNKNOWN — no other words.',
+      [{role:'user',content:'Model number: '+String(model).slice(0,40)}],24);
+    var name=String(raw||'').trim().replace(/[^A-Za-z \/-]/g,'');
+    if(!name||/unknown/i.test(name))return null;
+    // only trust it if it resolves to a brand we can actually query
+    var known=mpParseUnit(name).brand;
+    return known||null;
+  }catch(_e){ return null; }
+}
 function _hold_after_photo(){
   var k=_mpUnitPlain(); k.need=['brand'];
   window._mpWarrantyPending=k; window._mpPendingWarranty=true;
@@ -12423,6 +12445,13 @@ async function mpWarrantyRun(u){
   function _hold(need){
     var k=_mpStripEmpty(mpUnit()); k.need=need;
     window._mpWarrantyPending=k; window._mpPendingWarranty=true;
+  }
+  if(!u.brand&&u.model){
+    var _fromModel=await _mpBrandFromModel(u.model);
+    if(_fromModel){
+      mpUnitLearn({brand:_fromModel},'model'); u=mpUnit();
+      appendMessage('agent',"That "+u.model+" is a "+_mpSayBrand(_fromModel)+" — going with that. Shout if it's not.");
+    }
   }
   if(!u.brand){ _hold(['brand']); mpAskMike("Who makes it? Trane, Carrier, Goodman, Rheem — I need the brand before I can pull the registration."); return; }
   if(!u.serial){ _hold(['serial']); mpAskMike("I've got the brand — now the serial number off the data plate. That's the one the manufacturer keys the registration to."); return; }

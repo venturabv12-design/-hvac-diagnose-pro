@@ -12273,6 +12273,22 @@ function _mpFallbackPhoto(file){
 // Say the brand the way a tech says it. The registry groups families as
 // "Carrier / Bryant / Payne" and Mike was reading that taxonomy string out loud in
 // every branded reply. Nobody talks like that — he says "that Carrier".
+// A warranty lookup holds one connection open for 40-90 seconds while a browser drives
+// the manufacturer's form. On a phone that is a long time to keep a socket alive — the
+// screen locks, the app backgrounds, the cell hands off — and the answer is lost even
+// though the server produced it. Brandon watched exactly that on his own Trane: the
+// service logged a clean result and his phone said "couldn't reach the registry".
+// Retry instead of discarding it. The service now remembers every completed lookup for
+// 15 minutes, so the retry comes back immediately rather than driving a browser again.
+function _warrantyFetch(body,tries){
+  tries=tries||0;
+  return fetch('/api/warranty',{method:'POST',headers:{'Content-Type':'application/json'},body:body})
+    .catch(function(e){
+      if(tries>=2)throw e;
+      return new Promise(function(res){setTimeout(res,1200*(tries+1));})
+        .then(function(){ return _warrantyFetch(body,tries+1); });
+    });
+}
 function _mpSayBrand(b){ return String(b||'').split('/')[0].trim(); }
 // A model number names its manufacturer to any tech in the trade. The plate reader
 // was taught this; the TYPED path was not — so "model 25HCE430A300 serial 3921E11748"
@@ -12497,9 +12513,8 @@ async function mpWarrantyRun(u){
   window._mpWarrantyAsks=0;   // we have everything; the next lookup starts fresh
   window._mpWarrantyPending=null;
   if(typeof showTyping==='function')showTyping();
-  fetch('/api/warranty',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({token:(currentUser||{}).token,brand:u.brand,serial:u.serial,model:u.model,
-      lastName:u.lastName,zip:u.zip,state:u.state,originalPurchaser:u.originalPurchaser})})
+  _warrantyFetch(JSON.stringify({token:(currentUser||{}).token,brand:u.brand,serial:u.serial,model:u.model,
+      lastName:u.lastName,zip:u.zip,state:u.state,originalPurchaser:u.originalPurchaser}))
     .then(function(r){return r.json().catch(function(){return null;});})
     .then(function(d){
       if(typeof hideTyping==='function')hideTyping();
@@ -12578,7 +12593,7 @@ async function mpWarrantyRun(u){
     })
     .catch(function(){
       if(typeof hideTyping==='function')hideTyping();
-      appendMessage('agent',"Couldn't reach the registry — that's my end. Check it with the serial directly rather than taking my word for it.");
+      appendMessage('agent',"Couldn't reach the registry — that's my end, not your unit. Ask me once more; if it already went through I'll have the answer instantly.");
     });
 }
 // DE-DUPLICATED 2026-08-08. A tech reported the drawer as "a lot of tabs and a bit confusing"; the

@@ -131,18 +131,6 @@ const PENDING = [
     note: 'Public lookup, no login. Serial alone gets a result; last name and zip ' +
           'sharpen it.',
   },
-  {
-    id: 'trane',
-    label: 'Trane / American Standard',
-    aliases: ['trane', 'american standard', 'americanstandard', 'runtru', 'run tru'],
-    publicRegistry: true,
-    where: 'https://www.trane.com/residential/en/resources/warranty-and-registration/lookup/',
-    // Their form shows a last-name field next to the serial. Serial alone still
-    // completes, so we do not make a tech hunt for a name he may not have — but if he
-    // has already given one it gets filled in.
-    requires: [FIELD.serial],
-    note: 'Public lookup, no login. Serial alone works; a last name sharpens it.',
-  },
 ];
 
 // Trane's hand-written integration is retired. It posted a fixed payload shape to
@@ -159,7 +147,7 @@ const PENDING = [
 //
 // trane.js is retained for its serial parser and its unit tests, but is no longer
 // the lookup path.
-const IMPLEMENTED = [];
+const IMPLEMENTED = [trane];
 
 function resolve(brandName) {
   const q = String(brandName || '').trim().toLowerCase();

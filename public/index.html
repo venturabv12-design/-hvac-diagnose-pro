@@ -3367,9 +3367,9 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           <div class="mp-cred">MASTER TECH</div>
         </div>
         <div class="mp-reach">
-          <button class="mp-reach-btn call" onclick="mpEnterChat();toggleVoiceMode();" aria-label="Call Mike — hands-free voice"><span class="mp-rico">&#x1F4DE;</span>CALL</button>
+          <button class="mp-reach-btn call" onclick="if(!mpNeedAccount('call')){mpEnterChat();toggleVoiceMode();}" aria-label="Call Mike — hands-free voice"><span class="mp-rico">&#x1F4DE;</span>CALL</button>
           <button class="mp-reach-btn chat" onclick="mpEnterChat();setTimeout(function(){var i=document.getElementById('chatInput');if(i)i.focus();},60);" aria-label="Text Mike — chat"><span class="mp-rico">&#x1F4AC;</span>TEXT</button>
-          <button class="mp-reach-btn face" onclick="checkCameraAccess();" aria-label="FaceTime Mike — live visual"><span class="mp-rico">&#x1F4F7;</span>FACETIME</button>
+          <button class="mp-reach-btn face" onclick="if(!mpNeedAccount('face'))checkCameraAccess();" aria-label="FaceTime Mike — live visual"><span class="mp-rico">&#x1F4F7;</span>FACETIME</button>
         </div>
         <div id="jobBar" class="job-bar"></div>
       </div>
@@ -3401,11 +3401,11 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
-          <button id="voiceModeBtn" onclick="toggleVoiceMode()" class="v2-hbtn call" title="Call Mike" aria-label="Call Mike — hands-free voice conversation">
+          <button id="voiceModeBtn" onclick="if(!mpNeedAccount('call'))toggleVoiceMode()" class="v2-hbtn call" title="Call Mike" aria-label="Call Mike — hands-free voice conversation">
             <span class="v2-hbtn-ic"><i data-lucide="phone"></i></span>
             <span id="voiceModeBtnLabel" class="v2-hbtn-label" data-v2i18n="reachCall">CALL</span>
           </button>
-          <button onclick="checkCameraAccess()" class="v2-hbtn face" title="FaceTime Mike — live visual diagnostics" aria-label="FaceTime Mike — live visual diagnostics">
+          <button onclick="if(!mpNeedAccount('face'))checkCameraAccess()" class="v2-hbtn face" title="FaceTime Mike — live visual diagnostics" aria-label="FaceTime Mike — live visual diagnostics">
             <span class="v2-hbtn-ic">&#x1F4F9;</span>
             <span class="v2-hbtn-label" data-v2i18n="reachFace">FACETIME</span>
           </button>
@@ -7561,10 +7561,26 @@ function v2DemoSignup(){
 // Tech gets the full call/FaceTime/text rig (those live in the contractor chat surface).
 // Homeowner has no voice rig wired, so Call/Text route into their ask flow; FaceTime opens
 // the camera (a shared, app-wide capability) — nothing dead, nothing half-wired.
+// Call and FaceTime need an account. Without one the camera path returned early with
+// "Loading… tap again in a moment" — a door that never opens no matter how many times
+// he taps it, and the first thing a visitor learns is that a button lied to him. Text
+// stays open: ten questions, no account, per Brandon 2026-08-29. Say the true thing and
+// put the signup one tap away.
+function mpNeedAccount(what){
+  if(currentUser)return false;
+  var label=(what==='face')?'FaceTime':'a call';
+  if(typeof appendMessage==='function'&&document.body.classList.contains('mp-chatting')){
+    appendMessage('agent',"Create an account and sign in to use "+label+" — it's free to start. You can keep texting me right here either way.");
+  }else if(typeof showToast==='function'){
+    showToast('Sign in or create an account to use '+label+'. Texting works without one.','info',3600);
+  }
+  try{ if(typeof openAuth==='function')openAuth('signup'); }catch(_){}
+  return true;
+}
 function v2Reach(kind){
   var aud=document.getElementById('v2Landing').getAttribute('data-aud');
-  if(kind==='face'){ if(typeof checkCameraAccess==='function')checkCameraAccess(); return; }
-  if(kind==='call'&&aud==='tech'){ setMode('pro'); if(typeof toggleVoiceMode==='function')toggleVoiceMode(); return; }
+  if(kind==='face'){ if(mpNeedAccount('face'))return; if(typeof checkCameraAccess==='function')checkCameraAccess(); return; }
+  if(kind==='call'&&aud==='tech'){ if(mpNeedAccount('call'))return; setMode('pro'); if(typeof toggleVoiceMode==='function')toggleVoiceMode(); return; }
   // TEXT for a tech must land in the tech chat — never let it fall through to a
   // homeowner-mode flip. Mirror the call guard so the audience is explicit.
   if(kind==='text'&&aud==='tech'){ setMode('pro'); }

@@ -40,8 +40,20 @@ const log = (...a) => console.log('[agent]', ...a);
 // Runs on every string that leaves this process for the model. Deliberately
 // aggressive: losing a line of page text costs nothing, leaking a customer's
 // address costs Brandon the account.
-function scrub(text, secrets) {
+// Structured payloads hide PII the prose regexes cannot see. Trane's result comes back
+// as JSON carrying the homeowner's street, city and state under named keys — a street
+// like "505A Tassita Ln" does not match an address regex because the number is not
+// purely numeric. Redact by KEY as well as by pattern before anything reaches a model.
+const PII_KEYS = /(street\d*|address\d*|addr\d*|city|postal|zip|phone|mobile|email|first-?name|firstname|last-?name|lastname|full-?name|owner-?name|customer-?name)/i;
+function scrubStructured(text) {
   let out = String(text || '');
+  // "key":"value" — replace the value of any PII-named key, JSON or JSON-ish.
+  out = out.replace(/"([A-Za-z0-9_.\-]+)"\s*:\s*"([^"\\]{0,200})"/g,
+    (m, k, v) => (PII_KEYS.test(k) && v.trim() ? `"${k}":"[redacted]"` : m));
+  return out;
+}
+function scrub(text, secrets) {
+  let out = scrubStructured(text);
   // A person's name has no syntactic shape to match on, so the regexes below can
   // never catch one. But we KNOW this homeowner's name — the tech typed it and we
   // put it in the form ourselves — and Goodman, Rheem and Lennox echo it straight
@@ -115,11 +127,22 @@ async function describeForm(page) {
       if (p) return (p.innerText || '').trim().slice(0, 80);
       return '';
     };
+    // The old fallback was `tag:nth-of-type(n)` using the element's index among ALL
+    // matching tags — but :nth-of-type counts position within a PARENT, so that
+    // selector resolves to a different element entirely. Trane's Search button has no
+    // id and no name, so the plan came back "click button:nth-of-type(1)", the agent
+    // clicked something else, no search ever ran, and a unit registered for a 10-year
+    // extended term was reported as having no registration.
+    //
+    // Stamp a unique attribute on the element instead. Guaranteed to resolve to the
+    // element we actually described, on any site, however its markup is built.
+    let _mpN = 0;
     const sel = (el) => {
       if (el.id) return `#${CSS.escape(el.id)}`;
       if (el.name) return `${el.tagName.toLowerCase()}[name="${el.name}"]`;
-      const all = [...document.querySelectorAll(el.tagName)];
-      return `${el.tagName.toLowerCase()}:nth-of-type(${all.indexOf(el) + 1})`;
+      let tag = el.getAttribute('data-mp-sel');
+      if (!tag) { tag = 'mp' + (++_mpN); el.setAttribute('data-mp-sel', tag); }
+      return `[data-mp-sel="${tag}"]`;
     };
     const inputs = [...document.querySelectorAll('input, select, textarea')]
       .filter(el => vis(el) && !['hidden', 'submit', 'button', 'image'].includes(el.type))
@@ -135,10 +158,28 @@ async function describeForm(page) {
     // <input type="button" id="Search"> was invisible to the model: it saw a complete
     // form with no way to submit it, returned submit:null, and the lookup died at
     // "could not identify the lookup form" having never pressed anything.
+    // Strip site furniture. A manufacturer page carries a dozen nav buttons — submenu
+    // togglers, the hamburger, a search-icon, the cookie banner's close — and they
+    // crowded the real form control out of view: on Trane the actual "Search" button
+    // was the 15th of 19, behind eight "Open ... submenu" toggles. The model was
+    // choosing a submit button from a list that was almost entirely navigation.
+    const NAV = /(close|dismiss|menu|submenu|navigation|skip to|open search|language|cookie|consent|accept|feedback|chat|help)/i;
     const buttons = [...document.querySelectorAll(
       'button, input[type=submit], input[type=button], input[type=image], a[role=button], [role=button]')]
-      .filter(vis).slice(0, 15)
-      .map(el => ({ selector: sel(el), text: (el.innerText || el.value || el.getAttribute('aria-label') || '').trim().slice(0, 50) }));
+      .filter(vis)
+      .filter(el => {
+        const words = ((el.innerText || el.value || '') + ' ' + (el.getAttribute('aria-label') || el.title || '')).trim();
+        return !(words && NAV.test(words));
+      })
+      .slice(0, 15)
+      .map(el => ({
+        selector: sel(el),
+        text: (el.innerText || el.value || '').trim().slice(0, 50),
+        // Half the buttons on a manufacturer page render no text at all — nav arrows,
+        // carousel controls, icon buttons. Without a label the model is choosing blind
+        // and picks the first one, which is how Trane's Search never got clicked.
+        label: (el.getAttribute('aria-label') || el.title || '').trim().slice(0, 50),
+      }));
     return { inputs, buttons, title: document.title };
   });
 }
@@ -171,11 +212,25 @@ async function agentLookup(page, brand, serial, extra) {
   await page.waitForTimeout(3000);
 
   // Cookie banners sit on top of the form and swallow clicks. Dismiss before reading.
-  for (const label of ['Accept All Optional Cookies', 'Accept All Cookies', 'Accept All', 'I Accept', 'Accept', 'Agree']) {
+  // Try the consent platforms by ID FIRST: Trane's OneTrust button is labelled
+  // "continue", not "Accept", so a text-only search never dismissed it — the banner
+  // stayed up, ate the Search click, and every Trane lookup came back empty on a unit
+  // that was in fact registered for a 10-year extended term.
+  let _dismissed = false;
+  for (const sel of ['#onetrust-accept-btn-handler', '#truste-consent-button',
+                     '#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll', '.osano-cm-accept-all']) {
     try {
-      const btn = await page.$(`button:has-text("${label}")`);
-      if (btn) { await btn.click({ timeout: 3000 }); log('dismissed cookie banner'); await page.waitForTimeout(1200); break; }
+      const btn = await page.$(sel);
+      if (btn) { await btn.click({ timeout: 3000 }); log(`dismissed cookie banner (${sel})`); _dismissed = true; await page.waitForTimeout(1200); break; }
     } catch (_) {}
+  }
+  if (!_dismissed) {
+    for (const label of ['Accept All Optional Cookies', 'Accept All Cookies', 'Accept All', 'I Accept', 'Accept', 'Agree', 'I understand', 'Continue']) {
+      try {
+        const btn = await page.$(`button:has-text("${label}")`);
+        if (btn) { await btn.click({ timeout: 3000 }); log(`dismissed cookie banner ("${label}")`); await page.waitForTimeout(1200); break; }
+      } catch (_) {}
+    }
   }
 
   // The form is often in an IFRAME — Goodman's whole lookup is. Reading only the top
@@ -251,10 +306,29 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
   // Goodman's control is <input type="button" value="Search"> and it has been invisible
   // to this code in more than one way; a deterministic fallback is cheaper than another
   // deploy cycle every time a manufacturer uses a control we did not anticipate.
-  if (plan.confident && plan.fill.length && !plan.submit) {
-    const guess = (form.buttons || []).find(b => /search|submit|look\s?up|check|find|go\b/i.test(b.text || ''))
-               || (form.buttons || [])[0];
-    if (guess) { plan.submit = guess.selector; log(`  no submit in plan — falling back to "${guess.text || guess.selector}"`); }
+  // "continue" belongs to cookie banners far more often than to a lookup form — it was
+  // in this list, so the consent button matched before the real Search ever did and the
+  // override silently agreed with the wrong pick. Match the words a submit control
+  // actually uses, and take the LAST one: form buttons sit at the end of a page, site
+  // furniture at the top.
+  const SUBMITISH = /\b(search|submit|look\s?up|lookup|check|find|view|get results)\b/i;
+  const _matches = (form.buttons || []).filter(b => SUBMITISH.test((b.text || '') + ' ' + (b.label || '')));
+  const _named = _matches.length ? _matches[_matches.length - 1] : null;
+  if (plan.confident && plan.fill.length && !plan.submit && _named) {
+    plan.submit = _named.selector;
+    log(`  no submit in plan — using "${_named.text || _named.label}"`);
+  }
+  // The model picked SOMETHING, but a button that literally says "Search" beats a
+  // guess with no words on it. Trane's page carries a dozen unlabelled buttons and the
+  // plan came back pointing at the first one, so the form was never submitted and a
+  // registered unit read as unregistered.
+  if (plan.submit && _named && plan.submit !== _named.selector) {
+    const picked = (form.buttons || []).find(b => b.selector === plan.submit);
+    const pickedWords = ((picked && picked.text) || '') + ' ' + ((picked && picked.label) || '');
+    if (!SUBMITISH.test(pickedWords)) {
+      log(`  overriding submit: model chose "${pickedWords.trim() || plan.submit}", using "${_named.text || _named.label}" instead`);
+      plan.submit = _named.selector;
+    }
   }
   if (!plan.confident || !plan.fill.length || !plan.submit) {
     // Say WHY, with the evidence. This exact error was reported as "still failing"
@@ -274,6 +348,9 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
   // an empty list, threw, was swallowed, and the lookup submitted with no model at
   // all. Goodman answered with nothing and Mike reported the brand as unsupported.
   // Text fields first, then let dependent fields fill themselves in, then the selects.
+  // What the model decided to do, always. Diagnosing a silent no-result without this
+  // means guessing at which control was clicked — and guessing is what costs days.
+  log(`  plan: fill=${JSON.stringify((plan.fill||[]).map(f=>f.selector+'='+String(f.value).slice(0,14)))} submit=${plan.submit}`);
   const selects = [], texts = [];
   for (const f of plan.fill) {
     const tag = (form.inputs.find(i => i.selector === f.selector) || {}).tag;
@@ -336,17 +413,46 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
       await target.selectOption(f.selector, pick, { timeout: 8000 });
     } catch (_) { log(`  could not set ${f.selector}`); }
   }
+  // Start listening BEFORE the click, or the answer is already gone by the time we
+  // subscribe — which is exactly what happened on the first attempt at this fix.
+  const apiBodies = [];
+  const norm0 = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const _grab = async (r) => {
+    try {
+      const ct = (r.headers()['content-type'] || '');
+      if (!/json|text\/plain/i.test(ct)) return;
+      if (/\.(js|css|png|jpe?g|svg|woff2?)/i.test(r.url())) return;
+      const t = await r.text().catch(() => '');
+      if (t && t.length > 40 && t.length < 60000 && norm0(t).includes(norm0(serial))) apiBodies.push(t);
+    } catch (_) {}
+  };
+  page.on('response', _grab);
+
   await Promise.allSettled([
     target.click(plan.submit),
     page.waitForLoadState('networkidle', { timeout: 25000 }).catch(() => {}),
   ]);
-  await page.waitForTimeout(3500);
+  await page.waitForTimeout(6000);   // the result call can land after networkidle
+  page.off('response', _grab);
 
   // Read the answer. Scrubbed before it leaves the process.
   // Result may render in the frame OR the parent; take whichever actually has content.
+  // Some manufacturers never render the answer as text. Trane opens the result in a NEW
+  // TAB as a PDF — zero readable innerText — while the data itself comes back as JSON
+  // from their own API. Reading only the page meant a unit registered for a 10-year
+  // extended term was reported as "no registration found", which is a false NOT COVERED
+  // on a covered unit: the single most expensive thing this service can say. So keep
+  // whatever the page fetched while we were submitting, and use it when the page itself
+  // says nothing.
   const rawFrame = await target.evaluate(() => (document.body.innerText || '').slice(0, 6000)).catch(() => '');
   const rawPage = await page.evaluate(() => (document.body.innerText || '').slice(0, 6000)).catch(() => '');
-  const raw = (rawFrame && rawFrame.length > 200) ? rawFrame : (rawPage || rawFrame);
+  let raw = (rawFrame && rawFrame.length > 200) ? rawFrame : (rawPage || rawFrame);
+  // If the visible page never mentions the serial, the answer is not on it. Fall back to
+  // what the page's own API returned.
+  if (apiBodies.length && !norm0(raw).includes(norm0(serial))) {
+    log(`  page text has no result — using the site's own API response (${apiBodies.length} captured)`);
+    raw = apiBodies.join('\n---\n').slice(0, 12000);
+  }
   const result = firstJson(await ask([{
     role: 'user',
     content: `This is the RESULT page after submitting an HVAC warranty lookup for ${brand.label}, serial ${serial}.

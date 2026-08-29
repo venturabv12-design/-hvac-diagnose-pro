@@ -19,7 +19,15 @@
 // fields; the address is not returned, not cached, and not logged.
 
 const LOOKUP_PAGE = 'https://www.trane.com/residential/en/resources/warranty-and-registration/lookup/';
-const API_PATH = '/residential/api/warranty-registration/';
+// CORRECTED 2026-08-29. This was '/residential/api/warranty-registration/', which is a
+// REAL Trane endpoint — it serves the page's provisions/welcome text — so the call did
+// not 404 in a way that looked wrong. The registration SEARCH lives at the root path.
+// Captured from Trane's own page while it looked up Brandon's air handler:
+//   POST /api/warranty-registration/
+//   {"service":"registrations/serial-number/search","lastName":"","serialNumber":"..."}
+// One wrong path segment meant every Trane lookup came back empty, including a unit
+// registered for a 10-year extended term through 2033.
+const API_PATH = '/api/warranty-registration/';
 
 // Trane's own term-type value. REGISTERED is the extended term (the homeowner or
 // dealer registered within the window); BASE is the shorter default everyone gets.
@@ -116,27 +124,28 @@ function normalise(json, serial) {
   };
 }
 
-async function lookup(page, serial) {
+async function lookup(page, serial, extra) {
   // Establish the session. domcontentloaded is enough — we never touch the form.
   if (!page.url().startsWith('https://www.trane.com')) {
     await page.goto(LOOKUP_PAGE, { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(1500);
   }
 
-  const call = async () => page.evaluate(async ({ apiPath, serialNumber }) => {
+  const lastName = (extra && extra.lastName) || '';
+  const call = async () => page.evaluate(async ({ apiPath, serialNumber, lastName }) => {
     const res = await fetch(apiPath, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({
         service: 'registrations/serial-number/search',
-        lastName: '',
+        lastName: lastName || '',
         serialNumber,
       }),
     });
     let body = null;
     try { body = await res.json(); } catch (_) {}
     return { status: res.status, body };
-  }, { apiPath: API_PATH, serialNumber: serial });
+  }, { apiPath: API_PATH, serialNumber: serial, lastName });
 
   let out = await call();
 

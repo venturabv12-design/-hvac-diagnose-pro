@@ -10652,6 +10652,19 @@ async function sendChat(){
   // Asked for a warranty in plain chat — with or without a photo. Route it to the
   // registry instead of letting the brain talk about warranty TERMS, which is all it
   // can do. The brain believing Carrier is login-gated is exactly why this matters.
+  // A photo with NO words is the most natural way a tech uses this: hold the phone
+  // up to the plate, hit send. It was falling through to general photo analysis and
+  // he got a chatty nameplate breakdown with no warranty in it — the exact thing this
+  // feature exists to do. If a bare image turns out to be a data plate we run the
+  // registry; if it is a part or an install shot, mpWarrantyFromPhoto hands it back
+  // and the normal analysis takes over.
+  if(currentUser&&!text&&chatAttachment&&chatAttachment.type&&chatAttachment.type.indexOf('image/')===0&&!window._mpSkipPlateCheck){
+    var _bp=chatAttachment; clearChatAttach();
+    input.value='';input.style.height='auto';
+    mpWarrantyFromPhoto(_bp,{},window._mpWarrantyPending,'',true);
+    return;
+  }
+  window._mpSkipPlateCheck=false;   // one-shot: only skips the plate read once
   if(currentUser&&_mpWantsWarranty(text)&&(chatAttachment||mpParseUnit(text).serial)){
     input.value='';input.style.height='auto';
     var _wx=_mpWarrantyExtras(text);
@@ -12163,11 +12176,28 @@ function mpWarrantyCheck(){
 // only what is physically printed, never guess the brand — a guessed brand sends us
 // to the wrong manufacturer's registry and comes back "no registration found",
 // which reads to a tech like the unit isn't covered.
+// Not a data plate. Give the photo back to the ordinary image analysis — the part
+// identifier, the install review — instead of telling a tech to retake a picture he
+// never meant as a nameplate. The flag stops us re-reading it as a plate forever.
+function _mpFallbackPhoto(file){
+  try{
+    chatAttachment=file;
+    window._mpSkipPlateCheck=true;
+    var i=document.getElementById('chatInput'); if(i)i.value='';
+    return sendChat();
+  }catch(_fe){
+    appendMessage('agent',"That one isn't a data plate — tell me what you want me to look at and I'll take another run at it.");
+  }
+}
+// Say the brand the way a tech says it. The registry groups families as
+// "Carrier / Bryant / Payne" and Mike was reading that taxonomy string out loud in
+// every branded reply. Nobody talks like that — he says "that Carrier".
+function _mpSayBrand(b){ return String(b||'').split('/')[0].trim(); }
 function _hold_after_photo(){
   var k=_mpUnitPlain(); k.need=['brand'];
   window._mpWarrantyPending=k; window._mpPendingWarranty=true;
 }
-async function mpWarrantyFromPhoto(file,extras,prior,caption){
+async function mpWarrantyFromPhoto(file,extras,prior,caption,autoDetect){
   // Show the tech HIS OWN PHOTO, not the words "Data plate". Every other path in the
   // app renders a thumbnail; this one printed a label, so a tech who attached a plate
   // with a question saw two text bubbles and no picture — no way to tell whether the
@@ -12206,6 +12236,10 @@ async function mpWarrantyFromPhoto(file,extras,prior,caption){
     var d=null;try{var s=String(raw||'').replace(/```json|```/gi,'').trim();var mm=s.match(/\{[\s\S]*\}/);if(mm)d=JSON.parse(mm[0]);}catch(_e){d=null;}
     if(typeof hideTyping==='function')hideTyping();
     if(!d||!d.serial||d.confidence==='Low'){
+      // We went looking for a plate on our own initiative and this is not one — a
+      // part, an install shot, a wiring photo. Hand it back to the normal analysis
+      // instead of telling him to retake a photo he never meant as a plate.
+      if(autoDetect)return _mpFallbackPhoto(file);
       appendMessage('agent',"Couldn't read that plate well enough to trust it — and I'm not going to run a half-read serial against the registry and tell you it's not covered when it might be.\n\nGet a bit closer in better light and snap it again, or just type me the brand and serial.");
       window._mpPendingWarranty=true;
       return;
@@ -12233,10 +12267,10 @@ async function mpWarrantyFromPhoto(file,extras,prior,caption){
     if(d.brandSource==='model'&&_u.brand){
       // appendMessage escapes agent text itself (see the comment on its escapeHtml
       // call) — pre-escaping here renders a model containing & as &amp; on screen.
-      appendMessage('agent',"That's a "+_u.brand+(_u.model?" — "+_u.model+" is theirs":"")+
+      appendMessage('agent',"That's a "+_mpSayBrand(_u.brand)+(_u.model?" — "+_u.model+" is theirs":"")+
         ". Pulling the registration on "+_u.serial+" now. Shout if that's not right.");
-    }else if(_u.serial){
-      appendMessage('agent',"Got it — "+_u.serial+(_u.brand?" on that "+_u.brand:"")+". Pulling the registration now.");
+    }else if(_u.serial&&_u.brand){
+      appendMessage('agent',"Got it — "+_u.serial+" on that "+_mpSayBrand(_u.brand)+". Pulling the registration now.");
     }
     mpWarrantyRun(_u);
   }catch(_err){
@@ -12275,13 +12309,13 @@ async function mpWarrantyFromNameplate(data){
       return;
     }
     if(res.canCheck===false){
-      appendMessage('agent',(res.brandLabel||data.brand)+" keeps registration behind their dealer portal"+(res.note?" — "+res.note:"")+" I can't verify it and I won't pretend to.");
+      appendMessage('agent',_mpSayBrand((res.brandLabel||data.brand))+" keeps registration behind their dealer portal"+(res.note?" — "+res.note:"")+" I can't verify it and I won't pretend to.");
       return;
     }
     var have={serial:data.serial,model:data.model};
     var missing=(res.requires||[]).filter(function(f){ return !have[f.key]; });
     if(!missing.length){
-      appendMessage('agent',"Got the plate — checking the actual registration with "+(res.brandLabel||data.brand)+" now.");
+      appendMessage('agent',"Got the plate — checking the actual registration with "+_mpSayBrand((res.brandLabel||data.brand))+" now.");
       mpWarrantyRun(mpUnitLearn({brand:data.brand,serial:data.serial,model:data.model},'scan'));
       return;
     }
@@ -12290,7 +12324,7 @@ async function mpWarrantyFromNameplate(data){
     var _k=_mpStripEmpty(mpUnit()); _k.need=missing.map(function(f){return f.key;});
     window._mpWarrantyPending=_k;
     window._mpPendingWarranty=true;
-    appendMessage('agent',"I can pull the real registration on this one — "+(res.brandLabel||data.brand)+" just needs "+
+    appendMessage('agent',"I can pull the real registration on this one — "+_mpSayBrand((res.brandLabel||data.brand))+" just needs "+
       missing.map(function(f){return f.label;}).join(' and ')+" alongside the serial.\n\nGive me that and I'll tell you whether it's registered for the extended term or sitting on base coverage.");
   }catch(e){ /* never let this break the scan card */ }
 }
@@ -12327,7 +12361,7 @@ async function mpWarrantyRun(u){
       if(_miss.length&&window._mpWarrantyAsks>=2){
         window._mpWarrantyAsks=0;
         appendMessage('agent',"Going ahead without "+_miss.map(function(f){return f.label;}).join(' and ')+
-          " — "+(_rq.brandLabel||u.brand)+" may only give me the base terms without it, and I'll tell you if that's all I get.");
+          " — "+_mpSayBrand((_rq.brandLabel||u.brand))+" may only give me the base terms without it, and I'll tell you if that's all I get.");
         _miss=[];
       }
       if(_miss.length){
@@ -12335,7 +12369,7 @@ async function mpWarrantyRun(u){
         var _k2=_mpStripEmpty(mpUnit()); _k2.need=_miss.map(function(f){return f.key;});
         window._mpWarrantyPending=_k2;
         window._mpPendingWarranty=true;
-        appendMessage('agent',"Got the "+(_rq.brandLabel||u.brand)+" and the serial. "+(_rq.brandLabel||u.brand)+" also needs "+
+        appendMessage('agent',"Got the "+_mpSayBrand((_rq.brandLabel||u.brand))+" and the serial. "+_mpSayBrand((_rq.brandLabel||u.brand))+" also needs "+
           _miss.map(function(f){return f.label;}).join(' and ')+" before they'll return the real coverage.\n\nGive me that and I'll pull it.");
         return;
       }
@@ -12364,24 +12398,24 @@ async function mpWarrantyRun(u){
       // "couldn't check", he decides the tool is broken and stops opening it; told
       // "their site is down", he works around it and comes back.
       if(d.siteDown){
-        appendMessage('agent',(d.summary||("Can't check that one right now — "+(d.brandLabel||u.brand)+"'s warranty site is down. Nothing wrong on your end."))+"\n\nDon't quote it as covered until somebody confirms it.");
+        appendMessage('agent',(d.summary||("Can't check that one right now — "+_mpSayBrand((d.brandLabel||u.brand))+"'s warranty site is down. Nothing wrong on your end."))+"\n\nDon't quote it as covered until somebody confirms it.");
         return;
       }
       if(d.supported===false){
         if(d.reason==='no_public_registry'){
-          appendMessage('agent',(d.brandLabel||u.brand)+" doesn't publish a public warranty registry — registration status sits behind their dealer portal"+(d.where?" ("+d.where+")":"")+". I can't verify it, and I won't pretend to. Confirm it there before you quote it as covered.");
+          appendMessage('agent',_mpSayBrand((d.brandLabel||u.brand))+" doesn't publish a public warranty registry — registration status sits behind their dealer portal"+(d.where?" ("+d.where+")":"")+". I can't verify it, and I won't pretend to. Confirm it there before you quote it as covered.");
         } else if(d.reason==='lookup_failed'){
           // We ARE wired to this brand and the lookup broke. Saying "not wired"
           // here teaches a tech the brand is unsupported and he stops asking —
           // for a lookup that works the next time he tries it.
-          appendMessage('agent',"I couldn't get "+(d.brandLabel||u.brand)+"'s lookup to answer just now — that's my end, not your unit, and not the brand. Give it another shot in a minute"+(d.where?", or check it directly at "+d.where:"")+". I'm not going to guess at coverage.");
+          appendMessage('agent',"I couldn't get "+_mpSayBrand((d.brandLabel||u.brand))+"'s lookup to answer just now — that's my end, not your unit, and not the brand. Give it another shot in a minute"+(d.where?", or check it directly at "+d.where:"")+". I'm not going to guess at coverage.");
         } else {
-          appendMessage('agent',"I don't have "+(d.brandLabel||u.brand)+" wired into the registry yet"+(d.where?" — their lookup lives at "+d.where:"")+". Check it there with that serial. I'd rather tell you that than hand you a number I made up.");
+          appendMessage('agent',"I don't have "+_mpSayBrand((d.brandLabel||u.brand))+" wired into the registry yet"+(d.where?" — their lookup lives at "+d.where:"")+". Check it there with that serial. I'd rather tell you that than hand you a number I made up.");
         }
         return;
       }
       if(!d.found){
-        appendMessage('agent',"No registration came back for serial "+u.serial+" on that "+(d.brandLabel||u.brand)+".\n\nTwo usual reasons: the serial's off by a character, or the unit was never registered — and that second one matters on its own, because unregistered normally means the shorter base term instead of the extended one. Worth another look at the plate.");
+        appendMessage('agent',"No registration came back for serial "+u.serial+" on that "+_mpSayBrand((d.brandLabel||u.brand))+".\n\nTwo usual reasons: the serial's off by a character, or the unit was never registered — and that second one matters on its own, because unregistered normally means the shorter base term instead of the extended one. Worth another look at the plate.");
         return;
       }
       var reg=d.registered===true;

@@ -237,6 +237,18 @@ app.post('/lookup', async (req, res) => {
       if (err.code === 'TIMEOUT') await discardBrowser('agent timeout');
       // Say WHOSE problem it is. "Couldn't check" makes a tech distrust Mike; "their
       // site is down" tells him to stop trying and go around it.
+      // We could not get their form to run. That is OUR failure to report honestly —
+      // it is emphatically NOT "this unit has no registration", which is what a tech
+      // would otherwise act on.
+      if (err.code === 'NOT_SUBMITTED') {
+        return res.json({
+          ok: true, supported: true, found: false, inconclusive: true,
+          brand: brand.id, brandLabel: brand.label, serial,
+          reason: 'lookup_did_not_run',
+          summary: `I couldn't get ${brand.label}'s lookup to actually run — their form didn't go through on my end. That is NOT the same as "not covered", so don't treat it that way. Check it directly with the serial before you quote anything.`,
+          where: brand.where,
+        });
+      }
       if (err.code === 'SITE_DOWN' || err.code === 'SITE_MOVED') {
         return res.json({
           ok: true, supported: true, found: false,

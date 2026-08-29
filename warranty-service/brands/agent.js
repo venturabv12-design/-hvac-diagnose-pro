@@ -428,6 +428,13 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
   };
   page.on('response', _grab);
 
+  // Remember the page BEFORE we submit. If nothing changes and the site's own API is
+  // never called, the form did not submit — and an unsubmitted form is not a "no
+  // registration found". Carrier's page did exactly this: the click was swallowed and
+  // the text was byte-identical afterwards, so we reported "not registered" on a unit
+  // we never actually asked about. Never turn silence into a negative answer.
+  const beforeText = await target.evaluate(() => (document.body.innerText || '')).catch(() => '');
+
   await Promise.allSettled([
     target.click(plan.submit),
     page.waitForLoadState('networkidle', { timeout: 25000 }).catch(() => {}),
@@ -447,6 +454,15 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
   const rawFrame = await target.evaluate(() => (document.body.innerText || '').slice(0, 6000)).catch(() => '');
   const rawPage = await page.evaluate(() => (document.body.innerText || '').slice(0, 6000)).catch(() => '');
   let raw = (rawFrame && rawFrame.length > 200) ? rawFrame : (rawPage || rawFrame);
+  // Did anything actually happen? Unchanged page AND no API traffic means the submit
+  // never went through.
+  const afterText = await target.evaluate(() => (document.body.innerText || '')).catch(() => '');
+  if (!apiBodies.length && afterText && beforeText && afterText === beforeText) {
+    log(`  submit produced NO change and no API call — the form did not run`);
+    const err = new Error(`${brand.label}'s lookup form did not submit`);
+    err.code = 'NOT_SUBMITTED'; err.brandLabel = brand.label;
+    throw err;
+  }
   // If the visible page never mentions the serial, the answer is not on it. Fall back to
   // what the page's own API returned.
   if (apiBodies.length && !norm0(raw).includes(norm0(serial))) {

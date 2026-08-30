@@ -500,7 +500,17 @@ function renderIllustrationSVG(netlist){
   const zoneBg=[];
   zoneBg.push(`<rect x="24" y="116" width="${WIDTH-48}" height="480" rx="14" fill="#fdf4f3"/>`);
   zoneBg.push(`<rect x="24" y="612" width="${WIDTH-48}" height="252" rx="14" fill="#f0f8f6"/>`);
-  const pretty=(mk)=>{ const [br,md]=String(mk||'').split(':'); const b=br?br.charAt(0)+br.slice(1).toLowerCase():''; return md?`${b} ${md}`:(b||'Wiring'); };
+  // A photo whose model we could not read is keyed UNIT:UPLOAD internally, and that
+  // placeholder was being printed as the title — a tech (or a CEO watching a demo) reads
+  // "Unit UPLOAD — how it's wired" at the top of the drawing and it looks unfinished.
+  // Say something true instead; Mike's reply already asks for the model separately.
+  const pretty=(mk)=>{
+    const raw=String(mk||'');
+    if(!raw || /^(unit|unknown)\s*:/i.test(raw)) return 'This unit';
+    const [br,md]=raw.split(':');
+    const b=br?br.charAt(0)+br.slice(1).toLowerCase():'';
+    return md?`${b} ${md}`:(b||'Wiring');
+  };
   H.push(`<text x="40" y="34" font-size="21" font-weight="800" fill="#0b0d10">${escapeXml(pretty(netlist.model_key))} — how it’s wired</text>`);
   H.push(`<text x="40" y="53" font-size="12.5" fill="#7a8390">A beginner-friendly map of the real parts and how the wires connect them. The real manual is one tap away.</text>`);
   // Two-voltage explainer — big, top-LEFT of each band (where the eye starts reading)

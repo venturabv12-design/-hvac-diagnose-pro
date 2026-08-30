@@ -3151,6 +3151,48 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       // symptoms ("fan hums but won't spin") and emits the screwdriver method with no cap keyword in
       // the user's message (QA scenarios A1/B4, 2026-07-08). Sentence-level, so only the dangerous
       // sentence is removed; the resistor method and the rest of the answer survive.
+      // COVERAGE STRIP (deterministic, UNCONDITIONAL). A serial decodes to a BUILD DATE.
+      // It says nothing about whether the homeowner ever registered the unit, and
+      // registration is the difference between a 5-year and a 10-year parts term. On
+      // 2026-08-30 Mike read a Carrier plate — 2023, three years old — and told a
+      // technician "you're solidly in warranty and this is a healthy unit" before any
+      // registry had been touched. That is the single most expensive sentence this
+      // product can produce: a tech quotes free work, the claim is denied, and he eats
+      // the part. It is also the exact failure the warranty lookup exists to prevent.
+      //
+      // Prompting cannot be trusted here — same lesson as the screwdriver method. Age
+      // implying coverage is a trained-in default, so strip it at the sentence level.
+      //
+      // SCOPED OFF the published-terms follow-up: after a registry lookup returns no
+      // record, Mike is deliberately asked for the manufacturer's PUBLISHED base and
+      // registered terms and whether the build date falls inside them. That answer is
+      // labelled as published terms, not as this unit's coverage, and must survive.
+      const _publishedTermsTurn = /published (?:base )?terms|the registry had no record|ANSWER FORMAT/i.test(String(system || ''));
+      if (!_publishedTermsTurn) {
+        const _claimsCovered =
+          /\b(?:still\s+)?(?:solidly\s+|comfortably\s+|well\s+)?(?:in|under|within)\s+(?:the\s+)?warranty\b/i;
+        const _claimsCovered2 =
+          /\b(?:should\s+(?:still\s+)?be|is|are|it'?s|you'?re|that'?s)\s+(?:still\s+)?(?:fully\s+|likely\s+|probably\s+)?covered\b/i;
+        const _lines = outText.split('\n');
+        let _stripped = false;
+        for (let _li = 0; _li < _lines.length; _li++) {
+          const _sents = _lines[_li].split(/(?<=[.!?])\s+/);
+          const _keep = [];
+          for (const _sent of _sents) {
+            if (_claimsCovered.test(_sent) || _claimsCovered2.test(_sent)) { _stripped = true; continue; }
+            _keep.push(_sent);
+          }
+          _lines[_li] = _keep.join(' ');
+        }
+        if (_stripped) {
+          outText = _lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+          outText += (outText ? '\n\n' : '') +
+            "On coverage — the age off the plate does NOT tell us whether this one is registered, " +
+            "and registration is the difference between the base term and the extended one. " +
+            "Say the word and I'll pull the actual registration from the manufacturer before you quote anything.";
+        }
+      }
+
       const _hadScrewMethod = /\bscrewdriver\b/i.test(outText) && /\b(?:terminal|short|shorting|bridge|across)\b/i.test(outText);
       outText = outText.replace(/[^.!?\n]*\bscrewdriver\b[^.!?\n]*\b(?:terminal|short|shorting|blade|across)\b[^.!?\n]*[.!?]/gi, '');
       outText = outText.replace(/[^.!?\n]*\b(?:short|shorting|bridge)\b[^.!?\n]*\bterminal[^.!?\n]*\bscrewdriver\b[^.!?\n]*[.!?]/gi, '');

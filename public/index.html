@@ -5608,8 +5608,19 @@ function obProse(pack,type){
 // early with "Loading… tap again in a moment" when there is no account, which is a door
 // that never opens — so selling them in the intro promises something the next tap cannot
 // deliver. Show the one thing he CAN do here, and do it well.
-var OB_FRAMES_TECH=['who','cold','text','money'];
-var OB_FRAMES_HOME=['who','cold','talkedaround','tour'];
+// 'magic' — the live demo where a visitor asks Mike a REAL question and gets a REAL
+// answer, free, with no account — was built, wired to Mike's real brain via the
+// server's taste allowance, and then left out of both sequences. It has never once
+// rendered. So the front door was three slides of claims followed by a signup wall:
+// a stranger typed his first question and got a form instead of an answer.
+//
+// 677 visitors in a week produced one signup, and not one of them ever saw the
+// product do anything. The comment above this block has described the intended
+// sequence as ending in `magic` the whole time. Putting it back.
+//
+// It goes LAST on purpose: he has to see it work before the ask is worth making.
+var OB_FRAMES_TECH=['who','cold','text','money','magic'];
+var OB_FRAMES_HOME=['who','cold','talkedaround','tour','magic'];
 function obFrames(){
   var seq=(obRole()==='homeowner')?OB_FRAMES_HOME.slice():OB_FRAMES_TECH.slice();
   // A signed-in account already declared its audience — never ask it again.

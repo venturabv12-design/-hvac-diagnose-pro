@@ -203,7 +203,11 @@ async function agentLookup(page, brand, serial, extra) {
   // distributor, instead of assuming Mike is broken and losing faith in the tool.
   let resp;
   try {
-    resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    // 45s was tight for a manufacturer SPA behind a redirect on a cold profile, and a
+    // slow page was being reported to the technician as "their site is down" — which is
+    // both wrong and the kind of thing he repeats to a customer. The service still caps
+    // the whole lookup, so a genuinely dead site is caught there rather than here.
+    resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
   } catch (e) {
     const err = new Error(`${brand.label}'s warranty site did not respond`);
     err.code = 'SITE_DOWN'; err.brandLabel = brand.label; throw err;
@@ -415,13 +419,44 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
       const kind = (form.inputs.find(i => i.selector === f.selector) || {}).type;
       if (kind === 'radio' || kind === 'checkbox') {
         const want = !/^(false|no|0|off)$/i.test(String(f.value));
-        if (kind === 'checkbox') { if (want) await target.check(f.selector, { timeout: 8000 }); }
-        else await target.check(f.selector, { timeout: 8000 });
+        // check() waits for the INPUT itself to be actionable. Carrier styles its
+        // original-purchaser radios with the real input visually hidden behind a
+        // label, so check() sits there and times out — logged as "could not set
+        // #isOriginal1" — and the form then submits without a field Carrier REQUIRES,
+        // which comes back as an empty result that reads like "no registration".
+        // Observed on a clean profile 2026-08-30 while the same code succeeded on a
+        // warm one, so it is not reproducible enough to rely on a single method.
+        //
+        // Three ways in, cheapest first: tick it, click its label the way a person
+        // does, then set it directly in the page. Any one succeeding is enough.
+        let _ticked = false;
+        if (!(kind === 'checkbox' && !want)) {
+          try { await target.check(f.selector, { timeout: 6000 }); _ticked = true; }
+          catch (_) {
+            try {
+              const _id = (f.selector.match(/^#([A-Za-z0-9_-]+)$/) || [])[1];
+              if (_id) { await target.click(`label[for="${_id}"]`, { timeout: 4000 }); _ticked = true; }
+            } catch (_) {}
+            if (!_ticked) {
+              _ticked = await target.evaluate((sel) => {
+                const el = document.querySelector(sel);
+                if (!el) return false;
+                el.checked = true;
+                el.dispatchEvent(new Event('click',  { bubbles: true }));
+                el.dispatchEvent(new Event('input',  { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+                return !!el.checked;
+              }, f.selector).catch(() => false);
+            }
+          }
+        }
         await target.evaluate((sel) => {
           const el = document.querySelector(sel);
           if (el) el.dispatchEvent(new Event('change', { bubbles: true }));
         }, f.selector).catch(() => {});
-        log(`  ${f.selector}: ticked (${kind})`);
+        // Say which way worked. A required field that silently did not get set is how
+        // an incomplete form turns into a wrong answer.
+        log(`  ${f.selector}: ${_ticked ? 'ticked' : 'COULD NOT TICK'} (${kind})`);
         continue;
       }
       await target.fill(f.selector, String(f.value));

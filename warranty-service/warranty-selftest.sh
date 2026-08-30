@@ -61,6 +61,8 @@ if d.get("inconclusive") is True or d.get("reason")=="lookup_did_not_run":
     print("BAD|their form did not run"); raise SystemExit
 if d.get("supported") is False:
     print("BAD|brand reported unsupported: %s" % str(d.get("reason"))[:60]); raise SystemExit
+if d.get("cached") is True:
+    print("BAD|got a CACHED answer — this run did not reach the manufacturer"); raise SystemExit
 print("OK|found=%s registered=%s %s" % (d.get("found"), d.get("registered"), d.get("model") or d.get("reason") or ""))')
     if [ "${out%%|*}" = "OK" ]; then
       say "  $label ${out#*|}"
@@ -73,11 +75,11 @@ print("OK|found=%s registered=%s %s" % (d.get("found"), d.get("registered"), d.g
   say "self-check starting"
   # A real serial per family. Trane's answers "not registered", which is a real answer
   # and a pass — the check is whether their form RAN, not whether a unit is covered.
-  check "Carrier / Bryant / Payne"   '{"brand":"carrier","serial":"3623E02930","originalPurchaser":true}'
-  check "Heil / ICP (via Carrier)"   '{"brand":"heil","serial":"3623E02930","originalPurchaser":true}'
-  check "Trane / American Standard"  '{"brand":"trane","serial":"23161ABC1D"}'
-  check "Goodman / Amana / Daikin"   '{"brand":"goodman","serial":"2103456789","model":"GSZ140241","lastName":"Weiler","zip":"20109"}'
-  check "Rheem / Ruud"               '{"brand":"rheem","serial":"W231812345","lastName":"Weiler","state":"VA"}'
+  check "Carrier / Bryant / Payne"   '{"fresh":true,"brand":"carrier","serial":"3623E02930","originalPurchaser":true}'
+  check "Heil / ICP (via Carrier)"   '{"fresh":true,"brand":"heil","serial":"3623E02930","originalPurchaser":true}'
+  check "Trane / American Standard"  '{"fresh":true,"brand":"trane","serial":"23161ABC1D"}'
+  check "Goodman / Amana / Daikin"   '{"fresh":true,"brand":"goodman","serial":"2103456789","model":"GSZ140241","lastName":"Weiler","zip":"20109"}'
+  check "Rheem / Ruud"               '{"fresh":true,"brand":"rheem","serial":"W231812345","lastName":"Weiler","state":"VA"}'
 fi
 
 if [ -z "$FAILURES" ]; then

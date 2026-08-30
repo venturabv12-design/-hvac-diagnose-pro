@@ -358,9 +358,14 @@ app.post('/lookup', async (req, res) => {
   // Hand it to the laptop when this brand needs a residential connection and the
   // worker is actually checked in. If anything about that fails we fall through to the
   // normal path below, so this can only ever add an answer, never remove one.
+  // The daily self-check asks for a FRESH run. Reading cache would let it pass on
+  // yesterday's answer while a manufacturer's form is broken today, which is the one
+  // thing a monitor must never do. It still WRITES the cache, so the check also warms
+  // it for the first technician of the day.
+  const _skipCache = (req.body && req.body.fresh === true);
   if (workerHandles(brand.id) && workerOnline()) {
     const wkey = cacheKey(brand.id, serial);
-    const wcached = cacheGet(wkey);
+    const wcached = _skipCache ? null : cacheGet(wkey);
     if (wcached) return res.json(Object.assign({ ok: true, supported: true, cached: true }, wcached));
     try {
       const w = await askWorker(brand.id, serial, req.body && req.body.extra);
@@ -465,7 +470,7 @@ app.post('/lookup', async (req, res) => {
   }
 
   const key = cacheKey(brand.id, serial);
-  const cached = cacheGet(key);
+  const cached = _skipCache ? null : cacheGet(key);
   if (cached) return res.json(Object.assign({ ok: true, supported: true, cached: true }, cached));
 
   if (!rateOk()) return res.status(429).json({ ok: false, error: 'rate_limited' });

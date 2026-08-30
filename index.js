@@ -1584,14 +1584,17 @@ app.post('/api/warranty', authenticateToken, aiLimiter, async (req, res) => {
   // Rheem also wants the state. Those cannot come off a photo, so they arrive from
   // whatever the tech told Mike and have to be forwarded, or the lookup runs with
   // half the form filled and reports "no registration found" on a covered unit.
-  const { brand, serial, model, originalPurchaser, lastName, zip, state } = req.body || {};
+  const { brand, serial, model, originalPurchaser, lastName, zip, state, fresh } = req.body || {};
   if (!brand || !serial) return res.status(400).json({ ok: false, error: 'brand_and_serial_required' });
 
   try {
     const r = await fetch(`${WARRANTY_URL}/lookup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-warranty-token': WARRANTY_TOKEN },
-      body: JSON.stringify({ brand, serial, model, originalPurchaser,
+      // `fresh` is for the daily self-check only. Without it the check reads its own
+      // cached answer from yesterday and reports every brand healthy while one is
+      // broken — a monitor that cannot fail is decoration.
+      body: JSON.stringify({ brand, serial, model, originalPurchaser, fresh: fresh === true,
         extra: { model, lastName, zip, state, originalPurchaser } }),
       // A cold lookup launches a browser and drives the manufacturer's own form. That
       // agent path documents its normal case as 20-60s and the service gives it a 120s

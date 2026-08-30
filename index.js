@@ -631,7 +631,7 @@ app.use(helmet({
 // possible for anonymous traffic. Instead we keep counters in memory and flush ONE
 // aggregate row per day, owned by the admin account and typed 'site_traffic'. That
 // type is filtered out of the per-tech rollup so it can't distort those numbers.
-const _traffic = { day: null, views: 0, uniques: new Set(), refs: {}, paths: {}, rowId: null };
+const _traffic = { day: null, views: 0, uniques: new Set(), refs: {}, paths: {}, rowId: null, bots: 0 };
 // Max visitor hashes stored per day (16 chars each). 5000 ≈ 80KB — far above current
 // traffic, and the union math degrades gracefully to per-day counts above it.
 const TRAFFIC_HASH_CAP = 5000;
@@ -644,6 +644,25 @@ const _ET_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' 
 function _dayET(d) { return _ET_DAY.format(d instanceof Date ? d : new Date(d)); }
 function _today() { return _dayET(new Date()); }
 
+// EVERY CRAWLER COUNTED AS A VISITOR. The counter took any GET that asked for HTML,
+// so search bots, uptime pingers, security scanners and link previewers all landed in
+// the same bucket as a technician. That is not a rounding error: on 2026-08-29 it
+// reported 678 visitors for the week against 7 referrals from the entire outside
+// world, and produced the conclusion "people are visiting and not converting" when
+// the truth was closer to "almost nobody real is arriving". A number that drives
+// decisions has to be a number you can trust.
+//
+// Deliberately conservative: match on the self-identifying substrings crawlers put in
+// their user-agent. A bot that lies about its UA still gets counted, so this is a
+// floor on bot traffic, never a ceiling — the human number stays honest by erring
+// toward over-counting humans, not under.
+const BOT_UA = /(bot|crawl|spider|slurp|scrape|curl\/|wget|python-requests|python-urllib|go-http|java\/|okhttp|libwww|httpclient|headless|phantomjs|puppeteer|playwright|lighthouse|pingdom|uptime|monitor|statuscake|semrush|ahrefs|mj12|dotbot|petalbot|bingpreview|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|embedly|preview)/i;
+function _looksLikeBot(req) {
+  const ua = String(req.headers['user-agent'] || '');
+  if (!ua) return true;                 // no UA at all is not a person on a phone
+  return BOT_UA.test(ua);
+}
+
 function _visitorHash(req) {
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || '';
   const ua = req.headers['user-agent'] || '';
@@ -654,7 +673,7 @@ function _rollDay() {
   const d = _today();
   if (_traffic.day !== d) {
     _traffic.day = d; _traffic.views = 0; _traffic.uniques = new Set();
-    _traffic.refs = {}; _traffic.paths = {}; _traffic.rowId = null;
+    _traffic.refs = {}; _traffic.paths = {}; _traffic.rowId = null; _traffic.bots = 0;
   }
 }
 
@@ -666,6 +685,10 @@ app.use((req, res, next) => {
         && !/\.[a-z0-9]{2,5}$/i.test(req.path)
         && String(req.headers.accept || '').includes('text/html')) {
       _rollDay();
+      // Count bots SEPARATELY rather than dropping them silently. If this number is
+      // huge it is itself the finding, and a silent filter would hide a traffic
+      // source that suddenly went missing.
+      if (_looksLikeBot(req)) { _traffic.bots = (_traffic.bots || 0) + 1; return next(); }
       _traffic.views++;
       _traffic.uniques.add(_visitorHash(req));
       let ref = 'direct';
@@ -705,6 +728,9 @@ async function flushTraffic() {
       date: _traffic.day,
       views: _traffic.views,
       uniques: _traffic.uniques.size,
+      // Kept so a drop in real traffic can never be mistaken for a drop in crawling,
+      // and so the size of what we now exclude is visible rather than assumed.
+      bots: _traffic.bots || 0,
       hashes: hashList.length <= TRAFFIC_HASH_CAP ? hashList : null,
       hashesTruncated: hashList.length > TRAFFIC_HASH_CAP,
       refs: _traffic.refs,

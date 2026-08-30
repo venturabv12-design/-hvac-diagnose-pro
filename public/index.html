@@ -6123,6 +6123,14 @@ function obFinish(){
   // syncAuthSurface() already ran at page load, before the flag above was written, so
   // it has to run again now or the landing stays put for a signed-out visitor.
   try{ if(typeof syncAuthSurface==='function') syncAuthSurface(); }catch(e){}
+  // HONOUR THE ANSWER HE JUST GAVE. Onboarding's first question is "who are you?" and the
+  // choice was written to trazer_role_choice and then ignored by the surface: the panel is
+  // switched by applyModeFromRole(), which returns immediately when there is no
+  // currentUser. So a signed-out tech picked "I'm a tech", sat through four frames, and
+  // landed on the HOMEOWNER panel being told to "know exactly what to tell your technician
+  // when you call" — the one screen a tech has no use for, shown to every visitor who is
+  // not signed in yet. That is the front door, and those are exactly the people we need.
+  if(!currentUser){ try{ setMode(obRole()==='homeowner'?'home':'pro'); }catch(e){} }
   try{ if(typeof mpEnterChat==='function') mpEnterChat(); }catch(e){}
   try{seedFirstPrompt();}catch(e){}
 }
@@ -6134,7 +6142,10 @@ function seedFirstPrompt(){
   var ci=document.getElementById('chatInput');
   if(!ci)return;
   if((ci.value||'').trim())return; // respect anything the user already started typing
-  var isHome=!!(currentUser&&currentUser.role==='homeowner');
+  // Signed-out visitors have no currentUser, so this always chose the TECH starter —
+  // a homeowner who had just said "I'm a homeowner" was prompted with "got a nameplate
+  // here, what do you make of it?". Fall back to the choice made in onboarding.
+  var isHome=currentUser?(currentUser.role==='homeowner'):(obRole()==='homeowner');
   var seed=v2t(isHome?'seedHome':'seedTech');
   if(!seed)return;
   // HINT, DON'T TYPE FOR HIM. This used to write the sentence into the box as real

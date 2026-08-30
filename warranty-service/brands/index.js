@@ -83,11 +83,29 @@ const PENDING = [
   {
     id: 'carrier',
     label: 'Carrier / Bryant / Payne',
-    aliases: ['carrier', 'bryant', 'payne'],
+    // ICP — Heil, Tempstar, Comfortmaker, Arcoaire, KeepRite, Day & Night — is owned by
+    // Carrier Global, and the equipment is the same box under a different badge. Brandon,
+    // ten years in the field (2026-08-30): "I know Carrier and ICP work because I've done
+    // it before. They all look the same. They're all the same." He has looked ICP serials
+    // up on Carrier's own form and got the record. Field experience beats our guess here,
+    // so a tech typing Heil now reaches a real registry instead of "not wired yet".
+    //
+    // Carrier's consumer page does not advertise the ICP brands by name, so this is
+    // wired on his account, not on their marketing. The failure direction stays safe:
+    // if their registry genuinely has no record for an ICP serial it reports "no
+    // registration came back" with both causes named, and the guard layer keeps Mike
+    // from turning that into "not covered".
+    aliases: ['carrier', 'bryant', 'payne',
+              'heil', 'tempstar', 'comfortmaker', 'arcoaire', 'keeprite', 'kee prite',
+              'day & night', 'day and night', 'day-night', 'icp', 'international comfort'],
     publicRegistry: true,
-    where: 'carrier.com/residential/en/us/warranty-lookup/',
+    // www. is not cosmetic here. The bare host 301-redirects, and on a cold profile
+    // that extra hop in front of a heavy SPA was enough to blow the 45s page budget
+    // and surface as SITE_DOWN — while curl got 200 from www in 2.6s at the same
+    // moment. Point at the address that actually serves the page.
+    where: 'https://www.carrier.com/residential/en/us/warranty-lookup/',
     requires: [FIELD.serial, FIELD.originalPurchaser],
-    note: 'Serial plus original-purchaser only — no last name or zip.',
+    note: 'Serial plus original-purchaser only — no last name or zip. Covers the ICP brands (Heil, Tempstar, Comfortmaker, Arcoaire, KeepRite, Day & Night) — same Carrier registry.',
   },
   {
     id: 'rheem',

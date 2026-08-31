@@ -1822,9 +1822,31 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
     `?select=user_id,type,payload,created_at&created_at=gte.${since}&order=created_at.desc&limit=20000`);
   if (rows === null) return res.status(500).json({ error: 'Database error' });
 
-  const users = await supabase('GET', 'users', null,
-    '?select=id,email,name,plan,created_at,stripe_subscription_id&limit=500') || [];
-  const nameById = Object.fromEntries(users.map(u => [u.id, u.name || u.email]));
+  const _allUsers = await supabase('GET', 'users', null,
+    '?select=id,email,name,plan,created_at,stripe_subscription_id,company&limit=500') || [];
+
+  // HOUSE ACCOUNTS ARE NOT TECHNICIANS. Every QA signup made while testing on production
+  // — and there are dozens — was being counted here as a technician. On 2026-08-31 this
+  // page reported 41 accounts when 19 were real, and a deck went out with the wrong
+  // number because the dashboard said so. A number Brandon reads to make a decision, or
+  // to quote to a buyer, has to be the true one by default; making him remember to
+  // subtract is how the wrong figure reaches a room.
+  //
+  // Matched by EMAIL PATTERN, not a hardcoded id list — every test run mints a new
+  // account and a list of ids goes stale the first time anyone signs up.
+  const HOUSE_EMAIL = /^(trazertest\+|qa@|qa-crew@|test@)|@trazer\.test$|^venturabv12@gmail\.com$/i;
+  // qa-crew@trazerintelligence.com is the automated test rig and does not look like a QA
+  // address by pattern — it slipped through and its 36 questions inflated every number on
+  // this page. Belt and braces: pattern, company name, and the two known house ids.
+  const HOUSE_ID = new Set(['7725dfff-9e37-4eb9-a2cd-5d8c547fbeb3', '8c63d02a-e2cc-4401-b457-74d98c8752bd']);
+  const isHouse = (u) => !!u && (
+    HOUSE_ID.has(u.id) ||
+    (u.email && HOUSE_EMAIL.test(u.email)) ||
+    /\b(qa|internal|test)\b/i.test(String(u.company || ''))
+  );
+  const users = _allUsers.filter(u => !isHouse(u));
+  const houseIds = new Set(_allUsers.filter(isHouse).map(u => u.id));
+  const nameById = Object.fromEntries(_allUsers.map(u => [u.id, u.name || u.email]));
 
   // Every date below is an EASTERN calendar day so "Today" matches Brandon's clock.
   const dayKey = d => _dayET(d);
@@ -1871,9 +1893,14 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
   // ("has this tech ever asked Mike anything?") is a LIFETIME question — judging it on a
   // 30-day slice put every tech who used Mike in June onto the "signed up, never used it"
   // list, i.e. the list Brandon actually texts. Pull ask history unbounded for that.
-  const asks = rows.filter(r => r.type === 'mike_ask');
-  const asksAll = await supabase('GET', 'events', null,
-    `?select=user_id,created_at&type=eq.mike_ask&order=created_at.asc&limit=20000`) || [];
+  // Same rule as the accounts above: an event from a house account is not a technician
+  // using the product. Without this the ask counts, the activation rate and the "still
+  // using it" number all include my own testing, and Brandon reads a number that flatters
+  // us — which is the one direction a metric must never be wrong in.
+  const notHouse = (r) => !houseIds.has(r && r.user_id);
+  const asks = rows.filter(r => r.type === 'mike_ask' && notHouse(r));
+  const asksAll = ((await supabase('GET', 'events', null,
+    `?select=user_id,created_at&type=eq.mike_ask&order=created_at.asc&limit=20000`)) || []).filter(notHouse);
   // The day ask-logging went live. Before it, silence means "not instrumented", NOT
   // "never used Mike" — every metric below that would otherwise read the gap as failure.
   const ASK_LOG_START = asksAll.length ? asksAll[0].created_at : null;
@@ -2001,7 +2028,84 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
   const askLogDays = ASK_LOG_START
     ? Math.floor((Date.now() - new Date(ASK_LOG_START).getTime()) / 86400000) : null;
 
+  // ── WHAT A CONTRACTOR ACTUALLY ASKS FOR ────────────────────────────────────
+  // A CEO deciding whether to roll this out has exactly two questions: are my people
+  // using it, and is it catching anything. Signups answer neither. These do.
+  //
+  // ADOPTION leads, because "I'll buy it and nobody will use it" is the real objection
+  // and the honest number beats a flattering one — he will find it either way.
+  const _in30 = (r) => r && r.created_at && dayKey(r.created_at) >= ago(30);
+  const _in7  = (r) => r && r.created_at && dayKey(r.created_at) >= ago(7);
+  const _evt  = (t) => rows.filter(r => r.type === t && notHouse(r));
+
+  const jobsOpened   = _evt('job_start').filter(_in30).length;
+  const jobsClosed   = _evt('job_closed').filter(_in30).length;
+  const warrantyRuns = _evt('warranty_lookup').filter(_in30);
+  // THE MONEY NUMBER. A lookup that came back "found, but never registered" is a unit
+  // the customer believes is covered and is not — a part the technician was about to
+  // eat, or quote wrong. Every one of these is a callback or a chargeback avoided.
+  const warrantyCaught = warrantyRuns.filter(r => {
+    const p = r.payload || {};
+    return p.found === true && p.registered === false;
+  }).length;
+
+  const adoption = {
+    accounts: users.length,
+    activated: activatedAll,
+    activationPct: users.length ? +((activatedAll / users.length) * 100).toFixed(1) : 0,
+    active7: asked7.size,
+    active30: new Set(asks.filter(_in30).map(a => a.user_id)).size,
+    questions7: asks.filter(_in7).length,
+    questions30: asks.filter(_in30).length,
+    note: 'activated = has ever asked Mike anything. House/QA accounts excluded.',
+  };
+
+  const work = {
+    jobsOpened, jobsClosed,
+    warrantyLookups: warrantyRuns.length,
+    warrantyCaughtUnregistered: warrantyCaught,
+    note: 'last 30 days. "caught unregistered" = the registry answered and the unit was NOT registered.',
+  };
+
+  // PER COMPANY. Everything above is global; a contractor wants his own crew. Grouped on
+  // the company a tech typed at signup, normalised — "FH Furr", "Fhfurr" and "Fh. Furr"
+  // are one company, and counting them as three is how a deck claimed nine.
+  // Techs type their employer freehand: "FH Furr", "Fhfurr", "Fh. Furr", "Furr". Stripping
+  // punctuation still leaves "fhfurr" and "furr" as two companies, which is exactly how a
+  // deck once claimed nine companies for one. Collapse on the distinctive word.
+  const _normCo = (c) => {
+    const k = String(c || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!k) return null;
+    const KNOWN = ['furr'];   // add a name here when a second multi-spelling company appears
+    for (const w of KNOWN) if (k.includes(w)) return w;
+    return k;
+  };
+  const _coLabel = {};
+  const byCompanyMap = {};
+  for (const u of users) {
+    const k = _normCo(u.company); if (!k) continue;
+    const _raw = String(u.company).trim();
+    if (!_coLabel[k] || _raw.length > _coLabel[k].length) _coLabel[k] = _raw;
+    const c = byCompanyMap[k] || (byCompanyMap[k] = { key: k, company: _coLabel[k], accounts: 0, activated: 0, active7: 0, questions30: 0, ids: new Set() });
+    c.accounts++; c.ids.add(u.id);
+    if (askedEver.has(u.id)) c.activated++;
+    if (asked7.has(u.id)) c.active7++;
+  }
+  for (const a of asks) {
+    if (!_in30(a)) continue;
+    for (const c of Object.values(byCompanyMap)) if (c.ids.has(a.user_id)) { c.questions30++; break; }
+  }
+  for (const c of Object.values(byCompanyMap)) c.company = _coLabel[c.key] || c.company;
+  const byCompany = Object.values(byCompanyMap)
+    .map(({ ids, key, ...c }) => Object.assign(c, {
+      activationPct: c.accounts ? +((c.activated / c.accounts) * 100).toFixed(1) : 0,
+    }))
+    .sort((a, b) => b.accounts - a.accounts);
+
   res.json({
+    adoption,
+    work,
+    byCompany,
     movement,
     attention: {
       neverUsed,

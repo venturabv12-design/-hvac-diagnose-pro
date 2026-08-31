@@ -62,9 +62,30 @@ except Exception: print('ALERT incidents_unreadable',raw[:120]); sys.exit(1)
 if not isinstance(d,dict) or not d.get('ok'): print('ALERT incidents_error',str(d)[:150]); sys.exit(1)
 inc=d.get('incidents') or []
 print('incidents reports=%s techs=%s anon=%s'%(d.get('totalReports'),d.get('techsAffected'),d.get('anonymousReports')))
+# An incident stays inside the 2-hour query window long after it has been diagnosed
+# and fixed, so the same three reports fired the same alert hour after hour. That is
+# the disease the ask/answer check below was already rebuilt to avoid: a monitor that
+# keeps shouting about something resolved gets muted, and then it is watching nothing.
+# Alert on what is happening NOW — an incident whose most recent occurrence is inside
+# the last 45 minutes. Anything older is history and is printed as a note instead.
+# Verified against the real payload: each incident carries first/last timestamps.
+import datetime
+def _mins_ago(v):
+    try:
+        t=str(v).replace('Z','+00:00')
+        m=__import__('re').match(r'^(.*\.)(\d+)(.*)$', t)
+        if m: t=m.group(1)+(m.group(2)+'000000')[:6]+m.group(3)
+        dt=datetime.datetime.fromisoformat(t)
+        return (datetime.datetime.now(datetime.timezone.utc)-dt).total_seconds()/60.0
+    except Exception:
+        return 0.0   # unparseable -> treat as current, never silently swallow one
+FRESH_MIN=45
 bad=False
 for i in inc:
+    age=_mins_ago(i.get('last') or i.get('first'))
     line='%s | %s | techs=%s count=%s'%(i.get('kind'),str(i.get('detail'))[:70],i.get('techsAffected'),i.get('count'))
+    if age>FRESH_MIN:
+        print('  note (resolved/aged %.0fm)'%age,line); continue
     if i.get('kind')=='no_answer' or (i.get('techsAffected') or 0)>=2:
         print('ALERT tech_impact',line); bad=True
     else:

@@ -10532,6 +10532,7 @@ function stopChatStream(){
       try{
         var i=document.getElementById('chatInput');
         if(i&&!i.value.trim())i.value=_pending;   // restore if anything cleared it
+        window._sendBypassDup=true;   // this resend IS deliberate — see the guard in sendChat
         sendChat();
       }catch(e){ window._chatResendPending=false; }
     },0);
@@ -10559,6 +10560,19 @@ function setChatSendButtonStopMode(){
 }
 
 async function sendChat(){
+  // DUPLICATE TAP. chatSending is the re-entrancy guard, but it is not set until far
+  // below — after several branches that consume the attachment and RETURN. The bare-photo
+  // branch is one of them, so two quick taps both got past the guard: Brandon sent one
+  // picture on 2026-08-31 and saw it posted twice, with "On it — let me take a look."
+  // twice under it. Worse than cosmetic — each pass uploads the image to the vision model
+  // again, and photos are the most expensive request this app makes.
+  //
+  // A tap arriving within 1.2s of the last one is the same tap twice, not a second
+  // question. The deliberate stop-and-resend path sets _sendBypassDup so a tech who taps
+  // Send while Mike is mid-answer still gets his new question through immediately.
+  if(!window._sendBypassDup && window._sendAt && (Date.now()-window._sendAt) < 1200) return;
+  window._sendBypassDup=false;
+  window._sendAt=Date.now();
   // Defensive: if a previous request left state in a bad state, recover
   if(chatSending){
     // User tapped send while a request is in flight. Treat this as Stop+restart.
@@ -10789,8 +10803,12 @@ async function sendChat(){
   input.value='';input.style.height='auto';
   var hadAttachment=!!chatAttachment;
 
-  // Show user message — with image preview if photo attached
-  if(hadAttachment&&chatAttachment.type.startsWith('image/')){
+  // Show user message — with image preview if photo attached.
+  // _mpSkipEchoUser: the plate-reader already showed him this exact picture and is now
+  // handing it to normal analysis. Drawing it again is how one photo became two.
+  var _echoUser=!window._mpSkipEchoUser; window._mpSkipEchoUser=false;
+  if(!_echoUser){ /* already on screen */ }
+  else if(hadAttachment&&chatAttachment.type.startsWith('image/')){
     try{
       var b64Disp=await blobToBase64Display(chatAttachment);
       // breaker-fix Pass 4 — escape image-attachment caption text. The text-only path at line 5848 already escapes via escapeHtml(text); this path was inconsistent and let user-typed payloads execute via innerHTML in appendMessage.
@@ -12305,6 +12323,14 @@ function _mpFallbackPhoto(file){
   try{
     chatAttachment=file;
     window._mpSkipPlateCheck=true;
+    // His photo is already on screen — mpWarrantyFromPhoto drew it before trying to read
+    // a plate off it. Without this, handing the shot to normal analysis posted the SAME
+    // picture a second time: Brandon sent one photo of a Fieldpiece screen on 2026-08-31
+    // and saw it twice with "On it — let me take a look." wedged between the copies. It
+    // fires for every photo that ISN'T a data plate, which is most of them.
+    window._mpSkipEchoUser=true;
+    // And this resend is deliberate, so it must not be swallowed by the duplicate-tap guard.
+    window._sendBypassDup=true;
     var i=document.getElementById('chatInput'); if(i)i.value='';
     return sendChat();
   }catch(_fe){

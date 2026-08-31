@@ -10494,6 +10494,21 @@ function stopChatStream(){
   //
   // Nobody composes a question and then taps a button to cancel. If there is text in the
   // box, the tap means ASK, not abort. Stop the current reply and send what he wrote.
+  // SECOND FIELD REPORT, same button (2026-08-31): a technician on an iPhone lost his
+  // answer three times in five minutes, having waited 1.5s, 4.8s and 7.6s. Nobody
+  // deliberately cancels a question 1.5 seconds after asking it — that is a second tap
+  // landing where Send was a moment ago, either a double-tap or impatience because
+  // nothing had appeared yet. The guard below only covered the case where he had ALREADY
+  // typed a follow-up; with an empty box his own question was killed and he was shown
+  // "(stopped)", which reads as Mike breaking rather than as something he did.
+  //
+  // So: a stop that arrives in the first few seconds is treated as an accidental tap and
+  // ignored — the answer keeps coming. A deliberate cancel is someone who has watched it
+  // run for a while, and that still works.
+  if (chatAbortController && window._chatSendAt && (Date.now() - window._chatSendAt) < 3000) {
+    try { if (typeof haptic === 'function') haptic('light'); } catch (e) {}
+    return;   // keep his answer alive
+  }
   var _hadInflight=!!chatAbortController;
   var _pending='';
   try{
@@ -10770,6 +10785,7 @@ async function sendChat(){
   stopMikeSpeaking();
   setChatSendButtonStopMode();
   chatAbortController=(typeof AbortController!=='undefined')?new AbortController():null;
+  window._chatSendAt=Date.now();   // see stopChatStream — an instant re-tap is not a cancel
   input.value='';input.style.height='auto';
   var hadAttachment=!!chatAttachment;
 
@@ -10942,7 +10958,7 @@ async function sendChat(){
       // the button to ASK his next question, the resend is already queued — printing
       // "(stopped)" there is what made Mike look broken in the field.
       if(window._chatResendPending){ window._chatResendPending=false; }
-      else appendMessage('agent','(stopped)');
+      else appendMessage('agent','Stopped that one. Ask me again whenever you\u2019re ready \u2014 I still have the unit we were on.');
     } else if(em.includes('timed out')||em.includes('abort')||em.toLowerCase().includes('network')){
       appendMessage('agent','Taking a bit longer than usual. Check your connection and tap send again.');
     } else if(em.includes('high demand')||em.includes('Busy right now')||em.toLowerCase().includes('rate limit')){

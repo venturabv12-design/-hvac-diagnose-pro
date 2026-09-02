@@ -2790,6 +2790,13 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 <div id="jobTimer" onclick="toggleJobTimer()" title="Tap to stop timer"></div>
 
 <div id="authOverlay" class="hidden">
+<!-- ESCAPE HATCH. The overlay shipped with no close and no back: a visitor who tapped
+     "Already have an account? Sign in" on the cold-open — or got bounced here by an
+     expired session — had exactly two ways out, sign in or create an account. There is
+     no account to sign into yet for most of them, so the front door became a dead end.
+     Closing drops them back into the app, where texting Mike works without an account. -->
+<button id="authCloseBtn" type="button" aria-label="Close" onclick="closeAuth()"
+  style="position:fixed;top:max(14px,env(safe-area-inset-top,14px));left:14px;z-index:10001;display:flex;align-items:center;justify-content:center;width:34px;height:34px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:999px;color:#fff;font-family:var(--font);font-size:17px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent;">&#10005;</button>
 <!-- C-BUG1/3 — pre-login language chooser. Without a trigger inside the auth overlay
      (z-index 9999), the nav lang switcher sits behind the overlay and is unreachable,
      so a non-English visitor can't pick a language before signing in. This globe opens
@@ -2804,7 +2811,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     <div class="auth-logo-name">Trazer Intelligence</div>
   </div>
   <div class="auth-hero">POWER <span class="t">ON.</span></div>
-  <div class="auth-hero-sub">Sign in to your field instrument</div>
+  <div class="auth-hero-sub" id="authHeroSub">Sign in to your field instrument</div>
   <div class="auth-card">
     <!-- MIGRATION NOTICE (Variation A, Brandon-approved). V2 is a fresh-DB launch:
          returning/beta users must create a new account. B5 fix: this is existing-user
@@ -4528,8 +4535,23 @@ function maybeShowFirstRun(){
   if(window._firstRunQueued)return;            // never double-fire
   var cold=document.getElementById('mpColdOpen');
   if(cold&&cold.style.display==='flex'&&!cold.classList.contains('out'))return;
+  // NEVER over the sign-in form. The audience picker sits at z-index 10000, deliberately
+  // ABOVE #authOverlay (9999), so that on a true first open it can reach over anything
+  // underneath. The cost: a returning tech who taps "Already have an account? Sign in"
+  // on the cold-open got the picker slammed on top of the form — the email field was
+  // rendered and focusable in the DOM but physically unreachable, so signing in was
+  // impossible without first answering a question meant for strangers.
+  if(_authIsOpen())return;
   window._firstRunQueued=true;
-  setTimeout(function(){window._firstRunQueued=false;showOnboarding();},500);
+  setTimeout(function(){
+    window._firstRunQueued=false;
+    if(_authIsOpen())return;                   // opened during the delay — same rule
+    showOnboarding();
+  },500);
+}
+function _authIsOpen(){
+  var au=document.getElementById('authOverlay');
+  return !!(au&&!au.classList.contains('hidden'));
 }
 
 function showPersonalizedWelcome(){
@@ -4614,8 +4636,20 @@ function showPersonalizedWelcome(){
   saveUserMemoryProfile(p);
 }
 
+function closeAuth(){
+  var au=document.getElementById('authOverlay');if(au)au.classList.add('hidden');
+  // A visitor who backs out of the form has still never told us who he is, so the
+  // audience picker he skipped past is now the right next thing — not a dead chat.
+  try{ if(!currentUser&&typeof maybeShowFirstRun==='function')maybeShowFirstRun(); }catch(e){}
+}
+
 function authTab(t){
   document.querySelectorAll('.auth-tab').forEach(function(b,i){b.classList.toggle('active',(i===0&&t==='in')||(i===1&&t==='up'));});
+  // The subtitle used to read "Sign in to your field instrument" on BOTH tabs, so a
+  // brand-new tech filling out Create Account was told to sign in to an account he
+  // does not have yet.
+  var hs=document.getElementById('authHeroSub');
+  if(hs)hs.textContent=(t==='up')?'Set up your field instrument':'Sign in to your field instrument';
   document.getElementById('authInForm').style.display=t==='in'?'block':'none';
   document.getElementById('authUpForm').style.display=t==='up'?'block':'none';
   var e=document.getElementById('authErr');if(e)e.classList.remove('show');

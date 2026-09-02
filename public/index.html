@@ -10267,16 +10267,38 @@ function openImgOverlay(url){
 function showTyping(){
   var ti=document.getElementById('typingIndicator');
   if(ti){
-    ti.innerHTML='<div class="msg-agent"><div class="msg-bubble msg-bubble-agent" style="padding:10px 14px;"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>';
+    ti.innerHTML='<div class="msg-agent"><div class="msg-bubble msg-bubble-agent" style="padding:10px 14px;"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span><span id="typingNote" style="display:none;margin-left:10px;font-size:12.5px;opacity:.75;"></span></div></div>';
     ti.style.display='block';
   }
+  // SAY SOMETHING BEFORE 95 SECONDS OF NOTHING.
+  // Each attempt allows 60s and the client retries three times, so on a weak signal a
+  // technician watches three dots and gets no word for a minute and a half. Jay at
+  // F.H. Furr waited 97 seconds on 2026-09-01 and his request never reached the server
+  // at all — the app had nothing to say about it the entire time.
+  // Deliberately updates the DOTS, not a chat bubble: an agent message would close the
+  // field watch and we would stop hearing about the very failure this describes.
+  try{
+    if(window._typingNoteTimers)window._typingNoteTimers.forEach(clearTimeout);
+    window._typingNoteTimers=[
+      setTimeout(function(){_setTypingNote('still working on it…');},18000),
+      setTimeout(function(){_setTypingNote('signal looks slow — still trying');},45000),
+      setTimeout(function(){_setTypingNote('having trouble reaching Mike — hang on');},75000),
+    ];
+  }catch(e){}
   var cm=document.getElementById('chatMessages');
   if(cm)cm.scrollTop=cm.scrollHeight;
   // Visual feedback on send button
   var btn=document.getElementById('chatSendBtn');
   if(btn)btn.classList.add('sending');
 }
+function _setTypingNote(msg){
+  var n=document.getElementById('typingNote');
+  if(!n)return;
+  n.textContent=msg; n.style.display='inline';
+  var cm=document.getElementById('chatMessages'); if(cm)cm.scrollTop=cm.scrollHeight;
+}
 function hideTyping(){
+  try{ if(window._typingNoteTimers){window._typingNoteTimers.forEach(clearTimeout);window._typingNoteTimers=null;} }catch(e){}
   var ti=document.getElementById('typingIndicator');if(ti)ti.style.display='none';
   var btn=document.getElementById('chatSendBtn');if(btn)btn.classList.remove('sending');
 }
@@ -10570,9 +10592,15 @@ async function sendChat(){
   // A tap arriving within 1.2s of the last one is the same tap twice, not a second
   // question. The deliberate stop-and-resend path sets _sendBypassDup so a tech who taps
   // Send while Mike is mid-answer still gets his new question through immediately.
+  // STAMP ONLY WHEN WE ACTUALLY SEND — see the two _sendAt assignments below.
+  // Stamping here was wrong and it cost a technician his question on 2026-09-01: there
+  // are seventeen ways this function returns before anything is sent (onboarding, the
+  // toolbelt one-shots, the pending-warranty branch, the paywall...). Every one of them
+  // left a 1.2s window in which his NEXT tap was dropped in total silence — no message,
+  // no spinner, nothing. Jay at F.H. Furr tapped, waited 97 seconds, and no request ever
+  // left his phone. A guard against a double tap must never be able to eat a first one.
   if(!window._sendBypassDup && window._sendAt && (Date.now()-window._sendAt) < 1200) return;
   window._sendBypassDup=false;
-  window._sendAt=Date.now();
   // Defensive: if a previous request left state in a bad state, recover
   if(chatSending){
     // User tapped send while a request is in flight. Treat this as Stop+restart.
@@ -10746,6 +10774,7 @@ async function sendChat(){
   // registry; if it is a part or an install shot, mpWarrantyFromPhoto hands it back
   // and the normal analysis takes over.
   if(currentUser&&!text&&chatAttachment&&chatAttachment.type&&chatAttachment.type.indexOf('image/')===0&&!window._mpSkipPlateCheck){
+    window._sendAt=Date.now();   // committed: a second tap on this is a duplicate
     var _bp=chatAttachment; clearChatAttach();
     input.value='';input.style.height='auto';
     mpWarrantyFromPhoto(_bp,{},window._mpWarrantyPending,'',true);
@@ -10797,6 +10826,7 @@ async function sendChat(){
   chatSending=true;
   try{ if(window.fieldWatchAsked)window.fieldWatchAsked(); }catch(e){}
   stopMikeSpeaking();
+  window._sendAt=Date.now();   // committed: a second tap on this is a duplicate
   setChatSendButtonStopMode();
   chatAbortController=(typeof AbortController!=='undefined')?new AbortController():null;
   window._chatSendAt=Date.now();   // see stopChatStream — an instant re-tap is not a cancel

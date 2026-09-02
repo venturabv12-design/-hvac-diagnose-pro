@@ -1715,6 +1715,21 @@ body[data-mode="contractor"]:not(.mp-chatting) #panelDiag>.card{display:none;}
 .mpco-cta{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 22px 38px;width:100%;max-width:390px;z-index:10;animation:mpcoUp .7s .95s both;}
 .mpco-cta button{width:100%;height:56px;border-radius:15px;border:none;cursor:pointer;background:linear-gradient(180deg,#FFC02E,var(--safety));font-family:var(--font-ui);font-weight:800;font-size:16px;color:#1a1300;box-shadow:0 12px 30px -8px rgba(255,180,0,.55),0 1px 0 rgba(255,255,255,.45) inset;display:flex;align-items:center;justify-content:center;gap:8px;}
 .mpco-cta .cs{margin-top:12px;font-family:var(--font-code);font-size:9px;letter-spacing:.18em;color:rgba(244,239,230,.3);}
+/* The three things it DOES — the half of this screen that used to be empty black. */
+/* The sentence that says what this IS. It was inheriting .cr — 9px monospace with .2em
+   tracking, the style built for "MASTER TECH · 25 YEARS" — so the single most important
+   line on the screen read like a status code and broke after "technician's". */
+.mpco-line{font-family:var(--font-ui);font-size:15.5px;line-height:1.35;font-weight:500;
+  color:rgba(244,239,230,.88);margin:9px auto 0;max-width:300px;text-align:center;letter-spacing:-.1px;}
+.mpco-does{flex:none;margin-top:16px;width:100%;max-width:390px;padding:0 22px;display:flex;flex-direction:column;gap:11px;z-index:10;animation:mpcoUp .7s .65s both;}
+.mpco-do{display:flex;flex-direction:column;gap:3px;padding-left:15px;position:relative;}
+.mpco-do::before{content:"";position:absolute;left:0;top:6px;width:6px;height:6px;border-radius:50%;background:var(--teal);}
+.mpco-do .k{font-family:var(--font-ui);font-size:14.5px;font-weight:700;color:#F4EFE6;line-height:1.25;}
+.mpco-do .v{font-family:var(--font-ui);font-size:12.5px;line-height:1.4;color:rgba(244,239,230,.62);}
+.mpco-proof{flex:none;margin-top:16px;max-width:330px;padding:0 22px;text-align:center;font-family:var(--font-ui);font-size:11.5px;line-height:1.45;color:rgba(244,239,230,.42);z-index:10;animation:mpcoUp .7s .8s both;}
+/* Sign in is a real door, not a footnote — a tech with an account had to tap START to find it. */
+.mpco-cta .mpco-signin{margin-top:10px;height:44px;background:none;border:1px solid var(--line);color:rgba(244,239,230,.72);font-weight:500;font-size:14px;box-shadow:none;}
+.mpco-cta .mpco-signin b{color:#F4EFE6;font-weight:700;margin-left:4px;}
 @keyframes mpcoUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes mpcoBloom{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
 /* ── SIGN-IN reskin → teal-dial (Mike's-phone redesign) — CSS only, auth form untouched ── */
@@ -1781,19 +1796,24 @@ body[data-mode="contractor"] .v2-hbtn.face .v2-hbtn-label,body[data-mode="contra
   </div>
   <div class="mpco-status">
     <h2>MIKE</h2>
-    <div class="cr">MASTER TECH &middot; 25 YEARS</div>
+    <!-- SAY WHAT IT IS. This screen used to carry a name, a face and four status chips
+         (ONLINE / READY / 25 YRS / EPA 608) and not one word about what the product does.
+         A stranger learned nothing he could act on, and the half of the screen below the
+         chips was empty. 677 visitors in a week produced one signup. Brandon, 2026-09-02:
+         "it just doesn't look like a $100 a month app." -->
+    <div class="mpco-line">A master HVAC tech in every technician&rsquo;s pocket</div>
   </div>
-  <div class="mpco-pill"><span class="od"></span>ON THE LINE</div>
-  <div class="mpco-strip">
-    <div class="mpco-istat"><div class="iv teal">ONLINE</div><div class="il">SYSTEM</div></div>
-    <div class="mpco-istat"><div class="iv">READY</div><div class="il">STATUS</div></div>
-    <div class="mpco-istat"><div class="iv">25 YRS</div><div class="il">FIELD</div></div>
-    <div class="mpco-istat"><div class="iv safety">EPA 608</div><div class="il">CERT</div></div>
+  <div class="mpco-does">
+    <div class="mpco-do"><span class="k">Pulls the real warranty</span><span class="v">Photograph the plate &mdash; he checks the manufacturer&rsquo;s own registry and tells you what&rsquo;s actually covered</span></div>
+    <div class="mpco-do"><span class="k">Reads any wiring diagram</span><span class="v">Send a photo of the panel, get a clean labeled drawing back</span></div>
+    <div class="mpco-do"><span class="k">Quotes the actual manual</span><span class="v">43,690 passages from manufacturer service literature, cited to the page</span></div>
   </div>
-  <div class="mpco-sys">SYSTEM ONLINE &middot; MASTER TECH READY</div>
+  <div class="mpco-proof">Working technicians are using it on real jobs today &middot; call it, FaceTime it, or text it from the truck</div>
   <div class="mpco-cta">
-    <button type="button" onclick="mpDismissColdOpen()">Get Started &rarr;</button>
-    <div class="cs">TAP TO MEET MIKE</div>
+    <button type="button" onclick="mpDismissColdOpen()">Ask Mike a question &mdash; free</button>
+    <!-- SIGN IN WAS BEHIND "GET STARTED". A tech who already had an account had to tap a
+         button that says START to find SIGN IN. Both doors are visible now. -->
+    <button type="button" class="mpco-signin" onclick="mpDismissColdOpen();setTimeout(function(){openAuth('in');},380);">Already have an account? <b>Sign in</b></button>
   </div>
 </div>
 <div id="appLoader" style="position:fixed;inset:0;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s ease;pointer-events:none;">
@@ -3085,8 +3105,14 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   <div class="pdd-item" onclick="toggleDarkMode()"><span class="pdd-ic">🌙</span>Dark Mode</div>
   <div class="pdd-sep"></div>
   <div class="pdd-item" onclick="clearUserMemory()" style="color:#9499B0;"><span class="pdd-ic">🧹</span>Clear My Memory</div>
-  <div class="pdd-item pdd-danger" onclick="authSignOut()"><span class="pdd-ic">🚪</span>Sign Out</div>
-  <div class="pdd-item pdd-danger" onclick="deleteAccount()"><span class="pdd-ic">🗑️</span>Delete Account</div>
+  <!-- A VISITOR WAS OFFERED A WAY TO SIGN *OUT* AND NO WAY TO SIGN IN. Someone who tried
+       the free questions and wanted an account had nowhere to go from this menu — the only
+       auth item said Sign Out. Brandon, 2026-09-02: "to go to a sign in you have to sign
+       out which makes no sense." Which item shows is decided in updateProfileUI(). -->
+  <div class="pdd-item" id="pddSignIn" style="display:none;" onclick="closeProfileDD();openAuth('in');"><span class="pdd-ic">🔑</span>Sign In</div>
+  <div class="pdd-item" id="pddCreate" style="display:none;" onclick="closeProfileDD();openAuth('up');"><span class="pdd-ic">✨</span>Create Account</div>
+  <div class="pdd-item pdd-danger" id="pddSignOut" onclick="authSignOut()"><span class="pdd-ic">🚪</span>Sign Out</div>
+  <div class="pdd-item pdd-danger" id="pddDelete" onclick="deleteAccount()"><span class="pdd-ic">🗑️</span>Delete Account</div>
 </div>
 </div>
 <div id="trialBanner"><span>🎯 <strong><span id="trialDaysLeft">14</span> days</strong> left in your free trial</span><button class="trial-up-btn" onclick="showPaywall()">Manage</button></div>
@@ -4843,6 +4869,17 @@ async function deleteAccount(){
 }
 
 function updateProfileUI(){
+  // Decide the auth items BEFORE the signed-out early return below — that return is why
+  // a visitor's menu was never updated and kept showing the signed-in layout.
+  try{
+    var _si=document.getElementById('pddSignIn'), _cr=document.getElementById('pddCreate');
+    var _so=document.getElementById('pddSignOut'), _de=document.getElementById('pddDelete');
+    var _out=!currentUser;
+    if(_si)_si.style.display=_out?'':'none';
+    if(_cr)_cr.style.display=_out?'':'none';
+    if(_so)_so.style.display=_out?'none':'';
+    if(_de)_de.style.display=_out?'none':'';
+  }catch(e){}
   if(!currentUser)return;
   if(currentUser.name&&!currentUser.initials){
     currentUser.initials=currentUser.name.split(' ').map(function(x){return x[0]||'';}).join('').toUpperCase().slice(0,2)||'U';

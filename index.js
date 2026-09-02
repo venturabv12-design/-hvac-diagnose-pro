@@ -3126,6 +3126,8 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       let sentAny = false;
       const send = (obj) => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch (_) {} };
       let _streamed = '';
+      // Filled from the stream's own usage events — see message_start / message_delta below.
+      const _cost = { model: null, in_tokens: null, out_tokens: null, cache_read: null, cache_write: null };
 
       try {
         for await (const chunk of upstream.body) {
@@ -3142,6 +3144,20 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
             if (!payload || payload === '[DONE]') continue;
             let evt;
             try { evt = JSON.parse(payload); } catch (_) { continue; }
+            // TOKEN COUNTS ARRIVE IN THE STREAM TOO, in two places: message_start carries
+            // the input side (and what the cache saved), message_delta the output side.
+            // Most answers stream, so without this the cost picture would have been built
+            // from the small minority that don't — and those are the safety-guarded ones,
+            // which are not representative of what a normal day costs.
+            if (evt.type === 'message_start' && evt.message && evt.message.usage) {
+              const _mu = evt.message.usage;
+              _cost.model = evt.message.model || _cost.model;
+              _cost.in_tokens = _mu.input_tokens;
+              _cost.cache_read = _mu.cache_read_input_tokens;
+              _cost.cache_write = _mu.cache_creation_input_tokens;
+            } else if (evt.type === 'message_delta' && evt.usage) {
+              _cost.out_tokens = evt.usage.output_tokens;
+            }
             if (evt.type === 'content_block_delta' && evt.delta) {
               const piece = evt.delta.text || '';
               // Accumulate a copy for the audit trail. Most answers STREAM, so logging only
@@ -3160,7 +3176,8 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         send({ done: true });
         res.end();
         try {
-          if (_askUid && _streamed) logUsage(_askUid, 'mike_answer', { a: _streamed.slice(0, 8000), streamed: true });
+          if (_askUid && _streamed) logUsage(_askUid, 'mike_answer',
+            Object.assign({ a: _streamed.slice(0, 8000), streamed: true }, _cost));
         } catch { /* never let logging affect a delivered answer */ }
       } catch (streamErr) {
         if (streamErr.name === 'AbortError') send({ error: 'Request timed out — please try again.' });
@@ -3356,7 +3373,20 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     // it — not the raw model output. Auditing the pre-guard text would grade a reply nobody
     // ever read. Separate row from the question so a slow write can never delay the answer.
     try {
-      if (_askUid) logUsage(_askUid, 'mike_answer', { a: String(outText || '').slice(0, 8000) });
+      // WHAT THIS ANSWER COST. The model hands back exact token counts on every reply and
+      // we were passing them to the browser and throwing them away — so there was no way
+      // to answer the one question that sets a price: what does one technician cost per
+      // month? Without it, per-seat pricing is a guess and margin is unknowable.
+      // Counts and model only; never the text, which is already stored above.
+      const _u = (data && data.usage) || {};
+      if (_askUid) logUsage(_askUid, 'mike_answer', {
+        a: String(outText || '').slice(0, 8000),
+        model: data && data.model,
+        in_tokens: _u.input_tokens,
+        out_tokens: _u.output_tokens,
+        cache_read: _u.cache_read_input_tokens,
+        cache_write: _u.cache_creation_input_tokens,
+      });
     } catch { /* never block a tech's answer on logging */ }
     res.json({ response: outText, usage: data.usage });
 
@@ -3652,8 +3682,21 @@ app.get('/api/admin/incidents', authenticateToken, requireAdmin, async (req, res
   try {
     const hours = Math.min(parseInt(req.query.hours || '24', 10) || 24, 24 * 30);
     const since = new Date(Date.now() - hours * 3600000).toISOString();
-    const rows = await supabase('GET', 'events', null,
+    const _rawRows = await supabase('GET', 'events', null,
       `?select=user_id,payload,created_at&type=eq.client_error&created_at=gte.${since}&order=created_at.desc&limit=1000`) || [];
+
+    // MY OWN TESTING IS NOT A TECHNICIAN IN TROUBLE. Testing a failure path on production
+    // writes real client_error rows, and on 2026-09-01 a deliberate network-kill test made
+    // this page report TWO technicians affected when one — Jay — was real. An alarm that
+    // counts the person holding the alarm is how a monitor gets ignored.
+    const _house = await supabase('GET', 'users', null,
+      '?select=id,email,company&limit=500') || [];
+    const HOUSE_EMAIL = /^(trazertest\+|qa@|qa-crew@|test@)|@trazer\.test$|^venturabv12@gmail\.com$/i;
+    const HOUSE_ID = new Set(['7725dfff-9e37-4eb9-a2cd-5d8c547fbeb3', '8c63d02a-e2cc-4401-b457-74d98c8752bd']);
+    const houseIds = new Set(_house
+      .filter(u => u && (HOUSE_ID.has(u.id) || (u.email && HOUSE_EMAIL.test(u.email)) || /\b(qa|internal|test)\b/i.test(String(u.company || ''))))
+      .map(u => u.id));
+    const rows = _rawRows.filter(r => !houseIds.has(r && r.user_id));
 
     // Failures only. A success event landing here (a 'free answer delivered' telemetry
     // ping did, on day one) makes the incident list noisy, and a noisy alarm is one

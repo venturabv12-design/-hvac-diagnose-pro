@@ -36,6 +36,13 @@ const PORT    = Number(process.env.LOCAL_CDP_PORT || 9223);
 const CHROME  = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const PROFILE = process.env.LOCAL_PROFILE || `${process.env.HOME}/.trazer-worker-chrome`;
 const JOB_MS  = Number(process.env.WORKER_JOB_TIMEOUT_MS || 110000);
+// HOW MANY LOOKUPS AT ONCE. One at a time is fine for a handful of techs a day and
+// catastrophic for a room: a healthy lookup takes ~20s and the service stops waiting at
+// 75s, so with a single lane the FOURTH simultaneous technician gets "I couldn't check"
+// and everyone behind him does too. Six lanes turns a 32-person rollout into six batches
+// of ~20s instead of a 10-minute queue nobody survives.
+// Each lane is its own tab in the same Chrome — cheap. Raise it if the Mac shrugs.
+const LANES = Number(process.env.WORKER_CONCURRENCY || 6);
 const DIAG_DIR = process.env.WORKER_DIAG_DIR || `${process.env.HOME}/Library/Logs/trazer-warranty-failures`;
 
 let browser = null;
@@ -126,41 +133,60 @@ async function runJob(job) {
   }
 }
 
+let inFlight = 0;
+
+// One job, start to finish, in its own lane. Never throws — a lane that dies takes the
+// job with it, not the worker.
+async function handle(job, headers) {
+  inFlight++;
+  const started = Date.now();
+  console.log(`[worker] job ${job.id}: ${job.brand} ${job.serial}  (${inFlight}/${LANES} busy)`);
+  let result;
+  try { result = await runJob(job); }
+  catch (e) { result = { error: 'lane_failed', message: e.message }; }
+  try {
+    await fetch(`${SERVICE}${PREFIX}/result`, {
+      method: 'POST',
+      headers: Object.assign({ 'content-type': 'application/json' }, headers),
+      body: JSON.stringify({ id: job.id, result }),
+      signal: AbortSignal.timeout(20000),
+    });
+  } catch (e) { console.log('[worker] could not return result:', e.message); }
+  console.log(`[worker] job ${job.id} done in ${((Date.now() - started) / 1000).toFixed(1)}s — ${result.error ? 'error ' + result.error : 'found=' + !!result.found}`);
+  inFlight--;
+}
+
 async function loop() {
   const headers = TOKEN ? { 'x-worker-token': TOKEN } : {};
-  console.log(`[worker] polling ${SERVICE}${PREFIX} — brands: whatever the server sends`);
+  console.log(`[worker] polling ${SERVICE}${PREFIX} — ${LANES} lanes`);
   let quietSince = Date.now();
   for (;;) {
     let got = false;
     try {
-      const r = await fetch(`${SERVICE}${PREFIX}/next`, { headers, signal: AbortSignal.timeout(20000) });
-      const job = r.ok ? await r.json() : null;
-      if (job && job.id) {
-        got = true;
-        console.log(`[worker] job ${job.id}: ${job.brand} ${job.serial}`);
-        const started = Date.now();
-        const result = await runJob(job);
-        await fetch(`${SERVICE}${PREFIX}/result`, {
-          method: 'POST',
-          headers: Object.assign({ 'content-type': 'application/json' }, headers),
-          body: JSON.stringify({ id: job.id, result }),
-          signal: AbortSignal.timeout(20000),
-        }).catch(e => console.log('[worker] could not return result:', e.message));
-        console.log(`[worker] job ${job.id} done in ${((Date.now() - started) / 1000).toFixed(1)}s — ${result.error ? 'error ' + result.error : 'found=' + !!result.found}`);
+      // Only ask for work when a lane is free. The service hands out one job per request
+      // and marks it claimed, so asking repeatedly is how we fill the lanes — and two
+      // machines running this can never be given the same job.
+      if (inFlight < LANES) {
+        const r = await fetch(`${SERVICE}${PREFIX}/next`, { headers, signal: AbortSignal.timeout(20000) });
+        const job = r.ok ? await r.json() : null;
+        if (job && job.id) {
+          got = true;
+          handle(job, headers);   // deliberately NOT awaited — that is the concurrency
+        }
       }
     } catch (e) {
       console.log('[worker] poll failed:', e.message);
     }
     // A Chrome left open for days leaks memory. Nothing is in flight here, so this is
     // free — and it means a week-long uptime behaves like a fresh start.
-    if (!got && browser && Date.now() - quietSince > 30 * 60 * 1000) {
+    if (!got && inFlight === 0 && browser && Date.now() - quietSince > 30 * 60 * 1000) {
       quietSince = Date.now();
       try { await browser.close(); } catch (_) {}
       browser = null;
       console.log('[worker] idle — released Chrome');
     }
     if (got) quietSince = Date.now();
-    await new Promise(r => setTimeout(r, got ? 100 : 2500));
+    await new Promise(r => setTimeout(r, got ? 60 : (inFlight ? 400 : 2500)));
   }
 }
 

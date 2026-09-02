@@ -215,5 +215,36 @@ for b,e in bad.items():
 sys.exit(1 if bad else 0)
 " || RC=1
 
+# ── 5. is the machine that does the warranty lookups actually there? ──────────
+# Every warranty lookup runs on ONE laptop. If it sleeps, reboots, loses wifi or the
+# LaunchAgent dies, every technician asking about a warranty gets "I couldn't check" —
+# and nothing else in this sweep would notice, because the app itself is perfectly
+# healthy. The daily self-check would catch it at 6:41 the NEXT morning: a full day of
+# failures first. A single point of failure needs a fast alarm, not a slow one.
+# WK, not W — section 4 above already uses W for the warranty-lookup rows. They run in
+# sequence so reuse happened to work, but a name collision in a monitor is a trap for
+# whoever edits it next.
+WK=$(/usr/bin/curl -s -m 15 "https://trazermike.io/api/warranty-worker/status")
+echo "$WK" | python3 -c "
+import sys,json,time
+raw=sys.stdin.read()
+try: d=json.loads(raw)
+except Exception: print('ALERT worker_unreadable',raw[:100]); sys.exit(1)
+online=bool(d.get('online')); last=d.get('lastSeen'); pending=d.get('pending') or 0
+mins = (time.time()*1000 - last)/60000 if last else None
+if not online:
+    ago = ('%.0f min ago' % mins) if mins is not None else 'never'
+    print('ALERT warranty_worker_down last check-in %s — every warranty lookup is failing right now' % ago)
+    sys.exit(1)
+# Claimed work that nobody is finishing is the other way this breaks: the worker is
+# checking in but its browser is wedged, so jobs pile up and each tech waits out the
+# full timeout for nothing.
+if pending >= 5:
+    print('ALERT warranty_worker_backed_up %d jobs queued — techs are waiting' % pending)
+    sys.exit(1)
+print('worker online=%s pending=%d' % (online, pending))
+sys.exit(0)
+" || RC=1
+
 [ $RC -eq 0 ] && echo "SWEEP_CLEAN"
 exit $RC

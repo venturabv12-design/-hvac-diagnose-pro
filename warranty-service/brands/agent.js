@@ -239,6 +239,26 @@ async function agentLookup(page, brand, serial, extra) {
       } catch (_) {}
     }
   } catch (_) {}
+  // Cloudflare (and Akamai) put up a "Just a moment..." interstitial that clears itself
+  // in a few seconds IN A REAL BROWSER — which is what we drive. Reading the page
+  // immediately sees no form and reports the brand as broken. Mitsubishi's registration
+  // site did exactly this on 2026-09-08 an hour after answering normally.
+  // Wait for the challenge to clear before deciding anything about the page.
+  try {
+    for (let i = 0; i < 12; i++) {
+      const challenged = await page.evaluate(() => {
+        const t = (document.title || '').toLowerCase();
+        const b = (document.body && document.body.innerText || '').toLowerCase();
+        return t.includes('just a moment') || t.includes('attention required')
+            || t.includes('checking your browser')
+            || b.includes('verifying you are human') || b.includes('checking your browser');
+      }).catch(() => false);
+      if (!challenged) break;
+      if (i === 0) log(`  ${brand.label}: bot challenge on their site — waiting for it to clear`);
+      await page.waitForTimeout(2500);
+      if (i === 11) log(`  ${brand.label}: challenge did not clear in 30s`);
+    }
+  } catch (_) {}
   await page.waitForTimeout(3000);
 
   // Cookie banners sit on top of the form and swallow clicks. Dismiss before reading.

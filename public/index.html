@@ -485,7 +485,21 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .ob-live{display:flex;flex-direction:column;gap:8px;margin:10px 0 4px}
 .ob-live:empty{display:none}
 .ob-dots{opacity:.6}
-.ob-gate-hot{background:rgba(199,85,59,.14);border-color:rgba(199,85,59,.5)!important;transform:scale(1.02);transition:all .3s ease}
+/* Before he has seen Mike work, the gate stays a quiet caption — asking for an account
+   from a stranger who has been shown nothing is how you lose him. The moment Mike has
+   actually answered HIS question, wireObMagic() adds .ob-gate-hot, and this turns that
+   caption into a real button using the same treatment as the signup button itself, so
+   the ask reads as the obvious next tap instead of grey 9px text he scrolls past. */
+/* Specificity note: .ob-gate is declared LATER in this file, so a bare .ob-gate-hot loses
+   font-size/letter-spacing to it and the button renders as a 9px caption in a 54px box.
+   Doubling the class wins without reaching for !important on every line. */
+/* Column, not row: .ob-gate is a flex ROW, so as a button the reason and the action sat
+   side by side in two half-width columns and read as two broken sentences. Stacked, the
+   reason becomes a small subtitle and the action becomes the label. The copy is shared by
+   12 localisation packs, so this is done in CSS rather than by rewriting every string. */
+.ob-gate.ob-gate-hot{display:flex;flex-direction:column;gap:3px;background:linear-gradient(180deg,#FFC02E,var(--safety));border:none!important;color:#1a1300!important;font-family:'Archivo',var(--font-ui),sans-serif;font-size:11px;font-weight:600;letter-spacing:0;line-height:1.25;padding:14px 18px 16px;border-radius:13px;box-shadow:0 10px 26px -8px rgba(255,180,0,.5),0 1px 0 rgba(255,255,255,.4) inset;transform:scale(1.02);transition:all .3s ease}
+.ob-gate.ob-gate-hot b{color:#1a1300;font-size:16px;font-weight:800;}
+.ob-gate.ob-gate-hot .lock{display:none;}
 .ob-magic-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px;}
 /* magic frame: drop 3D depth, camera-push scale entrance */
 .ob-frame.ob-in .ob-magic-top,.ob-frame.ob-in .ob-magic-head,.ob-frame.ob-in .ob-chat,.ob-frame.ob-in .ob-chips,.ob-frame.ob-in .ob-composer,.ob-frame.ob-in .ob-gate{transform:none;}
@@ -6031,10 +6045,25 @@ function stopObSpeaking(){
 
 function wireObMagic(host,isMagic){
   if(!isMagic)return;
-  // The gate and the "find a tech" line still just exit — those ARE the exits.
-  Array.prototype.forEach.call(host.querySelectorAll('.ob-find-tech,.ob-gate'),function(n){
+  // "Find a tech" IS a genuine exit — a homeowner being handed to a real technician needs
+  // no account, so it stays as it was.
+  Array.prototype.forEach.call(host.querySelectorAll('.ob-find-tech'),function(n){
     n.style.cursor='pointer';
     n.addEventListener('click',function(){obFinish();});
+  });
+  // The gate is not an exit — it is THE ASK, and it used to call obFinish() like everything
+  // else. So a visitor who watched Mike solve his own problem, then tapped the one line
+  // offering him an account, was dropped into a signed-out chat surface and never asked for
+  // anything. That is the highest-intent second in the product and nothing collected on it.
+  // Open the signup form. obFinish() runs first so the onboarding state is closed out and
+  // the role he already picked is on record; the form is opened on the next tick because
+  // syncAuthSurface() inside obFinish() re-hides the auth overlay.
+  Array.prototype.forEach.call(host.querySelectorAll('.ob-gate'),function(n){
+    n.style.cursor='pointer';
+    n.addEventListener('click',function(){
+      obFinish();
+      setTimeout(function(){ try{ openAuth('up'); }catch(e){} },60);
+    });
   });
   var input=host.querySelector('#obTasteInput');
   var send=host.querySelector('#obTasteSend');

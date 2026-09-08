@@ -11034,6 +11034,14 @@ async function sendChat(){
         var _pu=mpParseUnit(response);
         if(_pu&&_pu.brand&&_pu.serial)mpUnitLearn(_mpStripEmpty(_pu),'plate');
       }
+      // He told Mike the customer's name in passing — "customer's name is Theresa Manly"
+      // alongside the photo — and Mike asked for it again two messages later, because
+      // only the warranty path ever read those details. Learn them from ordinary
+      // conversation too. Labelled matches only (expect=[] keeps every bare-word
+      // fallback off), so a normal sentence still teaches Mike nothing false.
+      // Unit first, then details: a NEW serial resets the details on purpose.
+      var _px=_mpWarrantyExtras(text||'',[]);
+      if(_px&&(_px.lastName||_px.zip||_px.state))mpUnitLearn(_px);
     }catch(_puErr){}
     // Mike draws on request — when the tech EXPLICITLY asks Mike to draw/sketch/create a
     // diagram or illustration, generate the visual after his reply. Narrow verbs only, so a
@@ -12364,6 +12372,16 @@ function _mpWarrantyExtras(t,expect){
       var score=(pi===0?1:0)+(isOwner?2:0);   // an explicit verb beats bare adjacency
       if(score>bestScore){bestScore=score;best=m[1];}
     }
+  }
+  // "customer's name is Theresa Manly" sent the manufacturer THERESA — the first name.
+  // A first name comes back "no registration found" on a unit that may well be covered,
+  // and a tech reads that as NOT COVERED. Brandon typed exactly this in front of a
+  // customer, 2026-09-08. When the label is a plain "name" (not "last name"/"surname")
+  // and two name-words follow, the surname is the SECOND one.
+  var _fn=/\bname\s*(?:is|:|=)\s*([A-Za-z][A-Za-z'-]{1,24})\s+([A-Za-z][A-Za-z'-]{1,24})(?![A-Za-z'-])/gi,_fm;
+  while((_fm=_fn.exec(t))!==null){
+    if(STOP.test(_fm[2])||_mpIsBrandWord(_fm[2]))continue;
+    best=_fm[2];bestScore=99;break;
   }
   if(best)out.lastName=best;
   // Mike asked for the last name and the tech answered "Weiler, 22192" — no label,

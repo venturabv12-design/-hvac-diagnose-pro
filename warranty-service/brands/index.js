@@ -103,7 +103,13 @@ const PENDING = [
     // that extra hop in front of a heavy SPA was enough to blow the 45s page budget
     // and surface as SITE_DOWN — while curl got 200 from www in 2.6s at the same
     // moment. Point at the address that actually serves the page.
-    where: 'https://www.carrier.com/residential/en/us/warranty-lookup/',
+    // MOVED 2026-09-08. Carrier rebuilt this page and the old path now 301s here.
+    // The old markup (#serialNumber, #isOriginal1, #btnSubmit) is gone — the new form
+    // uses #warranty-lookup-serial, radios named originalPurchaser, and a bare
+    // type=submit button with no id. Every Carrier, Bryant, Payne and ICP lookup
+    // failed with NOT_SUBMITTED from the moment they shipped it, mid-morning, because
+    // the agent kept clicking a button that no longer existed.
+    where: 'https://www.carrier.com/us/en/residential/homeowner-resources/warranty-lookup/',
     requires: [FIELD.serial, FIELD.originalPurchaser],
     note: 'Serial plus original-purchaser only — no last name or zip. Covers the ICP brands (Heil, Tempstar, Comfortmaker, Arcoaire, KeepRite, Day & Night) — same Carrier registry.',
   },

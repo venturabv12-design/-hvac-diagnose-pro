@@ -99,6 +99,48 @@ async function runJob(job) {
       new Promise((_, rej) => { t = setTimeout(() => rej(Object.assign(new Error('timeout'), { code: 'TIMEOUT' })), JOB_MS); }),
     ]);
     clearTimeout(t);
+
+    // NEVER report "no record" off a single run. A negative is the one answer a tech
+    // acts on destructively: he reads it as NOT COVERED and eats the part. And a
+    // negative can be manufactured by OUR side — on 2026-09-08 a control silently failed
+    // to get set and a unit with real 5-year coverage came back empty on 1 run in 3.
+    // A POSITIVE is self-evidencing: the registry handed us a record. A NEGATIVE is only
+    // trustworthy if it repeats. So confirm it once on a fresh page.
+    //   agree    -> report it
+    //   disagree -> the first read was ours, take the record
+    //   no second answer -> say we do not know
+    // Saying "I do not know" costs a tech one phone call. A wrong "not covered" costs
+    // him the part. Fail toward distrust, every time.
+    if (out && out.found === false && !out.inconclusive) {
+      let page2 = null, second = null;
+      try {
+        page2 = await ctx.newPage();
+        const r2 = brand.supported && typeof brand.lookup === 'function'
+          ? brand.lookup(page2, job.serial, job.extra)
+          : agentLookup(page2, brand, job.serial, job.extra);
+        r2.catch(() => {});
+        let t2;
+        second = await Promise.race([
+          r2,
+          new Promise((_, rej) => { t2 = setTimeout(() => rej(Object.assign(new Error('timeout'), { code: 'TIMEOUT' })), JOB_MS); }),
+        ]);
+        clearTimeout(t2);
+      } catch (_) { second = null; }
+      finally { if (page2) { try { await page2.close(); } catch (_) {} } }
+
+      if (second && second.found === true) {
+        console.log(`[worker] ${job.brand} ${job.serial} NEGATIVE OVERTURNED — the second read found a record`);
+        return Object.assign({}, second, { via: 'worker' });
+      }
+      if (!second) {
+        console.log(`[worker] ${job.brand} ${job.serial} negative UNCONFIRMED — second read did not complete`);
+        return Object.assign({}, out, {
+          via: 'worker', found: false, inconclusive: true, reason: 'negative_unconfirmed',
+          summary: `${brand.label} came back with no record on that serial, but I could not get a second read to confirm it. Do NOT treat that as "not covered" — check it directly before you quote anything.`,
+        });
+      }
+      console.log(`[worker] ${job.brand} ${job.serial} negative confirmed on a second read`);
+    }
     return Object.assign({}, out, { via: 'worker' });   // label wins over the engine's own
   } catch (e) {
     // KEEP ENOUGH TO FIX IT. A failure a technician hit in the field is the only chance

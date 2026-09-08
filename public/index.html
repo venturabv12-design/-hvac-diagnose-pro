@@ -10852,7 +10852,11 @@ async function sendChat(){
     return;
   }
   window._mpSkipPlateCheck=false;   // one-shot: only skips the plate read once
-  if(currentUser&&_mpWantsWarranty(text)&&(chatAttachment||mpParseUnit(text).serial)){
+  // A tech sends the plate photo, Mike reads the serial, and THEN he asks "warranty for it".
+  // Requiring the serial in the same sentence made Mike answer from general knowledge instead
+  // of pulling the real registration — in front of a customer, 2026-09-08. He already knows the
+  // unit; mpUnit() is holding it. Use it rather than making the tech repeat himself.
+  if(currentUser&&_mpWantsWarranty(text)&&(chatAttachment||mpParseUnit(text).serial||mpUnit().serial)){
     input.value='';input.style.height='auto';
     var _wx=_mpWarrantyExtras(text);
     if(chatAttachment&&chatAttachment.type&&chatAttachment.type.indexOf('image/')===0){
@@ -11019,6 +11023,18 @@ async function sendChat(){
       response=await callAI(sysPrompt,apiHistory,_maxTok,needsSearch);
     }
     hideTyping();response=checkAndLearn(response);response=checkAndSaveJob(response);appendMessage('agent',response);
+    // Mike just READ a data plate out loud in normal chat — that is the unit we are on, and
+    // he has to still know it on the next message. Brandon sent a plate photo WITH a caption
+    // (the auto plate-read above only fires on a photo with NO text), Mike answered "Bryant
+    // 925TA30040E14A, serial 3915A43816", then "warranty for it" found nothing to look up and
+    // he answered from general knowledge in front of a customer (2026-09-08). Learn the unit
+    // off his own answer. Photo turns only, and only when brand AND serial both read clean.
+    try{
+      if(hadAttachment&&typeof response==='string'){
+        var _pu=mpParseUnit(response);
+        if(_pu&&_pu.brand&&_pu.serial)mpUnitLearn(_mpStripEmpty(_pu),'plate');
+      }
+    }catch(_puErr){}
     // Mike draws on request — when the tech EXPLICITLY asks Mike to draw/sketch/create a
     // diagram or illustration, generate the visual after his reply. Narrow verbs only, so a
     // normal question ("what's this code") never trips it. (The broad camera-side detector

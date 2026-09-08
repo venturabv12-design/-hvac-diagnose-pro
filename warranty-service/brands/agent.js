@@ -409,6 +409,38 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
     const tag = (form.inputs.find(i => i.selector === f.selector) || {}).tag;
     (tag === 'select' ? selects : texts).push(f);
   }
+  // The planner writes selectors from what it read on the page, and on a radio group it
+  // sometimes invents a value that is not there — Carrier's original-purchaser radios
+  // carry value="true"/"false" and it asked for [value="yes"], which matches NOTHING.
+  // The radio then never got ticked, Carrier returned an empty result, and a COVERED unit
+  // read as "no record" one run in three (measured 2026-09-08). That is the dangerous
+  // direction: a tech reads it as not covered and eats the part.
+  // Resolve every selector against the live DOM, and when an over-specific radio selector
+  // matches nothing, fall back to the group and pick the option that means what we asked.
+  const _resolve = async (sel, value) => {
+    const found = await target.evaluate((s) => !!document.querySelector(s), sel).catch(() => false);
+    if (found) return sel;
+    const name = (String(sel).match(/name=["']([^"']+)["']/) || [])[1];
+    if (!name) return sel;
+    const want = !/^(false|no|0|off)$/i.test(String(value));
+    const alt = await target.evaluate(({ n, w }) => {
+      const els = [...document.querySelectorAll('input[name="' + n + '"]')];
+      if (!els.length) return null;
+      const yes = /^(true|yes|y|1|on)$/i, no = /^(false|no|n|0|off)$/i;
+      const hit = els.find(e => (w ? yes : no).test(String(e.value || '')))
+               || (els.length === 1 ? els[0] : null);
+      return hit ? 'input[name="' + n + '"][value="' + hit.value + '"]' : null;
+    }, { n: name, w: want }).catch(() => null);
+    if (alt && alt !== sel) log(`  ${sel} matched nothing — using ${alt}`);
+    return alt || sel;
+  };
+  // What the element ACTUALLY is, per the DOM. The plan's own metadata misses any
+  // selector the planner invented, and a radio that falls through to fill() throws.
+  const _domKind = async (sel) => await target.evaluate((s) => {
+    const el = document.querySelector(s);
+    if (!el) return 'missing';
+    return (el.tagName || '').toLowerCase() === 'select' ? 'select' : String(el.type || 'text').toLowerCase();
+  }, sel).catch(() => 'missing');
   for (const f of texts) {
     try {
       // A radio or a checkbox cannot be FILLED — fill() throws on them, which is why
@@ -416,7 +448,10 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
       // "could not set #isOriginal1" and the lookup ran without a field Carrier
       // REQUIRES. Every Carrier result was therefore produced from an incomplete form.
       // Tick them instead.
-      const kind = (form.inputs.find(i => i.selector === f.selector) || {}).type;
+      f.selector = await _resolve(f.selector, f.value);
+      const _dk = await _domKind(f.selector);
+      const kind = (_dk && _dk !== 'missing') ? _dk
+                 : (form.inputs.find(i => i.selector === f.selector) || {}).type;
       if (kind === 'radio' || kind === 'checkbox') {
         const want = !/^(false|no|0|off)$/i.test(String(f.value));
         // check() waits for the INPUT itself to be actionable. Carrier styles its
@@ -496,6 +531,45 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
       if (norm(current) === norm(pick)) { log(`  ${f.selector}: already "${pick}"`); continue; }
       await target.selectOption(f.selector, pick, { timeout: 8000 });
     } catch (_) { log(`  could not set ${f.selector}`); }
+  }
+  // A late-hydrating form replaces an input's value AFTER we set it. Carrier's page does
+  // exactly this: the serial was filled, the page finished booting, React put the field
+  // back to empty, and by submit time the form had no serial — so it silently refused to
+  // run and the tech was told the lookup "did not run" on a registry that was working
+  // fine. The kept diagnostic said it outright: fields_supplied=originalPurchaser, no
+  // serial. It looked intermittent because it is a race with page load, and it failed
+  // five times running in front of a customer (2026-09-08).
+  // Read every text field back and re-enter it until the value actually sticks.
+  const _stuck = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  for (const f of texts) {
+    // Only text-like inputs. A radio has no value to retype, and typing into one cost
+    // two 110-second timeouts the first time this guard was missing.
+    const _k = await _domKind(f.selector);
+    if (_k === 'radio' || _k === 'checkbox' || _k === 'select' || _k === 'missing') continue;
+    for (let a = 0; a < 3; a++) {
+      const got = await target.evaluate((sel) => {
+        const el = document.querySelector(sel); return el ? String(el.value || '') : null;
+      }, f.selector).catch(() => null);
+      if (got !== null && _stuck(got) === _stuck(f.value)) {
+        if (a) log(`  ${f.selector}: value stuck on retry ${a}`);
+        break;
+      }
+      if (a === 2) { log(`  ${f.selector}: VALUE WOULD NOT STICK — the form will refuse to run`); break; }
+      log(`  ${f.selector}: value did not stick (got "${String(got).slice(0, 20)}") — typing it again`);
+      await page.waitForTimeout(1500);            // let hydration finish before retyping
+      await target.click(f.selector).catch(() => {});
+      await target.fill(f.selector, '').catch(() => {});
+      // Real keystrokes, not a programmatic value set — a controlled input ignores the latter.
+      await target.type(f.selector, String(f.value), { delay: 30 })
+        .catch(() => target.fill(f.selector, String(f.value)).catch(() => {}));
+      await target.evaluate((sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return;
+        el.dispatchEvent(new Event('input',  { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        el.dispatchEvent(new Event('blur',   { bubbles: true }));
+      }, f.selector).catch(() => {});
+    }
   }
   // Start listening BEFORE the click, or the answer is already gone by the time we
   // subscribe — which is exactly what happened on the first attempt at this fix.

@@ -220,6 +220,28 @@ const WORKER_BRANDS_RAW = (process.env.WORKER_BRANDS || 'all').split(',').map(s 
 const WORKER_ALL = WORKER_BRANDS_RAW.includes('all');
 const WORKER_BRANDS = new Set(WORKER_BRANDS_RAW);
 function workerHandles(brandId) { return WORKER_ALL || WORKER_BRANDS.has(brandId); }
+
+// BRANDS THAT MUST NOT BE ANSWERED FROM A DATACENTER, EVEN AS A FALLBACK.
+// Measured 2026-09-09 09:01-09:10 on this build, same serials minutes apart:
+//   carrier 3623E02930 -> laptop found=TRUE  | Railway found=FALSE
+//   heil    (same registry)                  | same split
+//   lennox  5819K12345 -> laptop found=TRUE  | Railway could not run the form at all
+//   goodman + rheem    -> IDENTICAL both ways (those are safe from anywhere)
+// Google scores the NETWORK on Carrier's invisible reCAPTCHA, so a datacenter address
+// gets a page with no record on it rather than an error.
+//
+// This is why the ordinary never-trust-one-negative guard is NOT enough here. That
+// guard re-reads and believes the answer when it repeats — and from a datacenter the
+// wrong answer repeats perfectly, because the cause is systematic, not flaky. It
+// confirmed "no record" on a covered unit twice in a row (36s = two full reads).
+// A guard that asks the same broken source twice launders a lie into a fact.
+//
+// So for these brands the residential worker is the ONLY acceptable source. If it is
+// not there, we say we could not check. "I don't know" costs a tech a phone call;
+// "no registration found" costs him the part he just ate.
+const RESIDENTIAL_ONLY = new Set(
+  (process.env.RESIDENTIAL_BRANDS || 'carrier,lennox')
+    .split(',').map(s => s.trim().toLowerCase()).filter(Boolean));
 const WORKER_TOKEN = process.env.WORKER_TOKEN || '';
 const WORKER_STALE_MS = Number(process.env.WORKER_STALE_MS || 90 * 1000);
 const WORKER_WAIT_MS = Number(process.env.WORKER_WAIT_MS || 75 * 1000);
@@ -398,6 +420,20 @@ app.post('/lookup', async (req, res) => {
     } catch (e) {
       console.log(`[lookup] ${brand.id} worker error: ${e.message} — falling through`);
     }
+  }
+
+  // The residential worker was required for this brand and could not answer. Stop here.
+  // Falling through would hand the tech a datacenter read, and for these brands that
+  // read is confidently wrong rather than merely absent.
+  if (RESIDENTIAL_ONLY.has(brand.id)) {
+    console.log(`[lookup] ${brand.id} ${serial} NO residential source — refusing to answer from the datacenter`);
+    return res.json({
+      ok: true, supported: true, cached: false, found: false, inconclusive: true,
+      brand: brand.id, brandLabel: brand.label, serial,
+      reason: 'residential_source_unavailable',
+      summary: `I couldn't reach ${brand.label}'s registry right now, so I can't tell you either way on that serial. Do NOT read this as "not covered" — check it directly before you quote anything.`,
+      where: brand.where,
+    });
   }
 
   let agentAttemptFailed = false;

@@ -221,6 +221,44 @@ async function agentLookup(page, brand, serial, extra) {
     const err = new Error(`${brand.label} moved their warranty page (404)`);
     err.code = 'SITE_MOVED'; err.brandLabel = brand.label; throw err;
   }
+  // A manufacturer moving their page is the single failure that took every
+  // Carrier-family brand dark on 2026-09-08, and it announced itself nowhere: the old
+  // path 301s, Playwright follows it silently, status is 200, and the only symptom is
+  // that our selectors stop matching. A 404 was handled; a REDIRECT was not.
+  // Say it out loud on every lookup so the hourly self-check reports "page moved" the
+  // same hour instead of us learning it from a technician in front of a customer.
+  try {
+    const _norm = (u) => String(u || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase();
+    const _landed = page.url();
+    if (_norm(_landed) !== _norm(url)) {
+      log(`  PAGE MOVED — ${brand.label} now serves ${_landed} (config still says ${url})`);
+      try {
+        require('fs').appendFileSync(
+          require('path').join(require('os').homedir(), 'Library/Logs/trazer-warranty-moved.log'),
+          `${new Date().toISOString()} ${brand.id} ${url} -> ${_landed}\n`);
+      } catch (_) {}
+    }
+  } catch (_) {}
+  // Cloudflare (and Akamai) put up a "Just a moment..." interstitial that clears itself
+  // in a few seconds IN A REAL BROWSER — which is what we drive. Reading the page
+  // immediately sees no form and reports the brand as broken. Mitsubishi's registration
+  // site did exactly this on 2026-09-08 an hour after answering normally.
+  // Wait for the challenge to clear before deciding anything about the page.
+  try {
+    for (let i = 0; i < 12; i++) {
+      const challenged = await page.evaluate(() => {
+        const t = (document.title || '').toLowerCase();
+        const b = (document.body && document.body.innerText || '').toLowerCase();
+        return t.includes('just a moment') || t.includes('attention required')
+            || t.includes('checking your browser')
+            || b.includes('verifying you are human') || b.includes('checking your browser');
+      }).catch(() => false);
+      if (!challenged) break;
+      if (i === 0) log(`  ${brand.label}: bot challenge on their site — waiting for it to clear`);
+      await page.waitForTimeout(2500);
+      if (i === 11) log(`  ${brand.label}: challenge did not clear in 30s`);
+    }
+  } catch (_) {}
   await page.waitForTimeout(3000);
 
   // Cookie banners sit on top of the form and swallow clicks. Dismiss before reading.

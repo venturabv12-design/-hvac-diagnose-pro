@@ -286,7 +286,7 @@ app.use(express.json({ limit: '8kb' }));
 app.disable('x-powered-by');
 
 app.get('/health', (req, res) => {
-  res.json({ ok: true, browser: !!browser, queued: waiters.length, cached: cache.size, uptime: Math.round(process.uptime()) });
+  res.json({ ok: true, build: BUILD, browser: !!browser, queued: waiters.length, cached: cache.size, uptime: Math.round(process.uptime()) });
 });
 
 app.get('/brands', (req, res) => res.json({ brands: brands.catalogue() }));
@@ -331,7 +331,21 @@ app.post('/worker/result', (req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/worker/status', (req, res) => res.json({ online: workerOnline(), lastSeen: workerSeenAt || null, pending: jobs.size }));
+// This is the ONLY route on this service reachable from outside (Mike relays
+// /api/warranty-worker/:action and nothing else), so it is the only place that can
+// answer "what code is actually running in there?".
+//
+// That question went unanswerable until 2026-09-09 and it cost us: the Carrier page-move
+// fix, the Cloudflare challenge wait, and the never-trust-a-single-negative guard were
+// all committed on this branch on 09-08 and never pushed. The service kept driving
+// Carrier's OLD url for a day while every local check looked healthy, because the checks
+// were reading the WORKER (which runs main) and nothing could read the SERVICE.
+// A stale deploy that cannot be seen is indistinguishable from a current one.
+// Report the build and the routing config so the hourly sweep can catch drift itself.
+app.get('/worker/status', (req, res) => res.json({
+  online: workerOnline(), lastSeen: workerSeenAt || null, pending: jobs.size,
+  build: BUILD, workerBrands: WORKER_ALL ? 'all' : Array.from(WORKER_BRANDS).join(','),
+}));
 
 app.post('/lookup', async (req, res) => {
   // Only Mike calls this. It rides Railway's private network, but the shared token
@@ -403,11 +417,52 @@ app.post('/lookup', async (req, res) => {
       // behind it.
       running.catch(() => {});
       let _atimer;
-      const out = await Promise.race([
+      let out = await Promise.race([
         running,
         new Promise((_, rej) => { _atimer = setTimeout(() => rej(Object.assign(new Error('timeout'), { code: 'TIMEOUT' })), AGENT_TIMEOUT_MS); }),
       ]);
       clearTimeout(_atimer);
+      // NEVER report "no record" off a single run. A negative is the one answer a tech
+      // acts on destructively: he reads it as NOT COVERED and eats the part. And a
+      // negative can be manufactured by our own side — on 2026-09-08 a control silently
+      // failed to get set and a unit with real 5-year coverage came back empty on 1 run
+      // in 3. A POSITIVE is self-evidencing (the registry handed us a record); a
+      // NEGATIVE is only trustworthy if it repeats.
+      // So confirm it once, independently. Agree -> report it. Disagree -> we do not
+      // know, and saying "I do not know" costs a tech one phone call, while a wrong
+      // "not covered" costs him the part. Fail toward distrust, every time.
+      if (out && out.found === false && !out.inconclusive) {
+        let slotB = null, second = null;
+        try {
+          slotB = await acquire();
+          const r2 = agentLookup(slotB.page, brand, serial, req.body && req.body.extra);
+          r2.catch(() => {});
+          let _t2;
+          second = await Promise.race([
+            r2,
+            new Promise((_, rej) => { _t2 = setTimeout(() => rej(Object.assign(new Error('timeout'), { code: 'TIMEOUT' })), AGENT_TIMEOUT_MS); }),
+          ]);
+          clearTimeout(_t2);
+        } catch (_) { second = null; }
+        finally { if (slotB) { try { release(slotB); } catch (_) {} } }
+
+        if (second && second.found === true) {
+          // The second run FOUND it. The first negative was ours, not theirs.
+          console.log(`[lookup] ${brand.id} ${serial} NEGATIVE OVERTURNED — second run found a record`);
+          out = second;
+        } else if (!second) {
+          console.log(`[lookup] ${brand.id} ${serial} negative unconfirmed — second run did not complete`);
+          return res.json({
+            ok: true, supported: true, cached: false, found: false, inconclusive: true,
+            brand: brand.id, brandLabel: brand.label, serial,
+            reason: 'negative_unconfirmed',
+            summary: `${brand.label} came back with no record on that serial, but I could not get a second read to confirm it. Do NOT treat that as "not covered" — check it directly before you quote anything.`,
+            where: brand.where,
+          });
+        } else {
+          console.log(`[lookup] ${brand.id} ${serial} negative confirmed on a second run`);
+        }
+      }
       const payload = Object.assign({ brand: brand.id, brandLabel: brand.label, serial }, out);
       cacheSet(cacheKey(brand.id, serial), payload, out.found ? CACHE_TTL_MS : RETRY_TTL_MS);
       console.log(`[lookup] ${brand.id} ${serial} via=agent found=${!!out.found} registered=${out.registered}`);

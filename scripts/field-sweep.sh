@@ -246,5 +246,63 @@ print('worker online=%s pending=%d' % (online, pending))
 sys.exit(0)
 " || RC=1
 
+# ── 6. did Mike get something WRONG? ─────────────────────────────────────────
+# The whole product is "every tech performing like your best tech". An answer a
+# technician marked wrong is the single most valuable signal we get, and until now
+# nothing watched for it — flags landed in the events table and sat there. Brandon,
+# 2026-09-08: "make sure we catch and learn any mistakes Mike makes."
+# Every flag is kept to a file so there is a body of real mistakes to learn from,
+# not just an alert that scrolls past.
+FL=$(/usr/bin/curl -s -m 30 "$SU/rest/v1/events?select=user_id,payload,created_at&type=in.(answer_flag,feedback)&created_at=gte.$SINCE&limit=100" \
+  -H "apikey: $SK" -H "Authorization: Bearer $SK")
+HOUSE="$HOUSE" FL="$FL" python3 -c "
+import os,sys,json
+house=set(x for x in (os.environ.get('HOUSE') or '').split(',') if x)
+try: r=json.loads(os.environ.get('FL') or '[]')
+except Exception as e: print('ALERT sweep_broken flag_parse %s'%e); sys.exit(2)
+if not isinstance(r,list): print('ALERT sweep_broken flags_not_a_list'); sys.exit(2)
+# House accounts are our own QA. Both flags in the table as of 2026-09-08 came from
+# qa-crew, so counting them would have alerted on our own test data forever.
+rows=[x for x in r if isinstance(x,dict) and x.get('user_id') not in house]
+if not rows:
+    print('no wrong-answer flags from technicians'); sys.exit(0)
+log=os.path.expanduser('~/Library/Logs/trazer-mike-mistakes.log')
+with open(log,'a') as f:
+    for x in rows: f.write(json.dumps(x,ensure_ascii=False)+chr(10))
+for x in rows:
+    p=x.get('payload') or {}
+    q=str(p.get('q') or p.get('text') or '')[:110]
+    print('ALERT mike_marked_wrong %s asked: %s' % (x.get('created_at','')[:19], q))
+print('kept %d for review in %s' % (len(rows), log))
+sys.exit(1)
+" || RC=1
+
+# ── 7. Matt Zampi — the director deciding whether F.H. Furr uses Mike ─────────
+# Brandon, 2026-09-08: "we need to keep an eye on Matt... he is the one that says yes
+# or no." A failure in front of him costs the account, so his asks are checked on their
+# own rather than being averaged away in the all-technician numbers above.
+MZ=$(/usr/bin/curl -s -m 30 "$SU/rest/v1/events?select=type,payload,created_at&user_id=eq.2ad3c4ff-87ec-4fdb-b119-1c8dedf2e693&created_at=gte.$SINCE&order=created_at.asc&limit=200" \
+  -H "apikey: $SK" -H "Authorization: Bearer $SK")
+MZ="$MZ" python3 -c "
+import os,sys,json
+try: r=json.loads(os.environ.get('MZ') or '[]')
+except Exception as e: print('ALERT sweep_broken matt_parse %s'%e); sys.exit(2)
+if not isinstance(r,list): print('ALERT sweep_broken matt_not_a_list'); sys.exit(2)
+asks=[x for x in r if x.get('type')=='mike_ask']
+ans =[x for x in r if x.get('type')=='mike_answer']
+bad =[x for x in r if x.get('type') in ('answer_flag','client_error')]
+if not r: print('matt: no activity this window'); sys.exit(0)
+# An answer that apologises is a failure the technician SAW, whatever the logs say.
+FAIL=('something went wrong','tap send again','could not','couldn','unable to','timed out','try again')
+sick=[x for x in ans if any(f in str((x.get('payload') or {}).get('a','')).lower()[:400] for f in FAIL)]
+if bad or sick or (asks and not ans):
+    if bad:  print('ALERT matt_hit_a_problem %d flag/error event(s)' % len(bad))
+    if sick: print('ALERT matt_got_a_failure_reply %d of %d answers' % (len(sick),len(ans)))
+    if asks and not ans: print('ALERT matt_asked_%d_got_nothing' % len(asks))
+    sys.exit(1)
+print('matt: %d asks, %d answers, no failures' % (len(asks),len(ans)))
+sys.exit(0)
+" || RC=1
+
 [ $RC -eq 0 ] && echo "SWEEP_CLEAN"
 exit $RC

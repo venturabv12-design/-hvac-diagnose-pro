@@ -2668,10 +2668,10 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // paying tech; the only thing skipped is the account check.
   let _isTaste = false;
   if (!authToken && req.body?.taste === true) {
-    const allow = tasteAllowance(req);
+    const allow = await tasteAllowance(req);
     if (allow.left <= 0)
       return res.status(402).json({ error: 'That was the free one — create an account and Mike stays with you.', paywall: true });
-    tasteConsume(allow);
+    await tasteConsume(req, allow);
     _isTaste = true;
   }
   if (!_isTaste) {
@@ -3600,24 +3600,58 @@ async function systemOwnerId() {
 // before Mike had done anything worth paying for. 513 visitors produced 9 signups and
 // 0 paying customers, and none of them ever saw the product work.
 const FREE_TASTE_PER_DAY = Number(process.env.FREE_TASTE_PER_DAY || 10);
-const _tasteUsed = new Map();   // visitorHash -> { day, count }
+const _tasteUsed = new Map();   // per-instance fallback only (used when Supabase is down)
 
-function tasteAllowance(req) {
+// SHARED, DEPLOY-PROOF free-question counter.
+// The old version lived in a per-instance Map. Prod runs MULTIPLE replicas, so the count
+// never accumulated (requests round-robin across instances) and every deploy wiped it —
+// the free cap effectively never enforced. Verified 2026-09-11: /api/taste/left flapped
+// 2<->1 across replicas and three taste questions all answered. A signed-out visitor could
+// keep asking (close/reopen the app resets the CLIENT gate; the server never really stopped
+// them). Root-caused by Rodolfo via Brandon.
+// Source of truth is now ONE events row per (visitorHash, day), owned by the admin account,
+// company '__system', type 'taste_usage' — the same shared-storage pattern the traffic
+// counter already uses, so NO schema change. Fail-open on a DB error: this gates only the
+// free DEMO, and blocking a real visitor because Supabase hiccuped is worse than leaking a
+// single taste question.
+async function tasteAllowance(req) {
   const day = new Date().toISOString().slice(0, 10);
   const key = _visitorHash(req);
+  try {
+    const rows = await supabase('GET', 'events', null,
+      `?type=eq.taste_usage&select=id,payload&payload->>h=eq.${key}&payload->>d=eq.${day}&limit=1`);
+    if (Array.isArray(rows)) {
+      const used = (rows[0] && rows[0].payload && Number(rows[0].payload.c)) || 0;
+      return { key, day, used, left: Math.max(0, FREE_TASTE_PER_DAY - used), rowId: rows[0] && rows[0].id };
+    }
+  } catch (_) { /* fall through to memory */ }
   const cur = _tasteUsed.get(key);
-  if (!cur || cur.day !== day) return { key, day, used: 0, left: FREE_TASTE_PER_DAY };
-  return { key, day, used: cur.count, left: Math.max(0, FREE_TASTE_PER_DAY - cur.count) };
+  const used = (cur && cur.day === day) ? cur.count : 0;
+  return { key, day, used, left: Math.max(0, FREE_TASTE_PER_DAY - used) };
 }
-function tasteConsume(a) {
-  _tasteUsed.set(a.key, { day: a.day, count: a.used + 1 });
+async function tasteConsume(req, allow) {
+  const { key, day, used, rowId } = allow;
+  // Always bump the local fallback so a DB outage still counts within an instance.
+  _tasteUsed.set(key, { day, count: used + 1 });
   if (_tasteUsed.size > 20000) _tasteUsed.delete(_tasteUsed.keys().next().value);
+  try {
+    const uid = await _adminUserId();
+    if (!uid) return;
+    if (rowId) {
+      await supabase('PATCH', 'events', { payload: { h: key, d: day, c: used + 1 } },
+        `?id=eq.${encodeURIComponent(rowId)}`);
+    } else {
+      await supabase('POST', 'events',
+        { user_id: uid, type: 'taste_usage', company: '__system', payload: { h: key, d: day, c: 1 } });
+    }
+  } catch (_) { /* fail-open: the free demo must never hard-block on a DB blip */ }
 }
 
 // Lets the front door ask "does this visitor still have their free answer?" without
 // spending it, so the UI can show the wall instead of a dead send button.
-app.get('/api/taste/left', (req, res) => {
-  res.json({ ok: true, left: tasteAllowance(req).left });
+app.get('/api/taste/left', async (req, res) => {
+  try { res.json({ ok: true, left: (await tasteAllowance(req)).left }); }
+  catch (_) { res.json({ ok: true, left: FREE_TASTE_PER_DAY }); }
 });
 
 // ── FIELD WATCH — the phone reports what the server cannot see ────────────────

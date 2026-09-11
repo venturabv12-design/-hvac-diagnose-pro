@@ -6080,6 +6080,15 @@ function wireObMagic(host,isMagic){
     });
   });
 
+  // Stable per-device id so the free-question cap survives closing/reopening the app.
+  // localStorage (not sessionStorage) persists across app restarts; the server keys the
+  // anonymous free counter on this because Railway's proxy makes the client IP unreliable.
+  function _trazerDid(){
+    try{var d=localStorage.getItem('trazer_did');
+      if(!d||!/^[A-Za-z0-9_-]{8,64}$/.test(d)){d='d'+Math.random().toString(36).slice(2,12)+Date.now().toString(36);localStorage.setItem('trazer_did',d);}
+      return d;
+    }catch(e){return '';}
+  }
   var spent=false;
   function ask(){
     var q=(input.value||'').trim();
@@ -6095,7 +6104,7 @@ function wireObMagic(host,isMagic){
     // than no free answer at all, because this IS the product demo.
     var sys=(typeof AGENT_SYSTEM==='string'&&AGENT_SYSTEM)?AGENT_SYSTEM:'You are Mike, a master HVAC technician with 25 years in the field. Answer a working tech directly and briefly.';
     fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({taste:true,system:sys,max_tokens:700,messages:[{role:'user',content:q}]})})
+      body:JSON.stringify({taste:true,did:_trazerDid(),system:sys,max_tokens:700,messages:[{role:'user',content:q}]})})
       .then(function(r){return r.json();})
       .then(function(d){
         var box=document.getElementById('obLiveMike');

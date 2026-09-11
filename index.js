@@ -669,6 +669,21 @@ function _visitorHash(req) {
   return crypto.createHmac('sha256', JWT_SECRET).update(ip + '|' + ua).digest('hex').slice(0, 16);
 }
 
+// STABLE anonymous identity for the free-question counter.
+// Railway sits behind a multi-hop proxy: x-forwarded-for[0] is a ROTATING edge IP, not the
+// client, so IP-based keying counts every request as a new visitor and the free cap never
+// enforces (verified on prod 2026-09-11 — even a pinned XFF produced a fresh hash each call).
+// So we prefer a client-generated device id (localStorage, sent as x-trazer-did) which is
+// stable across app close/reopen — exactly the bypass that was reported. It falls back to the
+// IP hash when no id is present. A determined user can clear localStorage; a normal one who
+// closes and reopens the app cannot, which is the real-world case.
+function _tasteKey(req) {
+  const did = String((req.headers['x-trazer-did'] || (req.body && req.body.did) || '')).slice(0, 64);
+  if (/^[A-Za-z0-9_-]{8,64}$/.test(did))
+    return crypto.createHmac('sha256', JWT_SECRET).update('did|' + did).digest('hex').slice(0, 16);
+  return _visitorHash(req);
+}
+
 function _rollDay() {
   const d = _today();
   if (_traffic.day !== d) {
@@ -3616,7 +3631,7 @@ const _tasteUsed = new Map();   // per-instance fallback only (used when Supabas
 // single taste question.
 async function tasteAllowance(req) {
   const day = new Date().toISOString().slice(0, 10);
-  const key = _visitorHash(req);
+  const key = _tasteKey(req);
   try {
     const rows = await supabase('GET', 'events', null,
       `?type=eq.taste_usage&select=id,payload&payload->>h=eq.${key}&payload->>d=eq.${day}&limit=1`);

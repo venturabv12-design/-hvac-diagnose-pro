@@ -244,6 +244,7 @@ async function agentLookup(page, brand, serial, extra) {
   // immediately sees no form and reports the brand as broken. Mitsubishi's registration
   // site did exactly this on 2026-09-08 an hour after answering normally.
   // Wait for the challenge to clear before deciding anything about the page.
+  let _stillChallenged = false;
   try {
     for (let i = 0; i < 12; i++) {
       const challenged = await page.evaluate(() => {
@@ -251,14 +252,40 @@ async function agentLookup(page, brand, serial, extra) {
         const b = (document.body && document.body.innerText || '').toLowerCase();
         return t.includes('just a moment') || t.includes('attention required')
             || t.includes('checking your browser')
-            || b.includes('verifying you are human') || b.includes('checking your browser');
+            || b.includes('verifying you are human') || b.includes('checking your browser')
+            // Mitsubishi's registermehvac.com serves this wording, which the list above
+            // did not match — so we sat out the full 30s and then read the CHALLENGE
+            // PAGE as if it were the lookup form.
+            || b.includes('performing security verification')
+            || b.includes('security service to protect')
+            || b.includes('verify you are not a bot')
+            || b.includes('enable javascript and cookies to continue');
       }).catch(() => false);
-      if (!challenged) break;
+      if (!challenged) { _stillChallenged = false; break; }
+      _stillChallenged = true;
       if (i === 0) log(`  ${brand.label}: bot challenge on their site — waiting for it to clear`);
       await page.waitForTimeout(2500);
       if (i === 11) log(`  ${brand.label}: challenge did not clear in 30s`);
     }
   } catch (_) {}
+
+  // GIVING UP MUST BE LOUD, AND IT MUST BE HONEST.
+  // The loop used to log and fall through, so describeForm then read the Cloudflare
+  // interstitial as if it were the warranty form, found no fields, and threw a bare
+  // Error with no .code. The caller mapped that to supported:false — and Mike told the
+  // technician **the brand is not supported**. That is false: Mitsubishi is supported,
+  // their site is refusing us. Telling a tech a brand does not work teaches him to stop
+  // asking, which is far more expensive than one honest "I can't reach them right now".
+  //
+  // A wall is also not a thing to guess past: if Cloudflare ever serves a challenge page
+  // that DOES contain an input, the planner would submit against it and the extractor
+  // would read challenge text as a warranty result.
+  if (_stillChallenged) {
+    throw Object.assign(
+      new Error(`${brand.label} is blocking automated checks right now (bot wall)`),
+      { code: 'BOT_WALL' }
+    );
+  }
   await page.waitForTimeout(3000);
 
   // Cookie banners sit on top of the form and swallow clicks. Dismiss before reading.

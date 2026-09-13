@@ -710,6 +710,23 @@ app.post('/lookup', async (req, res) => {
           where: brand.where,
         });
       }
+      // BLOCKED IS NOT UNSUPPORTED. Mitsubishi sits behind a full Cloudflare
+      // interstitial on registermehvac.com; the challenge never clears for a datacenter
+      // IP. Before this, the wait timed out silently, the form reader parsed the
+      // challenge page, found no fields, and threw a code-less Error — which mapped to
+      // supported:false and had Mike telling technicians the BRAND is not supported.
+      // It is supported. Their site is refusing us. Saying otherwise trains a tech to
+      // stop asking about a brand that works fine tomorrow.
+      if (err.code === 'BOT_WALL') {
+        return res.json({
+          ok: true, supported: true, found: false, inconclusive: true,
+          brand: brand.id, brandLabel: brand.label, serial,
+          botWall: true,
+          reason: 'blocked_by_manufacturer',
+          summary: `Can't check that one right now — ${brand.label}'s site is blocking automated checks. That is on their end, not yours, and it does NOT mean the unit isn't covered. Check it directly with the serial before you quote anything.`,
+          where: brand.where,
+        });
+      }
       if (err.code === 'SITE_DOWN' || err.code === 'SITE_MOVED') {
         return res.json({
           ok: true, supported: true, found: false,

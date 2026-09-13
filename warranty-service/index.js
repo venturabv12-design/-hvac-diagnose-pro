@@ -375,8 +375,90 @@ const app = express();
 app.use(express.json({ limit: '8kb' }));
 app.disable('x-powered-by');
 
-app.get('/health', (req, res) => {
-  res.json({ ok: true, build: BUILD, browser: !!browser, queued: waiters.length, cached: cache.size, uptime: Math.round(process.uptime()) });
+// A HEALTH CHECK THAT CAN ACTUALLY FAIL.
+//
+// This used to be `res.json({ ok: true, ... })` — `ok` was a literal, so the endpoint
+// could not report a problem no matter what was wrong. Through all 53 hours of the
+// 2026-09-11 outage it returned ok:true while every lookup was impossible. `!!browser`
+// is no better: it proves a JS object exists, not that the Chrome behind that socket is
+// alive.
+//
+// What it must prove is the thing that WEDGES: can we still fork a process, and can the
+// browser execute. Railway will not act on this on its own — it polls the healthcheck
+// only during a deploy, never after — so the self-exit below is what actually heals us,
+// because the restart policy fires on a non-zero EXIT.
+//
+// Cached, so a health poller can neither drive the browser nor be used to hammer it.
+let _healthAt = 0, _healthVal = null, _healthFails = 0;
+const HEALTH_TTL_MS = Number(process.env.HEALTH_TTL_MS || 30000);
+const HEALTH_FAILS_TO_EXIT = Number(process.env.HEALTH_FAILS_TO_EXIT || 3);
+
+async function probeHealth() {
+  const out = { ok: true, build: BUILD, browser: !!browser, queued: waiters.length,
+                cached: cache.size, uptime: Math.round(process.uptime()), checks: {} };
+  // 1. Can this container still fork? That IS the EAGAIN condition that took us down,
+  //    and it costs one cheap syscall to ask.
+  //    /bin/sh, not /bin/true — macOS has no /bin/true, and the first local run of this
+  //    probe returned ENOENT, reported UNHEALTHY and would have exited the process in a
+  //    restart loop. A health check that can crash a HEALTHY service is worse than the
+  //    one that could not fail.
+  //    And only EAGAIN/ENOMEM count: those mean "out of process slots", which is the
+  //    unrecoverable condition. A missing binary or a bad path is a deploy problem and
+  //    must not trigger the self-exit.
+  try {
+    const r = spawnSync('/bin/sh', ['-c', 'exit 0'], { timeout: 3000 });
+    const code = r.error && (r.error.code || '');
+    out.checks.canSpawn = !(code === 'EAGAIN' || code === 'ENOMEM');
+    if (r.error) out.checks.spawnError = code || r.error.message;
+  } catch (e) {
+    const code = e.code || '';
+    out.checks.canSpawn = !(code === 'EAGAIN' || code === 'ENOMEM');
+    out.checks.spawnError = code || e.message;
+  }
+
+  // 2. If a browser is up, make it prove it. No browser is FINE — the service shuts it
+  //    down when idle by design, and a cold start is not a fault.
+  if (browser && pool.length) {
+    const slot = pool.find(x => !x.busy) || pool[0];
+    try {
+      await Promise.race([
+        slot.page.evaluate(() => 1),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000)),
+      ]);
+      out.checks.browserExecutes = true;
+    } catch (e) { out.checks.browserExecutes = false; out.checks.browserError = e.message; }
+  } else {
+    out.checks.browserExecutes = null;   // idle, not broken
+  }
+
+  out.ok = out.checks.canSpawn !== false && out.checks.browserExecutes !== false;
+  return out;
+}
+
+app.get('/health', async (req, res) => {
+  const now = Date.now();
+  if (_healthVal && now - _healthAt < HEALTH_TTL_MS) {
+    return res.status(_healthVal.ok ? 200 : 503).json({ ..._healthVal, cachedResult: true });
+  }
+  let v;
+  try { v = await probeHealth(); }
+  catch (e) { v = { ok: false, error: e.message, checks: {} }; }
+  _healthAt = now; _healthVal = v;
+
+  // CRASH RATHER THAN LIMP. Once we cannot fork or the browser cannot execute, nothing
+  // in-process recovers it — the 53-hour outage ended only when a human redeployed.
+  // Railway restarts on a non-zero exit, so exiting IS the self-heal. Requiring N
+  // consecutive failures stops a single blip from cycling the container.
+  if (!v.ok) {
+    _healthFails++;
+    console.error(`[health] UNHEALTHY (${_healthFails}/${HEALTH_FAILS_TO_EXIT}) ${JSON.stringify(v.checks || {})}`);
+    if (_healthFails >= HEALTH_FAILS_TO_EXIT) {
+      console.error('[health] unrecoverable — exiting so the platform restarts us');
+      setTimeout(() => process.exit(1), 100);
+    }
+  } else { _healthFails = 0; }
+
+  res.status(v.ok ? 200 : 503).json(v);
 });
 
 app.get('/brands', (req, res) => res.json({ brands: brands.catalogue() }));

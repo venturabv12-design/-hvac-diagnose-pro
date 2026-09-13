@@ -185,7 +185,13 @@ async function handle(job, headers) {
   console.log(`[worker] job ${job.id}: ${job.brand} ${job.serial}  (${inFlight}/${LANES} busy)`);
   let result;
   try { result = await runJob(job); }
-  catch (e) { result = { error: 'lane_failed', message: e.message }; }
+  catch (e) {
+    // The cause used to go only into the payload sent back to the service, so the local
+    // log line read "error lane_failed" with no reason attached — 151 of them, and not
+    // one of them said what actually went wrong. Print it.
+    console.log(`[worker] job ${job.id} LANE FAILED: ${e.message}`);
+    result = { error: 'lane_failed', message: e.message };
+  }
   try {
     await fetch(`${SERVICE}${PREFIX}/result`, {
       method: 'POST',
@@ -219,9 +225,25 @@ async function loop() {
     } catch (e) {
       console.log('[worker] poll failed:', e.message);
     }
-    // A Chrome left open for days leaks memory. Nothing is in flight here, so this is
-    // free — and it means a week-long uptime behaves like a fresh start.
-    if (!got && inFlight === 0 && browser && Date.now() - quietSince > 30 * 60 * 1000) {
+    // THIS IDLE RELEASE BROKE EVERY LOOKUP THAT CAME AFTER IT. Off by default now.
+    //
+    // The intent was sound — a Chrome left open for days leaks memory. But
+    // `browser.close()` on a CDP connection only DISCONNECTS us. The Chrome process keeps
+    // running and keeps holding the debugging port. ensureChrome() then probes that port,
+    // sees it answer, decides a browser is already up, skips the spawn, and attaches to an
+    // instance that can no longer serve a page. Verified in the worker log 2026-09-13:
+    //   [worker] idle — released Chrome
+    //   [worker] job j13 done in 0.2s — error lane_failed     (and every job after it)
+    // Carrier and Lennox were dead on production for hours. Because the cause was
+    // swallowed, the log said only "lane_failed" — 151 times, explaining nothing.
+    //
+    // Releasing is only safe once the release actually ENDS the process and the attach
+    // path proves the browser can execute. That is the proper fix and it is not in this
+    // commit. Until then, not releasing beats releasing into a wedge: a long-lived Chrome
+    // costs some memory on an always-on laptop, while a wedged one costs every Carrier and
+    // Lennox lookup, silently. WORKER_IDLE_RELEASE=1 restores the old behaviour.
+    if (process.env.WORKER_IDLE_RELEASE === '1'
+        && !got && inFlight === 0 && browser && Date.now() - quietSince > 30 * 60 * 1000) {
       quietSince = Date.now();
       try { await browser.close(); } catch (_) {}
       browser = null;

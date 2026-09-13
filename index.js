@@ -461,7 +461,16 @@ function verifyResetToken(token) {
 // CRITICAL ORDER: Stripe webhook MUST be registered before express.json() because
 // it needs the raw body for HMAC signature verification. JSON parsing corrupts it.
 app.post('/api/webhook', express.raw({type: 'application/json'}), async (req, res) => {
-  if (!STRIPE_SECRET_KEY || !STRIPE_WEBHOOK_SECRET) return res.json({ok:true});
+  // If Stripe is live but we cannot verify signatures, this used to 200-ACK and DISCARD
+  // every event. Stripe records successful delivery and never retries, so payments
+  // succeed and nobody is ever upgraded — silently, forever, behind a startup
+  // console.warn nobody reads. A 500 keeps the events on Stripe's retry ladder until the
+  // secret is set, so nothing is lost.
+  if (STRIPE_SECRET_KEY && !STRIPE_WEBHOOK_SECRET) {
+    console.error('[webhook] STRIPE_WEBHOOK_SECRET missing — cannot verify. Returning 500 so Stripe retries instead of dropping paid events.');
+    return res.status(500).json({ error: 'webhook not configured' });
+  }
+  if (!STRIPE_SECRET_KEY) return res.json({ok:true});   // Stripe genuinely not in use
   
   const sig = req.headers['stripe-signature'];
   let event;
@@ -503,14 +512,20 @@ app.post('/api/webhook', express.raw({type: 'application/json'}), async (req, re
       const customerId = session.customer;
       const subscriptionId = session.subscription;
       
-      if (email && SUPABASE_URL) {
-        // Update user plan in database
-        await supabase('PATCH', 'users', {
+      // MONEY ALREADY CHANGED HANDS. The PATCH result was never checked and
+      // "Plan activated" was printed unconditionally on the next line, so a Supabase
+      // wobble produced: customer charged, plan never upgraded, log claiming success,
+      // and a 200 telling Stripe never to retry. Throw instead — the outer catch now
+      // returns 500 and Stripe's own retry ladder does the work.
+      if (!email) throw new Error(`checkout.session.completed with no email (session ${session.id})`);
+      if (SUPABASE_URL) {
+        const rows = await supabase('PATCH', 'users', {
           plan,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
           plan_started_at: new Date().toISOString(),
         }, `?email=eq.${encodeURIComponent(email)}`);
+        if (!rows || !rows[0]) throw new Error(`plan PATCH did not land for ${email} → ${plan}`);
         console.log(`Plan activated: ${email} → ${plan}`);
       }
     }
@@ -519,10 +534,11 @@ app.post('/api/webhook', express.raw({type: 'application/json'}), async (req, re
       const sub = event.data.object;
       // Downgrade to trial/free when subscription cancelled
       if (SUPABASE_URL) {
-        await supabase('PATCH', 'users', {
+        const rows = await supabase('PATCH', 'users', {
           plan: 'trial',
           stripe_subscription_id: null,
         }, `?stripe_subscription_id=eq.${sub.id}`);
+        if (!rows) throw new Error(`downgrade PATCH failed for subscription ${sub.id}`);
         console.log(`Subscription cancelled: ${sub.id}`);
       }
     }
@@ -563,7 +579,14 @@ app.post('/api/webhook', express.raw({type: 'application/json'}), async (req, re
       }
     }
   } catch(err) {
-    console.error('Webhook handler error:', err.message);
+    // 500, NOT 200. Returning {received:true} on a failure told Stripe the event was
+    // handled, so it never retried and the failure was unrecoverable and invisible. A
+    // 5xx puts the event back on Stripe's retry ladder, which is built for exactly this.
+    console.error('Webhook handler error:', event && event.type, err.message);
+    try {
+      logUsage(null, 'webhook_failed', { type: event && event.type, id: event && event.id, err: String(err.message).slice(0, 200) });
+    } catch (_) {}
+    return res.status(500).json({ error: 'handler failed — please retry' });
   }
 
   res.json({received: true});

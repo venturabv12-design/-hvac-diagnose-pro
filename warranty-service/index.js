@@ -20,13 +20,17 @@
 
 const express = require('express');
 const { chromium } = require('playwright');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const brands = require('./brands');
 const { agentLookup } = require('./brands/agent');
 
 const PORT = process.env.PORT || 3000;
 const TOKEN = process.env.WARRANTY_SERVICE_TOKEN || '';
 const LOOKUP_TIMEOUT_MS = Number(process.env.LOOKUP_TIMEOUT_MS || 45000);
+// Attaching to a browser we just started on localhost is either instant or hopeless.
+// Playwright's default is an undeclared 30s, which is exactly how long every failed
+// lookup took during the outage while a technician waited on it.
+const CDP_CONNECT_MS = Number(process.env.CDP_CONNECT_MS || 8000);
 const IDLE_SHUTDOWN_MS = Number(process.env.IDLE_SHUTDOWN_MS || 120000);
 const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS || 24 * 60 * 60 * 1000);
 // A lookup takes 40-90 seconds and the phone holds one connection open the whole time.
@@ -77,13 +81,35 @@ async function discardBrowser(why) {
   // We started the process ourselves, so we have to stop it ourselves — closing the
   // CDP connection alone leaves the browser running and the port held.
   if (_proc) { try { _proc.kill('SIGKILL'); } catch (_) {} _proc = null; }
+  killStrayChrome('discard');
   console.warn(`[browser] discarded after ${why} — a stale automation cannot be allowed to keep driving the shared page`);
+}
+
+// Kill anything still running on OUR profile, whoever started it.
+// browser.close() over CDP only DISCONNECTS — the Chrome process survives, keeps the
+// debugging port, and keeps its tabs. Combined with the missing init reaper (see the
+// Dockerfile) that is how the container filled with orphaned Chromes until spawn()
+// returned EAGAIN. worker-run.sh has always done this; the service never did.
+function killStrayChrome(why) {
+  try {
+    const r = spawnSync('pkill', ['-9', '-f', `user-data-dir=${CDP_PROFILE}`], { stdio: 'ignore' });
+    if (r.status === 0) console.warn(`[browser] swept stray Chrome on ${CDP_PROFILE} (${why})`);
+  } catch (_) {}
 }
 
 async function ensureBrowser() {
   // Healthy when the browser is up and every slot still has a live tab.
   if (browser && pool.length === POOL_SIZE && pool.every(s => s.page && !s.page.isClosed())) return pool;
+  // NEVER REATTACH TO A SURVIVING BROWSER. The old code closed the CDP connection and
+  // then respawned on the same port and profile, so: (a) the new Chrome could not bind
+  // the port, (b) the readiness probe below happily found the OLD one still listening,
+  // and (c) connectOverCDP hung 30s against a browser that was already wedged. Every
+  // reconnect also opened five fresh tabs on the surviving instance without closing the
+  // previous five, at ~150MB each. Start clean, every time.
   if (browser) { try { await browser.close(); } catch (_) {} }
+  browser = null; page = null; pool.length = 0;
+  if (_proc) { try { _proc.kill('SIGKILL'); } catch (_) {} _proc = null; }
+  killStrayChrome('before spawn');
   // Present as an ordinary desktop Chrome. Not a disguise — the default automated
   // user agent literally says "HeadlessChrome", and some manufacturer sites refuse
   // it outright: Mitsubishi's warranty page returns 403 to the default and 200 to a
@@ -111,7 +137,19 @@ async function ensureBrowser() {
     '--no-first-run', '--no-default-browser-check',
     '--no-sandbox', '--disable-dev-shm-usage', 'about:blank',
   ], { stdio: 'ignore', detached: false });
-  _proc.on('exit', () => { _proc = null; });
+  // Capture the child in a local and compare identity before clearing _proc.
+  // Previously spawn A's late 'exit' would null out spawn B's handle, orphaning B —
+  // discardBrowser and shutdownBrowser both guard on `if (_proc)`, so B could never be
+  // killed. That is the accumulation mechanism behind the EAGAIN wedge.
+  const _child = _proc;
+  _child.on('exit', () => { if (_proc === _child) _proc = null; });
+  // spawn() reports EAGAIN/ENOENT through an async 'error' event. With no listener Node
+  // THROWS, which only the blanket uncaughtException handler caught — one log line, and
+  // the in-flight request left hanging. Handle it here so the failure is attributable.
+  _child.on('error', (e) => {
+    if (_proc === _child) _proc = null;
+    console.error(`[browser] spawn failed: ${e.code || ''} ${e.message} — the container is out of process slots if this says EAGAIN`);
+  });
 
   // Wait for the debugging endpoint rather than guessing at a sleep.
   let _ready = false;
@@ -121,8 +159,22 @@ async function ensureBrowser() {
       if (r.ok) _ready = true;
     } catch (_) { await new Promise(r => setTimeout(r, 250)); }
   }
-  if (!_ready) throw new Error('browser did not expose its debugging port');
-  browser = await chromium.connectOverCDP(`http://127.0.0.1:${CDP_PORT}`);
+  if (!_ready) { killStrayChrome('port never came up'); throw new Error('browser did not expose its debugging port'); }
+  // /json/version is served by the BROWSER process and answers even when every renderer
+  // is wedged or the instance is an abandoned orphan — a pure "if it answers it's
+  // healthy" check, and the reason a dead browser passed for 53 hours. The connect gets
+  // an explicit short timeout too; the Playwright default is an undeclared 30s, which is
+  // where the metronomic 30s failures in the logs came from.
+  try {
+    browser = await chromium.connectOverCDP(`http://127.0.0.1:${CDP_PORT}`, { timeout: CDP_CONNECT_MS });
+  } catch (e) {
+    killStrayChrome('CDP connect failed');
+    throw new Error(`could not attach to the browser: ${e.message}`);
+  }
+  // A browser that dies must not leave a truthy handle behind. The local worker has
+  // always done this; the service did not, so `browser` stayed a live-looking object
+  // and the health test relied entirely on page.isClosed().
+  browser.on('disconnected', () => { browser = null; page = null; pool.length = 0; });
   // Use the browser's OWN default context. A freshly created context behaves like an
   // incognito session; the run that actually got a reCAPTCHA token used the default
   // one, so that is what ships. The user agent needs no override either — this is a
@@ -131,7 +183,10 @@ async function ensureBrowser() {
   // Build the pool. The browser's own first tab is reused as slot 0 — it is the tab
   // that was verified to get a reCAPTCHA token — and the rest are opened alongside it.
   pool.length = 0;
-  const first = ctx.pages().find(p => !p.isClosed()) || await ctx.newPage();
+  // Close every tab that survived a previous cycle before building the pool. Without
+  // this, tab count grew 1 + 5N across reconnects at ~150MB each.
+  for (const old of ctx.pages()) { if (!old.isClosed()) await old.close().catch(() => {}); }
+  const first = await ctx.newPage();
   pool.push({ page: first, busy: false });
   for (let i = 1; i < POOL_SIZE; i++) pool.push({ page: await ctx.newPage(), busy: false });
   for (const s of pool) await s.page.setViewportSize({ width: 1512, height: 900 }).catch(() => {});
@@ -146,6 +201,18 @@ async function ensureBrowser() {
       route.continue();
     }).catch(() => {});
   }
+  // FUNCTIONAL PROOF, not a truthiness check. If the renderer cannot execute a trivial
+  // expression the browser is wedged, and we must find that out here rather than let a
+  // technician's lookup discover it.
+  try {
+    await Promise.race([
+      first.evaluate(() => 1),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('evaluate timed out after 5s')), 5000)),
+    ]);
+  } catch (e) {
+    await discardBrowser('the browser attached but could not execute');
+    throw new Error(`browser attached but is not executing: ${e.message}`);
+  }
   console.log(`[browser] ready — ${pool.length} lookup tabs, ${CDP_HEADED_NOTE}`);
   return pool;
 }
@@ -157,6 +224,7 @@ async function shutdownBrowser() {
   browser = null; page = null; pool.length = 0;
   if (b) { try { await b.close(); } catch (_) {} }
   if (_proc) { try { _proc.kill('SIGKILL'); } catch (_) {} _proc = null; }
+  killStrayChrome('idle shutdown');
   if (b) console.log('[browser] idle — shut down');
 }
 
@@ -629,7 +697,12 @@ function bye(sig) {
   return async () => {
     console.log(`[${sig}] shutting down`);
     server.close();
+    // close() over CDP only disconnects. Leaving the process alive orphans a Chrome
+    // holding port 9222 — precisely the state that made the next ensureBrowser()
+    // reattach to a dead browser.
     if (browser) { try { await browser.close(); } catch (_) {} }
+    if (_proc) { try { _proc.kill('SIGKILL'); } catch (_) {} _proc = null; }
+    killStrayChrome(sig);
     process.exit(0);
   };
 }

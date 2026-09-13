@@ -283,7 +283,12 @@ async function requireAdmin(req, res, next) {
   try {
     const admins = await supabase('GET', 'users', null,
       `?email=eq.${encodeURIComponent(req.user.email)}&select=role`);
-    if (!admins || !admins[0] || admins[0].role !== 'admin')
+    // 503, not 403. During a Supabase outage the admin dashboard is exactly where
+    // Brandon goes to diagnose it, and "Access denied" sends him hunting a permissions
+    // bug that does not exist. Same null-means-two-things trap as checkPaywall.
+    if (admins === null)
+      return res.status(503).json({ error: 'Database unavailable — try again in a moment' });
+    if (!admins[0] || admins[0].role !== 'admin')
       return res.status(403).json({ error: 'Access denied' });
     next();
   } catch (err) {
@@ -301,7 +306,9 @@ async function requireAdminOrOwner(req, res, next) {
   try {
     const rows = await supabase('GET', 'users', null,
       `?email=eq.${encodeURIComponent(req.user.email)}&select=role,company`);
-    const u = rows && rows[0];
+    if (rows === null)
+      return res.status(503).json({ error: 'Database unavailable — try again in a moment' });
+    const u = rows[0];
     if (!u) return res.status(403).json({ error: 'Access denied' });
     if (u.role === 'admin') { req.scope = { role: 'admin', all: true, company: null }; return next(); }
     if (u.role === 'owner') {
@@ -2420,7 +2427,20 @@ async function checkPaywall(token) {
     const users = await supabase('GET', 'users', null,
       `?id=eq.${encodeURIComponent(decoded.id)}&select=plan,trial_start,created_at,stripe_subscription_id`);
 
-    if (!users || users.length === 0)
+    // FAIL OPEN ON A DB FAILURE, DENY ONLY ON A REAL "NO SUCH USER".
+    // supabase() returns null for BOTH — a non-OK response and a 10s timeout land in the
+    // same place as a genuine miss (see the helper above). Collapsing them meant a
+    // Supabase blip told a PAYING technician "Account not found", which reads as "my
+    // account was deleted". It also killed /api/tts and /api/redraw, which gate on this.
+    // The header comment on this function has always promised fail-open; the code did
+    // the opposite. /api/auth/signin already distinguishes the two — this is that fix,
+    // finally carried across.
+    if (users === null) {
+      console.error('[paywall] DB unreachable — failing OPEN so an outage cannot lock out paying users');
+      try { logUsage(decoded.id, 'paywall_degraded', { reason: 'db_unreachable' }); } catch (_) {}
+      return { allowed: true, degraded: true };
+    }
+    if (users.length === 0)
       return { allowed: false, reason: 'Account not found' };
 
     const { plan, trial_start, created_at, stripe_subscription_id } = users[0];

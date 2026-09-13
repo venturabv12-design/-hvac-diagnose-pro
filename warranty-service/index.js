@@ -82,6 +82,7 @@ async function discardBrowser(why) {
   // CDP connection alone leaves the browser running and the port held.
   if (_proc) { try { _proc.kill('SIGKILL'); } catch (_) {} _proc = null; }
   killStrayChrome('discard');
+  drainWaiters(why);   // the pool they were queued for no longer exists
   console.warn(`[browser] discarded after ${why} — a stale automation cannot be allowed to keep driving the shared page`);
 }
 
@@ -250,18 +251,51 @@ const POOL_SIZE = Number(process.env.POOL_SIZE || 6);
 const pool = [];          // { page, busy }
 function poolFree() { return pool.find(s => !s.busy) || null; }
 
+// A WAIT THAT CANNOT BE INFINITE.
+//
+// acquire() used to park in `waiters` with no timeout and no way to be rejected. Two
+// separate ways that turned into a permanent wedge that only a redeploy could clear:
+//
+//   * discardBrowser() truncates `pool` to zero on a timeout while other lookups still
+//     hold slot references. Their release() then finds nothing free, does
+//     waiters.unshift(next) — and no one is ever coming to wake that waiter.
+//   * The negative-confirmation read acquired a SECOND slot while still holding the
+//     first (hold-and-wait). Six simultaneous unregistered lookups filled all six slots,
+//     all six asked for a seventh, and the only thing that could free a slot was code
+//     none of them would ever reach.
+//
+// Waiters now carry a reject and a deadline, so the worst case is an honest "busy"
+// instead of a service that is up and answers nothing.
+const ACQUIRE_WAIT_MS = Number(process.env.ACQUIRE_WAIT_MS || 60000);
 function acquire() {
   const free = poolFree();
   if (free) { free.busy = true; busy = true; return Promise.resolve(free); }
   if (waiters.length >= MAX_QUEUE) return Promise.reject(Object.assign(new Error('busy'), { code: 'BUSY' }));
-  return new Promise(res => waiters.push(res));
+  return new Promise((resolve, reject) => {
+    const w = { resolve, reject };
+    w.timer = setTimeout(() => {
+      const i = waiters.indexOf(w);
+      if (i >= 0) waiters.splice(i, 1);
+      reject(Object.assign(new Error('busy'), { code: 'BUSY' }));
+    }, ACQUIRE_WAIT_MS);
+    if (w.timer.unref) w.timer.unref();
+    waiters.push(w);
+  });
+}
+// Everyone still queued when the pool is thrown away must be told, not orphaned.
+function drainWaiters(why) {
+  while (waiters.length) {
+    const w = waiters.shift();
+    clearTimeout(w.timer);
+    w.reject(Object.assign(new Error('busy'), { code: 'BUSY', why }));
+  }
 }
 function release(slot) {
   if (slot) slot.busy = false;
   const next = waiters.shift();
   if (next) {
     const free = poolFree();
-    if (free) { free.busy = true; return next(free); }
+    if (free) { free.busy = true; clearTimeout(next.timer); return next.resolve(free); }
     waiters.unshift(next);   // nothing free yet; keep his place in line
     return;
   }
@@ -618,10 +652,15 @@ app.post('/lookup', async (req, res) => {
       // know, and saying "I do not know" costs a tech one phone call, while a wrong
       // "not covered" costs him the part. Fail toward distrust, every time.
       if (out && out.found === false && !out.inconclusive) {
-        let slotB = null, second = null;
+        // Run the confirmation on the slot we ALREADY hold. Asking for a second one
+        // while holding the first is hold-and-wait — the classic deadlock precondition
+        // — and with POOL_SIZE simultaneous unregistered lookups it wedged the whole
+        // service permanently. Independence here means a second independent RUN against
+        // the manufacturer, not a second tab: every pool page shares one browser context,
+        // so a different tab bought no isolation, only the deadlock.
+        let second = null;
         try {
-          slotB = await acquire();
-          const r2 = agentLookup(slotB.page, brand, serial, req.body && req.body.extra);
+          const r2 = agentLookup(slotA.page, brand, serial, req.body && req.body.extra);
           r2.catch(() => {});
           let _t2;
           second = await Promise.race([
@@ -630,7 +669,6 @@ app.post('/lookup', async (req, res) => {
           ]);
           clearTimeout(_t2);
         } catch (_) { second = null; }
-        finally { if (slotB) { try { release(slotB); } catch (_) {} } }
 
         if (second && second.found === true) {
           // The second run FOUND it. The first negative was ours, not theirs.

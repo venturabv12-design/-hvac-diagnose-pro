@@ -3021,7 +3021,17 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // non-stream for any message where a self-diagnosed cap discharge could appear —
   // that guarantees the strip runs and the dangerous method can't reach a tech.
   const _capDischargeRisk = /(capacitor|\bcaps?\b|dual[- ]?run|run cap|start cap|hard start|discharg)|((fan|motor|blower|compressor|condenser)[^.]{0,40}(not spinning|won'?t (spin|start|turn)|just hum|hums?|humming|buzz|won'?t run))|((won'?t (spin|start)|not spinning|humming|hums?)[^.]{0,40}(fan|motor|blower|compressor|condenser))/i.test(_lastUser);
-  const _forceNonStream = !!_safetyLead || !!_inverterWarn || !!_capacitorWarn || _homeownerFramed || _wiringDiagramIntent || _capDischargeRisk;
+  // (D4) COVERAGE claims. The deterministic warranty strip below — the one written after
+  // 2026-08-30, when Mike read a 2023 Carrier plate and told a tech "you're solidly in
+  // warranty and this is a healthy unit" on a unit that was never registered — lives ONLY
+  // on the non-stream path. Streaming returns before it ever runs, and streaming is the
+  // DEFAULT. So the single guard that exists to stop a tech quoting warranty labour on an
+  // uncovered unit was bypassed by every plainly-worded warranty question. Force
+  // non-stream whenever coverage could come up, exactly as _capDischargeRisk does for the
+  // screwdriver strip. Deltas already sent cannot be retracted, so forcing non-stream is
+  // the only way to guarantee the strip runs.
+  const _coverageIntent = /\b(warrant(y|ies|ied)|covered|coverage|registered|registration)\b|still\s+under\s+\w+|parts?\s+(and\s+labou?r\s+)?cover/i.test(_lastUser);
+  const _forceNonStream = !!_safetyLead || !!_inverterWarn || !!_capacitorWarn || _homeownerFramed || _wiringDiagramIntent || _capDischargeRisk || _coverageIntent;
 
   globalActive++;
   const controller = new AbortController();

@@ -1603,6 +1603,24 @@ app.get('/api/warranty/requirements', authenticateToken, async (req, res) => {
 // it, so these two routes are the only door: the laptop polls Mike, Mike asks the
 // warranty service. The laptop only ever makes outbound calls — nothing is opened on
 // his router and nothing listens on his machine.
+// The warranty SERVICE's own health, not the worker's. Nothing outside Railway's private
+// network could read it, so every monitor watched the laptop worker's `online:true`
+// boolean and saw green while the four server-side brands were dead. Read-only, no auth
+// (it exposes nothing a health check should not), and it mirrors the service's status
+// code so a monitor can act on it.
+app.get('/api/warranty-service-health', async (req, res) => {
+  try {
+    const r = await fetch(`${WARRANTY_URL}/health`, {
+      headers: { 'x-warranty-token': WARRANTY_TOKEN },
+      signal: AbortSignal.timeout(15000),
+    });
+    const data = await r.json().catch(() => null);
+    return res.status(r.status).json(data || { ok: false, error: 'unreadable' });
+  } catch (err) {
+    return res.status(503).json({ ok: false, error: 'warranty service unreachable', detail: err.message });
+  }
+});
+
 app.all('/api/warranty-worker/:action', async (req, res) => {
   const action = String(req.params.action || '').replace(/[^a-z]/gi, '');
   if (!['next', 'result', 'status'].includes(action)) return res.status(404).json({ error: 'unknown' });
@@ -1677,6 +1695,18 @@ app.post('/api/warranty', authenticateToken, aiLimiter, async (req, res) => {
     return res.json(data);
   } catch (err) {
     console.error('Warranty lookup error:', err.message);
+    // WRITE THE FAILURE DOWN. logUsage ran only on the success path, so a total warranty
+    // outage produced ZERO rows — and field-sweep, which alerts on rows where
+    // inconclusive/lookup_did_not_run, saw an empty result set and printed
+    // "warranty lookups=0 brands_failing=0 ... SWEEP_CLEAN". Absence of data read as
+    // health for 53 hours. A monitor that cannot see a total outage is worse than none.
+    try {
+      logUsage(req.user && req.user.id, 'warranty_lookup', {
+        brand, found: false, registered: false, supported: true,
+        inconclusive: true, reason: 'registry_unreachable', via: null,
+        err: String(err.message).slice(0, 120),
+      });
+    } catch (_) {}
     // Never invent a warranty. A wrong "covered through 2033" is how a tech quotes
     // warranty work on a unit that isn't covered.
     return res.status(502).json({ ok: false, error: 'registry_unreachable', brand });

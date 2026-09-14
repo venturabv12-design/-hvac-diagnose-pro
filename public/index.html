@@ -9301,6 +9301,37 @@ function buildPersonalizedContext(){
   } else {
     ctx += '\nCURRENT MODE: Live text chat. The tech is NOT using the camera. Do not ask them to point the camera at anything. Answer their question directly.\n';
   }
+  // THE UNIT HE IS STANDING AT. Brandon, 2026-09-14: "I just want him to be able to
+  // conversate and communicate and hold memory like a real human being... not every time
+  // we click one of those buttons it populates a question, but if we were already working
+  // on that."
+  //
+  // mpUnit() has held the scanned brand/model/serial all along — but ONLY the warranty
+  // code ever read it. Mike's brain never saw it. So a tech would photograph a plate,
+  // tap "Error Codes", and get asked for the model he had just shown him. Thirty-two
+  // buttons, every one firing a canned question into a brain with no idea what unit was
+  // in front of it. That is the robot feeling, and it was never a prompt problem — the
+  // knowledge simply was not in the room.
+  //
+  // One block here reaches every path (chat, camera, quick actions) because they all
+  // build their system prompt from this function.
+  try{
+    var _bu = (typeof _mpUnitPlain==='function') ? _mpUnitPlain() : null;
+    if(_bu && (_bu.brand||_bu.model||_bu.serial)){
+      var _bd=[]; if(_bu.brand)_bd.push(_bu.brand); if(_bu.model)_bd.push('model '+_bu.model); if(_bu.serial)_bd.push('serial '+_bu.serial);
+      ctx += '\nUNIT IN FRONT OF HIM RIGHT NOW: '+_bd.join(', ')+'.\n'
+          +  'He already gave you this — off the data plate or in conversation. It is the '
+          +  'default subject of anything he asks until he tells you otherwise.\n'
+          +  'DO NOT ASK HIM FOR IT AGAIN. Not the brand, not the model, not the serial. '
+          +  'Asking a man to re-read a plate he just showed you is what makes software feel '
+          +  'like a phone tree, and he notices every time.\n'
+          +  'If a request is ambiguous about WHICH system, do not open with a form — ask the '
+          +  'one question a person would ask: "still the '+(_bu.brand||'same')+', or a different '
+          +  'system?" Then carry on. One question, in his language, not an intake sheet.\n'
+          +  'If what he asks plainly concerns a different unit, just follow him there — no ceremony.\n';
+    }
+  }catch(_bue){}
+
   // Only inject date for agreement/invoice/scheduling related messages
   var _msgLower=(document.getElementById('chatInput').value||'').toLowerCase();
   var _needsDate=/agreement|invoice|contract|schedule|appointment|what.*date|what.*day|what.*time|today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|month|year|season|annual|expir|warrant|due|remind|how long|when is|when does|what year/i.test(_msgLower);
@@ -12482,13 +12513,36 @@ function _mpWarrantyExtras(t,expect){
   return out;
 }
 function mpWarrantyCheck(){
-  // Tapping this tile always means "the unit I am standing at right now", never a
-  // continuation of the last one. Without this the previous unit's homeowner name
-  // and zip survive into this lookup.
-  mpUnitClear();
+  // This used to call mpUnitClear() unconditionally, so a tech could photograph a plate
+  // and then be asked for the brand and serial off that same plate one tap later. The
+  // reason was real — the previous unit's homeowner name and zip must never ride along
+  // into a new lookup — but wiping the equipment too was throwing out the answer to
+  // solve the leak. Brandon, 2026-09-14: "if we were already working on that... I just
+  // don't want him to be a chat box or a robot."
+  //
+  // So: keep the equipment, drop the PEOPLE. Name what we have and ask the one question
+  // a human asks. If he says it is a different system, mpUnitLearn already wipes the
+  // whole unit the moment a different serial arrives.
+  var _u=(typeof mpUnit==='function')?mpUnit():null;
+  var _known=_u&&(_u.brand||_u.model||_u.serial);
+  if(_known){
+    // The homeowner details are the part that must not survive — they belong to the last
+    // customer, not this equipment.
+    ['lastName','zip','state','originalPurchaser'].forEach(function(k){
+      try{ delete _u[k]; if(_u._src)delete _u._src[k]; }catch(_dk){}
+    });
+    window._mpWarrantyAsks=0; window._mpWarrantyPending=null;
+  } else {
+    mpUnitClear();
+  }
   window._mpPendingWarranty=true;
   if(typeof mpEnterChat==='function')mpEnterChat();
-  mpAskMike("Give me the brand and the serial number off the data plate and I'll pull the actual warranty registration — not the general terms, the real status on that unit. Grab the model number too if it's on there; Goodman needs it. Or just snap a photo of the plate.");
+  if(_known){
+    var _d=[]; if(_u.brand)_d.push(_mpSayBrand(_u.brand)); if(_u.model)_d.push(_u.model);
+    mpAskMike("Still on that "+_d.join(' ')+"? Say the word and I'll pull the real registration on it. Different system, just tell me which and I'll go get that one.");
+  } else {
+    mpAskMike("Give me the brand and the serial number off the data plate and I'll pull the actual warranty registration — not the general terms, the real status on that unit. Grab the model number too if it's on there; Goodman needs it. Or just snap a photo of the plate.");
+  }
 }
 // Photo path — the tech snaps the data plate instead of typing. Mike already reads
 // nameplates; here we ask him for JUST the three identifiers as JSON so we can drive

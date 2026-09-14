@@ -3367,7 +3367,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         // claim with no number in it, which is still a price claim under Brandon's rule
         // (nothing about price to a homeowner: not a number, not a range, not whether
         // it's worth it). Comparatives and worth-it judgments are covered now.
-        var _priceWord = /\b(prices?|priced|pricing|costs?|costly|costlier|costing|quotes?|quoted|quoting|expensive|inexpensive|cheap(?:er|est)?|pricey|pricier|affordable|affordability|how much (?:does|will|is|it|to|for|a|the|they|i|you)|ballpark|labou?r rate|service (?:call )?fee|trip charge|diagnostic (?:fee|visit|call)|invoice|worth (?:it|the money|paying|spending))\b|\$\s?\d/i;
+        var _priceWord = /\b(prices?|priced|pricing|costs?|costly|costlier|costing|quotes?|quoted|quoting|expensive|inexpensive|cheap(?:er|est)?|pricey|pricier|affordable|affordability|how much (?:does|will|is|it|to|for|a|the|they|i|you)|ballpark|labou?r rate|service (?:call )?fee|trip charge|diagnostic (?:fee|visit|call)|invoice|worth (?:it|the money|paying|spending))\b|\$\s?\d|\b(?:hourly|flat|flat[- ]rate|labou?r|service|diagnostic)\s+(?:rates?|fees?)\b|\bcharges?\s+(?:a|an|you|around|about|roughly|between|from|per|anywhere)\b/i;
         var _hoLines = outText.split('\n'), _hoDropped = false;
         for (var _hoL = 0; _hoL < _hoLines.length; _hoL++) {
           var _hoSents = _hoLines[_hoL].split(/(?<=[.!?])\s+/), _hoKept = [];
@@ -3511,13 +3511,24 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       // ("## Why the Big Range?" with its whole body scrubbed — seen live 2026-09-14).
       // An empty section reads like the app broke, so drop any heading whose body is now
       // empty. Only fires on genuinely empty sections, so healthy answers are untouched.
+      // 2026-09-14, second prod capture: Mike labels sections with BOLD TEXT as often as
+      // with "#", and the scrubbed answer went out looking like this —
+      //     **DIY:**
+      //
+      //     **Professional:**
+      // two labels standing over nothing, which reads as a broken app to a customer. So a
+      // "section opener" here is a # heading OR a line that is only a bold/italic label.
       {
+        const _opener = (l) => /^\s*#{1,6}\s+\S/.test(l)
+          || /^\s*(?:\*\*|__)[^*_\n]{1,60}(?:\*\*|__)\s*:?\s*$/.test(l)
+          || /^\s*(?:\*|_)[^*_\n]{1,60}(?:\*|_)\s*:\s*$/.test(l);
         const _hl = outText.split('\n');
         for (let _i = 0; _i < _hl.length; _i++) {
-          if (!/^\s*#{1,6}\s+\S/.test(_hl[_i])) continue;
-          let _j = _i + 1, _empty = true;
-          for (; _j < _hl.length && !/^\s*#{1,6}\s+\S/.test(_hl[_j]); _j++) {
-            if (_hl[_j].trim()) { _empty = false; break; }
+          if (!_opener(_hl[_i])) continue;
+          let _empty = true;
+          for (let _j = _i + 1; _j < _hl.length && !_opener(_hl[_j]); _j++) {
+            // A horizontal rule is not content either.
+            if (_hl[_j].trim() && !/^\s*(?:[-*_]\s*){3,}$/.test(_hl[_j])) { _empty = false; break; }
           }
           if (_empty) _hl[_i] = '';
         }

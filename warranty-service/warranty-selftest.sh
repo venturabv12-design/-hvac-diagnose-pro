@@ -69,25 +69,8 @@ else
   check(){                     # check <label> <json body>
     local label="$1" body="$2"
     local out
-    # CAPTURE THE HTTP STATUS. /api/warranty sits behind aiLimiter (20/min) and the
-    # self-check shares that bucket with real technicians. When it gets squeezed out,
-    # express-rate-limit answers with a PLAIN-TEXT body, json.load raised, and this
-    # printed "no readable answer" — which scored as a BROKEN BRAND and fired a --major
-    # "Warranty lookup broke" alert. Seen live 2026-09-14 08:54:27: Trane "failed" in one
-    # second, and a clean retry moments later answered in 5.8s. Being rate limited means
-    # we could not test the brand; it says nothing about the brand. Different thing,
-    # different handling — skip the run, never page him for it.
-    # ONE request, body and status together. A separate probe call would double every
-    # lookup — each one drives a manufacturer's real form for 15-30s, so probing first
-    # would hit them twice per check and burn through the very rate limit it is testing.
-    local raw
-    raw=$($CURL -s -m 190 -w '\n%{http_code}' -X POST "$API/api/warranty" \
-          -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d "$body")
-    if [ "${raw##*$'\n'}" = "429" ]; then
-      say "  $label SKIPPED — rate limited (429), not a brand failure"
-      return
-    fi
-    out=$(printf '%s' "${raw%$'\n'*}" \
+    out=$($CURL -s -m 190 -X POST "$API/api/warranty" -H 'content-type: application/json' \
+          -H "Authorization: Bearer $TOKEN" -d "$body" \
           | $PY -c 'import sys,json
 try: d=json.load(sys.stdin)
 except Exception: print("BAD|no readable answer"); raise SystemExit
@@ -162,7 +145,7 @@ RENOTIFY_S=${RENOTIFY_S:-14400}          # 4h — re-nag while still broken
 EMAIL_EVERY_S=${EMAIL_EVERY_S:-86400}    # 24h — how often a CONTINUING problem re-emails
 EMAILED_F="$HOME/.claude/tools/trazer/.warranty-selftest-emailed"
 BLIND_RENOTIFY_S=${BLIND_RENOTIFY_S:-21600}   # 6h — a blind monitor is its own emergency
-NOTIFY="${TRAZER_NOTIFY_BIN:-$HOME/.claude/tools/trazer/notify.sh}"
+NOTIFY="$HOME/.claude/tools/trazer/notify.sh"
 STATE_F="$HOME/.claude/tools/trazer/.warranty-selftest-failing"
 STAMP_F="$HOME/.claude/tools/trazer/.warranty-selftest-notified"   # epoch of last CONFIRMED send
 SINCE_F="$HOME/.claude/tools/trazer/.warranty-selftest-since"      # epoch the current set began

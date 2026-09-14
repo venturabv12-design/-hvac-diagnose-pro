@@ -3449,8 +3449,19 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       // Set by every strip that EMPTIES a line. Renumbering below is gated on it so a
       // healthy answer that happens to start a list at "3." is never rewritten.
       var _guardRemovedLine = false;
-      const _screwMethodIn = (s) => /\bscrewdriver\b/i.test(s)
-        && /\b(?:terminal|short|shorting|bridge|blade|across|contacts?|prongs?)\b/i.test(s);
+      // 2026-09-14, third live capture — THE STRIP WAS KEYED ON THE WORD, NOT THE ACT.
+      // A tech asking about a 45/5 dual run cap got, on prod:
+      //   "Bridging bare metal across the terminals works but can weld the tip…"
+      // Same lethal method, no "screwdriver" in it, so nothing caught it. Match the ACT —
+      // bridging/shorting/jumping anything conductive across the terminals — and let the
+      // ONE safe version through by exempting a sentence that names a resistor.
+      const _safeDischarge = (s) => /\b(?:resistor|ohm|\d+\s*k\b)/i.test(s);
+      const _screwMethodIn = (s) => !_safeDischarge(s) && (
+        (/\bscrewdriver\b/i.test(s) && /\b(?:terminal|short|shorting|bridge|blade|across|contacts?|prongs?)\b/i.test(s))
+        || (/\b(?:short(?:ing|s)?|bridg(?:e|es|ing)|jump(?:er|ers|ing)?|arc(?:ing)?|lay(?:ing)?|touch(?:ing)?)\b[^.!?\n]{0,70}\b(?:across|between|from one)\b[^.!?\n]{0,50}\b(?:terminal|post|lug|prong|contact)/i.test(s))
+        || (/\b(?:terminal|post|lug|prong|contact)s?\b[^.!?\n]{0,50}\b(?:with|using)\b[^.!?\n]{0,40}\b(?:screwdriver|blade|bare metal|metal object|wire|pliers|jumper|coin|key)\b/i.test(s))
+        || (/\bbare metal\b[^.!?\n]{0,50}\b(?:across|between|on)\b[^.!?\n]{0,40}\b(?:terminal|post|lug|contact)/i.test(s))
+      );
       outText = outText.split('\n').map((line) => {
         if (!_screwMethodIn(line)) return line;
         const kept = line.split(/(?<=[.!?])\s+/).filter((s) => !_screwMethodIn(s));
@@ -3480,7 +3491,12 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         // any SECTION whose heading is the DIY walkthrough, and any sentence telling them
         // they can do this themselves. The diagnosis, the symptoms, and the what-to-ask
         // content live in other sections and survive.
-        const _diyHeading = /^\s*#{1,6}\s*[^\n]*\b(?:diy|do it yourself|yourself|if you (?:attempt|try|go)|attempt(?:ing)? it|before you start|how to (?:replace|swap|change|do)|replacing it|the swap|steps?)\b/i;
+        // 2026-09-14 third capture: the heading was "### If you decide to do it, the basics
+        // are:" followed by a four-step swap, and a "Tools you'll want" list under it. The
+        // pattern only knew "if you attempt/try". Widened — and below, ANY numbered
+        // procedure is dropped for a homeowner on a capacitor question, because the shape
+        // of a how-to is more reliable than guessing what Mike titled it.
+        const _diyHeading = /^\s*#{1,6}\s*[^\n]*\b(?:diy|do it yourself|yourself|if you (?:attempt|try|go|decide|want|choose)|attempt(?:ing)? it|doing it|before you start|before you buy|how to (?:replace|swap|change|do)|replacing it|the swap|the basics|steps?|tools?|what you'?ll need|you'?ll need)\b/i;
         const _dl = outText.split('\n');
         let _inDiy = false;
         for (let _i = 0; _i < _dl.length; _i++) {
@@ -3489,6 +3505,23 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         }
         outText = _dl.join('\n');
         const _diySell = /\b(?:many|most|plenty of|lots of)\s+homeowners?\s+(?:do|can|handle|replace|swap|tackle|manage)|\b(?:one of the|a)\s+(?:simpler|simplest|easier|easiest|more straightforward)\s+(?:ac |a\/c |hvac )?(?:repairs?|jobs?|fixes?|swaps?)|\byou can (?:absolutely |definitely |certainly |safely )?(?:do|handle|tackle|replace|swap|change) (?:this|it|that|the cap\w*)\s*(?:yourself|on your own)|\bit'?s (?:a )?(?:pretty |fairly |relatively |very )?(?:easy|simple|straightforward)\s+(?:diy|swap|fix|repair|job)|\bdiy(?:[- ]friendly| route| job| fix)/i;
+        // A numbered procedure IS a how-to, whatever it is titled. On a capacitor question
+        // from a homeowner there is no numbered procedure we want them following, so the
+        // shape goes — along with the line that introduces it ("…the basics are:"). This
+        // is narrow on purpose: homeowner AND capacitor. A homeowner asking about a filter
+        // still gets their steps (regression-tested).
+        const _pl = outText.split('\n');
+        for (let _i = 0; _i < _pl.length; _i++) {
+          if (!/^\s*\d+[.)]\s+\S/.test(_pl[_i])) continue;
+          _guardRemovedLine = true;
+          _pl[_i] = '';
+          for (let _k = _i - 1; _k >= 0; _k--) {
+            if (!_pl[_k].trim()) continue;
+            if (/:\s*$/.test(_pl[_k]) || /^\s*#{1,6}\s+\S/.test(_pl[_k])) _pl[_k] = '';
+            break;
+          }
+        }
+        outText = _pl.join('\n');
         const _sl = outText.split('\n');
         for (let _i = 0; _i < _sl.length; _i++) {
           if (!_diySell.test(_sl[_i])) continue;

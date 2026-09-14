@@ -3321,18 +3321,27 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
           '(a price your tech will give you)'
         );
         // Neutralize replace-or-repair recommendations to a homeowner.
-        outText = outText.replace(
-          /\b(replacement|replacing(?: it)?|a new system|a new unit|the new system|going new)\b[^.!?\n]{0,45}?\b(is (?:probably |likely )?(?:the )?(?:smarter|smart|better|right|wiser)|makes (?:more )?sense|the (?:better|smarter|right) (?:move|call|bet|play))/gi,
-          'whether to repair or replace is the licensed tech’s call'
-        );
-        outText = outText.replace(
-          /\b(?:i'?d|i would|lean toward|i'?d lean toward|go with|my (?:honest )?take[: -]*)[^.!?\n]{0,20}?\b(replac\w*|the new (?:system|unit)|a new (?:system|unit))/gi,
-          'the repair-or-replace call belongs to the tech on the job'
-        );
-        outText = outText.replace(
-          /\b(?:the )?math (?:often |usually |here )?(?:favors?|points? to|leans? toward|supports?)[^.!?\n]{0,22}?\b(replac\w*|new (?:system|unit)|going new)/gi,
-          'whether to repair or replace is the licensed tech’s call'
-        );
+        // 2026-09-14 — these used to SPLICE the safe phrase into the MIDDLE of the model's
+        // sentence, and on prod that produced actual broken English to a customer:
+        //   "You can't confidently the repair-or-replace call belongs to the tech on the job"
+        // (spliced over "…can't confidently go with a replacement"). Drop the whole
+        // sentence instead, and say the one true thing once at the end. A homeowner
+        // reading a mangled sentence trusts the product less than one reading a redirect.
+        const _replaceAdvice = [
+          /\b(replacement|replacing(?: it)?|a new system|a new unit|the new system|going new)\b[^.!?\n]{0,45}?\b(is (?:probably |likely )?(?:the )?(?:smarter|smart|better|right|wiser)|makes (?:more )?sense|the (?:better|smarter|right) (?:move|call|bet|play))/i,
+          /\b(?:i'?d|i would|lean toward|i'?d lean toward|go with|my (?:honest )?take[: -]*)[^.!?\n]{0,20}?\b(replac\w*|the new (?:system|unit)|a new (?:system|unit))/i,
+          /\b(?:the )?math (?:often |usually |here )?(?:favors?|points? to|leans? toward|supports?)[^.!?\n]{0,22}?\b(replac\w*|new (?:system|unit)|going new)/i,
+        ];
+        var _replDropped = false;
+        outText = outText.split('\n').map((line) => {
+          if (!_replaceAdvice.some((re) => re.test(line))) return line;
+          const kept = line.split(/(?<=[.!?])\s+/).filter((s) => {
+            if (_replaceAdvice.some((re) => re.test(s))) { _replDropped = true; return false; }
+            return true;
+          });
+          const rebuilt = kept.join(' ').trim();
+          return /^(?:[-*+]|\d+[.)]|#{1,6})\s*$/.test(rebuilt) ? '' : rebuilt;
+        }).join('\n');
         // Never GRADE another contractor's price to a homeowner (fair/high/premium/scam)
         // — that undercuts the paying tech as much as quoting a number does. These target
         // unambiguous price-judgment phrases only; anchored to price words so technical
@@ -3353,7 +3362,12 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         // and list breaks. Deliberately EXCLUDES bare "charge/charged" (refrigerant + cap
         // charge are HVAC terms), "bill" (energy bill is a legit efficiency topic), and bare
         // "estimate" (Mike estimates age/airflow) so technical and safety content survives.
-        var _priceWord = /\b(prices?|priced|pricing|costs?|costly|costing|quotes?|quoted|quoting|expensive|inexpensive|cheap|pricey|affordable|affordability|how much (?:does|will|is|it|to|for|a|the|they|i|you)|ballpark|labou?r rate|service (?:call )?fee|trip charge|diagnostic fee|invoice)\b|\$\s?\d/i;
+        // 2026-09-14 — "\bcheap\b" never matched "cheaper", so prod opened a homeowner
+        // answer with "Capacitor replacement is one of the cheaper AC repairs" — a price
+        // claim with no number in it, which is still a price claim under Brandon's rule
+        // (nothing about price to a homeowner: not a number, not a range, not whether
+        // it's worth it). Comparatives and worth-it judgments are covered now.
+        var _priceWord = /\b(prices?|priced|pricing|costs?|costly|costlier|costing|quotes?|quoted|quoting|expensive|inexpensive|cheap(?:er|est)?|pricey|pricier|affordable|affordability|how much (?:does|will|is|it|to|for|a|the|they|i|you)|ballpark|labou?r rate|service (?:call )?fee|trip charge|diagnostic (?:fee|visit|call)|invoice|worth (?:it|the money|paying|spending))\b|\$\s?\d/i;
         var _hoLines = outText.split('\n'), _hoDropped = false;
         for (var _hoL = 0; _hoL < _hoLines.length; _hoL++) {
           var _hoSents = _hoLines[_hoL].split(/(?<=[.!?])\s+/), _hoKept = [];
@@ -3365,6 +3379,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         }
         outText = _hoLines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
         if (_hoDropped) outText += (outText ? '\n\n' : '') + 'Numbers on price? That’s your tech’s call to make — I’m here to make sure you know exactly what’s wrong and what to ask him.';
+        else if (_replDropped) outText += (outText ? '\n\n' : '') + 'Repair or replace? That call belongs to the licensed tech with eyes on the system — I’m here to make sure you know what’s wrong and what to ask him.';
       }
       // SAFETY STRIP (deterministic, UNCONDITIONAL): the model keeps generating the "short the
       // terminals with a screwdriver" discharge method despite the prompt forbidding it. A prompt
@@ -3408,10 +3423,17 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         }
         if (_stripped) {
           outText = _lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-          outText += (outText ? '\n\n' : '') +
-            "On coverage — the age off the plate does NOT tell us whether this one is registered, " +
-            "and registration is the difference between the base term and the extended one. " +
-            "Say the word and I'll pull the actual registration from the manufacturer before you quote anything.";
+          // This note is written for a TECH ("before you quote anything"). Prod 2026-09-14
+          // appended it verbatim to a HOMEOWNER, who quotes nobody — tech-facing language
+          // to a customer reads as software talking to the wrong person. Same fact, their
+          // words, and it still points them at their tech rather than at a number.
+          outText += (outText ? '\n\n' : '') + (_homeownerFramed
+            ? "On coverage — the age of the unit does NOT tell us whether it was ever registered, " +
+              "and registration is the difference between the base parts warranty and the longer one. " +
+              "Your tech can pull the actual registration from the manufacturer before anyone assumes it's covered."
+            : "On coverage — the age off the plate does NOT tell us whether this one is registered, " +
+              "and registration is the difference between the base term and the extended one. " +
+              "Say the word and I'll pull the actual registration from the manufacturer before you quote anything.");
         }
       }
 
@@ -3424,12 +3446,16 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       // the most likely shape for the dangerous method to arrive in. Strip LINE-first
       // (every bullet/heading is its own unit, punctuation or not), then sentence-level
       // inside the line so a long paragraph only loses the dangerous sentence.
+      // Set by every strip that EMPTIES a line. Renumbering below is gated on it so a
+      // healthy answer that happens to start a list at "3." is never rewritten.
+      var _guardRemovedLine = false;
       const _screwMethodIn = (s) => /\bscrewdriver\b/i.test(s)
         && /\b(?:terminal|short|shorting|bridge|blade|across|contacts?|prongs?)\b/i.test(s);
       outText = outText.split('\n').map((line) => {
         if (!_screwMethodIn(line)) return line;
         const kept = line.split(/(?<=[.!?])\s+/).filter((s) => !_screwMethodIn(s));
         const rebuilt = kept.join(' ').trim();
+        _guardRemovedLine = true;
         // If the whole bullet/heading WAS the method, drop the leftover marker too.
         return /^(?:[-*+]|\d+[.)]|#{1,6})\s*$/.test(rebuilt) ? '' : rebuilt;
       }).join('\n');
@@ -3440,8 +3466,38 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       // which fixed the fixed-string TAIL but never touched Mike's own prose.)
       if (_homeownerFramed && (_capacitorWarn || _hadScrewMethod)) {
         outText = outText.split('\n')
-          .map((l) => /\b(?:discharg\w*|bleed(?:ing|s)?\b|jumper|resistor|screwdriver)\b/i.test(l) ? '' : l)
+          .map((l) => {
+            if (!/\b(?:discharg\w*|bleed(?:ing|s)?\b|jumper|resistor|screwdriver)\b/i.test(l)) return l;
+            _guardRemovedLine = true;
+            return '';
+          })
           .join('\n');
+        // Pulling only the discharge STEP out of a DIY walkthrough leaves something worse
+        // than what we started with: prod 2026-09-14 answered a homeowner "Yes, many
+        // homeowners do — it's one of the simpler AC repairs," walked them through the
+        // swap, and had the one step that keeps them alive silently missing, while the
+        // tail underneath said do not touch it. Take the whole how-to, not the step: drop
+        // any SECTION whose heading is the DIY walkthrough, and any sentence telling them
+        // they can do this themselves. The diagnosis, the symptoms, and the what-to-ask
+        // content live in other sections and survive.
+        const _diyHeading = /^\s*#{1,6}\s*[^\n]*\b(?:diy|do it yourself|yourself|if you (?:attempt|try|go)|attempt(?:ing)? it|before you start|how to (?:replace|swap|change|do)|replacing it|the swap|steps?)\b/i;
+        const _dl = outText.split('\n');
+        let _inDiy = false;
+        for (let _i = 0; _i < _dl.length; _i++) {
+          if (/^\s*#{1,6}\s+\S/.test(_dl[_i])) _inDiy = _diyHeading.test(_dl[_i]);
+          if (_inDiy) { if (_dl[_i].trim()) _guardRemovedLine = true; _dl[_i] = ''; }
+        }
+        outText = _dl.join('\n');
+        const _diySell = /\b(?:many|most|plenty of|lots of)\s+homeowners?\s+(?:do|can|handle|replace|swap|tackle|manage)|\b(?:one of the|a)\s+(?:simpler|simplest|easier|easiest|more straightforward)\s+(?:ac |a\/c |hvac )?(?:repairs?|jobs?|fixes?|swaps?)|\byou can (?:absolutely |definitely |certainly |safely )?(?:do|handle|tackle|replace|swap|change) (?:this|it|that|the cap\w*)\s*(?:yourself|on your own)|\bit'?s (?:a )?(?:pretty |fairly |relatively |very )?(?:easy|simple|straightforward)\s+(?:diy|swap|fix|repair|job)|\bdiy(?:[- ]friendly| route| job| fix)/i;
+        const _sl = outText.split('\n');
+        for (let _i = 0; _i < _sl.length; _i++) {
+          if (!_diySell.test(_sl[_i])) continue;
+          const _kept = _sl[_i].split(/(?<=[.!?])\s+/).filter((s) => !_diySell.test(s));
+          const _rb = _kept.join(' ').trim();
+          _guardRemovedLine = true;
+          _sl[_i] = /^(?:[-*+]|\d+[.)]|#{1,6})\s*$/.test(_rb) ? '' : _rb;
+        }
+        outText = _sl.join('\n');
       }
       // The multi-line "Method 1: …screwdriver…" block + orphaned-heading cleanup can corrupt
       // legitimately-numbered non-capacitor answers, so keep that de-numbering scoped to the
@@ -3470,6 +3526,21 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       // Removing a bullet mid-list leaves a blank line that markdown renders as TWO
       // broken lists. Close the gap when the blank line sits between two list items.
       outText = outText.replace(/((?:^|\n)\s*(?:[-*+]|\d+[.)])[^\n]*)\n[ \t]*\n(?=\s*(?:[-*+]|\d+[.)])\s)/g, '$1\n');
+      // And removing a NUMBERED step leaves a visible hole — prod 2026-09-14 showed a
+      // homeowner "1." then "3." with step 2 gone, which reads as a broken app and,
+      // worse, as a missing instruction. Renumber each run of steps from its own start.
+      if (_guardRemovedLine || _hoDropped || _replDropped) {
+        const _nl = outText.split('\n');
+        let _next = 0;
+        for (let _i = 0; _i < _nl.length; _i++) {
+          const _m = _nl[_i].match(/^(\s*)(\d+)([.)])(\s+\S)/);
+          if (!_m) { if (!_nl[_i].trim()) continue; _next = 0; continue; }
+          if (!_next) _next = 1;
+          _nl[_i] = _m[1] + _next + _m[3] + _m[4] + _nl[_i].slice(_m[0].length);
+          _next++;
+        }
+        outText = _nl.join('\n');
+      }
       outText = outText.replace(/\n{3,}/g, '\n\n').trim();
       // Genuine ACTIVE emergencies (911 / live gas / CO / spillage / A2L release) still
       // LEAD — you never bury "call 911" or "shut the gas off" under an answer. The

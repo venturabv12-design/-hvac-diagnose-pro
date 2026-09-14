@@ -3416,8 +3416,33 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       }
 
       const _hadScrewMethod = /\bscrewdriver\b/i.test(outText) && /\b(?:terminal|short|shorting|bridge|across)\b/i.test(outText);
-      outText = outText.replace(/[^.!?\n]*\bscrewdriver\b[^.!?\n]*\b(?:terminal|short|shorting|blade|across)\b[^.!?\n]*[.!?]/gi, '');
-      outText = outText.replace(/[^.!?\n]*\b(?:short|shorting|bridge)\b[^.!?\n]*\bterminal[^.!?\n]*\bscrewdriver\b[^.!?\n]*[.!?]/gi, '');
+      // 2026-09-14 — THE STRIP HAD A HOLE AND IT REACHED A HOMEOWNER ON PROD. Both regexes
+      // below required a sentence to END in [.!?], so a markdown BULLET with no terminal
+      // punctuation sailed straight through untouched. Verified live on trazermike.io:
+      //   "- Discharge the capacitor with an insulated screwdriver (touching across terminals)"
+      // Lists are how the model formats procedures, so this was not an edge case — it was
+      // the most likely shape for the dangerous method to arrive in. Strip LINE-first
+      // (every bullet/heading is its own unit, punctuation or not), then sentence-level
+      // inside the line so a long paragraph only loses the dangerous sentence.
+      const _screwMethodIn = (s) => /\bscrewdriver\b/i.test(s)
+        && /\b(?:terminal|short|shorting|bridge|blade|across|contacts?|prongs?)\b/i.test(s);
+      outText = outText.split('\n').map((line) => {
+        if (!_screwMethodIn(line)) return line;
+        const kept = line.split(/(?<=[.!?])\s+/).filter((s) => !_screwMethodIn(s));
+        const rebuilt = kept.join(' ').trim();
+        // If the whole bullet/heading WAS the method, drop the leftover marker too.
+        return /^(?:[-*+]|\d+[.)]|#{1,6})\s*$/.test(rebuilt) ? '' : rebuilt;
+      }).join('\n');
+      // A homeowner must never be walked through discharging or swapping a capacitor at
+      // all — the tail below already tells them it is a licensed tech's job, and a DIY
+      // how-to under it reads as permission. Line-level so the diagnosis and the
+      // "what to ask your tech" content survive. (Extends the 2026-08-22 audience gate,
+      // which fixed the fixed-string TAIL but never touched Mike's own prose.)
+      if (_homeownerFramed && (_capacitorWarn || _hadScrewMethod)) {
+        outText = outText.split('\n')
+          .map((l) => /\b(?:discharg\w*|bleed(?:ing|s)?\b|jumper|resistor|screwdriver)\b/i.test(l) ? '' : l)
+          .join('\n');
+      }
       // The multi-line "Method 1: …screwdriver…" block + orphaned-heading cleanup can corrupt
       // legitimately-numbered non-capacitor answers, so keep that de-numbering scoped to the
       // capacitor path where a "Method 1 (screwdriver) / Method 2 (resistor)" pair is expected.
@@ -3426,6 +3451,25 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         // removing the screwdriver "Method 1" leaves "Method 2" orphaned — de-number remaining method headings so it reads clean
         outText = outText.replace(/\bMethod\s*[1-9]\b[.:)\-—]*\s*/gi, '');
       }
+      // Every strip above removes LINES, which can leave a heading standing over nothing
+      // ("## Why the Big Range?" with its whole body scrubbed — seen live 2026-09-14).
+      // An empty section reads like the app broke, so drop any heading whose body is now
+      // empty. Only fires on genuinely empty sections, so healthy answers are untouched.
+      {
+        const _hl = outText.split('\n');
+        for (let _i = 0; _i < _hl.length; _i++) {
+          if (!/^\s*#{1,6}\s+\S/.test(_hl[_i])) continue;
+          let _j = _i + 1, _empty = true;
+          for (; _j < _hl.length && !/^\s*#{1,6}\s+\S/.test(_hl[_j]); _j++) {
+            if (_hl[_j].trim()) { _empty = false; break; }
+          }
+          if (_empty) _hl[_i] = '';
+        }
+        outText = _hl.join('\n');
+      }
+      // Removing a bullet mid-list leaves a blank line that markdown renders as TWO
+      // broken lists. Close the gap when the blank line sits between two list items.
+      outText = outText.replace(/((?:^|\n)\s*(?:[-*+]|\d+[.)])[^\n]*)\n[ \t]*\n(?=\s*(?:[-*+]|\d+[.)])\s)/g, '$1\n');
       outText = outText.replace(/\n{3,}/g, '\n\n').trim();
       // Genuine ACTIVE emergencies (911 / live gas / CO / spillage / A2L release) still
       // LEAD — you never bury "call 911" or "shut the gas off" under an answer. The

@@ -387,7 +387,12 @@ app.post('/lookup', async (req, res) => {
   }
 
   let agentAttemptFailed = false;
-  if (!brand.supported && brand.publicRegistry && brand.where && ANTHROPIC_KEY) {
+  // A LINK-ONLY brand is never driven. Its registry is behind a bot wall we have not
+  // beaten yet (Mitsubishi: Cloudflare), so attempting it can only do three things —
+  // stall the tech ~30s, hit the manufacturer for nothing, and report a "failure" that
+  // is really a known, accepted state. Skipping straight to the handoff is both faster
+  // for the tech and honest: we are not down, we just do not read this one.
+  if (!brand.linkOnly && !brand.supported && brand.publicRegistry && brand.where && ANTHROPIC_KEY) {
     if (!rateOk()) return res.status(429).json({ ok: false, error: 'rate_limited' });
     let acquiredA = false, slotA = null;
     try {
@@ -500,9 +505,14 @@ app.post('/lookup', async (req, res) => {
     return res.json({
       ok: true,
       supported: false,
-      reason: agentAttemptFailed ? 'lookup_failed'
+      // Four different "no"s, and the tech deserves to know which. link_only leads
+      // because it is the only one that is WORKING AS INTENDED — it must never be
+      // counted as an outage by the self-check or the field sweep.
+      reason: brand.linkOnly ? 'link_only'
+            : agentAttemptFailed ? 'lookup_failed'
             : brand.publicRegistry ? 'not_wired_yet'
             : 'no_public_registry',
+      linkOnly: brand.linkOnly === true,
       brand: brand.id,
       brandLabel: brand.label,
       where: brand.where || null,

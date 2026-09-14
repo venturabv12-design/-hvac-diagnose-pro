@@ -66,14 +66,60 @@ if [ -z "$TOKEN" ]; then
   FAILURES="the self-check could not sign in to production, so NO brand was actually tested"
 else
   FAILURES=""
+  # Transport bookkeeping. A brand we could not REACH is not a brand that is BROKEN, but
+  # if we could not reach ANY of them that is its own emergency and must still be said.
+  _ATTEMPTED=0
+  _SKIPPED=0
   check(){                     # check <label> <json body>
     local label="$1" body="$2"
     local out
-    out=$($CURL -s -m 190 -X POST "$API/api/warranty" -H 'content-type: application/json' \
-          -H "Authorization: Bearer $TOKEN" -d "$body" \
+    # CAPTURE THE HTTP STATUS. /api/warranty sits behind aiLimiter (20/min) and the
+    # self-check shares that bucket with real technicians. When it gets squeezed out,
+    # express-rate-limit answers with a PLAIN-TEXT body, json.load raised, and this
+    # printed "no readable answer" — which scored as a BROKEN BRAND and fired a --major
+    # "Warranty lookup broke" alert. Seen live 2026-09-14 08:54:27: Trane "failed" in one
+    # second, and a clean retry moments later answered in 5.8s. Being rate limited means
+    # we could not test the brand; it says nothing about the brand. Different thing,
+    # different handling — skip the run, never page him for it.
+    # ONE request, body and status together. A separate probe call would double every
+    # lookup — each one drives a manufacturer's real form for 15-30s, so probing first
+    # would hit them twice per check and burn through the very rate limit it is testing.
+    local raw
+    raw=$($CURL -s -m 190 -w '\n%{http_code}' -X POST "$API/api/warranty" \
+          -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d "$body")
+    # ONLY A 200 IS AN ANSWER ABOUT A BRAND. Everything else is a transport problem
+    # between this laptop and Mike, and says nothing about the manufacturer.
+    #
+    # The first version of this forgave 429 and nothing else, which was too narrow.
+    # A dropped connection makes curl report 000 and an empty body; a 502/503/504 sends
+    # HTML. Both fell into the JSON parser, failed, and printed "no readable answer" —
+    # scored as a BROKEN BRAND and paged Brandon. It hit Trane twice on 2026-09-14
+    # (08:54:27 and 18:16:23), each time "failing" in ONE second while the real lookups
+    # around it took 15-30s. A clean retry answered in 6.4s with a normal result both
+    # times. Nothing was ever wrong with Trane.
+    local _code="${raw##*$'\n'}"
+    _ATTEMPTED=$((_ATTEMPTED+1))
+    if [ "$_code" != "200" ]; then
+      _SKIPPED=$((_SKIPPED+1))
+      case "$_code" in
+        429) say "  $label SKIPPED — rate limited (429), not a brand failure" ;;
+        000) say "  $label SKIPPED — could not reach Mike (connection failed), not a brand failure" ;;
+        *)   say "  $label SKIPPED — HTTP $_code from Mike, not a brand failure" ;;
+      esac
+      return
+    fi
+    out=$(printf '%s' "${raw%$'\n'*}" \
           | $PY -c 'import sys,json
+# A 200 whose body is not JSON is STILL not a brand telling us it is broken. Every real
+# brand failure comes back as well-formed JSON (inconclusive, supported:false, siteDown).
+# Unparseable output means something between here and the manufacturer mangled it — a
+# proxy page, a truncated response, a dropped stream. Trane "failed" this way three times
+# on 2026-09-14 (08:54, 16:13, 18:16), each in about ONE second while every real lookup
+# took 15-30s, and five clean retries right after answered in 4-6s. It was never Trane,
+# and it texted Brandon twice. SKIP, do not accuse the brand. The all-skipped guard still
+# pages if this ever happens to every brand at once.
 try: d=json.load(sys.stdin)
-except Exception: print("BAD|no readable answer"); raise SystemExit
+except Exception: print("SKIP|unreadable answer (not JSON) — transport, not the brand"); raise SystemExit
 if not d.get("ok"): print("BAD|service error: %s" % str(d.get("error"))[:80]); raise SystemExit
 if d.get("inconclusive") is True or d.get("reason")=="lookup_did_not_run":
     print("BAD|their form did not run"); raise SystemExit
@@ -94,7 +140,10 @@ if d.get("cached") is True:
 if d.get("siteDown") is True or d.get("reason")=="manufacturer_site_down":
     print("BAD|the manufacturer site is down"); raise SystemExit
 print("OK|found=%s registered=%s %s" % (d.get("found"), d.get("registered"), d.get("model") or d.get("reason") or ""))')
-    if [ "${out%%|*}" = "OK" ]; then
+    if [ "${out%%|*}" = "SKIP" ]; then
+      _SKIPPED=$((_SKIPPED+1))
+      say "  $label SKIPPED — ${out#*|}"
+    elif [ "${out%%|*}" = "OK" ]; then
       say "  $label ${out#*|}"
     else
       say "  $label FAILED — ${out#*|}"
@@ -145,7 +194,7 @@ RENOTIFY_S=${RENOTIFY_S:-14400}          # 4h — re-nag while still broken
 EMAIL_EVERY_S=${EMAIL_EVERY_S:-86400}    # 24h — how often a CONTINUING problem re-emails
 EMAILED_F="$HOME/.claude/tools/trazer/.warranty-selftest-emailed"
 BLIND_RENOTIFY_S=${BLIND_RENOTIFY_S:-21600}   # 6h — a blind monitor is its own emergency
-NOTIFY="$HOME/.claude/tools/trazer/notify.sh"
+NOTIFY="${TRAZER_NOTIFY_BIN:-$HOME/.claude/tools/trazer/notify.sh}"
 STATE_F="$HOME/.claude/tools/trazer/.warranty-selftest-failing"
 STAMP_F="$HOME/.claude/tools/trazer/.warranty-selftest-notified"   # epoch of last CONFIRMED send
 SINCE_F="$HOME/.claude/tools/trazer/.warranty-selftest-since"      # epoch the current set began
@@ -205,7 +254,27 @@ fi
 
 # ── ALL CLEAR ────────────────────────────────────────────────────────────────
 if [ -z "$FAILURES" ]; then
+  # TOTAL UNREACHABILITY IS NOT AN ALL-CLEAR. Forgiving a non-200 per brand is right —
+  # one blip says nothing about a manufacturer — but if EVERY brand was skipped we tested
+  # nothing at all, and printing "all brands answered" would be the check lying about its
+  # own blindness. That is the 2026-09-13 failure mode exactly: absence of data reading as
+  # health. Different subject from a broken brand, so it gets its own sentence and still
+  # pages.
+  if [ "${_ATTEMPTED:-0}" -gt 0 ] && [ "${_SKIPPED:-0}" -ge "${_ATTEMPTED:-0}" ]; then
+    say "COULD NOT REACH MIKE — $_SKIPPED/$_ATTEMPTED brands skipped, NOTHING was tested"
+    if "$NOTIFY" --major "Warranty self-check could not reach Mike — nothing was tested" \
+       "Every one of the $_ATTEMPTED brand checks failed before it got an answer out of trazermike.io, so no manufacturer was actually verified. This says nothing about whether any brand is broken — only that the check is blind right now. Treat it as a broken smoke alarm, not a fire."; then
+      say "  unreachable — reported (confirmed delivery)"
+    else
+      say "  unreachable — ALERT SEND FAILED, will retry next run"
+    fi
+    exit 1
+  fi
+  if [ "${_SKIPPED:-0}" -gt 0 ]; then
+    say "all reachable brands answered — $_SKIPPED of $_ATTEMPTED skipped on transport, staying quiet"
+  else
   say "all brands answered — staying quiet"
+  fi
   : > "$STATE_F"; : > "$STAMP_F"; : > "$SINCE_F"; : > "$EMAILED_F"
   exit 0
 fi

@@ -9328,7 +9328,15 @@ function buildPersonalizedContext(){
           +  'If a request is ambiguous about WHICH system, do not open with a form — ask the '
           +  'one question a person would ask: "still the '+(_bu.brand||'same')+', or a different '
           +  'system?" Then carry on. One question, in his language, not an intake sheet.\n'
-          +  'If what he asks plainly concerns a different unit, just follow him there — no ceremony.\n';
+          +  'If what he asks plainly concerns a different unit, just follow him there — no ceremony.\n'
+          +  'WARRANTY — NEVER ANSWER IT FROM MEMORY. You know this unit, which makes it '
+          +  'tempting to decode the serial and recite the brand\'s standard terms. DO NOT. '
+          +  '"10-year parts if registered within 90 days, otherwise 5" is the back of the '
+          +  'brochure — it does not say whether THIS unit was ever registered, and that is '
+          +  'the only part that changes what he tells the customer. Trazer pulls the real '
+          +  'registration off the manufacturer\'s own site. If a warranty answer has not been '
+          +  'handed to you, say you are pulling it and do not state coverage, terms, years, '
+          +  'or registration status. Never guess at coverage.\n';
     }
   }catch(_bue){}
 
@@ -12407,8 +12415,20 @@ function _mpWantsWarranty(t){
   // INSIDE recovered / discovered / uncovered — so "I recovered 3 lbs of refrigerant"
   // plus a photo hijacked an ordinary diagnostic question into a warranty lookup.
   if(!/\bwarrant|\bregistrat|\bcovered\b|\bcoverage\b/i.test(t))return false;
-  // "what is a warranty" is a question about terms, not a lookup on a unit.
-  if(/^\s*(what|how|why|when)\b/i.test(t)&&!/\bthis\b|\bmy\b|\bcheck\b/i.test(t))return false;
+  // "what is a warranty" is a question about terms, not a lookup on a unit — TRUE only
+  // while we do not have a unit. Brandon caught this 2026-09-14: with a plate already
+  // scanned, "how long is the warranty", "what is the parts coverage" and "when does the
+  // coverage run out" all fell through this exclusion into Mike's brain, and he answered
+  // from the back of the brochure — "10-year parts if registered within 90 days,
+  // otherwise 5" — which says NOTHING about whether THIS unit was ever registered. The
+  // real lookup on that same serial returns "5 years from install, no registration on
+  // file", which is the answer that changes what the tech tells the customer.
+  //
+  // Once a serial is on the table, ANY warranty question is about that unit. The general
+  // "what is a warranty" case still reaches Mike, because then there is no unit to look up.
+  var _haveUnit=false;
+  try{ _haveUnit=!!(typeof mpUnit==='function'&&mpUnit().serial); }catch(_hu){}
+  if(!_haveUnit&&/^\s*(what|how|why|when)\b/i.test(t)&&!/\bthis\b|\bmy\b|\bcheck\b/i.test(t))return false;
   return true;
 }
 // Pull the human details a manufacturer form needs out of plain speech —

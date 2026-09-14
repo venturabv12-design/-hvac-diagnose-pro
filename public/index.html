@@ -12777,7 +12777,15 @@ async function mpWarrantyRun(u){
         return;
       }
       if(d.supported===false){
-        if(d.reason==='no_public_registry'){
+        if(d.reason==='link_only'||d.linkOnly===true){
+          // Brandon, 2026-09-14: "we can leave Mitsubishi at 'hey, this is the link to
+          // go into it. Just leave it at that.'" No apology and no "I broke" language —
+          // nothing is broken. This brand's registry is behind a wall we have not beaten
+          // yet, so Mike hands over the exact page and the serial the tech already gave
+          // him, and gets out of the way. Keep the serial in the line: the tech is on a
+          // roof with the plate behind him and should not have to scroll back for it.
+          appendMessage('agent',_mpSayBrand((d.brandLabel||u.brand))+" keeps their registry behind a check I can't get through, so this one's a manual look-up"+(d.where?" — "+d.where:"")+". Punch in "+(u.serial?"serial "+u.serial:"the serial")+(u.model?" with model "+u.model:"")+" and it'll tell you straight away. Everything else I can still pull for you.");
+        } else if(d.reason==='no_public_registry'){
           appendMessage('agent',_mpSayBrand((d.brandLabel||u.brand))+" doesn't publish a public warranty registry — registration status sits behind their dealer portal"+(d.where?" ("+d.where+")":"")+". I can't verify it, and I won't pretend to. Confirm it there before you quote it as covered.");
         } else if(d.reason==='lookup_failed'){
           // We ARE wired to this brand and the lookup broke. Saying "not wired"

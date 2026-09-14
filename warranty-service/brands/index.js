@@ -134,6 +134,22 @@ const PENDING = [
     // Added 2026-08-28. registermehvac.com returns 403 to a browser whose user agent
     // says "HeadlessChrome" and 200 to an ordinary one — it was refusing a headless
     // browser, not gating the page. Search by model + serial.
+    //
+    // LINK-ONLY as of 2026-09-14. That user-agent note is now stale: the page sits
+    // behind a Cloudflare interstitial ("Just a moment...", HTTP 403) that a plain
+    // request cannot clear, and the lookup is still attempted from the Railway
+    // datacenter IP, which is what Cloudflare screens hardest. Result: 114 consecutive
+    // hourly failures from 2026-09-08 to 09-14, each one burning ~30s driving a
+    // challenge page and then paging Brandon about a brand we already knew was dead.
+    //
+    // Brandon's call, 2026-09-14: "we can leave Mitsubishi at 'hey, this is the link to
+    // go into it.' Just leave it at that, and then later on, once we figure out how to
+    // do it, we'll be fine." So we stop pretending we can read it, hand the tech the
+    // exact page, and stop alarming. The scrape comes back when the Cloudflare path is
+    // actually solved — most likely by routing it to the laptop's real Chrome the way
+    // Carrier is, since that is the same wall Carrier's reCAPTCHA was behind.
+    linkOnly: true,
+    linkOnlyReason: 'Cloudflare challenge on registermehvac.com (verified 2026-09-14)',
     publicRegistry: true,
     where: 'https://registermehvac.com/WarrantyLookup_88973.aspx',
     requires: [FIELD.serial, FIELD.model],

@@ -3462,15 +3462,33 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       // Same lethal method, no "screwdriver" in it, so nothing caught it. Match the ACT —
       // bridging/shorting/jumping anything conductive across the terminals — and let the
       // ONE safe version through by exempting a sentence that names a resistor.
-      const _safeDischarge = (s) => /\b(?:resistor|ohm|\d+\s*k\b)/i.test(s);
-      const _screwMethodIn = (s) => !_safeDischarge(s) && (
-        (/\bscrewdriver\b/i.test(s) && /\b(?:terminal|short|shorting|bridge|blade|across|contacts?|prongs?)\b/i.test(s))
-        || (/\b(?:short(?:ing|s)?|bridg(?:e|es|ing)|jump(?:er|ers|ing)?|arc(?:ing)?|lay(?:ing)?|touch(?:ing)?)\b[^.!?\n]{0,70}\b(?:across|between|from one)\b[^.!?\n]{0,50}\b(?:terminal|post|lug|prong|contact)/i.test(s))
-        || (/\b(?:terminal|post|lug|prong|contact)s?\b[^.!?\n]{0,50}\b(?:with|using)\b[^.!?\n]{0,40}\b(?:screwdriver|blade|bare metal|metal object|wire|pliers|jumper|coin|key)\b/i.test(s))
-        || (/\bbare metal\b[^.!?\n]{0,50}\b(?:across|between|on)\b[^.!?\n]{0,40}\b(?:terminal|post|lug|contact)/i.test(s))
-      );
+      // TWO different tests, and the difference matters — a resistor exemption that covers
+      // the whole line is a BYPASS. Live on prod 2026-09-14 one line read: "Use an
+      // insulated screwdriver…, or better, a resistor discharge tool… Short across the
+      // terminals… The screwdriver method works but it's crude." Because the word
+      // "resistor" appeared somewhere in it, a line-wide exemption let all of it through.
+      //   _toolDanger  — names a conductive tool as the discharge method. NEVER exempt;
+      //                  a resistor mentioned elsewhere does not make a screwdriver safe.
+      //   _actDanger   — "short/bridge across the terminals" with no tool named. Exempt
+      //                  ONLY when that same sentence names the resistor, which is the
+      //                  one correct instruction and has to survive for the tech.
+      const _toolDanger = (s) =>
+        /\bthe screwdriver (?:method|trick|way|approach)\b/i.test(s)
+        || (/\b(?:screwdriver|blade|bare metal|metal object|pliers|coin|car key)\b/i.test(s)
+            // "…works but it's crude and sparks" endorses it just as much as an instruction
+            // does — prod 2026-09-14 left exactly that sentence standing.
+            && /\b(?:terminal|post|lug|prong|contact|discharg\w*|short\w*|bridg\w*|across|spark\w*|arc(?:s|ing)?|crude|zap\w*)\b/i.test(s));
+      const _actShape = (s) =>
+        /\b(?:short(?:ing|s)?|bridg(?:e|es|ing)|jump(?:er|ers|ing)?|arc(?:ing)?|lay(?:ing)?|touch(?:ing)?)\b[^.!?\n]{0,70}\b(?:across|between|from one)\b[^.!?\n]{0,50}\b(?:terminal|post|lug|prong|contact)/i.test(s)
+        || /\bbare metal\b[^.!?\n]{0,50}\b(?:across|between|on)\b[^.!?\n]{0,40}\b(?:terminal|post|lug|contact)/i.test(s);
+      const _actDanger = (s) => _actShape(s) && !/\b(?:resistor|ohm|\d+\s*k\b)/i.test(s);
+      const _screwMethodIn = (s) => _toolDanger(s) || _actDanger(s);
+      // The LINE gate deliberately ignores the exemption: a line only earns a pass when it
+      // has no dangerous shape at all. Otherwise it gets split and judged sentence by
+      // sentence, which is where the exemption belongs.
+      const _lineWorthSplitting = (l) => _toolDanger(l) || _actShape(l);
       outText = outText.split('\n').map((line) => {
-        if (!_screwMethodIn(line)) return line;
+        if (!_lineWorthSplitting(line)) return line;
         const kept = line.split(/(?<=[.!?])\s+/).filter((s) => !_screwMethodIn(s));
         const rebuilt = kept.join(' ').trim();
         _guardRemovedLine = true;

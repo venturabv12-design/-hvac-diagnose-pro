@@ -881,10 +881,17 @@ app.use((req, res, next) => {
 app.get('/api/health', (req, res) => {
   // Security: do not disclose which integrations are configured (feature-flag leak).
   // The frontend only needs a 200; deploy-verification uses uptime.
+  //
+  // `build` — 2026-09-14. Uptime ALONE has burned us twice: a fix gets pushed, uptime
+  // reads low because the PREVIOUS deploy just restarted, and the "verification" runs
+  // against the old code. A commit sha answers "which build is actually serving this
+  // request" with no inference. Railway injects RAILWAY_GIT_COMMIT_SHA; short sha only,
+  // which is already public in the repo and discloses nothing about configuration.
   res.json({
     ok: true,
     activeRequests: globalActive,
     uptime: Math.floor(process.uptime()),
+    build: String(process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || 'local').slice(0, 7),
     // Failover visibility. `degraded` true means the primary model is failing and
     // Mike is answering on a fallback — an outage that would previously have been
     // silent (or total). Deliberately does NOT expose the chain itself.

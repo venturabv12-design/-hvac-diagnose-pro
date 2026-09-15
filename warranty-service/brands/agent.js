@@ -418,6 +418,27 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
       plan.fill = plan.fill.filter(f => !dropped.includes(f));
       log(`  dropped ${dropped.length} field(s) from other forms: ${JSON.stringify(dropped.map(d => d.selector))}`);
     }
+    // BUMPER LANE. Brandon, 2026-09-15: "we know what fails, so put something in place
+    // so it doesn't fail... put guardrails so I can hit the bowling pins."
+    //
+    // Every warranty outage of the last week came down to ONE choice going wrong and
+    // having no second move. Lennox picked an unlabelled mobile close button sitting
+    // ahead of the real Search, clicked it, nothing happened, and we told a technician
+    // the form did not submit — for days. Fixing that one button is not the lesson. The
+    // lesson is that a single guess with no fallback WILL eventually be wrong on somebody's
+    // page, because manufacturers redesign without telling us.
+    //
+    // So stop betting everything on the first pick. Rank every plausible control in the
+    // serial's own form — real submit words first — and hand the caller the whole list.
+    // If the first one does nothing the submit loop walks to the next. Picking wrong
+    // becomes survivable instead of fatal, for every brand, including the ones that have
+    // not broken yet.
+    const _ownBtns = (form.buttons || []).filter(b => b.form === _serialForm || b.form === -1);
+    plan.submitCandidates = _ownBtns
+      .map(b => ({ sel: b.selector, words: ((b.text || '') + ' ' + (b.label || '')).trim() }))
+      .sort((a, z) => (SUBMITISH.test(z.words) ? 1 : 0) - (SUBMITISH.test(a.words) ? 1 : 0))
+      .map(b => b.sel);
+
     const inForm = (sel) => {
       const b = (form.buttons || []).find(x => x.selector === sel);
       return b && (b.form === _serialForm || b.form === -1);
@@ -692,25 +713,37 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
     // field, which is what a person does anyway. One retry costs a few seconds and is
     // the difference between an answer and telling a technician we could not check.
     const _serialSel = (plan.fill || []).find(f => norm0(f.value) === norm0(serial));
-    if (_serialSel && !plan.enterOn) {
-      log(`  submit produced no change — pressing Enter in the serial field and retrying`);
-      // Give the handler a real chance to attach before the second attempt. Retrying
-      // instantly re-runs the same race and fails the same way — which is what happened
-      // on 2026-09-15, where the Enter fallback fired and still produced nothing.
-      await page.waitForTimeout(2500);
+
+    // WALK THE BUMPERS. Try Enter in the serial field first — it is what a person does
+    // and what most of these forms actually listen for — then every other control in the
+    // form, best-named first. Stop the moment the page changes or an API call fires.
+    // One wrong guess no longer ends the lookup.
+    const _moves = [];
+    if (_serialSel && !plan.enterOn) _moves.push({ how: 'Enter in the serial field', run: () => target.press(_serialSel.selector, 'Enter') });
+    for (const cand of (plan.submitCandidates || [])) {
+      if (cand === plan.submit) continue;          // already tried, it did nothing
+      _moves.push({ how: `the "${cand}" control`, run: () => target.click(cand) });
+    }
+
+    for (const move of _moves.slice(0, 4)) {
+      log(`  submit produced no change — trying ${move.how}`);
+      // Give the handler a real chance to attach before the next attempt. Retrying
+      // instantly re-runs the same race and fails the same way.
+      await page.waitForTimeout(2000);
       page.on('response', _grab);
       await Promise.allSettled([
-        target.press(_serialSel.selector, 'Enter'),
+        move.run().catch(() => {}),
         page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {}),
       ]);
-      await page.waitForTimeout(6000);
+      await page.waitForTimeout(5000);
       page.off('response', _grab);
       const retryText = await target.evaluate(() => (document.body.innerText || '')).catch(() => '');
       if (apiBodies.length || (retryText && retryText !== beforeText)) {
-        log(`  Enter worked — the form ran on the retry`);
+        log(`  ${move.how} worked — the form ran`);
         raw = (retryText && retryText.length > 200) ? retryText.slice(0, 6000)
             : (await page.evaluate(() => (document.body.innerText || '').slice(0, 6000)).catch(() => raw));
         afterText = retryText;
+        break;
       }
     }
   }

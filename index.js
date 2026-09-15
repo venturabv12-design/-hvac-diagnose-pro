@@ -1801,12 +1801,57 @@ app.get('/api/jobs', authenticateToken, async (req, res) => {
   res.json({ jobs: rows });
 });
 
+// The jobs table's column names and the names the app closes a job with have NEVER
+// matched, so this endpoint 500'd on every single call since it was written — and the
+// client wraps the fetch in .catch(function(){}), so the tech saw "Job closed ✓ $X logged"
+// while Postgres rejected the row. Found 2026-09-15 by replaying the exact payload:
+//   Could not find the 'duration_min' column of 'jobs' in the schema cache
+// The jobs table has 0 rows and always has. Nothing was actually lost — submitCloseJob()
+// fires recordEvent('job_closed', …) first and that spine is what the revenue dashboard
+// reads — but a permanent silent 500 on a save the tech believes succeeded is exactly the
+// kind of quiet lie that is worse than a crash.
+//
+// Two things here, and the second matters more than the first.
+const JOB_COLUMNS = new Set(['customer_id', 'date', 'type', 'description', 'diagnosis',
+  'parts_used', 'labor_hours', 'total_amount', 'invoice_num', 'signed_off', 'signature', 'notes']);
+// What the app calls a thing -> what the column is called.
+const JOB_ALIASES = { what: 'description', summary: 'notes', note: 'notes',
+  ticket_total: 'total_amount', revenue: 'total_amount' };
+
 app.post('/api/jobs', authenticateToken, async (req, res) => {
-  const fields = { ...req.body };
-  delete fields.user_id; // strip any client-supplied user_id from the body
+  const body = { ...req.body };
+  delete body.user_id; // strip any client-supplied user_id from the body
   const user_id = req.user.id;
-  const rows = await supabase('POST', 'jobs', { user_id, ...fields });
-  if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save job' });
+
+  const row = {}; const extras = {};
+  for (const [k, v] of Object.entries(body)) {
+    if (v === undefined || v === null || v === '') continue;
+    const col = JOB_ALIASES[k] || k;
+    if (col === 'labor_hours' && k === 'duration_min') { row.labor_hours = Math.round((Number(v) / 60) * 100) / 100; continue; }
+    if (k === 'duration_min') { row.labor_hours = Math.round((Number(v) / 60) * 100) / 100; continue; }
+    if (JOB_COLUMNS.has(col)) {
+      // Never let two aliases silently overwrite each other — keep the first, keep the rest.
+      if (row[col] === undefined) row[col] = v; else extras[k] = v;
+    } else {
+      extras[k] = v;
+    }
+  }
+  // NEVER DROP WHAT THE TECH TOLD US just because there is no column for it. job_id,
+  // outcome and the enhancement figures have no home in this table; they belong to the
+  // events spine and are already there, but keeping them alongside the row means this
+  // record still makes sense on its own a year from now.
+  if (Object.keys(extras).length) {
+    const tail = '\n\n[detail] ' + JSON.stringify(extras);
+    row.notes = (row.notes ? String(row.notes) : '') + tail;
+  }
+
+  const rows = await supabase('POST', 'jobs', { user_id, ...row });
+  if (!rows || !rows[0]) {
+    // Say WHICH save failed and with what, so the next one of these is a one-line fix
+    // instead of a two-hour archaeology dig.
+    console.error('Failed to save job for', user_id, '- payload keys:', Object.keys(row).join(','));
+    return res.status(500).json({ error: 'Failed to save job' });
+  }
   res.json({ job: rows[0] });
 });
 

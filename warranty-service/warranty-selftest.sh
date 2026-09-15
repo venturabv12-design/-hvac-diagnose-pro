@@ -70,8 +70,11 @@ else
   # if we could not reach ANY of them that is its own emergency and must still be said.
   _ATTEMPTED=0
   _SKIPPED=0
-  check(){                     # check <label> <json body>
-    local label="$1" body="$2"
+  # ONE attempt. Sets _LAST to "OK|..", "SKIP|.." or "BAD|..". Split out of check() so the
+  # confirm-retry runs the EXACT same code path as the first try — a retry that tested
+  # something subtly different would be worse than no retry at all.
+  _try(){
+    local body="$1"
     local out
     # CAPTURE THE HTTP STATUS. /api/warranty sits behind aiLimiter (20/min) and the
     # self-check shares that bucket with real technicians. When it gets squeezed out,
@@ -140,15 +143,52 @@ if d.get("cached") is True:
 if d.get("siteDown") is True or d.get("reason")=="manufacturer_site_down":
     print("BAD|the manufacturer site is down"); raise SystemExit
 print("OK|found=%s registered=%s %s" % (d.get("found"), d.get("registered"), d.get("model") or d.get("reason") or ""))')
+    _LAST="$out"
+  }
+
+  check(){                     # check <label> <json body>
+    local label="$1" body="$2"
+    local out
+    _try "$body"
+    out="$_LAST"
     if [ "${out%%|*}" = "SKIP" ]; then
       _SKIPPED=$((_SKIPPED+1))
       say "  $label SKIPPED — ${out#*|}"
-    elif [ "${out%%|*}" = "OK" ]; then
-      say "  $label ${out#*|}"
-    else
-      say "  $label FAILED — ${out#*|}"
-      FAILURES="${FAILURES}${FAILURES:+$'\n'}$label — ${out#*|}"
+      return
     fi
+    if [ "${out%%|*}" = "OK" ]; then
+      say "  $label ${out#*|}"
+      return
+    fi
+
+    # CONFIRM BEFORE CRYING. Added 2026-09-15.
+    #
+    # Brandon: "I'm just losing more and more trust every day." The thing spending that
+    # trust was not the service — it ran 97% on 09-14 — it was THIS, paging him for
+    # single-cycle hiccups. On 2026-09-15 06:38:23 Lennox's form did not run; at 07:40:13
+    # Lennox answered normally and recovered on its own. One brand, one cycle, one hour,
+    # on a QA serial nobody was standing in front of — and it woke him up.
+    #
+    # Manufacturer sites blip. That is their nature and we cannot fix it. What we CAN fix
+    # is refusing to call a blip an outage. One failure is a rumour; two in a row is news.
+    #
+    # The retry is immediate rather than "wait for the next hourly run", so a REAL outage
+    # is still reported within seconds — no delay traded for the quiet. It costs one extra
+    # lookup, and only ever on a brand that already failed.
+    say "  $label first attempt failed (${out#*|}) — confirming before calling it broken"
+    sleep 15
+    _try "$body"
+    if [ "${_LAST%%|*}" = "OK" ]; then
+      say "  $label OK on retry — one-off blip on their end, not reporting"
+      return
+    fi
+    if [ "${_LAST%%|*}" = "SKIP" ]; then
+      _SKIPPED=$((_SKIPPED+1))
+      say "  $label SKIPPED on retry — ${_LAST#*|}"
+      return
+    fi
+    say "  $label FAILED TWICE — ${_LAST#*|}"
+    FAILURES="${FAILURES}${FAILURES:+$'\n'}$label — ${_LAST#*|}"
   }
 
   say "self-check starting"

@@ -631,6 +631,21 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
   // we never actually asked about. Never turn silence into a negative answer.
   const beforeText = await target.evaluate(() => (document.body.innerText || '')).catch(() => '');
 
+  // LET THE PAGE FINISH WIRING ITSELF UP BEFORE PRESSING ANYTHING.
+  //
+  // Lennox's lookup succeeded 90+ times for every 2-7 failures, and the failures always
+  // read the same: "submit produced NO change and no API call". Their Search button
+  // exists in the HTML before the script that gives it a click handler has run, so a
+  // fast click lands on a button that is not yet connected to anything and silently does
+  // nothing. That is a race, not an outage — which is exactly why it was intermittent
+  // and why it cost Brandon two false alarms on 2026-09-15.
+  //
+  // Waiting for the network to go quiet and then giving the page a beat to hydrate costs
+  // about a second on a lookup that already takes 15-30s, and it is the difference
+  // between an answer and telling a technician we could not check his unit.
+  await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(1200);
+
   await Promise.allSettled([
     plan.submit ? target.click(plan.submit) : target.press(plan.enterOn, 'Enter'),
     page.waitForLoadState('networkidle', { timeout: 25000 }).catch(() => {}),
@@ -662,6 +677,10 @@ If this page has no warranty lookup form, reply {"fill":[],"submit":null,"confid
     const _serialSel = (plan.fill || []).find(f => norm0(f.value) === norm0(serial));
     if (_serialSel && !plan.enterOn) {
       log(`  submit produced no change — pressing Enter in the serial field and retrying`);
+      // Give the handler a real chance to attach before the second attempt. Retrying
+      // instantly re-runs the same race and fails the same way — which is what happened
+      // on 2026-09-15, where the Enter fallback fired and still produced nothing.
+      await page.waitForTimeout(2500);
       page.on('response', _grab);
       await Promise.allSettled([
         target.press(_serialSel.selector, 'Enter'),

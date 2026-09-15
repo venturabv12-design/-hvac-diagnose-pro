@@ -1678,12 +1678,7 @@ body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-input-area{
 .mp-tool::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;}
 .mp-tool.parts::before{background:var(--safety);box-shadow:0 0 7px rgba(255,180,0,.5);}
 .mp-tool.warranty::before{background:var(--moss);box-shadow:0 0 7px rgba(91,123,90,.5);}
-/* MIKE IN THE EAR — iOS app only. The web has no background microphone, so showing
-   this tile in a browser would be a button that cannot do what it says. body.native-app
-   is set by tracerInit() when running inside the shell. */
-.mp-tool.ear{display:none;}
-body.native-app .mp-tool.ear{display:flex;}
-.mp-tool.ear::before{background:var(--moss);box-shadow:0 0 7px rgba(91,123,90,.5);}
+
 .mp-tool.wiring::before{background:var(--rust);box-shadow:0 0 7px rgba(199,85,59,.5);}
 .mp-tool.jobs::before{background:var(--brass);}
 .mp-tool.manual::before{background:rgba(244,239,230,.2);}
@@ -3446,7 +3441,6 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       </div>
       <div class="mp-rail"><div class="mp-rail-label">&mdash; MIKE'S TOOLBELT &mdash;</div></div>
       <div class="mp-belt">
-        <button class="mp-tool ear" onclick="mpOpenTool('ear',this)"><div class="mp-tool-ico">&#x1F442;</div><div class="mp-tool-name">In Your Ear</div><div class="mp-tool-sub">He listens &amp; coaches</div></button>
         <button class="mp-tool parts" onclick="mpOpenTool('parts',this)"><div class="mp-tool-ico">&#x1F529;</div><div class="mp-tool-name">Parts</div><div class="mp-tool-sub">Lookup &amp; order</div></button>
         <button class="mp-tool warranty" onclick="mpOpenTool('warranty',this)"><div class="mp-tool-ico">&#x1F6E1;</div><div class="mp-tool-name">Warranty</div><div class="mp-tool-sub">Check coverage</div></button>
         <button class="mp-tool wiring" onclick="mpOpenTool('wiring',this)"><div class="mp-tool-ico">&#x26A1;</div><div class="mp-tool-name">Wiring</div><div class="mp-tool-sub">Diagrams</div></button>
@@ -13006,21 +13000,6 @@ var MP_TOOLS={
   // MIKE IN THE EAR — first tile, because on a real call it is the first thing he taps and
   // then puts the phone away. Only appears inside the iOS app: the browser cannot hold a
   // microphone with the screen off, so offering it on the web would be a button that lies.
-  ear:{title:'Mike In Your Ear',pip:'var(--moss)',actions:[
-    {label:'Start Listening',sub:'He follows the call and coaches you',fn:function(){
-      if(typeof window.mikeEarStart!=='function'){
-        if(typeof showToast==='function')showToast('Update the app to use this — it needs the newest version.','info',3500);
-        return;
-      }
-      if(typeof window.mikeEarIsOn==='function'&&window.mikeEarIsOn()){
-        window.mikeEarStop(); return;
-      }
-      window.mikeEarStart();
-    }},
-    {label:'Stop Listening',sub:'Mike goes quiet',fn:function(){
-      if(typeof window.mikeEarStop==='function')window.mikeEarStop();
-    }}
-  ]},
   warranty:{title:'Warranty Check',pip:'var(--moss)',actions:[
     {label:'Check Warranty Status',sub:'Real registration, by serial',fn:function(){mpWarrantyCheck();}},
     {label:'File a Warranty Claim',sub:'Prep the claim',fn:function(){mpAskMike("What's the model and what failed? I'll prep the claim — grab the install date too if it's handy.");}}
@@ -13891,6 +13870,9 @@ function toggleVoiceMode(){
   unlockAudioSafe();
   if(voiceMode){
     voiceMode=false;
+    // Ending the call MUST release the native microphone. A Mike that keeps listening after
+    // the tech hangs up is the worst possible failure here — not a bug, a betrayal.
+    try{ if(typeof window.mikeEarStop==='function') window.mikeEarStop(); }catch(_e){}
     stopListening();
     stopMikeSpeaking();
     micGreetingPending=null;
@@ -14017,6 +13999,31 @@ function setVoiceStatus(status,transcript){
 }
 
 function startListening(){
+  // NATIVE EARS FIRST — this is what makes a call to Mike behave like a call on an iPhone.
+  // Brandon, 2026-09-15: "it should just automatically go to either he picks it up like a
+  // phone, or he gets it up on the earbud, or he puts it on speaker... we're not going to
+  // switch the UI, that's the FUNCTION I want."
+  //
+  // The browser's SpeechRecognition is suspended by iOS the instant the screen locks or the
+  // app backgrounds, and on a real service call the phone is in a pocket within ten seconds.
+  // So "hands-free" was only true while he stood there looking at it. The native plugin
+  // holds a real AVAudioSession and survives the pocket, the AirPods and the lock screen.
+  //
+  // Same button, same UI, same everything he already knows. Only the ears change. If the
+  // native side cannot take over for any reason it returns false and we fall straight
+  // through to the browser path below, exactly as before — a tech never ends up holding a
+  // dead phone because a plugin had a bad day.
+  if(!isMikeSpeaking && typeof window.mikeEarAvailable==='function' && window.mikeEarAvailable()){
+    if(window.mikeEarIsOn&&window.mikeEarIsOn())return;
+    window.mikeEarStart().then(function(ok){
+      if(ok){ isListening=true; setVoiceStatus('Listening…',''); }
+      else { _startListeningBrowser(); }
+    });
+    return;
+  }
+  _startListeningBrowser();
+}
+function _startListeningBrowser(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){setVoiceStatus('Voice not supported on this browser','');return;}
   if(isMikeSpeaking)return;

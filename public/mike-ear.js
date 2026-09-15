@@ -1,116 +1,90 @@
 /* MIKE IN THE EAR — the web half.
  *
- * The phone lends its ears (plugins/mike-ear). Mike's brain stays exactly where it already
- * is, on trazermike.io. This file is the wire between them, and it is deliberately the only
- * place that decides WHEN Mike is allowed to speak.
+ * Brandon, 2026-09-15: "it should just automatically go to either he picks it up like a
+ * phone, or he gets it up on the earbud, or he puts it on speaker... just like if you're
+ * making a regular call on an iPhone. We're not going to switch the UI — that's the
+ * FUNCTION I want."
  *
- * WHY THAT MATTERS MORE THAN THE LISTENING:
- * A coach who talks constantly is worse than no coach. The tech is in someone's basement
- * with a customer watching him. If Mike narrates, the tech pulls the AirPod out and never
- * puts it back. So the default is SILENCE, and Mike earns every interruption.
+ * So this is deliberately NOT a feature with its own button. It replaces the ENGINE behind
+ * the CALL button that already exists. Same UI, same tap, same everything he already knows —
+ * it just stops dying the moment the screen locks.
+ *
+ * WHY IT HAD TO CHANGE: the browser's SpeechRecognition is suspended by iOS the instant the
+ * phone locks or the app backgrounds. On a real service call the phone goes in a pocket
+ * within ten seconds, which meant "hands-free" was only true while he stood there staring at
+ * it. The native plugin holds a real AVAudioSession, so the call survives the pocket.
+ *
+ * Transcripts are handed to the EXACT pipeline the browser path already uses — write into
+ * the chat input, call sendChat() — so Mike's brain, his voice, the paywall, the history and
+ * every guard stay untouched. Nothing about Mike changes. Only the ears do.
  */
 (function () {
-  if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.MikeEar) return;
-  var Ear = window.Capacitor.Plugins.MikeEar;
+  function plugin() {
+    return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.MikeEar) || null;
+  }
+  /* Available only inside the iOS shell. On the web this whole file is inert and the
+     existing browser path runs exactly as before — no behaviour change for browser users. */
+  window.mikeEarAvailable = function () { return !!plugin(); };
 
-  var on = false;
-  var buffer = [];          // recent final lines — the conversation so far
-  var lastSpoke = 0;        // when Mike last said something, so he cannot chatter
-  var thinking = false;     // one request in flight at a time
-  var MIN_GAP_MS = 12000;   // Mike stays quiet at least this long between interruptions
+  var wired = false;
+  var listening = false;
 
-  // WHEN MIKE IS ALLOWED TO SPEAK. Three cases, and nothing else:
-  //  1. the tech asks him directly ("Mike, ...")
-  //  2. the customer raises an objection the tech is about to fumble
-  //  3. the tech says something factually dangerous or wrong about the equipment
-  // Everything else, he listens and says nothing.
-  var DIRECT = /\b(mike|hey mike|yo mike)\b/i;
-  var OBJECTION = /\b(too (expensive|much)|can'?t afford|think about it|get another quote|shop around|why so much|out of my budget|is it worth it|cheaper)\b/i;
-
-  function shouldSpeak(text) {
-    if (Date.now() - lastSpoke < MIN_GAP_MS) return null;
-    if (DIRECT.test(text)) return 'direct';
-    if (OBJECTION.test(text)) return 'objection';
-    return null;
+  /* One final transcript = one thing the tech said out loud. Hand it straight to the
+     existing send path. Deliberately NOT selective here: this is a CALL, he is talking TO
+     Mike, and a phone call where the other person only answers sometimes is a broken phone
+     call. (Ambient job-coaching — where Mike stays quiet and only speaks on an objection —
+     is a different mode and comes later.) */
+  function onHeard(e) {
+    if (!e || !e.final) return;
+    var text = (e.text || '').trim();
+    if (text.length < 2) return;
+    if (typeof isMikeSpeaking !== 'undefined' && isMikeSpeaking) return;  // don't transcribe Mike
+    var input = document.getElementById('chatInput');
+    if (!input) return;
+    input.value = text;
+    try { if (typeof setVoiceStatus === 'function') setVoiceStatus('Sending to Mike…', text); } catch (_) {}
+    try { if (window._idleResetTimer) window._idleResetTimer(); } catch (_) {}
+    try { window.autoListenAfterSpeak = true; } catch (_) {}
+    if (typeof sendChat === 'function') sendChat();
   }
 
-  async function ask(reason, heard) {
-    if (thinking) return;
-    thinking = true;
-    try {
-      var context = buffer.slice(-8).join('\n');
-      // Mike gets told he is IN THE ROOM. That changes the answer completely — it has to be
-      // sayable out loud in one breath, not a page he reads later.
-      var directive = reason === 'objection'
-        ? 'The CUSTOMER just raised a price objection and the tech is standing right there. Give him the exact words to say back. Two sentences maximum. No preamble, no "you could say" — just the words.'
-        : 'The tech asked you something out loud mid-job. Answer in two sentences he can act on immediately. No lists, no headings — this is being spoken into his ear.';
-      var r = await fetch('/api/ai', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system: (typeof AGENT_SYSTEM === 'string' ? AGENT_SYSTEM : '')
-                + (typeof buildKnowledgeContext === 'function' ? buildKnowledgeContext() : '')
-                + '\n\nEARPIECE MODE — YOU ARE IN THE ROOM.\n' + directive
-                + '\nHe cannot read. He cannot scroll. Anything longer than two sentences is worse than saying nothing.',
-          messages: [{ role: 'user', content: 'Conversation so far:\n' + context + '\n\nJust heard: ' + heard }],
-          max_tokens: 120,
-          token: (window.currentUser && window.currentUser.token) || null
-        })
-      });
-      var d = await r.json();
-      var say = d.response || '';
-      if (!say) return;
-
-      // One voice, made in one place. Reuse the same ElevenLabs route the app already uses
-      // rather than growing a second Mike that sounds subtly different.
-      var t = await fetch('/api/tts', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: say })
-      });
-      if (!t.ok) return;
-      var buf = await t.arrayBuffer();
-      var bin = ''; var bytes = new Uint8Array(buf);
-      for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-      await Ear.speak({ audio: btoa(bin) });
-      lastSpoke = Date.now();
-      if (typeof appendMessage === 'function') appendMessage('agent', say);
-    } catch (e) {
-      // A failed coach is silent, never a crash mid-job.
-    } finally {
-      thinking = false;
-    }
-  }
-
+  /* Returns false when it cannot take over, so the caller falls back to the browser path
+     rather than leaving the tech holding a dead phone. */
   window.mikeEarStart = async function () {
-    var s = await Ear.isSupported();
-    if (!s.supported || !s.onDevice) {
-      if (typeof showToast === 'function') showToast('This phone can’t transcribe privately on-device, so Mike won’t listen.', 'warning', 4000);
+    var P = plugin();
+    if (!P) return false;
+    try {
+      var s = await P.isSupported();
+      /* If the phone cannot transcribe on-device we do NOT quietly ship a customer's voice
+         to a server. Fall back to the browser path, which is the tech's own phone doing the
+         same thing it always did. */
+      if (!s.supported || !s.onDevice) return false;
+      var perm = await P.requestPermission();
+      if (!perm.speech || !perm.microphone) return false;
+      if (!wired) { await P.addListener('heard', onHeard); wired = true; }
+      await P.start();
+      listening = true;
+      return true;
+    } catch (e) {
       return false;
     }
-    var p = await Ear.requestPermission();
-    if (!p.speech || !p.microphone) {
-      if (typeof showToast === 'function') showToast('Mike needs the mic and speech permission to ride along.', 'warning', 4000);
-      return false;
-    }
-    await Ear.addListener('heard', function (e) {
-      if (!e.final) return;                    // act on complete thoughts, not half sentences
-      var text = (e.text || '').trim();
-      if (text.length < 4) return;
-      buffer.push(text);
-      if (buffer.length > 40) buffer.shift();
-      var reason = shouldSpeak(text);
-      if (reason) ask(reason, text);
-    });
-    await Ear.start();
-    on = true;
-    if (typeof showToast === 'function') showToast('Mike’s listening. Put your phone away.', 'success', 3000);
-    return true;
   };
 
   window.mikeEarStop = async function () {
-    if (!on) return;
-    await Ear.stop(); on = false; buffer = [];
-    if (typeof showToast === 'function') showToast('Mike stopped listening.', 'info', 2500);
+    var P = plugin();
+    if (!P || !listening) return;
+    try { await P.stop(); } catch (_) {}
+    listening = false;
   };
 
-  window.mikeEarIsOn = function () { return on; };
+  window.mikeEarIsOn = function () { return listening; };
+
+  /* Mike's voice, out through the earpiece, using the audio the web app already made from
+     ElevenLabs. Routed natively so it ducks other audio instead of stopping it, reaches the
+     AirPods he is actually wearing, and plays with the screen off. */
+  window.mikeEarSpeak = async function (base64mp3) {
+    var P = plugin();
+    if (!P) return false;
+    try { await P.speak({ audio: base64mp3 }); return true; } catch (e) { return false; }
+  };
 })();

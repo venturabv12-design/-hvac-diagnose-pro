@@ -103,11 +103,21 @@ else
     local _code="${raw##*$'\n'}"
     _ATTEMPTED=$((_ATTEMPTED+1))
     if [ "$_code" != "200" ]; then
-      _SKIPPED=$((_SKIPPED+1))
+      # SET _LAST ON EVERY PATH. This branch used to `return` without touching it, so the
+      # caller read whatever the PREVIOUS brand had left behind — and printed it under the
+      # new brand's name. Caught 2026-09-15 10:01:49, one run after it was written: Trane
+      # got a 502, was correctly skipped, and then logged
+      #   "Trane / American Standard found=True registered=False 25SCA536A003"
+      # which is HEIL's result and a CARRIER model number. A monitor reporting one brand
+      # healthy on another brand's answer is worse than one that simply fails.
+      #
+      # It also incremented _SKIPPED here AND in the caller, double-counting every skip
+      # toward the "everything was skipped" alarm. Counting and logging belong to check(),
+      # which is the only function that knows the label. _try only reports what happened.
       case "$_code" in
-        429) say "  $label SKIPPED — rate limited (429), not a brand failure" ;;
-        000) say "  $label SKIPPED — could not reach Mike (connection failed), not a brand failure" ;;
-        *)   say "  $label SKIPPED — HTTP $_code from Mike, not a brand failure" ;;
+        429) _LAST="SKIP|rate limited (429), not a brand failure" ;;
+        000) _LAST="SKIP|could not reach Mike (connection failed), not a brand failure" ;;
+        *)   _LAST="SKIP|HTTP $_code from Mike, not a brand failure" ;;
       esac
       return
     fi

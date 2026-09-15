@@ -1657,8 +1657,19 @@ app.post('/api/warranty', authenticateToken, aiLimiter, async (req, res) => {
   const { brand, serial, model, originalPurchaser, lastName, zip, state, fresh } = req.body || {};
   if (!brand || !serial) return res.status(400).json({ ok: false, error: 'brand_and_serial_required' });
 
-  try {
-    const r = await fetch(`${WARRANTY_URL}/lookup`, {
+  // SURVIVE A RESTART. The warranty service is its own Railway service, so every deploy
+  // of it takes the process down for a few seconds. Anything mid-flight got a connection
+  // error, this handler turned that into a 502, and Mike told the technician he could not
+  // reach the registry — for a unit that was perfectly checkable two seconds later.
+  //
+  // Measured 2026-09-15: four of these in 24h, on four DIFFERENT brands, every one landing
+  // within seconds of a deploy. Nothing was wrong with any manufacturer. It is the one
+  // failure we cause ourselves, on a schedule, every time we ship.
+  //
+  // One retry after a short pause covers the whole restart window. It only fires when the
+  // connection itself failed — never on a real answer, and never on a slow lookup, which
+  // is why the timeout below is left alone.
+  const _callService = async () => fetch(`${WARRANTY_URL}/lookup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-warranty-token': WARRANTY_TOKEN },
       // `fresh` is for the daily self-check only. Without it the check reads its own
@@ -1676,6 +1687,19 @@ app.post('/api/warranty', authenticateToken, aiLimiter, async (req, res) => {
       // service is always the one that decides a lookup has failed.
       signal: AbortSignal.timeout(135000),
     });
+
+  try {
+    let r;
+    try {
+      r = await _callService();
+    } catch (connErr) {
+      // A thrown fetch is the network failing, not the manufacturer answering. Give the
+      // service a beat to finish coming back up, then ask once more. If the second
+      // attempt also throws, it is a real outage and falls through to the catch below.
+      console.warn('Warranty service unreachable, retrying once:', connErr.message);
+      await new Promise(rs => setTimeout(rs, 2500));
+      r = await _callService();
+    }
     const data = await r.json().catch(() => null);
     if (!r.ok || !data) throw new Error(`lookup ${r.status}`);
 

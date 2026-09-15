@@ -14201,6 +14201,35 @@ function mikeSay(text){
     })
     .then(function(arrayBuf){
       if(stale()){resetMikeSpeakingUI();return;} // user pressed stop / opened camera — drop this audio
+      // PLAY THROUGH THE PHONE, NOT THE WEB VIEW, WHEN WE CAN.
+      // Brandon, 2026-09-15, testing the first build: "I close the phone and I can't hear
+      // him. He stops talking. The whole phone call ends."
+      //
+      // That was this line. Everything below decodes into WebAudio, and iOS suspends a
+      // WebView's audio the moment the screen locks — so Mike went mute in his pocket even
+      // though the native side was still listening. Handing the finished MP3 to the plugin
+      // plays it on a real AVAudioPlayer that survives the lock screen, ducks other audio
+      // instead of killing it, and reaches the AirPods he is actually wearing.
+      //
+      // Same bytes, same ElevenLabs voice, same everything — only the speaker changes. Falls
+      // through to WebAudio on the web, or if the native call fails for any reason.
+      if(typeof window.mikeEarAvailable==='function'&&window.mikeEarAvailable()&&arrayBuf&&arrayBuf.byteLength>=500){
+        try{
+          var _b='',_u8=new Uint8Array(arrayBuf);
+          for(var _i=0;_i<_u8.length;_i++)_b+=String.fromCharCode(_u8[_i]);
+          window.mikeEarSpeak(btoa(_b)).then(function(ok){
+            if(!ok)return;                       // native refused — WebAudio below still runs
+            // Mike finished talking: drop the speaking UI and hand the mic back, the same
+            // way the WebAudio onended path does.
+            setTimeout(function(){
+              isMikeSpeaking=false;
+              resetMikeSpeakingUI();
+              if(voiceMode&&!isListening)startListening();
+            }, Math.max(1200, Math.round(arrayBuf.byteLength/4000)*100));
+          });
+          return;
+        }catch(_ne){ /* fall through to WebAudio */ }
+      }
       if(!arrayBuf||arrayBuf.byteLength<500){
         // ElevenLabs returned nothing — go silent rather than fall back to robot voice.
         // Robot speechSynthesis was causing "two Mikes talking" when it overlapped real Mike.

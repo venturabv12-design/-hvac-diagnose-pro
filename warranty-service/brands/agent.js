@@ -171,7 +171,14 @@ async function describeForm(page) {
     // crowded the real form control out of view: on Trane the actual "Search" button
     // was the 15th of 19, behind eight "Open ... submenu" toggles. The model was
     // choosing a submit button from a list that was almost entirely navigation.
-    const NAV = /(close|dismiss|menu|submenu|navigation|skip to|open search|language|cookie|consent|accept|feedback|chat|help)/i;
+    // Extended 2026-09-15 from a sweep of all six brand pages at desktop AND phone width,
+    // run BEFORE anything else broke. It found the Lennox shape living on other sites:
+    //   carrier @390px  QSIFeedbackButton-close-btn   (textless dismiss)
+    //   rheem   @both   slider_p / slider_n           (textless carousel arrows)
+    // The carousel arrows were the dangerous ones — no text, and nothing in the old
+    // pattern matched them, so they were eligible to be chosen as Rheem's submit. That is
+    // exactly how Lennox died, one page over, and nobody had looked yet.
+    const NAV = /(close|dismiss|menu|submenu|navigation|skip to|open search|language|cookie|consent|accept|feedback|chat|help|slider|carousel|swiper|prev|next|arrow|scroll|toggle|tab-)/i;
     const buttons = [...document.querySelectorAll(
       'button, input[type=submit], input[type=button], input[type=image], a[role=button], [role=button]')]
       .filter(vis)

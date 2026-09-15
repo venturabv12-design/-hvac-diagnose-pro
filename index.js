@@ -1696,6 +1696,17 @@ app.post('/api/warranty', authenticateToken, aiLimiter, async (req, res) => {
         inconclusive: data.inconclusive === true,
         reason: data.reason || null,
         via: data.via || null,
+        // WHAT HE WAS ACTUALLY TRYING TO LOOK UP. Brandon, 2026-09-15: "I need to know
+        // who was using it when it fails, what were they trying to do... that's how we
+        // make the app better every day."
+        //
+        // Without the serial a failure row says "lennox failed" and nothing else, so we
+        // could never reproduce it, never tell a one-off bad serial from a dead form, and
+        // never call the tech back with an answer. Equipment identifiers only — the
+        // homeowner's name, address and zip are stripped upstream in the service and must
+        // never appear here.
+        serial: serial ? String(serial).slice(0, 40) : null,
+        model: model ? String(model).slice(0, 40) : null,
       });
     } catch (_) {}
 

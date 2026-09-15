@@ -617,9 +617,20 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 /* NATIVE APP (App Store / Google Play) — SIGN-IN ONLY. Hide every pricing / paywall / purchase
    surface so the app can't be rejected under Apple 3.1.1 / Play payments policy. Subscriptions
    happen on the web (trazermike.io). The browser build is UNAFFECTED. JS guards back this up. */
+/* CREATE ACCOUNT STAYS VISIBLE IN THE APP. #tabSignUp used to be hidden here, which meant
+   a technician who downloaded Mike from the App Store hit a sign-in screen with no way
+   forward — he had to find trazermike.io in a browser, sign up there, and come back. That
+   is not an Apple rule, it was our own over-correction. Apple forbids SELLING outside
+   their payment system (3.1.1); it does not forbid creating a free account. If anything a
+   pure login wall with nothing behind it is the rejectable shape, under 4.2.
+   Brandon, 2026-09-15: "how the fuck is that not the whole point of being in the App Store
+   ... a new guy has to sign up on here, then download this, then sign in? That's ridiculous."
+   He is right. A new tech can now sign up in the app and start his trial on the spot.
+   The PURCHASE surfaces below stay hidden — those are the ones Apple actually polices, and
+   the JS guard on the paywall backs them up. Payment continues to happen on the web via
+   Stripe, which is where it always was. */
 body.native-app #trialBanner,
 body.native-app .auth-trial-pill,
-body.native-app #tabSignUp,
 body.native-app .auth-migration-cta,
 body.native-app .pdd-trial,
 body.native-app #pddBillingItem,

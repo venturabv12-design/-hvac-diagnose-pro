@@ -19,9 +19,53 @@
  * every guard stay untouched. Nothing about Mike changes. Only the ears do.
  */
 (function () {
+  var _p = null;
   function plugin() {
-    return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.MikeEar) || null;
+    if (_p) return _p;
+    var C = window.Capacitor;
+    if (!C) return null;
+    // registerPlugin IS THE SUPPORTED WAY TO GET A HANDLE. Reading Capacitor.Plugins.MikeEar
+    // directly — which is what this did for three builds — returns undefined even when the
+    // native plugin is loaded and working. It is a documented Capacitor gotcha and it is
+    // worse when the app loads a REMOTE url like we do: the bridge is injected, the native
+    // class is registered, and that one object is still empty.
+    //
+    // Cost: builds 24, 25 and 26. Brandon tested every one on a real phone, locked the
+    // screen, and told me it did not work. He was right every time, and every time I looked
+    // somewhere other than here.
+    try {
+      if (typeof C.registerPlugin === 'function') { _p = C.registerPlugin('MikeEar'); return _p; }
+    } catch (e) {}
+    _p = (C.Plugins && C.Plugins.MikeEar) || null;
+    return _p;
   }
+
+  /* SAY WHAT THE APP ACTUALLY SEES. Every failure so far has been silent — the call quietly
+     fell back to the browser path and looked identical to success until the screen locked.
+     This turns "it doesn't work" into a sentence that names the reason. */
+  window.mikeEarDiag = async function () {
+    var C = window.Capacitor;
+    var d = {
+      capacitor: !!C,
+      native: !!(C && C.isNativePlatform && C.isNativePlatform()),
+      platform: (C && C.getPlatform && C.getPlatform()) || 'web',
+      pluginListed: !!(C && C.isPluginAvailable && C.isPluginAvailable('MikeEar')),
+      handle: !!plugin()
+    };
+    try {
+      var P = plugin();
+      if (P) {
+        var s = await P.isSupported();
+        d.supported = s.supported; d.onDevice = s.onDevice;
+      }
+    } catch (e) { d.error = String(e && e.message || e); }
+    var line = 'Capacitor:' + d.capacitor + '  native:' + d.native + '  platform:' + d.platform +
+               '\nplugin listed:' + d.pluginListed + '  handle:' + d.handle +
+               (d.supported !== undefined ? ('\nspeech supported:' + d.supported + '  on-device:' + d.onDevice) : '') +
+               (d.error ? ('\nerror: ' + d.error) : '');
+    try { if (typeof appendMessage === 'function') appendMessage('agent', 'EAR DIAGNOSTIC\n' + line); } catch (_) {}
+    return d;
+  };
   /* Available only inside the iOS shell. On the web this whole file is inert and the
      existing browser path runs exactly as before — no behaviour change for browser users. */
   window.mikeEarAvailable = function () { return !!plugin(); };

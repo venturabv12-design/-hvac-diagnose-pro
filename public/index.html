@@ -14017,7 +14017,14 @@ function startListening(){
     if(window.mikeEarIsOn&&window.mikeEarIsOn())return;
     window.mikeEarStart().then(function(ok){
       if(ok){ isListening=true; setVoiceStatus('Listening…',''); }
-      else { _startListeningBrowser(); }
+      else {
+        // SAY IT OUT LOUD WHEN THE NATIVE PATH DOES NOT TAKE. This fell back silently for
+        // three builds — the call looked completely normal until the screen locked and
+        // died, so the only symptom Brandon ever had was "it doesn't work". A fallback
+        // nobody can see is a fallback nobody can debug.
+        try{ if(typeof showToast==='function')showToast('Using browser voice — native ear not active','info',3000); }catch(_t){}
+        _startListeningBrowser();
+      }
     });
     return;
   }

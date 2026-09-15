@@ -177,7 +177,24 @@ async function describeForm(page) {
       .filter(vis)
       .filter(el => {
         const words = ((el.innerText || el.value || '') + ' ' + (el.getAttribute('aria-label') || el.title || '')).trim();
-        return !(words && NAV.test(words));
+        if (words && NAV.test(words)) return false;
+        // A TEXTLESS CLOSE BUTTON IS STILL A CLOSE BUTTON. The NAV test above only ran
+        // when the element had words, so a button with NO label slipped through no matter
+        // what it was. Lennox's warranty form opens with exactly that: an unlabelled
+        // <button class="close-btn d-block d-lg-none"> sitting FIRST in the form, ahead
+        // of the real "Search". It is a mobile dismiss control — d-lg-none means it
+        // disappears on a desktop-width viewport and appears on a narrow one — so
+        // whether we clicked it came down to the window size the browser happened to
+        // have. That is the whole story of Lennox's "intermittent" failures: pick the
+        // close button, click it, nothing happens, report the form did not submit.
+        // 90+ successes against 2-7 failures, and two false alarms to Brandon on
+        // 2026-09-15.
+        //
+        // So judge the element by what it IS, not only by what it says.
+        const marks = ((el.className && el.className.baseVal !== undefined ? el.className.baseVal : el.className) || '')
+                    + ' ' + (el.id || '') + ' ' + (el.getAttribute('data-dismiss') || '');
+        if (marks && NAV.test(marks)) return false;
+        return true;
       })
       .slice(0, 15)
       .map(el => ({

@@ -615,7 +615,24 @@ app.post('/lookup', async (req, res) => {
       ok: true, supported: true, cached: false, found: false, inconclusive: true,
       brand: brand.id, brandLabel: brand.label, serial,
       reason: 'residential_source_unavailable',
-      summary: `I couldn't reach ${brand.label}'s registry right now, so I can't tell you either way on that serial. Do NOT read this as "not covered" — check it directly before you quote anything.`,
+      // SAY WHOSE FAULT IT IS. Brandon, 2026-09-14: "if the website is down then have
+      // Mike say it so they know."
+      //
+      // This is OUR outage, not the manufacturer's. Carrier and Lennox only answer a
+      // residential connection, so when the house worker is asleep or dead we cannot
+      // reach them — but their site is perfectly fine. The old wording, "I couldn't
+      // reach Carrier's registry right now", blamed CARRIER for our own downtime. It was
+      // the single most common failure a tech could hit: 159 of 404 failures between
+      // 08-30 and 09-14, every one of them telling the tech the wrong story about who
+      // was broken.
+      //
+      // A tech who is told "their site is down" stops trying and may tell a customer the
+      // manufacturer is having problems. A tech who is told "that's on my end, here's the
+      // link" just goes and gets the answer. Same outage, completely different trust.
+      // "Carrier / Bryant / Payne" is how the registry FILES the family. No tech says it
+      // out loud, and Mike reading the taxonomy string is the same tic the client already
+      // strips with _mpSayBrand. Use the first name in the family.
+      summary: `That one's on me, not ${String(brand.label).split('/')[0].trim()} — their registry is up, I just can't get to it from here this minute. Nothing is wrong with the unit and nothing is wrong on your end. Do NOT read this as "not covered": pull it yourself at the link below, or give me a couple of minutes and ask me again.`,
       where: brand.where,
     });
   }

@@ -28,6 +28,13 @@
      service worker: it has to already be on the phone before the tech walks into the
      basement, because that is the moment it exists for. -->
 <script src="/fieldbrain.js"></script>
+<!-- MIKE IN THE EAR. Loads on every page but does nothing at all unless it finds the
+     native plugin, so the browser is completely unaffected — the first line is a guard
+     that returns immediately when window.Capacitor.Plugins.MikeEar is absent. It has to be
+     served from HERE rather than bundled in the app, because the iOS shell loads
+     trazermike.io directly (capacitor.config.json server.url). Anything shipped inside the
+     app bundle is simply never executed. -->
+<script src="/mike-ear.js"></script>
 <noscript></noscript>
 <style>
 
@@ -1671,6 +1678,12 @@ body[data-mode="contractor"].mp-chatting #panelDiag>.chat-card>.chat-input-area{
 .mp-tool::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;}
 .mp-tool.parts::before{background:var(--safety);box-shadow:0 0 7px rgba(255,180,0,.5);}
 .mp-tool.warranty::before{background:var(--moss);box-shadow:0 0 7px rgba(91,123,90,.5);}
+/* MIKE IN THE EAR — iOS app only. The web has no background microphone, so showing
+   this tile in a browser would be a button that cannot do what it says. body.native-app
+   is set by tracerInit() when running inside the shell. */
+.mp-tool.ear{display:none;}
+body.native-app .mp-tool.ear{display:flex;}
+.mp-tool.ear::before{background:var(--moss);box-shadow:0 0 7px rgba(91,123,90,.5);}
 .mp-tool.wiring::before{background:var(--rust);box-shadow:0 0 7px rgba(199,85,59,.5);}
 .mp-tool.jobs::before{background:var(--brass);}
 .mp-tool.manual::before{background:rgba(244,239,230,.2);}
@@ -3433,6 +3446,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       </div>
       <div class="mp-rail"><div class="mp-rail-label">&mdash; MIKE'S TOOLBELT &mdash;</div></div>
       <div class="mp-belt">
+        <button class="mp-tool ear" onclick="mpOpenTool('ear',this)"><div class="mp-tool-ico">&#x1F442;</div><div class="mp-tool-name">In Your Ear</div><div class="mp-tool-sub">He listens &amp; coaches</div></button>
         <button class="mp-tool parts" onclick="mpOpenTool('parts',this)"><div class="mp-tool-ico">&#x1F529;</div><div class="mp-tool-name">Parts</div><div class="mp-tool-sub">Lookup &amp; order</div></button>
         <button class="mp-tool warranty" onclick="mpOpenTool('warranty',this)"><div class="mp-tool-ico">&#x1F6E1;</div><div class="mp-tool-name">Warranty</div><div class="mp-tool-sub">Check coverage</div></button>
         <button class="mp-tool wiring" onclick="mpOpenTool('wiring',this)"><div class="mp-tool-ico">&#x26A1;</div><div class="mp-tool-name">Wiring</div><div class="mp-tool-sub">Diagrams</div></button>
@@ -12989,6 +13003,24 @@ async function mpWarrantyRun(u){
 // (safety-check), Handle Objection (handle-objection), Pitch Maintenance (pitch-maintenance),
 // Load Calc (load-calc). No tool was lost — each is still one tap away as its own tile.
 var MP_TOOLS={
+  // MIKE IN THE EAR — first tile, because on a real call it is the first thing he taps and
+  // then puts the phone away. Only appears inside the iOS app: the browser cannot hold a
+  // microphone with the screen off, so offering it on the web would be a button that lies.
+  ear:{title:'Mike In Your Ear',pip:'var(--moss)',actions:[
+    {label:'Start Listening',sub:'He follows the call and coaches you',fn:function(){
+      if(typeof window.mikeEarStart!=='function'){
+        if(typeof showToast==='function')showToast('Update the app to use this — it needs the newest version.','info',3500);
+        return;
+      }
+      if(typeof window.mikeEarIsOn==='function'&&window.mikeEarIsOn()){
+        window.mikeEarStop(); return;
+      }
+      window.mikeEarStart();
+    }},
+    {label:'Stop Listening',sub:'Mike goes quiet',fn:function(){
+      if(typeof window.mikeEarStop==='function')window.mikeEarStop();
+    }}
+  ]},
   warranty:{title:'Warranty Check',pip:'var(--moss)',actions:[
     {label:'Check Warranty Status',sub:'Real registration, by serial',fn:function(){mpWarrantyCheck();}},
     {label:'File a Warranty Claim',sub:'Prep the claim',fn:function(){mpAskMike("What's the model and what failed? I'll prep the claim — grab the install date too if it's handy.");}}

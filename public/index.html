@@ -28,13 +28,15 @@
      service worker: it has to already be on the phone before the tech walks into the
      basement, because that is the moment it exists for. -->
 <script src="/fieldbrain.js"></script>
-<!-- MIKE IN THE EAR. Loads on every page but does nothing at all unless it finds the
-     native plugin, so the browser is completely unaffected — the first line is a guard
-     that returns immediately when window.Capacitor.Plugins.MikeEar is absent. It has to be
-     served from HERE rather than bundled in the app, because the iOS shell loads
-     trazermike.io directly (capacitor.config.json server.url). Anything shipped inside the
-     app bundle is simply never executed. -->
-<script src="/mike-ear.js"></script>
+<!-- MIKE IN THE EAR — NOT LOADED. Parked 2026-09-15.
+     The script tag is removed rather than merely disabled because /mike-ear.js is served
+     with cache-control max-age=14400 — four hours. Brandon's app had already cached a
+     BROKEN copy, so force-quitting did nothing and he stayed broken no matter what I
+     deployed. Killing the switch inside the file cannot help when the file itself is the
+     stale thing being run.
+     Not loading it at all is the only fix that takes effect immediately for someone already
+     holding a bad copy. Re-add this tag WITH a version query (?v=N) when the native ear is
+     proven on a device — never again without one. -->
 <noscript></noscript>
 <style>
 

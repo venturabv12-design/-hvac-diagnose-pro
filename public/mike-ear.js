@@ -152,6 +152,34 @@
   /* Mike's voice, out through the earpiece, using the audio the web app already made from
      ElevenLabs. Routed natively so it ducks other audio instead of stopping it, reaches the
      AirPods he is actually wearing, and plays with the screen off. */
+  /* AUTO-REPORT ON OPEN. Brandon is testing on a phone, where there is no console and no way
+   * to type window.mikeEarDiag(). Three builds have now come back as "it doesn't work" with
+   * no way for me to see WHICH part did not work — the plugin missing, the model unloaded,
+   * or permission denied all look identical from his side. So when the app opens with
+   * ?ear=1 it says so itself, in the chat, where he can read it or screenshot it. */
+  window.addEventListener('load', function () {
+    setTimeout(async function () {
+      try {
+        var C = window.Capacitor;
+        var P = plugin();
+        var bits = [];
+        bits.push('native app: ' + !!(C && C.isNativePlatform && C.isNativePlatform()));
+        bits.push('plugin compiled in: ' + !!(C && C.isPluginAvailable && C.isPluginAvailable('MikeEar')));
+        if (P) {
+          try {
+            var s = await P.isSupported();
+            bits.push('model ready: ' + (s.ready === true));
+          } catch (e) { bits.push('plugin call failed: ' + (e && e.message || e)); }
+        } else {
+          bits.push('plugin handle: none');
+        }
+        if (typeof appendMessage === 'function') {
+          appendMessage('agent', 'EAR CHECK — ' + bits.join('  ·  '));
+        }
+      } catch (e) {}
+    }, 2500);
+  });
+
   window.mikeEarSpeak = async function (base64mp3) {
     var P = plugin();
     if (!P) return false;

@@ -246,6 +246,24 @@
         var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         var onCellular = !!(conn && conn.type === 'cellular');
         var delay = onCellular ? 8000 : 0;
+        // NEVER WARM THE MODEL WHILE MIKE IS TALKING.
+        // Brandon: "something cuts Mike off while he says his welcome back Brandon."
+        // Loading Whisper compiles the models for the Neural Engine, which is heavy enough to
+        // starve the WebView's audio thread on a phone — and the preload fired 1.5s after
+        // open, which is exactly when Mike is mid-greeting. So the first thing a tech hears
+        // is Mike getting cut off by us getting ready.
+        // Wait for him to finish. The model is not needed until someone taps Call, and this
+        // costs nothing but patience.
+        var waited = 0;
+        (function whenQuiet() {
+          var busy = false;
+          try { busy = (typeof isMikeSpeaking !== 'undefined' && isMikeSpeaking); } catch (e) {}
+          // Give up waiting after two minutes and load anyway, rather than never loading
+          // because someone left a long conversation running.
+          if (busy && waited < 120000) { waited += 1000; setTimeout(whenQuiet, 1000); return; }
+          go();
+        })();
+        function go() {
         setTimeout(function () {
         P.isSupported().then(function (s) {
           if (s && s.ready === true) return;          // already warm
@@ -260,6 +278,7 @@
           });
         }).catch(function () {});
         }, delay);
+        }
       } catch (e) {}
     }, 1500);
   })();

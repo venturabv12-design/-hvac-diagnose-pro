@@ -42,7 +42,7 @@
     if(!/[?&]ear=1\b/.test(location.search))return;
     window.MIKE_EAR_ENABLED=true;
     var t=document.createElement('script');
-    t.src='/mike-ear.js?v=16';
+    t.src='/mike-ear.js?v=17';
     document.head.appendChild(t);
   }catch(e){}
 })();
@@ -14072,7 +14072,17 @@ function startListening(){
   // through to the browser path below, exactly as before — a tech never ends up holding a
   // dead phone because a plugin had a bad day.
   if(!isMikeSpeaking && typeof window.mikeEarAvailable==='function' && window.mikeEarAvailable()){
-    if(window.mikeEarIsOn&&window.mikeEarIsOn())return;
+    if(window.mikeEarIsOn&&window.mikeEarIsOn()){
+      // ALREADY LISTENING — SAY SO. This used to return silently, so after Mike's greeting
+      // the app never set isListening and never showed "Listening…". The ear was running the
+      // whole time; the screen simply never handed him the turn.
+      // Brandon, 2026-09-16: "he now finishes the whole intro... but now it doesn't go to
+      // where I can talk." The ear WAS on. Nothing told him, so there was nothing to talk to.
+      isListening=true;
+      setVoiceStatus('Listening…','');
+      if(window._idleResetTimer)window._idleResetTimer();
+      return;
+    }
     window.mikeEarStart().then(function(ok){
       if(ok){ isListening=true; setVoiceStatus('Listening…',''); }
       else {

@@ -131,6 +131,16 @@
       if (!s.supported || !s.onDevice) return false;
       var perm = await P.requestPermission();
       if (!perm.speech || !perm.microphone) return false;
+      // LOAD THE MODEL FIRST. The native side refuses to start without it — "Speech model is
+      // not loaded yet — call prepare() first" — and nothing on the web side ever called it.
+      // So start() threw, mikeEarStart() caught it and returned false, and the call fell back
+      // to the browser every single time. That is the whole reason Brandon kept seeing
+      // "Using browser voice" on a build where the plugin was present and working.
+      // First run downloads and compiles the Whisper weights for the Neural Engine, which is
+      // slow exactly once; every call after this is instant.
+      if (!(s.ready === true)) {
+        try { await P.prepare(); } catch (e) { return false; }
+      }
       if (!wired) { await P.addListener('heard', onHeard); wired = true; }
       await P.start();
       listening = true;
@@ -157,7 +167,7 @@
    * no way for me to see WHICH part did not work — the plugin missing, the model unloaded,
    * or permission denied all look identical from his side. So when the app opens with
    * ?ear=1 it says so itself, in the chat, where he can read it or screenshot it. */
-  window.addEventListener('load', function () {
+  (function () {
     setTimeout(async function () {
       try {
         var C = window.Capacitor;
@@ -178,7 +188,7 @@
         }
       } catch (e) {}
     }, 2500);
-  });
+  })();
 
   window.mikeEarSpeak = async function (base64mp3) {
     var P = plugin();

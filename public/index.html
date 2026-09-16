@@ -42,7 +42,7 @@
     if(!/[?&]ear=1\b/.test(location.search))return;
     window.MIKE_EAR_ENABLED=true;
     var t=document.createElement('script');
-    t.src='/mike-ear.js?v=3';
+    t.src='/mike-ear.js?v=4';
     document.head.appendChild(t);
   }catch(e){}
 })();
@@ -14067,11 +14067,13 @@ function startListening(){
     window.mikeEarStart().then(function(ok){
       if(ok){ isListening=true; setVoiceStatus('Listening…',''); }
       else {
-        // SAY IT OUT LOUD WHEN THE NATIVE PATH DOES NOT TAKE. This fell back silently for
-        // three builds — the call looked completely normal until the screen locked and
-        // died, so the only symptom Brandon ever had was "it doesn't work". A fallback
-        // nobody can see is a fallback nobody can debug.
-        try{ if(typeof showToast==='function')showToast('Using browser voice — native ear not active','info',3000); }catch(_t){}
+        // The fallback is logged, NOT toasted. The toast was right to exist — a silent
+        // fallback cost three builds of guessing — but it fires on every listen cycle, which
+        // on a real call means it pops up mid-sentence and cuts Mike off. Brandon caught it
+        // instantly: "this pops up mid sentence and it cuts Mike off." Debug output that
+        // interrupts the product is worse than no debug output.
+        // The EAR CHECK line printed once on open says the same thing without talking over him.
+        try{ console.log('[ear] native not active — using browser voice'); }catch(_t){}
         _startListeningBrowser();
       }
     });

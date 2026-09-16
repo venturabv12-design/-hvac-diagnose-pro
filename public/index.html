@@ -10844,7 +10844,7 @@ async function sendChat(){
   // Toolbelt one-shot: tech tapped Draw a Diagram / Illustrate It and Mike asked what to
   // draw — THIS reply is the subject. Route it straight to the sketch generator so a short
   // answer ("reversing valve") still draws; the keyword detector would otherwise miss it.
-  if(currentUser&&text&&window._mpPendingGen){
+  if(currentUser&&text&&window._mpPendingGen&&_looksLikeDrawSubject(text)){
     var _genKind=window._mpPendingGen;window._mpPendingGen=null;
     input.value='';input.style.height='auto';
     appendMessage('user',escapeHtml(text));
@@ -12297,6 +12297,34 @@ function _scrollAfterKeyboard(){
 }
 function mpAskMike(q){window._mpActionDirective=null;mpEnterChat();if(typeof appendMessage==='function')appendMessage('agent',q);try{if(typeof chatHistory!=='undefined'&&chatHistory&&chatHistory.push)chatHistory.push({role:'assistant',content:q});}catch(e){}var i=document.getElementById('chatInput');if(i){i.value='';i.focus();}requestAnimationFrame(_scrollAfterKeyboard);}
 function mpFindPart(){mpAskMike("What part are you after? Give me the unit — make and model — or just the part if you already know it, and I'll get you the part number and where to grab it near you.");window._mpActionDirective={search:true,text:'ACTION — FIND THE PART: the tech wants a part and where to get it NOW. Lead with the answer. Take what they gave as final — do not re-confirm, do not second-guess, do not interrogate. If they named a universal/multi-tap part (e.g. a Turbo 200 or 200X run capacitor), you do NOT need their exact MFD — give it to them. Use the GPS location on file to SEARCH for real supply houses near them (Ferguson, Johnstone Supply, Baker Distributing, Grainger, RE Michel, local HVAC counters) and return ACTUAL store names, addresses, and which counter is likely to stock it — never "let me pull the counters." Ask at most ONE question, and only if you genuinely cannot proceed. Any safety note goes briefly at the END.'};}
+// IS THIS THE NAME OF A THING, OR A QUESTION?
+//
+// _mpPendingGen means "the tech tapped Draw a Diagram, so his next message is the subject".
+// That was right for "reversing valve" and badly wrong for anything else. Brandon tapped
+// Illustrate It, then typed:
+//
+//   "Hey Mike so say I take a picture of the defrost board and I'm trying to test the low
+//    pressure switch, would you be able to tell me what points to check..."
+//
+// Fifty words, a real question, and Mike answered it by drawing a picture — "Drawing your
+// illustration… 26s" — instead of answering the man. He never got a reply at all.
+//
+// A drawing subject is SHORT and names a thing. A question is long, or asks something. When
+// it is a question we drop the pending flag and let it go to Mike's brain like any other
+// message, which is what he actually wanted.
+function _looksLikeDrawSubject(t){
+  t=String(t||'').trim();
+  if(!t)return false;
+  var words=t.split(/\s+/).length;
+  // "Carrier 59TP6 control wiring" is four. Nobody names a part in more than about eight.
+  if(words>10){window._mpPendingGen=null;return false;}
+  // Asking rather than naming: "can you", "how do I", "what points", or just a question mark.
+  if(/\?/.test(t)||/^(hey|so|say|ok|okay|yeah|yes|no|wait)\b/i.test(t)
+     ||/\b(can you|could you|would you|will you|how do|how would|what (do|should|points|about)|why|where do|tell me|show me how|explain)\b/i.test(t)){
+    window._mpPendingGen=null;return false;
+  }
+  return true;
+}
 function mpDrawDiagram(){window._mpPendingGen='diagram';mpAskMike("What should I draw? Name the unit or circuit — like 'Carrier 59TP6 control wiring' or 'a heat-pump defrost circuit' — and I'll sketch it.");}
 function mpIllustrate(){window._mpPendingGen='illustration';mpAskMike("What do you want to see? Name the part — 'reversing valve,' 'TXV,' 'ECM motor' — and I'll draw it up.");}
 function mpWiringDiagram(){

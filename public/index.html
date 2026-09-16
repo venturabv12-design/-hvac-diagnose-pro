@@ -42,7 +42,7 @@
     if(!/[?&]ear=1\b/.test(location.search))return;
     window.MIKE_EAR_ENABLED=true;
     var t=document.createElement('script');
-    t.src='/mike-ear.js?v=17';
+    t.src='/mike-ear.js?v=18';
     document.head.appendChild(t);
   }catch(e){}
 })();
@@ -13987,6 +13987,24 @@ function toggleVoiceMode(){
   // (no AirPods/CarPlay), iOS will interrupt the AudioContext. We end the call
   // in that case. With a live route, the context stays running and we continue.
   window._visListener=function(){
+    // ─── THE HANDOFF ───────────────────────────────────────────────────────────────────
+    // This is the whole feature, and the only thing the browser genuinely cannot do.
+    // Screen goes off: stop the browser's recogniser (iOS is about to suspend it anyway) and
+    // hand the call to the phone, which holds a real audio session and survives the pocket.
+    // Screen comes back: hand it straight back, so everything he sees and hears on screen is
+    // the same code that has always run.
+    if(voiceMode&&typeof window.mikeEarAvailable==='function'&&window.mikeEarAvailable()){
+      if(document.hidden){
+        try{stopListening();}catch(_s){}
+        try{window.mikeEarStart();}catch(_s){}
+      }else{
+        try{window.mikeEarStop();}catch(_s){}
+        isListening=false;
+        if(!isMikeSpeaking)setTimeout(function(){
+          if(voiceMode&&!isListening&&!isMikeSpeaking&&!document.hidden)startListening();
+        },300);
+      }
+    }
     if(document.hidden&&voiceMode){
       setTimeout(function(){
         if(!voiceMode||!document.hidden)return;
@@ -14071,7 +14089,23 @@ function startListening(){
   // native side cannot take over for any reason it returns false and we fall straight
   // through to the browser path below, exactly as before — a tech never ends up holding a
   // dead phone because a plugin had a bad day.
-  if(!isMikeSpeaking && typeof window.mikeEarAvailable==='function' && window.mikeEarAvailable()){
+  // THE PHONE ONLY TAKES OVER WHEN THE SCREEN IS OFF. NOT BEFORE.
+  //
+  // Brandon, 2026-09-16: "How come you can't just see how it worked before? We're just adding
+  // it where we lock the screen and then Mike continues to still work and communicate. We're
+  // not changing the way the talking and all that works."
+  //
+  // He is right, and this is the correction. Calling Mike already worked. The one thing it
+  // could not do was survive the screen locking. I replaced the whole engine — listening,
+  // asking, speaking — and spent a day breaking things that were fine before I touched them:
+  // his greeting cut in half, the mic opening mid-sentence, the turn never being handed over.
+  //
+  // So while the screen is ON, this does nothing at all. The browser path below runs exactly
+  // as it has all along. The native ear engages only when the app goes to the background —
+  // see the visibilitychange handler in toggleVoiceMode — and hands straight back on unlock.
+  // Worst case if the native side has a bad day is the call behaves like it does today,
+  // rather than worse.
+  if(document.hidden && !isMikeSpeaking && typeof window.mikeEarAvailable==='function' && window.mikeEarAvailable()){
     if(window.mikeEarIsOn&&window.mikeEarIsOn()){
       // ALREADY LISTENING — SAY SO. This used to return silently, so after Mike's greeting
       // the app never set isListening and never showed "Listening…". The ear was running the
@@ -14294,7 +14328,11 @@ function mikeSay(text){
       // While the native ear is parked, Mike's voice goes through WebAudio exactly as it did
       // before any of tonight's work. mikeEarAvailable() returns false unconditionally until
       // the native path is proven on a real device.
-      if(typeof window.mikeEarAvailable==='function'&&window.mikeEarAvailable()&&arrayBuf&&arrayBuf.byteLength>=500){
+      // SAME RULE FOR HIS VOICE: the phone only plays Mike when the screen is off.
+      // While the app is open, WebAudio plays him exactly as it always has — that is the path
+      // that has been working for months, and routing it through the plugin is what let a
+      // second audio-session reconfiguration cut him off mid-greeting.
+      if(document.hidden&&typeof window.mikeEarAvailable==='function'&&window.mikeEarAvailable()&&arrayBuf&&arrayBuf.byteLength>=500){
         try{
           var _b='',_u8=new Uint8Array(arrayBuf);
           for(var _i=0;_i<_u8.length;_i++)_b+=String.fromCharCode(_u8[_i]);

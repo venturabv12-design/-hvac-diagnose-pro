@@ -205,83 +205,18 @@
   /* Mike's voice, out through the earpiece, using the audio the web app already made from
      ElevenLabs. Routed natively so it ducks other audio instead of stopping it, reaches the
      AirPods he is actually wearing, and plays with the screen off. */
-  /* LOAD THE MODEL THE MOMENT THE APP OPENS.
+  /* NO WEB-SIDE PRELOAD ANY MORE — the phone handles it.
    *
-   * The diagnostic that used to sit here did its job — it told us "native app: true, plugin
-   * compiled in: true, model ready: FALSE", which is how we finally learned the plugin was
-   * fine all along and only the model was missing. It also SPOKE, because appendMessage as
-   * Mike goes through text-to-speech in voice mode, so it cut him off mid-sentence. Brandon:
-   * "it cut Mike off and started saying the ear check thing." Debug output that talks over
-   * the product is worse than none. Removed.
+   * This used to kick off the model load 1.5s after open, then had to be taught to wait
+   * until Mike stopped talking because it was cutting him off mid-greeting. Both of those
+   * were symptoms of doing it in the wrong place: JavaScript deciding WHEN a Neural Engine
+   * compile should happen, with no idea what else the phone is doing.
    *
-   * What replaces it is the actual fix. Whisper's weights download and compile for the
-   * Neural Engine on first use — slow exactly once. Doing that when he TAPS CALL means his
-   * first call sits dead while it happens, and he never makes a second one. Doing it here,
-   * quietly, while he is reading the screen, means by the time he taps Call it is ready.
+   * The plugin now warms itself the moment it loads, on a .utility queue, so iOS schedules
+   * it around speech instead of against it. By the time he reaches for Call it is ready,
+   * and he never hears it happen. Brandon: "I don't want to wait every time."
    *
-   * AUTOMATIC, NO PROMPT. Brandon, 2026-09-15: "It should automatically happen when they
-   * download Mike" and "if they agree on terms and privacy then we should be good to use
-   * their data."
-   *
-   * He is right and I was over-thinking it. The terms cover it, and iOS already gives every
-   * user a per-app cellular switch — so they have control whether we ask or not. Our own
-   * prompt would just be friction stacked on a control Apple already provides. It is ~150MB
-   * once, which is a few minutes of scrolling Instagram, for a feature that makes Mike work
-   * hands-free forever after.
-   *
-   * We still PREFER wifi when it happens to be there — not asking, just using the free one
-   * if it exists, so a tech opening Mike for the first time in his driveway does not spend
-   * cellular he never needed to. If he is on cellular, it downloads anyway.
-   *
-   * Silent by design: no toast, no message, nothing spoken. If it fails, the call simply
-   * falls back to the browser exactly as it does today. */
-  (function () {
-    setTimeout(function () {
-      try {
-        var P = plugin();
-        if (!P || !window.mikeEarAvailable || !window.mikeEarAvailable()) return;
-        // Prefer wifi, never require it. On cellular we wait a few seconds in case the phone
-        // is about to join a known network — a tech pulling into the shop, say — then go
-        // ahead regardless rather than leaving him without the feature.
-        var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-        var onCellular = !!(conn && conn.type === 'cellular');
-        var delay = onCellular ? 8000 : 0;
-        // NEVER WARM THE MODEL WHILE MIKE IS TALKING.
-        // Brandon: "something cuts Mike off while he says his welcome back Brandon."
-        // Loading Whisper compiles the models for the Neural Engine, which is heavy enough to
-        // starve the WebView's audio thread on a phone — and the preload fired 1.5s after
-        // open, which is exactly when Mike is mid-greeting. So the first thing a tech hears
-        // is Mike getting cut off by us getting ready.
-        // Wait for him to finish. The model is not needed until someone taps Call, and this
-        // costs nothing but patience.
-        var waited = 0;
-        (function whenQuiet() {
-          var busy = false;
-          try { busy = (typeof isMikeSpeaking !== 'undefined' && isMikeSpeaking); } catch (e) {}
-          // Give up waiting after two minutes and load anyway, rather than never loading
-          // because someone left a long conversation running.
-          if (busy && waited < 120000) { waited += 1000; setTimeout(whenQuiet, 1000); return; }
-          go();
-        })();
-        function go() {
-        setTimeout(function () {
-        P.isSupported().then(function (s) {
-          if (s && s.ready === true) return;          // already warm
-          _warm = P.prepare();
-          _warm.then(function () {
-            try { console.log('[ear] speech model ready'); } catch (e) {}
-            report('warm', 'model ready');
-          }).catch(function (e) {
-            _warm = null;
-            try { console.log('[ear] model load failed: ' + (e && e.message || e)); } catch (_) {}
-            report('warm_failed', (e && e.message) || String(e));
-          });
-        }).catch(function () {});
-        }, delay);
-        }
-      } catch (e) {}
-    }, 1500);
-  })();
+   * mikeEarStart() still waits for that warm-up if he is fast enough to beat it. */
 
   window.mikeEarSpeak = async function (base64mp3) {
     var P = plugin();

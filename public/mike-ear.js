@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v12';
+  var EAR_BUILD = 'ear-v13';
 
   /* TELL THE SERVER, NOT THE SCREEN.
    *
@@ -176,6 +176,29 @@
     }, 20000);
   }
 
+  /* MIKE'S GREETING WAS BEING TREATED AS THE TECHNICIAN TALKING.
+     Brandon, 2026-09-16: "it still interrupts Mike and doesn't let me talk." His phone
+     reported in=MicrophoneBuiltIn — speakerphone. The greeting is spoken by THIS layer, and
+     the native ear cannot tell Mike's voice from his. So it transcribed Mike, sent Mike's own
+     greeting back to Mike as a question, and answered it. From the outside: Mike cuts himself
+     off and the tech never gets a turn.
+     The web already tracks this in isMikeSpeaking. It just had no way to tell the phone. So
+     mirror it down — one place to be right instead of the twenty sites that set the flag.
+     Polling is fine and deliberate: this only matters while the app is AWAKE, because a
+     suspended WebView cannot be playing audio in the first place. */
+  var _speakMirror = null, _lastSpoke = null;
+  function mirrorSpeaking(P) {
+    clearInterval(_speakMirror);
+    _lastSpoke = null;
+    _speakMirror = setInterval(function () {
+      if (!listening) { clearInterval(_speakMirror); return; }
+      var now = (typeof isMikeSpeaking !== 'undefined' && !!isMikeSpeaking);
+      if (now === _lastSpoke) return;
+      _lastSpoke = now;
+      try { if (P.setSpeaking) P.setSpeaking({ speaking: now }); } catch (_) {}
+    }, 120);
+  }
+
   function onHeard(e) {
     clearTimeout(_deafTimer);
     report('heard', (e && e.final ? 'final: ' : 'partial: ') + String((e && e.text) || '').slice(0, 80));
@@ -282,6 +305,7 @@
       listening = true;
       report('started', 'listening');
       watchForSilence();
+      mirrorSpeaking(P);
       return true;
     } catch (e) {
       report('start_failed', (e && e.message) || String(e));
@@ -293,6 +317,7 @@
     var P = plugin();
     if (!P || !listening) return;
     clearTimeout(_deafTimer);
+    clearInterval(_speakMirror);
     try { await P.stop(); } catch (_) {}
     listening = false;
   };

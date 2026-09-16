@@ -63,7 +63,10 @@
                '\nplugin listed:' + d.pluginListed + '  handle:' + d.handle +
                (d.supported !== undefined ? ('\nspeech supported:' + d.supported + '  on-device:' + d.onDevice) : '') +
                (d.error ? ('\nerror: ' + d.error) : '');
-    try { if (typeof appendMessage === 'function') appendMessage('agent', 'EAR DIAGNOSTIC\n' + line); } catch (_) {}
+    // Console only — NEVER appendMessage. Anything posted as Mike goes through
+    // text-to-speech in voice mode, so a debug line gets read aloud over him mid-sentence.
+    // mikeEarDiag() stays available to call by hand; it just cannot talk any more.
+    try { console.log('[ear] ' + line.replace(/\n/g, ' | ')); } catch (_) {}
     return d;
   };
   /* AVAILABLE MEANS THE NATIVE CODE IS REALLY THERE — not that Capacitor handed us an object.
@@ -162,32 +165,37 @@
   /* Mike's voice, out through the earpiece, using the audio the web app already made from
      ElevenLabs. Routed natively so it ducks other audio instead of stopping it, reaches the
      AirPods he is actually wearing, and plays with the screen off. */
-  /* AUTO-REPORT ON OPEN. Brandon is testing on a phone, where there is no console and no way
-   * to type window.mikeEarDiag(). Three builds have now come back as "it doesn't work" with
-   * no way for me to see WHICH part did not work — the plugin missing, the model unloaded,
-   * or permission denied all look identical from his side. So when the app opens with
-   * ?ear=1 it says so itself, in the chat, where he can read it or screenshot it. */
+  /* LOAD THE MODEL THE MOMENT THE APP OPENS.
+   *
+   * The diagnostic that used to sit here did its job — it told us "native app: true, plugin
+   * compiled in: true, model ready: FALSE", which is how we finally learned the plugin was
+   * fine all along and only the model was missing. It also SPOKE, because appendMessage as
+   * Mike goes through text-to-speech in voice mode, so it cut him off mid-sentence. Brandon:
+   * "it cut Mike off and started saying the ear check thing." Debug output that talks over
+   * the product is worse than none. Removed.
+   *
+   * What replaces it is the actual fix. Whisper's weights download and compile for the
+   * Neural Engine on first use — slow exactly once. Doing that when he TAPS CALL means his
+   * first call sits dead while it happens, and he never makes a second one. Doing it here,
+   * quietly, while he is reading the screen, means by the time he taps Call it is ready.
+   *
+   * Silent by design: no toast, no message, nothing spoken. If it fails, the call simply
+   * falls back to the browser exactly as it does today. */
   (function () {
-    setTimeout(async function () {
+    setTimeout(function () {
       try {
-        var C = window.Capacitor;
         var P = plugin();
-        var bits = [];
-        bits.push('native app: ' + !!(C && C.isNativePlatform && C.isNativePlatform()));
-        bits.push('plugin compiled in: ' + !!(C && C.isPluginAvailable && C.isPluginAvailable('MikeEar')));
-        if (P) {
-          try {
-            var s = await P.isSupported();
-            bits.push('model ready: ' + (s.ready === true));
-          } catch (e) { bits.push('plugin call failed: ' + (e && e.message || e)); }
-        } else {
-          bits.push('plugin handle: none');
-        }
-        if (typeof appendMessage === 'function') {
-          appendMessage('agent', 'EAR CHECK — ' + bits.join('  ·  '));
-        }
+        if (!P || !window.mikeEarAvailable || !window.mikeEarAvailable()) return;
+        P.isSupported().then(function (s) {
+          if (s && s.ready === true) return;          // already warm
+          P.prepare().then(function () {
+            try { console.log('[ear] speech model ready'); } catch (e) {}
+          }).catch(function (e) {
+            try { console.log('[ear] model load failed: ' + (e && e.message || e)); } catch (_) {}
+          });
+        }).catch(function () {});
       } catch (e) {}
-    }, 2500);
+    }, 1500);
   })();
 
   window.mikeEarSpeak = async function (base64mp3) {

@@ -66,9 +66,24 @@
     try { if (typeof appendMessage === 'function') appendMessage('agent', 'EAR DIAGNOSTIC\n' + line); } catch (_) {}
     return d;
   };
-  /* Available only inside the iOS shell. On the web this whole file is inert and the
-     existing browser path runs exactly as before — no behaviour change for browser users. */
-  window.mikeEarAvailable = function () { return !!plugin(); };
+  /* AVAILABLE MEANS THE NATIVE CODE IS REALLY THERE — not that Capacitor handed us an object.
+   *
+   * registerPlugin() ALWAYS returns a proxy, even when no native plugin is installed and even
+   * in a plain browser. Basing availability on "did we get a handle" made this return true
+   * everywhere, so the call took the native path, the native path did nothing, and Mike
+   * greeted Brandon and then froze with no way to answer. That was a live regression on his
+   * moneymaker and it was mine.
+   *
+   * Three things must ALL be true: we are on a native platform, Capacitor itself lists the
+   * plugin as available, and we hold a handle. isPluginAvailable is the authoritative check —
+   * it knows what actually got compiled in. */
+  window.mikeEarAvailable = function () {
+    var C = window.Capacitor;
+    if (!C) return false;
+    if (!(C.isNativePlatform && C.isNativePlatform())) return false;
+    if (!(C.isPluginAvailable && C.isPluginAvailable('MikeEar'))) return false;
+    return !!plugin();
+  };
 
   var wired = false;
   var listening = false;

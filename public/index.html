@@ -42,7 +42,7 @@
     if(!/[?&]ear=1\b/.test(location.search))return;
     window.MIKE_EAR_ENABLED=true;
     var t=document.createElement('script');
-    t.src='/mike-ear.js?v=18';
+    t.src='/mike-ear.js?v=19';
     document.head.appendChild(t);
   }catch(e){}
 })();
@@ -13995,10 +13995,11 @@ function toggleVoiceMode(){
     // the same code that has always run.
     if(voiceMode&&typeof window.mikeEarAvailable==='function'&&window.mikeEarAvailable()){
       if(document.hidden){
+        // Already recording, so this is allowed. Nothing starts here — attention shifts.
         try{stopListening();}catch(_s){}
-        try{window.mikeEarStart();}catch(_s){}
+        try{if(window.mikeEarAttention)window.mikeEarAttention(true);}catch(_s){}
       }else{
-        try{window.mikeEarStop();}catch(_s){}
+        try{if(window.mikeEarAttention)window.mikeEarAttention(false);}catch(_s){}
         isListening=false;
         if(!isMikeSpeaking)setTimeout(function(){
           if(voiceMode&&!isListening&&!isMikeSpeaking&&!document.hidden)startListening();
@@ -14048,6 +14049,20 @@ function toggleVoiceMode(){
   };
   var _pool=greetPool[currentLang]||greetPool.en;
   var _greetLine=_pool[Math.floor(Math.random()*_pool.length)];
+  // OPEN THE MICROPHONE NOW, WHILE THE APP IS IN FRONT — AND IGNORE IT.
+  // iOS refuses to START recording once an app is in the background (his phone reported
+  // exactly that: "cannot start recording"), but it will happily let a recording that is
+  // ALREADY running continue. So the ear opens here, on his tap, and then does nothing at
+  // all: every buffer discarded, nothing transcribed, nothing sent. The ordinary call runs
+  // the conversation untouched. When the screen goes off it is already running, and simply
+  // starts paying attention.
+  try{
+    if(typeof window.mikeEarAvailable==='function'&&window.mikeEarAvailable()&&!window.mikeEarIsOn()){
+      window.mikeEarStart().then(function(ok){
+        if(ok&&window.mikeEarAttention)window.mikeEarAttention(false);
+      });
+    }
+  }catch(_pe){}
   setVoiceStatus('Mike is starting…','');
   setTimeout(function(){if(voiceMode)mikeSay(_greetLine);},200);
 }

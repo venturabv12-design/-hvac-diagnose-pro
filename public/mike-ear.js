@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v18';
+  var EAR_BUILD = 'ear-v19';
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
@@ -335,6 +335,14 @@
   };
 
   window.mikeEarIsOn = function () { return listening; };
+  /* Passive while the screen is on, attentive once it is off. See MikeEarPlugin.swift —
+     iOS refuses to START recording in the background, so the mic must already be open
+     before he locks. Open, and completely ignored, is the only thing Apple allows. */
+  window.mikeEarAttention = async function (on) {
+    var P = plugin();
+    if (!P || !P.setActiveListening) return false;
+    try { await P.setActiveListening({ active: !!on }); return true; } catch (e) { return false; }
+  };
 
   /* Mike's voice, out through the earpiece, using the audio the web app already made from
      ElevenLabs. Routed natively so it ducks other audio instead of stopping it, reaches the

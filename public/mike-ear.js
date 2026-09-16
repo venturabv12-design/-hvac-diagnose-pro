@@ -14,14 +14,24 @@
  * within ten seconds, which meant "hands-free" was only true while he stood there staring at
  * it. The native plugin holds a real AVAudioSession, so the call survives the pocket.
  *
- * Transcripts are handed to the EXACT pipeline the browser path already uses — write into
- * the chat input, call sendChat() — so Mike's brain, his voice, the paywall, the history and
- * every guard stay untouched. Nothing about Mike changes. Only the ears do.
+ * 2026-09-16 — WHAT CHANGED, AND WHY THE EAR ALONE WAS NEVER ENOUGH.
+ * Transcripts USED to be handed to the browser pipeline — write into the chat input, call
+ * sendChat(). That is what made "I close the phone and it closes the call" inevitable: the
+ * ear survives the lock, but the thing it handed the words to does not. iOS suspends this
+ * entire file the moment the screen goes off.
+ *
+ * So the phone now carries the CALL — hear, ask Mike, speak the answer — in native code.
+ * This layer hands down the token and the persona while the app is still awake, then draws
+ * the conversation whenever he happens to be looking.
+ *
+ * What did NOT move: Mike's brain, the safety and pricing guards, the manual library,
+ * warranty. All still server-side, all still fixable in minutes with no App Store review.
+ * The phone carries the call, not the intelligence.
  */
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v11';
+  var EAR_BUILD = 'ear-v12';
 
   /* TELL THE SERVER, NOT THE SCREEN.
    *
@@ -142,6 +152,9 @@
 
   var wired = false;
   var listening = false;
+  /* True once the phone has the token and the persona and is carrying the call itself.
+     Gates the old web send path so Mike is never asked the same question twice. */
+  var _nativeCall = false;
 
   /* One final transcript = one thing the tech said out loud. Hand it straight to the
      existing send path. Deliberately NOT selective here: this is a CALL, he is talking TO
@@ -170,6 +183,19 @@
     var text = (e.text || '').trim();
     if (text.length < 2) return;
     if (typeof isMikeSpeaking !== 'undefined' && isMikeSpeaking) return;  // don't transcribe Mike
+
+    /* THE PHONE IS ALREADY ASKING HIM — DO NOT ASK AGAIN.
+       Once the session is handed down, the native side sends this exact sentence to Mike
+       itself. Letting this path also call sendChat() would ask Mike the same question twice,
+       bill it twice, and play two answers over each other. So when the phone owns the call,
+       this layer's only job is to draw what was said. */
+    if (_nativeCall) {
+      try { if (typeof appendMessage === 'function') appendMessage('user', text); } catch (_) {}
+      try { if (typeof setVoiceStatus === 'function') setVoiceStatus('Sending to Mike…', text); } catch (_) {}
+      try { if (window._idleResetTimer) window._idleResetTimer(); } catch (_) {}
+      return;
+    }
+
     var input = document.getElementById('chatInput');
     if (!input) return;
     input.value = text;
@@ -212,8 +238,41 @@
         try { await (_warm || (_warm = P.prepare())); report('prepared', 'ok'); }
         catch (e) { _warm = null; report('prepare_failed', (e && e.message) || String(e)); return false; }
       }
+      /* HAND THE PHONE EVERYTHING IT NEEDS *BEFORE* THE SCREEN CAN LOCK.
+         The token and Mike's persona live in JavaScript, and JavaScript is precisely what
+         iOS stops running when the phone goes in a pocket. Handing them down at the start of
+         the call is what lets the native side carry the whole conversation afterwards
+         without ever waking this layer up again. This is the fix for the thing Brandon
+         reported four times last night: "I close the phone and it closes the call." */
+      try {
+        var res = await P.setSession({
+          apiBase: location.origin,
+          token: (window.currentUser && window.currentUser.token) || '',
+          system: (typeof AGENT_SYSTEM === 'string' && AGENT_SYSTEM) ? AGENT_SYSTEM : '',
+          reset: true
+        });
+        _nativeCall = !!(res && res.ready);
+        report('session', 'handed down: ready=' + _nativeCall
+          + ' token=' + !!(window.currentUser && window.currentUser.token)
+          + ' system=' + (typeof AGENT_SYSTEM === 'string' ? AGENT_SYSTEM.length : 0) + ' chars');
+      } catch (e) {
+        _nativeCall = false;
+        /* Old build without setSession — the web path still works, it just dies on lock.
+           Worth knowing which one he is on rather than guessing at the symptom. */
+        report('session_failed', (e && e.message) || String(e));
+      }
+
       if (!wired) {
         await P.addListener('heard', onHeard);
+        /* Mike answered while the phone was locked. Draw it so that when he looks at the
+           screen the conversation is all there, instead of a chat that silently skipped ten
+           minutes of a real call. */
+        await P.addListener('answered', function (e) {
+          var t = (e && e.text) || '';
+          if (!t) return;
+          report('answered', String(t).slice(0, 80));
+          try { if (typeof appendMessage === 'function') appendMessage('agent', t); } catch (_) {}
+        });
         /* The native side's answer to "which silence is this" — buffer count, peak level,
            mic route, engine state. Forwarded straight to the server, never to the screen. */
         await P.addListener('diag', function (e) { report('diag', (e && e.detail) || ''); });

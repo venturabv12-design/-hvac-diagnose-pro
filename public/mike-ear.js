@@ -19,6 +19,30 @@
  * every guard stay untouched. Nothing about Mike changes. Only the ears do.
  */
 (function () {
+  /* TELL THE SERVER, NOT THE SCREEN.
+   *
+   * Every attempt to diagnose this has either been invisible (console on a phone I cannot
+   * reach) or destructive (a toast and then a spoken line, both of which cut Mike off
+   * mid-sentence). Brandon has spent his whole evening being my debugger.
+   *
+   * This posts the ear's state to the existing /api/client-error endpoint, which already
+   * ignores failures and never blocks the caller. I read it out of the events table. He sees
+   * nothing, hears nothing, and I stop guessing. */
+  function report(stage, detail) {
+    try {
+      fetch('/api/client-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'ear_' + stage,
+          message: String(detail || '').slice(0, 300),
+          token: (window.currentUser && window.currentUser.token) || null
+        }),
+        keepalive: true
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
   var _p = null;
   function plugin() {
     if (_p) return _p;
@@ -108,6 +132,7 @@
      call. (Ambient job-coaching — where Mike stays quiet and only speaks on an objection —
      is a different mode and comes later.) */
   function onHeard(e) {
+    report('heard', (e && e.final ? 'final: ' : 'partial: ') + String((e && e.text) || '').slice(0, 80));
     if (!e || !e.final) return;
     var text = (e.text || '').trim();
     if (text.length < 2) return;
@@ -131,8 +156,10 @@
       /* If the phone cannot transcribe on-device we do NOT quietly ship a customer's voice
          to a server. Fall back to the browser path, which is the tech's own phone doing the
          same thing it always did. */
+      report('supported', 'supported=' + s.supported + ' onDevice=' + s.onDevice + ' ready=' + s.ready);
       if (!s.supported || !s.onDevice) return false;
       var perm = await P.requestPermission();
+      report('permission', 'mic=' + perm.microphone + ' speech=' + perm.speech);
       if (!perm.speech || !perm.microphone) return false;
       // LOAD THE MODEL FIRST. The native side refuses to start without it — "Speech model is
       // not loaded yet — call prepare() first" — and nothing on the web side ever called it.
@@ -142,13 +169,16 @@
       // First run downloads and compiles the Whisper weights for the Neural Engine, which is
       // slow exactly once; every call after this is instant.
       if (!(s.ready === true)) {
-        try { await P.prepare(); } catch (e) { return false; }
+        try { await P.prepare(); report('prepared', 'ok'); }
+        catch (e) { report('prepare_failed', (e && e.message) || String(e)); return false; }
       }
       if (!wired) { await P.addListener('heard', onHeard); wired = true; }
       await P.start();
       listening = true;
+      report('started', 'listening');
       return true;
     } catch (e) {
+      report('start_failed', (e && e.message) || String(e));
       return false;
     }
   };

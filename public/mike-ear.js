@@ -31,7 +31,13 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v14';
+  var EAR_BUILD = 'ear-v15';
+  /* THE APP'S OWN BUILD NUMBER, straight from the phone.
+     The web half updates the instant it deploys; the APP half only updates when he installs
+     it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
+     2026-09-16 it cost a round of "still doesn't work" that was really "you're on the old
+     app." Every report now carries both, so which-build-is-he-on is never a question again. */
+  var _nativeBuild = '';
 
   /* TELL THE SERVER, NOT THE SCREEN.
    *
@@ -59,7 +65,7 @@
           kind: 'ear_' + stage,
           detail: String(detail || '').slice(0, 300),
           where: 'mike-ear.js',
-          build: EAR_BUILD,
+          build: EAR_BUILD + (_nativeBuild ? ('/app-' + _nativeBuild) : '/app-?'),
           token: (window.currentUser && window.currentUser.token) || null
         }),
         keepalive: true
@@ -238,6 +244,7 @@
       /* If the phone cannot transcribe on-device we do NOT quietly ship a customer's voice
          to a server. Fall back to the browser path, which is the tech's own phone doing the
          same thing it always did. */
+      if (s && s.native) _nativeBuild = String(s.native);
       report('supported', 'supported=' + s.supported + ' onDevice=' + s.onDevice + ' ready=' + s.ready);
       if (!s.supported || !s.onDevice) return false;
       var perm = await P.requestPermission();
@@ -275,6 +282,7 @@
           reset: true
         });
         _nativeCall = !!(res && res.ready);
+        if (res && res.native) _nativeBuild = String(res.native);
         report('session', 'handed down: ready=' + _nativeCall
           + ' token=' + !!(window.currentUser && window.currentUser.token)
           + ' system=' + (typeof AGENT_SYSTEM === 'string' ? AGENT_SYSTEM.length : 0) + ' chars');

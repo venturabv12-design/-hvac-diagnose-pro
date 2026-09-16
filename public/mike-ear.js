@@ -219,6 +219,20 @@
    * first call sits dead while it happens, and he never makes a second one. Doing it here,
    * quietly, while he is reading the screen, means by the time he taps Call it is ready.
    *
+   * AUTOMATIC, NO PROMPT. Brandon, 2026-09-15: "It should automatically happen when they
+   * download Mike" and "if they agree on terms and privacy then we should be good to use
+   * their data."
+   *
+   * He is right and I was over-thinking it. The terms cover it, and iOS already gives every
+   * user a per-app cellular switch — so they have control whether we ask or not. Our own
+   * prompt would just be friction stacked on a control Apple already provides. It is ~150MB
+   * once, which is a few minutes of scrolling Instagram, for a feature that makes Mike work
+   * hands-free forever after.
+   *
+   * We still PREFER wifi when it happens to be there — not asking, just using the free one
+   * if it exists, so a tech opening Mike for the first time in his driveway does not spend
+   * cellular he never needed to. If he is on cellular, it downloads anyway.
+   *
    * Silent by design: no toast, no message, nothing spoken. If it fails, the call simply
    * falls back to the browser exactly as it does today. */
   (function () {
@@ -226,6 +240,13 @@
       try {
         var P = plugin();
         if (!P || !window.mikeEarAvailable || !window.mikeEarAvailable()) return;
+        // Prefer wifi, never require it. On cellular we wait a few seconds in case the phone
+        // is about to join a known network — a tech pulling into the shop, say — then go
+        // ahead regardless rather than leaving him without the feature.
+        var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        var onCellular = !!(conn && conn.type === 'cellular');
+        var delay = onCellular ? 8000 : 0;
+        setTimeout(function () {
         P.isSupported().then(function (s) {
           if (s && s.ready === true) return;          // already warm
           _warm = P.prepare();
@@ -238,6 +259,7 @@
             report('warm_failed', (e && e.message) || String(e));
           });
         }).catch(function () {});
+        }, delay);
       } catch (e) {}
     }, 1500);
   })();

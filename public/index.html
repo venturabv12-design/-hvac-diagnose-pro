@@ -14220,6 +14220,10 @@ function mikeSay(text){
       //
       // Same bytes, same ElevenLabs voice, same everything — only the speaker changes. Falls
       // through to WebAudio on the web, or if the native call fails for any reason.
+      // Gated by the same kill switch as the listening side — see public/mike-ear.js.
+      // While the native ear is parked, Mike's voice goes through WebAudio exactly as it did
+      // before any of tonight's work. mikeEarAvailable() returns false unconditionally until
+      // the native path is proven on a real device.
       if(typeof window.mikeEarAvailable==='function'&&window.mikeEarAvailable()&&arrayBuf&&arrayBuf.byteLength>=500){
         try{
           var _b='',_u8=new Uint8Array(arrayBuf);

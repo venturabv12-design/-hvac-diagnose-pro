@@ -28,7 +28,26 @@
      service worker: it has to already be on the phone before the tech walks into the
      basement, because that is the moment it exists for. -->
 <script src="/fieldbrain.js"></script>
-<!-- MIKE IN THE EAR — NOT LOADED. Parked 2026-09-15.
+<!-- MIKE IN THE EAR — OPT-IN ONLY, and versioned.
+     Loads ONLY when the page is opened with ?ear=1, which is set exclusively by the
+     feat/ear-whisperkit TestFlight build (capacitor.config.json server.url). The App Store
+     build and every browser open trazermike.io WITHOUT that flag, so they never fetch this
+     file and cannot be affected by it — which is the whole point after tonight.
+     The ?v= is mandatory: this file is served with max-age=14400, and a bad copy without a
+     version query sat on Brandon's phone for four hours while every fix I deployed went
+     nowhere. Bump v on every change to it. -->
+<script>
+(function(){
+  try{
+    if(!/[?&]ear=1\b/.test(location.search))return;
+    window.MIKE_EAR_ENABLED=true;
+    var t=document.createElement('script');
+    t.src='/mike-ear.js?v=2';
+    document.head.appendChild(t);
+  }catch(e){}
+})();
+</script>
+<!-- Parked 2026-09-15.
      The script tag is removed rather than merely disabled because /mike-ear.js is served
      with cache-control max-age=14400 — four hours. Brandon's app had already cached a
      BROKEN copy, so force-quitting did nothing and he stayed broken no matter what I

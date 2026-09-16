@@ -42,7 +42,7 @@
     if(!/[?&]ear=1\b/.test(location.search))return;
     window.MIKE_EAR_ENABLED=true;
     var t=document.createElement('script');
-    t.src='/mike-ear.js?v=13';
+    t.src='/mike-ear.js?v=14';
     document.head.appendChild(t);
   }catch(e){}
 })();
@@ -13990,6 +13990,15 @@ function toggleVoiceMode(){
     if(document.hidden&&voiceMode){
       setTimeout(function(){
         if(!voiceMode||!document.hidden)return;
+        // THE PHONE IS CARRYING THIS CALL — DO NOT HANG UP ON HIM.
+        // This probe is from the browser era, when backgrounding really did kill the audio
+        // and ending the call was the honest thing to do. With the native ear the audio does
+        // NOT die: the plugin holds its own AVAudioSession, which is the entire point. Left
+        // as it was, this line deliberately ends the call the moment the screen locks — the
+        // exact thing Brandon reported four times ("I close the phone and it closes the
+        // call"), written down as a rule. A suspended AudioContext is expected here and
+        // means nothing about whether Mike can still hear him.
+        if(window.mikeEarIsOn&&window.mikeEarIsOn())return;
         var ctx=sharedAudioCtx;
         if(!ctx||ctx.state==='interrupted'||ctx.state==='suspended'){
           toggleVoiceMode();

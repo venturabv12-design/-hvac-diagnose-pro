@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v13';
+  var EAR_BUILD = 'ear-v14';
 
   /* TELL THE SERVER, NOT THE SCREEN.
    *
@@ -299,6 +299,10 @@
         /* The native side's answer to "which silence is this" — buffer count, peak level,
            mic route, engine state. Forwarded straight to the server, never to the screen. */
         await P.addListener('diag', function (e) { report('diag', (e && e.detail) || ''); });
+        /* WHY THE CALL ENDED. Brandon asked "but did you get a report for that?" about a
+           hang-up I had only READ in the source. I had not. Nothing reported the call ending,
+           so every explanation for it was inference dressed up as a finding. Now it says. */
+        await P.addListener('ended', function (e) { report('ended', (e && e.reason) || 'unknown'); });
         wired = true;
       }
       await P.start();

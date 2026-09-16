@@ -42,7 +42,7 @@
     if(!/[?&]ear=1\b/.test(location.search))return;
     window.MIKE_EAR_ENABLED=true;
     var t=document.createElement('script');
-    t.src='/mike-ear.js?v=15';
+    t.src='/mike-ear.js?v=16';
     document.head.appendChild(t);
   }catch(e){}
 })();
@@ -14290,13 +14290,28 @@ function mikeSay(text){
           for(var _i=0;_i<_u8.length;_i++)_b+=String.fromCharCode(_u8[_i]);
           window.mikeEarSpeak(btoa(_b)).then(function(ok){
             if(!ok)return;                       // native refused — WebAudio below still runs
-            // Mike finished talking: drop the speaking UI and hand the mic back, the same
-            // way the WebAudio onended path does.
+            // WAIT FOR MIKE TO ACTUALLY FINISH, NOT FOR A GUESS ABOUT HOW LONG HE IS.
+            //
+            // This used to estimate his speaking time from the SIZE OF THE MP3:
+            // round(bytes/4000)*100 ms. ElevenLabs turbo runs about 16,000 bytes per second,
+            // so that guess came out roughly 2.5x too short — on a four second greeting the
+            // microphone opened 2.4 seconds early, on a fifteen second answer, nine seconds
+            // early. And opening the mic mid-playback is what CUTS HIM OFF on iOS.
+            //
+            // Brandon, 2026-09-16: "it'll greet and then it'll cut him off during the greet
+            // and then he'll finish his greet, but he'll finish while it's trying to record
+            // my voice at the same time." That is this line, described perfectly.
+            //
+            // The plugin has always returned the real duration of the audio it is playing.
+            // We threw it away and guessed instead.
+            var _secs=(ok&&typeof ok.seconds==='number'&&ok.seconds>0)?ok.seconds:null;
+            var _waitMs=_secs?Math.round(_secs*1000)+350
+                             :Math.max(1200,Math.round(arrayBuf.byteLength/16000)*1000+350);
             setTimeout(function(){
               isMikeSpeaking=false;
               resetMikeSpeakingUI();
               if(voiceMode&&!isListening)startListening();
-            }, Math.max(1200, Math.round(arrayBuf.byteLength/4000)*100));
+            }, _waitMs);
           });
           return;
         }catch(_ne){ /* fall through to WebAudio */ }

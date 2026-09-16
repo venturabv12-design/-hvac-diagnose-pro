@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v15';
+  var EAR_BUILD = 'ear-v16';
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
@@ -355,6 +355,10 @@
   window.mikeEarSpeak = async function (base64mp3) {
     var P = plugin();
     if (!P) return false;
-    try { await P.speak({ audio: base64mp3 }); return true; } catch (e) { return false; }
+    /* Return the plugin's answer, not just true/false. It reports the REAL duration of the
+       audio, and the web was throwing that away and guessing the length from the file size
+       instead — a guess about 2.5x too short, which opened the microphone in the middle of
+       Mike's sentence and interrupted him. That is the cut-off Brandon heard on every call. */
+    try { return (await P.speak({ audio: base64mp3 })) || true; } catch (e) { return false; }
   };
 })();

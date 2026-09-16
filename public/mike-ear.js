@@ -19,6 +19,10 @@
  * every guard stay untouched. Nothing about Mike changes. Only the ears do.
  */
 (function () {
+  /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
+     costs a round trip through Brandon every single time. */
+  var EAR_BUILD = 'ear-v11';
+
   /* TELL THE SERVER, NOT THE SCREEN.
    *
    * Every attempt to diagnose this has either been invisible (console on a phone I cannot
@@ -28,6 +32,14 @@
    * This posts the ear's state to the existing /api/client-error endpoint, which already
    * ignores failures and never blocks the caller. I read it out of the events table. He sees
    * nothing, hears nothing, and I stop guessing. */
+  /* THE FIELD NAME WAS WRONG, SO EVERY DETAIL WAS THROWN AWAY.
+     /api/client-error stores `detail`. This sent `message`. The server read a field that
+     was never there, so all fourteen reports from Brandon's phone landed with detail:null —
+     the endpoint built specifically so he would never have to describe a failure to me
+     recorded only THAT something happened, never what. I could see the ear go deaf and not
+     one reason why. Same class of mistake as the three silent failures last night: the
+     instrument was broken, not the thing it measured. `build` is sent for the same reason —
+     "which version is on his phone" was unanswerable and it is the first question every time. */
   function report(stage, detail) {
     try {
       fetch('/api/client-error', {
@@ -35,7 +47,9 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           kind: 'ear_' + stage,
-          message: String(detail || '').slice(0, 300),
+          detail: String(detail || '').slice(0, 300),
+          where: 'mike-ear.js',
+          build: EAR_BUILD,
           token: (window.currentUser && window.currentUser.token) || null
         }),
         keepalive: true
@@ -134,7 +148,23 @@
      Mike, and a phone call where the other person only answers sometimes is a broken phone
      call. (Ambient job-coaching — where Mike stays quiet and only speaks on an objection —
      is a different mode and comes later.) */
+  /* SILENCE IS THE ONE THING THAT NEVER REPORTED ITSELF.
+     Brandon's 06:00 test: supported → permission → started, then nothing, forever. Three
+     completely different faults produce that same nothing — a mic handing us no buffers, a
+     mic handing us sound too quiet to cross the speech threshold, or Whisper transcribing to
+     an empty string. Without this timer all three are indistinguishable and the next step is
+     guesswork, which is what cost him his evening. The native side answers WHICH; this
+     guarantees we at least always learn THAT. */
+  var _deafTimer = null;
+  function watchForSilence() {
+    clearTimeout(_deafTimer);
+    _deafTimer = setTimeout(function () {
+      report('deaf', 'listening 20s, zero transcripts');
+    }, 20000);
+  }
+
   function onHeard(e) {
+    clearTimeout(_deafTimer);
     report('heard', (e && e.final ? 'final: ' : 'partial: ') + String((e && e.text) || '').slice(0, 80));
     if (!e || !e.final) return;
     var text = (e.text || '').trim();
@@ -182,10 +212,17 @@
         try { await (_warm || (_warm = P.prepare())); report('prepared', 'ok'); }
         catch (e) { _warm = null; report('prepare_failed', (e && e.message) || String(e)); return false; }
       }
-      if (!wired) { await P.addListener('heard', onHeard); wired = true; }
+      if (!wired) {
+        await P.addListener('heard', onHeard);
+        /* The native side's answer to "which silence is this" — buffer count, peak level,
+           mic route, engine state. Forwarded straight to the server, never to the screen. */
+        await P.addListener('diag', function (e) { report('diag', (e && e.detail) || ''); });
+        wired = true;
+      }
       await P.start();
       listening = true;
       report('started', 'listening');
+      watchForSilence();
       return true;
     } catch (e) {
       report('start_failed', (e && e.message) || String(e));
@@ -196,6 +233,7 @@
   window.mikeEarStop = async function () {
     var P = plugin();
     if (!P || !listening) return;
+    clearTimeout(_deafTimer);
     try { await P.stop(); } catch (_) {}
     listening = false;
   };

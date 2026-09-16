@@ -44,6 +44,9 @@
   }
 
   var _p = null;
+  /* The in-flight model warm-up. One download, shared by the preload on open and by anyone
+     who taps Call before it finishes. */
+  var _warm = null;
   function plugin() {
     if (_p) return _p;
     var C = window.Capacitor;
@@ -169,8 +172,15 @@
       // First run downloads and compiles the Whisper weights for the Neural Engine, which is
       // slow exactly once; every call after this is instant.
       if (!(s.ready === true)) {
-        try { await P.prepare(); report('prepared', 'ok'); }
-        catch (e) { report('prepare_failed', (e && e.message) || String(e)); return false; }
+        // WAIT FOR THE WARM-UP ALREADY RUNNING — do not start a second one.
+        // The simulator log settled this: the model IS downloading (base.en weights,
+        // AudioEncoder, TextDecoder, straight from HuggingFace) and the whole chain works.
+        // It just takes a while the first time, and Brandon tapped Call while it was still
+        // pulling files. Kicking off a SECOND prepare() there would race the first one.
+        // Reuse the in-flight promise so the call simply waits for the download instead of
+        // giving up on it.
+        try { await (_warm || (_warm = P.prepare())); report('prepared', 'ok'); }
+        catch (e) { _warm = null; report('prepare_failed', (e && e.message) || String(e)); return false; }
       }
       if (!wired) { await P.addListener('heard', onHeard); wired = true; }
       await P.start();
@@ -218,10 +228,14 @@
         if (!P || !window.mikeEarAvailable || !window.mikeEarAvailable()) return;
         P.isSupported().then(function (s) {
           if (s && s.ready === true) return;          // already warm
-          P.prepare().then(function () {
+          _warm = P.prepare();
+          _warm.then(function () {
             try { console.log('[ear] speech model ready'); } catch (e) {}
+            report('warm', 'model ready');
           }).catch(function (e) {
+            _warm = null;
             try { console.log('[ear] model load failed: ' + (e && e.message || e)); } catch (_) {}
+            report('warm_failed', (e && e.message) || String(e));
           });
         }).catch(function () {});
       } catch (e) {}

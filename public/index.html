@@ -12966,6 +12966,53 @@ async function mpWarrantyRun(u){
       // brand returns null, and null means Mike says nothing about age — enforced by stripping
       // it, not by asking him. Fail toward distrust: a missing date costs a question, a wrong one
       // costs a warranty claim. Add brands here only with a source, never from memory.
+      // ─── PUBLISHED PARTS TERMS: THE SECOND NUMBER MIKE WAS GETTING WRONG ───────────────────
+      // 2026-09-17, found while proving the date fix on prod. Asked about a Goodman, Mike
+      // answered "unregistered base coverage is 10 years; registered coverage is 10 years."
+      // Goodman is 5 unregistered, 10 registered, registered within 60 days. Quoting 10 on an
+      // unregistered unit tells a tech a seven-year-old machine is covered when it is not — the
+      // same money mistake as the Rodolfo bug, pointing the other way.
+      //
+      // So this is the same treatment: numbers that matter live in code with a source, not in
+      // Mike's recall. A brand that is not listed here is NOT guessed at — Mike answers and the
+      // answer is labelled unverified, so a tech knows to confirm it before quoting it.
+      //
+      // NOTE ON PRECEDENCE: the manufacturer's own registry is better than this table and is
+      // already preferred upstream (d.parts.years). This is the fallback for when the registry
+      // gives no term, which is exactly when Mike used to improvise.
+      //
+      // Brands omitted ON PURPOSE because their schedule is genuinely not a clean base/registered
+      // split and I will not flatten it into one: Lennox (varies by series, and registration is
+      // not always required), Daikin (12-year registered plus unit replacement on some lines),
+      // York/Coleman/Luxaire. Those fall through to the unverified label. Fail toward distrust.
+      var WARRANTY_TERMS=[
+        // base parts years, registered parts years, days to register, source
+        {match:/goodman|amana/i,                      base:5, reg:10, days:60, src:'Goodman published limited warranty'},
+        {match:/trane|american standard/i,            base:5, reg:10, days:60, src:'Trane/American Standard published limited warranty'},
+        {match:/carrier|bryant|payne/i,               base:5, reg:10, days:90, src:'Carrier/Bryant published limited warranty'},
+        {match:/rheem|ruud/i,                         base:5, reg:10, days:90, src:'Rheem/Ruud published limited warranty'}
+      ];
+      function lookupTerms(brand){
+        var b=String(brand||'');
+        if(!b) return null;
+        for(var i=0;i<WARRANTY_TERMS.length;i++){
+          if(WARRANTY_TERMS[i].match.test(b)) return WARRANTY_TERMS[i];
+        }
+        return null;
+      }
+      // The instruction fragment for the published-terms line: hand over the verified numbers, or
+      // make him say out loud that they are not verified.
+      function termsInstruction(brand){
+        var t=lookupTerms(brand);
+        if(t){
+          return "1) PUBLISHED PARTS TERMS, ALREADY VERIFIED IN CODE — "+t.base+" years base (unregistered), "
+            +t.reg+" years registered, registration within "+t.days+" days of install. State exactly these "
+            +"numbers. Do NOT substitute your own recollection and do NOT contradict them.\n";
+        }
+        return "1) Give this brand and product type's published parts term unregistered and registered. "
+          +"These numbers are NOT verified on our side, so end that line with \"(confirm on the manufacturer's "
+          +"site before you quote it)\" — a tech is about to tell a customer what they owe.\n";
+      }
       function decodeUnitDate(brand, serial){
         var b=String(brand||'').toLowerCase(), sn=String(serial||'').trim().toUpperCase();
         if(!sn) return null;
@@ -13026,7 +13073,7 @@ async function mpWarrantyRun(u){
             if(typeof showTyping==='function')showTyping();
             var _sys=(typeof AGENT_SYSTEM==='string'?AGENT_SYSTEM:'')+
               "\n\nANSWER FORMAT — a technician needs numbers, not a shrug. Be brief.\n"+
-              "1) The manufacturer's PUBLISHED base parts term for this brand and product type when the unit was never registered, and the registered/extended term for comparison.\n"+
+              termsInstruction(u.brand||d.brandLabel)+
               (_datedA
                 ? ("2) MANUFACTURE DATE, ALREADY DECODED IN CODE — week "+_datedA.week+" of "+_datedA.year+" ("+_datedA.brand+", "+_datedA.source+"). Use that date. Do NOT re-derive it from the serial and do NOT contradict it.\n"
                    +"3) Using that date, say whether the unit is still inside the base term today and roughly when it runs out.\n")
@@ -13086,7 +13133,7 @@ async function mpWarrantyRun(u){
             if(typeof showTyping==='function')showTyping();
             var _sys=(typeof AGENT_SYSTEM==='string'?AGENT_SYSTEM:'')+
               "\n\nANSWER FORMAT — two lines, no preamble. A technician is standing at the unit.\n"+
-              "1) This brand and product type's PUBLISHED parts term unregistered, and registered. Give both numbers plainly (e.g. \"5 years base, 10 registered\").\n"+
+              termsInstruction(u.brand||d.brandLabel)+
               (_datedB
                 ? ("2) MANUFACTURE DATE, ALREADY DECODED IN CODE — week "+_datedB.week+" of "+_datedB.year+" ("+_datedB.brand+", "+_datedB.source+"). State that date if age is relevant. Do NOT re-derive it and do NOT contradict it.\n")
                 : "2) You do NOT know this unit's manufacture date. Say NOTHING about its age, its year, or whether coverage has expired. Answer only the published terms.\n")+

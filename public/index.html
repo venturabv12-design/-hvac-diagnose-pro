@@ -12946,6 +12946,66 @@ async function mpWarrantyRun(u){
           +(d.where?"\n\nCheck it directly: "+d.where:""));
         return;
       }
+
+      // ─── MANUFACTURE DATE: DECODED, NEVER GUESSED ──────────────────────────────────────────
+      // 2026-09-17. Rodolfo at F.H. Furr scanned an American Standard heat pump, serial
+      // 22491USP4F. Mike read it as "week 22 of 2009", called the unit 15-16 years old and told
+      // him it was "well past even the registered 10-year window". Trane and American Standard
+      // serials from 2010 on read YEAR first: 22 = 2022, week 49. The unit is about three years
+      // old and almost certainly still inside the 5-year base parts term. A tech was one step
+      // from charging a homeowner for a part the manufacturer owed him.
+      //
+      // The registry lookup was correct throughout. Mike volunteered an age nobody asked for.
+      //
+      // Both warranty prompts already said "decode ONLY if you genuinely recognise the format ...
+      // never invent a date". He did recognise it, read it backwards, and stated it with
+      // confidence. That is the documented failure mode of a prompt-based guard on a trained-in
+      // default, and the house answer is the same one the pricing guard uses: decide it in code.
+      //
+      // Rules are transcribed from published decoders and each carries its source. An unlisted
+      // brand returns null, and null means Mike says nothing about age — enforced by stripping
+      // it, not by asking him. Fail toward distrust: a missing date costs a question, a wrong one
+      // costs a warranty claim. Add brands here only with a source, never from memory.
+      function decodeUnitDate(brand, serial){
+        var b=String(brand||'').toLowerCase(), sn=String(serial||'').trim().toUpperCase();
+        if(!sn) return null;
+        // TRANE / AMERICAN STANDARD — same plants, same scheme.
+        // 2010 onward: positions 1-2 = year, 3-4 = week.
+        // Source: Building Intelligence Center, "Trane HVAC age".
+        // 2002-2009 arranged it differently, so anything decoding below 2010 is not safely
+        // readable by this rule and is refused rather than reported.
+        if(b.indexOf('trane')!==-1 || b.indexOf('american standard')!==-1){
+          var m=sn.match(/^(\d{2})(\d{2})/);
+          if(m){
+            var yy=parseInt(m[1],10), wk=parseInt(m[2],10);
+            var year=2000+yy;
+            if(year>=2010 && year<=(new Date().getFullYear()+1) && wk>=1 && wk<=53){
+              return {year:year, week:wk, brand:'Trane/American Standard',
+                      source:'positions 1-2 year, 3-4 week (2010+ scheme)'};
+            }
+          }
+          return null;
+        }
+        return null;   // every other brand: unknown, and unknown stays silent
+      }
+      // Age claims, and the coverage conclusions drawn from them. Applied ONLY when
+      // decodeUnitDate returned null — given a real date, Mike is free to reason from it.
+      function stripUnverifiedAge(text){
+        if(!text) return text;
+        var out=[], dropped=0;
+        String(text).split(/\n+/).forEach(function(para){
+          var risky=/(19|20)\d{2}\b/.test(para)
+            || /\byears?\s+old\b/i.test(para)
+            || /\bweek\s+\d{1,2}\b/i.test(para)
+            || /\b(manufactured|built|made)\s+(in|around|about)\b/i.test(para)
+            || /\b(past|beyond|outside|expired|out of|still in|still inside|within)\b[^.]*\b(window|term|warranty|coverage)\b/i.test(para);
+          if(risky){ dropped++; return; }
+          out.push(para);
+        });
+        if(dropped) out.push("I can't read the manufacture date off that serial with certainty, so I won't guess at the age — get the install date off the plate or the paperwork before you tell the customer anything about coverage.");
+        return out.join("\n\n");
+      }
+      
       if(!d.found){
         // LEAD WITH THE ANSWER. This used to open "No registration came back", which
         // reads as the tool failing — Brandon watched the whole lookup work end to end
@@ -12960,20 +13020,27 @@ async function mpWarrantyRun(u){
         // registered." Mike knows the published terms and can date a serial — so use
         // him for exactly that, and label it as the published term rather than a
         // registry result, because we did not read these off the manufacturer.
+        var _datedA=decodeUnitDate(u.brand||d.brandLabel, u.serial);
         (async function(){
           try{
             if(typeof showTyping==='function')showTyping();
             var _sys=(typeof AGENT_SYSTEM==='string'?AGENT_SYSTEM:'')+
               "\n\nANSWER FORMAT — a technician needs numbers, not a shrug. Be brief.\n"+
               "1) The manufacturer's PUBLISHED base parts term for this brand and product type when the unit was never registered, and the registered/extended term for comparison.\n"+
-              "2) Decode the manufacture date from the serial if you genuinely recognise the format. If you do not, say so and skip it — never invent a date.\n"+
-              "3) If you have a date, say whether the unit is still inside that base term today, and roughly when it runs out.\n"+
+              (_datedA
+                ? ("2) MANUFACTURE DATE, ALREADY DECODED IN CODE — week "+_datedA.week+" of "+_datedA.year+" ("+_datedA.brand+", "+_datedA.source+"). Use that date. Do NOT re-derive it from the serial and do NOT contradict it.\n"
+                   +"3) Using that date, say whether the unit is still inside the base term today and roughly when it runs out.\n")
+                : "2) You do NOT know this unit's manufacture date. Say NOTHING about its age, its year, or whether coverage has run out.\n"
+                  +"3) Skip the in-or-out question entirely — you cannot answer it without a date. Ask him for the install date instead.\n")+
               "4) One line on what to quote.\n"+
               "Say plainly that these are the published terms, not a lookup on this unit — the registry had no record. Never state coverage as confirmed.";
             var _q="Unit: "+(u.brand||'')+" "+(u.model||'')+", serial "+u.serial+
               ". The manufacturer's registry returned no registration for it. What is the standard base warranty on this, and is it still in it?";
             var _ans=await callAI(_sys,[{role:'user',content:_q}],520);
             if(typeof hideTyping==='function')hideTyping();
+            // ENFORCED, NOT REQUESTED. The instruction above already asked him not to guess.
+            // He guessed anyway, confidently and backwards, which is how we got here.
+            if(_ans && !_datedA) _ans=stripUnverifiedAge(_ans);
             if(_ans)appendMessage('agent',_ans);
           }catch(_te){ if(typeof hideTyping==='function')hideTyping(); }
         })();
@@ -13001,6 +13068,7 @@ async function mpWarrantyRun(u){
       // he can tell the customer what registering would have been worth.
       (function(){
         var yrs=(d.parts&&d.parts.years)||null;
+        var _datedB=decodeUnitDate(u.brand||d.brandLabel, u.serial);
         var known=[];
         if(yrs) known.push("**Parts: "+yrs+" year"+(yrs===1?"":"s")+"** from install"+(reg?" under the registered term":" on the base term")+".");
         if(d.compressor&&d.compressor.years) known.push("Compressor: "+d.compressor.years+" years.");
@@ -13019,7 +13087,9 @@ async function mpWarrantyRun(u){
             var _sys=(typeof AGENT_SYSTEM==='string'?AGENT_SYSTEM:'')+
               "\n\nANSWER FORMAT — two lines, no preamble. A technician is standing at the unit.\n"+
               "1) This brand and product type's PUBLISHED parts term unregistered, and registered. Give both numbers plainly (e.g. \"5 years base, 10 registered\").\n"+
-              "2) Decode the manufacture date from the serial ONLY if you genuinely recognise the format; if not, skip it and say nothing about age. Never invent a date.\n"+
+              (_datedB
+                ? ("2) MANUFACTURE DATE, ALREADY DECODED IN CODE — week "+_datedB.week+" of "+_datedB.year+" ("+_datedB.brand+", "+_datedB.source+"). State that date if age is relevant. Do NOT re-derive it and do NOT contradict it.\n")
+                : "2) You do NOT know this unit's manufacture date. Say NOTHING about its age, its year, or whether coverage has expired. Answer only the published terms.\n")+
               "Label these as the manufacturer's published terms, not a lookup on this unit. Do not repeat what the registry already reported. No safety preamble.";
             var _q="Unit: "+(u.brand||'')+" "+(d.model||u.model||'')+", serial "+u.serial+
               ". The registry shows it "+(reg?"REGISTERED for the extended term":"NOT registered — base coverage only")+
@@ -13027,6 +13097,7 @@ async function mpWarrantyRun(u){
               ". What are the published base and registered parts terms for this brand and product type?";
             var _ans=await callAI(_sys,[{role:'user',content:_q}],320);
             if(typeof hideTyping==='function')hideTyping();
+            if(_ans && !_datedB) _ans=stripUnverifiedAge(_ans);
             if(_ans)appendMessage('agent',_ans);
           }catch(_te){ if(typeof hideTyping==='function')hideTyping(); }
         })();

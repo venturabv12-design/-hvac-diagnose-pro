@@ -42,7 +42,7 @@
     if(!/[?&]ear=1\b/.test(location.search))return;
     window.MIKE_EAR_ENABLED=true;
     var t=document.createElement('script');
-    t.src='/mike-ear.js?v=20';
+    t.src='/mike-ear.js?v=21';
     document.head.appendChild(t);
   }catch(e){}
 })();
@@ -14131,7 +14131,26 @@ function startListening(){
   // see the visibilitychange handler in toggleVoiceMode — and hands straight back on unlock.
   // Worst case if the native side has a bad day is the call behaves like it does today,
   // rather than worse.
-  if(document.hidden && !isMikeSpeaking && typeof window.mikeEarAvailable==='function' && window.mikeEarAvailable()){
+  // ── ONE OWNER OF THE MICROPHONE, FOR THE WHOLE CALL ────────────────────────────────
+  // Brandon, 2026-09-17: "the whole point is to put it all on the app. The website was just
+  // to get the ball rolling." He said the same thing on the 15th and I talked him out of it.
+  //
+  // This gate used to read `document.hidden &&` — the phone only took the microphone once
+  // the screen went off, and handed it straight back on unlock. Two owners, one microphone,
+  // twice a call. Every failure of the last three days lived in that swap: the tap dying on
+  // the route change, the browser asking for a mic the ear already held and reporting it as
+  // a denied permission, Mike cut off as the session was reconfigured under him.
+  //
+  // Now the phone takes it when he taps Call and holds it until he hangs up. The browser
+  // recogniser does not run in the app at all. Mike's brain, the safety and pricing guards,
+  // the manual library and warranty all stay server-side — the phone carries the CALL, never
+  // the intelligence. And if the native side cannot take over it still returns false and the
+  // browser path runs exactly as it always has, so nobody is ever left holding a dead phone.
+  // `document.hidden ||` is the safety belt: on an app build whose plugin predates call
+  // ownership the phone stays passive with the screen on, so the browser must keep listening
+  // exactly as it does today. Ownership is claimed only when the phone itself confirms it.
+  if((document.hidden || (window.mikeEarOwnsCall&&window.mikeEarOwnsCall())) && !isMikeSpeaking
+     && typeof window.mikeEarAvailable==='function' && window.mikeEarAvailable()){
     if(window.mikeEarIsOn&&window.mikeEarIsOn()){
       // ALREADY LISTENING — SAY SO. This used to return silently, so after Mike's greeting
       // the app never set isListening and never showed "Listening…". The ear was running the

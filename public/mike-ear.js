@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v20';
+  var EAR_BUILD = 'ear-v21';
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
@@ -157,6 +157,7 @@
   };
 
   var wired = false;
+  var _ownsCall = false;
   var listening = false;
   /* True once the phone has the token and the persona and is carrying the call itself.
      Gates the old web send path so Mike is never asked the same question twice. */
@@ -313,7 +314,17 @@
         await P.addListener('ended', function (e) { report('ended', (e && e.reason) || 'unknown'); });
         wired = true;
       }
-      await P.start();
+      /* ownCall: the phone stays attentive for the whole call instead of waiting for the
+         screen to go off. Only when the session actually came down — without a token and a
+         system prompt the native side cannot ask Mike anything, and an owner that cannot
+         answer is worse than the browser it replaced. */
+      var started = await P.start({ ownCall: _nativeCall });
+      /* BELIEVE THE PHONE, NOT THE REQUEST. An older plugin ignores ownCall entirely and
+         stays passive until the screen goes off. If this layer assumed ownership anyway it
+         would also stand the browser's recogniser down, and nobody would be listening at
+         all — on a build already on his phone, which I cannot take back. */
+      _ownsCall = !!(started && started.owns);
+      report('owns', _ownsCall ? 'the phone is carrying this call' : 'passive until the screen goes off');
       listening = true;
       report('started', 'listening');
       watchForSilence();
@@ -338,6 +349,8 @@
   };
 
   window.mikeEarIsOn = function () { return listening; };
+  /* True only when a plugin that actually understands ownership said yes. */
+  window.mikeEarOwnsCall = function () { return listening && _ownsCall; };
   /* Passive while the screen is on, attentive once it is off. See MikeEarPlugin.swift —
      iOS refuses to START recording in the background, so the mic must already be open
      before he locks. Open, and completely ignored, is the only thing Apple allows. */

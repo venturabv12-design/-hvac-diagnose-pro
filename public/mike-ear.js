@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v19';
+  var EAR_BUILD = 'ear-v20';
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
@@ -325,12 +325,15 @@
     }
   };
 
-  window.mikeEarStop = async function () {
+  window.mikeEarStop = async function (why) {
     var P = plugin();
     if (!P || !listening) return;
     clearTimeout(_deafTimer);
     clearInterval(_speakMirror);
-    try { await P.stop(); } catch (_) {}
+    /* EVERY HANG-UP NAMES ITSELF. The native side has always reported the reason it was
+       given; the web never gave it one, so every single ended event in the table reads
+       "web asked" and I have spent two days inferring which of four code paths asked. */
+    try { await P.stop({ reason: why ? String(why).slice(0, 60) : 'web asked' }); } catch (_) {}
     listening = false;
   };
 

@@ -42,7 +42,7 @@
     if(!/[?&]ear=1\b/.test(location.search))return;
     window.MIKE_EAR_ENABLED=true;
     var t=document.createElement('script');
-    t.src='/mike-ear.js?v=25';
+    t.src='/mike-ear.js?v=26';
     document.head.appendChild(t);
   }catch(e){}
 })();
@@ -14518,7 +14518,26 @@ function mikeSay(text){
       // While the app is open, WebAudio plays him exactly as it always has — that is the path
       // that has been working for months, and routing it through the plugin is what let a
       // second audio-session reconfiguration cut him off mid-greeting.
-      if(document.hidden&&typeof window.mikeEarAvailable==='function'&&window.mikeEarAvailable()&&arrayBuf&&arrayBuf.byteLength>=500){
+      // WHOEVER OWNS THE MICROPHONE MUST ALSO OWN THE VOICE.
+      //
+      // Brandon, 2026-09-18: "I tapped, he introduced himself, I talked, he responded. Ended
+      // the call. Tapped again — it showed Mike was talking but I heard nothing. Ended it,
+      // redialled — nothing again."
+      //
+      // First call fine, every call after it silent. The browser plays Mike through WebAudio,
+      // and once the phone has taken the audio session for the microphone — which it now does
+      // for the WHOLE call, not just once the screen locks — the WebView's audio has nowhere
+      // to go. The screen still says he is talking, because the web genuinely thinks it is
+      // playing. It just cannot be heard.
+      //
+      // This gate said "only when the screen is off", which was correct when the phone only
+      // held the session in his pocket. It is not correct now. The phone holds it from the
+      // moment he taps Call, so the phone plays Mike from that moment too.
+      //
+      // Falls through to WebAudio untouched on the web, or whenever the phone does not own
+      // the call — nothing changes for anyone in a browser.
+      var _phoneHasIt = (typeof window.mikeEarOwnsCall==='function' && window.mikeEarOwnsCall());
+      if((document.hidden||_phoneHasIt)&&typeof window.mikeEarAvailable==='function'&&window.mikeEarAvailable()&&arrayBuf&&arrayBuf.byteLength>=500){
         try{
           var _b='',_u8=new Uint8Array(arrayBuf);
           for(var _i=0;_i<_u8.length;_i++)_b+=String.fromCharCode(_u8[_i]);

@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v22';
+  var EAR_BUILD = 'ear-v23';
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on

@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v26';
+  var EAR_BUILD = 'ear-v27';
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
@@ -355,7 +355,17 @@
          screen to go off. Only when the session actually came down — without a token and a
          system prompt the native side cannot ask Mike anything, and an owner that cannot
          answer is worse than the browser it replaced. */
-      var started = await P.start({ ownCall: _nativeCall });
+      /* THE PHONE DOES NOT TAKE THE CALL. IT WAITS FOR THE LOCK.
+         Brandon, 2026-09-16: "We're just adding it where we lock the screen and then Mike
+         continues to still work and communicate. We're NOT changing the way the talking and
+         all that works." And again 2026-09-18: "I used to be able to have a normal
+         conversation with Mike. I talk, he responds, he stops, it goes to recording, I talk.
+         Like a normal phone call."
+         He said it twice and I overrode it twice — ownCall handed the phone the whole
+         conversation, and the normal conversation is what stopped. The browser has run that
+         conversation for months. It goes back to running it, and the phone does the one thing
+         only it can: keep the call alive once the screen goes off. */
+      var started = await P.start({ ownCall: false });
       /* BELIEVE THE PHONE, NOT THE REQUEST. An older plugin ignores ownCall entirely and
          stays passive until the screen goes off. If this layer assumed ownership anyway it
          would also stand the browser's recogniser down, and nobody would be listening at

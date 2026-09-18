@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v21';
+  var EAR_BUILD = 'ear-v22';
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
@@ -303,7 +303,12 @@
           var t = (e && e.text) || '';
           if (!t) return;
           report('answered', String(t).slice(0, 80));
+          /* The plugin has ALREADY played this through the phone's own audio — that is the
+             whole point of the phone carrying the call. appendMessage's TTS gate would speak
+             it again, a beat behind. Flag it as already spoken for this one message. */
+          try { window._mikeSpokenByPhone = true; } catch (_) {}
           try { if (typeof appendMessage === 'function') appendMessage('agent', t); } catch (_) {}
+          try { window._mikeSpokenByPhone = false; } catch (_) {}
         });
         /* The native side's answer to "which silence is this" — buffer count, peak level,
            mic route, engine state. Forwarded straight to the server, never to the screen. */

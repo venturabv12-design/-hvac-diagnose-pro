@@ -42,7 +42,7 @@
     if(!/[?&]ear=1\b/.test(location.search))return;
     window.MIKE_EAR_ENABLED=true;
     var t=document.createElement('script');
-    t.src='/mike-ear.js?v=21';
+    t.src='/mike-ear.js?v=22';
     document.head.appendChild(t);
   }catch(e){}
 })();
@@ -10301,10 +10301,18 @@ function appendMessage(role,text){
   // to avoid the double-speak race.
   if(role==='agent'&&shouldMikeSpeak()){
     var _ctrCamSkip=(typeof cameraActive!=='undefined'&&cameraActive);
-    if(!_ctrCamSkip){
+    // THE PHONE ALREADY SAID THIS ONE OUT LOUD.
+    // Brandon, 2026-09-18, on the first call that actually worked: "it works but mikes voice
+    // doubles." When the phone carries the call it asks Mike itself, plays the answer through
+    // its own audio, and then tells the web what was said so the chat is complete. Drawing it
+    // here hit this gate and spoke the very same sentence a second time, a beat behind the
+    // first. Same shape as the camera skip above: whoever already spoke it owns it.
+    var _ctrPhoneSaid=(window._mikeSpokenByPhone===true);
+    if(!_ctrCamSkip&&!_ctrPhoneSaid){
       setTimeout(function(){mikeSay(voiceText);},200);
     }
   }
+  window._mikeSpokenByPhone=false;
   var container=document.getElementById('chatMessages');
   var isAgent=role==='agent';
   // V2 re-skin: detect a structured diagnosis (fault + readings) in Mike's reply.

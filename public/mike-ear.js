@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v27';
+  var EAR_BUILD = 'ear-v28';
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
@@ -266,8 +266,23 @@
         // pulling files. Kicking off a SECOND prepare() there would race the first one.
         // Reuse the in-flight promise so the call simply waits for the download instead of
         // giving up on it.
-        try { await (_warm || (_warm = P.prepare())); report('prepared', 'ok'); }
-        catch (e) { _warm = null; report('prepare_failed', (e && e.message) || String(e)); return false; }
+        /* DO NOT WAIT FOR IT. THE LOCK WILL NOT.
+           Brandon's 23:01 call, from his own phone:
+             23:01:16  app opened, model not loaded
+             23:01:46  HE LOCKED THE SCREEN
+             23:01:51  model finished loading, 35 seconds later
+             23:01:52  only now does it try to open the microphone
+             23:01:54+ "cannot start recording", over and over
+           iOS refuses to START recording once an app is backgrounded; it only lets recording
+           that is ALREADY RUNNING continue. That one rule is the entire basis of this feature.
+           So the microphone has to be open BEFORE he locks — and it was queued behind a cold
+           model download. He locked five seconds early and the ear could never recover.
+           Opening the mic and loading the model are different jobs and only one is
+           time-critical. Kick the download off and keep going; the native side opens the mic
+           without it and simply does not transcribe until the model lands. */
+        (_warm || (_warm = P.prepare()))
+          .then(function () { report('prepared', 'ok'); })
+          .catch(function (e) { _warm = null; report('prepare_failed', (e && e.message) || String(e)); });
       }
       /* HAND THE PHONE EVERYTHING IT NEEDS *BEFORE* THE SCREEN CAN LOCK.
          The token and Mike's persona live in JavaScript, and JavaScript is precisely what

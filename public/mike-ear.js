@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v28';
+  var EAR_BUILD = 'ear-v29';
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
@@ -281,7 +281,29 @@
            time-critical. Kick the download off and keep going; the native side opens the mic
            without it and simply does not transcribe until the model lands. */
         (_warm || (_warm = P.prepare()))
-          .then(function () { report('prepared', 'ok'); })
+          .then(function () {
+            report('prepared', 'ok');
+            /* AND TRY AGAIN, BECAUSE THE FIRST ATTEMPT WAS TOO EARLY.
+               His 23:39 call:
+                 23:39:01.3  start refused — "Speech model is not loaded yet"
+                 23:39:01.9  model ready, six tenths of a second later
+                 23:39:30    HE LOCKED THE SCREEN, 28 seconds later, mic never opened
+               Asking immediately is right — the lock will not wait for a download. But when
+               the phone says no because the model has not landed, nothing ever asked again,
+               and it was ready before he had finished hearing the greeting. One retry would
+               have had the microphone open half a minute before he locked.
+               The app-side fix that removes the refusal entirely is built and has not reached
+               Apple, so this closes the same gap from the side I can actually deploy. */
+            try {
+              if (!listening && typeof window.mikeEarStart === 'function'
+                  && typeof voiceMode !== 'undefined' && voiceMode) {
+                report('started', 'retrying now the model has landed');
+                window.mikeEarStart().then(function (ok) {
+                  if (ok && window.mikeEarAttention) window.mikeEarAttention(false);
+                });
+              }
+            } catch (_) {}
+          })
           .catch(function (e) { _warm = null; report('prepare_failed', (e && e.message) || String(e)); });
       }
       /* HAND THE PHONE EVERYTHING IT NEEDS *BEFORE* THE SCREEN CAN LOCK.

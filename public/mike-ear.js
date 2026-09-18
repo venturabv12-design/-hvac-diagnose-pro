@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v24';
+  var EAR_BUILD = 'ear-v25';
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
@@ -329,6 +329,22 @@
         /* The native side's answer to "which silence is this" — buffer count, peak level,
            mic route, engine state. Forwarded straight to the server, never to the screen. */
         await P.addListener('diag', function (e) { report('diag', (e && e.detail) || ''); });
+        /* PROOF, NOT A LABEL.
+           Brandon: "it kind of doesn't look like he's recording or listening, so I just say
+           different things to see if he's actually listening." The bar said "Listening…" and
+           then never moved again, which looks exactly like broken. The dot that was already
+           sitting on that bar now moves with his voice, so the screen answers the question
+           instead of him testing it. Display only — nothing here touches the call. */
+        await P.addListener('level', function (e) {
+          var dot = document.getElementById('voiceStatusDot');
+          if (!dot) return;
+          var rms = (e && e.rms) || 0;
+          var bar = (e && e.threshold) || 0.0035;
+          var ratio = Math.max(0, Math.min(1, rms / (bar * 4)));
+          dot.style.transition = 'transform .08s linear, opacity .08s linear';
+          dot.style.transform = 'scale(' + (1 + ratio * 0.9).toFixed(2) + ')';
+          dot.style.opacity = (0.35 + ratio * 0.65).toFixed(2);
+        });
         /* WHY THE CALL ENDED. Brandon asked "but did you get a report for that?" about a
            hang-up I had only READ in the source. I had not. Nothing reported the call ending,
            so every explanation for it was inference dressed up as a finding. Now it says. */
@@ -367,6 +383,11 @@
        "web asked" and I have spent two days inferring which of four code paths asked. */
     try { await P.stop({ reason: why ? String(why).slice(0, 60) : 'web asked' }); } catch (_) {}
     listening = false;
+    /* Leave the dot where it started, not frozen mid-pulse on a call that has ended. */
+    try {
+      var dot = document.getElementById('voiceStatusDot');
+      if (dot) { dot.style.transform = ''; dot.style.opacity = ''; }
+    } catch (_) {}
   };
 
   window.mikeEarIsOn = function () { return listening; };

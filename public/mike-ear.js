@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v23';
+  var EAR_BUILD = 'ear-v24';
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
@@ -276,17 +276,33 @@
          without ever waking this layer up again. This is the fix for the thing Brandon
          reported four times last night: "I close the phone and it closes the call." */
       try {
+        /* MIKE HAS TO KNOW WHO HE IS TALKING TO.
+           Brandon, 2026-09-18: he said "Mikey Mike, what's up bro?" and Mike answered
+           "Ricky, my man". His account name is right — Mike simply had no idea. This handoff
+           passed the brain and the login and never his name, so on the phone Mike was talking
+           to a stranger and filled the gap with an invented one. On the website he has always
+           known, because the greeting is built there from currentUser.
+           Inventing a name is worse than using none, so say that part out loud too. */
+        var _full = ((window.currentUser && window.currentUser.name) || '').trim();
+        var _first = _full ? _full.split(/\s+/)[0] : '';
+        var _who = _first
+          ? ('\n\nYou are speaking with ' + _first + '. That is his name — use it naturally, '
+             + 'the way you would on a real call. NEVER use any other name for him, and never '
+             + 'invent one.')
+          : ('\n\nYou do not know this technician\'s name. Do NOT invent one and do NOT guess — '
+             + 'speak to him without a name until he tells you.');
         var res = await P.setSession({
           apiBase: location.origin,
           token: (window.currentUser && window.currentUser.token) || '',
-          system: (typeof AGENT_SYSTEM === 'string' && AGENT_SYSTEM) ? AGENT_SYSTEM : '',
+          system: ((typeof AGENT_SYSTEM === 'string' && AGENT_SYSTEM) ? AGENT_SYSTEM : '') + _who,
           reset: true
         });
         _nativeCall = !!(res && res.ready);
         if (res && res.native) _nativeBuild = String(res.native);
         report('session', 'handed down: ready=' + _nativeCall
           + ' token=' + !!(window.currentUser && window.currentUser.token)
-          + ' system=' + (typeof AGENT_SYSTEM === 'string' ? AGENT_SYSTEM.length : 0) + ' chars');
+          + ' system=' + (typeof AGENT_SYSTEM === 'string' ? AGENT_SYSTEM.length : 0) + ' chars'
+          + ' name=' + (_first || 'NONE'));
       } catch (e) {
         _nativeCall = false;
         /* Old build without setSession — the web path still works, it just dies on lock.

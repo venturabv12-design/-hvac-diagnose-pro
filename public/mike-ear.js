@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v29';
+  var EAR_BUILD = 'ear-v30';
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
@@ -388,21 +388,24 @@
         await P.addListener('ended', function (e) { report('ended', (e && e.reason) || 'unknown'); });
         wired = true;
       }
-      /* ownCall: the phone stays attentive for the whole call instead of waiting for the
-         screen to go off. Only when the session actually came down — without a token and a
-         system prompt the native side cannot ask Mike anything, and an owner that cannot
-         answer is worse than the browser it replaced. */
-      /* THE PHONE DOES NOT TAKE THE CALL. IT WAITS FOR THE LOCK.
-         Brandon, 2026-09-16: "We're just adding it where we lock the screen and then Mike
-         continues to still work and communicate. We're NOT changing the way the talking and
-         all that works." And again 2026-09-18: "I used to be able to have a normal
-         conversation with Mike. I talk, he responds, he stops, it goes to recording, I talk.
-         Like a normal phone call."
-         He said it twice and I overrode it twice — ownCall handed the phone the whole
-         conversation, and the normal conversation is what stopped. The browser has run that
-         conversation for months. It goes back to running it, and the phone does the one thing
-         only it can: keep the call alive once the screen goes off. */
-      var started = await P.start({ ownCall: false });
+      /* ownCall: the phone does the listening for the WHOLE call, not just after the lock.
+         2026-09-20 (Fable): the previous ownCall:false and open-the-mic-on-tap contradicted
+         each other and were never tested together with the screen on. On his first real
+         screen-on test (13:45), the native mic heard him loud and clear — peakRms 0.0321,
+         nine times over threshold — and transcribed NOTHING for 20 seconds, then ear_deaf.
+         His words: "when it said it was listening he wasn't actually listening."
+         The cause is one microphone with two would-be owners: toggleVoiceMode opens the
+         native mic on his tap so it is armed before he locks, which means the native session
+         holds the audio hardware the entire call — but with ownCall:false the native ear sat
+         PASSIVE waiting for the lock while the browser recogniser, which cannot get a mic the
+         native session already holds, was supposed to be listening. Nobody transcribed.
+         This does NOT reopen what Brandon vetoed on 09-16/09-18. He vetoed REBUILDING the
+         conversation — the greeting, the turn-taking, the playback — and that stays exactly
+         as it is. The only change here is that the ear which is already holding the mic all
+         call actually listens, instead of idling until the lock. One owner of the microphone,
+         which is what the code has said it wants all along. Native honours this on build 87+
+         (activeListening = ownCall) and reports back whether ownership actually took. */
+      var started = await P.start({ ownCall: true });
       /* BELIEVE THE PHONE, NOT THE REQUEST. An older plugin ignores ownCall entirely and
          stays passive until the screen goes off. If this layer assumed ownership anyway it
          would also stand the browser's recogniser down, and nobody would be listening at

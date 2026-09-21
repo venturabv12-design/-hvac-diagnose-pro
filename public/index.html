@@ -42,7 +42,7 @@
     if(!/[?&]ear=1\b/.test(location.search))return;
     window.MIKE_EAR_ENABLED=true;
     var t=document.createElement('script');
-    t.src='/mike-ear.js?v=30';
+    t.src='/mike-ear.js?v=31';
     document.head.appendChild(t);
   }catch(e){}
 })();
@@ -14186,20 +14186,14 @@ function toggleVoiceMode(){
   };
   var _pool=greetPool[currentLang]||greetPool.en;
   var _greetLine=_pool[Math.floor(Math.random()*_pool.length)];
-  // OPEN THE MICROPHONE NOW, WHILE THE APP IS IN FRONT — AND IGNORE IT.
-  // iOS refuses to START recording once an app is in the background (his phone reported
-  // exactly that: "cannot start recording"), but it will happily let a recording that is
-  // ALREADY running continue. So the ear opens here, on his tap, and then does nothing at
-  // all: every buffer discarded, nothing transcribed, nothing sent. The ordinary call runs
-  // the conversation untouched. When the screen goes off it is already running, and simply
-  // starts paying attention.
-  try{
-    if(typeof window.mikeEarAvailable==='function'&&window.mikeEarAvailable()&&!window.mikeEarIsOn()){
-      window.mikeEarStart().then(function(ok){
-        if(ok&&window.mikeEarAttention)window.mikeEarAttention(false);
-      });
-    }
-  }catch(_pe){}
+  // DO NOT pre-open the native mic here. 2026-09-21 (Fable): pre-opening it armed the mic for
+  // the lock, but the native session then held the microphone the whole call and starved the
+  // browser's speech recognition — the fast, speech-vs-noise-aware listener that ran this
+  // conversation well for months. In Brandon's noisy workspace the native loudness detector
+  // could not tell he had stopped talking ("Hello" alone ran to the 25s cap), so replies took
+  // 20-30 seconds instead of a couple. Leaving the mic to the browser restores the fast path.
+  // Honest cost: the call no longer survives a screen lock — that gets rebuilt separately,
+  // without touching the talking. The native ear stays available for that future locked mode.
   setVoiceStatus('Mike is starting…','');
   setTimeout(function(){if(voiceMode)mikeSay(_greetLine);},200);
 }

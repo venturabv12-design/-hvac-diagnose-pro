@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v30';
+  var EAR_BUILD = 'ear-v31';
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
@@ -388,24 +388,25 @@
         await P.addListener('ended', function (e) { report('ended', (e && e.reason) || 'unknown'); });
         wired = true;
       }
-      /* ownCall: the phone does the listening for the WHOLE call, not just after the lock.
-         2026-09-20 (Fable): the previous ownCall:false and open-the-mic-on-tap contradicted
-         each other and were never tested together with the screen on. On his first real
-         screen-on test (13:45), the native mic heard him loud and clear — peakRms 0.0321,
-         nine times over threshold — and transcribed NOTHING for 20 seconds, then ear_deaf.
-         His words: "when it said it was listening he wasn't actually listening."
-         The cause is one microphone with two would-be owners: toggleVoiceMode opens the
-         native mic on his tap so it is armed before he locks, which means the native session
-         holds the audio hardware the entire call — but with ownCall:false the native ear sat
-         PASSIVE waiting for the lock while the browser recogniser, which cannot get a mic the
-         native session already holds, was supposed to be listening. Nobody transcribed.
-         This does NOT reopen what Brandon vetoed on 09-16/09-18. He vetoed REBUILDING the
-         conversation — the greeting, the turn-taking, the playback — and that stays exactly
-         as it is. The only change here is that the ear which is already holding the mic all
-         call actually listens, instead of idling until the lock. One owner of the microphone,
-         which is what the code has said it wants all along. Native honours this on build 87+
-         (activeListening = ownCall) and reports back whether ownership actually took. */
-      var started = await P.start({ ownCall: true });
+      /* ownCall MUST be false. The browser owns the conversation while the screen is on.
+         2026-09-21 (Fable): I set this true on 09-20 to fix "says listening but isn't", and it
+         DID fix that — but it moved all the screen-on listening onto the native ear, whose
+         turn-end detector is pure loudness (RMS). Brandon works in a noisy spot where the
+         background sits at the same level as his voice, so that detector can never tell he has
+         stopped: his phone showed him saying one word, "Hello", and the turn still ran to the
+         25-second cap. His words: "before it was like a couple seconds... now it's like 20,
+         almost 30 seconds." He is right, and it is my regression.
+         The fast "before" was the BROWSER's speech recognition (Apple's on-device recogniser),
+         which knows speech from noise and endpoints in a beat. So the browser goes back to
+         running the conversation with the screen on — exactly how it worked for months — and
+         the native ear is only for the locked-pocket case. See the matching change in
+         index.html toggleVoiceMode: the native mic is no longer pre-opened on tap, so it can
+         never starve the browser's microphone (that starving was the "says listening but
+         isn't" bug — now moot because native does not hold the mic while the screen is on).
+         Honest trade, told to Brandon: without the mic pre-armed, the call does not survive a
+         screen lock right now. Restoring fast conversation is the priority; the pocket-lock
+         gets rebuilt separately without touching the talking. */
+      var started = await P.start({ ownCall: false });
       /* BELIEVE THE PHONE, NOT THE REQUEST. An older plugin ignores ownCall entirely and
          stays passive until the screen goes off. If this layer assumed ownership anyway it
          would also stand the browser's recogniser down, and nobody would be listening at

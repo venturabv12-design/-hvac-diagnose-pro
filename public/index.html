@@ -42,7 +42,7 @@
     if(!/[?&]ear=1\b/.test(location.search))return;
     window.MIKE_EAR_ENABLED=true;
     var t=document.createElement('script');
-    t.src='/mike-ear.js?v=31';
+    t.src='/mike-ear.js?v=32';
     document.head.appendChild(t);
   }catch(e){}
 })();
@@ -14186,14 +14186,22 @@ function toggleVoiceMode(){
   };
   var _pool=greetPool[currentLang]||greetPool.en;
   var _greetLine=_pool[Math.floor(Math.random()*_pool.length)];
-  // DO NOT pre-open the native mic here. 2026-09-21 (Fable): pre-opening it armed the mic for
-  // the lock, but the native session then held the microphone the whole call and starved the
-  // browser's speech recognition — the fast, speech-vs-noise-aware listener that ran this
-  // conversation well for months. In Brandon's noisy workspace the native loudness detector
-  // could not tell he had stopped talking ("Hello" alone ran to the 25s cap), so replies took
-  // 20-30 seconds instead of a couple. Leaving the mic to the browser restores the fast path.
-  // Honest cost: the call no longer survives a screen lock — that gets rebuilt separately,
-  // without touching the talking. The native ear stays available for that future locked mode.
+  // OPEN THE NATIVE MIC ON TAP — but ONLY when the phone is going to own the whole call.
+  // 2026-09-22 (Fable): with the go-live switch on (mikeEarNativeCall), the phone runs the call
+  // end to end — the neural ear (Silero) does the listening, so it no longer starves anything
+  // (there is no browser recogniser competing), and the mic must be open BEFORE he locks because
+  // iOS refuses to START recording in the background. When the switch is OFF (instant rollback),
+  // this does nothing and the browser owns the conversation exactly as it does today. That is
+  // why the pre-open is gated on the switch, not unconditional — the rollback stays clean.
+  try{
+    if(typeof window.mikeEarNativeCall==='function' && window.mikeEarNativeCall()
+       && typeof window.mikeEarAvailable==='function' && window.mikeEarAvailable()
+       && window.mikeEarIsOn && !window.mikeEarIsOn()){
+      window.mikeEarStart().then(function(ok){
+        if(ok && window.mikeEarAttention) window.mikeEarAttention(false);
+      });
+    }
+  }catch(_pe){}
   setVoiceStatus('Mike is starting…','');
   setTimeout(function(){if(voiceMode)mikeSay(_greetLine);},200);
 }

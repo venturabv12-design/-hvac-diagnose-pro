@@ -31,7 +31,13 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v31';
+  var EAR_BUILD = 'ear-v32';
+  /* THE GO-LIVE SWITCH. true = the phone owns the whole call (neural ear, native voice, survives
+     lock). false = revert to the browser conversation instantly. This one flag is the rollback:
+     if the native call misbehaves, set it false and redeploy — Brandon is back to today's fast
+     conversation in ~2 minutes, no app build. Requires app build 94+ (the neural ear); older
+     builds ignore ownCall and stay on the browser, which this flag also allows for safely. */
+  var EAR_NATIVE_CALL = true;
   /* THE APP'S OWN BUILD NUMBER, straight from the phone.
      The web half updates the instant it deploys; the APP half only updates when he installs
      it from TestFlight. The two drifting apart looks exactly like a broken feature, and on
@@ -388,25 +394,19 @@
         await P.addListener('ended', function (e) { report('ended', (e && e.reason) || 'unknown'); });
         wired = true;
       }
-      /* ownCall MUST be false. The browser owns the conversation while the screen is on.
-         2026-09-21 (Fable): I set this true on 09-20 to fix "says listening but isn't", and it
-         DID fix that — but it moved all the screen-on listening onto the native ear, whose
-         turn-end detector is pure loudness (RMS). Brandon works in a noisy spot where the
-         background sits at the same level as his voice, so that detector can never tell he has
-         stopped: his phone showed him saying one word, "Hello", and the turn still ran to the
-         25-second cap. His words: "before it was like a couple seconds... now it's like 20,
-         almost 30 seconds." He is right, and it is my regression.
-         The fast "before" was the BROWSER's speech recognition (Apple's on-device recogniser),
-         which knows speech from noise and endpoints in a beat. So the browser goes back to
-         running the conversation with the screen on — exactly how it worked for months — and
-         the native ear is only for the locked-pocket case. See the matching change in
-         index.html toggleVoiceMode: the native mic is no longer pre-opened on tap, so it can
-         never starve the browser's microphone (that starving was the "says listening but
-         isn't" bug — now moot because native does not hold the mic while the screen is on).
-         Honest trade, told to Brandon: without the mic pre-armed, the call does not survive a
-         screen lock right now. Restoring fast conversation is the priority; the pocket-lock
-         gets rebuilt separately without touching the talking. */
-      var started = await P.start({ ownCall: false });
+      /* ownCall = EAR_NATIVE_CALL. GO-LIVE 2026-09-22 (Fable): the phone owns the whole call.
+         The reason ownCall:true failed on 09-20 was ONLY the turn-end detector — it was pure
+         loudness (RMS), which drowned in his shop noise and let a turn run to the 25s cap. That
+         is now replaced by the neural ear (Silero), PROVEN on his own phone in build 94:
+         speech detected at 0.99, and it decides he has stopped talking in 432ms, immune to noise.
+         So native-owns-call is finally correct: one owner of the mic (no browser/native fight),
+         fast noise-proof endpointing, Mike's voice played by the phone (not the flaky browser
+         AudioContext that ate his audio on the 09-22 call), and it survives the lock.
+         EAR_NATIVE_CALL is the single switch: flip it to false and everything reverts to the
+         browser conversation in one deploy — the instant rollback. The native side still reports
+         back whether ownership actually took (older plugins ignore ownCall), so the web never
+         stands the browser down unless the phone confirmed it owns the call. */
+      var started = await P.start({ ownCall: EAR_NATIVE_CALL });
       /* BELIEVE THE PHONE, NOT THE REQUEST. An older plugin ignores ownCall entirely and
          stays passive until the screen goes off. If this layer assumed ownership anyway it
          would also stand the browser's recogniser down, and nobody would be listening at
@@ -444,6 +444,10 @@
   window.mikeEarIsOn = function () { return listening; };
   /* True only when a plugin that actually understands ownership said yes. */
   window.mikeEarOwnsCall = function () { return listening && _ownsCall; };
+  /* Whether we INTEND the phone to own the whole call (the go-live switch). index.html reads
+     this to decide whether to pre-open the native mic on tap. Distinct from mikeEarOwnsCall,
+     which is only true AFTER the phone confirms it actually took the call. */
+  window.mikeEarNativeCall = function () { return EAR_NATIVE_CALL; };
   /* Passive while the screen is on, attentive once it is off. See MikeEarPlugin.swift —
      iOS refuses to START recording in the background, so the mic must already be open
      before he locks. Open, and completely ignored, is the only thing Apple allows. */

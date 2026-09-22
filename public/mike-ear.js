@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v33';
+  var EAR_BUILD = 'ear-v34';
   /* THE GO-LIVE SWITCH. true = the phone owns the whole call (neural ear, native voice, survives
      lock). false = revert to the browser conversation instantly. This one flag is the rollback:
      if the native call misbehaves, set it false and redeploy — Brandon is back to today's fast
@@ -392,6 +392,16 @@
            hang-up I had only READ in the source. I had not. Nothing reported the call ending,
            so every explanation for it was inference dressed up as a finding. Now it says. */
         await P.addListener('ended', function (e) { report('ended', (e && e.reason) || 'unknown'); });
+        /* SAY WHOSE TURN IT IS, IN WORDS. Brandon: the old browser call said "Listening…" so he
+           knew when to talk; the native call only moved a dot. The phone now tells us whose turn
+           it is and we put the plain cue back on the bar. Display only — never touches the call. */
+        await P.addListener('turn', function (e) {
+          try {
+            if (typeof setVoiceStatus !== 'function') return;
+            if (e && e.listening) setVoiceStatus('Listening — talk to Mike', '');
+            else setVoiceStatus('Mike is talking…', '');
+          } catch (_) {}
+        });
         wired = true;
       }
       /* ownCall = EAR_NATIVE_CALL. GO-LIVE 2026-09-22 (Fable): the phone owns the whole call.

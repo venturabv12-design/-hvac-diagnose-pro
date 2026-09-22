@@ -42,7 +42,7 @@
     if(!/[?&]ear=1\b/.test(location.search))return;
     window.MIKE_EAR_ENABLED=true;
     var t=document.createElement('script');
-    t.src='/mike-ear.js?v=32';
+    t.src='/mike-ear.js?v=33';
     document.head.appendChild(t);
   }catch(e){}
 })();
@@ -14202,8 +14202,15 @@ function toggleVoiceMode(){
       });
     }
   }catch(_pe){}
-  setVoiceStatus('Mike is starting…','');
-  setTimeout(function(){if(voiceMode)mikeSay(_greetLine);},200);
+  // HIDE THE COLD START. Do not greet — and do not let the conversation begin — until the
+  // on-device model is actually loaded, so a tap never lands on a half-loaded engine and runs
+  // a dead call (the 45s cold-start problem). In normal use the model has been warming since
+  // app-open, so this resolves instantly and he hears the greeting right away. On a genuine
+  // cold launch he sees "Mike is waking up…" for a beat instead of silence, then Mike greets.
+  setVoiceStatus('Mike is waking up…','');
+  (window.mikeEarReady ? window.mikeEarReady() : Promise.resolve(true)).then(function(){
+    if(voiceMode) mikeSay(_greetLine);
+  });
 }
 
 function unlockAudioSafe(){

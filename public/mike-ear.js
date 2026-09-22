@@ -31,7 +31,7 @@
 (function () {
   /* Bump this with the ?v= in index.html's loader. Without it, "is he even running the fix?"
      costs a round trip through Brandon every single time. */
-  var EAR_BUILD = 'ear-v32';
+  var EAR_BUILD = 'ear-v33';
   /* THE GO-LIVE SWITCH. true = the phone owns the whole call (neural ear, native voice, survives
      lock). false = revert to the browser conversation instantly. This one flag is the rollback:
      if the native call misbehaves, set it false and redeploy — Brandon is back to today's fast
@@ -448,6 +448,21 @@
      this to decide whether to pre-open the native mic on tap. Distinct from mikeEarOwnsCall,
      which is only true AFTER the phone confirms it actually took the call. */
   window.mikeEarNativeCall = function () { return EAR_NATIVE_CALL; };
+  /* HIDE THE COLD START, THE WAY REAL APPS DO. Resolves when the on-device model is actually
+     loaded and a call can transcribe. The UI awaits this before greeting, so a tap never lands
+     on a half-loaded engine and dies — worst case he sees "waking up" for a beat, then Mike
+     greets. In normal use the model has been warming since app-open, so this resolves instantly.
+     Never blocks on an error or on the browser path (nothing to wait for there). */
+  window.mikeEarReady = async function () {
+    var P = plugin(); if (!P) return true;
+    try {
+      var s = await P.isSupported();
+      if (!s || !s.supported || !s.onDevice) return true;   // browser handles it; nothing to wait on
+      if (s.ready === true) return true;
+      await (_warm || (_warm = P.prepare()));
+      return true;
+    } catch (e) { return true; }
+  };
   /* Passive while the screen is on, attentive once it is off. See MikeEarPlugin.swift —
      iOS refuses to START recording in the background, so the mic must already be open
      before he locks. Open, and completely ignored, is the only thing Apple allows. */

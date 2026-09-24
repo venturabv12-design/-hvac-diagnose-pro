@@ -14202,15 +14202,16 @@ function toggleVoiceMode(){
       });
     }
   }catch(_pe){}
-  // HIDE THE COLD START. Do not greet — and do not let the conversation begin — until the
-  // on-device model is actually loaded, so a tap never lands on a half-loaded engine and runs
-  // a dead call (the 45s cold-start problem). In normal use the model has been warming since
-  // app-open, so this resolves instantly and he hears the greeting right away. On a genuine
-  // cold launch he sees "Mike is waking up…" for a beat instead of silence, then Mike greets.
-  setVoiceStatus('Mike is waking up…','');
-  (window.mikeEarReady ? window.mikeEarReady() : Promise.resolve(true)).then(function(){
-    if(voiceMode) mikeSay(_greetLine);
-  });
+  // GREET THE INSTANT HE TAPS. Brandon, 2026-09-24: "can we make it 1-2 seconds please."
+  // The greeting is TTS — it never needed the ear engine, yet v33 made it WAIT for the
+  // model ('Mike is waking up…'), and on his 08:09 call that hold was 12 seconds: the
+  // warm-up ran at low priority under a live call and stretched 5s→19s. So: greet now.
+  // This is SAFE without the gate because the native mic opens on the tap and BUFFERS —
+  // flush() declines to transcribe until the model is ready and the audio window is kept,
+  // so words spoken to a still-warming engine are transcribed the moment it lands (the
+  // engine also now warms at user-initiated priority; see MikeEarPlugin.swift). Worst
+  // case is Mike's first ANSWER arrives on the warm-up's schedule — never dead air on tap.
+  mikeSay(_greetLine);
 }
 
 function unlockAudioSafe(){

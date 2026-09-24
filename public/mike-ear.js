@@ -368,6 +368,12 @@
           try { window._mikeSpokenByPhone = true; } catch (_) {}
           try { if (typeof appendMessage === 'function') appendMessage('agent', t); } catch (_) {}
           try { window._mikeSpokenByPhone = false; } catch (_) {}
+          /* FEED THE IDLE CLOCK (crew audit F9). On a native-owned call Mike's answers
+             bypass mikeSay, which was the only thing resetting the 45s idle timer — so a
+             long answer ran the clock out, "You still with me?" stomped the player
+             MID-ANSWER, and 15s later the call hung up on a man mid-job. An answer is
+             activity; say so. */
+          try { if (typeof window._idleResetTimer === 'function') window._idleResetTimer(); } catch (_) {}
         });
         /* The native side's answer to "which silence is this" — buffer count, peak level,
            mic route, engine state. Forwarded straight to the server, never to the screen. */
@@ -391,7 +397,20 @@
         /* WHY THE CALL ENDED. Brandon asked "but did you get a report for that?" about a
            hang-up I had only READ in the source. I had not. Nothing reported the call ending,
            so every explanation for it was inference dressed up as a finding. Now it says. */
-        await P.addListener('ended', function (e) { report('ended', (e && e.reason) || 'unknown'); });
+        await P.addListener('ended', function (e) {
+          report('ended', (e && e.reason) || 'unknown');
+          /* A LOCK-SCREEN HANG-UP MUST END THE CALL ON SCREEN TOO (crew audit F8). This
+             listener only ever logged; the web's voiceMode stayed on, so after unlocking,
+             the bar said "Listening…" over a call the phone had already torn down — he
+             talks, nothing hears. If the web still thinks the call is live, end it. */
+          try {
+            if ((e && e.reason) === 'lock screen hang up'
+                && typeof window.toggleVoiceMode === 'function'
+                && typeof window.voiceMode !== 'undefined' && window.voiceMode) {
+              window.toggleVoiceMode();
+            }
+          } catch (_) {}
+        });
         /* SAY WHOSE TURN IT IS, IN WORDS. Brandon: the old browser call said "Listening…" so he
            knew when to talk; the native call only moved a dot. The phone now tells us whose turn
            it is and we put the plain cue back on the bar. Display only — never touches the call. */

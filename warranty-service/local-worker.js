@@ -176,6 +176,7 @@ async function runJob(job) {
 }
 
 let inFlight = 0;
+let lastPollAt = Date.now();   // fed by the loop; the watchdog below reads it
 
 // One job, start to finish, in its own lane. Never throws — a lane that dies takes the
 // job with it, not the worker.
@@ -183,15 +184,35 @@ async function handle(job, headers) {
   inFlight++;
   const started = Date.now();
   console.log(`[worker] job ${job.id}: ${job.brand} ${job.serial}  (${inFlight}/${LANES} busy)`);
-  let result;
-  try { result = await runJob(job); }
+  // A lane must FREE ITSELF no matter what. runJob's own races cover the lookup, but
+  // the browser attach / new-tab step BEFORE them has no timeout — 2026-09-23 a half-dead
+  // CDP connection hung six lanes exactly there, the loop stopped polling at 6/6, and
+  // every Carrier/Lennox lookup died until a human restarted the worker. Hard ceiling on
+  // the whole lane; a negative-confirm can legitimately run two full races, so 2x + slack.
+  const LANE_MS = 2 * JOB_MS + 60000;
+  let result, laneT;
+  try {
+    result = await Promise.race([
+      runJob(job),
+      new Promise((_, rej) => { laneT = setTimeout(() => rej(Object.assign(new Error(`lane hung ${LANE_MS / 1000}s`), { code: 'LANE_HUNG' })), LANE_MS); }),
+    ]);
+  }
   catch (e) {
     // The cause used to go only into the payload sent back to the service, so the local
     // log line read "error lane_failed" with no reason attached — 151 of them, and not
     // one of them said what actually went wrong. Print it.
     console.log(`[worker] job ${job.id} LANE FAILED: ${e.message}`);
     result = { error: 'lane_failed', message: e.message };
+    if (e.code === 'LANE_HUNG') {
+      // The only await outside runJob's races is the browser itself, so a hung lane means
+      // a wedged Chrome. close() only DISCONNECTS (see the idle-release note in loop());
+      // the process keeps holding the port and would be re-attached to forever — end it.
+      try { if (browser) browser.close().catch(() => {}); } catch (_) {}
+      browser = null;
+      try { spawn('/usr/bin/pkill', ['-f', PROFILE], { stdio: 'ignore' }).unref(); } catch (_) {}
+    }
   }
+  finally { clearTimeout(laneT); }
   try {
     await fetch(`${SERVICE}${PREFIX}/result`, {
       method: 'POST',
@@ -215,6 +236,7 @@ async function loop() {
       // and marks it claimed, so asking repeatedly is how we fill the lanes — and two
       // machines running this can never be given the same job.
       if (inFlight < LANES) {
+        lastPollAt = Date.now();   // a poll ATTEMPT is the heartbeat, whatever its outcome
         const r = await fetch(`${SERVICE}${PREFIX}/next`, { headers, signal: AbortSignal.timeout(20000) });
         const job = r.ok ? await r.json() : null;
         if (job && job.id) {
@@ -256,4 +278,20 @@ async function loop() {
 
 process.on('unhandledRejection', e => console.log('[worker] unhandled:', e && e.message));
 process.on('uncaughtException',  e => console.log('[worker] uncaught:', e && e.message));
+
+// DEAD-MAN SWITCH. The 2026-09-23 wedge was invisible from inside: the process was alive,
+// launchd was satisfied, but with every lane stuck the loop skipped polling forever and
+// the service marked us offline. The lane ceiling above should make that impossible —
+// this catches whatever class of wedge we have not met yet. If no poll has even been
+// ATTEMPTED for longer than any legitimate full-lanes turnover, exit; launchd (KeepAlive,
+// 10s throttle) brings us back clean. A down service still beats (failed polls count),
+// so a Railway outage does not restart-loop us.
+const STALL_MS = Math.max(5 * 60 * 1000, 2 * JOB_MS + 120000);
+setInterval(() => {
+  if (Date.now() - lastPollAt > STALL_MS) {
+    console.log(`[worker] WATCHDOG: no poll attempt in ${Math.round((Date.now() - lastPollAt) / 1000)}s (${inFlight}/${LANES} lanes busy) — exiting so launchd restarts us clean`);
+    process.exit(70);
+  }
+}, 30000).unref();
+
 loop();

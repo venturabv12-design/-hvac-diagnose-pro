@@ -345,10 +345,32 @@
           + 'needs steps, give the first step and ask if he wants the rest. No lists, no headings, '
           + 'no long monologues — he can always ask for more. Brevity is speed here: a shorter '
           + 'answer reaches his ear faster and sounds human, not like a robot reading a manual.';
+        // WHERE HE IS STANDING. Brandon, 2026-09-25: on a call Mike said "I don't have your
+        // location" even though the app has GPS (the weather panel uses it). The typed chat
+        // injects the location; the VOICE call never did. Hand him the FACTS at call start —
+        // location, coords, local time, and the REAL current weather the app already fetched —
+        // so he answers supply-shop/weather/pressure questions without needing a live search
+        // (which the voice path cannot run). Snapshot at call start; good for a service call.
+        var _locBlock = '';
+        try {
+          if (window.techLocation && window.techLocation.display) {
+            var _tl = window.techLocation;
+            var _now = new Date();
+            var _t = _now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+            var _wx = (window._currentWeather && window._currentWeather.summary)
+              ? ('\nCurrent weather right now: ' + window._currentWeather.summary) : '';
+            _locBlock = '\n\nWHERE THE TECH IS (verified GPS — this is his REAL location):'
+              + '\nLocation: ' + _tl.display
+              + (_tl.lat != null ? ('\nCoordinates: ' + _tl.lat + ', ' + _tl.lon) : '')
+              + '\nLocal time: ' + _t + _wx
+              + '\nUse this for supply shops near him, weather, and refrigerant pressure/superheat '
+              + 'targets. Do not ask him for his location or zip — you already have it here.';
+          }
+        } catch (_) {}
         var res = await P.setSession({
           apiBase: location.origin,
           token: (window.currentUser && window.currentUser.token) || '',
-          system: ((typeof AGENT_SYSTEM === 'string' && AGENT_SYSTEM) ? AGENT_SYSTEM : '') + _who + _voiceStyle,
+          system: ((typeof AGENT_SYSTEM === 'string' && AGENT_SYSTEM) ? AGENT_SYSTEM : '') + _who + _voiceStyle + _locBlock,
           reset: true
         });
         _nativeCall = !!(res && res.ready);
@@ -356,7 +378,11 @@
         report('session', 'handed down: ready=' + _nativeCall
           + ' token=' + !!(window.currentUser && window.currentUser.token)
           + ' system=' + (typeof AGENT_SYSTEM === 'string' ? AGENT_SYSTEM.length : 0) + ' chars'
-          + ' name=' + (_first || 'NONE'));
+          + ' name=' + (_first || 'NONE')
+          // Proves, from his actual call, whether the app HAD his location to hand over —
+          // so we know if the fix landed real data vs. the phone never grabbing GPS.
+          + ' loc=' + ((window.techLocation && window.techLocation.display) ? window.techLocation.display : 'NONE')
+          + ' weather=' + ((window._currentWeather && window._currentWeather.summary) ? 'yes' : 'no'));
       } catch (e) {
         _nativeCall = false;
         /* Old build without setSession — the web path still works, it just dies on lock.

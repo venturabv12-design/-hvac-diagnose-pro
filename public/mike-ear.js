@@ -334,10 +334,21 @@
              + 'invent one.')
           : ('\n\nYou do not know this technician\'s name. Do NOT invent one and do NOT guess — '
              + 'speak to him without a name until he tells you.');
+        // TALK LIKE A PHONE CALL, NOT AN ESSAY. 2026-09-25, Brandon: the ears are solved,
+        // but Mike's spoken answer takes 3-4s because he writes a paragraph and THEN the
+        // whole voice clip is generated before a word plays — long answer = long wait, and
+        // it reads as "a robot digesting." The chat persona (AGENT_SYSTEM) rewards
+        // thoroughness; a voice call rewards brevity. This directive ONLY rides the spoken
+        // path (setSession is the native/voice call), so typed chat is untouched.
+        var _voiceStyle = '\n\nYOU ARE ON A LIVE VOICE CALL. Answer the way a real tech talks '
+          + 'on the phone: one or two short sentences, then stop. Get to the point first; if it '
+          + 'needs steps, give the first step and ask if he wants the rest. No lists, no headings, '
+          + 'no long monologues — he can always ask for more. Brevity is speed here: a shorter '
+          + 'answer reaches his ear faster and sounds human, not like a robot reading a manual.';
         var res = await P.setSession({
           apiBase: location.origin,
           token: (window.currentUser && window.currentUser.token) || '',
-          system: ((typeof AGENT_SYSTEM === 'string' && AGENT_SYSTEM) ? AGENT_SYSTEM : '') + _who,
+          system: ((typeof AGENT_SYSTEM === 'string' && AGENT_SYSTEM) ? AGENT_SYSTEM : '') + _who + _voiceStyle,
           reset: true
         });
         _nativeCall = !!(res && res.ready);

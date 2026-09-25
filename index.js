@@ -33,6 +33,12 @@ const PORT = process.env.PORT || 3000;
 const ANTHROPIC_API_KEY    = process.env.ANTHROPIC_API_KEY;
 const ELEVENLABS_API_KEY   = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_VOICE_ID  = process.env.ELEVENLABS_VOICE_ID || 'ErXwobaYiN019PkySvjV';
+// GROQ_API_KEY — speech-to-text for the LOCKED part of a Mike voice call. iOS forbids the
+// on-device Neural Engine from running while the phone is in a pocket (proven on Brandon's
+// device 2026-09-25: "Unable to compute the prediction using a neural network model"), so
+// the locked leg sends audio here and the server transcribes it via Groq Whisper. Optional:
+// if unset, /api/transcribe returns 503 and the app stays on its on-device (screen-on) path.
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const SUPABASE_URL         = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const STRIPE_SECRET_KEY    = process.env.STRIPE_SECRET_KEY;
@@ -3876,6 +3882,65 @@ app.post('/api/tts', ttsLimiter, allowOnboardingVoice,
   } catch (err) {
     if (err.name === 'AbortError') res.status(504).json({ error: 'TTS timed out' });
     else { console.error('TTS error:', err.message); res.status(502).json({ error: 'TTS unavailable' }); }
+  } finally {
+    clearTimeout(timeout);
+  }
+});
+
+// ── /api/transcribe ───────────────────────────────────────────────────────────
+// The locked/pocket leg of a Mike voice call. On-device Whisper is fast and private and
+// carries the whole SCREEN-ON conversation; the instant the screen locks, iOS refuses to
+// run the Neural Engine for a backgrounded app, so the native ear POSTs its captured audio
+// window here and we transcribe it in the cloud (which a locked app IS allowed to reach over
+// the network). Same paid-voice gate as /api/tts — this is part of the call, not a new
+// surface. Groq Whisper (whisper-large-v3-turbo): ~216x realtime, ~$0.04/hr of audio.
+const transcribeLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,                 // a locked call flushes a turn every few seconds; generous
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: 'Too many transcription requests — slow down.' },
+});
+app.post('/api/transcribe', transcribeLimiter,
+  (req, res, next) => authenticateToken(req, res, next),
+  (req, res, next) => requireVoiceAccess(req, res, next),
+  async (req, res) => {
+  if (!GROQ_API_KEY) return res.status(503).json({ error: 'Transcription not configured' });
+  // Audio arrives as base64 (wav/mono/16k from the native ear). Keep the cap tight — a
+  // single conversational turn is well under a megabyte; anything larger is not a turn.
+  const b64 = req.body?.audio;
+  if (!b64 || typeof b64 !== 'string') return res.status(400).json({ error: 'audio required' });
+  let buf;
+  try { buf = Buffer.from(b64, 'base64'); } catch (_) { return res.status(400).json({ error: 'audio not base64' }); }
+  if (!buf.length || buf.length > 8 * 1024 * 1024) return res.status(400).json({ error: 'audio empty or too large' });
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    // Node 18+ has global FormData/Blob/fetch — no SDK, same posture as the rest of the file.
+    const form = new FormData();
+    form.append('file', new Blob([buf], { type: 'audio/wav' }), 'turn.wav');
+    form.append('model', 'whisper-large-v3-turbo');
+    form.append('language', 'en');            // Mike's techs are English; skips lang-detect latency
+    form.append('response_format', 'json');
+    form.append('temperature', '0');
+    const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
+      body: form,
+      signal: controller.signal,
+    });
+    if (!r.ok) {
+      const detail = await r.text().catch(() => '');
+      console.error('Groq STT error:', r.status, detail.slice(0, 200));
+      return res.status(502).json({ error: 'Transcription unavailable' });
+    }
+    const j = await r.json();
+    const text = (j && typeof j.text === 'string') ? j.text.trim() : '';
+    return res.json({ text });
+  } catch (err) {
+    if (err.name === 'AbortError') return res.status(504).json({ error: 'Transcription timed out' });
+    console.error('Transcribe error:', err.message);
+    return res.status(502).json({ error: 'Transcription unavailable' });
   } finally {
     clearTimeout(timeout);
   }

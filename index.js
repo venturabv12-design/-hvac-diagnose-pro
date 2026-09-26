@@ -976,6 +976,11 @@ app.post('/api/auth/signup', authLimiter, async (req, res) => {
         plan: user.plan,
         trialStart: new Date(user.trial_start).getTime(),
         usageCount: user.usage_count || 0,
+        // A durable "returning tech" signal. usage_count is never persisted server-side
+        // (incremented only client-side, wiped on reinstall), so a returning tech on a
+        // fresh install was mis-greeted with the brand-new self-intro. The account's age
+        // is durable: if it existed before today, they are not a first-timer.
+        createdAt: user.created_at ? new Date(user.created_at).getTime() : null,
       },
       token,
     });
@@ -1052,6 +1057,7 @@ app.post('/api/auth/signin', authLimiter, async (req, res) => {
         plan: user.plan || 'trial',
         trialStart: user.trial_start ? new Date(user.trial_start).getTime() : Date.now(),
         usageCount: user.usage_count || 0,
+        createdAt: user.created_at ? new Date(user.created_at).getTime() : null, // durable returning-tech signal
         features: user.features || {},
         profile: user.profile || {},
         epaCert: user.epa_cert || '',

@@ -7357,6 +7357,16 @@ var techLocation=null,wakeLock=null;
 // langToggle handler removed — handled by langBtn handler
 
 // ── TECH LOCATION (GPS) ──────────────────────────────────────
+function _geoReport(detail){
+  // Tells us, from his actual device, what the browser's geolocation ACTUALLY did —
+  // 2026-09-26: Mike said "no location" on typed chat too, so techLocation is null; this
+  // proves whether iOS hands coords back to the WebView (success), denies, or times out.
+  try{
+    fetch('/api/client-error',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({kind:'geo',where:'index.html',detail:String(detail).slice(0,180),
+        build:(window.currentUser&&window.currentUser.email)?'auth':'anon'})});
+  }catch(e){}
+}
 function requestTechLocation(){
   // Refresh if: no location, poor accuracy, or older than 10 minutes
   var tenMin=10*60*1000;
@@ -7364,12 +7374,15 @@ function requestTechLocation(){
      techLocation.timestamp&&(Date.now()-techLocation.timestamp)<tenMin)return;
   if(!navigator.geolocation){
     window._locationDenied=true;
+    _geoReport('navigator.geolocation MISSING in this webview');
     return;
   }
+  _geoReport('requesting position (have='+(techLocation?techLocation.display:'none')+')');
   // Try high accuracy first, fall back to low accuracy
   var opts_high={enableHighAccuracy:true,timeout:10000,maximumAge:0};
   var opts_low={enableHighAccuracy:false,timeout:8000,maximumAge:300000};
   function onSuccess(pos){
+    _geoReport('SUCCESS lat='+pos.coords.latitude.toFixed(3)+' lon='+pos.coords.longitude.toFixed(3)+' acc='+Math.round(pos.coords.accuracy)+'m');
     var lat=pos.coords.latitude.toFixed(5);
     var lon=pos.coords.longitude.toFixed(5);
     var acc=Math.round(pos.coords.accuracy);
@@ -7404,6 +7417,7 @@ function requestTechLocation(){
     // console.debug (not warn) — GPS timeouts/denials are expected and self-recover via
     // the low-accuracy retry + profile-zip fallback below; no need to clutter the console.
     console.debug('GPS error:',err.code,err.message);
+    _geoReport('ERROR code='+err.code+' ('+(err.code===1?'DENIED':err.code===2?'UNAVAILABLE':err.code===3?'TIMEOUT':'?')+') '+err.message);
     window._locationDenied=(err.code===1);
     if(err.code!==1){
       navigator.geolocation.getCurrentPosition(onSuccess,function(){window._locationDenied=false;},opts_low);

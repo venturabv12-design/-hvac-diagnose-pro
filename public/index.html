@@ -14114,6 +14114,11 @@ function toggleVoiceMode(){
     return;
   }
   voiceMode=true;
+  // GRAB LOCATION AT CALL START. 2026-09-26: on a call Mike had loc=NONE and said "my search
+  // came back generic" — because requestTechLocation only ran on a TYPED message, never when a
+  // tech opened the app and went straight to calling. Fire it now so the GPS is loading before
+  // the greeting; it persists once resolved. Native bridge (build 112+) makes this reliable.
+  try{ if(!window._locationDenied && typeof requestTechLocation==='function') requestTechLocation(); }catch(_lg){}
   // iOS Safari: pre-create and unlock an Audio element during this user gesture
   // so any HTMLAudioElement fallback path can play. WebAudio in mikeSay() is primary.
   try{
@@ -15807,6 +15812,10 @@ function initReconnectToast(){
 document.addEventListener('DOMContentLoaded',function(){
   (function(){var l=document.getElementById('appLoader');if(l){l.style.opacity='0';setTimeout(function(){if(l&&l.parentNode)l.parentNode.removeChild(l);},450);}})();
   tracerInit();
+  // WARM THE LOCATION ON OPEN. So it is ready by the time the tech taps Call, not fetched
+  // only on a typed message (2026-09-26 fix — calls were landing with loc=NONE). Deferred a
+  // beat so it never competes with first paint; native geolocation (build 112+) makes it reliable.
+  setTimeout(function(){ try{ if(!window._locationDenied && typeof requestTechLocation==='function') requestTechLocation(); }catch(_lo){} }, 1500);
   // H7 — toggle body.landing-atop while the V2 landing sits at the top of the viewport,
   // so CSS can hide the nav Mike-face glyph there (no Mike face on landing).
   (function(){

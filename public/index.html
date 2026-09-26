@@ -4621,7 +4621,13 @@ function showPersonalizedWelcome(){
   // used to drop a returning tech into the brand-new self-intro. currentUser.usageCount
   // comes from the server (DB usage_count) and persists, so it's the durable signal.
   var serverUsage=(currentUser&&currentUser.usageCount)||0;
-  var isReturning=(totalMsg>0)||(serverUsage>0);
+  // DURABLE returning-tech signal. totalMsg (local) is wiped on reinstall and usage_count
+  // is never persisted server-side, so both read 0 for a returning tech on a fresh build —
+  // which mis-served the brand-new "25 years, let me introduce myself" intro to techs who
+  // have used Mike for months. The account's AGE is durable: created before ~today = not new.
+  var acctAgeMs=(currentUser&&currentUser.createdAt)?(Date.now()-currentUser.createdAt):0;
+  var establishedAccount=acctAgeMs>(10*60*1000); // older than 10 min = a returning tech
+  var isReturning=(totalMsg>0)||(serverUsage>0)||establishedAccount;
   var msg='';
 
   // P1-3 — greet in the tech's language. Keep the exact returning-vs-new branching

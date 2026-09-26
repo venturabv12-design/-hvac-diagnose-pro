@@ -7430,6 +7430,28 @@ function requestTechLocation(){
       }
     }catch(e){}
   }
+  // NATIVE BRIDGE FIRST. 2026-09-26: on his phone techLocation stayed NULL (loc=NONE) — the
+  // documented WKWebView failure: a Capacitor app loading a REMOTE url gets nothing back from
+  // the WebView's navigator.geolocation. The @capacitor/geolocation plugin talks to CoreLocation
+  // directly and works. Use it when running native; the browser path below is unchanged for web.
+  try{
+    var _cap=window.Capacitor;
+    var _geo=_cap&&_cap.Plugins&&_cap.Plugins.Geolocation;
+    if(_cap&&_cap.isNativePlatform&&_cap.isNativePlatform()&&_geo){
+      _geoReport('native Capacitor Geolocation path');
+      _geo.getCurrentPosition({enableHighAccuracy:true,timeout:10000}).then(function(pos){
+        onSuccess(pos);
+      }).catch(function(err){
+        onError({code:(err&&/denied|permission/i.test(err.message||''))?1:3,message:(err&&err.message)||'native geo failed'});
+      });
+      if(!window._geoWatchId&&_geo.watchPosition){
+        _geo.watchPosition({enableHighAccuracy:true,timeout:15000},function(pos,err){
+          if(pos&&(!techLocation||pos.coords.accuracy<(techLocation.accuracy||9999))) onSuccess(pos);
+        }).then(function(id){window._geoWatchId=id;}).catch(function(){});
+      }
+      return;
+    }
+  }catch(e){ _geoReport('native geo threw: '+(e&&e.message)); }
   navigator.geolocation.getCurrentPosition(onSuccess,onError,opts_high);
   // Also start watching for updates
   if(!window._geoWatchId){

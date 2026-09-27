@@ -42,7 +42,7 @@
     if(!/[?&]ear=1\b/.test(location.search))return;
     window.MIKE_EAR_ENABLED=true;
     var t=document.createElement('script');
-    t.src='/mike-ear.js?v=35';
+    t.src='/mike-ear.js?v=36';
     document.head.appendChild(t);
   }catch(e){}
 })();
@@ -14729,6 +14729,10 @@ function resetMikeSpeakingUI(){
 
 function stopMikeSpeaking(){
   isMikeSpeaking=false;
+  // On a native call Mike's voice is played by the plugin, not web audio — so also fire the
+  // native barge-in (2026-09-27: there was no way to interrupt Mike on a call/locked). No-op
+  // on the browser path. This is what makes the Stop button and lock-screen cut Mike off.
+  try{ if(typeof window.mikeEarInterrupt==='function') window.mikeEarInterrupt(); }catch(_i){}
   // Put the UI back too — clearing the flag alone left "Mike is talking…" on screen.
   try{ resetMikeSpeakingUI(); }catch(e){}
   // Abort any in-flight TTS fetches (both voice mode and camera) so slow downloads

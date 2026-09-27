@@ -453,9 +453,15 @@
            it is and we put the plain cue back on the bar. Display only — never touches the call. */
         await P.addListener('turn', function (e) {
           try {
-            if (typeof setVoiceStatus !== 'function') return;
-            if (e && e.listening) setVoiceStatus('Listening — talk to Mike', '');
-            else setVoiceStatus('Mike is talking…', '');
+            var talking = !(e && e.listening);
+            if (typeof setVoiceStatus === 'function') {
+              setVoiceStatus(talking ? 'Mike is talking…' : 'Listening — talk to Mike', '');
+            }
+            // Show the Stop/interrupt button ONLY while Mike is talking, so a tech can cut in.
+            // On a native call Mike's voice is the plugin's, so the button must hit the native
+            // interrupt, not just the (silent-here) web audio path — see stopMikeSpeaking().
+            var sb = document.getElementById('stopSpeakBtn');
+            if (sb) sb.style.display = talking ? '' : 'none';
           } catch (_) {}
         });
         wired = true;
@@ -553,6 +559,14 @@
    * and he never hears it happen. Brandon: "I don't want to wait every time."
    *
    * mikeEarStart() still waits for that warm-up if he is fast enough to beat it. */
+
+  /* BARGE-IN. Cut Mike off mid-sentence and hand the turn back — from the in-app stop button
+     or (when it exists) any caller. Native stops the player, drops the queue, opens the mic. */
+  window.mikeEarInterrupt = async function () {
+    var P = plugin();
+    if (!P || !P.interrupt) return false;
+    try { await P.interrupt(); return true; } catch (e) { return false; }
+  };
 
   window.mikeEarSpeak = async function (base64mp3) {
     var P = plugin();

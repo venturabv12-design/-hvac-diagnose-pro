@@ -6138,7 +6138,12 @@ function wireObMagic(host,isMagic){
   var spent=false;
   function ask(){
     var q=(input.value||'').trim();
-    if(!q||spent)return;
+    if(spent){
+      // Free one already used. Never dead-end him — bridge to signup with the reason.
+      obFinish(); setTimeout(function(){ try{ openAuth('up'); }catch(e){} },60);
+      return;
+    }
+    if(!q)return;
     spent=true;
     input.disabled=true; send.style.opacity='.4';
     live.innerHTML='<div class="bubble me">'+obEsc(q)+'</div>'
@@ -7681,6 +7686,10 @@ var DEMO_MIKE_ANSWER=[
 // then apply markup over the escaped text (same model as renderV2 message rendering).
 // Input is the DEMO_MIKE_ANSWER constant only — never user input, no XSS path.
 function renderDemoAnswer(raw){
+  // Strip the saved-job sentinel exactly like the main chat renderer does. Without this, the
+  // FIRST answer a new tech ever sees ended with raw JSON — it read as broken software at the
+  // single most important moment (2026-09-28 walkthrough; likely why Rafael bounced with 0 usage).
+  raw=String(raw).replace(/\n?\s*JOB_SAVED:\s*\{[\s\S]*?\}\s*/g,'').trim();
   var lines=String(raw).split("\n");
   var out=[],i=0;
   function inline(s){

@@ -825,6 +825,79 @@ function logUsage(userId, type, payload = {}) {
     .catch(e => console.error('usage log failed (non-fatal):', e.message));
 }
 
+// ── MIKE MEMORY (Phase 1) — self-evolving per-tech memory, the SOUL of the product ──────────
+// Stored server-side, account-keyed, so web chat AND the native voice call read/write ONE memory
+// (both go through /api/ai). Kept as a sub-key of users.profile so it needs no schema migration —
+// and ALWAYS merged into the existing profile, never a wholesale overwrite (a wholesale PATCH once
+// blanked a live profile; that must never recur). Two layers now: a rolling natural-language
+// `summary` (always injected) + structured `facts` (name, region, brands, tone…). Episodic recall +
+// the ADD/UPDATE/DELETE reconcile loop are Phase 2/3.
+async function getUserMemory(uid) {
+  if (!uid) return null;
+  try {
+    const rows = await supabase('GET', 'users', null, `?id=eq.${encodeURIComponent(uid)}&select=profile`);
+    const prof = Array.isArray(rows) && rows[0] ? (rows[0].profile || {}) : {};
+    return prof.mikeMemory || null;
+  } catch { return null; }
+}
+
+// Build the context Mike sees at the START of every call/chat — "what you already know about this tech."
+function buildMemoryContext(mem) {
+  if (!mem || (!mem.summary && !(mem.facts && Object.keys(mem.facts).length))) return '';
+  let out = '\n\n=== WHAT YOU ALREADY KNOW ABOUT THIS TECH (your memory of him) ===\n'
+    + 'Use this to talk like a partner who remembers him — pick up where you left off, catch callbacks '
+    + '("weren\'t we on a similar unit the other day?"). Never re-introduce yourself to a tech you know. '
+    + 'Do not recite this back verbatim; just know it.\n';
+  if (mem.facts && Object.keys(mem.facts).length) out += 'Facts: ' + JSON.stringify(mem.facts) + '\n';
+  if (mem.summary) out += 'Recent history: ' + mem.summary + '\n';
+  out += '=== END MEMORY ===\n';
+  return out;
+}
+
+// The reflect-and-write loop: after an exchange, update the rolling summary + facts and MERGE back
+// into users.profile.mikeMemory. Fire-and-forget so it never adds latency to the tech's answer.
+async function updateUserMemory(uid, userText, assistantText) {
+  if (!uid || !userText) return;
+  try {
+    const prior = await getUserMemory(uid) || { summary: '', facts: {} };
+    const reflectSys = 'You maintain a running memory of an HVAC technician for their AI assistant "Mike". '
+      + 'Given the CURRENT memory and the LATEST exchange, return ONLY compact JSON: '
+      + '{"summary": "<=900 chars, rolling natural-language summary of who this tech is and what has been '
+      + 'going on across sessions — jobs, units, brands, recurring issues, callbacks; supersede stale details, '
+      + 'do not just append>", "facts": {"name":"","region":"","brands":[],"skill":"","tone":"","notes":""}}. '
+      + 'Keep only durable, useful facts. No prose outside the JSON.';
+    const reflectBody = {
+      model: process.env.MIKE_MODEL || 'claude-opus-4-8',
+      max_tokens: 700,
+      system: reflectSys,
+      messages: [{ role: 'user', content:
+        'CURRENT MEMORY:\n' + JSON.stringify(prior).slice(0, 4000)
+        + '\n\nLATEST EXCHANGE:\nTech: ' + String(userText).slice(0, 1500)
+        + '\nMike: ' + String(assistantText || '').slice(0, 1500)
+        + '\n\nReturn the updated memory JSON.' }],
+    };
+    const _fo = await callModelWithFailover(reflectBody, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+    }, { stream: false });
+    if (!_fo || !_fo.res || !_fo.res.ok) return;
+    const data = await _fo.res.json();
+    const raw = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim();
+    const m = raw.match(/\{[\s\S]*\}/); if (!m) return;
+    let next; try { next = JSON.parse(m[0]); } catch { return; }
+    const mikeMemory = {
+      summary: typeof next.summary === 'string' ? next.summary.slice(0, 1000) : (prior.summary || ''),
+      facts: (next.facts && typeof next.facts === 'object') ? next.facts : (prior.facts || {}),
+      updated_at: new Date().toISOString(),
+    };
+    // MERGE-safe write: read the whole profile, set only mikeMemory, write it back intact.
+    const rows = await supabase('GET', 'users', null, `?id=eq.${encodeURIComponent(uid)}&select=profile`);
+    const prof = (Array.isArray(rows) && rows[0] && rows[0].profile) ? rows[0].profile : {};
+    prof.mikeMemory = mikeMemory;
+    await supabase('PATCH', 'users', { profile: prof }, `?id=eq.${encodeURIComponent(uid)}`);
+  } catch (e) { console.error('memory update failed (non-fatal):', e.message); }
+}
+
 // ── COMPANY SITE (trazerintelligence.com) ───────────────────────────────────────
 // Apple's Individual→Organization migration requires "a publicly available organization
 // website whose domain is associated with the organization". trazermike.io is the PRODUCT;
@@ -3257,7 +3330,11 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     // For the common no-RAG case the concatenated text equals the old `_ragContext + system`,
     // so the prompt the model sees is byte-identical and Mike's answers are unchanged.
     const _baseSys = (system || '');
-    const _tailSys = _ragContext + (systemExtra || '');
+    // MIKE MEMORY: what he already knows about THIS tech, injected into the per-message tail
+    // (never the cached base). One memory serves web chat AND the native voice call (both here).
+    let _memContext = '';
+    try { if (_askUid) _memContext = buildMemoryContext(await getUserMemory(_askUid)); } catch {}
+    const _tailSys = _memContext + _ragContext + (systemExtra || '');
     let _systemField;
     if (_baseSys.length > 8000) {
       const _baseBlock = { type: 'text', text: _baseSys, cache_control: { type: 'ephemeral', ttl: '1h' } };
@@ -3375,6 +3452,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         try {
           if (_askUid && _streamed) logUsage(_askUid, 'mike_answer',
             Object.assign({ a: _streamed.slice(0, 8000), streamed: true }, _cost));
+          if (_askUid && _streamed) { try { updateUserMemory(_askUid, _lastUser, _streamed); } catch {} }
         } catch { /* never let logging affect a delivered answer */ }
       } catch (streamErr) {
         if (streamErr.name === 'AbortError') send({ error: 'Request timed out — please try again.' });
@@ -3762,6 +3840,9 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         cache_write: _u.cache_creation_input_tokens,
       });
     } catch { /* never block a tech's answer on logging */ }
+    // REFLECT — update Mike's memory of this tech from the exchange. Fire-and-forget: never
+    // block or delay the answer. (Covers native voice calls, which use this non-stream path.)
+    try { if (_askUid) updateUserMemory(_askUid, _lastUser, outText); } catch {}
     res.json({ response: outText, usage: data.usage });
 
   } catch (err) {

@@ -7758,6 +7758,19 @@ function closeV2Demo(){
 // A stranger who typed a question, then signed up, should find it waiting — not have to
 // remember and retype it. Never auto-sends: they see it and press send themselves.
 function restorePendingQuestion(){
+  // DIRECT-SUBSCRIBE LINK. A tech who tapped trazermike.io/?subscribe=pro (texted after a demo)
+  // just created his account — drop him straight into checkout, no hunting for a button. Web only
+  // (goCheckout no-ops in the native app by design). This is the "close him on the spot" path.
+  try{
+    if(window._pendingSubscribe && !isNativeApp()){
+      var _sp=window._pendingSubscribe; window._pendingSubscribe=null;
+      if(currentUser && currentUser.token){
+        try{ selPlan=_sp; }catch(e){}
+        setTimeout(function(){ try{ goCheckout(); }catch(e){} }, 700);
+        return;
+      }
+    }
+  }catch(e){}
   try{
     var q=window._pendingFirstQuestion;if(!q)return;
     window._pendingFirstQuestion=null;
@@ -15853,6 +15866,18 @@ document.addEventListener('DOMContentLoaded',function(){
       window.history.replaceState({},'','/');
     }
     if(_up.get('payment')==='cancelled'){showToast('Checkout cancelled - no charge made.','info',3000);window.history.replaceState({},'','/'); }
+    // DIRECT-SUBSCRIBE deep link: trazermike.io/?subscribe=pro — the link Brandon texts a tech
+    // after a demo. Signed in -> straight to checkout. Not signed in -> sign-up, then checkout
+    // continues via restorePendingQuestion(). Never in the native app (payment is web, by design).
+    var _subParam=(_up.get('subscribe')||'').toLowerCase();
+    if(_subParam && !isNativeApp()){
+      window._pendingSubscribe=(_subParam==='pro'||_subParam==='starter'||_subParam==='team')?_subParam:'pro';
+      window.history.replaceState({},'','/');
+      setTimeout(function(){
+        if(currentUser && currentUser.token){ try{ selPlan=window._pendingSubscribe; window._pendingSubscribe=null; goCheckout(); }catch(e){} }
+        else { try{ openAuth('up'); }catch(e){} }
+      }, 800);
+    }
     // Handle password reset link: APP_URL?reset=<token>
     var _resetToken=_up.get('reset');
     if(_resetToken){

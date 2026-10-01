@@ -478,6 +478,31 @@ textarea{resize:vertical;line-height:1.6;min-height:88px;}
 .ob-grow .ic{font-size:16px;}
 .ob-grow .tx{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.04em;line-height:1.4;color:var(--ob-brass);}
 .ob-grow .tx b{color:#FAF7F1;font-weight:700;}
+/* ===== Approved onboarding deck additions (Brandon 2026-10-01, from the 09-30 mockup) ===== */
+/* page 1 — the three ways to reach Mike */
+.ob-ways{display:flex;gap:9px;margin-top:18px;}
+.ob-way{flex:1;background:rgba(244,239,230,.04);border:1px solid var(--ob-line);border-radius:14px;padding:13px 6px;text-align:center;animation:ob-rise .5s 1.1s both;}
+.ob-way .i{font-size:20px;}
+.ob-way .l{font-size:11.5px;font-weight:700;margin-top:6px;color:var(--ob-paper);}
+.ob-waysnote{margin-top:14px;text-align:center;font-size:12.5px;color:var(--ob-mute);line-height:1.45;animation:ob-rise .5s 1.4s both;}
+/* "this really happened" caption under a real exchange */
+.ob-exreal{text-align:center;color:var(--ob-mute2);font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.04em;margin-top:9px;animation:ob-rise .5s 2s both;}
+/* edge frame — the generic-AI bubble gone wrong (rust = the app's red) */
+.ob-bubble.ob-edge-bad{background:rgba(199,85,59,.08);border-color:rgba(199,85,59,.4);}
+.ob-bubble.ob-edge-bad .who{color:var(--ob-rust);}
+.ob-edge-flag{color:var(--ob-rust);font-family:'JetBrains Mono',monospace;font-size:10px;}
+/* grow frame — feature rows + the callback math card */
+.ob-rows2{display:flex;flex-direction:column;gap:9px;margin-top:18px;}
+.ob-row2{display:grid;grid-template-columns:26px 1fr;gap:11px;align-items:start;background:rgba(244,239,230,.04);border:1px solid var(--ob-line);border-radius:12px;padding:12px 13px;animation:ob-rise .5s both;}
+.ob-row2:nth-child(1){animation-delay:.9s}.ob-row2:nth-child(2){animation-delay:1.15s}.ob-row2:nth-child(3){animation-delay:1.4s}
+.ob-row2 .i{font-size:16px;}
+.ob-row2 h3{font-size:13px;font-weight:700;color:var(--ob-paper);margin:0;}
+.ob-row2 p{color:var(--ob-mute);font-size:11.5px;margin:2px 0 0;line-height:1.4;}
+.ob-row2 .soon{color:var(--ob-safety);font-size:9px;font-family:'JetBrains Mono',monospace;letter-spacing:.08em;}
+.ob-mathcard{margin-top:16px;padding:16px 15px;text-align:center;border-radius:14px;background:linear-gradient(180deg,#14130D,#0F0E0A);border:1px solid rgba(201,169,97,.4);animation:ob-rise .6s 1.7s both;}
+.ob-mathcard .t{font-size:17px;font-weight:800;line-height:1.25;color:var(--ob-paper);}
+.ob-mathcard .t em{color:var(--ob-brass);font-style:normal;}
+.ob-mathcard .s{color:var(--ob-mute);font-size:11.5px;margin-top:5px;}
 
 /* FRAME 5 — THE MONEY (tech only) */
 .ob-money-stage{flex:1;display:flex;flex-direction:column;gap:11px;padding-top:6px;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -5601,11 +5626,13 @@ async function goCheckout(){
 var OB_I18N={
   en:{
     who:{k:'BEFORE WE START',l1:'FIRST —',l2:'WHO ARE YOU?',line:"Mike works differently depending on who's holding the phone. Pick your side and he sets himself up for you.",techT:"I'm a tech",techS:'Diagnostics, part calls, wiring diagrams, and the words that close the job.',homeT:"I'm a homeowner",homeS:"Plain English on what's wrong, whether it's safe, and what to ask whoever comes out.",hint:'SELECT ONE TO CONTINUE',voice:"First — who am I talking to? I work differently depending on who's holding the phone. Are you a tech, or a homeowner?"},
-    cold:{pre:'CONNECTING YOU TO',l1:'25 YEARS',l2:'ON EVERY',l3:'SYSTEM.',sub:'A master tech who picks up every time — <b>text him free right now.</b> Calling and FaceTime come with the free 14-day trial — no card.',cta:'Meet Mike →',voice:"25 years on every system. A master tech who picks up every time — text me free right now. Calling and FaceTime come with the free fourteen day trial — no card."},
+    cold:{pre:'MASTER HVAC TECH · 25 YEARS',l1:'THE BEST TECH',l2:'YOU KNOW,',l3:'IN YOUR POCKET.',sub:'Any system, any brand, any job — <b>text him free right now.</b> Calling and FaceTime come with the free 14-day trial — no card.',ways:[{i:'📞',l:'Call'},{i:'📹',l:'FaceTime'},{i:'💬',l:'Text'}],waysnote:'Talk to him hands-free — earbuds in, phone locked in your pocket.',cta:'Meet Mike →',voice:"The best tech you know, in your pocket. Any system, any brand, any job — text me free right now. Calling and FaceTime come with the free fourteen day trial — no card."},
     call:{k:'01 · CALL',l1:'HANDS FULL?',l2:'JUST CALL HIM.',line:"On the roof, in the truck, gloves on — <b>talk it through out loud.</b> He answers like the guy in the next bay.",st:'ON THE LINE',q:'“Before you condemn the board — what\'s your 24 volts at R to C? Read it to me.”',sig:'— Mike, hands-free',voice:"Hands full? Just call me. On the roof, in the truck, gloves on — talk it through out loud. Before you condemn the board, what's your 24 volts at R to C? Read it to me."},
     facetime:{k:'02 · FACETIME',l1:'POINT YOUR',l2:'PHONE AT IT.',line:"FaceTime him and <b>he sees what you see</b> — reads the nameplate, calls the part, helps you close it in front of the customer.",q:'“There it is — see the hairline on the igniter? Show the homeowner that. That\'s your sale.”',sig:'— Mike, on FaceTime',voice:"Point your phone at it. FaceTime me and I see what you see. There it is — see the hairline on the igniter? Show the homeowner that. That's your sale."},
-    text:{k:'03 · TEXT · EVERY DAY',l1:'THE GUY WHO',l2:'MAKES YOU BETTER.',line:"Quick questions, nameplate photos, the tough calls — <b>he remembers you</b> and grows you toward senior-tech money.",me:"Customer says it's short cycling. 3 ton Goodman. Worth replacing the cap or am I chasing it?",mike:"Check the cap first — read it with a meter, don't eyeball it. If it's in spec, you're looking at the contactor or a dirty condenser stacking head pressure. Don't part-swap on a guess.",grow:'<b>You\'ve logged 14 calls with Mike.</b><br>You\'re diagnosing 2× faster than week one.',voice:"The guy who makes you better. Quick questions, nameplate photos, the tough calls — I remember you and grow you toward senior-tech money."},
+    text:{k:'SEE HIM WORK · DIAGNOSE',l1:'HE DIAGNOSES IT',l2:'ON THE SPOT.',line:"Real answers from the actual manual — <b>cited to the page, never a guess.</b>",me:"My system keeps short cycling",mike:"Those numbers tell the story — you're <b>undercharged, low on refrigerant.</b> Look at your subcool: 1.6°F, basically zero. And superheat's 27.2°F, way high. High superheat + near-zero subcool = the system's starving. That's your short-cycle right there.",growic:'📖',grow:'<b>Backed by manuals across 74 brands — quoted to the page.</b><br>And he pulls the real warranty in seconds.',real:'↑ A real conversation with a tech using Mike today. Nothing scripted.',voice:"He diagnoses it on the spot. Real answers from the actual manual — cited to the page, never a guess. That exchange you're looking at is a real conversation with a tech using me today."},
     money:{k:'04 · THE MONEY',l1:'HE PAYS FOR',l2:'HIMSELF. TWICE.',line:"Any tool diagnoses. Mike catches the money you'd leave on the table — and hands you the words when they push back on price. <b>Done honest.</b>",mtag:'MIKE CAUGHT THIS',mctx:'JOB · CARRIER 80K · BLOWER REPAIR',catch:'“While you\'re in there — that filter rack\'s wide open and they\'ve got a kid with asthma. <b>Offer the media cabinet. That\'s an honest add, not a sell.</b>”',cl1:'YOUR TICKET',cl2:'WITH THE CATCH',gl:'SAME TRUCK ROLL',honest:'▲ <b>Real fix the customer actually needs</b> — not a part-swap on a guess.',ohd:'THEY PUSHED BACK · MIKE HAS YOUR LINE',cust:'“That price seems high — let me get another quote.”',say:'“Fair. Get your other quotes — I\'d want you to. Ask each of \'em if a <b>licensed tech is doing the work</b> and if the part\'s <b>OEM with a warranty</b>. Mine is, in writing, today. Cheaper usually means one of those is missing.”',osig:'— Mike, in your corner',voice:"He pays for himself, twice. Mike catches the money you'd leave on the table — and hands you the words when they push back on price. Done honest."},
+    edge:{k:'WHY NOT JUST CHATGPT?',l1:'BECAUSE IT GUESSES.',l2:'MIKE DOESN\'T.',line:"Ask a generic AI for a spec and it'll make one up — confident, and wrong. <b>That's a callback.</b>",badme:"What's the charge on a Goodman GSX16 in a 3-ton?",badwho:'CHATGPT',bad:'Factory charge is about 6 lbs 4 oz of R-410A.',badflag:'← confidently made up',goodme:'Age of this system? [photo of the data plate]',good:"That's a Trane variable-speed air handler. Plate read: serial 182810YT3V — Trane's format puts year/week up front. <b>18 = 2018, 28 = 28th week</b>, so it was built about July 2018. Makes it ~8 years old.",real:'↑ A real tech showed Mike the plate. He read it — no guessing.',voice:"Why not just ChatGPT? Because it guesses — and I don't. I read the real plate or the real manual, or I say read it to me. I never fake a number."},
+    grow:{k:'EVERYTHING ELSE',l1:'AND HE GROWS',l2:'WITH YOU.',line:"Not a chatbot — <b>a partner that gets better every job.</b>",rows:[{i:'📸',t:'Show him the unit',s:'Point your camera at the nameplate or wiring — he reads it and walks you through it.'},{i:'🧠',t:'Remembers you',s:'Your brands, your area, the last job — picks up where you left off, like a partner.'},{i:'🔌',t:'Works with no signal',soon:1,s:"Attic, basement, out in the sticks — Mike's still there when the bars aren't."}],matht:'One callback he saves you = <em>6 months of Mike.</em>',maths:'A callback costs you a whole service call (~$650). Stop one and he\'s paid for himself.',voice:"And I grow with you. Show me the unit with your camera, I remember you job to job, and soon I'll work with no signal at all. One callback I save you pays for six months of me."},
     magic:{k:'YOUR FIRST CALL',h1a:'ASK MIKE',h1b:'ONE THING.',st:'READY · 25 YRS ON EVERY SYSTEM',free:'FREE TASTE',me:'R-410A system, 12° subcool, low suction. What am I looking at?',mike:'12° subcool with low suction? You\'re likely <b>overcharged with a restriction</b> downstream — check the TXV bulb and your liquid line temp first. Tell me the line temps and I\'ll walk you to it…',chip1:'What part do I need?',chip2:'Read me the fault code',chip3:'Send a nameplate photo',ph:'Tell Mike what you\'re working on…',gate:'First answer\'s on the house · <b>Create your account to keep Mike on speed-dial</b>',cta:'Start →',voice:"Ask me one thing. First answer's on the house — tell me what you're working on."}
   },
   homeEn:{
@@ -5750,7 +5777,12 @@ function obProse(pack,type){
 // sequence as ending in `magic` the whole time. Putting it back.
 //
 // It goes LAST on purpose: he has to see it work before the ask is worth making.
-var OB_FRAMES_TECH=['who','cold','text','money','magic'];
+// 2026-10-01 (Brandon-approved 09-30 deck): the tech path is the five approved pages —
+// hero (cold) → real diagnose (text) → the money (money) → why-not-ChatGPT (edge) →
+// grows-with-you (grow) — and still CLOSES on the live free-taste (magic), because the
+// funnel data (677 visitors, 1 signup) proved a stranger has to SEE Mike answer before
+// the ask is worth making. edge/grow are EN-only prose; obProse falls back for other langs.
+var OB_FRAMES_TECH=['who','cold','text','money','edge','grow','magic'];
 var OB_FRAMES_HOME=['who','cold','talkedaround','tour','magic'];
 function obFrames(){
   var seq=(obRole()==='homeowner')?OB_FRAMES_HOME.slice():OB_FRAMES_TECH.slice();
@@ -5845,10 +5877,23 @@ function obFrameHTML(type,p){
   }
   if(type==='cold'){
     var c=p.cold;
+    // Approved deck (2026-09-30): page 1 SHOWS the three ways to reach Mike. This does not
+    // reopen the 08-29 "text only" decision — the sub still sells text-free-now and frames
+    // call/FaceTime as trial features, so nothing here promises a door a cold visitor can't open.
+    var ways='';
+    if(c.ways&&c.ways.length){
+      ways='<div class="ob-ways">';
+      for(var wi=0;wi<c.ways.length;wi++){
+        ways+='<div class="ob-way"><div class="i">'+obEsc(c.ways[wi].i)+'</div><div class="l">'+obEsc(c.ways[wi].l)+'</div></div>';
+      }
+      ways+='</div>';
+      if(c.waysnote)ways+='<div class="ob-waysnote">'+obEsc(c.waysnote)+'</div>';
+    }
     return '<div class="ob-cold">'
       +'<div class="ob-preline"><span class="dot"></span>'+obEsc(c.pre)+'</div>'
       +'<h1 class="ob-h1"><span class="l1">'+obEsc(c.l1)+'</span><span class="l2">'+obEsc(c.l2)+'</span><span class="l3">'+obEsc(c.l3)+'</span></h1>'
       +'<p class="ob-sub">'+obEsc(c.sub)+'</p>'
+      +ways
     +'</div>';
   }
   if(type==='call'||type==='talkedaround'){
@@ -5896,8 +5941,9 @@ function obFrameHTML(type,p){
       +'<div class="ob-stage"><div class="ob-card ob-thread">'
         +'<div class="ob-bubble ob-me">'+obEsc(c.me)+'</div>'
         +'<div class="ob-bubble ob-mike"><div class="who">MIKE · 25 YRS</div>'+obEsc(c.mike)+'</div>'
-        +'<div class="ob-grow"><span class="ic">📈</span><span class="tx">'+obEsc(c.grow)+'</span></div>'
-      +'</div></div>';
+        +'<div class="ob-grow"><span class="ic">'+obEsc(c.growic||'📈')+'</span><span class="tx">'+obEsc(c.grow)+'</span></div>'
+      +'</div></div>'
+      +(c.real?'<div class="ob-exreal">'+obEsc(c.real)+'</div>':'');
   }
   if(type==='money'){
     // TECH-ONLY frame (guardrail). $ figures are language-neutral constants here.
@@ -5922,6 +5968,38 @@ function obFrameHTML(type,p){
           +'<span class="ob-sig">'+obEsc(c.osig)+'</span>'
         +'</div>'
       +'</div>';
+  }
+  if(type==='edge'){
+    // Approved deck page 4 — why Mike, not a generic AI. The honesty gate IS the pitch:
+    // the bad bubble is illustrative of generic-AI spec-guessing; the good one is a real
+    // anonymized exchange (Trane serial decode). NEVER swap in content that fakes a cite.
+    var c=obProse(p,'edge');
+    return '<div class="ob-kicker" style="color:var(--ob-rust)">'+obEsc(c.k)+'</div>'
+      +'<h1 class="ob-h1"><span class="l1" style="color:var(--ob-rust)">'+obEsc(c.l1)+'</span><span class="l2" style="color:var(--ob-teal)">'+obEsc(c.l2)+'</span></h1>'
+      +'<p class="ob-line">'+obEsc(c.line)+'</p>'
+      +'<div class="ob-stage"><div class="ob-card ob-thread" style="border-color:rgba(199,85,59,.3)">'
+        +'<div class="ob-bubble ob-me">'+obEsc(c.badme)+'</div>'
+        +'<div class="ob-bubble ob-mike ob-edge-bad"><div class="who">'+obEsc(c.badwho)+'</div>'+obEsc(c.bad)+' <span class="ob-edge-flag">'+obEsc(c.badflag)+'</span></div>'
+      +'</div></div>'
+      +'<div class="ob-stage" style="margin-top:10px"><div class="ob-card ob-thread">'
+        +'<div class="ob-bubble ob-me">'+obEsc(c.goodme)+'</div>'
+        +'<div class="ob-bubble ob-mike"><div class="who">MIKE · 25 YRS</div>'+obEsc(c.good)+'</div>'
+      +'</div></div>'
+      +(c.real?'<div class="ob-exreal">'+obEsc(c.real)+'</div>':'');
+  }
+  if(type==='grow'){
+    // Approved deck page 5 — camera, memory, offline(SOON) + the callback math.
+    var c=obProse(p,'grow');
+    var rows='';
+    for(var gi=0;gi<(c.rows||[]).length;gi++){
+      var r=c.rows[gi];
+      rows+='<div class="ob-row2"><div class="i">'+obEsc(r.i)+'</div><div><h3>'+obEsc(r.t)+(r.soon?' <span class="soon">SOON</span>':'')+'</h3><p>'+obEsc(r.s)+'</p></div></div>';
+    }
+    return '<div class="ob-kicker" style="color:var(--ob-brass)">'+obEsc(c.k)+'</div>'
+      +'<h1 class="ob-h1"><span class="l1">'+obEsc(c.l1)+'</span><span class="l2" style="color:var(--ob-brass)">'+obEsc(c.l2)+'</span></h1>'
+      +'<p class="ob-line">'+obEsc(c.line)+'</p>'
+      +'<div class="ob-rows2">'+rows+'</div>'
+      +'<div class="ob-mathcard"><div class="t">'+obEsc(c.matht)+'</div><div class="s">'+obEsc(c.maths)+'</div></div>';
   }
   if(type==='magic'){
     var c=p.magic;var isHome=!!(currentUser&&currentUser.role==='homeowner');

@@ -3083,6 +3083,25 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       || /5[- ]?flash[^.]{0,90}(flame|gas|no call|thermostat (is )?off|keeps? running)/i.test(_lastUser)) {
     _safetyLead = 'SAFETY FIRST — shut the gas off at the appliance shutoff valve right now. A burner staying lit with no call for heat means the gas valve is stuck open; kill the gas before you diagnose anything else.';
   }
+  // (A2) GAS ODOR / SUSPECTED GAS LEAK — the full utility protocol, deterministic.
+  // 2026-10-02 exam: gas-smell scenarios had NO hardcoded guard (only CO ppm and the
+  // stuck-open valve were), and every graded gas scenario dropped protocol steps — the
+  // 300-ft standoff and the escalation path most often. Mike's instinct (evacuate, no
+  // switches, call from outside) was consistently right; the missing tail is exactly
+  // what a deterministic lead guarantees. Placed after (A) so later, worse leads
+  // (ambient-CO evacuation, person down) still override it.
+  const _gasOdor =
+    /(smell|smells?|odor|odour|smelling|stink|reek)[^.]{0,45}\b(gas|rotten egg|sulfur|sulphur|mercaptan)\b/i.test(_lastUser)
+    || /\b(gas)\s*(smell|odor|odour|leak)\b/i.test(_lastUser)
+    || /\brotten[- ]egg/i.test(_lastUser)
+    || /(hiss|hissing)[^.]{0,35}(gas (line|valve|meter|pipe)|flex connector|at the (meter|valve))/i.test(_lastUser)
+    || /(combustible|gas)\s*(detector|monitor)[^.]{0,30}(read|going off|alarm|above zero|lit up)/i.test(_lastUser);
+  // Grade it so a tech DESCRIBING a finished repair ("found the leak, fixed it, no more
+  // gas smell") doesn't trigger a full evacuation — past-tense/resolved wording skips it.
+  const _gasResolved = /(fixed|repaired|replaced|re-?lit|no (more|longer) (smell|odor|leak)|smell (is )?gone|after (the|my) repair)/i.test(_lastUser);
+  if (_gasOdor && !_gasResolved) {
+    _safetyLead = 'SAFETY FIRST — treat this as a live gas leak. Get every occupant out now, you included — no light switches, no phones, no doorbells, nothing electrical inside on the way out. Shut the gas at the meter ONLY if you can reach it from outside without going back in. Get everyone at least 300 feet from the building, call the gas utility\'s emergency line from out there (911 too if the odor is strong or anyone feels sick), and nobody re-enters until the utility gives the all-clear. Find-and-fix comes after the all-clear, not before.';
+  }
   // ── CO NUMBER PARSING ────────────────────────────────────────────────────────────────
   // The old pattern was (\d{3,4}) — three or four digits. Against "10000 ppm air free" it
   // captured "0000" (parseInt 0) and against "1,200 ppm air free" it captured "200", so the
@@ -3234,6 +3253,19 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       && /(bulg|swollen|swell|leak|fail|bad|blown|burst|rupture|replace|chang|swap|test|check|touch|discharg|pull|remov|leave it|leave for now|leave that|still good|how do i)/i.test(_lastUser)) {
     _capacitorWarn = 'SAFETY — a run or start capacitor holds a lethal charge even with the power off. Kill the disconnect AND the breaker, then discharge the capacitor (bleed it across a ~20k ohm resistor across each terminal pair — never short the terminals with a screwdriver, which arcs and can injure) before you touch it or test it. A bulging or swollen cap has already failed and is never safe to leave running -- it can leak, rupture, or start a fire, so it comes out, it does not stay in.';
   }
+  // (D5-D8) PROCEDURAL-SAFETY RISK TOPICS — the 2026-10-02 exam's single biggest finding:
+  // 170 graded answers had the right diagnosis with a mandatory call-out missing. The miss
+  // almost always lives in MIKE'S REPLY (he volunteers "pull the board and check the
+  // thermistor" with no power-off), not in the tech's question — so the prompt side here
+  // only flags the TOPIC to force the non-stream path (streamed deltas can't be retracted,
+  // same reason as _capDischargeRisk), and the actual check runs on outText at the tail
+  // stage below. Topic triggers are deliberately broad; the output-side checks are what
+  // decide whether anything is appended.
+  const _lotoRisk = /(control board|circuit board|\bpcb\b|board|panel|terminal|connector|thermistor|sensor|contactor|wiring|\bohm\b|24v|240v|low[- ]voltage|\bvoltage\b|fault code|error code|flash code|\bled\b|communication (error|fault)|comm(s)? (error|fault))/i.test(_lastUser);
+  const _brazeRisk = /(braz|solder|sweat|torch|reversing valve|filter[- ]?drier|\btxv\b|compressor (swap|replac)|lineset|suction line|liquid line)/i.test(_lastUser);
+  const _leakRisk = /(low (on )?(charge|refrigerant|freon)|undercharg|add (refrigerant|charge|freon|a pound|a couple)|top[- ]?(it[- ])?off|weigh in|(410a?|454b|r-?22|r-?32)\b)/i.test(_lastUser);
+  const _verifyRisk = /(furnace|boiler|water heater|burner|gas valve|igniter|ignitor|inducer|heat exchanger|flue|vent)[^.]{0,60}(replac|repair|clean|re-?light|relit|install|swap|back (on|in service)|fix)/i.test(_lastUser)
+      || /(re-?light|relit|back in service|restor(e|ing) (service|gas))/i.test(_lastUser);
   const _homeownerFramed = req.body.homeowner === true ||
     /\bi'?m a homeowner\b|\bas a homeowner\b|\bhomeowner here\b|(my contractor|the repair (guy|tech|man)|a contractor|the tech)\s+(quoted|said|is quoting|gave me|quoting me)|should i (just )?replace (it|my|the|this)|is (that|this|\$?\d[\d,]*) (a )?fair (price|quote)|gave me a quote/i.test(_lastUser);
   // Wiring/schematic questions get a non-streamed reply so a retrieved diagram
@@ -3256,7 +3288,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // screwdriver strip. Deltas already sent cannot be retracted, so forcing non-stream is
   // the only way to guarantee the strip runs.
   const _coverageIntent = /\b(warrant(y|ies|ied)|covered|coverage|registered|registration)\b|still\s+under\s+\w+|parts?\s+(and\s+labou?r\s+)?cover/i.test(_lastUser);
-  const _forceNonStream = !!_safetyLead || !!_inverterWarn || !!_capacitorWarn || _homeownerFramed || _wiringDiagramIntent || _capDischargeRisk || _coverageIntent;
+  const _forceNonStream = !!_safetyLead || !!_inverterWarn || !!_capacitorWarn || _lotoRisk || _brazeRisk || _leakRisk || _verifyRisk || _homeownerFramed || _wiringDiagramIntent || _capDischargeRisk || _coverageIntent;
 
   globalActive++;
   const controller = new AbortController();
@@ -3812,7 +3844,43 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         const _saidNotScrewdriver = /never\s+short|not\s+with\s+a\s+screwdriver|don'?t\s+short/i.test(outText);
         if (_saidPowerOff && _saidBleed && _saidNotScrewdriver) _capTail = '';
       }
-      const _tail = [_capTail, _inverterWarn].filter(Boolean);
+      // (D5-D8) OUTPUT-SIDE procedural-safety checks (2026-10-03, from the exam findings).
+      // Fire when MIKE'S OWN REPLY directs a hazardous procedure without its mandatory
+      // step. Topic-gated by the _xxxRisk flags (which also forced non-stream so this code
+      // is guaranteed to run). Each fails toward speaking: suppressed only when his prose
+      // demonstrably covers the step.
+      let _lotoTail = '';
+      if (_lotoRisk
+          && /(open|pull|remove|behind|reseat|unplug|swap|replace|land|tighten|jumper|check|ohm|test|measure|verify|inspect)[^.!?\n]{0,60}(control board|circuit board|\bpcb\b|board|panel|terminal(s| block)?|connector|thermistor|\bsensor\b|probe|contactor|wire|wiring)/i.test(outText)
+          && !/((kill|cut|shut|turn|pull)[^.!?\n]{0,30}(disconnect|breaker|power)|power (off|down|killed)|de-?energiz|lock[- ]?out|loto|verify (it'?s |it is )?dead|confirm (it'?s |it is )?dead)/i.test(outText)) {
+        _lotoTail = 'SAFETY — before any of that panel or terminal work: kill the disconnect AND the breaker, verify dead with your meter, and lock it out if anyone else could re-energize it while your hands are in there.';
+      }
+      let _brazeTail = '';
+      if (_brazeRisk
+          && /(braz|sweat|torch|solder)[^.!?\n]{0,70}(line|lineset|valve|coil|compressor|drier|fitting|joint|stub|pipe|it in|it out)/i.test(outText)
+          && !/nitrogen/i.test(outText)) {
+        _brazeTail = 'SAFETY — recover the charge to zero before the torch comes out, and flow nitrogen through the lines while you braze. Brazing without nitrogen cooks scale into the lineset and kills TXVs and compressors downstream; heating a line under pressure can blow it open in your face.';
+      }
+      let _leakTail = '';
+      if (_leakRisk
+          && /(add|weigh in|top[- ]?(it[- ])?off|charge (it|the system)|put[^.!?\n]{0,15}(refrigerant|freon|pound|lb))/i.test(outText)
+          && !/(leak[- ]?(search|check|test|detect|hunt)|find (the|that) leak|locate the leak|(repair|fix)[^.!?\n]{0,25}leak)/i.test(outText)) {
+        _leakTail = 'One more thing — if it\'s low, it leaked. Leak-search and repair BEFORE refrigerant goes in: topping off a leaking system without finding the leak is an EPA 608 problem and a guaranteed callback. Note the leak location and the fix on the ticket.';
+      }
+      let _verifyTail = '';
+      if (_verifyRisk
+          && /(fire (it|the\b[^.!?\n]{0,25}) (back )?up|re-?light|relight|put (it|the\b[^.!?\n]{0,25}) back (in service|together|online)|button (it|everything) (back )?up|restore (gas|service)|should be good to go|you'?re (all )?set)/i.test(outText)
+          && /(furnace|boiler|water heater|burner|gas|combustion|flue|vent)/i.test(outText)
+          && !/(combustion analy|analyzer)/i.test(outText)) {
+        _verifyTail = 'Before you leave: combustion analysis with it firing, CO at the supply registers (zero tolerance in the living space), bubble-test every gas connection you touched — and write the as-found and as-left readings on the work order. The paper trail is part of the job.';
+      }
+      // Documentation rider: whenever a hard safety lead fired, the paper trail is part of
+      // the protocol (exam finding: document-on-work-order was the most-missed tail step).
+      let _docTail = '';
+      if (_safetyLead && !_verifyTail && !/(work order|document|write (it|that|this) (up|down)|on the ticket|paper trail)/i.test(outText)) {
+        _docTail = 'And when it\'s handled: document what you found, what you measured, and what you did on the work order. On safety calls the paper trail is part of the job.';
+      }
+      const _tail = [_capTail, _inverterWarn, _lotoTail, _brazeTail, _leakTail, _verifyTail, _docTail].filter(Boolean);
       if (_tail.length) outText = outText + '\n\n' + _tail.join('\n\n');
     } catch (_) {}
 

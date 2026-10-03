@@ -2889,14 +2889,14 @@ async function retrieveManualContext(userText) {
     } else {
       chunks = chunks.slice(0, 6);
     }
-    const text = chunks.map(c => `[Source: ${c.doc_title}${c.page_num ? ', p.' + c.page_num : ''}]\n${c.chunk_text}`).join('\n\n---\n\n');
-    // Phase 2: surface a wiring-diagram image ONLY when its manual is genuinely for the MODEL the
-    // tech asked about. A close-but-wrong-model/technology diagram (an inverter heat-pump print for a
-    // single-stage or two-stage AC) is a miswire risk a tech could trust off the card (staging field-
-    // test 2026-07-17). Same-doc gating wasn't enough — retrieval can rank a wrong-model manual #1. So
-    // match the query's model token against the diagram's doc title (>=4-char family prefix, e.g.
-    // GSXC / GSXN / GSZC are treated as DIFFERENT). No model in the query, or no title match -> show
-    // NO diagram and let Mike describe the wiring in text (safe). No cross-doc pool fallback.
+    // Model-family gate for TEXT chunks (2026-10-03, exam class-2 fix). The baseline run
+    // verified 9 answers where retrieval fed same-brand/WRONG-FAMILY manuals (a commercial
+    // DVM S VRF manual for a residential ductless; VRV IV for an FTXS wall-mount) and Mike
+    // asserted terminals that don't exist on the tech's unit, undisclosed. Same principle
+    // as the diagram gate below: when the query names a model and some chunks' doc titles
+    // match that family, DROP the non-matching chunks. When NOTHING matches the family,
+    // keep the pool (recall matters) but flag it so the prompt forces Mike to disclose the
+    // platform mismatch instead of silently cross-applying it.
     const _qKey = ((String(userText).toUpperCase().match(/\b([A-Z]{2,5}\d{1,3}[A-Z0-9]{0,4})\b/) || [])[1] || '').replace(/[^A-Z0-9]/g, '');
     const _modelMatch = (title) => {
       if (_qKey.length < 4) return false;
@@ -2904,6 +2904,26 @@ async function retrieveManualContext(userText) {
       for (let n = _qKey.length; n >= 4; n--) if (T.includes(_qKey.slice(0, n))) return true;
       return false;
     };
+    let _familyMismatch = false;
+    if (_qKey.length >= 4) {
+      const _matching = chunks.filter(c => _modelMatch(c.doc_title));
+      if (_matching.length) chunks = _matching;
+      else _familyMismatch = true;
+    }
+    let text = chunks.map(c => `[Source: ${c.doc_title}${c.page_num ? ', p.' + c.page_num : ''}]\n${c.chunk_text}`).join('\n\n---\n\n');
+    if (_familyMismatch) {
+      text = 'PLATFORM WARNING: none of these excerpts are from a manual matching the model the tech named ("' + _qKey + '"). '
+        + 'They are the closest documents in the library and may describe a DIFFERENT product family (e.g. commercial VRF vs residential ductless) '
+        + 'with different boards, terminals, and fault tables. If you use anything from them, SAY which product the manual is for and that it may not '
+        + 'apply to this exact unit — and prefer asking for the nameplate over cross-applying a wrong-family procedure.\n\n' + text;
+    }
+    // Phase 2: surface a wiring-diagram image ONLY when its manual is genuinely for the MODEL the
+    // tech asked about. A close-but-wrong-model/technology diagram (an inverter heat-pump print for a
+    // single-stage or two-stage AC) is a miswire risk a tech could trust off the card (staging field-
+    // test 2026-07-17). Same-doc gating wasn't enough — retrieval can rank a wrong-model manual #1. So
+    // match the query's model token against the diagram's doc title (>=4-char family prefix, e.g.
+    // GSXC / GSXN / GSZC are treated as DIFFERENT). No model in the query, or no title match -> show
+    // NO diagram and let Mike describe the wiring in text (safe). No cross-doc pool fallback.
     const _seen = new Set(); const diagrams = [];
     for (const c of chunks) {
       if (!c || !c.diagram_image_url || !_modelMatch(c.doc_title)) continue;
@@ -3321,6 +3341,9 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       if (_mc && _mc.text) {
         _ragContext = '\n\n=== MANUFACTURER SERVICE MANUAL EXCERPTS (authoritative) ===\n'
           + 'Answer fault-code, wiring, and spec questions ONLY from these excerpts and cite the [Source: ...] tag in your reply. '
+          + 'CITATION RULE (non-negotiable): EVERY specific number, spec value, resistance range, pressure, fault-code meaning, or threshold you '
+          + 'take from an excerpt carries its [Source: ...] tag inline, in the same sentence — a spec sentence with no tag reads as a guess and '
+          + 'breaks the tech\'s trust. Also NAME the product family the manual covers when you cite it; if it is not exactly the tech\'s unit, say so. '
           + 'If the answer is not in these excerpts, say so plainly and use web search.\n\n'
           + _mc.text + '\n=== END MANUAL EXCERPTS ===\n';
         // When the manual and Mike's instinct disagree, the manual wins — but say so out

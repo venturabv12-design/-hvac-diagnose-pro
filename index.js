@@ -3193,9 +3193,19 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // because that is the one that SUPPRESSES a warning.
   const _coSignal = _CO_SIG.test(_lastUser);
   const _spaceSignal = _SPACE_SIG.test(_lastUser);
+  // (B3) STANDARDS TALK IS NOT A READING (2026-10-04, found by the exam re-test).
+  // A tech ASKING about CO thresholds ("OSHA 50 ppm TWA, NIOSH 200 ppm ceiling, EPA 9 ppm
+  // 8-hour") got "STOP AND EVACUATE — 200 ppm ambient CO": the guard took the worst number
+  // in a standards LIST as a live reading and ordered the evacuation of a building nobody
+  // measured. A clause that cites a standard/limit with no measurement language is
+  // knowledge, not telemetry — skip it. A clause carrying BOTH ("reading 200 ppm, over
+  // the OSHA limit") keeps its measurement meaning, so real readings still evacuate.
+  const _STD_CTX = /\bosha\b|\bniosh\b|ashrae|\bepa\b|\bwho\b|\bpel\b|\btwa\b|\bstel\b|ceiling|ul ?2034|\bansi\b|\bbpi\b|standard|threshold|\blimit\b|guideline|allowable|exposure (limit|level)|chronic exposure|long[- ]term exposure|do[- ]?not[- ]?restore|alarm (point|setpoint|set ?point|must (sound|alarm|activate))|set at|code (says|requires|allows)|max(imum)?\s+(of\s+)?\d|difference between/i;
+  const _MEAS_CTX = /read(ing|s)?\b|measur|metered?|test(ed|ing)? at|\bgetting\b|\bseeing\b|\bshowing\b|\bshows\b|pulling\b|my (meter|monitor|detector|analyzer)|(meter|monitor|detector|analyzer)\s+(is|says|reads|shows|went)|went off|alarming|i'?m at|sitting at|holding at/i;
   let _amb = 0;
   for (const _cl of _lastUser.split(/[.;,]|\bbut\b|\bhowever\b|\bwhile\b/i)) {
     if (_FLUE_CTX.test(_cl)) continue;                       // rule (B) owns flue readings
+    if (_STD_CTX.test(_cl) && !_MEAS_CTX.test(_cl)) continue; // (B3) cited standard, not a reading
     if (!(_CO_SIG.test(_cl) || _SPACE_SIG.test(_cl) || _coSignal || _spaceSignal)) continue;
     const _clRe = new RegExp(_PPM + '\\s*ppm', 'gi');
     let _hit;
@@ -3256,7 +3266,16 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     || /\b(unconscious|passed out|unresponsive|barely conscious|having a seizure|convulsing|won'?t wake up)\b/i.test(_lastUser)
     || /(confused|slurring|disorient|dizzy|nause|headache|throwing up|vomit)[^.]{0,45}(possible |suspect|maybe |might be )?(co\b|carbon monoxide|poison)/i.test(_lastUser)
     || /(co\b|carbon monoxide)[^.]{0,45}(confused|slurring|disorient|unconscious|passed out|vomit|barely|can'?t stay awake|drowsy)/i.test(_lastUser);
-  if (_personDown) {
+  // (C4b) ELECTRICAL-SHOCK VICTIM ≠ CO VICTIM (2026-10-04, found by the exam re-test).
+  // The person-down lead assumed carbon monoxide for EVERY downed person. On "co-worker
+  // received electrical shock, may still be in contact with energized equipment" it opened
+  // with "get the person out into fresh air" — grab the victim — BEFORE the body's
+  // kill-the-power step. Rescuer contact with an energized victim is how one casualty
+  // becomes two, so shock context owns the lead: power off before touch.
+  const _shockVictim = /electrocut|electric(al)?[- ]?(shock|burn|contact)|\bshocked\b|(received?|got|getting|took) a shock|still in contact|in contact with[^.]{0,40}(energized|live|equipment|conductor|wire|panel)|(touch|grabb|holding)[^.]{0,30}(live|hot|energized)/i.test(_lastUser);
+  if (_personDown && _shockVictim) {
+    _safetyLead = 'DO NOT TOUCH THEM — kill the power FIRST. If they could still be in contact with the source, de-energize before anything else: breaker, disconnect, pull the meter. If you can\'t kill power fast, separate them from the source with something dry and non-conductive — wood, fiberglass, a rubber mat — never your bare hands. Call 911 the moment they\'re clear, or have someone else call while you kill power. Then, and only then: not breathing means CPR now, and send someone for an AED. Electrical burns at the contact points mean internal injury — they go to the hospital even if they say they feel fine. You\'re the tech, not the medic: power off, 911, help until EMS arrives.';
+  } else if (_personDown) {
     _safetyLead = 'CALL 911 IMMEDIATELY — before anything else. If you can do it safely, get the person out into fresh air, then call 911 and tell them suspected carbon monoxide poisoning. Do NOT stop to diagnose the equipment — this is a medical emergency and life safety comes first. You are the tech here, not the medic: your job right now is to get 911 moving and get everyone into fresh air. Don\'t re-enter a space you suspect is full of CO without the fire department and proper protection.';
   }
   // (D) Inverter / variable-speed fault work = lethal stored DC.

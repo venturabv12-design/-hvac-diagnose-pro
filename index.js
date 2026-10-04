@@ -3200,10 +3200,13 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // measured. A clause that cites a standard/limit with no measurement language is
   // knowledge, not telemetry — skip it. A clause carrying BOTH ("reading 200 ppm, over
   // the OSHA limit") keeps its measurement meaning, so real readings still evacuate.
-  const _STD_CTX = /\bosha\b|\bniosh\b|ashrae|\bepa\b|\bwho\b|\bpel\b|\btwa\b|\bstel\b|ceiling|ul ?2034|\bansi\b|\bbpi\b|standard|threshold|\blimit\b|guideline|allowable|exposure (limit|level)|chronic exposure|long[- ]term exposure|do[- ]?not[- ]?restore|alarm (point|setpoint|set ?point|must (sound|alarm|activate))|set at|code (says|requires|allows)|max(imum)?\s+(of\s+)?\d|difference between/i;
+  const _STD_CTX = /\bosha\b|\bniosh\b|ashrae|\bepa\b|\bwho\b|\bpel\b|\btwa\b|\bstel\b|ceiling|ul ?2034|\bansi\b|\bbpi\b|standard|threshold|\blimit\b|guideline|allowable|exposure (limit|level)|chronic exposure|long[- ]term exposure|\bidlh\b|\brel\b|\btlv\b|acgih|\bpossibl\w*|\bfor\s+\d+\s*[\u2013-]\s*\d+\s*min|do[- ]?not[- ]?restore|alarm (point|setpoint|set ?point|must (sound|alarm|activate))|set at|code (says|requires|allows)|max(imum)?\s+(of\s+)?\d|difference between/i;
   const _MEAS_CTX = /read(ing|s)?\b|measur|metered?|test(ed|ing)? at|\bgetting\b|\bseeing\b|\bshowing\b|\bshows\b|pulling\b|my (meter|monitor|detector|analyzer)|(meter|monitor|detector|analyzer)\s+(is|says|reads|shows|went)|went off|alarming|i'?m at|sitting at|holding at/i;
   let _amb = 0;
-  for (const _cl of _lastUser.split(/[.;,]|\bbut\b|\bhowever\b|\bwhile\b/i)) {
+  // thousands separators first: the clause split cuts on commas, so "NIOSH IDLH: 1,200 ppm"
+  // used to shed a bare "200 ppm" clause with no standards word left to suppress it (2026-10-04).
+  const _ambScan = _lastUser.replace(/(\d),(?=\d{3}\b)/g, '$1');
+  for (const _cl of _ambScan.split(/[.;,]|\bbut\b|\bhowever\b|\bwhile\b/i)) {
     if (_FLUE_CTX.test(_cl)) continue;                       // rule (B) owns flue readings
     if (_STD_CTX.test(_cl) && !_MEAS_CTX.test(_cl)) continue; // (B3) cited standard, not a reading
     if (!(_CO_SIG.test(_cl) || _SPACE_SIG.test(_cl) || _coSignal || _spaceSignal)) continue;
@@ -3224,6 +3227,17 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     } else if (_amb >= 9) {
       _safetyLead = 'SAFETY FIRST — ' + _amb + ' ppm ambient CO is detectable. Tell the occupant, ventilate, and find the source before you move on. If a permanently installed appliance is the suspect, it needs a qualified professional on it.';
     }
+  }
+  // (B4) CO ALARM ACTIVELY SOUNDING = evacuate on the ALARM fact (2026-10-04). Before this
+  // rule the only deterministic evacuation needed a NUMBER, so "CO alarm sounding, occupants
+  // home" either fabricated a reading out of the alarm's UL-2034 spec text ("400 ppm ambient
+  // CO" nobody measured) or fell through to model judgment. The alarm being in alarm IS the
+  // trigger; the honest lead carries no reading because none exists yet. A number-backed
+  // evacuation above outranks this one. Past-tense ("went off last week") stays model-side.
+  if (!/^(STOP AND EVACUATE|GET OUT NOW)/.test(_safetyLead)
+      && /(\bco\b|carbon monoxide)[ -]?(alarm|detector|monitor)[^.]{0,45}(sounding|going off|alarming|in alarm|activated|activation|triggered|just went off|keeps going off|won'?t stop)/i.test(_lastUser)
+      && !/(last (week|month|night|winter)|yesterday|days? ago|a while (ago|back)|went off (once|briefly|before)|had gone off|false alarm)/i.test(_lastUser)) {
+    _safetyLead = 'STOP AND EVACUATE — that CO alarm is doing its job, treat it as real. Everyone out of the building now, you included; call 911 or the gas utility\'s emergency line from OUTSIDE. Do not ventilate first and do not hunt for the source yet — air it out and you erase the evidence AND keep people breathing it while you look. Measure ambient CO at the door with YOUR meter before anyone re-enters, and find the source before that alarm gets written off as false.';
   }
   // (C5) OCCUPANT SYMPTOMS + a combustion appliance = treat it as CO until proven otherwise.
   // Symptoms are now an INDEPENDENT trigger. Previously "headache" only registered if a CO

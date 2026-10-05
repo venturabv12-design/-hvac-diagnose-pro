@@ -2897,25 +2897,110 @@ async function retrieveManualContext(userText) {
     // match that family, DROP the non-matching chunks. When NOTHING matches the family,
     // keep the pool (recall matters) but flag it so the prompt forces Mike to disclose the
     // platform mismatch instead of silently cross-applying it.
-    const _qKey = ((String(userText).toUpperCase().match(/\b([A-Z]{2,5}\d{1,3}[A-Z0-9]{0,4})\b/) || [])[1] || '').replace(/[^A-Z0-9]/g, '');
+    // HARDENED 2026-10-04: the staged re-test showed 13/65 answers still citing wrong-family
+    // manuals — now WEARING clean [Source:] tags that made them look authoritative. Three holes:
+    //   1. token extraction missed R96V-style ids (1-letter prefix) and hyphen compounds
+    //      (MSZ-FH12NA), and took only the FIRST token — fault-code-shaped tokens (P9, CH05,
+    //      A014 after "code:"), refrigerants (R454B) and ratings (SEER2, MERV13) now excluded;
+    //   2. word-named families (City Multi vs M-series, DVM S, VRV, ReliaTel vs Voyager) are
+    //      not model tokens — a curated family-name list plus a commercial-VRF-vs-residential-
+    //      ductless class check catch those (7 of the 13 leaks were VRF-on-ductless);
+    //   3. the mismatch policy was keep-and-ask-Mike-to-disclose — proven insufficient. The
+    //      mismatch now lives INSIDE every [Source:] tag so a clean-looking citation from a
+    //      wrong-family manual cannot exist, and the preamble forbids transferring its numbers.
+    const _NOT_MODELS = /^(R(11|12|13|22|23|32|113|114|123|125|134A?|170|290|404A|407[ACF]|410A|417A|422[BD]|427A|434A|438A|448A|449A|452B|454[ABC]|455A|466A|468A|500|502|507A?|513A|514A|600A?|717|718|744|1150|1233ZD|1234YF|1234ZE)|SEER\d*|HSPF\d*|EER\d*|AFUE\d*|MERV\d*|UL\d+|CO2?|A[123]L?|B[12]L?|PM\d+|BTUH?\d*|CFM\d*|PSIG?\d*|AWG\d*|LED\d*|DIP\d*|(CN|TB|TH|TP|SW|JP|PCB|CB|XT?|K)\d+[A-Z]?)$/;
+    const _CODE_CTX = /\b(code|codes|fault|error|flash|alarm|dtc|blink)\b[\s:*=\-\u2014("']*$/i;
+    const _qTokens = [];
+    {
+      const _up = String(userText).toUpperCase();
+      const _re = /\b([A-Z]{1,5}\d{1,3}[A-Z0-9]{0,4})(-[A-Z0-9]{1,8})?\b/g;
+      let _m;
+      while ((_m = _re.exec(_up))) {
+        if (_CODE_CTX.test(_up.slice(Math.max(0, _m.index - 26), _m.index))) continue;
+        const _cands = [_m[1]];
+        if (_m[2]) _cands.push((_m[1] + _m[2]).replace(/-/g, ''));
+        for (const _t of _cands) {
+          if (_t.length < 4 || _t.length > 12) continue;
+          if (_NOT_MODELS.test(_t)) continue;
+          if (!/[A-Z]/.test(_t) || !/\d/.test(_t)) continue;
+          if (!_qTokens.includes(_t)) _qTokens.push(_t);
+        }
+      }
+      // hyphenated families where the letters sit alone before the hyphen: MSZ-FH12NA
+      const _hy = /\b([A-Z]{2,5})-([A-Z0-9]{2,10})\b/g;
+      while ((_m = _hy.exec(_up))) {
+        const _t = (_m[1] + _m[2]).replace(/-/g, '');
+        if (_t.length >= 4 && _t.length <= 12 && /\d/.test(_t) && !_NOT_MODELS.test(_t) && !_qTokens.includes(_t)) _qTokens.push(_t);
+      }
+    }
     const _modelMatch = (title) => {
-      if (_qKey.length < 4) return false;
+      if (!_qTokens.length) return false;
       const T = String(title || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-      for (let n = _qKey.length; n >= 4; n--) if (T.includes(_qKey.slice(0, n))) return true;
+      for (const _t of _qTokens) for (let n = _t.length; n >= 4; n--) if (T.includes(_t.slice(0, n))) return true;
       return false;
     };
+    // Named product families + the one platform split that caused most leaks.
+    const _FAM_NAMES = ['city multi', 'pury', 'puhy', 'pumy', 'dvm s', 'multi v', 'vrv', 'airstage', 'reliatel', 'precedent', 'voyager', 'intellipak', 'connex'];
+    const _famsIn = (sLower) => _FAM_NAMES.filter(f => sLower.includes(f));
+    const _VRF_RE = /city multi|pur[ym]|puhy|\bvrv\b|\bvrf\b|multi[- ]?v\b|dvm[- ]?s|variable refrigerant|water[- ]?source vrf/i;
+    const _DUCTLESS_RE = /mini[- ]?split|ductless|wall[- ]?mount|\bmsz\b|\bmuz\b|\bmxz\b|\bmfz\b|\bftxs?\b|\brxs\b|\bctxs\b|\bm[- ]series\b|\bp[- ]series\b|single[- ]zone mini/i;
+    const _qLower = String(userText).toLowerCase();
+    const _qFams = _famsIn(_qLower);
+    const _qClass = _DUCTLESS_RE.test(_qLower) && !_VRF_RE.test(_qLower) ? 'ductless'
+      : _VRF_RE.test(_qLower) && !_DUCTLESS_RE.test(_qLower) ? 'vrf' : null;
+    // Reasons are prefixed with their kind: 'WRONG|' = provably a different family/platform
+    // than the tech's; 'UNCONF|' = a platform-specific manual that NOTHING in the tech's
+    // message confirms (brand fault code only, no model, no platform words). The second kind
+    // exists because most leaked answers came from exactly that shape — "Samsung E101" pulled
+    // the only Samsung manual in the library (commercial water-source VRF) and its fault
+    // table got stated as the tech's. Honest behavior is confirm-the-model-first.
+    const _chunkConflict = (c) => {
+      const _tl = String(c.doc_title || '').toLowerCase();
+      const _tf = _famsIn(_tl);
+      const _tClass = _VRF_RE.test(_tl) && !_DUCTLESS_RE.test(_tl) ? 'vrf' : _DUCTLESS_RE.test(_tl) && !_VRF_RE.test(_tl) ? 'ductless' : null;
+      if (_qFams.length && _tf.length && !_tf.some(f => _qFams.includes(f))) return 'WRONG|the ' + _tf[0].toUpperCase() + ' family, not the tech\'s';
+      if (_qClass && _tClass && _tClass !== _qClass) return 'WRONG|' + (_tClass === 'vrf' ? 'a commercial VRF platform; the tech is on residential ductless' : 'a residential ductless platform; the tech is on commercial VRF');
+      if ((_tClass || _tf.length) && !_modelMatch(c.doc_title) && !_tf.some(f => _qFams.includes(f)) && !(_tClass && _qClass === _tClass)) {
+        return 'UNCONF|the ' + (_tf[0] ? _tf[0].toUpperCase() : (_tClass === 'vrf' ? 'commercial VRF' : 'residential ductless')) + ' platform, and nothing in the tech\'s message confirms their unit is on it';
+      }
+      return null;
+    };
+    // Pass 1: drop class/family-conflicted chunks whenever anything clean remains.
+    const _conflicts = new Map(chunks.map(c => [c, _chunkConflict(c)]));
+    const _cleanPool = chunks.filter(c => !_conflicts.get(c));
+    let _poolConflictReason = null;
+    if (_cleanPool.length) chunks = _cleanPool;
+    else if (chunks.length && _conflicts.get(chunks[0])) _poolConflictReason = _conflicts.get(chunks[0]);
+    // Pass 2: model-token gate (matching-family chunks win outright, as before).
     let _familyMismatch = false;
-    if (_qKey.length >= 4) {
+    if (_qTokens.length) {
       const _matching = chunks.filter(c => _modelMatch(c.doc_title));
       if (_matching.length) chunks = _matching;
       else _familyMismatch = true;
     }
-    let text = chunks.map(c => `[Source: ${c.doc_title}${c.page_num ? ', p.' + c.page_num : ''}]\n${c.chunk_text}`).join('\n\n---\n\n');
-    if (_familyMismatch) {
-      text = 'PLATFORM WARNING: none of these excerpts are from a manual matching the model the tech named ("' + _qKey + '"). '
-        + 'They are the closest documents in the library and may describe a DIFFERENT product family (e.g. commercial VRF vs residential ductless) '
-        + 'with different boards, terminals, and fault tables. If you use anything from them, SAY which product the manual is for and that it may not '
-        + 'apply to this exact unit — and prefer asking for the nameplate over cross-applying a wrong-family procedure.\n\n' + text;
+    const _poisoned = _familyMismatch || _poolConflictReason;
+    const _mkTag = (c) => {
+      const _raw = _conflicts.get(c) || _poolConflictReason
+        || (_familyMismatch ? 'WRONG|no library manual matches the model the tech named (' + _qTokens.join('/') + ')' : '');
+      if (!_poisoned || !_raw) return '[Source: ' + c.doc_title + (c.page_num ? ', p.' + c.page_num : '') + ']';
+      const _kind = _raw.split('|')[0], _why = _raw.split('|').slice(1).join('|');
+      const _suffix = _kind === 'UNCONF'
+        ? ' — PLATFORM UNCONFIRMED: this manual covers ' + _why + '. Do not state its tables as this unit\'s until the model is confirmed'
+        : ' — WRONG PRODUCT FAMILY: this manual covers ' + _why + '. Its specs, terminal IDs, resistances and fault tables DO NOT apply to this tech\'s unit';
+      return '[Source: ' + c.doc_title + (c.page_num ? ', p.' + c.page_num : '') + _suffix + ']';
+    };
+    let text = chunks.map(c => `${_mkTag(c)}\n${c.chunk_text}`).join('\n\n---\n\n');
+    if (_poisoned) {
+      const _anyWrong = _familyMismatch || [..._conflicts.values()].some(v => v && v.startsWith('WRONG')) || (_poolConflictReason || '').startsWith('WRONG');
+      text = (_anyWrong
+        ? 'PLATFORM WARNING: none of these excerpts match the tech\'s actual equipment. Every excerpt below is tagged WRONG PRODUCT FAMILY. '
+          + 'You may use them ONLY for the generic shape of a procedure. You may NOT state any of their numeric specs, terminal IDs, resistance values, '
+          + 'pressures or fault-code meanings as applying to this tech\'s unit — not even with the citation. Say plainly that the exact manual is not in '
+          + 'the library, give the safe generic path, and ask for the nameplate/model so the right documentation can be pulled.'
+        : 'PLATFORM CHECK FIRST: the only matching documents are for a SPECIFIC platform and nothing in the tech\'s message confirms their unit is on it. '
+          + 'Before stating any fault-code meaning, terminal ID or spec from these excerpts as this unit\'s, ask which unit they\'re on (model or nameplate). '
+          + 'You may describe what the cited platform\'s manual says AS that platform\'s data, clearly labeled, while you confirm.')
+        + '\n\n' + text;
     }
     // Phase 2: surface a wiring-diagram image ONLY when its manual is genuinely for the MODEL the
     // tech asked about. A close-but-wrong-model/technology diagram (an inverter heat-pump print for a
@@ -3377,6 +3462,9 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
           + 'CITATION RULE (non-negotiable): EVERY specific number, spec value, resistance range, pressure, fault-code meaning, or threshold you '
           + 'take from an excerpt carries its [Source: ...] tag inline, in the same sentence — a spec sentence with no tag reads as a guess and '
           + 'breaks the tech\'s trust. Also NAME the product family the manual covers when you cite it; if it is not exactly the tech\'s unit, say so. '
+          + 'WRONG-FAMILY RULE: if an excerpt\'s [Source:] tag says WRONG PRODUCT FAMILY, you may NOT state its numbers, terminal IDs, resistances or '
+          + 'fault-code meanings as values for this tech\'s unit, with or without the citation. Say the exact manual is not in the library, give the '
+          + 'generic safe procedure, and ask for the nameplate/model number instead. '
           + 'If the answer is not in these excerpts, say so plainly and use web search.\n\n'
           + _mc.text + '\n=== END MANUAL EXCERPTS ===\n';
         // When the manual and Mike's instinct disagree, the manual wins — but say so out

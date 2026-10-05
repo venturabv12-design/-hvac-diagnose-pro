@@ -3204,7 +3204,14 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // Grade it so a tech DESCRIBING a finished repair ("found the leak, fixed it, no more
   // gas smell") doesn't trigger a full evacuation — past-tense/resolved wording skips it.
   const _gasResolved = /(fixed|repaired|replaced|re-?lit|no (more|longer) (smell|odor|leak)|smell (is )?gone|after (the|my) repair)/i.test(_lastUser);
-  if (_gasOdor && !_gasResolved) {
+  // (A2b) REFRIGERANT gas is not FUEL gas (2026-10-05, run-2 exam: the full natural-gas
+  // evacuation fired on an LG CH38 "refrigerant gas leak detected" fault code). When the
+  // only gas-leak language is refrigerant-flavored and there's no fuel indicator (smell,
+  // odorant, propane/natural-gas words, combustible detector), this lead stands down —
+  // the A2L ignition lead (C3) still covers flammable refrigerant.
+  const _refrigGasOnly = /refrigerant\s+gas\s*(leak|detected|loss)|gas leak detected[^.]{0,40}(low refrigerant|refrigerant)/i.test(_lastUser)
+    && !/(smell|odor|odour|rotten|mercaptan|sulfur|sulphur|natural gas|propane|lp|fuel gas|gas (line|pipe|meter|valve|utility))/i.test(_lastUser);
+  if (_gasOdor && !_gasResolved && !_refrigGasOnly) {
     _safetyLead = 'SAFETY FIRST — treat this as a live gas leak. Get every occupant out now, you included — no light switches, no phones, no doorbells, nothing electrical inside on the way out. Shut the gas at the meter ONLY if you can reach it from outside without going back in. Get everyone at least 300 feet from the building, call the gas utility\'s emergency line from out there (911 too if the odor is strong or anyone feels sick), and nobody re-enters until the utility gives the all-clear. Find-and-fix comes after the all-clear, not before.';
   }
   // ── CO NUMBER PARSING ────────────────────────────────────────────────────────────────
@@ -3223,11 +3230,21 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // Take the WORST air-free reading, not the first (fixed 2026-08-09). A tech logging two
   // appliances — "150 ppm air free on the water heater and 900 on the furnace" — got judged
   // on 150 and the 900 vanished. Same first-match defect the ambient rule had.
+  // Shared standards-vs-measurement context tests (declared here so BOTH the flue rule
+  // and the ambient rule below can use them; 2026-10-05 the flue rule got the same
+  // standards-talk hole the ambient rule had — a thresholds LESSON ("400 ppm air-free:
+  // BPI/ANSI threshold") was read as a live 400 ppm reading and ordered a shutdown).
+  const _STD_CTX_B = /\bosha\b|\bniosh\b|ashrae|\bepa\b|\bbpi\b|\bansi\b|\bpel\b|\btwa\b|\bstel\b|ceiling|ul ?2034|standard|threshold|\blimit\b|guideline|allowable|acceptable (range|thresholds?)|exposure (limit|level)|chronic exposure|do[- ]?not[- ]?restore|alarm (point|setpoint|set ?point|must (sound|alarm|activate))|set at|code (says|requires|allows)|max(imum)?\s+(of\s+)?\d|difference between|interpreting|\bpossibl\w*|\bfor\s+\d+\s*[\u2013-]\s*\d+\s*min/i;
+  const _MEAS_CTX_B = /read(ing|s)?\b|measur|metered?|test(ed|ing)? at|\bgetting\b|\bseeing\b|\bshowing\b|\bshows\b|pulling\b|my (meter|monitor|detector|analyzer)|(meter|monitor|detector|analyzer)\s+(is|says|reads|shows|went)|went off|alarming|i'?m at|sitting at|holding at|came back (at|over|above)/i;
   let _co = 0;
   for (const _re of [new RegExp(_PPM + '\\s*ppm[^.]{0,24}air[- ]?free', 'gi'),
                      new RegExp('air[- ]?free[^.]{0,24}' + _PPM + '\\s*ppm', 'gi')]) {
     let _h;
-    while ((_h = _re.exec(_lastUser))) { const _v = _ppmNum(_h[1]); if (_v > _co) _co = _v; }
+    while ((_h = _re.exec(_lastUser))) {
+      const _win = _lastUser.slice(Math.max(0, _h.index - 70), _h.index + _h[0].length + 70);
+      if (_STD_CTX_B.test(_win) && !_MEAS_CTX_B.test(_win)) continue; // cited threshold, not telemetry
+      const _v = _ppmNum(_h[1]); if (_v > _co) _co = _v;
+    }
   }
   if (_co > 0) {
     // 200 ppm: water heater, vented/unvented room heater, BIV wall furnace.
@@ -3510,7 +3527,10 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     // (never the cached base). One memory serves web chat AND the native voice call (both here).
     let _memContext = '';
     try { if (_askUid) _memContext = buildMemoryContext(await getUserMemory(_askUid)); } catch {}
-    const _tailSys = _memContext + _ragContext + (systemExtra || '');
+    // HARD FACT-GUARDS (2026-10-05, run-2 exam): three recurring confident-wrong patterns
+    // that survive the citation rules because no excerpt is involved. Small and uncached.
+    const _factGuards = '\n\nHARD RULES: (1) Never state a flat gram threshold (e.g. "100 g per circuit") for A2L leak-detection or charge-limit requirements — those limits depend on the standard (UL 60335-2-40 / ASHRAE 15.2) and the room size; if you do not have the exact table in front of you, say so and point to the unit\'s install manual. (2) Never recommend a hard-start kit while liquid refrigerant in the compressor is suspected (slugging, flood-back, flooded start, liquid at the compressor) — the liquid problem gets corrected first, full stop. (3) Never judge a head pressure "healthy/normal/fine" from the psig number alone — convert it to saturated condensing temperature, compare to ambient plus a typical approach, and show that math.';
+    const _tailSys = _memContext + _ragContext + (systemExtra || '') + _factGuards;
     let _systemField;
     if (_baseSys.length > 8000) {
       const _baseBlock = { type: 'text', text: _baseSys, cache_control: { type: 'ephemeral', ttl: '1h' } };
@@ -4024,7 +4044,32 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       if (_safetyLead && !_verifyTail && !/(work order|document|write (it|that|this) (up|down)|on the ticket|paper trail)/i.test(outText)) {
         _docTail = 'And when it\'s handled: document what you found, what you measured, and what you did on the work order. On safety calls the paper trail is part of the job.';
       }
-      const _tail = [_capTail, _inverterWarn, _lotoTail, _brazeTail, _leakTail, _verifyTail, _docTail].filter(Boolean);
+      // (D9) HAZARD CLOSE-OUT CHECKLIST (2026-10-05, run-2 exam: 58 strict safety fails
+      // missed exactly one or two of THESE lines while the hands-on protocol was right).
+      // Item-wise and idempotent: each mandate appends only when its hazard class is live
+      // and neither Mike's prose nor the prepended lead already covers it.
+      let _closeoutTail = '';
+      {
+        const _coEvent = /(\bco\b|carbon monoxide)/i.test(_safetyLead) ||
+          /(\bco\b|carbon monoxide)[^.]{0,45}(alarm|reading|ppm|exposure|poison|detector)/i.test(_lastUser);
+        const _gasEvent = /live gas leak/i.test(_safetyLead);
+        const _items = [];
+        if (_coEvent) {
+          if (!/(do not|don'?t|never|stays? off|comes? off)[^.!?\n]{0,60}(restore|back (in|into) service|back on)|until[^.!?\n]{0,50}(root cause|found and correct|corrected|repaired)/i.test(outText))
+            _items.push('the appliance stays OFF until the root cause is found and corrected — never restore on "it seems fine now"');
+          if (!/(zero|\b0\b)\s*ppm[^.!?\n]{0,30}(before|living space|registers)|verify[^.!?\n]{0,35}(\bco\b|carbon monoxide)[^.!?\n]{0,20}(zero|0)|combustion analy/i.test(outText))
+            _items.push('before it goes back in service: combustion analysis firing, and ambient CO verified at ZERO in the living space');
+          if (/(occupant|homeowner|family|resident|customer|tenant|anyone|kids?|child)[^.]{0,70}(headache|nause|dizzy|symptom|exposed|exposure|sick|vomit|flu)/i.test(_lastUser)
+              && !/(medic|physician|doctor|medical|urgent care|\bEMS\b|\bER\b)/i.test(outText))
+            _items.push('everyone who was exposed gets evaluated by a medic — CO dose is cumulative and symptoms lag the exposure');
+        }
+        if (_gasEvent && !/(leak[- ]?test|pressure[- ]?test|bubble[- ]?test)/i.test(outText))
+          _items.push('after the utility gives the all-clear: leak-test the repair before anything gets re-lit');
+        if (_items.length) {
+          _closeoutTail = 'Close it out right — these are not optional: ' + _items.map((x, i) => '(' + (i + 1) + ') ' + x).join('; ') + '.';
+        }
+      }
+      const _tail = [_capTail, _inverterWarn, _lotoTail, _brazeTail, _leakTail, _verifyTail, _closeoutTail, _docTail].filter(Boolean);
       if (_tail.length) outText = outText + '\n\n' + _tail.join('\n\n');
     } catch (_) {}
 

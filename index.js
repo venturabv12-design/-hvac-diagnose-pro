@@ -4054,7 +4054,9 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         // Rollout / spillage / stuck-valve / air-free shutdowns are combustion-safety
         // events too (2026-10-05 verify: the rollout lead shipped with no post-repair
         // combustion-analysis mandate — the exact line SAF-035 failed on).
-        const _combustionEvent = /(rollout|spillage|gas off at the appliance|air-free|stuck open)/i.test(_safetyLead);
+        const _combustionEvent = /(rollout|spillage|gas off at the appliance|air-free|stuck open)/i.test(_safetyLead)
+          || (/(spillage|backdraft|flue (blockage|restriction|icing|ice)|iced?[- ](over|up|cap)|cracked heat exchanger|restricted (draft|flue))/i.test(_lastUser + ' ' + outText)
+              && /(\bco\b|carbon monoxide)/i.test(_lastUser + ' ' + outText));
         const _items = [];
         if (_coEvent) {
           if (!/(do not|don'?t|never|stays? off|comes? off)[^.!?\n]{0,60}(restore|back (in|into) service|back on)|until[^.!?\n]{0,50}(root cause|found and correct|corrected|repaired)/i.test(outText))

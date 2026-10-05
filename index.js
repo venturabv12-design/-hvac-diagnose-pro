@@ -3234,14 +3234,17 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // and the ambient rule below can use them; 2026-10-05 the flue rule got the same
   // standards-talk hole the ambient rule had — a thresholds LESSON ("400 ppm air-free:
   // BPI/ANSI threshold") was read as a live 400 ppm reading and ordered a shutdown).
-  const _STD_CTX_B = /\bosha\b|\bniosh\b|ashrae|\bepa\b|\bbpi\b|\bansi\b|\bpel\b|\btwa\b|\bstel\b|ceiling|ul ?2034|standard|threshold|\blimit\b|guideline|allowable|acceptable (range|thresholds?)|exposure (limit|level)|chronic exposure|do[- ]?not[- ]?restore|alarm (point|setpoint|set ?point|must (sound|alarm|activate))|set at|code (says|requires|allows)|max(imum)?\s+(of\s+)?\d|difference between|interpreting|\bpossibl\w*|\bfor\s+\d+\s*[\u2013-]\s*\d+\s*min/i;
-  const _MEAS_CTX_B = /read(ing|s)?\b|measur|metered?|test(ed|ing)? at|\bgetting\b|\bseeing\b|\bshowing\b|\bshows\b|pulling\b|my (meter|monitor|detector|analyzer)|(meter|monitor|detector|analyzer)\s+(is|says|reads|shows|went)|went off|alarming|i'?m at|sitting at|holding at|came back (at|over|above)/i;
+  const _STD_CTX_B = /\bosha\b|\bniosh\b|ashrae|\bepa\b|\bbpi\b|\bansi\b|\bpel\b|\btwa\b|\bstel\b|ceiling|ul ?2034|standard|threshold|\blimit\b|guideline|allowable|acceptable (range|thresholds?)|exposure (limit|level)|chronic exposure|do[- ]?not[- ]?restore|alarm (point|setpoint|set ?point|must (sound|alarm|activate))|set at|code (says|requires|allows)|max(imum)?\s+(of\s+)?\d|difference between|interpreting|\bpossibl\w*|\bfor\s+\d+\s*[\u2013-]\s*\d+\s*min|(must|shall) be (shut down|serviced|replaced|corrected)|return to (operation|service)|immediate action/i;
+  // Number-anchored on purpose (2026-10-05 verify round): the bare noun "readings" shows
+  // up in knowledge questions ("Interpreting CO readings...") and un-suppressed a
+  // thresholds lesson. Measurement context = a verb tied to a number or an instrument.
+  const _MEAS_CTX_B = /read(ing|s)?\s+(at\s+|of\s+|above\s+|over\s+)?\d|measured?\s+(at\s+)?\d|came back (at|over|above)|(meter|monitor|detector|analyzer)\s+(is|says|reads|shows|went|came)|my (meter|monitor|detector|analyzer)|i'?m (getting|seeing|reading)|show(s|ing)\s+\d|test(ed)? at\s+\d|sitting at\s+\d|holding at\s+\d|went off/i;
   let _co = 0;
   for (const _re of [new RegExp(_PPM + '\\s*ppm[^.]{0,24}air[- ]?free', 'gi'),
                      new RegExp('air[- ]?free[^.]{0,24}' + _PPM + '\\s*ppm', 'gi')]) {
     let _h;
     while ((_h = _re.exec(_lastUser))) {
-      const _win = _lastUser.slice(Math.max(0, _h.index - 70), _h.index + _h[0].length + 70);
+      const _win = _lastUser.slice(Math.max(0, _h.index - 95), _h.index + _h[0].length + 70);
       if (_STD_CTX_B.test(_win) && !_MEAS_CTX_B.test(_win)) continue; // cited threshold, not telemetry
       const _v = _ppmNum(_h[1]); if (_v > _co) _co = _v;
     }
@@ -4038,12 +4041,6 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
           && !/(combustion analy|analyzer)/i.test(outText)) {
         _verifyTail = 'Before you leave: combustion analysis with it firing, CO at the supply registers (zero tolerance in the living space), bubble-test every gas connection you touched — and write the as-found and as-left readings on the work order. The paper trail is part of the job.';
       }
-      // Documentation rider: whenever a hard safety lead fired, the paper trail is part of
-      // the protocol (exam finding: document-on-work-order was the most-missed tail step).
-      let _docTail = '';
-      if (_safetyLead && !_verifyTail && !/(work order|document|write (it|that|this) (up|down)|on the ticket|paper trail)/i.test(outText)) {
-        _docTail = 'And when it\'s handled: document what you found, what you measured, and what you did on the work order. On safety calls the paper trail is part of the job.';
-      }
       // (D9) HAZARD CLOSE-OUT CHECKLIST (2026-10-05, run-2 exam: 58 strict safety fails
       // missed exactly one or two of THESE lines while the hands-on protocol was right).
       // Item-wise and idempotent: each mandate appends only when its hazard class is live
@@ -4051,8 +4048,13 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       let _closeoutTail = '';
       {
         const _coEvent = /(\bco\b|carbon monoxide)/i.test(_safetyLead) ||
-          /(\bco\b|carbon monoxide)[^.]{0,45}(alarm|reading|ppm|exposure|poison|detector)/i.test(_lastUser);
+          /(\bco\b|carbon monoxide)[^.]{0,45}(alarm|reading|ppm|exposure|poison|detector|register)/i.test(_lastUser) ||
+          /(\bco\b|carbon monoxide)[^.!?\n]{0,35}(meter|ambient|register|at the (register|vent|supply))/i.test(outText);
         const _gasEvent = /live gas leak/i.test(_safetyLead);
+        // Rollout / spillage / stuck-valve / air-free shutdowns are combustion-safety
+        // events too (2026-10-05 verify: the rollout lead shipped with no post-repair
+        // combustion-analysis mandate — the exact line SAF-035 failed on).
+        const _combustionEvent = /(rollout|spillage|gas off at the appliance|air-free|stuck open)/i.test(_safetyLead);
         const _items = [];
         if (_coEvent) {
           if (!/(do not|don'?t|never|stays? off|comes? off)[^.!?\n]{0,60}(restore|back (in|into) service|back on)|until[^.!?\n]{0,50}(root cause|found and correct|corrected|repaired)/i.test(outText))
@@ -4065,9 +4067,20 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         }
         if (_gasEvent && !/(leak[- ]?test|pressure[- ]?test|bubble[- ]?test)/i.test(outText))
           _items.push('after the utility gives the all-clear: leak-test the repair before anything gets re-lit');
+        if (_combustionEvent && !_coEvent && !/combustion analy/i.test(outText))
+          _items.push('after the repair: combustion analysis with it firing and CO verified at the registers before it goes back in service');
+        if ((_coEvent || _gasEvent || _combustionEvent)
+            && !/(work order|document|write (it|that|this) (up|down)|on the ticket|paper trail)/i.test(outText))
+          _items.push('as-found readings, what you did, and as-left readings go on the work order');
         if (_items.length) {
           _closeoutTail = 'Close it out right — these are not optional: ' + _items.map((x, i) => '(' + (i + 1) + ') ' + x).join('; ') + '.';
         }
+      }
+      // Documentation rider: whenever a hard safety lead fired, the paper trail is part of
+      // the protocol (exam finding: document-on-work-order was the most-missed tail step).
+      let _docTail = '';
+      if (_safetyLead && !_verifyTail && !/work order/.test(_closeoutTail) && !/(work order|document|write (it|that|this) (up|down)|on the ticket|paper trail)/i.test(outText)) {
+        _docTail = 'And when it\'s handled: document what you found, what you measured, and what you did on the work order. On safety calls the paper trail is part of the job.';
       }
       const _tail = [_capTail, _inverterWarn, _lotoTail, _brazeTail, _leakTail, _verifyTail, _closeoutTail, _docTail].filter(Boolean);
       if (_tail.length) outText = outText + '\n\n' + _tail.join('\n\n');

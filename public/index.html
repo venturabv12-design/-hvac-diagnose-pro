@@ -5077,6 +5077,23 @@ function recordEvent(type,payload,amount){
     fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentUser.token},body:JSON.stringify(body)}).catch(function(){});
   }catch(e){}
 }
+// App lifecycle telemetry (outcome-capture spec): open / hide / return, throttled so a
+// flaky attic signal flapping visibility doesn't spam the spine. Feeds stickiness curves.
+(function(){
+  var last={open:0,hide:0};
+  function lifeEvent(kind){
+    var now=Date.now();
+    if(now-(last[kind]||0)<60000)return; // at most one of each per minute
+    last[kind]=now;
+    recordEvent(kind==='open'?'app_open':'app_hide',{at:new Date().toISOString()});
+  }
+  window.addEventListener('load',function(){setTimeout(function(){lifeEvent('open');},1500);});
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='hidden')lifeEvent('hide');
+    else lifeEvent('open');
+  });
+  window.addEventListener('pagehide',function(){lifeEvent('hide');});
+})();
 
 // ── JOB LIFECYCLE ───────────────────────────────────────────────────────────────
 // Every service call is a JOB: Start a Job → all activity (Mike chat, diagnostics,

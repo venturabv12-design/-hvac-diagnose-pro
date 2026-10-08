@@ -854,6 +854,111 @@ function buildMemoryContext(mem) {
   return out;
 }
 
+// ── OUTCOME CAPTURE + TIME-GROUNDING (spec: .claude/context/feature-specs/outcome-capture-spec.md) ──
+// Mike must know what day it is and whether this tech has an unresolved job (an "open
+// loop"), so he can ask "how'd that call yesterday turn out?" like a partner would.
+// Every piece here fails silent — a tech's answer is never delayed or broken by this.
+const _ET_TZ = 'America/New_York';
+function fmtNowET(d) {
+  d = d || new Date();
+  return d.toLocaleString('en-US', { timeZone: _ET_TZ, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+// "earlier today" / "yesterday afternoon" / "Tuesday" — null past 7 days (a friend
+// doesn't ask about a call from three weeks ago; the spec's staleness cap).
+function fmtAgoET(iso, now) {
+  try {
+    const then = new Date(iso); now = now || new Date();
+    const dayKey = (x) => x.toLocaleDateString('en-CA', { timeZone: _ET_TZ });
+    const diffDays = Math.round((new Date(dayKey(now)) - new Date(dayKey(then))) / 86400000);
+    if (diffDays > 7 || diffDays < 0) return null;
+    const hour = Number(then.toLocaleString('en-US', { timeZone: _ET_TZ, hour: 'numeric', hour12: false }));
+    const part = hour < 12 ? 'morning' : (hour < 17 ? 'afternoon' : 'evening');
+    if (diffDays === 0) return 'earlier today';
+    if (diffDays === 1) return 'yesterday ' + part;
+    return then.toLocaleDateString('en-US', { timeZone: _ET_TZ, weekday: 'long' });
+  } catch { return null; }
+}
+// A question that reads like a real job, not a lookup. Deliberately conservative —
+// better to miss a job than to nag a tech who asked for a charging chart.
+function looksLikeJobQ(q) {
+  if (!q || typeof q !== 'string' || q.length < 25) return false;
+  const unit = /\b[A-Z]{2,5}\d[A-Z0-9-]{3,}\b|\b(condenser|furnace|heat pump|air handler|package unit|mini[- ]?split|boiler|rtu|compressor|walk[- ]?in|reach[- ]?in)\b/i.test(q);
+  const trouble = /(won'?t|wont|not|no)\s+(start|run|cool|heat|ignite|fire|spin|drain)|short[- ]cycl|tripp(ing|ed)|leak|hums?|buzz|flash(ing)? code|error|fault|frozen|ice[sd]? (up|over)|intermittent|dead|blank|clicking|overheat/i.test(q);
+  return unit && trouble;
+}
+// One cheap read of this tech's recent spine: last ask (for "you were on last …"),
+// plus the newest job-like ask with no outcome after it and fewer than 2 probes.
+async function getLoopState(uid) {
+  const out = { lastAskAt: null, openLoop: null };
+  if (!uid || !SUPABASE_URL) return out;
+  const rows = await supabase('GET', 'events', null,
+    `?select=id,type,payload,created_at&user_id=eq.${encodeURIComponent(uid)}`
+    + `&type=in.(mike_ask,job_outcome,loop_probe,job_closed)`
+    + `&created_at=gte.${encodeURIComponent(new Date(Date.now() - 7 * 86400000).toISOString())}`
+    + `&order=created_at.desc&limit=60`);
+  if (!rows || !rows.length) return out;
+  const asks = rows.filter(r => r.type === 'mike_ask');
+  if (asks.length) out.lastAskAt = asks[0].created_at;
+  for (const a of asks) {
+    const q = a.payload && a.payload.q;
+    if (!looksLikeJobQ(q)) continue;
+    const t = new Date(a.created_at).getTime();
+    // Any outcome/close recorded since that ask means the loop is settled — stop hunting.
+    if (rows.some(r => (r.type === 'job_outcome' || r.type === 'job_closed') && new Date(r.created_at).getTime() >= t)) break;
+    const probes = rows.filter(r => r.type === 'loop_probe' && r.payload && r.payload.ref === a.id).length;
+    if (probes >= 2) break; // asked once + one retry — the spec says let it go for good
+    out.openLoop = { id: a.id, q: String(q).slice(0, 220), at: a.created_at, probes };
+    break;
+  }
+  return out;
+}
+function buildTimeContext(lastAskAt) {
+  let out = '\n\n=== RIGHT NOW ===\nIt is ' + fmtNowET() + ' (US Eastern). Speak in real time-language '
+    + '("earlier today", "yesterday afternoon", "Tuesday") — never "previously" or "in a past conversation".';
+  if (lastAskAt) { const ago = fmtAgoET(lastAskAt); if (ago) out += ' This tech last talked to you ' + ago + '.'; }
+  return out + '\n=== END RIGHT NOW ===\n';
+}
+const OUTCOME_SYS = '\n\n=== CLOSING THE LOOP (outcome capture) ===\n'
+  + 'You care how jobs END. Two habits, and BOTH apply only when the conversation is clearly a real '
+  + 'job (a unit plus a symptom) — never on quick lookups (specs, code meanings, charts, charge math):\n'
+  + '1) WRAP-UP: when the fix lands or the tech is signing off, ask ONCE, casually, in your own words: '
+  + 'did it fix it first trip, repair or replace, and what did the ticket run (money is optional — never push).\n'
+  + '2) When the tech REPORTS how a job went (this one or an earlier one) — fixed or not, sold or not, '
+  + 'an amount — acknowledge it like a partner, then end your reply with ONE final line, exactly:\n'
+  + '[JOB_OUTCOME]{"fixed":true|false|null,"first_trip":true|false|null,"kind":"repair"|"replace"|"maintenance"|null,"amount":number-or-null,"note":"up to 8 words"}\n'
+  + 'Rules for that line: it is MACHINE-READ and stripped before the tech ever sees your reply — never '
+  + 'mention it, never emit it unless the tech actually reported an outcome, never more than one, valid '
+  + 'JSON only. Never ask about an outcome twice in one conversation; if he ignores the question, drop it.\n'
+  + '=== END CLOSING THE LOOP ===\n';
+function buildLoopContext(loop) {
+  if (!loop) return '';
+  const ago = fmtAgoET(loop.at) || 'recently';
+  return '\n\n=== OPEN LOOP (unfinished job) ===\nThis tech was working a job ' + ago
+    + " and you never heard how it ended. His question back then: \"" + loop.q.replace(/"/g, "'") + "\".\n"
+    + 'OPEN your reply with ONE short, natural check-in about that job ("how\'d it turn out? we make money?") '
+    + 'and then IMMEDIATELY answer his new question in the SAME message. Never withhold the answer, never ask twice.'
+    + (loop.probes > 0 ? ' This is your second and FINAL mention — if he skips it again, let it go for good.' : '')
+    + '\n=== END OPEN LOOP ===\n';
+}
+// job_outcome rows carry amount in the events.amount column so the existing revenue
+// dashboard slices pick them up with zero changes.
+async function logOutcome(uid, parsed, ref) {
+  try {
+    if (!uid || !parsed || typeof parsed !== 'object') return;
+    await supabase('POST', 'events', {
+      user_id: uid, type: 'job_outcome',
+      payload: {
+        fixed: (typeof parsed.fixed === 'boolean') ? parsed.fixed : null,
+        first_trip: (typeof parsed.first_trip === 'boolean') ? parsed.first_trip : null,
+        kind: ['repair', 'replace', 'maintenance'].includes(parsed.kind) ? parsed.kind : null,
+        note: String(parsed.note || '').slice(0, 80),
+        ref: ref || null,
+      },
+      amount: (parsed.amount != null && !isNaN(parsed.amount)) ? Number(parsed.amount) : null,
+    });
+  } catch (e) { console.error('outcome log failed (non-fatal):', e.message); }
+}
+
 // The reflect-and-write loop: after an exchange, update the rolling summary + facts and MERGE back
 // into users.profile.mikeMemory. Fire-and-forget so it never adds latency to the tech's answer.
 async function updateUserMemory(uid, userText, assistantText) {
@@ -3081,6 +3186,24 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     });
   } catch { /* token already validated by checkPaywall; never block on logging */ }
 
+  // ── OUTCOME SPINE: time-grounding + this tech's open loop (one cheap read) ──
+  let _loopState = { lastAskAt: null, openLoop: null };
+  try { if (_askUid) _loopState = await getLoopState(_askUid); } catch {}
+  // If the unresolved question is part of THIS conversation's history, it isn't an
+  // open loop — it's the conversation he's already in. Don't greet him with his own chat.
+  try {
+    if (_loopState.openLoop) {
+      const _frag = _loopState.openLoop.q.slice(0, 80);
+      const _inConvo = (Array.isArray(messages) ? messages : []).some(m => {
+        if (!m || m.role !== 'user') return false;
+        const t = typeof m.content === 'string' ? m.content
+          : (Array.isArray(m.content) ? m.content.map(c => (c && c.text) || '').join(' ') : '');
+        return t.includes(_frag);
+      });
+      if (_inConvo) _loopState.openLoop = null;
+    }
+  } catch {}
+
   // ── DETERMINISTIC GUARD LAYER ──────────────────────────────────────────────
   // Prompt-tuning failed 3 cert passes on two safety scenarios + replacement-lean
   // language. These guards make the critical safety + no-homeowner-pricing rules
@@ -3446,7 +3569,11 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // screwdriver strip. Deltas already sent cannot be retracted, so forcing non-stream is
   // the only way to guarantee the strip runs.
   const _coverageIntent = /\b(warrant(y|ies|ied)|covered|coverage|registered|registration)\b|still\s+under\s+\w+|parts?\s+(and\s+labou?r\s+)?cover/i.test(_lastUser);
-  const _forceNonStream = !!_safetyLead || !!_inverterWarn || !!_capacitorWarn || _lotoRisk || _brazeRisk || _leakRisk || _verifyRisk || _homeownerFramed || _wiringDiagramIntent || _capDischargeRisk || _coverageIntent;
+  // Outcome reports force non-stream too: the [JOB_OUTCOME] marker Mike appends must be
+  // stripped server-side before the tech sees it, and streamed deltas can't be retracted.
+  // Same mechanism, same reason as the warranty and screwdriver strips above.
+  const _outcomeReport = /\b(fixed it|got (it|her|them) (running|going|back)|up and running|runnin(g)? (now|again)|sold (it|the|them|him|her)|closed (it|the|that)|went with (the )?(repair|replace)|replaced the|swapped (it|the|that)|came back (out|today|yesterday)?|didn'?t (work|hold|fix)|still (down|broken|not))\b|\$\s?\d{2,}/i.test(_lastUser);
+  const _forceNonStream = !!_safetyLead || !!_inverterWarn || !!_capacitorWarn || _lotoRisk || _brazeRisk || _leakRisk || _verifyRisk || _homeownerFramed || _wiringDiagramIntent || _capDischargeRisk || _coverageIntent || _outcomeReport || !!(_loopState && _loopState.openLoop);
 
   globalActive++;
   const controller = new AbortController();
@@ -3533,7 +3660,19 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     // HARD FACT-GUARDS (2026-10-05, run-2 exam): three recurring confident-wrong patterns
     // that survive the citation rules because no excerpt is involved. Small and uncached.
     const _factGuards = '\n\nHARD RULES: (1) Never state a flat gram threshold (e.g. "100 g per circuit") for A2L leak-detection or charge-limit requirements — those limits depend on the standard (UL 60335-2-40 / ASHRAE 15.2) and the room size; if you do not have the exact table in front of you, say so and point to the unit\'s install manual. (2) Never recommend a hard-start kit while liquid refrigerant in the compressor is suspected (slugging, flood-back, flooded start, liquid at the compressor) — the liquid problem gets corrected first, full stop. (3) Never judge a head pressure "healthy/normal/fine" from the psig number alone — convert it to saturated condensing temperature, compare to ambient plus a typical approach, and show that math.';
-    const _tailSys = _memContext + _ragContext + (systemExtra || '') + _factGuards;
+    // OUTCOME SPINE injection: the clock, the open loop, and the closing-the-loop habits.
+    // Signed-in techs only (_askUid) — a taste visitor has no spine to close.
+    let _timeCtx = '', _loopCtx = '', _outcomeSys = '';
+    if (_askUid) {
+      try {
+        _timeCtx = buildTimeContext(_loopState.lastAskAt);
+        _loopCtx = buildLoopContext(_loopState.openLoop);
+        _outcomeSys = OUTCOME_SYS;
+        // Record the probe so a loop is only ever raised twice, across sessions.
+        if (_loopState.openLoop) logUsage(_askUid, 'loop_probe', { ref: _loopState.openLoop.id });
+      } catch {}
+    }
+    const _tailSys = _memContext + _timeCtx + _loopCtx + _outcomeSys + _ragContext + (systemExtra || '') + _factGuards;
     let _systemField;
     if (_baseSys.length > 8000) {
       const _baseBlock = { type: 'text', text: _baseSys, cache_control: { type: 'ephemeral', ttl: '1h' } };
@@ -3651,6 +3790,9 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         try {
           if (_askUid && _streamed) logUsage(_askUid, 'mike_answer',
             Object.assign({ a: _streamed.slice(0, 8000), streamed: true }, _cost));
+          // Belt for the stream path: outcome reports force non-stream upstream, but if a
+          // marker ever slips into a streamed reply, still capture the data it carried.
+          if (_askUid && _streamed) { try { const _m2 = _streamed.match(/\[JOB_OUTCOME\]\s*(\{[^\n]*\})\s*$/m); if (_m2) logOutcome(_askUid, JSON.parse(_m2[1]), null); } catch {} }
           if (_askUid && _streamed) { try { updateUserMemory(_askUid, _lastUser, _streamed); } catch {} }
         } catch { /* never let logging affect a delivered answer */ }
       } catch (streamErr) {
@@ -3689,6 +3831,15 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
 
     // ── Apply the deterministic guard layer to the reply ──────────────────────
     let outText = text || 'No response.';
+    // [JOB_OUTCOME] marker: Mike's machine-read outcome line. Strip it BEFORE the guards
+    // and before any tech ever sees it; log it to the events spine (the pilot dataset).
+    try {
+      const _om = outText.match(/\[JOB_OUTCOME\]\s*(\{[^\n]*\})\s*$/m);
+      if (_om) {
+        outText = outText.replace(_om[0], '').replace(/\n{3,}/g, '\n\n').trimEnd();
+        if (_askUid) logOutcome(_askUid, JSON.parse(_om[1]), _loopState && _loopState.openLoop ? _loopState.openLoop.id : null);
+      }
+    } catch { outText = outText.replace(/\[JOB_OUTCOME\][^\n]*/g, '').trimEnd(); }
     try {
       if (_homeownerFramed) {
         // Strip any dollar amount the model leaked.

@@ -79,3 +79,9 @@ beyond staleness cap (7d) = don't bring it up at all.
 - Preserve the safety/pricing guard layer and auth untouched (index.js discipline per CLAUDE.md).
 - Feature branch, gates, Brandon's "push it" for prod — as always.
 - QA/admin accounts excluded from all outcome metrics (same rule as /numbers).
+
+## Refinement (Brandon, 2026-10-09, shipped same day): no-money calls still count
+If the tech says there was no money in it (warranty call, callback, no-charge), Mike pivots to the
+fix itself — "did we get it fixed though?" — because a first-trip fix on a warranty call is the same
+win in the data. kind enum extended: repair | replace | maintenance | warranty | callback. Warranty
+mix per brand is its own sellable dataset (nobody in the industry has it).

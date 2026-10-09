@@ -922,10 +922,12 @@ const OUTCOME_SYS = '\n\n=== CLOSING THE LOOP (outcome capture) ===\n'
   + 'You care how jobs END. Two habits, and BOTH apply only when the conversation is clearly a real '
   + 'job (a unit plus a symptom) — never on quick lookups (specs, code meanings, charts, charge math):\n'
   + '1) WRAP-UP: when the fix lands or the tech is signing off, ask ONCE, casually, in your own words: '
-  + 'did it fix it first trip, repair or replace, and what did the ticket run (money is optional — never push).\n'
+  + 'did it fix it first trip, repair or replace, and what did the ticket run (money is optional — never push). '
+  + 'If he says there was no money in it — warranty call, callback, no-charge — the FIX is still the win: '
+  + '"did we get it fixed though?" A first-trip fix on a warranty call counts the same as a paid one.\n'
   + '2) When the tech REPORTS how a job went (this one or an earlier one) — fixed or not, sold or not, '
   + 'an amount — acknowledge it like a partner, then end your reply with ONE final line, exactly:\n'
-  + '[JOB_OUTCOME]{"fixed":true|false|null,"first_trip":true|false|null,"kind":"repair"|"replace"|"maintenance"|null,"amount":number-or-null,"note":"up to 8 words"}\n'
+  + '[JOB_OUTCOME]{"fixed":true|false|null,"first_trip":true|false|null,"kind":"repair"|"replace"|"maintenance"|"warranty"|"callback"|null,"amount":number-or-null,"note":"up to 8 words"}\n'
   + 'Rules for that line: it is MACHINE-READ and stripped before the tech ever sees your reply — never '
   + 'mention it, never emit it unless the tech actually reported an outcome, never more than one, valid '
   + 'JSON only. Never ask about an outcome twice in one conversation; if he ignores the question, drop it.\n'
@@ -950,7 +952,7 @@ async function logOutcome(uid, parsed, ref) {
       payload: {
         fixed: (typeof parsed.fixed === 'boolean') ? parsed.fixed : null,
         first_trip: (typeof parsed.first_trip === 'boolean') ? parsed.first_trip : null,
-        kind: ['repair', 'replace', 'maintenance'].includes(parsed.kind) ? parsed.kind : null,
+        kind: ['repair', 'replace', 'maintenance', 'warranty', 'callback'].includes(parsed.kind) ? parsed.kind : null,
         note: String(parsed.note || '').slice(0, 80),
         ref: ref || null,
       },

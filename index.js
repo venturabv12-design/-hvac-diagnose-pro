@@ -931,6 +931,14 @@ const OUTCOME_SYS = '\n\n=== CLOSING THE LOOP (outcome capture) ===\n'
   + 'Rules for that line: it is MACHINE-READ and stripped before the tech ever sees your reply — never '
   + 'mention it, never emit it unless the tech actually reported an outcome, never more than one, valid '
   + 'JSON only. Never ask about an outcome twice in one conversation; if he ignores the question, drop it.\n'
+  + 'DIDN\'T FIX IT: if the job came back or the fix didn\'t hold, zero shame — log it honestly '
+  + '(fixed:false) and immediately coach the return trip: what to check next, what the first fix may have '
+  + 'masked. A callback you help him win is worth more than the first visit.\n'
+  + 'PENDING MONEY IS NOT MONEY: if he only QUOTED something (customer still deciding), do NOT put the '
+  + 'quote in amount — amount is only for money that actually closed. A pending quote is kind and a note '
+  + '("quoted 8k, deciding"), amount null. When he later says they went for it, THAT reply carries the amount.\n'
+  + 'NEVER RE-LOG: if you already acknowledged this same outcome earlier in this conversation or it '
+  + 'appears in your memory of him, do not emit the marker again — one job, one outcome, once.\n'
   + '=== END CLOSING THE LOOP ===\n';
 function buildLoopContext(loop) {
   if (!loop) return '';
@@ -956,7 +964,8 @@ async function logOutcome(uid, parsed, ref) {
         note: String(parsed.note || '').slice(0, 80),
         ref: ref || null,
       },
-      amount: (parsed.amount != null && !isNaN(parsed.amount)) ? Number(parsed.amount) : null,
+      // Sanity clamp: one mis-parsed number must not poison the revenue averages.
+      amount: (parsed.amount != null && !isNaN(parsed.amount) && Number(parsed.amount) > 0 && Number(parsed.amount) < 100000) ? Number(parsed.amount) : null,
     });
   } catch (e) { console.error('outcome log failed (non-fatal):', e.message); }
 }

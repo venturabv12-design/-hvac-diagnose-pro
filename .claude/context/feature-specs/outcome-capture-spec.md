@@ -85,3 +85,14 @@ If the tech says there was no money in it (warranty call, callback, no-charge), 
 fix itself — "did we get it fixed though?" — because a first-trip fix on a warranty call is the same
 win in the data. kind enum extended: repair | replace | maintenance | warranty | callback. Warranty
 mix per brand is its own sellable dataset (nobody in the industry has it).
+
+## Gap sweep (operator pass, 2026-10-09 — shipped): the four holes closed without being asked
+1. NOT-FIXED path: fixed:false logged shame-free + Mike coaches the return trip (a coached callback
+   is the highest-value event in the system).
+2. PENDING ≠ CLOSED: quotes never land in amount — amount is closed money only; quote goes in the
+   note until the tech reports it sold. Protects the revenue dataset from inflation.
+3. NO RE-LOGGING: one job, one outcome, once — never re-emit for an outcome already acknowledged
+   in-conversation or in memory. (Reporting queries should still dedupe defensively by ref+window.)
+4. AMOUNT CLAMP: server ignores amounts ≤0 or ≥$100k — one mis-parse can't poison the averages.
+Known v1 limits (accepted): one open loop per tech at a time; voice path covered because voice goes
+through /api/ai with the same marker strip; response-rate metric = job_outcome ÷ job-like asks.

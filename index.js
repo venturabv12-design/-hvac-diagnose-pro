@@ -3678,7 +3678,11 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       const _baseBlock = { type: 'text', text: _baseSys, cache_control: { type: 'ephemeral', ttl: '1h' } };
       _systemField = _tailSys ? [_baseBlock, { type: 'text', text: _tailSys }] : [_baseBlock];
     } else {
-      _systemField = _ragContext + _baseSys;
+      // _tailSys carries memory, time-grounding, outcome capture, RAG and the fact-guards.
+      // It was silently DROPPED on this branch (short/no persona), so those protections
+      // only existed for full-persona calls. Append it here too; _ragContext already
+      // lives inside _tailSys, so it is not prepended twice.
+      _systemField = _baseSys + _tailSys;
     }
     const body = {
       model: process.env.MIKE_MODEL || 'claude-opus-4-8',

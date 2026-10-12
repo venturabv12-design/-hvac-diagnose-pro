@@ -3024,7 +3024,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div class="pw-plan sel" onclick="selectPlan('pro',this)">
         <div class="pw-badge">EVERYTHING INCLUDED</div>
         <div class="pw-name">Mike Pro</div>
-        <div class="pw-price">$100</div>
+        <div class="pw-price">$50</div>
         <div class="pw-period">/tech/mo</div>
         <div class="pw-features">
           <div class="pw-feat">✅ Live chat &amp; voice with Mike</div>
@@ -3048,8 +3048,8 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         </a>
     </div>
   </div>
-  <button class="pw-btn" onclick="goCheckout()">Keep Mike — $100/mo</button>
-  <div class="pw-note">🔒 Your 14 free days are up — $100/mo from today, cancel anytime · Secured by Stripe</div>
+  <button class="pw-btn" onclick="goCheckout()">Keep Mike — $50/mo</button>
+  <div class="pw-note">🔒 Your free days are up — $50/mo from today, cancel anytime · Secured by Stripe</div>
   <!-- Testimonials removed 2026-08-04: Brandon confirmed the two quotes here were
        not from real customers. Placeholder social proof does not go on a live page
        that takes money. Put real quotes back the moment a paying tech gives one. -->
@@ -5094,6 +5094,23 @@ function recordEvent(type,payload,amount){
   });
   window.addEventListener('pagehide',function(){lifeEvent('hide');});
 })();
+// Announcement banner (server-flagged via /api/announcement; dismiss persists per announcement id).
+// Hidden in the native app build — App Store rules forbid pricing UI there (same rule as the paywall).
+(function(){
+  if(document.body&&document.body.getAttribute('data-native'))return;
+  fetch('/api/announcement').then(function(r){return r.json();}).then(function(a){
+    if(!a||!a.active||!a.id)return;
+    if(localStorage.getItem('trz_ann_'+a.id))return;
+    if(document.body&&document.body.getAttribute('data-native'))return;
+    var b=document.createElement('div');
+    b.id='trzAnnounce';
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#0e2a33;color:#eaf6f9;padding:10px 44px 10px 14px;font:600 13px/1.45 system-ui,-apple-system,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.35);';
+    b.innerHTML='<span style="opacity:.95">📣 '+a.title+'</span> <span style="opacity:.75;font-weight:400">'+a.body+'</span>'+
+      '<button aria-label="Dismiss" style="position:absolute;right:8px;top:6px;background:none;border:none;color:#eaf6f9;font-size:20px;cursor:pointer;padding:4px 8px" '+
+      'onclick="localStorage.setItem(\'trz_ann_'+a.id+'\',1);document.getElementById(\'trzAnnounce\').remove();">×</button>';
+    document.body.appendChild(b);
+  }).catch(function(){});
+})();
 
 // ── JOB LIFECYCLE ───────────────────────────────────────────────────────────────
 // Every service call is a JOB: Start a Job → all activity (Mike chat, diagnostics,
@@ -5594,7 +5611,7 @@ function showPaywall(){
   // full 14 days, so anyone reaching this screen has already had the free look and WILL be
   // charged on adding a card. The old "no charge today" copy would be a false billing promise.
   if(title)title.textContent='Your 14 free days are up';
-  if(sub)sub.textContent='Add a card to keep Mike in your pocket — $100/mo, cancel anytime.';
+  if(sub)sub.textContent='Add a card to keep Mike in your pocket — $50/mo, cancel anytime.';
   e.style.display='';           // clear the leftover inline display:none from the beta short-circuit
   e.classList.add('show');
 }

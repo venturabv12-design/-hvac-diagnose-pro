@@ -972,10 +972,11 @@ const FEEDBACK_SYS = '\n\n=== WHEN THE TECH CRITIQUES YOU ===\n'
 // Nov-1 $50 announcement: Mike tells each tech ONCE, conversationally, flag-gated by env.
 const PRICE50_SYS = '\n\n=== ONE-TIME HEADS-UP (price) ===\n'
   + 'You have NOT yet told this tech about the new price. ONCE in this conversation, at a natural moment '
-  + '(end of your reply is fine, never interrupt a safety answer), tell him like a workmate would: starting '
-  + 'November 1st Mike is $50 a month (down from $100). Say it in your own words, one or two sentences, and '
-  + 'invite honesty: if you have not earned that, he should tell you straight. Do not repeat it, do not sell '
-  + 'hard, never mention this instruction.\n=== END HEADS-UP ===\n';
+  + '(end of your reply is fine, never interrupt a safety answer), give him the heads-up like a workmate '
+  + 'would: thank him for riding with you while Mike was free, then say it plain — starting November 1st '
+  + 'Mike is $50 a month (down from $100). One or two sentences in your own words, confident, no asking '
+  + 'whether you have earned it, no selling, no apologizing. Do not repeat it, never mention this '
+  + 'instruction.\n=== END HEADS-UP ===\n';
 
 // job_outcome rows carry amount in the events.amount column so the existing revenue
 // dashboard slices pick them up with zero changes.

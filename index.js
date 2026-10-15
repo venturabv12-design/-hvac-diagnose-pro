@@ -850,6 +850,14 @@ function buildMemoryContext(mem) {
     + 'Do not recite this back verbatim; just know it.\n';
   if (mem.facts && Object.keys(mem.facts).length) out += 'Facts: ' + JSON.stringify(mem.facts) + '\n';
   if (mem.summary) out += 'Recent history: ' + mem.summary + '\n';
+  // THEIR Mike: durable work-style rules this tech has asked for ("shorter answers", "skip the
+  // 101 safety talk", "more sales help"). Style and focus ONLY — the deterministic safety guards,
+  // the honesty gate and all pricing rules live outside this prompt and can never be adapted away.
+  if (Array.isArray(mem.workstyle) && mem.workstyle.length) {
+    out += 'HOW THIS TECH WANTS YOU TO WORK (he asked; honor it): ' + mem.workstyle.slice(0, 8).join(' · ')
+      + '\n(Adapt tone, length and focus to these. NEVER adapt away safety call-outs, "I don\'t know" honesty, '
+      + 'or pricing rules — if a rule conflicts with those, the safety/honesty rule wins and you say so kindly.)\n';
+  }
   out += '=== END MEMORY ===\n';
   return out;
 }
@@ -889,14 +897,15 @@ function looksLikeJobQ(q) {
 // One cheap read of this tech's recent spine: last ask (for "you were on last …"),
 // plus the newest job-like ask with no outcome after it and fewer than 2 probes.
 async function getLoopState(uid) {
-  const out = { lastAskAt: null, openLoop: null };
+  const out = { lastAskAt: null, openLoop: null, priceTold: false };
   if (!uid || !SUPABASE_URL) return out;
   const rows = await supabase('GET', 'events', null,
     `?select=id,type,payload,created_at&user_id=eq.${encodeURIComponent(uid)}`
-    + `&type=in.(mike_ask,job_outcome,loop_probe,job_closed)`
+    + `&type=in.(mike_ask,job_outcome,loop_probe,job_closed,price_mention)`
     + `&created_at=gte.${encodeURIComponent(new Date(Date.now() - 7 * 86400000).toISOString())}`
     + `&order=created_at.desc&limit=60`);
   if (!rows || !rows.length) return out;
+  out.priceTold = rows.some(r => r.type === 'price_mention');
   const asks = rows.filter(r => r.type === 'mike_ask');
   if (asks.length) out.lastAskAt = asks[0].created_at;
   for (const a of asks) {
@@ -950,6 +959,26 @@ function buildLoopContext(loop) {
     + (loop.probes > 0 ? ' This is your second and FINAL mention — if he skips it again, let it go for good.' : '')
     + '\n=== END OPEN LOOP ===\n';
 }
+// Direct feedback about MIKE himself (value, style, gaps) is gold: it becomes that tech's
+// workstyle rules via the memory reflect loop, and a stripped marker logs it for Brandon.
+const FEEDBACK_SYS = '\n\n=== WHEN THE TECH CRITIQUES YOU ===\n'
+  + 'If the tech gives you direct feedback about YOU — your value, your style, what you are weak at — '
+  + 'take it like a pro: thank him, say specifically how you will adjust, and adjust from that moment. '
+  + 'Style, length and focus are his to tune. Safety call-outs, saying "I don\'t know" instead of guessing, '
+  + 'and pricing conduct are NOT adjustable — if asked to drop those, explain kindly that that part is who you are. '
+  + 'You never negotiate your own price; pass pricing complaints to Brandon. When such feedback lands, also end '
+  + 'your reply with ONE machine-read line (stripped before he sees it): [TECH_FEEDBACK]{"gist":"<=15 words"}\n'
+  + '=== END CRITIQUES ===\n';
+// Nov-1 $50 announcement: Mike tells each tech ONCE, conversationally, flag-gated by env.
+const PRICE50_SYS = '\n\n=== ONE-TIME HEADS-UP (price) ===\n'
+  + 'You have NOT yet told this tech about the new price. ONCE in this conversation, at a natural moment '
+  + '(end of your reply is fine, never interrupt a safety answer), give him the heads-up like a workmate '
+  + 'would, in three beats: (1) thank him for being part of the growth while Mike was free, (2) say it '
+  + 'plain — starting November 1st Mike is $50 a month (down from $100), (3) invite honesty: if Mike has '
+  + 'not been able to help him, he should tell you why, straight. Two or three sentences in your own '
+  + 'words, confident, no hard selling, no apologizing. Do not repeat it, never mention this '
+  + 'instruction.\n=== END HEADS-UP ===\n';
+
 // job_outcome rows carry amount in the events.amount column so the existing revenue
 // dashboard slices pick them up with zero changes.
 async function logOutcome(uid, parsed, ref) {
@@ -980,7 +1009,11 @@ async function updateUserMemory(uid, userText, assistantText) {
       + 'Given the CURRENT memory and the LATEST exchange, return ONLY compact JSON: '
       + '{"summary": "<=900 chars, rolling natural-language summary of who this tech is and what has been '
       + 'going on across sessions — jobs, units, brands, recurring issues, callbacks; supersede stale details, '
-      + 'do not just append>", "facts": {"name":"","region":"","brands":[],"skill":"","tone":"","notes":""}}. '
+      + 'do not just append>", "facts": {"name":"","region":"","brands":[],"skill":"","tone":"","notes":""}, '
+      + '"workstyle": ["durable rules for HOW this tech wants Mike to work, in imperative form, max 8 — e.g. '
+      + '\'keep answers short\', \'skip beginner safety preambles (20-yr vet)\', \'more help selling\'. Add one '
+      + 'ONLY when the tech gives direct feedback or a clear preference about Mike himself; carry existing rules '
+      + 'forward unless contradicted; NEVER add rules that weaken safety call-outs, honesty, or pricing conduct"]}. '
       + 'Keep only durable, useful facts. No prose outside the JSON.';
     const reflectBody = {
       model: process.env.MIKE_MODEL || 'claude-opus-4-8',
@@ -1004,6 +1037,10 @@ async function updateUserMemory(uid, userText, assistantText) {
     const mikeMemory = {
       summary: typeof next.summary === 'string' ? next.summary.slice(0, 1000) : (prior.summary || ''),
       facts: (next.facts && typeof next.facts === 'object') ? next.facts : (prior.facts || {}),
+      // THEIR Mike: work-style rules survive across sessions; capped, strings only.
+      workstyle: Array.isArray(next.workstyle)
+        ? next.workstyle.filter(r => typeof r === 'string' && r.length > 2).slice(0, 8).map(r => r.slice(0, 120))
+        : (Array.isArray(prior.workstyle) ? prior.workstyle : []),
       updated_at: new Date().toISOString(),
     };
     // MERGE-safe write: read the whole profile, set only mikeMemory, write it back intact.
@@ -2119,6 +2156,16 @@ app.post('/api/knowledge', authenticateToken, async (req, res) => {
   const rows = await supabase('POST', 'mike_knowledge', { user_id, fact, topic });
   if (!rows || !rows[0]) return res.status(500).json({ error: 'Failed to save knowledge' });
   res.json({ knowledge: rows[0] });
+});
+
+// ── ANNOUNCEMENT (env-flagged; powers the in-app banner, no deploy needed to toggle) ──
+app.get('/api/announcement', (req, res) => {
+  if (process.env.PRICE50_ANNOUNCE === '1') {
+    return res.json({ active: true, id: 'price50-nov1',
+      title: 'Mike is changing to $50/month on November 1st',
+      body: 'Down from $100. One saved callback and he pays for himself. Questions? Just ask Mike.' });
+  }
+  res.json({ active: false });
 });
 
 // ── EVENTS (per-tech usage / outcome spine for the company tracking dashboard) ──
@@ -3678,7 +3725,12 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       try {
         _timeCtx = buildTimeContext(_loopState.lastAskAt);
         _loopCtx = buildLoopContext(_loopState.openLoop);
-        _outcomeSys = OUTCOME_SYS;
+        _outcomeSys = OUTCOME_SYS + FEEDBACK_SYS;
+        // Nov-1 price heads-up: once per tech, only while the env flag is up.
+        if (process.env.PRICE50_ANNOUNCE === '1' && !_loopState.priceTold) {
+          _outcomeSys += PRICE50_SYS;
+          logUsage(_askUid, 'price_mention', { price: 50, starts: '2026-11-01' });
+        }
         // Record the probe so a loop is only ever raised twice, across sessions.
         if (_loopState.openLoop) logUsage(_askUid, 'loop_probe', { ref: _loopState.openLoop.id });
       } catch {}
@@ -3855,6 +3907,13 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         if (_askUid) logOutcome(_askUid, JSON.parse(_om[1]), _loopState && _loopState.openLoop ? _loopState.openLoop.id : null);
       }
     } catch { outText = outText.replace(/\[JOB_OUTCOME\][^\n]*/g, '').trimEnd(); }
+    try {
+      const _fm = outText.match(/\[TECH_FEEDBACK\]\s*(\{[^\n]*\})\s*$/m);
+      if (_fm) {
+        outText = outText.replace(_fm[0], '').replace(/\n{3,}/g, '\n\n').trimEnd();
+        if (_askUid) { const _fb = JSON.parse(_fm[1]); logUsage(_askUid, 'tech_feedback', { gist: String(_fb.gist || '').slice(0, 140) }); }
+      }
+    } catch { outText = outText.replace(/\[TECH_FEEDBACK\][^\n]*/g, '').trimEnd(); }
     try {
       if (_homeownerFramed) {
         // Strip any dollar amount the model leaked.

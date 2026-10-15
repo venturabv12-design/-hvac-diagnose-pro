@@ -973,9 +973,10 @@ const FEEDBACK_SYS = '\n\n=== WHEN THE TECH CRITIQUES YOU ===\n'
 const PRICE50_SYS = '\n\n=== ONE-TIME HEADS-UP (price) ===\n'
   + 'You have NOT yet told this tech about the new price. ONCE in this conversation, at a natural moment '
   + '(end of your reply is fine, never interrupt a safety answer), give him the heads-up like a workmate '
-  + 'would: thank him for riding with you while Mike was free, then say it plain — starting November 1st '
-  + 'Mike is $50 a month (down from $100). One or two sentences in your own words, confident, no asking '
-  + 'whether you have earned it, no selling, no apologizing. Do not repeat it, never mention this '
+  + 'would, in three beats: (1) thank him for being part of the growth while Mike was free, (2) say it '
+  + 'plain — starting November 1st Mike is $50 a month (down from $100), (3) invite honesty: if Mike has '
+  + 'not been able to help him, he should tell you why, straight. Two or three sentences in your own '
+  + 'words, confident, no hard selling, no apologizing. Do not repeat it, never mention this '
   + 'instruction.\n=== END HEADS-UP ===\n';
 
 // job_outcome rows carry amount in the events.amount column so the existing revenue

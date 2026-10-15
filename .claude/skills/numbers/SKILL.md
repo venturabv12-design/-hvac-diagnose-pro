@@ -15,9 +15,17 @@ This procedure exists so those two failures cannot repeat.
 
 ## Non-negotiables
 
-**Exclude the house accounts.** QA CREW `7725dfff-9e37-4eb9-a2cd-5d8c547fbeb3`
-and admin `8c63d02a-e2cc-4401-b457-74d98c8752bd` are Claude and Brandon. They
-are NOT technicians. Every externally-quoted figure excludes both.
+**Exclude ALL house accounts — by pattern, not by a fixed pair.** On 2026-10-15
+the old two-account exclusion (QA CREW `7725dfff-...`, admin `8c63d02a-...`)
+let 33 OTHER test accounts inflate "41 techs / 1,772 questions" into a stat
+card; the truth was **21 techs / 515 questions**. Before quoting anything,
+pull the users table and exclude every id whose email matches (case-insens.):
+`trazertest|selfcheck|example\.com|\.test@|^test@|qa-|baseline|\+test|tuesday\.test|trazerqa`
+plus QA CREW `7725dfff-9e37-4eb9-a2cd-5d8c547fbeb3` and admin
+`8c63d02a-e2cc-4401-b457-74d98c8752bd`. Any new harness account MUST use a
+matching email pattern. 4,524 of 4,543 warranty_lookup rows were the smoke
+self-checker (`trazertest+selfcheck@`) — never quote an event count without
+a per-user breakdown sanity check.
 
 **Never count rows to get a total.** PostgREST truncates. Use
 `Prefer: count=exact` and read `content-range`. Counting a returned array is

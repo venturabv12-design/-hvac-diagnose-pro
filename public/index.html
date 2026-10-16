@@ -5104,9 +5104,11 @@ function recordEvent(type,payload,amount){
     if(document.body&&document.body.getAttribute('data-native'))return;
     var b=document.createElement('div');
     b.id='trzAnnounce';
-    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#0e2a33;color:#eaf6f9;padding:10px 44px 10px 14px;font:600 13px/1.45 system-ui,-apple-system,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.35);';
+    // Safe-area aware: on notched iPhones (PWA black-translucent) the webview runs under the
+    // status bar, so the banner needs the inset or the X lands beneath the clock — untappable.
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#0e2a33;color:#eaf6f9;padding:calc(10px + env(safe-area-inset-top,0px)) 56px 10px 14px;font:600 13px/1.45 system-ui,-apple-system,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.35);';
     b.innerHTML='<span style="opacity:.95">📣 '+a.title+'</span> <span style="opacity:.75;font-weight:400">'+a.body+'</span>'+
-      '<button aria-label="Dismiss" style="position:absolute;right:8px;top:6px;background:none;border:none;color:#eaf6f9;font-size:20px;cursor:pointer;padding:4px 8px" '+
+      '<button aria-label="Dismiss" style="position:absolute;right:6px;top:calc(4px + env(safe-area-inset-top,0px));background:rgba(234,246,249,.12);border:none;border-radius:8px;color:#eaf6f9;font-size:24px;line-height:1;cursor:pointer;padding:8px 14px" '+
       'onclick="localStorage.setItem(\'trz_ann_'+a.id+'\',1);document.getElementById(\'trzAnnounce\').remove();">×</button>';
     document.body.appendChild(b);
   }).catch(function(){});

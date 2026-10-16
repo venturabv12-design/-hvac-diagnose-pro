@@ -14529,10 +14529,34 @@ function _startListeningBrowser(){
   }
 }
 
+// Fires after a real pause in voice mode. This is the ONLY path that sends spoken
+// input to Mike now — the recognizer ending no longer sends. window._voiceGraceMs
+// (default 1600) is how long of a pause counts as "done talking" and is tunable live
+// from the console without a redeploy.
+function _voiceDoSend(){
+  if(window._voiceSendTimer){clearTimeout(window._voiceSendTimer);window._voiceSendTimer=null;}
+  var t=((document.getElementById('chatInput')||{}).value||'').trim();
+  if(t&&voiceMode&&!isMikeSpeaking){
+    setVoiceStatus('Sending to Mike…',t);
+    window._voiceAccum='';
+    autoListenAfterSpeak=true;
+    try{if(speechRecognition)speechRecognition.stop();}catch(_e){}
+    sendChat();
+  }
+}
+
 function _doStartListening(SR){
   try{
+    // Only clear the buffer on a genuinely fresh start. During the grace window the
+    // ear relistens with a send still pending — wiping here would lose "Hey Mike".
+    if(!window._voiceSendTimer)window._voiceAccum='';
     speechRecognition=new SR();
-    speechRecognition.continuous=false;
+    // continuous=true so a mid-sentence pause does NOT end the turn. The old value
+    // (false) made the recognizer finalize on the first pause, which fired "Hey Mike"
+    // off to Mike before the tech finished his sentence — he talked over the user.
+    // Sending is now governed by a silence timer (see onresult), not by the recognizer
+    // ending. iOS may still force-end; onend preserves the buffer and relistens.
+    speechRecognition.continuous=true;
     speechRecognition.interimResults=!isSafari;
     // Intentionally NOT setting .lang — iOS Speech.framework silently fails to
     // capture audio for locales whose dictation packs aren't installed on the
@@ -14553,29 +14577,51 @@ function _doStartListening(SR){
       }
     };
     speechRecognition.onspeechstart=function(){
-      // User started talking — clear any pending idle-check and reset the silence timer
+      // User started talking — clear any pending idle-check and reset the silence timer.
+      // Also cancel any pending auto-send: he is still talking, do NOT fire a fragment.
+      if(window._voiceSendTimer){clearTimeout(window._voiceSendTimer);window._voiceSendTimer=null;}
       if(window._idleCheckFiring)window._idleCheckFiring=false;
       if(window._idleResetTimer)window._idleResetTimer();
     };
     speechRecognition.onresult=function(e){
-      var transcript='';
-      for(var i=e.resultIndex;i<e.results.length;i++)transcript+=e.results[i][0].transcript;
-      if(!isSafari)setVoiceStatus('Listening…',transcript);
-      if(e.results[e.results.length-1].isFinal){
-        document.getElementById('chatInput').value=transcript;
-        if(isSafari)setVoiceStatus('Got it…',transcript);
-        if(window._idleResetTimer)window._idleResetTimer();
+      var finalTxt='',interimTxt='';
+      for(var i=0;i<e.results.length;i++){
+        if(e.results[i].isFinal)finalTxt+=e.results[i][0].transcript;
+        else interimTxt+=e.results[i][0].transcript;
       }
+      // _voiceAccum carries finals from any PRIOR session iOS force-ended, so continued
+      // speech appends instead of overwriting. Full = everything heard so far.
+      var full=(((window._voiceAccum||'')+' '+finalTxt+' '+interimTxt)).replace(/\s+/g,' ').trim();
+      if(full){document.getElementById('chatInput').value=full;setVoiceStatus('Listening…',full);}
+      // Every scrap of speech resets the silence countdown. We send ONLY after a real
+      // pause (the grace window) — never the instant the recognizer sees a breath. This
+      // is the fix for Mike cutting the tech off after "Hey Mike".
+      if(window._voiceSendTimer){clearTimeout(window._voiceSendTimer);window._voiceSendTimer=null;}
+      window._voiceSendTimer=setTimeout(_voiceDoSend,(window._voiceGraceMs||1600));
+      if(window._idleResetTimer)window._idleResetTimer();
     };
     speechRecognition.onend=function(){
       isListening=false;
       if(micBtn){micBtn.classList.remove('mic-listening');micBtn.textContent='🎙️';}
-      var text=document.getElementById('chatInput').value.trim();
-      if(text){
-        setVoiceStatus('Sending to Mike…',text);
-        autoListenAfterSpeak=true;
-        sendChat();
-      } else if(voiceMode&&!isMikeSpeaking){
+      var text=(document.getElementById('chatInput').value||'').trim();
+      // The recognizer stopped. With the silence timer now governing the send, onend is
+      // NOT a send trigger — if we sent here we would be back to the old cut-off bug on
+      // iOS (which force-ends mid-sentence). Instead: preserve what we heard, keep the
+      // ear open, and let the silence timer decide when he is actually done.
+      if(window._voiceSendTimer){
+        // A send is already counting down. iOS likely force-ended; save + relisten so
+        // continued speech still appends, and the timer still fires on real silence.
+        if(text)window._voiceAccum=text;
+        if(voiceMode&&!isMikeSpeaking)setTimeout(function(){if(voiceMode&&!isMikeSpeaking&&!isListening)startListening();},200);
+        return;
+      }
+      if(text&&voiceMode&&!isMikeSpeaking){
+        // Words waiting, no countdown yet (iOS ended before onresult could arm it):
+        // arm the grace window and relisten rather than send a possible fragment.
+        window._voiceAccum=text;
+        window._voiceSendTimer=setTimeout(_voiceDoSend,(window._voiceGraceMs||1600));
+        setTimeout(function(){if(voiceMode&&!isMikeSpeaking&&!isListening)startListening();},200);
+      } else if(!text&&voiceMode&&!isMikeSpeaking){
         setTimeout(function(){if(voiceMode&&!isMikeSpeaking)startListening();},isSafari?1200:600);
       }
     };

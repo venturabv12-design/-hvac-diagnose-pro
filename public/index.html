@@ -13258,15 +13258,16 @@ async function mpWarrantyRun(u){
           try{
             if(typeof showTyping==='function')showTyping();
             var _sys=(typeof AGENT_SYSTEM==='string'?AGENT_SYSTEM:'')+
-              "\n\nANSWER FORMAT — a technician needs numbers, not a shrug. Be brief.\n"+
+              "\n\nANSWER FORMAT — VERDICT FIRST, then back to work. EXACTLY three short lines, no paragraphs, no warranty lecture:\n"+
+              "REFERENCE (fold into the verdict, do not recite as a list):\n"+
               termsInstruction(u.brand||d.brandLabel)+
               (_datedA
-                ? ("2) MANUFACTURE DATE, ALREADY DECODED IN CODE — week "+_datedA.week+" of "+_datedA.year+" ("+_datedA.brand+", "+_datedA.source+"). Use that date. Do NOT re-derive it from the serial and do NOT contradict it.\n"
-                   +"3) Using that date, say whether the unit is still inside the base term today and roughly when it runs out.\n")
-                : "2) You do NOT know this unit's manufacture date. Say NOTHING about its age, its year, or whether coverage has run out.\n"
-                  +"3) Skip the in-or-out question entirely — you cannot answer it without a date. Ask him for the install date instead.\n")+
-              "4) One line on what to quote.\n"+
-              "Say plainly that these are the published terms, not a lookup on this unit — the registry had no record. Never state coverage as confirmed.";
+                ? ("MANUFACTURE DATE, ALREADY DECODED IN CODE — week "+_datedA.week+" of "+_datedA.year+" ("+_datedA.brand+", "+_datedA.source+"). Use it. Do NOT re-derive it from the serial and do NOT contradict it.\n"
+                   +"Line 1 (bold): start with \"Not registered —\" then the call: IN or OUT of the base parts term today, and roughly when it runs/ran out.\n")
+                : "You do NOT know this unit's manufacture date. Say NOTHING about its age or year.\n"
+                  +"Line 1 (bold): start with \"Not registered —\" then the published base terms in one phrase, and that you need the install date to call in-or-out.\n")+
+              "Line 2: one short line on what to quote — published terms, registry had no record, never say \"confirmed\".\n"+
+              "Line 3: pivot back to the job, like \"What are we working on?\"";
             var _q="Unit: "+(u.brand||'')+" "+(u.model||'')+", serial "+u.serial+
               ". The manufacturer's registry returned no registration for it. What is the standard base warranty on this, and is it still in it?";
             var _ans=await callAI(_sys,[{role:'user',content:_q}],520);

@@ -3393,7 +3393,11 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   const _refrigGasOnly = /refrigerant\s+gas\s*(leak|detected|loss)|gas leak detected[^.]{0,40}(low refrigerant|refrigerant)/i.test(_lastUser)
     && !/(smell|odor|odour|rotten|mercaptan|sulfur|sulphur|natural gas|propane|lp|fuel gas|gas (line|pipe|meter|valve|utility))/i.test(_lastUser);
   if (_gasOdor && !_gasResolved && !_refrigGasOnly) {
-    _safetyLead = 'SAFETY FIRST — treat this as a live gas leak. Get every occupant out now, you included — no light switches, no phones, no doorbells, nothing electrical inside on the way out. Shut the gas at the meter ONLY if you can reach it from outside without going back in. Get everyone at least 300 feet from the building, call the gas utility\'s emergency line from out there (911 too if the odor is strong or anyone feels sick), and nobody re-enters until the utility gives the all-clear. Find-and-fix comes after the all-clear, not before.';
+    // Tightened 2026-10-19 on field feedback ("just the main point"). Every protocol
+    // step the 10-02 exam graded on is still here — evacuate incl. the tech, nothing
+    // electrical, meter-from-outside-only, 300 ft, utility line, 911 escalation,
+    // no re-entry, fix-after — each as its own short clause a tech actually reads.
+    _safetyLead = 'SAFETY FIRST — live gas leak. Everyone out now, you included; nothing electrical on the way out — no switches, no phones. Gas off at the meter ONLY if you can reach it from outside. 300 feet back, call the gas utility\'s emergency line from there — 911 too if it\'s strong or anyone feels sick. Nobody re-enters until the utility clears it; find-and-fix comes after.';
   }
   // ── CO NUMBER PARSING ────────────────────────────────────────────────────────────────
   // The old pattern was (\d{3,4}) — three or four digits. Against "10000 ppm air free" it
@@ -3523,7 +3527,10 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   if (!/^(STOP AND EVACUATE|GET OUT NOW)/.test(_safetyLead)
       && /(\bco\b|carbon monoxide)[ -]?(alarm|detector|monitor)[^.]{0,45}(sounding|going off|alarming|in alarm|activated|activation|triggered|just went off|keeps going off|won'?t stop)/i.test(_lastUser)
       && !/(last (week|month|night|winter)|yesterday|days? ago|a while (ago|back)|went off (once|briefly|before)|had gone off|false alarm)/i.test(_lastUser)) {
-    _safetyLead = 'STOP AND EVACUATE — that CO alarm is doing its job, treat it as real. Everyone out of the building now, you included; call 911 or the gas utility\'s emergency line from OUTSIDE. Do not ventilate first and do not hunt for the source yet — air it out and you erase the evidence AND keep people breathing it while you look. Measure ambient CO at the door with YOUR meter before anyone re-enters, and find the source before that alarm gets written off as false.';
+    // Tightened 2026-10-19: same steps (treat as real, evacuate incl. tech, call from
+    // outside, no ventilate-first, meter at the door before re-entry, find the source),
+    // half the words.
+    _safetyLead = 'STOP AND EVACUATE — treat that CO alarm as real. Everyone out now, you included; call 911 or the gas utility from OUTSIDE. Don\'t ventilate first — airing it out erases the evidence while people keep breathing it. Meter the ambient CO at the door before anyone re-enters, and find the source before that alarm gets called false.';
   }
   // (C5) OCCUPANT SYMPTOMS + a combustion appliance = treat it as CO until proven otherwise.
   // Symptoms are now an INDEPENDENT trigger. Previously "headache" only registered if a CO
@@ -3735,7 +3742,14 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         if (_loopState.openLoop) logUsage(_askUid, 'loop_probe', { ref: _loopState.openLoop.id });
       } catch {}
     }
-    const _tailSys = _memContext + _timeCtx + _loopCtx + _outcomeSys + _ragContext + (systemExtra || '') + _factGuards;
+    // The deterministic safety lead is PREPENDED to the final reply after the call
+    // (search: `outText = _safetyLead +`), so the model never sees it and rewrites the
+    // same evacuation/shutdown steps — the tech reads the whole protocol twice. Tell the
+    // model what will already be standing at the top of its reply.
+    const _leadNote = _safetyLead
+      ? '\n\nA DETERMINISTIC SAFETY LEAD WILL OPEN YOUR REPLY — prepended in code, the tech reads it before your first word: "' + _safetyLead + '" Do NOT restate or re-explain any of those steps. Add ONLY what is new: his actual situation, and what happens after the all-clear if it matters.'
+      : '';
+    const _tailSys = _memContext + _timeCtx + _loopCtx + _outcomeSys + _ragContext + (systemExtra || '') + _factGuards + _leadNote;
     let _systemField;
     if (_baseSys.length > 8000) {
       const _baseBlock = { type: 'text', text: _baseSys, cache_control: { type: 'ephemeral', ttl: '1h' } };

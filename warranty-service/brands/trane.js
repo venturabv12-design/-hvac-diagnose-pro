@@ -18,6 +18,8 @@
 // never leaves this module. `normalise()` below reads only the equipment and policy
 // fields; the address is not returned, not cached, and not logged.
 
+const { fetchCertificate } = require('./trane-cert');
+
 const LOOKUP_PAGE = 'https://www.trane.com/residential/en/resources/warranty-and-registration/lookup/';
 // CORRECTED 2026-08-29. This was '/residential/api/warranty-registration/', which is a
 // REAL Trane endpoint — it serves the page's provisions/welcome text — so the call did
@@ -190,7 +192,24 @@ async function lookup(page, serial, extra) {
     throw err;
   }
 
-  return normalise(out.body, serial);
+  const primary = normalise(out.body, serial);
+  if (primary.found !== false) return primary;
+
+  // DEALER-REGISTERED units are invisible to serial-number/search: the registry
+  // answers 200 "Serial number not registered" for a unit carrying a 10-year
+  // Residential Extended term (verified live 2026-10-19). The coverage still exists —
+  // in the PDF certificate behind registrations/certificate/search — so a not-found
+  // here is only an answer about who filed the registration, not about coverage.
+  // The genuine 404 above never reaches this fallback: invented serials 404 on the
+  // primary call, and the certificate endpoint will hand junk serials a real-looking
+  // record, which is exactly the fabrication this ordering prevents.
+  try {
+    const cert = await fetchCertificate(page, serial, lastName);
+    if (cert && cert.found) return cert;
+  } catch (certErr) {
+    console.warn('trane certificate fallback failed:', certErr.message);
+  }
+  return primary;
 }
 
 module.exports = {

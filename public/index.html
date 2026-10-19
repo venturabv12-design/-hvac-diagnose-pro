@@ -1295,6 +1295,27 @@ body[data-mode="contractor"] .msg-agent .msg-bubble-agent{background:var(--ink-2
 .np-grid .npfv{font-size:14px;font-weight:800;color:#fff;margin-top:2px;}
 .np-grid .npfv.hot{color:var(--safety);}
 .np-grid .npfv.good{color:var(--teal-bright);}
+/* WARRANTY CARD — same in-chat ID-card language as .np-idcard, led by --moss (the
+   warranty tool's assigned accent). Term rows carry the number a tech quotes from,
+   so they read bigger than the unit facts above them. */
+.wr-card{margin-top:10px;background:linear-gradient(180deg,#161f16,#101510);border:1px solid rgba(91,123,90,.35);border-radius:14px;overflow:hidden;max-width:100%;}
+.wr-card .wrh{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.13em;color:#9DBC9C;text-transform:uppercase;font-weight:800;}
+.wr-card .wrbadge{margin-left:auto;font-size:9px;font-weight:800;padding:2px 8px;border-radius:6px;letter-spacing:.06em;}
+.wr-card .wrbadge.reg{background:rgba(91,123,90,.2);border:1px solid rgba(91,123,90,.55);color:#9DBC9C;}
+.wr-card .wrbadge.base{background:rgba(255,180,0,.14);border:1px solid rgba(255,180,0,.4);color:var(--safety);}
+.wr-grid{display:grid;grid-template-columns:1fr 1fr;}
+.wr-grid .npf{padding:10px 14px;border-top:1px solid rgba(255,255,255,.05);}
+.wr-grid .npf:nth-child(2n){border-left:1px solid rgba(255,255,255,.05);}
+.wr-terms{border-top:1px solid rgba(255,255,255,.08);}
+.wr-term{display:flex;align-items:baseline;gap:10px;padding:11px 14px;border-top:1px solid rgba(255,255,255,.05);}
+.wr-term:first-child{border-top:none;}
+.wr-term .wtn{font-size:13px;font-weight:800;color:#fff;flex:1;min-width:0;}
+.wr-term .wty{font-size:15px;font-weight:800;color:#9DBC9C;white-space:nowrap;}
+.wr-term .wtd{font-size:11px;color:#7e858c;white-space:nowrap;}
+.wr-term .wts{font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;letter-spacing:.06em;white-space:nowrap;}
+.wr-term .wts.on{background:rgba(91,123,90,.2);border:1px solid rgba(91,123,90,.5);color:#9DBC9C;}
+.wr-term .wts.off{background:rgba(232,53,74,.12);border:1px solid rgba(232,53,74,.4);color:var(--red);}
+.wr-note{padding:9px 14px 11px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;line-height:1.5;color:#8a9188;}
 body[data-mode="contractor"] .msg-user .msg-bubble-user{background:linear-gradient(135deg,var(--teal),var(--teal-deep));color:var(--ink);border-radius:14px 14px 14px 14px;border-top-right-radius:4px;font-size:14px;line-height:1.4;font-weight:600;letter-spacing:-.005em;}
 body[data-mode="contractor"] .msg-time{display:none;}
 
@@ -13025,6 +13046,86 @@ async function mpWarrantyFromNameplate(data){
       missing.map(function(f){return f.label;}).join(' and ')+" alongside the serial.\n\nGive me that and I'll tell you whether it's registered for the extended term or sitting on base coverage.");
   }catch(e){ /* never let this break the scan card */ }
 }
+// THE WARRANTY CARD. Same idea as the nameplate ID-card: the registry's answer as a
+// scannable card in the chat, not a paragraph. Rows are ONLY what the manufacturer
+// actually returned — agent brands (Goodman/Carrier/Rheem/Lennox) send parts/
+// compressor/labor with years+end date, Trane sends its term lines (coverage[]) —
+// never a published-schedule guess dressed as a lookup. Returns {ok,terms} so the
+// caller knows whether the card rendered and whether any term rows made it on; a
+// falsy/zero return means fall back to the plain-text answer.
+function renderWarrantyCard(d,u){
+  try{
+    var c=document.getElementById('chatMessages');
+    if(!c||!d||d.found!==true) return {ok:false,terms:0};
+    var esc=function(s){return (typeof escapeHtml==='function')?escapeHtml(String(s)):String(s).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch];});};
+    var today=new Date().toISOString().slice(0,10);
+    // Techs read 12/26/2030, not 2030-12-26. ISO stays internal for the comparisons.
+    var usDate=function(iso){
+      var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso||''));
+      return m?(Number(m[2])+'/'+Number(m[3])+'/'+m[1]):String(iso||'');
+    };
+    var titleCase=function(s){return String(s||'').replace(/\w\S*/g,function(w){return w.charAt(0).toUpperCase()+w.slice(1);});};
+    var yearsBetween=function(a,b){ // whole years from two ISO dates, or null
+      if(!a||!b) return null;
+      var ms=new Date(b)-new Date(a);
+      if(!(ms>0)) return null;
+      var y=Math.round(ms/31557600000);
+      return y>=1&&y<=30?y:null;
+    };
+    var terms=[];
+    var push=function(name,years,end,status){
+      if(!years&&!end) return;
+      terms.push({name:name,years:years||null,end:end||null,
+        status:status||(end?(end>=today?'Active':'Expired'):null)});
+    };
+    if(d.parts&&(d.parts.years||d.parts.endDate)) push('Parts',d.parts.years,d.parts.endDate);
+    if(d.compressor&&(d.compressor.years||d.compressor.endDate)) push('Compressor',d.compressor.years,d.compressor.endDate);
+    if(d.labor&&(d.labor.years||d.labor.endDate)) push('Labor',d.labor.years,d.labor.endDate);
+    if(!terms.length&&Array.isArray(d.coverage)){
+      d.coverage.forEach(function(p){
+        if(!p) return;
+        var nm=(String(p.description||'').split(':')[0]||'').trim()||p.termLabel||'Coverage';
+        var ym=/\((\d{1,2})\s*Years?\s*\)/i.exec(String(p.description||''));
+        push(nm,(ym?parseInt(ym[1],10):null)||yearsBetween(p.startDate,p.endDate),p.endDate,p.status);
+      });
+    }
+    if(!terms.length&&d.endDate) push(d.termLabel||'Coverage',null,d.endDate,d.status);
+    var reg=d.registered===true;
+    var unitRows=[
+      ['Brand',titleCase(_mpSayBrand((u&&u.brand)||d.brandLabel||''))],
+      ['Model',d.model||(u&&u.model)||''],
+      ['Serial',(u&&u.serial)||''],
+      ['Installed',usDate(d.installDate)]
+    ].filter(function(r){return r[1]&&String(r[1]).trim();});
+    var html='<div class="msg-agent"><div class="wr-card"><div class="wrh">&#x1F6E1;&#xFE0F; Manufacturer warranty'+
+      '<span class="wrbadge '+(reg?'reg':'base')+'">'+(reg?'REGISTERED':'BASE COVERAGE')+'</span></div>';
+    if(unitRows.length){
+      html+='<div class="wr-grid">';
+      unitRows.forEach(function(r){html+='<div class="npf"><div class="npfl">'+esc(r[0])+'</div><div class="npfv">'+esc(r[1])+'</div></div>';});
+      html+='</div>';
+    }
+    if(terms.length){
+      html+='<div class="wr-terms">';
+      terms.forEach(function(t){
+        html+='<div class="wr-term"><div class="wtn">'+esc(t.name)+'</div>'+
+          (t.years?'<div class="wty">'+esc(t.years)+' year'+(t.years===1?'':'s')+'</div>':'')+
+          (t.end?'<div class="wtd">through '+esc(usDate(t.end))+'</div>':'')+
+          (t.status?'<div class="wts '+(String(t.status).toLowerCase()==='active'?'on':'off')+'">'+esc(String(t.status).toUpperCase())+'</div>':'')+
+          '</div>';
+      });
+      html+='</div>';
+    }
+    // The certificate path confirms the term but may not list every component's
+    // schedule — say so ON the card, where he quotes from, not in a bubble he scrolled past.
+    if(d.partial===true||d.via==='certificate'){
+      html+='<div class="wr-note">Straight off the manufacturer’s certificate. Terms shown are what it lists — component-specific coverage (like compressor) can run longer. Plate should read model '+esc(d.model||'')+'.</div>';
+    }
+    html+='</div></div>';
+    c.insertAdjacentHTML('beforeend',html);
+    c.scrollTop=c.scrollHeight;
+    return {ok:true,terms:terms.length};
+  }catch(_e){ return {ok:false,terms:0}; }
+}
 async function mpWarrantyRun(u){
   u=u||{};
   // HOLD WHAT WE ALREADY HAVE. This asked for the missing field and threw away the
@@ -13281,15 +13382,21 @@ async function mpWarrantyRun(u){
         return;
       }
       var reg=d.registered===true;
+      // The card carries the facts; Mike's bubble carries only the judgment call. If the
+      // card could not render (old payload shape, DOM missing), the full text answer
+      // below is the unchanged pre-card behavior — never a silent downgrade.
+      var _card=(typeof renderWarrantyCard==='function')?renderWarrantyCard(d,u):{ok:false,terms:0};
       var lines=[];
-      lines.push(reg
-        ? "**Registered — extended coverage.**"+(d.termLabel?" ("+d.termLabel+")":"")
-        : "**Base coverage — this one was never registered** for the extended term.");
-      lines.push("");
-      if(d.category||d.model) lines.push([d.category,d.model].filter(Boolean).join(" · "));
-      if(d.installDate) lines.push("Installed "+d.installDate);
-      if(d.endDate) lines.push("**Covered through "+d.endDate+"**"+(d.status?" · "+d.status:""));
-      lines.push("");
+      if(!_card.ok){
+        lines.push(reg
+          ? "**Registered — extended coverage.**"+(d.termLabel?" ("+d.termLabel+")":"")
+          : "**Base coverage — this one was never registered** for the extended term.");
+        lines.push("");
+        if(d.category||d.model) lines.push([d.category,d.model].filter(Boolean).join(" · "));
+        if(d.installDate) lines.push("Installed "+d.installDate);
+        if(d.endDate) lines.push("**Covered through "+d.endDate+"**"+(d.status?" · "+d.status:""));
+        lines.push("");
+      }
       lines.push(reg
         ? "That's straight off the manufacturer's registration — not an estimate off the build date. If the failed part falls under it, the customer shouldn't be paying for the part."
         : "Base term only. Worth telling the customer plainly — registration had to happen within the window after install, and it didn't.");
@@ -13304,12 +13411,15 @@ async function mpWarrantyRun(u){
         var yrs=(d.parts&&d.parts.years)||null;
         var _datedB=decodeUnitDate(u.brand||d.brandLabel, u.serial);
         var known=[];
-        if(yrs) known.push("**Parts: "+yrs+" year"+(yrs===1?"":"s")+"** from install"+(reg?" under the registered term":" on the base term")+".");
-        if(d.compressor&&d.compressor.years) known.push("Compressor: "+d.compressor.years+" years.");
-        if(d.labor&&d.labor.years) known.push("Labor: "+d.labor.years+" years.");
+        // When the card already shows the term rows, repeating them as text is noise —
+        // these lines exist only for the no-card fallback.
+        var _onCard=_card.ok&&_card.terms>0;
+        if(yrs&&!_onCard) known.push("**Parts: "+yrs+" year"+(yrs===1?"":"s")+"** from install"+(reg?" under the registered term":" on the base term")+".");
+        if(d.compressor&&d.compressor.years&&!_onCard) known.push("Compressor: "+d.compressor.years+" years.");
+        if(d.labor&&d.labor.years&&!_onCard) known.push("Labor: "+d.labor.years+" years.");
         // d.summary is the registry-derived sentence. Show it only when it adds a term we
         // did not already print, or it just repeats the header in longer words.
-        if(!known.length&&d.summary) known.push(d.summary);
+        if(!known.length&&d.summary&&!_onCard) known.push(d.summary);
         if(known.length) appendMessage('agent',known.join("\n"));
         // The comparison is the part that changes what he tells the customer, and it is
         // NOT on the registry page — it is the manufacturer's published schedule. Ask for

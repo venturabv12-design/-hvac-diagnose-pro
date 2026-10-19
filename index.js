@@ -3392,12 +3392,45 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // the A2L ignition lead (C3) still covers flammable refrigerant.
   const _refrigGasOnly = /refrigerant\s+gas\s*(leak|detected|loss)|gas leak detected[^.]{0,40}(low refrigerant|refrigerant)/i.test(_lastUser)
     && !/(smell|odor|odour|rotten|mercaptan|sulfur|sulphur|natural gas|propane|lp|fuel gas|gas (line|pipe|meter|valve|utility))/i.test(_lastUser);
-  if (_gasOdor && !_gasResolved && !_refrigGasOnly) {
+  // (A2c) LOCATED-LEAK, TECH IN CONTROL — 2026-10-19, Brandon: a tech who walked in,
+  // sniffed around and FOUND the leak at a fitting was getting the full building
+  // evacuation ("holy cow, get everybody out" on a loose union is absurd and teaches
+  // techs to ignore the lead that matters). When the tech has PINPOINTED the source —
+  // named the fitting, soaped it, traced it — he is doing gas work, not reporting an
+  // unknown hazard, and the professional lead applies: isolate, no ignition, fix,
+  // leak-test. FAIL TOWARD DISTRUST: any strong-odor, spreading, symptom, homeowner
+  // framing, or detector-alarm language keeps the FULL evacuation lead regardless.
+  const _gasLocated =
+    (/\b(found|located|pin-?pointed|traced|isolated|got)\b[^.]{0,40}\bleak\b/i.test(_lastUser)
+      || /\bleak\b[^.]{0,15}\b(is|was|'s)?\s*(at|on|in)\b[^.]{0,30}\b(union|flare|flex|connector|fitting|joint|coupling|valve|regulator|manifold|riser|drip leg|pilot|nipple|tee|elbow)\b/i.test(_lastUser)
+      || /\bsoap(ed)?\b[^.]{0,30}\b(bubbl|test)/i.test(_lastUser)
+      || /\bbubbl(es|ing)\b[^.]{0,25}\b(at|on|from)\b/i.test(_lastUser))
+    && !/(strong|heavy|overwhelming|everywhere|whole (house|home|building)|fill(ed|ing)|spread)/i.test(_lastUser)
+    && !/(dizzy|sick|headache|nause|light-?headed|faint)/i.test(_lastUser)
+    && !/(detector|monitor|alarm)/i.test(_lastUser)
+    && !(req.body.homeowner === true || /\bi'?m a homeowner\b|\bas a homeowner\b|\bhomeowner here\b/i.test(_lastUser));
+  // (A2d) A NUMBER BEATS A NOUN — same philosophy as the CO ppm thresholds below: when
+  // the tech gives a combustible-gas READING, grade on the number, not the wording.
+  // Fire-service action level is 10% LEL: at or above, full evacuation no matter how
+  // handy the tech is or how local the leak sounds. Detectable below 10% is working
+  // territory — ignition control, ventilate, meter stays on. No reading = the
+  // located-vs-unknown split decides.
+  const _lelM = /(\d{1,3})\s*(?:%|percent)?\s*(?:of\s+)?(?:the\s+)?(?:lel\b|lower explosive)|(?:lel\b|lower explosive limit)[^.\d]{0,12}(\d{1,3})\s*(?:%|percent)?/i.exec(_lastUser);
+  const _lelPct = _lelM ? parseInt(_lelM[1] || _lelM[2], 10) : null;
+  if ((_gasOdor || _lelPct !== null) && !_gasResolved && !_refrigGasOnly) {
+    if (_lelPct !== null && _lelPct >= 10) {
+      _safetyLead = 'SAFETY FIRST — ' + _lelPct + '% LEL is evacuation territory, the number outranks everything else. Everyone out now, you included; nothing electrical on the way out. Gas off at the meter ONLY from outside. 300 feet back, call the gas utility\'s emergency line — 911 too if anyone feels sick. Nobody re-enters until it clears.';
+    } else if (_lelPct !== null) {
+      _safetyLead = 'SAFETY FIRST — ' + _lelPct + '% LEL confirmed combustible gas, below the 10% action level. Ignition sources dead, ventilate, gas off to the affected line, and keep the meter running while you hunt it. 10% or climbing = stop, everybody out, full protocol.';
+    } else if (_gasLocated) {
+      _safetyLead = 'SAFETY FIRST — gas off to that line before you put a wrench on it, and no ignition sources while it\'s open. Fix it, then soap-test the repair before you gas back up. If the odor\'s beyond right-at-the-fitting, or anyone feels off, that\'s full-evacuation territory — not a wrench job.';
+    } else {
     // Tightened 2026-10-19 on field feedback ("just the main point"). Every protocol
     // step the 10-02 exam graded on is still here — evacuate incl. the tech, nothing
     // electrical, meter-from-outside-only, 300 ft, utility line, 911 escalation,
     // no re-entry, fix-after — each as its own short clause a tech actually reads.
     _safetyLead = 'SAFETY FIRST — live gas leak. Everyone out now, you included; nothing electrical on the way out — no switches, no phones. Gas off at the meter ONLY if you can reach it from outside. 300 feet back, call the gas utility\'s emergency line from there — 911 too if it\'s strong or anyone feels sick. Nobody re-enters until the utility clears it; find-and-fix comes after.';
+    }
   }
   // ── CO NUMBER PARSING ────────────────────────────────────────────────────────────────
   // The old pattern was (\d{3,4}) — three or four digits. Against "10000 ppm air free" it

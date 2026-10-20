@@ -11184,7 +11184,7 @@ async function sendChat(){
   // Requiring the serial in the same sentence made Mike answer from general knowledge instead
   // of pulling the real registration — in front of a customer, 2026-09-08. He already knows the
   // unit; mpUnit() is holding it. Use it rather than making the tech repeat himself.
-  if(currentUser&&_mpWantsWarranty(text)&&(chatAttachment||mpParseUnit(text).serial||mpUnit().serial)){
+  if(currentUser&&_mpWantsWarranty(text)&&(chatAttachment||mpParseUnit(text).serial||mpUnit().serial||_mpUnitFromChat().serial)){
     input.value='';input.style.height='auto';
     var _wx=_mpWarrantyExtras(text);
     if(chatAttachment&&chatAttachment.type&&chatAttachment.type.indexOf('image/')===0){
@@ -11202,7 +11202,10 @@ async function sendChat(){
       return;
     }
     appendMessage('user',escapeHtml(text));
-    mpWarrantyRun(mpUnitLearn(Object.assign({},_mpStripEmpty(mpParseUnit(text)),_wx)));
+    // Chat-derived unit first, the tech's own typed words on top — what he TYPES
+    // outranks what Mike said, and mpUnitLearn wipes the previous unit the moment a
+    // different serial arrives, so the Lennox from earlier never rides into a Carrier.
+    mpWarrantyRun(mpUnitLearn(Object.assign({},_mpStripEmpty(_mpUnitFromChat()),_mpStripEmpty(mpParseUnit(text)),_wx)));
     return;
   }
   // Free-text "draw / illustrate / sketch X" typed straight into chat (no toolbelt tap)
@@ -11367,7 +11370,16 @@ async function sendChat(){
         // shorter is a fragment: keep the brand, drop the fragment, and Mike asks for the
         // serial once instead of reporting a unit as uncovered when it is not.
         if(_pu&&_pu.serial&&String(_pu.serial).length<8){_pu.serial=null;_pu.model=null;}
-        if(_pu&&_pu.brand&&_pu.serial)mpUnitLearn(_mpStripEmpty(_pu),'plate');
+        // The brand word is often NOT in Mike's reply — a Carrier plate that prints only
+        // "25HCE430A300" gets read back as model+serial, the old brand-AND-serial gate
+        // learned nothing, and the next "pull the warranty" asked for what Mike just
+        // said (Brandon, 2026-10-19). Derive the brand from the model prefix the same
+        // way the plate path does; if it stays unknown, learn the serial+model anyway —
+        // the lookup flow asks ONE question (who makes it) instead of three.
+        if(_pu&&_pu.serial&&!_pu.brand&&_pu.model&&typeof _mpBrandFromModel==='function'){
+          try{ _pu.brand=await _mpBrandFromModel(_pu.model); }catch(_bm){}
+        }
+        if(_pu&&_pu.serial)mpUnitLearn(_mpStripEmpty(_pu),'plate');
       }
       // He told Mike the customer's name in passing — "customer's name is Theresa Manly"
       // alongside the photo — and Mike asked for it again two messages later, because
@@ -12687,6 +12699,30 @@ function _mpIsBrandWord(w){
 }
 function _mpStripEmpty(o){
   var r={}; for(var k in o){ if(o[k]!==null&&o[k]!==undefined&&o[k]!=='')r[k]=o[k]; } return r;
+}
+// The unit Mike himself read out in THIS conversation. 2026-10-19, Brandon: Lennox
+// lookup done, then a Carrier plate photo in the same chat — the plate-read fell
+// through to general analysis, Mike read the model and serial out loud in prose, and
+// "pull the warranty" got "give me the model and serial." The information was sitting
+// in the chat box; only the warranty tool couldn't see it. Scan the last few of
+// Mike's own messages for a labelled serial before ever asking the tech to repeat
+// what Mike already said. Same guards as the photo-prose learn: labelled serial only,
+// 8+ chars (shorter is a date-code fragment that reads as NOT REGISTERED on a covered
+// unit), newest message wins.
+function _mpUnitFromChat(){
+  try{
+    var h=(typeof chatHistory!=='undefined'&&Array.isArray(chatHistory))?chatHistory:[];
+    for(var i=h.length-1;i>=0&&i>=h.length-8;i--){
+      var m=h[i];
+      if(!m||m.role!=='assistant')continue;
+      var c=typeof m.content==='string'?m.content:'';
+      if(!c)continue;
+      var u=mpParseUnit(c);
+      if(u&&u.serial&&String(u.serial).length<8){u.serial=null;}
+      if(u&&u.serial)return _mpStripEmpty(u);
+    }
+  }catch(_ce){}
+  return {};
 }
 function _mpWantsWarranty(t){
   t=String(t||'');

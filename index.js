@@ -3223,8 +3223,18 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // use and let him improve from it. That is impossible without the transcript, so store it.
   // Truncated, fire-and-forget, and never allowed to delay or break a tech's answer.
   let _askUid = null;
+  // SLIDING SESSION (2026-10-22). Tokens expired hard at 30 days with NO refresh anywhere,
+  // so every active technician was force-ejected monthly — mid-job, with the client wiping
+  // their saved session on the second 401/402. Once a working token is past
+  // RENEW_AFTER_DAYS (default 7), every answer carries renewed_token: a fresh 30-day JWT
+  // the client swaps in silently. A tech idle past the full 30 days still re-signs-in
+  // once — that boundary is unchanged. Env-tunable so staging can force-renew (0) to test.
+  let _renewTok = null;
   try {
-    _askUid = jwt.verify(authToken, JWT_SECRET, { algorithms: ['HS256'] }).id;
+    const _dec = jwt.verify(authToken, JWT_SECRET, { algorithms: ['HS256'] });
+    _askUid = _dec.id;
+    if (_dec.iat && Date.now() - _dec.iat * 1000 > parseFloat(process.env.RENEW_AFTER_DAYS ?? '7') * 86400000)
+      _renewTok = signToken({ id: _dec.id, email: _dec.email });
     const _last = messages[messages.length - 1];
     let _q = '';
     if (_last && typeof _last.content === 'string') _q = _last.content;
@@ -3353,10 +3363,10 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
           res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
           if (typeof res.flushHeaders === 'function') res.flushHeaders();
           res.write(`data: ${JSON.stringify({ delta: _reply })}\n\n`);
-          res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+          res.write(`data: ${JSON.stringify(_renewTok ? { done: true, renewed_token: _renewTok } : { done: true })}\n\n`);
           return res.end();
         }
-        return res.json({ response: _reply });
+        return res.json(_renewTok ? { response: _reply, renewed_token: _renewTok } : { response: _reply });
       }
       // couldn't read it cleanly → let Mike's normal reply handle it (he'll ask for a clearer photo)
     }
@@ -3892,14 +3902,14 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
               // would have biased the audit toward Mike's most careful replies.
               if (piece) { sentAny = true; _streamed += piece; send({ delta: piece }); }
             } else if (evt.type === 'message_stop') {
-              send({ done: true });
+              send(_renewTok ? { done: true, renewed_token: _renewTok } : { done: true });
             } else if (evt.type === 'error') {
               send({ error: (evt.error && evt.error.message) || 'stream error' });
             }
           }
         }
         if (!sentAny) send({ delta: '' });
-        send({ done: true });
+        send(_renewTok ? { done: true, renewed_token: _renewTok } : { done: true });
         res.end();
         try {
           if (_askUid && _streamed) logUsage(_askUid, 'mike_answer',
@@ -4387,7 +4397,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     // REFLECT — update Mike's memory of this tech from the exchange. Fire-and-forget: never
     // block or delay the answer. (Covers native voice calls, which use this non-stream path.)
     try { if (_askUid) updateUserMemory(_askUid, _lastUser, outText); } catch {}
-    res.json({ response: outText, usage: data.usage });
+    res.json(_renewTok ? { response: outText, usage: data.usage, renewed_token: _renewTok } : { response: outText, usage: data.usage });
 
   } catch (err) {
     if (err.name === 'AbortError') res.status(504).json({ error: 'Request timed out — please try again.' });

@@ -247,13 +247,18 @@ function verifyLegacyPassword(password, hash, salt) {
 
 // ── JWT AUTH ──────────────────────────────────────────────────────────────────
 // Tokens are HS256 JWTs, signed with JWT_SECRET. 30-day expiry.
-// Payload: { id, email } — minimal surface area.
+// Payload: { id, email, pv? } — minimal surface area.
+// pv = password-version: a short HMAC of the stored password hash, carried in the token
+// so the sliding renewal in /api/ai can refuse to extend a session issued against an OLD
+// password. Without it, renewal would quietly repeal the 30-day backstop — a stolen token
+// could re-up forever and a password reset would never evict the thief.
+function pwdVersion(hash) {
+  return crypto.createHmac('sha256', JWT_SECRET).update('pv|' + (hash || '')).digest('hex').slice(0, 12);
+}
 function signToken(user) {
-  return jwt.sign(
-    { id: user.id, email: user.email },
-    JWT_SECRET,
-    { expiresIn: '30d', algorithm: 'HS256' }
-  );
+  const payload = { id: user.id, email: user.email };
+  if (user.password_hash) payload.pv = pwdVersion(user.password_hash);
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '30d', algorithm: 'HS256' });
 }
 
 // ── AUTH MIDDLEWARE ───────────────────────────────────────────────────────────
@@ -3233,8 +3238,22 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   try {
     const _dec = jwt.verify(authToken, JWT_SECRET, { algorithms: ['HS256'] });
     _askUid = _dec.id;
-    if (_dec.iat && Date.now() - _dec.iat * 1000 > parseFloat(process.env.RENEW_AFTER_DAYS ?? '7') * 86400000)
-      _renewTok = signToken({ id: _dec.id, email: _dec.email });
+    const _rdRaw = parseFloat(process.env.RENEW_AFTER_DAYS);
+    const _renewDays = Number.isFinite(_rdRaw) ? _rdRaw : 7;
+    if (_dec.iat && Date.now() - _dec.iat * 1000 > _renewDays * 86400000) {
+      // Renewal must not outlive the password it was issued against: only tokens carrying
+      // pv renew, and only after re-checking pv against the LIVE hash. A pv-less token
+      // (pre-rollout) or a DB miss simply ages out at 30 days like before — renewal is
+      // never granted on a blip, because an unverifiable renewal IS the revocation hole.
+      if (!SUPABASE_URL) {
+        _renewTok = signToken({ id: _dec.id, email: _dec.email }); // dev mode — no DB to check
+      } else if (_dec.pv) {
+        const _rows = await supabase('GET', 'users', null,
+          `?id=eq.${encodeURIComponent(_dec.id)}&select=password_hash`);
+        if (Array.isArray(_rows) && _rows[0] && pwdVersion(_rows[0].password_hash) === _dec.pv)
+          _renewTok = signToken({ id: _dec.id, email: _dec.email, password_hash: _rows[0].password_hash });
+      }
+    }
     const _last = messages[messages.length - 1];
     let _q = '';
     if (_last && typeof _last.content === 'string') _q = _last.content;

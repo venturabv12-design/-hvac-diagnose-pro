@@ -84,10 +84,10 @@ These regions are protected. The `.claude/` hooks enforce this; this section is 
 - `public/lucide.min.js` — bundled library (~356 KB). Never hand-edit (still hard-locked).
 
 **Function bodies inside `public/index.html`:**
-- `parseJSON` — defined at `public/index.html:3387` (`function parseJSON(raw){`)
-- `renderDiagCards` — defined at `public/index.html:3543` (`function renderDiagCards(data,c){`)
-- Any line referencing `JOB_SAVED` — string sentinel for saved-job state. Current occurrence count = 6. Must not change without explicit override.
-- Camera flow (10 functions, lines as of current `main`): `primeCameraAudio` (4629), `checkCameraAccess` (6397), `startLiveCamera` (6417), `startCameraStream` (6467), `stopLiveCamera` (6531), `flipCamera` (6552), `analyzeCameraFrame` (6566), `setCameraResponse` (6615), `updateCameraMicState` (6624), `mikeSayCamera` (6643).
+- `parseJSON` — defined at `public/index.html:8438` (`function parseJSON(raw){`)
+- `renderDiagCards` — defined at `public/index.html:8623` (`function renderDiagCards(data,c){`)
+- Any line referencing `JOB_SAVED` — string sentinel for saved-job state. Current occurrence count = 7. Must not change without explicit override.
+- Camera flow (10 functions, lines as of fix/session-refresh 2026-10-22; line numbers drift with edits — the function NAMES are the lock, re-grep before relying on a number): `primeCameraAudio` (9824), `checkCameraAccess` (15133), `startLiveCamera` (15155), `startCameraStream` (15216), `stopLiveCamera` (15280), `flipCamera` (15301), `analyzeCameraFrame` (15321), `setCameraResponse` (15384), `updateCameraMicState` (15393), `mikeSayCamera` (15412).
 
 **Override**: set `TRAZER_HOOK_OVERRIDE=1` in the environment for a session to bypass the hook blocks. Intentional friction — only use when you've explicitly decided the locked region must change. Hooks emit a stderr warning on override use.
 

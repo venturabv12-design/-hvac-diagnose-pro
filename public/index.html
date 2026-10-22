@@ -8262,6 +8262,9 @@ async function callAI(system,messages,max_tokens,useSearch){
       var res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(reqBody),signal:controller.signal});
       clearTimeout(tid);
       var data=await res.json();
+      // SLIDING SESSION — the server renews a week-old token on every answer; swap it in
+      // silently so an active tech never ages out at the 30-day hard expiry.
+      if(data&&data.renewed_token&&currentUser){currentUser.token=data.renewed_token;try{localStorage.setItem('trazer_user',JSON.stringify(currentUser));}catch(e){}}
       // 401 = invalid/expired token (old base64 token from before Phase 1, or truly expired JWT)
       // Force a clean re-login so user gets a fresh JWT.
       // 401, OR a 402 with paywall:false (e.g. "Invalid or expired session" — a bad/stale
@@ -8376,6 +8379,9 @@ async function callAIStream(system,messages,max_tokens,onToken){
         var evt;try{evt=JSON.parse(payload);}catch(_e){continue;}
         if(evt.delta){full+=evt.delta;if(typeof onToken==='function')onToken(evt.delta);}
         else if(evt.error){streamErr=evt.error;}
+        // SLIDING SESSION — done frames can carry a renewed 30-day token; swap it in so
+        // an active tech never ages out at the hard expiry.
+        if(evt&&evt.renewed_token&&currentUser){currentUser.token=evt.renewed_token;try{localStorage.setItem('trazer_user',JSON.stringify(currentUser));}catch(_e){}}
         // evt.done → loop ends naturally when reader closes
       }
     }

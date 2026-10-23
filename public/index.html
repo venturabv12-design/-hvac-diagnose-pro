@@ -8285,6 +8285,9 @@ async function callAI(system,messages,max_tokens,useSearch){
           localStorage.removeItem('trazer_users');
           currentUser=null;
           document.getElementById('authOverlay').classList.remove('hidden');
+          // One-time rollover note: sessions now renew themselves, so this ejection is the
+          // LAST one an active tech ever sees — say so, or it reads as the same old bug.
+          try{if(typeof showAuthErr==='function')showAuthErr('Quick one-time sign-in — Mike upgraded how sessions stay signed in. Log back in and you won\'t get signed out again.');}catch(_e){}
         }
         throw new Error('Your session expired. Please sign in again.');
       }

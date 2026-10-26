@@ -4427,6 +4427,91 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   }
 });
 
+// ── FOUNDER HQ — "Ask Cello" (owner business advisor) ──────────────────────────
+// A SEPARATE brain from Mike. Mike is the tech-facing HVAC master and runs behind the
+// deterministic safety/pricing guard (a tech/homeowner must never be quoted a price,
+// never handed a dangerous method). This route is the OPPOSITE audience: Brandon, the
+// owner, asking business questions — what to charge a 30-man shop, who to follow up
+// with, how a tech is trending. Those answers NEED dollar figures, so this path
+// intentionally does NOT run Mike's guard layer and does NOT log as a mike_ask (which
+// would poison the usage metrics the HQ itself reports). Gated hard: authenticateToken
+// + requireAdmin — only the owner/admin reaches it, server-enforced, same as the
+// dashboard. Net-new; touches nothing in the /api/ai path above.
+app.post('/api/hq/ask', authenticateToken, requireAdmin, async (req, res) => {
+  if (!ANTHROPIC_API_KEY)
+    return res.status(503).json({ error: 'AI not configured.' });
+  if (globalActive >= MAX_GLOBAL)
+    return res.status(503).json({ error: 'Server at capacity — please try again in a moment.' });
+
+  const { messages, context = '' } = req.body || {};
+  if (!messages || !Array.isArray(messages) || messages.length === 0)
+    return res.status(400).json({ error: 'messages required' });
+
+  // The owner's live business context (real stats + pricebook) is passed from the client,
+  // which already holds it from the admin dashboard. Clamp its size; it is admin-only
+  // input so there is no untrusted-user risk, but a runaway payload still shouldn't bloat
+  // the prompt. A business advisor is useless if it invents numbers, so the system prompt
+  // binds Cello to the supplied context and to saying "I don't have that" when it's absent.
+  const _ctx = String(context || '').slice(0, 6000);
+  const _system =
+    "You are Cello — Brandon Ventura's AI COO for Trazer Mike, the AI master-HVAC-tech product " +
+    "(Mike lives in every technician's pocket; shops pay per seat). You are NOT Mike and you are NOT " +
+    "talking to a technician or a homeowner — you are talking to Brandon, the founder/owner, about " +
+    "running and growing this business. Speak plainly and briefly (he is usually on his phone): answer " +
+    "first in 2-4 sentences, lead with the call, no preamble.\n\n" +
+    "RULES:\n" +
+    "- Business numbers (what to charge a shop, margins, deal sizing) ARE your job — give real figures and ranges. " +
+    "This is the owner's cockpit, not Mike's tech chat; there is no homeowner here to protect.\n" +
+    "- NEVER invent a metric about his actual business. If a number (tech counts, revenue, who's active) isn't in the " +
+    "BUSINESS CONTEXT below, say you don't have it rather than guessing.\n" +
+    "- No financial guarantees; flag anything legal/tax/big-money as 'run it by a real pro too.'\n" +
+    "- When he asks who to follow up with or who's slipping, use the context's real names/flags.\n\n" +
+    "BUSINESS CONTEXT (his live data, as of this session — may be partial):\n" +
+    (_ctx || '(none supplied this turn)');
+
+  const body = {
+    model: process.env.MIKE_MODEL || 'claude-opus-4-8',
+    max_tokens: 1024,
+    system: _system,
+    messages,
+  };
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55000);
+  globalActive++;
+  try {
+    const _fo = await callModelWithFailover(body, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      signal: controller.signal,
+    }, { stream: false });
+    const response = _fo.res;
+    const data = await response.json();
+    if (!response.ok) {
+      const msg = data?.error?.message || `API error ${response.status}`;
+      console.error('HQ ask error:', response.status, msg, `(last model: ${_fo.model})`);
+      return res.status(response.status === 429 ? 429 : 502).json({ error: msg });
+    }
+    const text = (data.content || [])
+      .filter(b => b.type === 'text')
+      .map(b => b.text)
+      .join('\n')
+      .trim();
+    return res.json({ response: text || 'No response.' });
+  } catch (err) {
+    if (err.name === 'AbortError') return res.status(504).json({ error: 'Request timed out — please try again.' });
+    console.error('HQ ask error:', err.message);
+    return res.status(502).json({ error: 'Connection error — please try again.' });
+  } finally {
+    clearTimeout(timeout);
+    globalActive = Math.max(0, globalActive - 1);
+  }
+});
+
 // ── TTS ───────────────────────────────────────────────────────────────────────
 // Auth + rate-limited: token comes from body (existing frontend pattern, same as /api/ai)
 // or Authorization: Bearer header. authenticateToken reads both. (Security fix C3.)

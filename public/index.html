@@ -946,6 +946,138 @@ body[data-device="phone"] .dev-filter-row{gap:12px;}
 .adm-status-btn{background:var(--teal);border:none;border-radius:8px;color:#fff;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
 .adm-spinner{width:15px;height:15px;border:2px solid #2a3540;border-top-color:var(--teal);border-radius:50%;display:inline-block;animation:admspin .7s linear infinite;vertical-align:middle;margin-right:8px;}
 @keyframes admspin{to{transform:rotate(360deg)}}
+
+/* ══════════════════ FOUNDER HQ — "Trazer Mike HQ" ══════════════════
+   Brandon's daily cockpit. Lives in the owner/admin side (opens from the
+   profile menu, same gate as the old admin dashboard). Dark cockpit family
+   so flipping to "The numbers" (the detailed #adminOverlay) feels like one
+   place. Uses the app's real brand tokens: --teal (good), --safety (needs
+   you), --rust (primary). Everything scoped under #hqOverlay. Net-new. */
+#hqOverlay{position:fixed;inset:0;z-index:9991;background:#0b0e10;display:none;overflow-y:auto;color:#F4EFE6;font-family:var(--font-ui);-webkit-font-smoothing:antialiased;}
+#hqOverlay.show{display:block;}
+.hq-wrap{max-width:680px;margin:0 auto;padding:14px 16px 90px;}
+.hq-demohint{font-family:var(--font-code);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:#5b6672;text-align:center;margin:2px 0 7px;}
+.hq-demobar{position:sticky;top:0;z-index:6;background:#0b0e10;padding:8px 0 10px;display:flex;align-items:center;gap:10px;}
+.hq-seg{display:flex;background:#12161a;border:1px solid #232a31;border-radius:12px;padding:4px;flex:1;}
+.hq-seg button{flex:1;border:none;background:none;color:#8a96a2;font-family:inherit;font-weight:800;font-size:13px;padding:9px 8px;border-radius:9px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;-webkit-appearance:none;}
+.hq-seg button.on{background:linear-gradient(180deg,var(--rust),var(--rust-deep));color:#fff;box-shadow:0 2px 10px rgba(199,85,59,.4);}
+.hq-xclose{flex:none;background:#12161a;border:1px solid #232a31;border-radius:10px;color:#8a96a2;font-size:13px;font-weight:700;padding:9px 13px;cursor:pointer;font-family:inherit;-webkit-appearance:none;}
+
+.hq-header{display:flex;align-items:center;gap:12px;padding:4px 0 2px;}
+.hq-mark{width:40px;height:40px;border-radius:11px;flex:none;display:grid;place-items:center;color:#fff;font-family:var(--font-display);font-size:23px;background:linear-gradient(145deg,var(--rust),var(--rust-deep));box-shadow:0 3px 12px rgba(199,85,59,.4);}
+.hq-brand .co{font-family:var(--font-code);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5b6672;}
+.hq-brand h1{font-family:var(--font-display);font-size:24px;letter-spacing:.5px;text-transform:uppercase;line-height:1;margin-top:2px;color:#fff;}
+.hq-me{margin-left:auto;display:flex;align-items:center;gap:9px;}
+.hq-ava{width:38px;height:38px;border-radius:50%;background:#1d2228;display:grid;place-items:center;font-weight:800;font-size:13px;color:#8a96a2;}
+
+.hq-tabs{display:flex;gap:8px;margin:14px 0 18px;overflow-x:auto;padding-bottom:3px;-webkit-overflow-scrolling:touch;}
+.hq-tabs::-webkit-scrollbar{display:none;}
+.hq-tabs button{border:1px solid #232a31;background:#12161a;color:#8a96a2;font-family:inherit;font-weight:700;font-size:13px;padding:9px 15px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:all .14s;-webkit-appearance:none;position:relative;}
+.hq-tabs button.on{background:rgba(199,85,59,.14);border-color:var(--rust);color:#fff;}
+.hq-tabs button .hq-flag{margin-left:7px;background:var(--safety);color:#1a140a;font-size:10px;font-weight:800;border-radius:20px;padding:1px 7px;}
+
+.hq-panel{display:none;}
+.hq-panel.on{display:block;animation:hqfade .2s ease;}
+@keyframes hqfade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+.hq-greet{background:linear-gradient(135deg,#12161a,#171c21);border:1px solid #232a31;border-radius:16px;padding:16px 18px;margin-bottom:18px;position:relative;overflow:hidden;}
+.hq-greet::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(var(--teal),var(--rust));}
+.hq-greet .who{font-family:var(--font-code);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);font-weight:700;display:flex;align-items:center;gap:7px;margin-bottom:7px;}
+.hq-greet .who .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 0 var(--teal);animation:hqpulse 2.4s infinite;}
+@keyframes hqpulse{0%{box-shadow:0 0 0 0 rgba(58,139,138,.5)}70%{box-shadow:0 0 0 7px rgba(58,139,138,0)}100%{box-shadow:0 0 0 0 rgba(58,139,138,0)}}
+.hq-greet p{margin:0;font-size:15px;line-height:1.55;color:#e7e2d8;}
+.hq-greet b{font-weight:750;color:#fff;}
+
+.hq-sectlabel{font-family:var(--font-code);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--rust);font-weight:700;margin:22px 0 12px;display:flex;align-items:center;gap:11px;}
+.hq-sectlabel .ct{margin-left:auto;color:#5b6672;font-weight:600;}
+
+.hq-flagged{background:rgba(255,180,0,.09);border:1px solid rgba(255,180,0,.34);border-radius:14px;padding:6px 7px;}
+.hq-fitem{display:flex;align-items:center;gap:12px;padding:12px;text-decoration:none;}
+.hq-fitem+.hq-fitem{border-top:1px solid rgba(255,180,0,.18);}
+.hq-fitem .ic{width:30px;height:30px;border-radius:8px;flex:none;background:rgba(255,180,0,.2);display:grid;place-items:center;font-size:15px;}
+.hq-fitem .t{flex:1;font-size:14px;color:#e7e2d8;}
+.hq-fitem .t b{font-weight:750;color:#fff;}
+.hq-fitem .go{font-size:12px;font-weight:700;color:var(--safety);white-space:nowrap;}
+.hq-clear{background:#12161a;border:1px solid #232a31;border-radius:14px;padding:16px;text-align:center;color:#8a96a2;font-size:14px;}
+.hq-clear b{color:var(--teal);}
+
+.hq-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+@media(max-width:560px){.hq-stats{grid-template-columns:repeat(2,1fr);}}
+.hq-stat{background:#12161a;border:1px solid #232a31;border-radius:13px;padding:14px;}
+.hq-stat .n{font-family:var(--font-display);font-size:28px;line-height:1;letter-spacing:.3px;color:#fff;}
+.hq-stat .n.good{color:var(--teal);}
+.hq-stat .n.warn{color:var(--safety);}
+.hq-stat .l{font-size:11px;color:#5b6672;margin-top:6px;font-weight:600;line-height:1.3;}
+
+.hq-mission{background:#12161a;border:1px solid #232a31;border-radius:16px;padding:6px 8px;}
+.hq-progress{display:flex;align-items:center;gap:12px;padding:12px 13px 7px;}
+.hq-bar{flex:1;height:8px;border-radius:5px;background:#1d2228;overflow:hidden;}
+.hq-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--rust));border-radius:5px;width:0;transition:width .3s;}
+.hq-progress .lbl{font-family:var(--font-code);font-size:12px;color:#8a96a2;font-variant-numeric:tabular-nums;}
+.hq-obj{display:flex;align-items:flex-start;gap:12px;padding:13px 12px;border-radius:12px;cursor:pointer;transition:background .13s;}
+.hq-obj+.hq-obj{border-top:1px solid #1d2228;}
+.hq-obj:hover{background:#171c21;}
+.hq-box{width:22px;height:22px;border-radius:7px;border:2px solid #2d343c;flex:none;margin-top:1px;display:grid;place-items:center;transition:all .14s;color:transparent;font-size:13px;font-weight:900;}
+.hq-obj.done .hq-box{background:var(--teal);border-color:var(--teal);color:#fff;}
+.hq-obj .t{flex:1;}
+.hq-obj .t .h{font-weight:700;font-size:14.5px;color:#f4efe6;transition:color .14s;}
+.hq-obj.done .t .h{color:#5b6672;text-decoration:line-through;}
+.hq-obj .t .d{color:#8a96a2;font-size:12.5px;margin-top:3px;}
+.hq-tag{font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;margin-top:2px;flex:none;}
+.hq-tag.sell{background:rgba(199,85,59,.14);color:var(--rust);}
+.hq-tag.ship{background:rgba(58,139,138,.14);color:var(--teal);}
+.hq-tag.money{background:rgba(255,180,0,.14);color:var(--safety);}
+
+.hq-world{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;}
+@media(max-width:560px){.hq-world{grid-template-columns:repeat(2,1fr);}}
+.hq-tile{background:#12161a;border:1px solid #232a31;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:border-color .14s;-webkit-appearance:none;text-align:left;color:inherit;font-family:inherit;}
+.hq-tile:hover{border-color:var(--rust);}
+.hq-tile .ic{width:32px;height:32px;border-radius:9px;background:rgba(199,85,59,.13);border:1px solid rgba(199,85,59,.34);display:grid;place-items:center;font-size:17px;}
+.hq-tile .nm{font-weight:750;font-size:14px;color:#fff;}
+.hq-tile .sub{font-size:11.5px;color:#5b6672;}
+.hq-tile .soon{font-size:10px;font-weight:700;color:#5b6672;border:1px solid #2d343c;border-radius:20px;padding:1px 7px;align-self:flex-start;margin-top:2px;}
+
+/* Ask Cello */
+.hq-chat{display:flex;flex-direction:column;gap:12px;}
+.hq-msgs{display:flex;flex-direction:column;gap:12px;min-height:40px;}
+.hq-msg{max-width:88%;padding:12px 15px;border-radius:14px;font-size:14.5px;line-height:1.55;white-space:pre-wrap;word-wrap:break-word;}
+.hq-msg.me{align-self:flex-end;background:linear-gradient(180deg,var(--rust),var(--rust-deep));color:#fff;border-bottom-right-radius:5px;}
+.hq-msg.cello{align-self:flex-start;background:#12161a;border:1px solid #232a31;border-bottom-left-radius:5px;color:#e7e2d8;}
+.hq-msg.cello .who{font-family:var(--font-code);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:6px;}
+.hq-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.hq-chip{font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:20px;background:#12161a;border:1px solid #232a31;color:#8a96a2;cursor:pointer;transition:all .13s;-webkit-appearance:none;font-family:inherit;}
+.hq-chip:hover{border-color:var(--rust);color:#fff;}
+.hq-askfield{display:flex;align-items:center;gap:10px;background:#12161a;border:1.5px solid #232a31;border-radius:14px;padding:11px 14px;position:sticky;bottom:12px;}
+.hq-askfield input{flex:1;background:none;border:none;color:#fff;-webkit-text-fill-color:#fff;font-family:inherit;font-size:15px;outline:none;}
+.hq-askfield input::placeholder{color:#5b6672;}
+.hq-askfield .send{width:36px;height:36px;border-radius:50%;background:var(--rust);border:none;display:grid;place-items:center;cursor:pointer;color:#fff;font-size:17px;flex:none;-webkit-appearance:none;}
+.hq-askfield .send:disabled{opacity:.5;}
+
+/* Team */
+.hq-person{display:flex;align-items:center;gap:13px;padding:13px 2px;border-bottom:1px solid #1d2228;}
+.hq-person:last-child{border-bottom:none;}
+.hq-person .mini{width:38px;height:38px;border-radius:50%;background:#1d2228;display:grid;place-items:center;font-weight:800;font-size:13px;color:#8a96a2;flex:none;}
+.hq-person .pn{flex:1;min-width:0;}
+.hq-person .pn b{font-weight:750;font-size:14.5px;color:#fff;display:block;}
+.hq-person .pn small{display:block;color:#5b6672;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hq-status{font-size:12px;font-weight:700;padding:5px 11px;border-radius:20px;white-space:nowrap;flex:none;}
+.hq-status.on{background:rgba(58,139,138,.14);color:var(--teal);}
+.hq-status.off{background:#1d2228;color:#8a96a2;}
+
+/* Business / legal */
+.hq-biz{display:flex;flex-direction:column;gap:11px;}
+.hq-doc{display:flex;align-items:center;gap:13px;background:#12161a;border:1px solid #232a31;border-radius:13px;padding:14px;}
+.hq-doc .ic{width:34px;height:34px;border-radius:9px;flex:none;background:rgba(58,139,138,.12);border:1px solid rgba(58,139,138,.3);display:grid;place-items:center;font-size:16px;}
+.hq-doc .info{flex:1;min-width:0;}
+.hq-doc .info b{font-weight:750;font-size:14px;color:#fff;display:block;}
+.hq-doc .info small{color:#5b6672;font-size:12px;}
+.hq-doc .slot{font-size:12px;font-weight:700;color:var(--teal);border:1px solid rgba(58,139,138,.4);border-radius:9px;padding:7px 12px;background:rgba(58,139,138,.08);cursor:pointer;white-space:nowrap;-webkit-appearance:none;font-family:inherit;}
+.hq-doc.filled .slot{color:var(--safety);border-color:rgba(255,180,0,.4);background:rgba(255,180,0,.08);}
+.hq-note{font-size:12px;color:#5b6672;line-height:1.55;margin-top:4px;padding:0 2px;}
+
+/* floating return pill when flipped to tech side */
+.hq-return{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:9992;display:none;align-items:center;gap:8px;background:linear-gradient(180deg,var(--rust),var(--rust-deep));color:#fff;border:none;border-radius:30px;padding:12px 20px;font-family:var(--font-ui);font-weight:800;font-size:14px;box-shadow:0 8px 28px rgba(0,0,0,.5);cursor:pointer;-webkit-appearance:none;}
+.hq-return.show{display:flex;}
 .adm-spark{display:flex;align-items:flex-end;gap:5px;height:64px;padding-top:8px;}
 .adm-spark-bar{flex:1;min-width:4px;background:linear-gradient(180deg,var(--teal),var(--teal-dark));border-radius:3px 3px 0 0;min-height:3px;position:relative;transition:height .3s;}
 .adm-spark-bar:last-child{background:linear-gradient(180deg,#FFB400,#C7553B);}
@@ -3197,12 +3329,115 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   <div id="devTabContent" style="display:none"></div>
 </div>
 </div>
+
+<!-- ══════════════ FOUNDER HQ — Brandon's daily cockpit ══════════════
+     Opens from the profile menu (same owner/admin gate as the old admin
+     dashboard, see showFounderHQ). One app, two doors: the Owner|Tech flip
+     at the top swaps this cockpit for the REAL tech app underneath. Tools >
+     "The numbers" opens the existing detailed #adminOverlay. Net-new. -->
+<div id="hqOverlay">
+  <div class="hq-wrap">
+    <div class="hq-demohint">Demo switch — flip between what you see and what your techs see</div>
+    <div class="hq-demobar">
+      <div class="hq-seg">
+        <button id="hqOwnerBtn" class="on" onclick="hqFlip('owner')">🏢 Owner side</button>
+        <button id="hqTechBtn" onclick="hqFlip('tech')">🔧 Tech side</button>
+      </div>
+      <button class="hq-xclose" onclick="closeHQ()">Close</button>
+    </div>
+
+    <header class="hq-header">
+      <div class="hq-mark">M</div>
+      <div class="hq-brand"><div class="co">Trazer Intelligence</div><h1>Mike&nbsp;HQ</h1></div>
+      <div class="hq-me"><div class="hq-ava" id="hqAva">BV</div></div>
+    </header>
+
+    <div class="hq-tabs" id="hqTabs">
+      <button class="on" data-tab="home" onclick="hqSetTab('home')">Home</button>
+      <button data-tab="ask" onclick="hqSetTab('ask')">Ask Cello</button>
+      <button data-tab="team" onclick="hqSetTab('team')">Team</button>
+      <button data-tab="tools" onclick="hqSetTab('tools')">Tools</button>
+      <button data-tab="biz" onclick="hqSetTab('biz')">Business</button>
+    </div>
+
+    <!-- HOME -->
+    <div class="hq-panel on" id="hqPanel-home">
+      <div class="hq-greet">
+        <div class="who"><span class="dot"></span> Cello · your AI COO</div>
+        <p id="hqGreetText">Loading your numbers…</p>
+      </div>
+
+      <div class="hq-sectlabel">Needs you now <span class="ct" id="hqFlagCt"></span></div>
+      <div id="hqFlagged"><div class="hq-clear">Loading…</div></div>
+
+      <div class="hq-sectlabel">Your scoreboard</div>
+      <div class="hq-stats">
+        <div class="hq-stat"><div class="n" id="hqStatTotal">–</div><div class="l">techs signed up</div></div>
+        <div class="hq-stat"><div class="n good" id="hqStatActive">–</div><div class="l">active this week</div></div>
+        <div class="hq-stat"><div class="n warn" id="hqStatPaying">–</div><div class="l">paying</div></div>
+        <div class="hq-stat"><div class="n" id="hqStatAsks">–</div><div class="l">questions · 7d</div></div>
+      </div>
+
+      <div class="hq-sectlabel">Today's mission <span class="ct" id="hqMissCt"></span></div>
+      <div class="hq-mission" id="hqMission">
+        <div class="hq-progress"><div class="hq-bar"><span id="hqBar"></span></div><div class="lbl" id="hqPlbl">0%</div></div>
+        <div id="hqObjList"></div>
+      </div>
+      <div class="hq-note">Your own daily checklist — it lives on this device. Check items off; it remembers.</div>
+    </div>
+
+    <!-- ASK CELLO -->
+    <div class="hq-panel" id="hqPanel-ask">
+      <div class="hq-sectlabel">Ask your business</div>
+      <div class="hq-chat">
+        <div class="hq-chips" id="hqChips">
+          <button class="hq-chip" onclick="hqChip(this)">What should I charge a 30-man shop?</button>
+          <button class="hq-chip" onclick="hqChip(this)">Who should I follow up with?</button>
+          <button class="hq-chip" onclick="hqChip(this)">How are my numbers trending?</button>
+        </div>
+        <div class="hq-msgs" id="hqMsgs"></div>
+        <div class="hq-askfield">
+          <input id="hqAskInput" placeholder="Ask Cello anything about your business…" autocomplete="off"
+                 onkeydown="if(event.key==='Enter')hqAsk()">
+          <button class="send" id="hqAskSend" onclick="hqAsk()" aria-label="Send">→</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEAM -->
+    <div class="hq-panel" id="hqPanel-team">
+      <div class="hq-sectlabel">Your team <span class="ct" id="hqTeamCt"></span></div>
+      <div id="hqTeam"><div class="hq-clear">Loading roster…</div></div>
+    </div>
+
+    <!-- TOOLS -->
+    <div class="hq-panel" id="hqPanel-tools">
+      <div class="hq-sectlabel">Your world</div>
+      <div class="hq-world">
+        <button class="hq-tile" onclick="hqTool('pricebook')"><div class="ic">📒</div><div class="nm">Pricebook</div><div class="sub">What to charge</div><span class="soon">Coming soon</span></button>
+        <button class="hq-tile" onclick="hqTool('prospects')"><div class="ic">📍</div><div class="nm">Prospects</div><div class="sub">Shops to pitch</div><span class="soon">Coming soon</span></button>
+        <button class="hq-tile" onclick="hqTool('numbers')"><div class="ic">📊</div><div class="nm">The numbers</div><div class="sub">Full dashboard</div></button>
+        <button class="hq-tile" onclick="hqTool('billing')"><div class="ic">⚙️</div><div class="nm">Prices &amp; plan</div><div class="sub">Billing, team</div></button>
+        <button class="hq-tile" onclick="hqTool('playbook')"><div class="ic">📖</div><div class="nm">Mike's playbook</div><div class="sub">Your rules</div><span class="soon">Coming soon</span></button>
+      </div>
+    </div>
+
+    <!-- BUSINESS / LEGAL -->
+    <div class="hq-panel" id="hqPanel-biz">
+      <div class="hq-sectlabel">Business &amp; legal <span class="ct">company binder</span></div>
+      <div class="hq-biz" id="hqBiz"></div>
+      <div class="hq-note">This is where the company's paperwork lives so it's one tap away when a shop, a partner, or a lender asks. Phase 1 holds the slots — attach a link or a file to each and it stays put on this device. Nothing here is auto-generated.</div>
+    </div>
+  </div>
+</div>
+<button class="hq-return" id="hqReturn" onclick="hqFlip('owner')">⟵ Back to Owner HQ</button>
+
 <div class="profile-dd" id="profileDD">
 <div class="pdd-head"><div class="pdd-name" id="pddName">-</div><div class="pdd-email" id="pddEmail"></div><div class="pdd-plan" id="pddPlan">Trial</div></div>
 <div class="pdd-trial" id="pddTrial" style="display:none">🎯 <strong><span id="pddTrialDays">7</span> days</strong> left in free trial</div>
 <div class="pdd-usage"><div class="pdd-usage-lbl">Usage</div><div class="pdd-bar"><div class="pdd-bar-fill" id="pddBarFill" style="width:0%"></div></div><div class="pdd-usage-count" id="pddUsageCount">0 AI calls</div></div>
 <div class="pdd-menu">
-  <div class="pdd-item" id="adminMenuItem" style="display:none;color:#3A8B8A;font-weight:700;" onclick="pddStats()"><span class="pdd-ic">📊</span>Admin Stats</div>
+  <div class="pdd-item" id="adminMenuItem" style="display:none;color:#3A8B8A;font-weight:700;" onclick="pddStats()"><span class="pdd-ic">📊</span>Mike HQ</div>
   <div class="pdd-item" onclick="closeProfileDD();toggleLangMenu();"><span class="pdd-ic">🌐</span><span data-v2i18n="qaLanguage">Language</span></div>
   <div class="pdd-item" onclick="pddProfile()"><span class="pdd-ic">👤</span>Profile Settings</div>
   <div class="pdd-item" id="pddBillingItem" onclick="pddBilling()"><span class="pdd-ic">💳</span>Billing &amp; Plan</div>
@@ -5273,7 +5508,7 @@ function isProFeature(feature){
 }
 
 // pddBilling replaced below
-function pddStats(){closeProfileDD();window._settingsReturn=true;showAdminDashboard();}
+function pddStats(){closeProfileDD();showFounderHQ();}
 // pddWhatsNew replaced below
 // pddHelp replaced below
 function pddProfile(){
@@ -7434,6 +7669,302 @@ function admVerifyDiagram(btn,id){
     .catch(function(){btn.disabled=false;btn.innerHTML='Verify &#10003;';});
 }
 function closeAdmin(){var el=document.getElementById('adminOverlay');if(el)el.classList.remove('show');_reopenSettingsIfArmed();}
+
+/* ══════════════════ FOUNDER HQ — cockpit controller ══════════════════
+   Opens from the profile menu (pddStats) behind the SAME owner/admin gate
+   the old admin dashboard used. Lands on Home. "The numbers" tile opens the
+   existing detailed dashboard (showAdminDashboard). Net-new; touches no
+   locked function. */
+function hqEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':'&quot;';});}
+
+function showFounderHQ(){
+  // Mirror showAdminDashboard's client gate (server still enforces on every fetch).
+  if(!currentUser||!(currentUser.role==='admin'||currentUser.plan==='admin'||currentUser.isAdmin)){
+    if(typeof showToast==='function')showToast('Access denied.','error',3000);
+    return;
+  }
+  var el=document.getElementById('hqOverlay');if(!el)return;
+  var who=(currentUser.name||currentUser.email||'BV').trim();
+  var initials=who.split(/\s+/).map(function(p){return p[0];}).join('').slice(0,2).toUpperCase()||'BV';
+  var ava=document.getElementById('hqAva');if(ava)ava.textContent=initials;
+  el.classList.add('show');
+  hqFlip('owner');
+  hqSetTab('home');
+  el.scrollTop=0;
+  hqRenderMissions();
+  hqRenderBiz();
+  hqLoadData();
+}
+function closeHQ(){
+  var el=document.getElementById('hqOverlay');if(el)el.classList.remove('show');
+  var pill=document.getElementById('hqReturn');if(pill)pill.classList.remove('show');
+  if(typeof _reopenSettingsIfArmed==='function')_reopenSettingsIfArmed();
+}
+// One app, two doors. Owner = this cockpit. Tech = the REAL tech app underneath
+// (adminSetView('pro') is the genuine contractor view), with a floating pill back.
+function hqFlip(side){
+  var el=document.getElementById('hqOverlay'), pill=document.getElementById('hqReturn');
+  var ob=document.getElementById('hqOwnerBtn'), tb=document.getElementById('hqTechBtn');
+  if(side==='tech'){
+    if(el)el.classList.remove('show');
+    if(pill)pill.classList.add('show');
+    try{ if(typeof adminSetView==='function')adminSetView('pro'); else if(typeof setMode==='function')setMode('pro'); }catch(e){}
+    window.scrollTo({top:0,behavior:'smooth'});
+  }else{
+    if(pill)pill.classList.remove('show');
+    if(ob)ob.className='on';if(tb)tb.className='';
+    if(el){el.classList.add('show');el.scrollTop=0;}
+  }
+}
+function hqSetTab(tab){
+  var tabs=document.getElementById('hqTabs');
+  if(tabs){var bs=tabs.querySelectorAll('button');for(var i=0;i<bs.length;i++){bs[i].className=(bs[i].getAttribute('data-tab')===tab?'on':'');}}
+  var names=['home','ask','team','tools','biz'];
+  for(var j=0;j<names.length;j++){
+    var p=document.getElementById('hqPanel-'+names[j]);
+    if(p)p.className='hq-panel'+(names[j]===tab?' on':'');
+  }
+  var ov=document.getElementById('hqOverlay');if(ov)ov.scrollTop=0;
+}
+
+// Pull the owner's REAL numbers — same endpoints the admin dashboard uses.
+function hqLoadData(){
+  var token=currentUser&&currentUser.token;if(!token)return;
+  var hdr={'Authorization':'Bearer '+token};
+  fetch('/api/admin/stats',{headers:hdr}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+    .then(function(d){ try{ hqRenderStats(d); }catch(e){} });
+  fetch('/api/admin/users',{headers:hdr}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+    .then(function(d){ try{ hqRenderTeam((d&&d.users)||[]); }catch(e){} });
+}
+
+function hqSet(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+
+function hqRenderStats(d){
+  if(!d){hqSet('hqGreetText','Signed in — your live numbers will show here once the server responds.');return;}
+  window._hqStats=d;
+  var a=d.accounts||{}, u=d.usage||{}, at=d.attention||{};
+  var total=(a.total!=null?a.total:'–');
+  var active=(u.activeTechs7!=null?u.activeTechs7:'–');
+  var paying=(a.paying!=null?a.paying:'–');
+  var asks7=(u.asks7!=null?u.asks7:'–');
+  hqSet('hqStatTotal',total);
+  hqSet('hqStatActive',active);
+  hqSet('hqStatPaying',paying);
+  hqSet('hqStatAsks',asks7);
+
+  // Greeting — time-aware, honest about health.
+  var h=new Date().getHours();
+  var part=h<12?'Morning':(h<18?'Afternoon':'Evening');
+  var name=(currentUser&&(currentUser.name||'').split(/\s+/)[0])||'Brandon';
+  var nFlag=((at.neverUsed||[]).length)+((at.wentQuiet||[]).length);
+  var g=part+', '+name+'. ';
+  g+= (active!=='–'&&active>0) ? 'Mike answered '+(asks7!=='–'?asks7:'questions')+' this week across '+active+' active tech'+(active===1?'':'s')+'. ' : 'Mike is up. ';
+  g+= nFlag>0 ? nFlag+' thing'+(nFlag===1?'':'s')+' need'+(nFlag===1?'s':'')+' you below.' : 'Nothing flagged — you’re clear.';
+  var gt=document.getElementById('hqGreetText');if(gt)gt.textContent=g;
+
+  // Flagged strip from REAL attention lists.
+  hqRenderFlagged(at);
+  // Build the business context Ask Cello is seeded with.
+  hqBuildContext(d);
+}
+
+function hqRenderFlagged(at){
+  at=at||{};
+  var never=at.neverUsed||[], quiet=at.wentQuiet||[];
+  var n=never.length+quiet.length;
+  hqSet('hqFlagCt', n?(n+' flagged'):'all clear');
+  var box=document.getElementById('hqFlagged');if(!box)return;
+  if(!n){box.innerHTML='<div class="hq-clear"><b>You’re clear.</b> No techs signed-up-and-idle and none gone quiet.</div>';return;}
+  var html='<div class="hq-flagged">';
+  if(never.length){
+    var nm=never.slice(0,6).map(function(p){return p.name||p.email;}).join(', ');
+    html+='<a class="hq-fitem" href="mailto:'+hqEsc((never[0]&&never[0].email)||'')+'">'
+      +'<div class="ic">👤</div>'
+      +'<div class="t"><b>'+never.length+' signed up, never used Mike</b> — '+hqEsc(nm)+(never.length>6?' …':'')+'</div>'
+      +'<div class="go">Nudge →</div></a>';
+  }
+  if(quiet.length){
+    var qm=quiet.slice(0,6).map(function(p){var d=(p.daysSinceLastUse!=null?' ('+p.daysSinceLastUse+'d)':'');return (p.name||p.email)+d;}).join(', ');
+    html+='<a class="hq-fitem" href="mailto:'+hqEsc((quiet[0]&&quiet[0].email)||'')+'">'
+      +'<div class="ic">⚠️</div>'
+      +'<div class="t"><b>'+quiet.length+' went quiet</b> — were using Mike, now silent: '+hqEsc(qm)+(quiet.length>6?' …':'')+'</div>'
+      +'<div class="go">Reach out →</div></a>';
+  }
+  html+='</div>';
+  box.innerHTML=html;
+}
+
+function hqRenderTeam(users){
+  var box=document.getElementById('hqTeam');if(!box)return;
+  hqSet('hqTeamCt',users.length?(users.length+' techs'):'');
+  if(!users.length){box.innerHTML='<div class="hq-clear">No techs on the roster yet.</div>';return;}
+  // Mark who's quiet from the stats attention lists (by email).
+  var quietSet={};
+  var st=window._hqStats;
+  if(st&&st.attention){
+    ((st.attention.neverUsed)||[]).forEach(function(p){if(p.email)quietSet[p.email.toLowerCase()]='Never used';});
+    ((st.attention.wentQuiet)||[]).forEach(function(p){if(p.email)quietSet[p.email.toLowerCase()]='Quiet';});
+  }
+  // Owner's own house/admin accounts shouldn't clutter the crew view, but keep it honest: show all, sort by recent login.
+  var rows=users.slice().sort(function(x,y){
+    var a=x.last_login?new Date(x.last_login).getTime():0, b=y.last_login?new Date(y.last_login).getTime():0;return b-a;
+  });
+  var html='';
+  rows.forEach(function(u){
+    var nm=(u.name||u.email||'—').trim();
+    var initials=nm.split(/\s+/).map(function(p){return p[0];}).join('').slice(0,2).toUpperCase()||'?';
+    var rel=(typeof admRelTime==='function')?admRelTime(u.last_login):{txt:'—',recent:false};
+    var flag=quietSet[(u.email||'').toLowerCase()];
+    var statusCls, statusTxt;
+    if(flag){statusCls='off';statusTxt=flag==='Quiet'?'Nudge':'Never used';}
+    else if(rel.recent){statusCls='on';statusTxt='Active';}
+    else{statusCls='off';statusTxt='Idle';}
+    var sub=(u.company?hqEsc(u.company)+' · ':'')+'last active '+hqEsc(rel.txt);
+    html+='<div class="hq-person"><span class="mini">'+hqEsc(initials)+'</span>'
+      +'<span class="pn"><b>'+hqEsc(nm)+'</b><small>'+sub+'</small></span>'
+      +'<span class="hq-status '+statusCls+'">'+hqEsc(statusTxt)+'</span></div>';
+  });
+  box.innerHTML=html;
+}
+
+// ── Ask Cello — wired to the owner-only /api/hq/ask business brain ──────────
+function hqBuildContext(d){
+  var lines=[];
+  var a=(d&&d.accounts)||{}, u=(d&&d.usage)||{}, at=(d&&d.attention)||{};
+  if(a.total!=null)lines.push('Techs signed up: '+a.total);
+  if(u.activeTechs7!=null)lines.push('Active this week (asked Mike in last 7d): '+u.activeTechs7);
+  if(a.paying!=null)lines.push('Paying: '+a.paying);
+  if(a.activated!=null)lines.push('Ever activated (asked at least once): '+a.activated);
+  if(u.asksToday!=null)lines.push('Questions today: '+u.asksToday);
+  if(u.asks7!=null)lines.push('Questions last 7 days: '+u.asks7);
+  if(u.asksTotal!=null)lines.push('Questions last 30 days: '+u.asksTotal);
+  if(a.conversion30!=null)lines.push('Visitor->signup conversion (30d): '+a.conversion30+'%');
+  var never=(at.neverUsed||[]).map(function(p){return (p.name||p.email);});
+  var quiet=(at.wentQuiet||[]).map(function(p){return (p.name||p.email)+(p.daysSinceLastUse!=null?' ('+p.daysSinceLastUse+'d silent)':'');});
+  if(never.length)lines.push('Signed up but never used it: '+never.join(', '));
+  if(quiet.length)lines.push('Was using it, went quiet: '+quiet.join(', '));
+  // Real plan prices from the app's own pricebook (ADM_PRICES).
+  try{ if(typeof ADM_PRICES==='object'){ lines.push('Current plan prices: Starter $'+ADM_PRICES.starter+'/mo, Pro $'+ADM_PRICES.pro+'/mo, Homeowner $'+ADM_PRICES.homeowner+'/mo, Team = custom.'); } }catch(e){}
+  window._hqCtx=lines.join('\n');
+}
+function hqChip(btn){var inp=document.getElementById('hqAskInput');if(inp){inp.value=btn.textContent;}hqAsk();}
+function hqAddMsg(role,text){
+  var box=document.getElementById('hqMsgs');if(!box)return null;
+  var div=document.createElement('div');
+  div.className='hq-msg '+(role==='me'?'me':'cello');
+  if(role==='cello'){div.innerHTML='<div class="who">Cello</div>';div.appendChild(document.createTextNode(text));}
+  else{div.textContent=text;}
+  box.appendChild(div);
+  var ov=document.getElementById('hqOverlay');if(ov)ov.scrollTop=ov.scrollHeight;
+  return div;
+}
+function hqAsk(){
+  var inp=document.getElementById('hqAskInput'), send=document.getElementById('hqAskSend');
+  if(!inp)return;
+  var q=(inp.value||'').trim();if(!q)return;
+  var token=currentUser&&currentUser.token;if(!token){hqAddMsg('cello','Sign in again — your session has no token.');return;}
+  var chips=document.getElementById('hqChips');if(chips)chips.style.display='none';
+  inp.value='';
+  hqAddMsg('me',q);
+  if(send)send.disabled=true;
+  var thinking=hqAddMsg('cello','…');
+  if(!window._hqConvo)window._hqConvo=[];
+  window._hqConvo.push({role:'user',content:q});
+  fetch('/api/hq/ask',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({messages:window._hqConvo.slice(-12),context:window._hqCtx||'',token:token})
+  }).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+    .then(function(res){
+      var txt=res.ok?(res.j.response||'No response.'):(res.j.error||'Something went wrong.');
+      if(thinking){thinking.innerHTML='<div class="who">Cello</div>';thinking.appendChild(document.createTextNode(txt));}
+      if(res.ok)window._hqConvo.push({role:'assistant',content:txt});
+      var ov=document.getElementById('hqOverlay');if(ov)ov.scrollTop=ov.scrollHeight;
+    }).catch(function(){
+      if(thinking){thinking.innerHTML='<div class="who">Cello</div>';thinking.appendChild(document.createTextNode('Connection error — try again.'));}
+    }).finally(function(){ if(send)send.disabled=false; });
+}
+
+// ── Today's mission — the owner's OWN daily checklist, stored on this device.
+// Not business data; seeded with founder prompts and resets each day.
+function hqMissionKey(){var d=new Date();return 'hq_missions_'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+var HQ_MISSIONS=[
+  {h:'Set today’s #1',d:'Name the one thing that matters most today.',tag:'sell',tl:'Aim'},
+  {h:'Clear one flagged item',d:'Open “Needs you now” and knock out at least one.',tag:'money',tl:'Money'},
+  {h:'Record one Mike clip',d:'A short Instagram clip. Just hit record.',tag:'ship',tl:'Ship'},
+  {h:'Reach one new shop',d:'One outreach to a shop you haven’t pitched.',tag:'sell',tl:'Sell'},
+  {h:'Set tomorrow’s target',d:'Name the one number you want to move tomorrow.',tag:'ship',tl:'Aim'}
+];
+function hqMissionState(){
+  try{var raw=localStorage.getItem(hqMissionKey());if(raw)return JSON.parse(raw);}catch(e){}
+  return {};
+}
+function hqRenderMissions(){
+  var state=hqMissionState();
+  var list=document.getElementById('hqObjList');if(!list)return;
+  var html='';
+  for(var i=0;i<HQ_MISSIONS.length;i++){
+    var m=HQ_MISSIONS[i], done=!!state[i];
+    html+='<div class="hq-obj'+(done?' done':'')+'" onclick="hqToggleMission('+i+')">'
+      +'<div class="hq-box">✓</div>'
+      +'<div class="t"><div class="h">'+hqEsc(m.h)+'</div><div class="d">'+hqEsc(m.d)+'</div></div>'
+      +'<span class="hq-tag '+m.tag+'">'+hqEsc(m.tl)+'</span></div>';
+  }
+  list.innerHTML=html;
+  var done=0;for(var k=0;k<HQ_MISSIONS.length;k++){if(state[k])done++;}
+  var pct=Math.round(done/HQ_MISSIONS.length*100);
+  var bar=document.getElementById('hqBar');if(bar)bar.style.width=pct+'%';
+  hqSet('hqPlbl',pct+'%');
+  hqSet('hqMissCt',done+' of '+HQ_MISSIONS.length+' done');
+}
+function hqToggleMission(i){
+  var state=hqMissionState();
+  state[i]=!state[i];
+  try{localStorage.setItem(hqMissionKey(),JSON.stringify(state));}catch(e){}
+  hqRenderMissions();
+}
+
+// ── Tools ──
+function hqTool(which){
+  if(which==='numbers'){ closeHQ(); if(typeof showAdminDashboard==='function')showAdminDashboard(); return; }
+  if(which==='billing'){ closeHQ(); if(typeof showPaywall==='function')showPaywall(); else if(typeof pddBilling==='function')pddBilling(); return; }
+  if(typeof showToast==='function')showToast('Coming soon — this one’s on the roadmap.','info',2600);
+}
+
+// ── Business binder — Phase 1 holds the slots; attach a link/note per item. ──
+var HQ_DOCS=[
+  {k:'coi',ic:'🛡️',t:'Insurance (COI)',s:'General liability certificate'},
+  {k:'msa',ic:'📝',t:'Contracts / MSA',s:'Master service agreement'},
+  {k:'w9',ic:'🧾',t:'W-9',s:'Taxpayer ID form'},
+  {k:'cgs',ic:'🏛️',t:'Certificate of Good Standing',s:'State registration'},
+  {k:'sec',ic:'🔒',t:'Security one-pager',s:'How Mike handles data'},
+  {k:'vendor',ic:'📦',t:'Vendor pack',s:'What procurement asks for'}
+];
+function hqDocStore(){try{var raw=localStorage.getItem('hq_biz_docs');if(raw)return JSON.parse(raw);}catch(e){}return {};}
+function hqRenderBiz(){
+  var box=document.getElementById('hqBiz');if(!box)return;
+  var store=hqDocStore();
+  var html='';
+  for(var i=0;i<HQ_DOCS.length;i++){
+    var d=HQ_DOCS[i], val=store[d.k];
+    var filled=!!val;
+    html+='<div class="hq-doc'+(filled?' filled':'')+'">'
+      +'<div class="ic">'+d.ic+'</div>'
+      +'<div class="info"><b>'+hqEsc(d.t)+'</b><small>'+(filled?hqEsc(val):hqEsc(d.s))+'</small></div>'
+      +'<button class="slot" onclick="hqAttach(\''+d.k+'\')">'+(filled?'Edit':'Attach')+'</button></div>';
+  }
+  box.innerHTML=html;
+}
+function hqAttach(k){
+  var store=hqDocStore();
+  var cur=store[k]||'';
+  var v=window.prompt('Paste a link or a short note for this item (stored on this device):',cur);
+  if(v===null)return;
+  v=v.trim();
+  if(v)store[k]=v; else delete store[k];
+  try{localStorage.setItem('hq_biz_docs',JSON.stringify(store));}catch(e){}
+  hqRenderBiz();
+}
 // Techs section: collapsible dropdown + live search filter (name / email / company).
 function admToggleTechs(){
   var b=document.getElementById('admTechsBody'),ch=document.getElementById('admTechsChev');

@@ -22,7 +22,7 @@ The server uses native `fetch` (Node 18+). No Stripe SDK, no Supabase SDK. All v
 
 ### Integrations (all gated by env vars; only `ANTHROPIC_API_KEY` is fatal-on-missing)
 
-- **Anthropic** (`/api/ai`) — proxies to `claude-sonnet-4-5` via `api.anthropic.com/v1/messages`. Optional `web_search` tool when `use_search:true`. Throttled by `globalActive` counter capped at `MAX_GLOBAL=100`. 55s abort timeout; `fetchWithRetry` retries on 503/529.
+- **Anthropic** (`/api/ai`) — proxies to a model FAILOVER CHAIN via `api.anthropic.com/v1/messages`: primary `claude-opus-5` (env `MIKE_MODEL`), fallbacks `claude-opus-4-8, claude-sonnet-5` (env `MIKE_MODEL_FALLBACKS`). Requests send `output_config.effort` ('medium' for answers, 'low' for memory-reflect) and a 4096-token max_tokens floor (Claude 5 thinks by default; thinking counts against max_tokens). Optional `web_search_20260209` tool when `use_search:true`. Throttled by `globalActive` counter capped at `MAX_GLOBAL=100`. 55s abort timeout; failover retries next model on 404/429/5xx/529.
 - **ElevenLabs** (`/api/tts`) — voice ID defaulted to `ErXwobaYiN019PkySvjV`, `eleven_turbo_v2_5` model, 20s timeout, returns `audio/mpeg`.
 - **Supabase** (REST, no SDK) — accessed via the `supabase(method, table, body, query)` helper using the service-role key. Returns parsed JSON (arrays for collections, `null` on failure). `POST`/`PATCH` with `Prefer: return=representation` — take `[0]` for the inserted/updated row.
 - **Stripe** (`/api/billing/*`, `/api/webhook`) — no Stripe SDK. Manual HMAC-SHA256 webhook verification. Plans map: `homeowner | starter | pro | team` → `STRIPE_PRICE_*` env vars.

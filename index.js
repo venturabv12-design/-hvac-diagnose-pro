@@ -120,18 +120,27 @@ async function fetchWithRetry(url, options, retries = 2) {
 // a fallback model cannot route around the homeowner-pricing rule or the capacitor
 // strip. Failover changes WHO answers, never WHAT is allowed through.
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-const PRIMARY_MODEL = process.env.MIKE_MODEL || 'claude-opus-4-8';
+// 2026-10-29 Claude 5 generation. Opus 5 is the same price as Opus 4.8 and a straight
+// capability upgrade; the chain steps DOWN one generation per hop so a degraded Mike
+// still sounds like Mike. Every model here accepts output_config.effort (GA on 4.7+
+// and the 5 family) — if an env override ever pins a pre-4.7 model, that model will
+// 400 on effort and the request fails rather than falls over (400 is our bug, not an
+// outage; see isFailoverStatus).
+const PRIMARY_MODEL = process.env.MIKE_MODEL || 'claude-opus-5';
 const MODEL_CHAIN = (function () {
-  const extra = (process.env.MIKE_MODEL_FALLBACKS || 'claude-opus-4-7,claude-sonnet-4-6')
+  const extra = (process.env.MIKE_MODEL_FALLBACKS || 'claude-opus-4-8,claude-sonnet-5')
     .split(',').map(m => m.trim()).filter(Boolean);
   return [PRIMARY_MODEL].concat(extra.filter(m => m !== PRIMARY_MODEL));
 })();
 
 // Retry-the-next-model statuses. 429 is included because a per-model rate ceiling
-// leaves a tech just as stuck as an outage does. 4xx like 400/401/404 are OUR bug
+// leaves a tech just as stuck as an outage does. 404 is included because our URL is a
+// constant that never changes — a 404 here can only mean "this model ID no longer
+// exists" (retired upstream), and a retired model on one chain entry must not take
+// Mike dark when the next entry still answers. Other 4xx (400/401) are OUR bug
 // (bad request, bad key) — trying another model would just fail three times slower.
 function isFailoverStatus(code) {
-  return code === 429 || code === 500 || code === 502 || code === 503 || code === 504 || code === 529;
+  return code === 404 || code === 429 || code === 500 || code === 502 || code === 503 || code === 504 || code === 529;
 }
 
 // Reports which model answered so a degraded state is visible instead of silent.
@@ -149,9 +158,15 @@ async function callModelWithFailover(baseBody, fetchOpts, opts) {
 
   for (let i = 0; i < MODEL_CHAIN.length; i++) {
     const model = MODEL_CHAIN[i];
-    const attemptOpts = Object.assign({}, fetchOpts, {
-      body: JSON.stringify(Object.assign({}, baseBody, { model })),
-    });
+    // One sanitize-retry per hop: output_config.effort and web_search_20260209 are
+    // version-pinned to the 4.7+/5 generation. If an env override ever pins an older
+    // model, that model 400s on these fields — and a 400 does NOT walk the chain
+    // (correctly: it's our request, not an outage). Without this, a stale MIKE_MODEL
+    // set from Brandon's phone during an incident would take Mike fully dark. So on a
+    // 400 that names these fields, strip them and retry the SAME model once.
+    let bodyForModel = Object.assign({}, baseBody, { model });
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const attemptOpts = Object.assign({}, fetchOpts, { body: JSON.stringify(bodyForModel) });
 
     try {
       const res = useStream
@@ -167,18 +182,36 @@ async function callModelWithFailover(baseBody, fetchOpts, opts) {
         return { res, model, degraded: i > 0 };
       }
 
+      if (res && res.status === 400 && attempt === 0 && (bodyForModel.output_config || bodyForModel.tools)) {
+        // Sanitize on ANY first-attempt 400, not on error-message wording — upstream
+        // copy changes must never decide whether Mike survives a stale model pin.
+        // A genuinely malformed request just 400s again sanitized and returns below.
+        console.warn(`[failover] ${model} returned 400 with Claude-5-era fields present — retrying once sanitized`);
+        try { if (res.body && res.body.cancel) res.body.cancel(); } catch {}
+        bodyForModel = Object.assign({}, bodyForModel);
+        delete bodyForModel.output_config;
+        if (Array.isArray(bodyForModel.tools)) {
+          bodyForModel.tools = bodyForModel.tools.map(t =>
+            t && t.type === 'web_search_20260209' ? Object.assign({}, t, { type: 'web_search_20250305' }) : t);
+        }
+        continue; // retry same model, sanitized
+      }
+
       lastRes = res;
       if (!res || !isFailoverStatus(res.status) || i === MODEL_CHAIN.length - 1) {
         return { res, model, degraded: i > 0 };
       }
       console.warn(`[failover] ${model} returned ${res.status} — trying ${MODEL_CHAIN[i + 1]}`);
+      break; // walk to the next model in the chain
     } catch (err) {
       // Don't keep walking a chain the caller already abandoned.
       if (err && (err.name === 'AbortError' || err.code === 'ABORT_ERR')) throw err;
       lastErr = err;
       if (i === MODEL_CHAIN.length - 1) throw err;
       console.warn(`[failover] ${model} threw "${err.message}" — trying ${MODEL_CHAIN[i + 1]}`);
+      break; // network-level error on this model — walk to the next one
     }
+    } // end sanitize-retry attempts for this model
   }
 
   if (lastRes) return { res: lastRes, model: MODEL_CHAIN[MODEL_CHAIN.length - 1], degraded: true };
@@ -1021,8 +1054,12 @@ async function updateUserMemory(uid, userText, assistantText) {
       + 'forward unless contradicted; NEVER add rules that weaken safety call-outs, honesty, or pricing conduct"]}. '
       + 'Keep only durable, useful facts. No prose outside the JSON.';
     const reflectBody = {
-      model: process.env.MIKE_MODEL || 'claude-opus-4-8',
-      max_tokens: 700,
+      model: PRIMARY_MODEL, // overridden per-hop by callModelWithFailover
+      // 1600 not 700: Claude 5 thinks by default and thinking counts against
+      // max_tokens — at 700 the memory JSON could truncate and silently stop
+      // updating. Effort 'low' keeps this routine reflect step fast and cheap.
+      max_tokens: 1600,
+      output_config: { effort: 'low' },
       system: reflectSys,
       messages: [{ role: 'user', content:
         'CURRENT MEMORY:\n' + JSON.stringify(prior).slice(0, 4000)
@@ -3824,13 +3861,26 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       _systemField = _baseSys + _tailSys;
     }
     const body = {
-      model: process.env.MIKE_MODEL || 'claude-opus-4-8',
-      max_tokens: Math.min(max_tokens, 8192),
+      model: PRIMARY_MODEL, // overridden per-hop by callModelWithFailover; kept for log clarity
+      // FLOOR of 4096, not just a cap: Claude 5 models think-before-answering by
+      // default, and thinking tokens count against max_tokens. The client's old
+      // 700–2048 asks would truncate a hard diagnostic mid-answer. Answer LENGTH is
+      // still governed by the persona (brevity rules) — this only buys reasoning room.
+      // Taste tier (free, unauthenticated) gets a tighter 2048 ceiling so free
+      // visitors can't widen Mike's spend — paying techs get the full room.
+      max_tokens: _isTaste ? 2048 : Math.min(Math.max(max_tokens, 4096), 8192),
       system: _systemField,
       messages,
+      // Effort 'medium' on the 5 family ≈ prior-generation 'high' quality at fewer
+      // tokens and lower latency — a tech in an attic gets a faster, tighter answer.
+      // Taste tier runs 'low': still a good answer, minimal thinking spend on free use.
+      output_config: { effort: _isTaste ? 'low' : 'medium' },
     };
     if (use_search) {
-      body.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }];
+      // _20260209 = dynamic filtering: the model pre-filters search results before
+      // they hit context — better answers, fewer wasted tokens. Supported by every
+      // model in the default chain.
+      body.tools = [{ type: 'web_search_20260209', name: 'web_search', max_uses: 5 }];
     }
 
     // ── STREAMING TRANSPORT (additive) ────────────────────────────────────────
@@ -3881,6 +3931,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       let sentAny = false;
       const send = (obj) => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch (_) {} };
       let _streamed = '';
+      let _refused = false; // a canned refusal line is shown to the tech but never logged as an answer or remembered
       // Filled from the stream's own usage events — see message_start / message_delta below.
       const _cost = { model: null, in_tokens: null, out_tokens: null, cache_read: null, cache_write: null };
 
@@ -3913,6 +3964,21 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
             } else if (evt.type === 'message_delta' && evt.usage) {
               _cost.out_tokens = evt.usage.output_tokens;
             }
+            // Claude 5 classifiers can refuse MID-STREAM (HTTP 200, stop_reason
+            // "refusal" on message_delta, zero text deltas). Without this the tech
+            // gets a silent empty bubble. Safety-flagged prompts never reach this
+            // path (_forceNonStream), so no _safetyLead handling is needed here —
+            // but send a real sentence so the reply is never blank.
+            if (evt.type === 'message_delta' && evt.delta && evt.delta.stop_reason === 'refusal' && !sentAny) {
+              console.warn('[refusal:stream]', _fo.model);
+              _refused = true;
+              if (_askUid) { try { logUsage(_askUid, 'mike_refusal', { model: _fo.model, streamed: true }); } catch {} }
+              const _rline = "That one's outside what I can help with. Give me the unit and the symptom and let's get back to the job.";
+              // The tech still SEES the line (send below) — but _refused gates it out of
+              // the mike_answer corpus and the tech's durable memory: a canned decline is
+              // not an answer Mike gave, and must never be remembered as one.
+              sentAny = true; _streamed += _rline; send({ delta: _rline });
+            }
             if (evt.type === 'content_block_delta' && evt.delta) {
               const piece = evt.delta.text || '';
               // Accumulate a copy for the audit trail. Most answers STREAM, so logging only
@@ -3931,12 +3997,12 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         send(_renewTok ? { done: true, renewed_token: _renewTok } : { done: true });
         res.end();
         try {
-          if (_askUid && _streamed) logUsage(_askUid, 'mike_answer',
+          if (_askUid && _streamed && !_refused) logUsage(_askUid, 'mike_answer',
             Object.assign({ a: _streamed.slice(0, 8000), streamed: true }, _cost));
           // Belt for the stream path: outcome reports force non-stream upstream, but if a
           // marker ever slips into a streamed reply, still capture the data it carried.
-          if (_askUid && _streamed) { try { const _m2 = _streamed.match(/\[JOB_OUTCOME\]\s*(\{[^\n]*\})\s*$/m); if (_m2) logOutcome(_askUid, JSON.parse(_m2[1]), null); } catch {} }
-          if (_askUid && _streamed) { try { updateUserMemory(_askUid, _lastUser, _streamed); } catch {} }
+          if (_askUid && _streamed && !_refused) { try { const _m2 = _streamed.match(/\[JOB_OUTCOME\]\s*(\{[^\n]*\})\s*$/m); if (_m2) logOutcome(_askUid, JSON.parse(_m2[1]), null); } catch {} }
+          if (_askUid && _streamed && !_refused) { try { updateUserMemory(_askUid, _lastUser, _streamed); } catch {} }
         } catch { /* never let logging affect a delivered answer */ }
       } catch (streamErr) {
         if (streamErr.name === 'AbortError') send({ error: 'Request timed out — please try again.' });
@@ -3964,6 +4030,21 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       const msg = data?.error?.message || `API error ${response.status}`;
       console.error('Anthropic error:', response.status, msg, `(last model: ${_foNS.model})`);
       return res.status(response.status === 429 ? 429 : 502).json({ error: msg });
+    }
+
+    // Claude 5 safety classifiers can decline a request as a SUCCESSFUL response
+    // (HTTP 200, stop_reason "refusal", content empty or partial). Near-impossible
+    // for HVAC questions, but without this guard a refusal would surface to the tech
+    // as the bare string "No response." — handle it as what it is.
+    // CRITICAL: the deterministic _safetyLead must STILL open the reply — safety-flagged
+    // prompts are forced onto exactly this non-stream path, and the guard's invariant is
+    // that the lead is guaranteed, never model-dependent. A refusal skips the model's
+    // words, not ours.
+    if (data.stop_reason === 'refusal') {
+      console.warn('[refusal]', _foNS.model, data?.stop_details?.category || 'uncategorized');
+      if (_askUid) { try { logUsage(_askUid, 'mike_refusal', { model: _foNS.model }); } catch {} }
+      return res.json({ response: (_safetyLead ? _safetyLead + '\n\n' : '')
+        + "That one's outside what I can help with. Give me the unit and the symptom and let's get back to the job." });
     }
 
     const text = (data.content || [])
@@ -4470,8 +4551,12 @@ app.post('/api/hq/ask', authenticateToken, requireAdmin, async (req, res) => {
     (_ctx || '(none supplied this turn)');
 
   const body = {
-    model: process.env.MIKE_MODEL || 'claude-opus-4-8',
-    max_tokens: 1024,
+    model: PRIMARY_MODEL, // overridden per-hop by callModelWithFailover
+    // 4096 not 1024: Claude 5 thinks by default and thinking counts against
+    // max_tokens; business questions deserve the reasoning room. Answer length
+    // is still governed by the "2-4 sentences" rule in the system prompt.
+    max_tokens: 4096,
+    output_config: { effort: 'medium' },
     system: _system,
     messages,
   };
@@ -4495,6 +4580,10 @@ app.post('/api/hq/ask', authenticateToken, requireAdmin, async (req, res) => {
       const msg = data?.error?.message || `API error ${response.status}`;
       console.error('HQ ask error:', response.status, msg, `(last model: ${_fo.model})`);
       return res.status(response.status === 429 ? 429 : 502).json({ error: msg });
+    }
+    if (data.stop_reason === 'refusal') {
+      console.warn('[refusal:hq]', _fo.model);
+      return res.json({ response: "I can't take that one on. Ask me about the business — numbers, team, pricing, next moves." });
     }
     const text = (data.content || [])
       .filter(b => b.type === 'text')

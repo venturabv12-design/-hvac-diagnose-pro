@@ -3848,7 +3848,21 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     const _leadNote = _safetyLead
       ? '\n\nA DETERMINISTIC SAFETY LEAD WILL OPEN YOUR REPLY — prepended in code, the tech reads it before your first word: "' + _safetyLead + '" Do NOT restate or re-explain any of those steps. Add ONLY what is new: his actual situation, and what happens after the all-clear if it matters.'
       : '';
-    const _tailSys = _memContext + _timeCtx + _loopCtx + _outcomeSys + _ragContext + (systemExtra || '') + _factGuards + _leadNote;
+    // Server-side brevity pin (Brandon, 2026-10-29): the persona already carries the
+    // three-lines doctrine, but (a) Claude 5 models drift longer unless the length rule
+    // is restated NEAR THE END of the prompt, and (b) the free taste tier never carried
+    // the rule at all. Pinning it here puts it on every path, every tier, every model in
+    // the chain. LAST in _tailSys on purpose — late placement is what makes it stick.
+    const _styleGuard = '\n\nREPLY LENGTH — every conversational answer, no exceptions: '
+      + 'first line IS the answer. Then one line of why, then the next move if there is one. '
+      + 'THREE short lines is the default ceiling — no headers, no intro, no recap of his '
+      + 'question, no summary section, no sign-off. If one line answers it, send one line. '
+      + 'Go longer ONLY when the tech explicitly asks for a walkthrough or every step, or '
+      + 'when a safety call-out needs each immediate action — one short line per step, then '
+      + 'stop. If the task instructions above require a structured format (JSON, a form, a '
+      + 'report with sections), follow that format exactly — this rule governs conversational '
+      + 'replies only.';
+    const _tailSys = _memContext + _timeCtx + _loopCtx + _outcomeSys + _ragContext + (systemExtra || '') + _factGuards + _leadNote + _styleGuard;
     let _systemField;
     if (_baseSys.length > 8000) {
       const _baseBlock = { type: 'text', text: _baseSys, cache_control: { type: 'ephemeral', ttl: '1h' } };

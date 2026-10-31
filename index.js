@@ -146,6 +146,13 @@ function isFailoverStatus(code) {
 // Reports which model answered so a degraded state is visible instead of silent.
 let lastModelUsed = PRIMARY_MODEL;
 let failoverCount = 0;
+// Brain truth for /api/health (2026-10-31): the brain was dead 12 hours on an
+// out-of-credits 502 while health reported ok:true — and the external watchdog,
+// reading only that, green-lit the outage. These record the last REAL model
+// success and the last end-of-chain failure, so the watchdog can read the brain
+// instead of just the web server.
+let lastBrainOkAt = 0;
+let lastBrainFailAt = 0;
 
 // Walks MODEL_CHAIN until one answers. `opts.stream` picks the raw fetch (SSE needs
 // the live body) over fetchWithRetry. Returns the winning response plus the model
@@ -175,6 +182,7 @@ async function callModelWithFailover(baseBody, fetchOpts, opts) {
 
       if (res && res.ok) {
         lastModelUsed = model;
+        lastBrainOkAt = Date.now();
         if (i > 0) {
           failoverCount++;
           console.warn(`[failover] ${MODEL_CHAIN[0]} unavailable — answered on ${model} (fallback #${i})`);
@@ -199,6 +207,11 @@ async function callModelWithFailover(baseBody, fetchOpts, opts) {
 
       lastRes = res;
       if (!res || !isFailoverStatus(res.status) || i === MODEL_CHAIN.length - 1) {
+        // End of the line: a non-ok response is what the caller gets. A 400 is OUR bug
+        // (malformed request), not an outage — it must not latch suspectDown until the
+        // next success on an idle night. 401/403 (dead or disabled key) ARE outages —
+        // the exact 2026-10-26 class — so they keep stamping.
+        if (!res || res.status !== 400) lastBrainFailAt = Date.now();
         return { res, model, degraded: i > 0 };
       }
       console.warn(`[failover] ${model} returned ${res.status} — trying ${MODEL_CHAIN[i + 1]}`);
@@ -207,13 +220,14 @@ async function callModelWithFailover(baseBody, fetchOpts, opts) {
       // Don't keep walking a chain the caller already abandoned.
       if (err && (err.name === 'AbortError' || err.code === 'ABORT_ERR')) throw err;
       lastErr = err;
-      if (i === MODEL_CHAIN.length - 1) throw err;
+      if (i === MODEL_CHAIN.length - 1) { lastBrainFailAt = Date.now(); throw err; }
       console.warn(`[failover] ${model} threw "${err.message}" — trying ${MODEL_CHAIN[i + 1]}`);
       break; // network-level error on this model — walk to the next one
     }
     } // end sanitize-retry attempts for this model
   }
 
+  lastBrainFailAt = Date.now(); // whole chain walked and nothing answered
   if (lastRes) return { res: lastRes, model: MODEL_CHAIN[MODEL_CHAIN.length - 1], degraded: true };
   throw lastErr || new Error('all models unavailable');
 }
@@ -1172,6 +1186,17 @@ app.get('/api/health', (req, res) => {
     models: MODEL_CHAIN.length,
     degraded: lastModelUsed !== PRIMARY_MODEL,
     failovers: failoverCount,
+    // `brain` — 2026-10-31. The brain was dead 12 hours on an out-of-credits 502
+    // while this endpoint reported ok:true, and the external watchdog green-lit the
+    // outage. ok:true only ever meant "Express is up". These ages are the brain's own
+    // pulse: suspectDown flips true the moment the most recent model outcome is a
+    // failure, and THIS is the field the watchdog reads now. null = no traffic yet
+    // since boot (not a failure — an idle night looks like old ages, not suspectDown).
+    brain: {
+      lastOkAgeSec: lastBrainOkAt ? Math.floor((Date.now() - lastBrainOkAt) / 1000) : null,
+      lastFailAgeSec: lastBrainFailAt ? Math.floor((Date.now() - lastBrainFailAt) / 1000) : null,
+      suspectDown: !!(lastBrainFailAt && lastBrainFailAt > lastBrainOkAt),
+    },
   });
 });
 

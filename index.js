@@ -3343,6 +3343,14 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       break;
     }
   }
+  // ── LANGUAGE (2026-10-31) — the guard's guarantee must survive translation. The
+  // client embeds the exact phrase "Responde SIEMPRE en español" in the system prompt
+  // when a tech runs Mike in Spanish (sometimes typed without the accent). Every
+  // deterministic lead below ships in BOTH languages; _es() picks per request and
+  // English stays the default. Detection regexes get parallel Spanish alternatives
+  // ORed in further down — the English branches are untouched.
+  const _wantsSpanish = /respond[ea]\s+siempre\s+en\s+espa[ñn]ol/i.test(String(system || '') + String(systemExtra || ''));
+  const _es = (en, es) => (_wantsSpanish ? es : en);
   // ── DIAGRAM REDRAW (conversational — no button) ──────────────────────────────
   // A tech uploaded a wiring-diagram photo and asked Mike to simplify it → trace it
   // and hand back the clean illustration IN CHAT. Fail-safe: ANY problem falls through
@@ -3432,8 +3440,14 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // (A) Burner/flame staying lit with no call for heat = stuck-open gas valve.
   if (/(furnace|burner|flame|unit|heat)[^.]{0,70}(keeps? running|still (running|on|lit|burning)|won'?t (shut|turn) off|stays (on|lit|running))[^.]{0,55}(thermostat|t-?stat|call)/i.test(_lastUser)
       || /(flame|burner)[^.]{0,40}(no call|without a call|no heat call)/i.test(_lastUser)
-      || /5[- ]?flash[^.]{0,90}(flame|gas|no call|thermostat (is )?off|keeps? running)/i.test(_lastUser)) {
-    _safetyLead = 'SAFETY FIRST — shut the gas off at the appliance shutoff valve right now. A burner staying lit with no call for heat means the gas valve is stuck open; kill the gas before you diagnose anything else.';
+      || /5[- ]?flash[^.]{0,90}(flame|gas|no call|thermostat (is )?off|keeps? running)/i.test(_lastUser)
+      // Spanish mirror (2026-10-31): same three-term shape — appliance word, stays-lit wording, thermostat/call context.
+      || /(quemador|llama|horno|calefacci[oó]n|calefactor|unidad)[^.]{0,70}(sigue (encendid|prendid|funcionando|quemando)|no se apaga|se queda (encendid|prendid))[^.]{0,55}(termostato|llamada de calor|sin llamada)/i.test(_lastUser)
+      || /(llama|quemador)[^.]{0,40}(sin llamada|sin demanda|no hay llamada)/i.test(_lastUser)) {
+    _safetyLead = _es(
+      'SAFETY FIRST — shut the gas off at the appliance shutoff valve right now. A burner staying lit with no call for heat means the gas valve is stuck open; kill the gas before you diagnose anything else.',
+      // "atascada abierta" is load-bearing: _combustionEvent (close-out checklist) matches on it.
+      'SEGURIDAD PRIMERO — cierre el gas en la válvula de corte del equipo ahora mismo. Un quemador que sigue encendido sin llamada de calor significa que la válvula de gas está atascada abierta; corte el gas antes de diagnosticar cualquier otra cosa.');
   }
   // (A2) GAS ODOR / SUSPECTED GAS LEAK — the full utility protocol, deterministic.
   // 2026-10-02 exam: gas-smell scenarios had NO hardcoded guard (only CO ppm and the
@@ -3447,17 +3461,35 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     || /\b(gas)\s*(smell|odor|odour|leak)\b/i.test(_lastUser)
     || /\brotten[- ]egg/i.test(_lastUser)
     || /(hiss|hissing)[^.]{0,35}(gas (line|valve|meter|pipe)|flex connector|at the (meter|valve))/i.test(_lastUser)
-    || /(combustible|gas)\s*(detector|monitor)[^.]{0,30}(read|going off|alarm|above zero|lit up)/i.test(_lastUser);
+    || /(combustible|gas)\s*(detector|monitor)[^.]{0,30}(read|going off|alarm|above zero|lit up)/i.test(_lastUser)
+    // Spanish mirror (2026-10-31), accent-insensitive: smell-word within the same 45-char
+    // window of a gas word; "fuga/escape de gas" standalone mirrors the English standalone
+    // "gas leak"; rotten-egg/sulfur odorant words standalone, like \brotten[- ]egg above.
+    || /(huele|hueles|huelo|ol[ií]a|olor|oliendo|apesta|peste|hediondo)[^.]{0,45}\b(gas|huevos? podridos?|azufre|sulfuro|mercaptano)\b/i.test(_lastUser)
+    || /\b(fuga|escape)\s+de\s+gas\b/i.test(_lastUser)
+    || /\bolor\s+a\s+gas\b/i.test(_lastUser)
+    || /\bhuevos?\s+podridos?\b/i.test(_lastUser)
+    || /(silba|silbido|siseo|sisea)[^.]{0,35}(l[ií]nea de gas|v[aá]lvula|medidor|tuber[ií]a de gas)/i.test(_lastUser);
   // Grade it so a tech DESCRIBING a finished repair ("found the leak, fixed it, no more
   // gas smell") doesn't trigger a full evacuation — past-tense/resolved wording skips it.
-  const _gasResolved = /(fixed|repaired|replaced|re-?lit|no (more|longer) (smell|odor|leak)|smell (is )?gone|after (the|my) repair)/i.test(_lastUser);
+  const _gasResolved = /(fixed|repaired|replaced|re-?lit|no (more|longer) (smell|odor|leak)|smell (is )?gone|after (the|my) repair)/i.test(_lastUser)
+    // Spanish resolved wording (2026-10-31): a tech DESCRIBING a finished repair in
+    // Spanish gets the same stand-down the English resolved wording gets.
+    || /(arreglad|reparad|reemplazad|ya no (huele|hay olor|hay fuga)|el olor (se fue|desapareci)|despu[eé]s de (la|mi) reparaci[oó]n|ya qued[oó] (bien|arreglad))/i.test(_lastUser);
   // (A2b) REFRIGERANT gas is not FUEL gas (2026-10-05, run-2 exam: the full natural-gas
   // evacuation fired on an LG CH38 "refrigerant gas leak detected" fault code). When the
   // only gas-leak language is refrigerant-flavored and there's no fuel indicator (smell,
   // odorant, propane/natural-gas words, combustible detector), this lead stands down —
   // the A2L ignition lead (C3) still covers flammable refrigerant.
-  const _refrigGasOnly = /refrigerant\s+gas\s*(leak|detected|loss)|gas leak detected[^.]{0,40}(low refrigerant|refrigerant)/i.test(_lastUser)
-    && !/(smell|odor|odour|rotten|mercaptan|sulfur|sulphur|natural gas|propane|lp|fuel gas|gas (line|pipe|meter|valve|utility))/i.test(_lastUser);
+  const _refrigGasOnly = (/refrigerant\s+gas\s*(leak|detected|loss)|gas leak detected[^.]{0,40}(low refrigerant|refrigerant)/i.test(_lastUser)
+    && !/(smell|odor|odour|rotten|mercaptan|sulfur|sulphur|natural gas|propane|lp|fuel gas|gas (line|pipe|meter|valve|utility))/i.test(_lastUser))
+    // Spanish mirror (2026-10-31): "fuga de gas refrigerante detectada" is an LG-style
+    // fault report, not a fuel-gas emergency — same stand-down, same fuel-indicator veto.
+    || (/(fuga|p[eé]rdida|escape)\s+de\s+gas\s+refrigerante|gas\s+refrigerante[^.]{0,40}(fuga|detectad|p[eé]rdida)|fuga\s+de\s+refrigerante\s+detectad/i.test(_lastUser)
+    && !/(huele|olor|hediond|podrido|azufre|sulfuro|mercaptano|gas natural|propano|combustible|(l[ií]nea|tuber[ií]a|medidor|v[aá]lvula) de gas)/i.test(_lastUser)
+    // …and the ENGLISH fuel indicators too — a mixed-language message ("fuga de gas
+    // refrigerante detectada, smells like rotten eggs") is a fuel-gas emergency.
+    && !/(smell|odor|odour|rotten|mercaptan|sulfur|sulphur|natural gas|propane|\blp\b|fuel gas|gas (line|pipe|meter|valve|utility))/i.test(_lastUser));
   // (A2c) LOCATED-LEAK, TECH IN CONTROL — 2026-10-19, Brandon: a tech who walked in,
   // sniffed around and FOUND the leak at a fitting was getting the full building
   // evacuation ("holy cow, get everybody out" on a loose union is absurd and teaches
@@ -3481,21 +3513,30 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // handy the tech is or how local the leak sounds. Detectable below 10% is working
   // territory — ignition control, ventilate, meter stays on. No reading = the
   // located-vs-unknown split decides.
-  const _lelM = /(\d{1,3})\s*(?:%|percent)?\s*(?:of\s+)?(?:the\s+)?(?:lel\b|lower explosive)|(?:lel\b|lower explosive limit)[^.\d]{0,12}(\d{1,3})\s*(?:%|percent)?/i.exec(_lastUser);
+  const _lelM = /(\d{1,3})\s*(?:%|percent|por\s*ciento)?\s*(?:of\s+|del\s+|de\s+)?(?:the\s+|el\s+)?(?:lel\b|lower explosive|l[ií]mite inferior de explosi)|(?:lel\b|lower explosive limit|l[ií]mite inferior de explosi\w*)[^.\d]{0,12}(\d{1,3})\s*(?:%|percent|por\s*ciento)?/i.exec(_lastUser);
   const _lelPct = _lelM ? parseInt(_lelM[1] || _lelM[2], 10) : null;
   if ((_gasOdor || _lelPct !== null) && !_gasResolved && !_refrigGasOnly) {
     if (_lelPct !== null && _lelPct >= 10) {
-      _safetyLead = 'SAFETY FIRST — ' + _lelPct + '% LEL is evacuation territory, the number outranks everything else. Everyone out now, you included; nothing electrical on the way out. Gas off at the meter ONLY from outside. 300 feet back, call the gas utility\'s emergency line — 911 too if anyone feels sick. Nobody re-enters until it clears.';
+      _safetyLead = _es(
+        'SAFETY FIRST — ' + _lelPct + '% LEL is evacuation territory, the number outranks everything else. Everyone out now, you included; nothing electrical on the way out. Gas off at the meter ONLY from outside. 300 feet back, call the gas utility\'s emergency line — 911 too if anyone feels sick. Nobody re-enters until it clears.',
+        'SEGURIDAD PRIMERO — ' + _lelPct + '% del LEL es territorio de evacuación; el número manda sobre todo lo demás. Todos afuera ahora, usted incluido; nada eléctrico al salir. Gas cerrado en el medidor SOLO desde afuera. A 300 pies (91 m) de distancia, llame a la línea de emergencia de la compañía de gas — y al 911 si alguien se siente mal. Nadie vuelve a entrar hasta que se despeje.');
     } else if (_lelPct !== null) {
-      _safetyLead = 'SAFETY FIRST — ' + _lelPct + '% LEL confirmed combustible gas, below the 10% action level. Ignition sources dead, ventilate, gas off to the affected line, and keep the meter running while you hunt it. 10% or climbing = stop, everybody out, full protocol.';
+      _safetyLead = _es(
+        'SAFETY FIRST — ' + _lelPct + '% LEL confirmed combustible gas, below the 10% action level. Ignition sources dead, ventilate, gas off to the affected line, and keep the meter running while you hunt it. 10% or climbing = stop, everybody out, full protocol.',
+        'SEGURIDAD PRIMERO — ' + _lelPct + '% del LEL confirma gas combustible, por debajo del nivel de acción del 10%. Fuentes de ignición apagadas, ventile, gas cerrado a la línea afectada, y el medidor sigue midiendo mientras busca la fuga. ¿10% o subiendo? Pare, todos afuera, protocolo completo.');
     } else if (_gasLocated) {
-      _safetyLead = 'SAFETY FIRST — gas off to that line before you put a wrench on it, and no ignition sources while it\'s open. Fix it, then soap-test the repair before you gas back up. If the odor\'s beyond right-at-the-fitting, or anyone feels off, that\'s full-evacuation territory — not a wrench job.';
+      _safetyLead = _es(
+        'SAFETY FIRST — gas off to that line before you put a wrench on it, and no ignition sources while it\'s open. Fix it, then soap-test the repair before you gas back up. If the odor\'s beyond right-at-the-fitting, or anyone feels off, that\'s full-evacuation territory — not a wrench job.',
+        'SEGURIDAD PRIMERO — cierre el gas a esa línea antes de ponerle una llave, y nada de fuentes de ignición mientras esté abierta. Repárela y haga la prueba de jabón sobre la reparación antes de restablecer el gas. Si el olor va más allá del punto de la conexión, o alguien se siente mal, eso es territorio de evacuación total — no un trabajo de llave.');
     } else {
     // Tightened 2026-10-19 on field feedback ("just the main point"). Every protocol
     // step the 10-02 exam graded on is still here — evacuate incl. the tech, nothing
     // electrical, meter-from-outside-only, 300 ft, utility line, 911 escalation,
     // no re-entry, fix-after — each as its own short clause a tech actually reads.
-    _safetyLead = 'SAFETY FIRST — live gas leak. Everyone out now, you included; nothing electrical on the way out — no switches, no phones. Gas off at the meter ONLY if you can reach it from outside. 300 feet back, call the gas utility\'s emergency line from there — 911 too if it\'s strong or anyone feels sick. Nobody re-enters until the utility clears it; find-and-fix comes after.';
+    _safetyLead = _es(
+      'SAFETY FIRST — live gas leak. Everyone out now, you included; nothing electrical on the way out — no switches, no phones. Gas off at the meter ONLY if you can reach it from outside. 300 feet back, call the gas utility\'s emergency line from there — 911 too if it\'s strong or anyone feels sick. Nobody re-enters until the utility clears it; find-and-fix comes after.',
+      // "fuga de gas activa" is load-bearing: _gasEvent (close-out checklist) matches on it.
+      'SEGURIDAD PRIMERO — fuga de gas activa. Todos afuera ahora, usted incluido; nada eléctrico al salir — ni interruptores, ni teléfonos. Gas cerrado en el medidor SOLO si lo alcanza desde afuera. A 300 pies (91 m), llame desde allí a la línea de emergencia de la compañía de gas — y al 911 si es fuerte o alguien se siente mal. Nadie vuelve a entrar hasta que la compañía lo autorice; buscar y reparar viene después.');
     }
   }
   // ── CO NUMBER PARSING ────────────────────────────────────────────────────────────────
@@ -3518,14 +3559,18 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // and the ambient rule below can use them; 2026-10-05 the flue rule got the same
   // standards-talk hole the ambient rule had — a thresholds LESSON ("400 ppm air-free:
   // BPI/ANSI threshold") was read as a live 400 ppm reading and ordered a shutdown).
-  const _STD_CTX_B = /\bosha\b|\bniosh\b|ashrae|\bepa\b|\bbpi\b|\bansi\b|\bpel\b|\btwa\b|\bstel\b|ceiling|ul ?2034|standard|threshold|\blimit\b|guideline|allowable|acceptable (range|thresholds?)|exposure (limit|level)|chronic exposure|do[- ]?not[- ]?restore|alarm (point|setpoint|set ?point|must (sound|alarm|activate))|set at|code (says|requires|allows)|max(imum)?\s+(of\s+)?\d|difference between|interpreting|\bpossibl\w*|\bfor\s+\d+\s*[\u2013-]\s*\d+\s*min|(must|shall) be (shut down|serviced|replaced|corrected)|return to (operation|service)|immediate action/i;
+  const _STD_CTX_B = /\bosha\b|\bniosh\b|ashrae|\bepa\b|\bbpi\b|\bansi\b|\bpel\b|\btwa\b|\bstel\b|ceiling|ul ?2034|standard|threshold|\blimit\b|guideline|allowable|acceptable (range|thresholds?)|exposure (limit|level)|chronic exposure|do[- ]?not[- ]?restore|alarm (point|setpoint|set ?point|must (sound|alarm|activate))|set at|code (says|requires|allows)|max(imum)?\s+(of\s+)?\d|difference between|interpreting|\bpossibl\w*|\bfor\s+\d+\s*[\u2013-]\s*\d+\s*min|(must|shall) be (shut down|serviced|replaced|corrected)|return to (operation|service)|immediate action|norma\b|\bl[ií]mites?\b|umbral|\best[aá]ndar(es)?\b|permitid|aceptable|exposici[oó]n|diferencia entre|c[oó]digo (dice|exige|permite)/i;
   // Number-anchored on purpose (2026-10-05 verify round): the bare noun "readings" shows
   // up in knowledge questions ("Interpreting CO readings...") and un-suppressed a
   // thresholds lesson. Measurement context = a verb tied to a number or an instrument.
-  const _MEAS_CTX_B = /read(ing|s)?\s+(at\s+|of\s+|above\s+|over\s+)?\d|measured?\s+(at\s+)?\d|came back (at|over|above)|(meter|monitor|detector|analyzer)\s+(is|says|reads|shows|went|came)|my (meter|monitor|detector|analyzer)|i'?m (getting|seeing|reading)|show(s|ing)\s+\d|test(ed)? at\s+\d|sitting at\s+\d|holding at\s+\d|went off/i;
+  const _MEAS_CTX_B = /read(ing|s)?\s+(at\s+|of\s+|above\s+|over\s+)?\d|measured?\s+(at\s+)?\d|came back (at|over|above)|(meter|monitor|detector|analyzer)\s+(is|says|reads|shows|went|came)|my (meter|monitor|detector|analyzer)|i'?m (getting|seeing|reading)|show(s|ing)\s+\d|test(ed)? at\s+\d|sitting at\s+\d|holding at\s+\d|went off|leyendo\s+\d|lectura de\s+\d|midiendo|midi[oó]\s+\d|marcando\s+\d|me (da|est[aá] dando)\s+\d|estoy (viendo|midiendo|leyendo)|son[oó]|se activ[oó]|se dispar[oó]/i;
   let _co = 0;
+  // Spanish mirror (2026-10-31): "CO libre de aire" / "corregido" is how the air-free
+  // (corrected) flue reading is written in Spanish. The number stays capture group 1.
   for (const _re of [new RegExp(_PPM + '\\s*ppm[^.]{0,24}air[- ]?free', 'gi'),
-                     new RegExp('air[- ]?free[^.]{0,24}' + _PPM + '\\s*ppm', 'gi')]) {
+                     new RegExp('air[- ]?free[^.]{0,24}' + _PPM + '\\s*ppm', 'gi'),
+                     new RegExp(_PPM + '\\s*ppm[^.]{0,28}(?:libre de aire|sin diluir|corregid)', 'gi'),
+                     new RegExp('(?:libre de aire|corregid[oa]s?)[^.]{0,28}' + _PPM + '\\s*ppm', 'gi')]) {
     let _h;
     while ((_h = _re.exec(_lastUser))) {
       const _win = _lastUser.slice(Math.max(0, _h.index - 95), _h.index + _h[0].length + 70);
@@ -3535,28 +3580,45 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   }
   if (_co > 0) {
     // 200 ppm: water heater, vented/unvented room heater, BIV wall furnace.
-    const _strict = /(water heater|room heater|unvented|space heater|wall furnace)/i.test(_lastUser)
-                    && !/direct[- ]?vent/i.test(_lastUser);
+    const _strict = (/(water heater|room heater|unvented|space heater|wall furnace)/i.test(_lastUser)
+                    || /(calentador de agua|calefactor|sin ventilaci[oó]n|calentador de pared)/i.test(_lastUser))
+                    && !/direct[- ]?vent|tiro directo|ventilaci[oó]n directa/i.test(_lastUser);
     // 400 ppm: central/floor/gravity furnace, boiler, direct-vent wall furnace, clothes dryer.
-    const _loose = /(central furnace|\bfurnace\b|\bboiler\b|floor furnace|gravity furnace|direct[- ]?vent|clothes dryer|\bdryer\b)/i.test(_lastUser);
+    const _loose = /(central furnace|\bfurnace\b|\bboiler\b|floor furnace|gravity furnace|direct[- ]?vent|clothes dryer|\bdryer\b)/i.test(_lastUser)
+                   || /(\bhorno\b|\bcaldera\b|secadora|tiro directo|ventilaci[oó]n directa)/i.test(_lastUser);
     const _lim = _strict ? 200 : (_loose ? 400 : 200);
     if (_co >= _lim) {
-      _safetyLead = 'SAFETY FIRST — shut the appliance down now. ' + _co + ' ppm CO air-free is at or above the ' + _lim + ' ppm limit for this appliance; it comes off until you find and correct the cause, then check ambient CO in the occupied space.';
+      _safetyLead = _es(
+        'SAFETY FIRST — shut the appliance down now. ' + _co + ' ppm CO air-free is at or above the ' + _lim + ' ppm limit for this appliance; it comes off until you find and correct the cause, then check ambient CO in the occupied space.',
+        // "libre de aire" is load-bearing: _combustionEvent (close-out checklist) matches on it.
+        'SEGURIDAD PRIMERO — apague el equipo ahora. ' + _co + ' ppm de CO libre de aire está en o por encima del límite de ' + _lim + ' ppm para este equipo; queda fuera de servicio hasta encontrar y corregir la causa, y después mida el CO ambiente en el espacio ocupado.');
     }
   }
   // (C) Confirmed spillage past 2 minutes under worst-case depressurization.
   if (/spillage[^.]{0,55}(continu|past|over|beyond|exceed|more than|lasting)[^.]{0,16}(2|two)\s*min/i.test(_lastUser)
       || /(2|two)\s*min[^.]{0,26}spillage/i.test(_lastUser)) {
-    _safetyLead = 'SAFETY FIRST — shut it down and red-tag it, with written notice to the occupants. Confirmed draft-hood spillage past two minutes under worst-case depressurization is a mandatory shutdown, not a judgment call.';
+    _safetyLead = _es(
+      'SAFETY FIRST — shut it down and red-tag it, with written notice to the occupants. Confirmed draft-hood spillage past two minutes under worst-case depressurization is a mandatory shutdown, not a judgment call.',
+      // "Derrame de gases" is load-bearing: _combustionEvent (close-out checklist) matches on it.
+      'SEGURIDAD PRIMERO — apáguelo y póngale etiqueta roja (red tag), con aviso por escrito a los ocupantes. Derrame de gases confirmado en la campana de tiro por más de dos minutos bajo despresurización de peor caso es un apagado obligatorio, no una decisión a criterio.');
   }
   // (C2) Tripped flame-rollout switch.
-  if (/(flame )?rollout[^.]{0,30}(switch )?(trip|tripp?ed|open|is out|popped)/i.test(_lastUser)) {
-    _safetyLead = 'SAFETY FIRST — shut the gas off at the appliance valve, and do NOT reset the rollout switch until you have found the root cause (blocked flue, cracked heat exchanger, dirty or misaligned burners, failed inducer). A tripped rollout means flame left the burner box.';
+  if (/(flame )?rollout[^.]{0,30}(switch )?(trip|tripp?ed|open|is out|popped)/i.test(_lastUser)
+      // Spanish mirror (2026-10-31): techs keep the English word "rollout" in Spanish.
+      || /rollout[^.]{0,30}(disparad|se dispar[oó]|se abri[oó]|abierto|activad|botad)/i.test(_lastUser)) {
+    _safetyLead = _es(
+      'SAFETY FIRST — shut the gas off at the appliance valve, and do NOT reset the rollout switch until you have found the root cause (blocked flue, cracked heat exchanger, dirty or misaligned burners, failed inducer). A tripped rollout means flame left the burner box.',
+      'SEGURIDAD PRIMERO — cierre el gas en la válvula del equipo, y NO restablezca el interruptor de rollout hasta encontrar la causa raíz (chimenea bloqueada, intercambiador de calor agrietado, quemadores sucios o desalineados, inductor fallado). Un rollout disparado significa que la llama salió de la caja de quemadores.');
   }
   // (C3) A2L refrigerant release/leak — ignition sources FIRST, then ventilate.
   if (/(a2l|r-?454b|r-?32|r-?1234yf|r-?466a)[^.]{0,45}(leak|release|spray|venting|escap|discharg)/i.test(_lastUser)
-      || /(refrigerant|charge)[^.]{0,30}(leak|release|spray|venting|escap)[^.]{0,45}(a2l|r-?454b|r-?32|flammab)/i.test(_lastUser)) {
-    _safetyLead = 'SAFETY FIRST — eliminate every ignition source first: no light switches, no open flame, no sparking tools in the area. THEN ventilate and clear the space. A2L refrigerant is mildly flammable, so ignition control comes before anything else.';
+      || /(refrigerant|charge)[^.]{0,30}(leak|release|spray|venting|escap)[^.]{0,45}(a2l|r-?454b|r-?32|flammab)/i.test(_lastUser)
+      // Spanish mirror (2026-10-31): same refrigerant names, Spanish leak/flammable words, same windows.
+      || /(a2l|r-?454b|r-?32|r-?1234yf|r-?466a)[^.]{0,45}(fuga|fugando|escape|escapando|liberaci[oó]n|descargando|rociando)/i.test(_lastUser)
+      || /(refrigerante|carga)[^.]{0,30}(fuga|fugando|escape|escapando)[^.]{0,45}(a2l|r-?454b|r-?32|inflamable)/i.test(_lastUser)) {
+    _safetyLead = _es(
+      'SAFETY FIRST — eliminate every ignition source first: no light switches, no open flame, no sparking tools in the area. THEN ventilate and clear the space. A2L refrigerant is mildly flammable, so ignition control comes before anything else.',
+      'SEGURIDAD PRIMERO — elimine primero toda fuente de ignición: ni interruptores de luz, ni llama abierta, ni herramientas que hagan chispa en el área. DESPUÉS ventile y despeje el espacio. El refrigerante A2L es levemente inflamable, así que el control de ignición va antes que todo.');
   }
   // (B2) AMBIENT CO in an occupied space — ANSI/BPI-1200-S 7.3.3.3.
   // BEFORE 2026-08-08 THERE WAS NO AMBIENT RULE AT ALL: the only CO number checked was a
@@ -3574,9 +3636,9 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // acted on 35 and issued the mildest advisory instead of evacuating.
   // Now: split into clauses, judge each reading in ITS OWN context, act on the WORST
   // ambient one. Same posture as the rest of this file — the dangerous reading wins.
-  const _FLUE_CTX = /air[- ]?free|\bflue\b|\bvent\b|\bvented\b|stack|exhaust|draft hood|burner|combustion analyzer/i;
-  const _CO_SIG = /\bco\b|carbon monoxide|monitor|meter|detector|alarm/i;
-  const _SPACE_SIG = /ambient|hallway|living room|basement|bedroom|kitchen|upstairs|downstairs|\bCAZ\b|in the (house|room|air|space|home)/i;
+  const _FLUE_CTX = /air[- ]?free|\bflue\b|\bvent\b|\bvented\b|stack|exhaust|draft hood|burner|combustion analyzer|libre de aire|sin diluir|corregid|chimenea|quemador|campana de tiro|analizador de combusti/i;
+  const _CO_SIG = /\bco\b|carbon monoxide|monitor|meter|detector|alarm|mon[oó]xido|medidor/i;
+  const _SPACE_SIG = /ambient|hallway|living room|basement|bedroom|kitchen|upstairs|downstairs|\bCAZ\b|in the (house|room|air|space|home)|s[oó]tano|pasillo|habitaci[oó]n|rec[aá]mara|dormitorio|cocina|\bsala\b|en (la|el) (casa|cuarto|aire|espacio|hogar)/i;
   // Message-level signals let a bare "90 ppm in the hallway" clause still qualify when the
   // CO word sits in a neighbouring clause; the FLUE test stays clause-local on purpose,
   // because that is the one that SUPPRESSES a warning.
@@ -3589,13 +3651,13 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // measured. A clause that cites a standard/limit with no measurement language is
   // knowledge, not telemetry — skip it. A clause carrying BOTH ("reading 200 ppm, over
   // the OSHA limit") keeps its measurement meaning, so real readings still evacuate.
-  const _STD_CTX = /\bosha\b|\bniosh\b|ashrae|\bepa\b|\bwho\b|\bpel\b|\btwa\b|\bstel\b|ceiling|ul ?2034|\bansi\b|\bbpi\b|standard|threshold|\blimit\b|guideline|allowable|exposure (limit|level)|chronic exposure|long[- ]term exposure|\bidlh\b|\brel\b|\btlv\b|acgih|\bpossibl\w*|\bfor\s+\d+\s*[\u2013-]\s*\d+\s*min|do[- ]?not[- ]?restore|alarm (point|setpoint|set ?point|must (sound|alarm|activate))|set at|code (says|requires|allows)|max(imum)?\s+(of\s+)?\d|difference between/i;
-  const _MEAS_CTX = /read(ing|s)?\b|measur|metered?|test(ed|ing)? at|\bgetting\b|\bseeing\b|\bshowing\b|\bshows\b|pulling\b|my (meter|monitor|detector|analyzer)|(meter|monitor|detector|analyzer)\s+(is|says|reads|shows|went)|went off|alarming|i'?m at|sitting at|holding at/i;
+  const _STD_CTX = /\bosha\b|\bniosh\b|ashrae|\bepa\b|\bwho\b|\bpel\b|\btwa\b|\bstel\b|ceiling|ul ?2034|\bansi\b|\bbpi\b|standard|threshold|\blimit\b|guideline|allowable|exposure (limit|level)|chronic exposure|long[- ]term exposure|\bidlh\b|\brel\b|\btlv\b|acgih|\bpossibl\w*|\bfor\s+\d+\s*[\u2013-]\s*\d+\s*min|do[- ]?not[- ]?restore|alarm (point|setpoint|set ?point|must (sound|alarm|activate))|set at|code (says|requires|allows)|max(imum)?\s+(of\s+)?\d|difference between|norma\b|\bl[ií]mites?\b|umbral|\best[aá]ndar(es)?\b|permitid|aceptable|exposici[oó]n|diferencia entre|c[oó]digo (dice|exige|permite)/i;
+  const _MEAS_CTX = /read(ing|s)?\b|measur|metered?|test(ed|ing)? at|\bgetting\b|\bseeing\b|\bshowing\b|\bshows\b|pulling\b|my (meter|monitor|detector|analyzer)|(meter|monitor|detector|analyzer)\s+(is|says|reads|shows|went)|went off|alarming|i'?m at|sitting at|holding at|leyendo|lectura|midiendo|midi[oó]|marcando|me (da|est[aá] dando)|estoy (viendo|midiendo|leyendo)|son[oó]|se activ[oó]|se dispar[oó]/i;
   let _amb = 0;
   // thousands separators first: the clause split cuts on commas, so "NIOSH IDLH: 1,200 ppm"
   // used to shed a bare "200 ppm" clause with no standards word left to suppress it (2026-10-04).
   const _ambScan = _lastUser.replace(/(\d),(?=\d{3}\b)/g, '$1');
-  for (const _cl of _ambScan.split(/[.;,]|\bbut\b|\bhowever\b|\bwhile\b/i)) {
+  for (const _cl of _ambScan.split(/[.;,]|\bbut\b|\bhowever\b|\bwhile\b|\bpero\b|\bsin embargo\b|\bmientras\b|\baunque\b/i)) {
     if (_FLUE_CTX.test(_cl)) continue;                       // rule (B) owns flue readings
     if (_STD_CTX.test(_cl) && !_MEAS_CTX.test(_cl)) continue; // (B3) cited standard, not a reading
     if (!(_CO_SIG.test(_cl) || _SPACE_SIG.test(_cl) || _coSignal || _spaceSignal)) continue;
@@ -3608,13 +3670,21 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   }
   if (_amb > 0) {
     if (_amb >= 1200) {
-      _safetyLead = 'GET OUT NOW — ' + _amb + ' ppm is at or above the level that is immediately dangerous to life. Everyone leaves the building right now, you included. Call 911 from outside. Nobody goes back in without the fire department and SCBA.';
+      _safetyLead = _es(
+        'GET OUT NOW — ' + _amb + ' ppm is at or above the level that is immediately dangerous to life. Everyone leaves the building right now, you included. Call 911 from outside. Nobody goes back in without the fire department and SCBA.',
+        'SALGAN AHORA — ' + _amb + ' ppm de CO está en o por encima del nivel inmediatamente peligroso para la vida. Todos salen del edificio ahora mismo, usted incluido. Llame al 911 desde afuera. Nadie vuelve a entrar sin los bomberos y equipo de aire autónomo (SCBA).');
     } else if (_amb >= 70) {
-      _safetyLead = 'STOP AND EVACUATE — ' + _amb + ' ppm ambient CO. Tell every occupant to get out of the building now, and get yourself out with them. Call emergency services from OUTSIDE the house. Do not stay to ventilate and do not keep diagnosing — at 70 ppm and up the standard says you leave.';
+      _safetyLead = _es(
+        'STOP AND EVACUATE — ' + _amb + ' ppm ambient CO. Tell every occupant to get out of the building now, and get yourself out with them. Call emergency services from OUTSIDE the house. Do not stay to ventilate and do not keep diagnosing — at 70 ppm and up the standard says you leave.',
+        'ALTO Y EVACÚEN — ' + _amb + ' ppm de CO ambiente. Dígale a todos los ocupantes que salgan del edificio ahora, y salga usted con ellos. Llame a emergencias desde AFUERA de la casa. No se quede a ventilar y no siga diagnosticando — a 70 ppm o más la norma dice que se sale.');
     } else if (_amb >= 36) {
-      _safetyLead = 'SAFETY FIRST — ' + _amb + ' ppm ambient CO is elevated. Tell the occupant, get windows and doors open, and shut off every possible CO source before you go any further.';
+      _safetyLead = _es(
+        'SAFETY FIRST — ' + _amb + ' ppm ambient CO is elevated. Tell the occupant, get windows and doors open, and shut off every possible CO source before you go any further.',
+        'SEGURIDAD PRIMERO — ' + _amb + ' ppm de CO ambiente es un nivel elevado. Avise al ocupante, abra ventanas y puertas, y apague toda posible fuente de CO antes de seguir.');
     } else if (_amb >= 9) {
-      _safetyLead = 'SAFETY FIRST — ' + _amb + ' ppm ambient CO is detectable. Tell the occupant, ventilate, and find the source before you move on. If a permanently installed appliance is the suspect, it needs a qualified professional on it.';
+      _safetyLead = _es(
+        'SAFETY FIRST — ' + _amb + ' ppm ambient CO is detectable. Tell the occupant, ventilate, and find the source before you move on. If a permanently installed appliance is the suspect, it needs a qualified professional on it.',
+        'SEGURIDAD PRIMERO — ' + _amb + ' ppm de CO ambiente es detectable. Avise al ocupante, ventile, y encuentre la fuente antes de continuar. Si el sospechoso es un equipo de instalación permanente, necesita un profesional calificado.');
     }
   }
   // (B4) CO ALARM ACTIVELY SOUNDING = evacuate on the ALARM fact (2026-10-04). Before this
@@ -3623,13 +3693,22 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // CO" nobody measured) or fell through to model judgment. The alarm being in alarm IS the
   // trigger; the honest lead carries no reading because none exists yet. A number-backed
   // evacuation above outranks this one. Past-tense ("went off last week") stays model-side.
-  if (!/^(STOP AND EVACUATE|GET OUT NOW)/.test(_safetyLead)
-      && /(\bco\b|carbon monoxide)[ -]?(alarm|detector|monitor)[^.]{0,45}(sounding|going off|alarming|in alarm|activated|activation|triggered|just went off|keeps going off|won'?t stop)/i.test(_lastUser)
-      && !/(last (week|month|night|winter)|yesterday|days? ago|a while (ago|back)|went off (once|briefly|before)|had gone off|false alarm)/i.test(_lastUser)) {
+  const _coAlarmNowEn = /(\bco\b|carbon monoxide)[ -]?(alarm|detector|monitor)[^.]{0,45}(sounding|going off|alarming|in alarm|activated|activation|triggered|just went off|keeps going off|won'?t stop)/i.test(_lastUser)
+      && !/(last (week|month|night|winter)|yesterday|days? ago|a while (ago|back)|went off (once|briefly|before)|had gone off|false alarm)/i.test(_lastUser);
+  // Spanish mirror (2026-10-31): alarm/detector noun + CO within the same windows plus an
+  // actively-sounding verb, with the same past-tense/false-alarm stand-down. Word order
+  // flips in Spanish ("sonó la alarma de monóxido"), so both orders are covered.
+  const _coAlarmNowEs = (/(alarma|detector|monitor)[^.]{0,30}(de\s+)?(\bco\b|mon[oó]xido)[^.]{0,45}(sonando|son[oó]|se activ[oó]|se dispar[oó]|disparad|activad|no (deja|para) de sonar|est[aá] sonando)/i.test(_lastUser)
+      || /(son[oó]|est[aá] sonando|sonando|se activ[oó]|se dispar[oó])[^.]{0,35}(alarma|detector|monitor)[^.]{0,30}(\bco\b|mon[oó]xido)/i.test(_lastUser))
+      && !/(la semana pasada|el (mes|a[ñn]o) pasado|anoche|ayer|hace (d[ií]as|rato|tiempo|una semana)|son[oó] (una vez|antes|brevemente)|falsa alarma)/i.test(_lastUser);
+  if (!/^(STOP AND EVACUATE|GET OUT NOW|ALTO Y EVAC|SALGAN AHORA)/.test(_safetyLead)
+      && (_coAlarmNowEn || _coAlarmNowEs)) {
     // Tightened 2026-10-19: same steps (treat as real, evacuate incl. tech, call from
     // outside, no ventilate-first, meter at the door before re-entry, find the source),
     // half the words.
-    _safetyLead = 'STOP AND EVACUATE — treat that CO alarm as real. Everyone out now, you included; call 911 or the gas utility from OUTSIDE. Don\'t ventilate first — airing it out erases the evidence while people keep breathing it. Meter the ambient CO at the door before anyone re-enters, and find the source before that alarm gets called false.';
+    _safetyLead = _es(
+      'STOP AND EVACUATE — treat that CO alarm as real. Everyone out now, you included; call 911 or the gas utility from OUTSIDE. Don\'t ventilate first — airing it out erases the evidence while people keep breathing it. Meter the ambient CO at the door before anyone re-enters, and find the source before that alarm gets called false.',
+      'ALTO Y EVACÚEN — trate esa alarma de CO como real. Todos afuera ahora, usted incluido; llame al 911 o a la compañía de gas desde AFUERA. No ventile primero — airear borra la evidencia mientras la gente lo sigue respirando. Mida el CO ambiente en la puerta antes de que alguien vuelva a entrar, y encuentre la fuente antes de declarar falsa esa alarma.');
   }
   // (C5) OCCUPANT SYMPTOMS + a combustion appliance = treat it as CO until proven otherwise.
   // Symptoms are now an INDEPENDENT trigger. Previously "headache" only registered if a CO
@@ -3639,9 +3718,14 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // The reasoning: dose is concentration x time, so a spot reading captures neither the peak
   // nor the accumulated exposure, and WHO notes the link between measured levels and symptoms
   // is poor. A symptomatic occupant is a real signal at ANY reading, including zero.
-  if (/(headache|nause|dizzy|light[- ]?headed|confus|disorient|vomit|throwing up|flu[- ]?like)/i.test(_lastUser)
-      && /(furnace|boiler|water heater|gas|combustion|appliance|heater|fireplace|\bco\b|carbon monoxide|ppm)/i.test(_lastUser)) {
-    const _medical = ' Anyone feeling it needs to be checked by a medic — symptoms around a combustion appliance get treated as carbon monoxide until proven otherwise, whatever the meter says, because a spot reading misses both the peak and what they have already breathed in.';
+  if ((/(headache|nause|dizzy|light[- ]?headed|confus|disorient|vomit|throwing up|flu[- ]?like)/i.test(_lastUser)
+       // Spanish symptom words (2026-10-31), accent-insensitive.
+       || /(dolor de cabeza|n[aá]usea|maread|v[oó]mit|vomitando|confundid|desorientad|aturdid|como con gripe)/i.test(_lastUser))
+      && (/(furnace|boiler|water heater|gas|combustion|appliance|heater|fireplace|\bco\b|carbon monoxide|ppm)/i.test(_lastUser)
+       || /(caldera|calefacci[oó]n|calentador|calefactor|horno|estufa|chimenea|combusti[oó]n|aparato|mon[oó]xido)/i.test(_lastUser))) {
+    const _medical = _es(
+      ' Anyone feeling it needs to be checked by a medic — symptoms around a combustion appliance get treated as carbon monoxide until proven otherwise, whatever the meter says, because a spot reading misses both the peak and what they have already breathed in.',
+      ' Cualquiera que lo sienta necesita evaluación médica — los síntomas cerca de un equipo de combustión se tratan como monóxido de carbono (CO) hasta demostrar lo contrario, diga lo que diga el medidor, porque una lectura puntual no captura ni el pico ni lo que ya respiraron.');
     // GRADED, so the guard doesn't cry wolf (fixed 2026-08-09). Symptoms became an independent
     // trigger, which meant "this furnace is giving me a headache" — a tech venting, not a
     // patient — produced a full building evacuation. That matters: a guard that fires on
@@ -3651,16 +3735,24 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     // as feeling it. Those get the full evacuation. A bare appliance word plus a symptom gets
     // a proportionate check instead — still safety-first, still CO-until-proven-otherwise.
     const _symptomCorroborated =
-      /\d\s*ppm|\bco\b|carbon monoxide|detector|alarm|monitor/i.test(_lastUser)
-      || /(occupant|homeowner|customer|tenant|resident|wife|husband|kids?|child|children|baby|family|she|he|they|everyone)\b[^.]{0,40}(has|had|have|feels?|felt|is|are|been|complain|says?|said|getting)/i.test(_lastUser);
-    if (/^(STOP AND EVACUATE|GET OUT NOW)/.test(_safetyLead)) {
+      /\d\s*ppm|\bco\b|carbon monoxide|detector|alarm|monitor|mon[oó]xido/i.test(_lastUser)
+      || /(occupant|homeowner|customer|tenant|resident|wife|husband|kids?|child|children|baby|family|she|he|they|everyone)\b[^.]{0,40}(has|had|have|feels?|felt|is|are|been|complain|says?|said|getting)/i.test(_lastUser)
+      // Spanish mirror (2026-10-31): someone OTHER than the writer described as feeling it.
+      || /(ocupante|due[ñn][oa]|cliente|inquilin[oa]|residente|esposa|esposo|se[ñn]ora|se[ñn]or|ni[ñn][oa]s?|beb[eé]|familia|ella|todos)\b[^.]{0,40}(tiene|tienen|ten[ií]a|siente|sienten|se siente|est[aá]|est[aá]n|dice|dicen|se queja)/i.test(_lastUser);
+    if (/^(STOP AND EVACUATE|GET OUT NOW|ALTO Y EVAC|SALGAN AHORA)/.test(_safetyLead)) {
       // An evacuation already fired — append the medical step, never replace it, or a
       // symptomatic occupant at 180 ppm loses "call emergency services from outside".
       _safetyLead += _medical;
     } else if (_symptomCorroborated) {
-      _safetyLead = 'SAFETY FIRST — get everyone out into fresh air now, including you.' + _medical + ' Diagnose the equipment after the people are out and safe.';
+      _safetyLead = _es(
+        'SAFETY FIRST — get everyone out into fresh air now, including you.',
+        'SEGURIDAD PRIMERO — saque a todos al aire fresco ahora, usted incluido.') + _medical + _es(
+        ' Diagnose the equipment after the people are out and safe.',
+        ' Diagnostique el equipo después de que la gente esté afuera y a salvo.');
     } else {
-      _safetyLead = 'SAFETY FIRST — if that is a real symptom and not just a long day, step outside into fresh air before you go further. Around a combustion appliance, a headache or nausea gets treated as carbon monoxide until proven otherwise — put a meter on the space and check ambient CO before you keep working.';
+      _safetyLead = _es(
+        'SAFETY FIRST — if that is a real symptom and not just a long day, step outside into fresh air before you go further. Around a combustion appliance, a headache or nausea gets treated as carbon monoxide until proven otherwise — put a meter on the space and check ambient CO before you keep working.',
+        'SEGURIDAD PRIMERO — si eso es un síntoma real y no solo un día largo, salga al aire fresco antes de seguir. Cerca de un equipo de combustión, un dolor de cabeza o náuseas se tratan como monóxido de carbono (CO) hasta demostrar lo contrario — ponga un medidor en el espacio y verifique el CO ambiente antes de seguir trabajando.');
     }
   }
   // (C4) MEDICAL EMERGENCY — an occupant is incapacitated (suspected CO or otherwise).
@@ -3671,32 +3763,53 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     /\b(occupant|someone|somebody|person|people|homeowner|customer|tenant|resident|man|woman|lady|child|kid|baby|elderly|guy|she|he|they)\b[^.]{0,70}(unconscious|passed out|won'?t wake|unresponsive|collapsed|slurring|slurred|can barely (answer|respond|stand|talk|keep)|barely (conscious|awake|responsive|standing)|disorient|seizure|convuls|not making sense|cherry[- ]?red|blue lips|throwing up|vomit)/i.test(_lastUser)
     || /\b(unconscious|passed out|unresponsive|barely conscious|having a seizure|convulsing|won'?t wake up)\b/i.test(_lastUser)
     || /(confused|slurring|disorient|dizzy|nause|headache|throwing up|vomit)[^.]{0,45}(possible |suspect|maybe |might be )?(co\b|carbon monoxide|poison)/i.test(_lastUser)
-    || /(co\b|carbon monoxide)[^.]{0,45}(confused|slurring|disorient|unconscious|passed out|vomit|barely|can'?t stay awake|drowsy)/i.test(_lastUser);
+    || /(co\b|carbon monoxide)[^.]{0,45}(confused|slurring|disorient|unconscious|passed out|vomit|barely|can'?t stay awake|drowsy)/i.test(_lastUser)
+    // Spanish mirror (2026-10-31): standalone incapacitation words, and symptom+CO in both orders.
+    || /\b(inconsciente|desmayad[oa]|se desmay[oó]|no responde|no despierta|sin conocimiento|convulsion(es|ando)?|apenas (consciente|responde)|no reacciona)\b/i.test(_lastUser)
+    || /(confundid|balbucea|desorientad|maread|n[aá]usea|dolor de cabeza|vomitando|v[oó]mit)[^.]{0,45}(posible |sospech\w+ )?(co\b|mon[oó]xido|envenenamiento|intoxicaci[oó]n)/i.test(_lastUser)
+    || /(co\b|mon[oó]xido)[^.]{0,45}(confundid|balbucea|desorientad|inconsciente|desmayad|vomitando|apenas|no se mantiene despiert|somnolient)/i.test(_lastUser);
   // (C4b) ELECTRICAL-SHOCK VICTIM ≠ CO VICTIM (2026-10-04, found by the exam re-test).
   // The person-down lead assumed carbon monoxide for EVERY downed person. On "co-worker
   // received electrical shock, may still be in contact with energized equipment" it opened
   // with "get the person out into fresh air" — grab the victim — BEFORE the body's
   // kill-the-power step. Rescuer contact with an energized victim is how one casualty
   // becomes two, so shock context owns the lead: power off before touch.
-  const _shockVictim = /electrocut|electric(al)?[- ]?(shock|burn|contact)|\bshocked\b|(received?|got|getting|took) a shock|still in contact|in contact with[^.]{0,40}(energized|live|equipment|conductor|wire|panel)|(touch|grabb|holding)[^.]{0,30}(live|hot|energized)/i.test(_lastUser);
+  const _shockVictim = /electrocut|electric(al)?[- ]?(shock|burn|contact)|\bshocked\b|(received?|got|getting|took) a shock|still in contact|in contact with[^.]{0,40}(energized|live|equipment|conductor|wire|panel)|(touch|grabb|holding)[^.]{0,30}(live|hot|energized)/i.test(_lastUser)
+    // Spanish mirror (2026-10-31): shock context owns the lead — power off before touch.
+    || /(electrocutad|descarga el[eé]ctrica|le dio (la )?corriente|recibi[oó] (una )?descarga|sigue en contacto|en contacto con[^.]{0,40}(energizad|vivo|cable|panel|equipo)|quemadura el[eé]ctrica)/i.test(_lastUser);
   if (_personDown && _shockVictim) {
-    _safetyLead = 'DO NOT TOUCH THEM — kill the power FIRST. If they could still be in contact with the source, de-energize before anything else: breaker, disconnect, pull the meter. If you can\'t kill power fast, separate them from the source with something dry and non-conductive — wood, fiberglass, a rubber mat — never your bare hands. Call 911 the moment they\'re clear, or have someone else call while you kill power. Then, and only then: not breathing means CPR now, and send someone for an AED. Electrical burns at the contact points mean internal injury — they go to the hospital even if they say they feel fine. You\'re the tech, not the medic: power off, 911, help until EMS arrives.';
+    _safetyLead = _es(
+      'DO NOT TOUCH THEM — kill the power FIRST. If they could still be in contact with the source, de-energize before anything else: breaker, disconnect, pull the meter. If you can\'t kill power fast, separate them from the source with something dry and non-conductive — wood, fiberglass, a rubber mat — never your bare hands. Call 911 the moment they\'re clear, or have someone else call while you kill power. Then, and only then: not breathing means CPR now, and send someone for an AED. Electrical burns at the contact points mean internal injury — they go to the hospital even if they say they feel fine. You\'re the tech, not the medic: power off, 911, help until EMS arrives.',
+      'NO LO TOQUE — corte la corriente PRIMERO. Si la persona todavía puede estar en contacto con la fuente, desenergice antes que nada: breaker, desconectador, o jale el medidor. Si no puede cortar la corriente rápido, sepárela de la fuente con algo seco y no conductor — madera, fibra de vidrio, un tapete de goma — nunca con las manos desnudas. Llame al 911 en cuanto esté libre de la fuente, o que alguien más llame mientras usted corta la corriente. Entonces, y solo entonces: si no respira, RCP ya, y mande a alguien por un DEA. Quemaduras eléctricas en los puntos de contacto significan lesión interna — van al hospital aunque digan que se sienten bien. Usted es el técnico, no el paramédico: corriente fuera, 911, y ayude hasta que llegue la ambulancia.');
   } else if (_personDown) {
-    _safetyLead = 'CALL 911 IMMEDIATELY — before anything else. If you can do it safely, get the person out into fresh air, then call 911 and tell them suspected carbon monoxide poisoning. Do NOT stop to diagnose the equipment — this is a medical emergency and life safety comes first. You are the tech here, not the medic: your job right now is to get 911 moving and get everyone into fresh air. Don\'t re-enter a space you suspect is full of CO without the fire department and proper protection.';
+    _safetyLead = _es(
+      'CALL 911 IMMEDIATELY — before anything else. If you can do it safely, get the person out into fresh air, then call 911 and tell them suspected carbon monoxide poisoning. Do NOT stop to diagnose the equipment — this is a medical emergency and life safety comes first. You are the tech here, not the medic: your job right now is to get 911 moving and get everyone into fresh air. Don\'t re-enter a space you suspect is full of CO without the fire department and proper protection.',
+      'LLAME AL 911 DE INMEDIATO — antes que nada. Si puede hacerlo con seguridad, saque a la persona al aire fresco, luego llame al 911 y diga que sospecha intoxicación por monóxido de carbono (CO). NO se detenga a diagnosticar el equipo — esto es una emergencia médica y la vida va primero. Usted es el técnico aquí, no el paramédico: su trabajo ahora es activar al 911 y sacar a todos al aire fresco. No vuelva a entrar a un espacio que sospecha lleno de CO sin los bomberos y protección adecuada.');
   }
   // (D) Inverter / variable-speed fault work = lethal stored DC.
   let _inverterWarn = '';
-  if (/(inverter|variable[- ]?speed|25vna|24vna|vrv|vrf|mini[- ]?split|modulating heat pump)/i.test(_lastUser)
-      && /(fault|error|code|not running|won'?t (start|run)|no (heat|cool)|diagnos)/i.test(_lastUser)) {
-    _inverterWarn = 'SAFETY — this is an inverter-drive unit; it stores lethal DC voltage after shutoff. Wait a full 5 minutes after killing power and confirm the DC bus is under 50 VDC with a meter before opening the inverter compartment.';
+  if ((/(inverter|variable[- ]?speed|25vna|24vna|vrv|vrf|mini[- ]?split|modulating heat pump)/i.test(_lastUser)
+       || /(velocidad variable|bomba de calor (modulante|inverter))/i.test(_lastUser))
+      && (/(fault|error|code|not running|won'?t (start|run)|no (heat|cool)|diagnos)/i.test(_lastUser)
+       // Spanish fault words (2026-10-31) — unit names (inverter, mini-split, VRF) carry over unchanged.
+       || /(falla|fallo|c[oó]digo|no arranca|no enciende|no prende|no funciona|no (enfr[ií]a|calienta)|diagn[oó]stic)/i.test(_lastUser))) {
+    _inverterWarn = _es(
+      'SAFETY — this is an inverter-drive unit; it stores lethal DC voltage after shutoff. Wait a full 5 minutes after killing power and confirm the DC bus is under 50 VDC with a meter before opening the inverter compartment.',
+      'SEGURIDAD — esta es una unidad con inverter; almacena voltaje DC letal después del apagado. Espere 5 minutos completos después de cortar la corriente y confirme con el multímetro que el bus DC está por debajo de 50 VDC antes de abrir el compartimiento del inverter.');
   }
   // (D2) Capacitor work = lethal stored charge. Run/start caps hold 370-440V even
   // with power off; "bulging cap, can I leave it?" must lead with discharge protocol,
   // not generic-electronics advice. Guard, because prompt-only failed re-cert.
   let _capacitorWarn = '';
-  if (/(capacitor|\bcaps?\b|dual[- ]?run|run cap|start cap|hard start)/i.test(_lastUser)
-      && /(bulg|swollen|swell|leak|fail|bad|blown|burst|rupture|replace|chang|swap|test|check|touch|discharg|pull|remov|leave it|leave for now|leave that|still good|how do i)/i.test(_lastUser)) {
-    _capacitorWarn = 'SAFETY — a run or start capacitor holds a lethal charge even with the power off. Kill the disconnect AND the breaker, then discharge the capacitor (bleed it across a ~20k ohm resistor across each terminal pair — never short the terminals with a screwdriver, which arcs and can injure) before you touch it or test it. A bulging or swollen cap has already failed and is never safe to leave running -- it can leak, rupture, or start a fire, so it comes out, it does not stay in.';
+  if ((/(capacitor|\bcaps?\b|dual[- ]?run|run cap|start cap|hard start)/i.test(_lastUser)
+       // "capacitor" is the same word in Spanish; "condensador" is the other common name.
+       || /(condensador( el[eé]ctrico)?\b|capacitor de (marcha|arranque))/i.test(_lastUser))
+      && (/(bulg|swollen|swell|leak|fail|bad|blown|burst|rupture|replace|chang|swap|test|check|touch|discharg|pull|remov|leave it|leave for now|leave that|still good|how do i)/i.test(_lastUser)
+       // Spanish condition/intent words (2026-10-31): hinchado/inflado/abombado/cambiar/probar/descargar and kin.
+       || /(hinchad|inflad|abombad|fugando|fall[oó]|fallad|da[ñn]ad|quemad|revent|cambiar|reemplazar|probar|revisar|chequear|tocar|descargar|quitar|sacar|dejarlo|sigue (bueno|sirviendo)|c[oó]mo (lo|puedo|se))/i.test(_lastUser))) {
+    _capacitorWarn = _es(
+      'SAFETY — a run or start capacitor holds a lethal charge even with the power off. Kill the disconnect AND the breaker, then discharge the capacitor (bleed it across a ~20k ohm resistor across each terminal pair — never short the terminals with a screwdriver, which arcs and can injure) before you touch it or test it. A bulging or swollen cap has already failed and is never safe to leave running -- it can leak, rupture, or start a fire, so it comes out, it does not stay in.',
+      'SEGURIDAD — un capacitor de marcha o de arranque guarda una carga letal aun con la corriente apagada. Corte el desconectador Y el breaker, luego descargue el capacitor (drénelo a través de una resistencia de ~20k ohmios entre cada par de terminales — nunca haga cortocircuito entre los terminales con un destornillador: produce arco y puede lesionar) antes de tocarlo o probarlo. Un capacitor hinchado o abombado ya falló y nunca es seguro dejarlo funcionando — puede derramarse, reventar o iniciar un incendio, así que se saca, no se queda.');
   }
   // (D5-D8) PROCEDURAL-SAFETY RISK TOPICS — the 2026-10-02 exam's single biggest finding:
   // 170 graded answers had the right diagnosis with a mandatory call-out missing. The miss
@@ -3706,13 +3819,24 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // same reason as _capDischargeRisk), and the actual check runs on outText at the tail
   // stage below. Topic triggers are deliberately broad; the output-side checks are what
   // decide whether anything is appended.
-  const _lotoRisk = /(control board|circuit board|\bpcb\b|board|panel|terminal|connector|thermistor|sensor|contactor|wiring|\bohm\b|24v|240v|low[- ]voltage|\bvoltage\b|fault code|error code|flash code|\bled\b|communication (error|fault)|comm(s)? (error|fault))/i.test(_lastUser);
-  const _brazeRisk = /(braz|solder|sweat|torch|reversing valve|filter[- ]?drier|\btxv\b|compressor (swap|replac)|lineset|suction line|liquid line)/i.test(_lastUser);
-  const _leakRisk = /(low (on )?(charge|refrigerant|freon)|undercharg|add (refrigerant|charge|freon|a pound|a couple)|top[- ]?(it[- ])?off|weigh in|(410a?|454b|r-?22|r-?32)\b)/i.test(_lastUser);
+  const _lotoRisk = /(control board|circuit board|\bpcb\b|board|panel|terminal|connector|thermistor|sensor|contactor|wiring|\bohm\b|24v|240v|low[- ]voltage|\bvoltage\b|fault code|error code|flash code|\bled\b|communication (error|fault)|comm(s)? (error|fault))/i.test(_lastUser)
+    // Spanish mirror (2026-10-31). Topic flag only — it forces non-stream so the output-side
+    // check is guaranteed to run; over-matching costs nothing but a non-streamed reply.
+    || /(voltaje|alta tensi[oó]n|descarga el[eé]ctrica|me dio (la )?corriente|da toques|\btoques\b|tablero|\bplaca\b|cableado|conector|c[oó]digo de (falla|error|aver[ií]a)|bajo voltaje)/i.test(_lastUser);
+  const _brazeRisk = /(braz|solder|sweat|torch|reversing valve|filter[- ]?drier|\btxv\b|compressor (swap|replac)|lineset|suction line|liquid line)/i.test(_lastUser)
+    // Spanish mirror (2026-10-31): soldar/soldadura paired with a refrigeration word
+    // ("soldar" alone is generic welding), plus the standalone part/line names.
+    || /(soldar|soldadura|soldando|soplete)[^.]{0,60}(refrigerante|l[ií]nea|tuber[ií]a|cobre|compresor|v[aá]lvula|serpent[ií]n)/i.test(_lastUser)
+    || /(fuga de refrigerante|v[aá]lvula reversible|filtro secador|l[ií]nea de (succi[oó]n|l[ií]quido)|cambio de compresor)/i.test(_lastUser);
+  const _leakRisk = /(low (on )?(charge|refrigerant|freon)|undercharg|add (refrigerant|charge|freon|a pound|a couple)|top[- ]?(it[- ])?off|weigh in|(410a?|454b|r-?22|r-?32)\b)/i.test(_lastUser)
+    // Spanish mirror (2026-10-31): low-on-charge and add/top-off wording.
+    || /(bajo (de |en )?(carga|refrigerante|fre[oó]n|gas)|falta (de )?refrigerante|poca carga|agregar(le)? (refrigerante|carga|fre[oó]n|gas)|recargar|rellenar|completar la carga|pesar la carga|fuga de refrigerante)/i.test(_lastUser);
   const _verifyRisk = /(furnace|boiler|water heater|burner|gas valve|igniter|ignitor|inducer|heat exchanger|flue|vent)[^.]{0,60}(replac|repair|clean|re-?light|relit|install|swap|back (on|in service)|fix)/i.test(_lastUser)
       || /(re-?light|relit|back in service|restor(e|ing) (service|gas))/i.test(_lastUser);
   const _homeownerFramed = req.body.homeowner === true ||
-    /\bi'?m a homeowner\b|\bas a homeowner\b|\bhomeowner here\b|(my contractor|the repair (guy|tech|man)|a contractor|the tech)\s+(quoted|said|is quoting|gave me|quoting me)|should i (just )?replace (it|my|the|this)|is (that|this|\$?\d[\d,]*) (a )?fair (price|quote)|gave me a quote/i.test(_lastUser);
+    /\bi'?m a homeowner\b|\bas a homeowner\b|\bhomeowner here\b|(my contractor|the repair (guy|tech|man)|a contractor|the tech)\s+(quoted|said|is quoting|gave me|quoting me)|should i (just )?replace (it|my|the|this)|is (that|this|\$?\d[\d,]*) (a )?fair (price|quote)|gave me a quote/i.test(_lastUser)
+    // Spanish mirror (2026-10-31): Brandon's no-price-to-homeowners rule is language-blind.
+    || /(soy (el |la )?(due[ñn][oa]|propietari[oa])|due[ñn][oa] de (la )?casa|me cotiz(aron|[oó])|me dio un (precio|presupuesto)|(es un |un )?precio justo|deber[ií]a (solo )?(reemplazarl[oa]|cambiarl[oa]))/i.test(_lastUser);
   // Wiring/schematic questions get a non-streamed reply so a retrieved diagram
   // image can be attached to the end of the response without splitting the sentinel.
   const _wiringDiagramIntent = /(wiring|schematic|connection|ladder)\s+diagram|electrical\s+schematic|wiring\s+schematic|(diagram|schematic)\s+(for|of|on)\b|wiring\s+(for|on|of)\b|\bthe\s+(wiring|schematic)\b|(show|pull\s+up|bring\s+up|upload|get|give|send|see|need|want|grab|find)\s+(me\s+)?(the\s+|a\s+|an\s+)?(wiring|schematic|diagram)|(diagram|schematic)\b[^.!?\n]{0,20}\b(hook.?up|wiring|terminal)/i.test(_lastUser);
@@ -3722,7 +3846,10 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   // deterministic screwdriver strip only exists on the non-stream path, so force
   // non-stream for any message where a self-diagnosed cap discharge could appear —
   // that guarantees the strip runs and the dangerous method can't reach a tech.
-  const _capDischargeRisk = /(capacitor|\bcaps?\b|dual[- ]?run|run cap|start cap|hard start|discharg)|((fan|motor|blower|compressor|condenser)[^.]{0,40}(not spinning|won'?t (spin|start|turn)|just hum|hums?|humming|buzz|won'?t run))|((won'?t (spin|start)|not spinning|humming|hums?)[^.]{0,40}(fan|motor|blower|compressor|condenser))/i.test(_lastUser);
+  const _capDischargeRisk = /(capacitor|\bcaps?\b|dual[- ]?run|run cap|start cap|hard start|discharg)|((fan|motor|blower|compressor|condenser)[^.]{0,40}(not spinning|won'?t (spin|start|turn)|just hum|hums?|humming|buzz|won'?t run))|((won'?t (spin|start)|not spinning|humming|hums?)[^.]{0,40}(fan|motor|blower|compressor|condenser))/i.test(_lastUser)
+    // Spanish mirror (2026-10-31): same shapes, same 40-char windows. Topic flag only —
+    // it forces non-stream so the screwdriver strip is guaranteed to run on the reply.
+    || /(condensador|descarg)|((ventilador|motor|compresor|turbina|abanico)[^.]{0,40}(no gira|no arranca|no enciende|no prende|no funciona|s[oó]lo zumba|zumba|zumbando|hace un zumbido))|((no gira|no arranca|zumba|zumbando)[^.]{0,40}(ventilador|motor|compresor|turbina|abanico))/i.test(_lastUser);
   // (D4) COVERAGE claims. The deterministic warranty strip below — the one written after
   // 2026-08-30, when Mike read a 2023 Carrier plate and told a tech "you're solidly in
   // warranty and this is a healthy unit" on a unit that was never registered — lives ONLY
@@ -4103,6 +4230,9 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
           /\b(replacement|replacing(?: it)?|a new system|a new unit|the new system|going new)\b[^.!?\n]{0,45}?\b(is (?:probably |likely )?(?:the )?(?:smarter|smart|better|right|wiser)|makes (?:more )?sense|the (?:better|smarter|right) (?:move|call|bet|play))/i,
           /\b(?:i'?d|i would|lean toward|i'?d lean toward|go with|my (?:honest )?take[: -]*)[^.!?\n]{0,20}?\b(replac\w*|the new (?:system|unit)|a new (?:system|unit))/i,
           /\b(?:the )?math (?:often |usually |here )?(?:favors?|points? to|leans? toward|supports?)[^.!?\n]{0,22}?\b(replac\w*|new (?:system|unit)|going new)/i,
+          // Spanish mirrors (2026-10-31): replace-leaning money judgments in Spanish prose.
+          /\b(?:reemplazar(?:lo|la)?|un (?:sistema|equipo) nuevo|cambiarl[oa] por uno nuevo)\b[^.!?\n]{0,45}?\b(?:sale m[aá]s barato|conviene|es (?:probablemente )?(?:mejor|m[aá]s inteligente)|tiene m[aá]s sentido|vale (?:m[aá]s )?la pena)\b/i,
+          /\b(?:sale m[aá]s barato|conviene m[aá]s|tiene m[aá]s sentido|vale la pena)\b[^.!?\n]{0,30}?\breemplazar/i,
         ];
         var _replDropped = false;
         outText = outText.split('\n').map((line) => {
@@ -4128,6 +4258,9 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         outText = outText.replace(/\b(?:price|quote|cost|number|charge|bill)\b[^.!?\n]{0,40}?\b(?:is|runs|seems|that'?s|it'?s)\s+(?:a (?:bit|little) )?(?:on the )?(?:high|low)(?:er)?[- ]?(?:side|end)\b/gi, 'is a pricing question for your tech');
         outText = outText.replace(/\bR-?22\b[^.!?\n]{0,18}?\breplac\w*/gi, 'an R-22 system is a repair-or-replace conversation for your tech');
         outText = outText.replace(/\b(?:a |the )?new (?:system|unit)\b[^.!?\n]{0,30}?\b(?:wins|pays for itself|cheaper|cost[- ]per[- ]year|saves you money|comes out ahead)/gi, 'whether a new system is worth it is your tech’s call');
+        // Spanish mirrors (2026-10-31): never grade a price to a homeowner, in any language.
+        outText = outText.replace(/\b(?:precio|cotizaci[oó]n|presupuesto|costo)\b[^.!?\n]{0,40}?\b(?:es|parece|suena|est[aá])\s+(?:un poco |muy |bastante |demasiado )?(?:alto|bajo|justo|razonable|elevado|excesivo|caro|barato)\b/gi, 'eso es una pregunta de precio para su técnico');
+        outText = outText.replace(/\b(?:precio|cotizaci[oó]n|costo|presupuesto)\s+(?:justo|razonable|alto|bajo|elevado|excesivo|caro|barato)\b/gi, 'una pregunta de precio para su técnico');
         // Brandon's rule (2026-06-28): to a homeowner, Mike says NOTHING about price or
         // cost — not a number, not a range, not "it depends", not whether it's worth it.
         // Drop any SENTENCE that talks price/cost and redirect to the tech, preserving line
@@ -4139,7 +4272,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         // claim with no number in it, which is still a price claim under Brandon's rule
         // (nothing about price to a homeowner: not a number, not a range, not whether
         // it's worth it). Comparatives and worth-it judgments are covered now.
-        var _priceWord = /\b(prices?|priced|pricing|costs?|costly|costlier|costing|quotes?|quoted|quoting|expensive|inexpensive|cheap(?:er|est)?|pricey|pricier|affordable|affordability|how much (?:does|will|is|it|to|for|a|the|they|i|you)|ballpark|labou?r rate|service (?:call )?fee|trip charge|diagnostic (?:fee|visit|call)|invoice|worth (?:it|the money|paying|spending))\b|\$\s?\d|\b(?:hourly|flat|flat[- ]rate|labou?r|service|diagnostic)\s+(?:rates?|fees?)\b|\bcharges?\s+(?:a|an|you|around|about|roughly|between|from|per|anywhere)\b/i;
+        var _priceWord = /\b(prices?|priced|pricing|costs?|costly|costlier|costing|quotes?|quoted|quoting|expensive|inexpensive|cheap(?:er|est)?|pricey|pricier|affordable|affordability|how much (?:does|will|is|it|to|for|a|the|they|i|you)|ballpark|labou?r rate|service (?:call )?fee|trip charge|diagnostic (?:fee|visit|call)|invoice|worth (?:it|the money|paying|spending))\b|\$\s?\d|\b(?:hourly|flat|flat[- ]rate|labou?r|service|diagnostic)\s+(?:rates?|fees?)\b|\bcharges?\s+(?:a|an|you|around|about|roughly|between|from|per|anywhere)\b|\b(?:precios?|costos?|costoso|cuestan?|costar(?:[aá]|ía)?|cotizaci[oó]n(?:es)?|cotizar(?:on)?|presupuestos?|caros?|barat[oa]s?|vale la pena|cu[aá]nto (?:cuesta|vale|cobra|sale)|mano de obra|tarifas?)\b/i;
         var _hoLines = outText.split('\n'), _hoDropped = false;
         for (var _hoL = 0; _hoL < _hoLines.length; _hoL++) {
           var _hoSents = _hoLines[_hoL].split(/(?<=[.!?])\s+/), _hoKept = [];
@@ -4150,8 +4283,12 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
           _hoLines[_hoL] = _hoKept.join(' ');
         }
         outText = _hoLines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-        if (_hoDropped) outText += (outText ? '\n\n' : '') + 'Numbers on price? That’s your tech’s call to make — I’m here to make sure you know exactly what’s wrong and what to ask him.';
-        else if (_replDropped) outText += (outText ? '\n\n' : '') + 'Repair or replace? That call belongs to the licensed tech with eyes on the system — I’m here to make sure you know what’s wrong and what to ask him.';
+        if (_hoDropped) outText += (outText ? '\n\n' : '') + _es(
+          'Numbers on price? That’s your tech’s call to make — I’m here to make sure you know exactly what’s wrong and what to ask him.',
+          'Sobre números y precios: esa es una decisión de su técnico — yo estoy aquí para que usted sepa exactamente qué está mal y qué preguntarle.');
+        else if (_replDropped) outText += (outText ? '\n\n' : '') + _es(
+          'Repair or replace? That call belongs to the licensed tech with eyes on the system — I’m here to make sure you know what’s wrong and what to ask him.',
+          '¿Reparar o reemplazar? Esa decisión es del técnico con licencia que tiene el sistema enfrente — yo estoy aquí para que usted sepa qué está mal y qué preguntarle.');
       }
       // SAFETY STRIP (deterministic, UNCONDITIONAL): the model keeps generating the "short the
       // terminals with a screwdriver" discharge method despite the prompt forbidding it. A prompt
@@ -4209,7 +4346,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         }
       }
 
-      const _hadScrewMethod = /\bscrewdriver\b/i.test(outText) && /\b(?:terminal|short|shorting|bridge|across)\b/i.test(outText);
+      const _hadScrewMethod = /\b(?:screwdriver|destornillador|desarmador)\b/i.test(outText) && /\b(?:terminal|terminales|short|shorting|bridge|across|cortocircuit\w*|puente\w*|born[ea]s?)\b/i.test(outText);
       // 2026-09-14 — THE STRIP HAD A HOLE AND IT REACHED A HOMEOWNER ON PROD. Both regexes
       // below required a sentence to END in [.!?], so a markdown BULLET with no terminal
       // punctuation sailed straight through untouched. Verified live on trazermike.io:
@@ -4239,14 +4376,21 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       //                  one correct instruction and has to survive for the tech.
       const _toolDanger = (s) =>
         /\bthe screwdriver (?:method|trick|way|approach)\b/i.test(s)
-        || (/\b(?:screwdriver|blade|bare metal|metal object|pliers|coin|car key)\b/i.test(s)
+        // Spanish (2026-10-31): same two-part shape — a conductive tool named, plus the
+        // act/endorsement words — so a Spanish reply can't carry the lethal method either.
+        || /\bel (?:m[eé]todo|truco) del destornillador\b/i.test(s)
+        || (/\b(?:screwdriver|blade|bare metal|metal object|pliers|coin|car key|destornillador|desarmador|alicates|pinzas|moneda|navaja|metal (?:pelado|desnudo))\b/i.test(s)
             // "…works but it's crude and sparks" endorses it just as much as an instruction
             // does — prod 2026-09-14 left exactly that sentence standing.
-            && /\b(?:terminal|post|lug|prong|contact|discharg\w*|short\w*|bridg\w*|across|spark\w*|arc(?:s|ing)?|crude|zap\w*)\b/i.test(s));
+            && /\b(?:terminal|post|lug|prong|contact|discharg\w*|short\w*|bridg\w*|across|spark\w*|arc(?:s|ing)?|crude|zap\w*|terminales|born[ea]s?|contacto|descarg\w*|cortocircuit\w*|puente\w*|chispa\w*|arco\b)\b/i.test(s));
       const _actShape = (s) =>
         /\b(?:short(?:ing|s)?|bridg(?:e|es|ing)|jump(?:er|ers|ing)?|arc(?:ing)?|lay(?:ing)?|touch(?:ing)?)\b[^.!?\n]{0,70}\b(?:across|between|from one)\b[^.!?\n]{0,50}\b(?:terminal|post|lug|prong|contact)/i.test(s)
-        || /\bbare metal\b[^.!?\n]{0,50}\b(?:across|between|on)\b[^.!?\n]{0,40}\b(?:terminal|post|lug|contact)/i.test(s);
-      const _actDanger = (s) => _actShape(s) && !/\b(?:resistor|ohm|\d+\s*k\b)/i.test(s);
+        || /\bbare metal\b[^.!?\n]{0,50}\b(?:across|between|on)\b[^.!?\n]{0,40}\b(?:terminal|post|lug|contact)/i.test(s)
+        // Spanish (2026-10-31): "haga cortocircuito entre los terminales", "puentear los
+        // terminales" — same act, both word orders, same character windows.
+        || /\b(?:cortocircuit\w*|puentea?r|puenteando|tocar|tocando|cruzar|cruzando)\b[^.!?\n]{0,70}\b(?:entre|a trav[eé]s de|de un[oa]?)\b[^.!?\n]{0,50}\b(?:terminal|borne|contacto)/i.test(s)
+        || /\b(?:cortocircuit\w*|puentea?r|puenteando)\b[^.!?\n]{0,60}\b(?:terminal|borne|contacto)/i.test(s);
+      const _actDanger = (s) => _actShape(s) && !/\b(?:resistor|ohm|\d+\s*k\b|resistencia)/i.test(s);
       const _screwMethodIn = (s) => _toolDanger(s) || _actDanger(s);
       // The LINE gate deliberately ignores the exemption: a line only earns a pass when it
       // has no dangerous shape at all. Otherwise it gets split and judged sentence by
@@ -4400,7 +4544,9 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       //     full boilerplate — the dedupe fails toward saying it twice, never toward silence.
       let _capTail = _capacitorWarn;
       if (_capTail && _homeownerFramed) {
-        _capTail = 'SAFETY — do not open the unit or touch that capacitor yourself. It holds a lethal charge even with the power off, and it can injure or kill someone who is not trained and equipped to discharge it. This one is a licensed technician\'s job, and it is not an expensive part for them to handle.';
+        _capTail = _es(
+          'SAFETY — do not open the unit or touch that capacitor yourself. It holds a lethal charge even with the power off, and it can injure or kill someone who is not trained and equipped to discharge it. This one is a licensed technician\'s job, and it is not an expensive part for them to handle.',
+          'SEGURIDAD — no abra la unidad ni toque ese capacitor usted mismo. Guarda una carga letal aun con la corriente apagada, y puede lesionar o matar a alguien que no tiene el entrenamiento y el equipo para descargarlo. Este es trabajo de un técnico con licencia, y no es una pieza cara para que ellos la manejen.');
       } else if (_capTail) {
         const _saidPowerOff = /(kill|cut|shut|turn)\s+(off\s+)?(the\s+)?(disconnect|breaker|power)|power\s+off|disconnect\s+pulled/i.test(outText);
         const _saidBleed = /(\d+\s*k\s*ohm|resistor|bleed\s+(it|the\s+cap)|discharge\s+(it|the\s+cap))/i.test(outText);
@@ -4416,26 +4562,34 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
       if (_lotoRisk
           && /(open|pull|remove|behind|reseat|unplug|swap|replace|land|tighten|jumper|check|ohm|test|measure|verify|inspect)[^.!?\n]{0,60}(control board|circuit board|\bpcb\b|board|panel|terminal(s| block)?|connector|thermistor|\bsensor\b|probe|contactor|wire|wiring)/i.test(outText)
           && !/((kill|cut|shut|turn|pull)[^.!?\n]{0,30}(disconnect|breaker|power)|power (off|down|killed)|de-?energiz|lock[- ]?out|loto|verify (it'?s |it is )?dead|confirm (it'?s |it is )?dead)/i.test(outText)) {
-        _lotoTail = 'SAFETY — before any of that panel or terminal work: kill the disconnect AND the breaker, verify dead with your meter, and lock it out if anyone else could re-energize it while your hands are in there.';
+        _lotoTail = _es(
+          'SAFETY — before any of that panel or terminal work: kill the disconnect AND the breaker, verify dead with your meter, and lock it out if anyone else could re-energize it while your hands are in there.',
+          'SEGURIDAD — antes de cualquier trabajo en ese panel o en terminales: corte el desconectador Y el breaker, verifique con su multímetro que está muerto, y póngale candado (lockout) si alguien más pudiera re-energizarlo mientras usted tiene las manos adentro.');
       }
       let _brazeTail = '';
       if (_brazeRisk
           && /(braz|sweat|torch|solder)[^.!?\n]{0,70}(line|lineset|valve|coil|compressor|drier|fitting|joint|stub|pipe|it in|it out)/i.test(outText)
           && !/nitrogen/i.test(outText)) {
-        _brazeTail = 'SAFETY — recover the charge to zero before the torch comes out, and flow nitrogen through the lines while you braze. Brazing without nitrogen cooks scale into the lineset and kills TXVs and compressors downstream; heating a line under pressure can blow it open in your face.';
+        _brazeTail = _es(
+          'SAFETY — recover the charge to zero before the torch comes out, and flow nitrogen through the lines while you braze. Brazing without nitrogen cooks scale into the lineset and kills TXVs and compressors downstream; heating a line under pressure can blow it open in your face.',
+          'SEGURIDAD — recupere la carga a cero antes de sacar el soplete, y haga fluir nitrógeno por las líneas mientras suelda. Soldar sin nitrógeno cocina escoria dentro de la tubería y mata válvulas TXV y compresores aguas abajo; calentar una línea con presión puede reventarla en su cara.');
       }
       let _leakTail = '';
       if (_leakRisk
           && /(add|weigh in|top[- ]?(it[- ])?off|charge (it|the system)|put[^.!?\n]{0,15}(refrigerant|freon|pound|lb))/i.test(outText)
           && !/(leak[- ]?(search|check|test|detect|hunt)|find (the|that) leak|locate the leak|(repair|fix)[^.!?\n]{0,25}leak)/i.test(outText)) {
-        _leakTail = 'One more thing — if it\'s low, it leaked. Leak-search and repair BEFORE refrigerant goes in: topping off a leaking system without finding the leak is an EPA 608 problem and a guaranteed callback. Note the leak location and the fix on the ticket.';
+        _leakTail = _es(
+          'One more thing — if it\'s low, it leaked. Leak-search and repair BEFORE refrigerant goes in: topping off a leaking system without finding the leak is an EPA 608 problem and a guaranteed callback. Note the leak location and the fix on the ticket.',
+          'Una cosa más — si está bajo, es porque fugó. Busque y repare la fuga ANTES de meter refrigerante: recargar un sistema con fuga sin encontrar la fuga es un problema de EPA 608 y una visita de regreso garantizada. Anote la ubicación de la fuga y la reparación en la orden de trabajo.');
       }
       let _verifyTail = '';
       if (_verifyRisk
           && /(fire (it|the\b[^.!?\n]{0,25}) (back )?up|re-?light|relight|put (it|the\b[^.!?\n]{0,25}) back (in service|together|online)|button (it|everything) (back )?up|restore (gas|service)|should be good to go|you'?re (all )?set)/i.test(outText)
           && /(furnace|boiler|water heater|burner|gas|combustion|flue|vent)/i.test(outText)
           && !/(combustion analy|analyzer)/i.test(outText)) {
-        _verifyTail = 'Before you leave: combustion analysis with it firing, CO at the supply registers (zero tolerance in the living space), bubble-test every gas connection you touched — and write the as-found and as-left readings on the work order. The paper trail is part of the job.';
+        _verifyTail = _es(
+          'Before you leave: combustion analysis with it firing, CO at the supply registers (zero tolerance in the living space), bubble-test every gas connection you touched — and write the as-found and as-left readings on the work order. The paper trail is part of the job.',
+          'Antes de irse: análisis de combustión con el equipo encendido, CO en las rejillas de suministro (tolerancia cero en el espacio habitado), prueba de burbujas en cada conexión de gas que tocó — y escriba las lecturas como-se-encontró y como-se-dejó en la orden de trabajo. El registro en papel es parte del trabajo.');
       }
       // (D9) HAZARD CLOSE-OUT CHECKLIST (2026-10-05, run-2 exam: 58 strict safety fails
       // missed exactly one or two of THESE lines while the hands-on protocol was right).
@@ -4446,39 +4600,53 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
         const _coEvent = /(\bco\b|carbon monoxide)/i.test(_safetyLead) ||
           /(\bco\b|carbon monoxide)[^.]{0,45}(alarm|reading|ppm|exposure|poison|detector|register)/i.test(_lastUser) ||
           /(\bco\b|carbon monoxide)[^.!?\n]{0,35}(meter|ambient|register|at the (register|vent|supply))/i.test(outText);
-        const _gasEvent = /live gas leak/i.test(_safetyLead);
+        const _gasEvent = /live gas leak|fuga de gas activa/i.test(_safetyLead);
         // Rollout / spillage / stuck-valve / air-free shutdowns are combustion-safety
         // events too (2026-10-05 verify: the rollout lead shipped with no post-repair
         // combustion-analysis mandate — the exact line SAF-035 failed on).
-        const _combustionEvent = /(rollout|spillage|gas off at the appliance|air-free|stuck open)/i.test(_safetyLead)
+        const _combustionEvent = /(rollout|spillage|gas off at the appliance|air-free|stuck open|derrame de gases|atascada abierta|libre de aire)/i.test(_safetyLead)
           || (/(spillage|backdraft|flue (blockage|restriction|icing|ice)|iced?[- ](over|up|cap)|cracked heat exchanger|restricted (draft|flue))/i.test(_lastUser + ' ' + outText)
               && /(\bco\b|carbon monoxide)/i.test(_lastUser + ' ' + outText));
         const _items = [];
         if (_coEvent) {
           if (!/(do not|don'?t|never|stays? off|comes? off)[^.!?\n]{0,60}(restore|back (in|into) service|back on)|until[^.!?\n]{0,50}(root cause|found and correct|corrected|repaired)/i.test(outText))
-            _items.push('the appliance stays OFF until the root cause is found and corrected — never restore on "it seems fine now"');
+            _items.push(_es(
+              'the appliance stays OFF until the root cause is found and corrected — never restore on "it seems fine now"',
+              'el equipo se queda APAGADO hasta encontrar y corregir la causa raíz — nunca lo restablezca con un "parece que ya está bien"'));
           if (!/(zero|\b0\b)\s*ppm[^.!?\n]{0,30}(before|living space|registers)|verify[^.!?\n]{0,35}(\bco\b|carbon monoxide)[^.!?\n]{0,20}(zero|0)|combustion analy/i.test(outText))
-            _items.push('before it goes back in service: combustion analysis firing, and ambient CO verified at ZERO in the living space');
+            _items.push(_es(
+              'before it goes back in service: combustion analysis firing, and ambient CO verified at ZERO in the living space',
+              'antes de volver a ponerlo en servicio: análisis de combustión con el equipo encendido, y CO ambiente verificado en CERO en el espacio habitado'));
           if (/(occupant|homeowner|family|resident|customer|tenant|anyone|kids?|child)[^.]{0,70}(headache|nause|dizzy|symptom|exposed|exposure|sick|vomit|flu)/i.test(_lastUser)
               && !/(medic|physician|doctor|medical|urgent care|\bEMS\b|\bER\b)/i.test(outText))
-            _items.push('everyone who was exposed gets evaluated by a medic — CO dose is cumulative and symptoms lag the exposure');
+            _items.push(_es(
+              'everyone who was exposed gets evaluated by a medic — CO dose is cumulative and symptoms lag the exposure',
+              'todas las personas expuestas deben ser evaluadas por un médico — la dosis de CO es acumulativa y los síntomas van detrás de la exposición'));
         }
         if (_gasEvent && !/(leak[- ]?test|pressure[- ]?test|bubble[- ]?test)/i.test(outText))
-          _items.push('after the utility gives the all-clear: leak-test the repair before anything gets re-lit');
+          _items.push(_es(
+            'after the utility gives the all-clear: leak-test the repair before anything gets re-lit',
+            'después de que la compañía de gas dé el visto bueno: haga prueba de fugas a la reparación antes de volver a encender nada'));
         if (_combustionEvent && !_coEvent && !/combustion analy/i.test(outText))
-          _items.push('after the repair: combustion analysis with it firing and CO verified at the registers before it goes back in service');
+          _items.push(_es(
+            'after the repair: combustion analysis with it firing and CO verified at the registers before it goes back in service',
+            'después de la reparación: análisis de combustión con el equipo encendido y CO verificado en las rejillas antes de volver a ponerlo en servicio'));
         if ((_coEvent || _gasEvent || _combustionEvent)
             && !/(work order|document|write (it|that|this) (up|down)|on the ticket|paper trail)/i.test(outText))
-          _items.push('as-found readings, what you did, and as-left readings go on the work order');
+          _items.push(_es(
+            'as-found readings, what you did, and as-left readings go on the work order',
+            'las lecturas como-se-encontró, lo que hizo, y las lecturas como-se-dejó van en la orden de trabajo'));
         if (_items.length) {
-          _closeoutTail = 'Close it out right — these are not optional: ' + _items.map((x, i) => '(' + (i + 1) + ') ' + x).join('; ') + '.';
+          _closeoutTail = _es('Close it out right — these are not optional: ', 'Cierre el trabajo bien — esto no es opcional: ') + _items.map((x, i) => '(' + (i + 1) + ') ' + x).join('; ') + '.';
         }
       }
       // Documentation rider: whenever a hard safety lead fired, the paper trail is part of
       // the protocol (exam finding: document-on-work-order was the most-missed tail step).
       let _docTail = '';
-      if (_safetyLead && !_verifyTail && !/work order/.test(_closeoutTail) && !/(work order|document|write (it|that|this) (up|down)|on the ticket|paper trail)/i.test(outText)) {
-        _docTail = 'And when it\'s handled: document what you found, what you measured, and what you did on the work order. On safety calls the paper trail is part of the job.';
+      if (_safetyLead && !_verifyTail && !/work order|orden de trabajo/.test(_closeoutTail) && !/(work order|document|write (it|that|this) (up|down)|on the ticket|paper trail|orden de trabajo|documente)/i.test(outText)) {
+        _docTail = _es(
+          'And when it\'s handled: document what you found, what you measured, and what you did on the work order. On safety calls the paper trail is part of the job.',
+          'Y cuando esté resuelto: documente lo que encontró, lo que midió y lo que hizo en la orden de trabajo. En llamadas de seguridad el registro en papel es parte del trabajo.');
       }
       const _tail = [_capTail, _inverterWarn, _lotoTail, _brazeTail, _leakTail, _verifyTail, _closeoutTail, _docTail].filter(Boolean);
       if (_tail.length) outText = outText + '\n\n' + _tail.join('\n\n');

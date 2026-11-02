@@ -3636,42 +3636,42 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   <div id="panelHome">
     <!-- HOW IT WORKS strip — visible to new users -->
     <div style="background:linear-gradient(135deg,#0F0F0F,#1a2232);border-radius:12px;padding:16px 18px;margin-bottom:12px;">
-      <div style="font-size:13px;font-weight:700;color:var(--rust);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;">How it works</div>
+      <div style="font-size:13px;font-weight:700;color:var(--rust);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;" data-v2i18n="hiwTitle">How it works</div>
       <div style="display:flex;gap:0;flex-direction:column;gap:10px;">
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:28px;height:28px;background:var(--rust);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">1</div>
-          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;">Take a photo of your system or describe what's happening</span>
+          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;" data-v2i18n="hiwStep1">Take a photo of your system or describe what's happening</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:28px;height:28px;background:var(--rust);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">2</div>
-          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;">Get a plain-English explanation — no technical jargon</span>
+          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;" data-v2i18n="hiwStep2">Get a plain-English explanation — no technical jargon</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:28px;height:28px;background:var(--rust);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">3</div>
-          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;">Know exactly what to tell your technician when you call</span>
+          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;" data-v2i18n="hiwStep3">Know exactly what to tell your technician when you call</span>
         </div>
       </div>
     </div>
     <div class="card">
-      <label class="field-label">📷 Take or Upload a Photo</label>
-      <p class="field-sub">A photo of your AC, furnace, or thermostat helps us give you a more accurate answer</p>
+      <label class="field-label" data-v2i18n="dzLabel">📷 Take or Upload a Photo</label>
+      <p class="field-sub" data-v2i18n="dzSub">A photo of your AC, furnace, or thermostat helps us give you a more accurate answer</p>
       <input type="file" id="homeFileInput" accept="video/*,image/*" style="display:none" onchange="handleHomeFileSelect(event)"/>
       <input type="file" id="homeFileInputCam" accept="image/*,video/*" capture="environment" style="display:none" onchange="handleHomeFileSelect(event)"/>
       <div class="drop-zone" id="homeDropZone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleHomeDrop(event)" onclick="document.getElementById('homeFileInput').click()">
         <div id="homeDropPrompt" style="padding:28px 20px 20px;text-align:center;">
           <div style="width:64px;height:64px;background:rgba(255,255,255,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:2px solid var(--line);"><i data-lucide="camera" style="width:28px;height:28px;color:var(--teal);"></i></div>
-          <div style="font-size:16px;font-weight:700;color:#F4EFE6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Take or Upload a Photo</div>
-          <div style="font-size:12px;color:#9499B0;margin-bottom:18px;">Photo · Video · JPG · PNG · up to 50MB</div>
+          <div style="font-size:16px;font-weight:700;color:#F4EFE6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;" data-v2i18n="dzTitle">Take or Upload a Photo</div>
+          <div style="font-size:12px;color:#9499B0;margin-bottom:18px;" data-v2i18n="dzMeta">Photo · Video · JPG · PNG · up to 50MB</div>
           <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;" onclick="event.stopPropagation()">
-            <label for="homeFileInputCam" style="display:flex;align-items:center;gap:7px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">📸 Camera</label>
-            <label for="homeFileInput" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.08);color:#F4EFE6;border:1.5px solid var(--line);border-radius:6px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">🖼️ Library</label>
+            <label for="homeFileInputCam" style="display:flex;align-items:center;gap:7px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;" data-v2i18n="dzCamera">📸 Camera</label>
+            <label for="homeFileInput" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.08);color:#F4EFE6;border:1.5px solid var(--line);border-radius:6px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;" data-v2i18n="dzLibrary">🖼️ Library</label>
           </div>
         </div>
         <div class="photo-tips" id="homeDropTips">
-          <div class="photo-tip"><span class="photo-tip-icon">✅</span><strong>Close up</strong><br/>Fill frame</div>
-          <div class="photo-tip"><span class="photo-tip-icon">💡</span><strong>Good light</strong><br/>No shadows</div>
-          <div class="photo-tip"><span class="photo-tip-icon">🔍</span><strong>In focus</strong><br/>Text readable</div>
-          <div class="photo-tip bad"><span class="photo-tip-icon">❌</span><strong>No blur</strong><br/>Retake if shaky</div>
+          <div class="photo-tip" data-v2i18n="dzTipClose"><span class="photo-tip-icon">✅</span><strong>Close up</strong><br/>Fill frame</div>
+          <div class="photo-tip" data-v2i18n="dzTipLight"><span class="photo-tip-icon">💡</span><strong>Good light</strong><br/>No shadows</div>
+          <div class="photo-tip" data-v2i18n="dzTipFocus"><span class="photo-tip-icon">🔍</span><strong>In focus</strong><br/>Text readable</div>
+          <div class="photo-tip bad" data-v2i18n="dzTipBlur"><span class="photo-tip-icon">❌</span><strong>No blur</strong><br/>Retake if shaky</div>
         </div>
       </div>
       <div id="homePreviewWrapper" style="display:none;margin-top:10px;position:relative;">
@@ -3682,22 +3682,22 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       </div>
     </div>
     <div class="card">
-      <label class="field-label">What is your system doing?</label>
-      <p class="field-sub">Select everything that applies</p>
+      <label class="field-label" data-v2i18n="symLabel">What is your system doing?</label>
+      <p class="field-sub" data-v2i18n="symSub">Select everything that applies</p>
       <div class="symptoms-grid" id="homeSymptoms"></div>
     </div>
     <div class="card">
-      <label class="field-label">Describe the problem in your own words</label>
-      <p class="field-sub">When did it start? Is it getting worse? Anything else you've noticed?</p>
-      <textarea id="homeDesc" placeholder="e.g. My AC runs all day but the house stays hot. Started 2 days ago…"></textarea>
+      <label class="field-label" data-v2i18n="descLabel">Describe the problem in your own words</label>
+      <p class="field-sub" data-v2i18n="descSub">When did it start? Is it getting worse? Anything else you've noticed?</p>
+      <textarea id="homeDesc" data-v2i18n-ph="descPh" placeholder="e.g. My AC runs all day but the house stays hot. Started 2 days ago…"></textarea>
     </div>
     <div class="card">
-      <label class="field-label">System Age</label>
-      <select id="homeSysAge"><option value="">Select age…</option></select>
+      <label class="field-label" data-v2i18n="ageLabel">System Age</label>
+      <select id="homeSysAge"><option value="" data-v2i18n="ageSelect">Select age…</option></select>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:16px;">
-      <button id="homeRunBtn" onclick="runHomeownerDiagnostic()" style="flex:1;padding:18px;border:none;border-radius:6px;cursor:pointer;background:var(--rust);color:#fff;font-family:var(--font);font-size:18px;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(0,181,181,.4);transition:all .15s;">🔍 Analyze My System</button>
-      <button onclick="resetHomeownerDiagnostic()" style="padding:18px 16px;border:2px solid #d0d0d0;border-radius:6px;cursor:pointer;background:#FFFFFF;color:#6B7190;font-family:var(--font);font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;">🔄 New</button>
+      <button id="homeRunBtn" onclick="runHomeownerDiagnostic()" style="flex:1;padding:18px;border:none;border-radius:6px;cursor:pointer;background:var(--rust);color:#fff;font-family:var(--font);font-size:18px;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(0,181,181,.4);transition:all .15s;" data-v2i18n="btnAnalyze">🔍 Analyze My System</button>
+      <button onclick="resetHomeownerDiagnostic()" style="padding:18px 16px;border:2px solid #d0d0d0;border-radius:6px;cursor:pointer;background:#FFFFFF;color:#6B7190;font-family:var(--font);font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;" data-v2i18n="btnNew">🔄 New</button>
     </div>
     <div id="homeResultPanel" style="display:none;margin-top:8px;" class="fi">
       <div style="margin-bottom:14px;"><span style="font-size:18px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;" class="result-title">Your Diagnostic Report</span></div>
@@ -4495,15 +4495,15 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div style="width:36px;height:36px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;"><img src="/icon-512.png" alt="Mike" style="width:100%;height:100%;object-fit:cover;"/></div>
       <div>
         <div style="font-size:17px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;">Trazer Intelligence</div>
-        <div style="font-size:11px;color:#9499B0;font-weight:500;"><span data-contractor-only>Field Intelligence Platform</span><span data-homeowner-only>Know what's wrong before you call.</span></div>
+        <div style="font-size:11px;color:#9499B0;font-weight:500;"><span data-contractor-only data-v2i18n="ftTagPro">Field Intelligence Platform</span><span data-homeowner-only data-v2i18n="ftTagHome">Know what's wrong before you call.</span></div>
       </div>
     </div>
     <div style="display:flex;justify-content:center;gap:16px;margin-bottom:12px;">
-      <a href="#" onclick="showTermsModal();return false;" style="font-size:12px;color:#9499B0;text-decoration:none;">Terms</a>
-      <a href="#" onclick="showPrivacyModal();return false;" style="font-size:12px;color:#9499B0;text-decoration:none;">Privacy</a>
-      <a href="mailto:support@trazerintelligence.ai" style="font-size:12px;color:#9499B0;text-decoration:none;">Support</a>
+      <a href="#" onclick="showTermsModal();return false;" style="font-size:12px;color:#9499B0;text-decoration:none;" data-v2i18n="ftTerms">Terms</a>
+      <a href="#" onclick="showPrivacyModal();return false;" style="font-size:12px;color:#9499B0;text-decoration:none;" data-v2i18n="ftPrivacy">Privacy</a>
+      <a href="mailto:support@trazerintelligence.ai" style="font-size:12px;color:#9499B0;text-decoration:none;" data-v2i18n="ftSupport">Support</a>
     </div>
-    <p style="font-size:11px;color:#C8CBD8;line-height:1.6;max-width:400px;margin:0 auto;text-align:center;">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician. Mike is an AI — not a licensed contractor. Use of this Service constitutes acceptance of our Terms of Service.</p>
+    <p style="font-size:11px;color:#C8CBD8;line-height:1.6;max-width:400px;margin:0 auto;text-align:center;" data-v2i18n="ftLegal">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician. Mike is an AI — not a licensed contractor. Use of this Service constitutes acceptance of our Terms of Service.</p>
   </div>
 <!-- LIVE CAMERA OVERLAY — Premium Quality -->
 <div id="liveCameraOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9998;flex-direction:column;font-family:'Plus Jakarta Sans',-apple-system,sans-serif;">
@@ -8016,8 +8016,8 @@ var SYS_TYPES=["Air Conditioner – Split System","Air Conditioner – Package U
 var SYS_AGES=["0–5 years","5–10 years","10–15 years","15–20 years","20+ years","Not sure"];
 var BRANDS=["Carrier","Bryant","Payne","Trane","American Standard","Lennox","Goodman","Amana","Daikin","Rheem","Ruud","York","Coleman","Heil","Tempstar","Mitsubishi Electric","Fujitsu","LG","Bosch","Weil-McLain","Other / Unknown"];
 var HOME_SIZES=["Under 1,000 sq ft","1,000–1,500 sq ft","1,500–2,000 sq ft","2,000–2,500 sq ft","2,500–3,000 sq ft","3,000–4,000 sq ft","4,000+ sq ft"];
-var HOME_SYMPTOMS=[{icon:"❄️",label:"Not cooling"},{icon:"🔥",label:"Not heating"},{icon:"💨",label:"Weak airflow"},{icon:"💧",label:"Water leaking"},{icon:"🔊",label:"Strange noises"},{icon:"💸",label:"High energy bills"},{icon:"🌡️",label:"Uneven temperatures"},{icon:"🤧",label:"Poor air quality"},{icon:"🔄",label:"Keeps cycling on/off"},{icon:"❌",label:"Won't turn on"},{icon:"🧊",label:"Ice forming on unit"},
-  {icon:"🧊",label:"System freezing up"},{icon:"👃",label:"Burning smell"}];
+var HOME_SYMPTOMS=[{icon:"❄️",label:"Not cooling",k:"symNotCooling"},{icon:"🔥",label:"Not heating",k:"symNotHeating"},{icon:"💨",label:"Weak airflow",k:"symWeakAir"},{icon:"💧",label:"Water leaking",k:"symWater"},{icon:"🔊",label:"Strange noises",k:"symNoise"},{icon:"💸",label:"High energy bills",k:"symBills"},{icon:"🌡️",label:"Uneven temperatures",k:"symUneven"},{icon:"🤧",label:"Poor air quality",k:"symAirQ"},{icon:"🔄",label:"Keeps cycling on/off",k:"symCycling"},{icon:"❌",label:"Won't turn on",k:"symNoStart"},{icon:"🧊",label:"Ice forming on unit",k:"symIce"},
+  {icon:"🧊",label:"System freezing up",k:"symFreeze"},{icon:"👃",label:"Burning smell",k:"symSmell"}];
 var PRO_SYMPTOMS=[{icon:"❄️",label:"Not cooling"},{icon:"🌡️",label:"High head pressure"},{icon:"📉",label:"Low suction pressure"},{icon:"🧊",label:"Freezing up"},{icon:"🌊",label:"Refrigerant leak"},{icon:"🔄",label:"Short cycling"},{icon:"🔥",label:"No heat"},{icon:"🔥",label:"Furnace not igniting"},{icon:"💨",label:"Furnace blowing cold"},{icon:"🔩",label:"Heat exchanger issue"},{icon:"🟡",label:"Inducer motor fail"},{icon:"🔌",label:"Pressure switch fault"},{icon:"🔃",label:"Reversing valve stuck"},{icon:"🌡️",label:"Heat pump not heating"},{icon:"❄️",label:"Heat pump not cooling"},{icon:"💨",label:"Weak airflow"},{icon:"🔧",label:"Blower motor fail"},{icon:"🔌",label:"Capacitor fault"},{icon:"💧",label:"Drain blockage"},{icon:"⚡",label:"Electrical fault"},{icon:"🔌",label:"Contactor fail"},{icon:"🔧",label:"Compressor failure"},{icon:"🔊",label:"Strange noise"},{icon:"👃",label:"Burning smell"}];
 var CONCERNS=[{icon:"😷",label:"Allergies or Asthma"},{icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},{icon:"🐾",label:"Pets in home"},{icon:"💧",label:"Humidity problems"},{icon:"🌡️",label:"Hot or cold rooms"},{icon:"💰",label:"High energy bills"},{icon:"🔒",label:"No service plan yet"},{icon:"🛢️",label:"Old R-22 system"},{icon:"🏚️",label:"Older home"},{icon:"🔥",label:"Gas appliances"},{icon:"💨",label:"Poor ventilation"}];
 var MAINT_CONCERNS=[{icon:"💸",label:"Worried about bills"},{icon:"🔒",label:"Wants peace of mind"},{icon:"😷",label:"Health / air quality"},{icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},{icon:"🏠",label:"Older home"},{icon:"💔",label:"Had a breakdown before"},{icon:"🔥",label:"Gas system"},{icon:"📅",label:"Snowbird / seasonal"}];
@@ -8183,6 +8183,7 @@ function populateSelects(){
     rBrandRefrig:BRANDS,rTypeRefrig:SYS_TYPES,rAgeRefrig:SYS_AGES,
     mSysType:SYS_TYPES,mSysAge:SYS_AGES,mBrand:BRANDS};
   for(var id in map){var el=document.getElementById(id);if(!el)continue;map[id].forEach(function(o){var opt=document.createElement("option");opt.value=opt.textContent=o;el.appendChild(opt);});}
+  if(typeof localizeHomeAgeSelect==='function')localizeHomeAgeSelect();
 }
 
 function setMode(m){
@@ -8518,11 +8519,26 @@ function buildHomeSymptomGrid(){
   var grid=document.getElementById("homeSymptoms");if(!grid)return;
   grid.innerHTML="";
   HOME_SYMPTOMS.forEach(function(s){
-    var btn=document.createElement("button");btn.className="chip";
-    btn.innerHTML='<span class="chip-icon">'+s.icon+'</span><span>'+s.label+'</span>';
+    var btn=document.createElement("button");
+    // Display localizes via V2_I18N; s.label (English) stays the canonical value in
+    // selectedHomeSymptoms and the diagnostic prompt. Rebuilds (language switch /
+    // reset) restore the selected state from that canonical list.
+    btn.className=selectedHomeSymptoms.indexOf(s.label)>-1?"chip selected":"chip";
+    var disp=(s.k&&typeof v2t==="function")?v2t(s.k):s.label;
+    btn.innerHTML='<span class="chip-icon">'+s.icon+'</span><span>'+disp+'</span>';
     btn.onclick=function(){var idx=selectedHomeSymptoms.indexOf(s.label);if(idx>-1){selectedHomeSymptoms.splice(idx,1);btn.className="chip";}else{selectedHomeSymptoms.push(s.label);btn.className="chip selected";}};
     grid.appendChild(btn);
   });
+}
+// Localize the homeowner System Age option labels in place. Option VALUES stay the
+// English SYS_AGES strings (profile.homeSysAge persistence + the prompt read .value),
+// only the visible text translates. Option[0] is the data-v2i18n="ageSelect" placeholder.
+function localizeHomeAgeSelect(){
+  var sel=document.getElementById("homeSysAge");if(!sel||typeof v2t!=="function")return;
+  for(var i=0;i<sel.options.length;i++){
+    var idx=SYS_AGES.indexOf(sel.options[i].value);
+    if(idx>-1)sel.options[i].textContent=v2t("ageOpt"+idx);
+  }
 }
 
 function buildConcernsGrid(){
@@ -8986,7 +9002,7 @@ async function runHomeownerDiagnostic(){
   }
   var btn=document.getElementById("homeRunBtn");
   btn.disabled=true;btn.style.background="#A8472F";
-  btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing" style="font-size:18px;">Analyzing…</span>';
+  btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing" style="font-size:18px;">'+v2t('btnAnalyzing')+'</span>';
   try{
     var syms=selectedHomeSymptoms.length?selectedHomeSymptoms.join(", "):"None selected";
 
@@ -9070,7 +9086,7 @@ async function runHomeownerDiagnostic(){
     appendMessage('agent','Something went wrong — please try again.');
     setMode('home'); // Push 7.5 — same anchor on the failure path
   }finally{
-    btn.disabled=false;btn.style.background="#C7553B";btn.innerHTML="⚡ Run Diagnostic";
+    btn.disabled=false;btn.style.background="#C7553B";btn.textContent=v2t('btnAnalyze');
   }
 }
 function resetHomeownerDiagnostic(){
@@ -10615,6 +10631,24 @@ var V2_I18N={
     lndHomeCtaPrime:'Ask Mike anything →',lndHomeCtaGhost:'Find a trusted local tech',lndHomeFoot:'HONEST READ · NO GUESSWORK · NEVER IN THE DARK',
     migHead:'We rebuilt everything. You need a fresh account.',migBody:'You were here from the beginning — that matters. Mike\'s got a whole new home now, and it doesn\'t carry the old one over. Takes 30 seconds to get back in. Same Mike, better everything.',migCta:'Create My Account',
     obNext:'Next  →',obStart:'Get Started →',seedTech:'Hey Mike — got a nameplate here, what do you make of it?',seedHome:'Tell Mike what\'s going on with your system.',
+    // Homeowner diagnose form + footer (i18n coverage pass, 2026-11)
+    hiwTitle:'How it works',hiwStep1:'Take a photo of your system or describe what\'s happening',hiwStep2:'Get a plain-English explanation — no technical jargon',
+    hiwStep3:'Know exactly what to tell your technician when you call',dzLabel:'📷 Take or Upload a Photo',dzSub:'A photo of your AC, furnace, or thermostat helps us give you a more accurate answer',
+    dzTitle:'Take or Upload a Photo',dzMeta:'Photo · Video · JPG · PNG · up to 50MB',dzCamera:'📸 Camera',
+    dzLibrary:'🖼️ Library',dzTipClose:'<span class="photo-tip-icon">✅</span><strong>Close up</strong><br/>Fill frame',dzTipLight:'<span class="photo-tip-icon">💡</span><strong>Good light</strong><br/>No shadows',
+    dzTipFocus:'<span class="photo-tip-icon">🔍</span><strong>In focus</strong><br/>Text readable',dzTipBlur:'<span class="photo-tip-icon">❌</span><strong>No blur</strong><br/>Retake if shaky',symLabel:'What is your system doing?',
+    symSub:'Select everything that applies',symNotCooling:'Not cooling',symNotHeating:'Not heating',
+    symWeakAir:'Weak airflow',symWater:'Water leaking',symNoise:'Strange noises',
+    symBills:'High energy bills',symUneven:'Uneven temperatures',symAirQ:'Poor air quality',
+    symCycling:'Keeps cycling on/off',symNoStart:'Won\'t turn on',symIce:'Ice forming on unit',
+    symFreeze:'System freezing up',symSmell:'Burning smell',descLabel:'Describe the problem in your own words',
+    descSub:'When did it start? Is it getting worse? Anything else you\'ve noticed?',descPh:'e.g. My AC runs all day but the house stays hot. Started 2 days ago…',ageLabel:'System Age',
+    ageSelect:'Select age…',ageOpt0:'0–5 years',ageOpt1:'5–10 years',
+    ageOpt2:'10–15 years',ageOpt3:'15–20 years',ageOpt4:'20+ years',
+    ageOpt5:'Not sure',btnAnalyze:'🔍 Analyze My System',btnAnalyzing:'Analyzing…',
+    btnNew:'🔄 New',ftTagPro:'Field Intelligence Platform',ftTagHome:'Know what\'s wrong before you call.',
+    ftTerms:'Terms',ftPrivacy:'Privacy',ftSupport:'Support',
+    ftLegal:'Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician. Mike is an AI — not a licensed contractor. Use of this Service constitutes acceptance of our Terms of Service.',
     demoTitle:'A REAL DIAGNOSIS',demoQ:'Carrier 58STA, no heat, high-limit lockout. Plenum\'s 182°F, static 3.2" wc, blower 11A. What\'s the fault and the fix?',demoTyping:'Mike is reading the system…',demoCta:'Ask Mike your own →',demoClose:'Close'},
   es:{reachCall:'LLAMAR',reachFace:'FACETIME',clear:'BORRAR',mikeName:'MIKE',headRole:'TÉCNICO MAESTRO',headStatus:'SIEMPRE DISPONIBLE',diagHead:'FALLA IDENTIFICADA',mentorSig:'— Mike',composer:'Pregúntale a Mike…',
     heroPro:'Inteligencia Profesional de Campo HVAC',heroHome:'¿Tu aire o calefacción no funciona?',
@@ -10646,6 +10680,24 @@ var V2_I18N={
     lndHomeCtaPrime:'Pregúntale a Mike →',lndHomeCtaGhost:'Encontrar un técnico de confianza',lndHomeFoot:'LECTURA HONESTA · SIN ADIVINANZAS · NUNCA A OSCURAS',
     migHead:'Reconstruimos todo. Necesitas una cuenta nueva.',migBody:'Estuviste aquí desde el principio — eso importa. Mike ahora tiene un hogar completamente nuevo, y no traslada el anterior. Toma 30 segundos volver a entrar. El mismo Mike, todo mejor.',migCta:'Crear Mi Cuenta',
     obNext:'Siguiente  →',obStart:'Empezar →',seedTech:'Oye Mike — tengo una placa aquí, ¿qué opinas?',seedHome:'Cuéntale a Mike qué está pasando con tu sistema.',
+    // Homeowner diagnose form + footer (i18n coverage pass, 2026-11)
+    hiwTitle:'Cómo funciona',hiwStep1:'Toma una foto de tu sistema o describe lo que está pasando',hiwStep2:'Recibe una explicación en palabras claras — sin tecnicismos',
+    hiwStep3:'Sabe exactamente qué decirle a tu técnico cuando llames',dzLabel:'📷 Toma o sube una foto',dzSub:'Una foto de tu aire, calefacción o termostato nos ayuda a darte una respuesta más precisa',
+    dzTitle:'Toma o sube una foto',dzMeta:'Foto · Video · JPG · PNG · hasta 50MB',dzCamera:'📸 Cámara',
+    dzLibrary:'🖼️ Galería',dzTipClose:'<span class="photo-tip-icon">✅</span><strong>De cerca</strong><br/>Llene el cuadro',dzTipLight:'<span class="photo-tip-icon">💡</span><strong>Buena luz</strong><br/>Sin sombras',
+    dzTipFocus:'<span class="photo-tip-icon">🔍</span><strong>Enfocada</strong><br/>Texto legible',dzTipBlur:'<span class="photo-tip-icon">❌</span><strong>No borrosa</strong><br/>Repítela si tembló',symLabel:'¿Qué está haciendo tu sistema?',
+    symSub:'Selecciona todo lo que aplique',symNotCooling:'No enfría',symNotHeating:'No calienta',
+    symWeakAir:'Poco flujo de aire',symWater:'Gotea agua',symNoise:'Ruidos extraños',
+    symBills:'Facturas de luz altas',symUneven:'Temperaturas disparejas',symAirQ:'Mala calidad de aire',
+    symCycling:'Prende y apaga seguido',symNoStart:'No enciende',symIce:'Hielo en la unidad',
+    symFreeze:'Sistema congelado',symSmell:'Olor a quemado',descLabel:'Describe el problema con tus propias palabras',
+    descSub:'¿Cuándo empezó? ¿Está empeorando? ¿Algo más que haya notado?',descPh:'Ej.: Mi aire corre todo el día pero la casa sigue caliente. Empezó hace 2 días…',ageLabel:'Edad del sistema',
+    ageSelect:'Selecciona la edad…',ageOpt0:'0–5 años',ageOpt1:'5–10 años',
+    ageOpt2:'10–15 años',ageOpt3:'15–20 años',ageOpt4:'Más de 20 años',
+    ageOpt5:'No estoy seguro',btnAnalyze:'🔍 Analizar mi sistema',btnAnalyzing:'Analizando…',
+    btnNew:'🔄 Nuevo',ftTagPro:'Plataforma de Inteligencia de Campo',ftTagHome:'Sabe qué está mal antes de llamar.',
+    ftTerms:'Términos',ftPrivacy:'Privacidad',ftSupport:'Soporte',
+    ftLegal:'Los diagnósticos son solo una guía. Las reparaciones con refrigerante, gas o alto voltaje siempre deben hacerlas técnicos de HVAC con licencia. Mike es una IA — no un contratista con licencia. El uso de este Servicio constituye la aceptación de nuestros Términos de Servicio.',
     demoTitle:'UN DIAGNÓSTICO REAL',demoQ:'Carrier 58STA, sin calor, bloqueo por límite alto. Pleno a 182°F, estática 3.2" wc, motor 11A. ¿Cuál es la falla y el arreglo?',demoTyping:'Mike está leyendo el sistema…',demoCta:'Pregúntale a Mike lo tuyo →',demoClose:'Cerrar'},
   zh:{reachCall:'通话',reachFace:'视频',clear:'清除',mikeName:'MIKE',headRole:'高级技师',headStatus:'随时在线',diagHead:'已识别故障',mentorSig:'— Mike',composer:'问 Mike 任何问题…',
     heroPro:'专业暖通现场智能',heroHome:'您的空调或暖气坏了吗？',
@@ -10677,6 +10729,24 @@ var V2_I18N={
     lndHomeCtaPrime:'问 Mike 任何问题 →',lndHomeCtaGhost:'寻找信赖的本地技师',lndHomeFoot:'诚实判断 · 不靠猜测 · 永不蒙在鼓里',
     migHead:'我们重建了一切。你需要一个全新的账户。',migBody:'你从一开始就在 — 这很重要。Mike 现在有了一个全新的家，不会把旧的带过来。重新登录只需 30 秒。还是那个 Mike，一切都更好。',migCta:'创建我的账户',
     obNext:'下一步  →',obStart:'开始 →',seedTech:'嘿 Mike — 我这有一张铭牌，你怎么看？',seedHome:'告诉 Mike 你的系统出了什么情况。',
+    // Homeowner diagnose form + footer (i18n coverage pass, 2026-11)
+    hiwTitle:'使用方法',hiwStep1:'拍下您的系统，或描述出现的状况',hiwStep2:'获得通俗易懂的解释 — 没有专业术语',
+    hiwStep3:'打电话时清楚知道该对技师说什么',dzLabel:'📷 拍照或上传照片',dzSub:'空调、暖炉或温控器的照片能帮我们给出更准确的答案',
+    dzTitle:'拍照或上传照片',dzMeta:'照片 · 视频 · JPG · PNG · 最大50MB',dzCamera:'📸 拍照',
+    dzLibrary:'🖼️ 相册',dzTipClose:'<span class="photo-tip-icon">✅</span><strong>拍近些</strong><br/>填满画面',dzTipLight:'<span class="photo-tip-icon">💡</span><strong>光线充足</strong><br/>避免阴影',
+    dzTipFocus:'<span class="photo-tip-icon">🔍</span><strong>对准焦</strong><br/>文字清晰',dzTipBlur:'<span class="photo-tip-icon">❌</span><strong>不要模糊</strong><br/>拍糊了请重拍',symLabel:'您的系统出现什么状况？',
+    symSub:'选择所有符合的项',symNotCooling:'不制冷',symNotHeating:'不制热',
+    symWeakAir:'风量弱',symWater:'漏水',symNoise:'异响',
+    symBills:'电费偏高',symUneven:'温度不均',symAirQ:'空气质量差',
+    symCycling:'频繁启停',symNoStart:'无法启动',symIce:'机组结冰',
+    symFreeze:'系统结冰',symSmell:'烧焦味',descLabel:'用您自己的话描述问题',
+    descSub:'什么时候开始的？是否越来越严重？还注意到什么？',descPh:'例如：空调整天运转，屋里还是热。两天前开始的……',ageLabel:'系统年限',
+    ageSelect:'选择年限…',ageOpt0:'0–5年',ageOpt1:'5–10年',
+    ageOpt2:'10–15年',ageOpt3:'15–20年',ageOpt4:'20年以上',
+    ageOpt5:'不确定',btnAnalyze:'🔍 分析我的系统',btnAnalyzing:'分析中……',
+    btnNew:'🔄 重新开始',ftTagPro:'现场智能平台',ftTagHome:'打电话之前先弄清问题。',
+    ftTerms:'条款',ftPrivacy:'隐私',ftSupport:'支持',
+    ftLegal:'诊断结果仅供参考。涉及制冷剂、燃气或高压电的维修，请务必交由持证HVAC技师完成。Mike是人工智能 — 不是持证承包商。使用本服务即表示接受我们的服务条款。',
     demoTitle:'真实诊断',demoQ:'Carrier 58STA，不制热，高温限位锁定。风室 182°F，静压 3.2" wc，风机 11A。故障是什么，怎么修？',demoTyping:'Mike 正在读取系统…',demoCta:'问 Mike 你自己的问题 →',demoClose:'关闭'},
   vi:{reachCall:'GỌI',reachFace:'FACETIME',clear:'XÓA',mikeName:'MIKE',headRole:'THỢ CẢ',headStatus:'LUÔN SẴN SÀNG',diagHead:'ĐÃ XÁC ĐỊNH LỖI',mentorSig:'— Mike',composer:'Hỏi Mike bất kỳ điều gì…',
     heroPro:'Trí Tuệ Hiện Trường HVAC Chuyên Nghiệp',heroHome:'Máy lạnh hay lò sưởi của bạn không chạy?',
@@ -10708,6 +10778,24 @@ var V2_I18N={
     lndHomeCtaPrime:'Hỏi Mike bất kỳ điều gì →',lndHomeCtaGhost:'Tìm thợ địa phương đáng tin',lndHomeFoot:'NHẬN ĐỊNH THẬT · KHÔNG ĐOÁN MÒ · KHÔNG MƠ HỒ',
     migHead:'Chúng tôi đã xây dựng lại mọi thứ. Bạn cần một tài khoản mới.',migBody:'Bạn đã ở đây từ những ngày đầu — điều đó rất quan trọng. Mike giờ có một ngôi nhà hoàn toàn mới, và nó không mang theo cái cũ. Chỉ mất 30 giây để vào lại. Vẫn là Mike đó, mọi thứ tốt hơn.',migCta:'Tạo Tài Khoản Của Tôi',
     obNext:'Tiếp  →',obStart:'Bắt Đầu →',seedTech:'Chào Mike — tôi có một tấm nhãn máy ở đây, anh thấy sao?',seedHome:'Hãy kể cho Mike biết hệ thống của bạn đang gặp chuyện gì.',
+    // Homeowner diagnose form + footer (i18n coverage pass, 2026-11)
+    hiwTitle:'Cách hoạt động',hiwStep1:'Chụp ảnh hệ thống của bạn hoặc mô tả tình trạng đang xảy ra',hiwStep2:'Nhận giải thích dễ hiểu — không có thuật ngữ kỹ thuật',
+    hiwStep3:'Biết chính xác cần nói gì với thợ khi bạn gọi',dzLabel:'📷 Chụp hoặc tải ảnh lên',dzSub:'Ảnh máy lạnh, lò sưởi hoặc bộ điều nhiệt giúp chúng tôi trả lời chính xác hơn',
+    dzTitle:'Chụp hoặc tải ảnh lên',dzMeta:'Ảnh · Video · JPG · PNG · tối đa 50MB',dzCamera:'📸 Máy ảnh',
+    dzLibrary:'🖼️ Thư viện',dzTipClose:'<span class="photo-tip-icon">✅</span><strong>Chụp gần</strong><br/>Lấp đầy khung hình',dzTipLight:'<span class="photo-tip-icon">💡</span><strong>Đủ sáng</strong><br/>Không bóng tối',
+    dzTipFocus:'<span class="photo-tip-icon">🔍</span><strong>Rõ nét</strong><br/>Chữ đọc được',dzTipBlur:'<span class="photo-tip-icon">❌</span><strong>Không mờ</strong><br/>Chụp lại nếu rung',symLabel:'Hệ thống của bạn đang bị gì?',
+    symSub:'Chọn tất cả những gì đúng',symNotCooling:'Không lạnh',symNotHeating:'Không ấm',
+    symWeakAir:'Gió yếu',symWater:'Rò rỉ nước',symNoise:'Tiếng ồn lạ',
+    symBills:'Tiền điện cao',symUneven:'Nhiệt độ không đều',symAirQ:'Không khí kém',
+    symCycling:'Bật tắt liên tục',symNoStart:'Không khởi động',symIce:'Đóng băng trên máy',
+    symFreeze:'Hệ thống đông đá',symSmell:'Mùi khét',descLabel:'Mô tả vấn đề bằng lời của bạn',
+    descSub:'Bắt đầu từ khi nào? Có nặng hơn không? Còn gì khác bạn nhận thấy?',descPh:'VD: Máy lạnh chạy cả ngày mà nhà vẫn nóng. Bắt đầu 2 ngày trước…',ageLabel:'Tuổi hệ thống',
+    ageSelect:'Chọn số năm…',ageOpt0:'0–5 năm',ageOpt1:'5–10 năm',
+    ageOpt2:'10–15 năm',ageOpt3:'15–20 năm',ageOpt4:'Trên 20 năm',
+    ageOpt5:'Không rõ',btnAnalyze:'🔍 Phân tích hệ thống',btnAnalyzing:'Đang phân tích…',
+    btnNew:'🔄 Làm mới',ftTagPro:'Nền tảng Trí tuệ Hiện trường',ftTagHome:'Biết hỏng gì trước khi gọi thợ.',
+    ftTerms:'Điều khoản',ftPrivacy:'Quyền riêng tư',ftSupport:'Hỗ trợ',
+    ftLegal:'Chẩn đoán chỉ mang tính tham khảo. Mọi sửa chữa liên quan đến môi chất lạnh, gas hoặc điện cao áp phải do thợ HVAC có giấy phép thực hiện. Mike là AI — không phải nhà thầu có giấy phép. Việc sử dụng Dịch vụ này đồng nghĩa với việc chấp nhận Điều khoản Dịch vụ của chúng tôi.',
     demoTitle:'MỘT CHẨN ĐOÁN THẬT',demoQ:'Carrier 58STA, không nóng, khóa quá nhiệt. Khoang 182°F, tĩnh 3.2" wc, quạt 11A. Lỗi là gì và cách sửa?',demoTyping:'Mike đang đọc hệ thống…',demoCta:'Hỏi Mike chuyện của bạn →',demoClose:'Đóng'},
   fr:{reachCall:'APPELER',reachFace:'FACETIME',clear:'EFFACER',mikeName:'MIKE',headRole:'MAÎTRE TECH',headStatus:'TOUJOURS DISPO',diagHead:'PANNE IDENTIFIÉE',mentorSig:'— Mike',composer:'Demandez à Mike…',
     heroPro:'Intelligence de Terrain CVC Professionnelle',heroHome:'Votre clim ou chauffage ne marche pas ?',
@@ -10739,6 +10827,24 @@ var V2_I18N={
     lndHomeCtaPrime:'Demandez à Mike →',lndHomeCtaGhost:'Trouver un technicien de confiance',lndHomeFoot:'AVIS HONNÊTE · SANS DEVINETTE · JAMAIS DANS LE FLOU',
     migHead:'Nous avons tout reconstruit. Il vous faut un nouveau compte.',migBody:'Vous étiez là depuis le début — ça compte. Mike a maintenant une toute nouvelle maison, et elle ne reprend pas l\'ancienne. Il faut 30 secondes pour revenir. Le même Mike, tout en mieux.',migCta:'Créer Mon Compte',
     obNext:'Suivant  →',obStart:'Commencer →',seedTech:'Salut Mike — j\'ai une plaque ici, qu\'est-ce que t\'en penses ?',seedHome:'Dites à Mike ce qui se passe avec votre système.',
+    // Homeowner diagnose form + footer (i18n coverage pass, 2026-11)
+    hiwTitle:'Comment ça marche',hiwStep1:'Prenez une photo de votre système ou décrivez ce qui se passe',hiwStep2:'Recevez une explication claire — sans jargon technique',
+    hiwStep3:'Sachez exactement quoi dire à votre technicien quand vous appelez',dzLabel:'📷 Prendre ou envoyer une photo',dzSub:'Une photo de votre climatisation, chaudière ou thermostat nous aide à vous répondre plus précisément',
+    dzTitle:'Prendre ou envoyer une photo',dzMeta:'Photo · Vidéo · JPG · PNG · jusqu’à 50MB',dzCamera:'📸 Caméra',
+    dzLibrary:'🖼️ Galerie',dzTipClose:'<span class="photo-tip-icon">✅</span><strong>En gros plan</strong><br/>Remplissez le cadre',dzTipLight:'<span class="photo-tip-icon">💡</span><strong>Bonne lumière</strong><br/>Pas d’ombres',
+    dzTipFocus:'<span class="photo-tip-icon">🔍</span><strong>Bien nette</strong><br/>Texte lisible',dzTipBlur:'<span class="photo-tip-icon">❌</span><strong>Pas de flou</strong><br/>Reprenez si bougé',symLabel:'Que fait votre système ?',
+    symSub:'Sélectionnez tout ce qui s’applique',symNotCooling:'Ne refroidit pas',symNotHeating:'Ne chauffe pas',
+    symWeakAir:'Débit d’air faible',symWater:'Fuite d’eau',symNoise:'Bruits étranges',
+    symBills:'Factures élevées',symUneven:'Températures inégales',symAirQ:'Air de mauvaise qualité',
+    symCycling:'Marche/arrêt en boucle',symNoStart:'Ne démarre pas',symIce:'Glace sur l’unité',
+    symFreeze:'Système qui gèle',symSmell:'Odeur de brûlé',descLabel:'Décrivez le problème avec vos mots',
+    descSub:'Depuis quand ? Est-ce que ça empire ? Autre chose à signaler ?',descPh:'Ex. : la clim tourne toute la journée mais la maison reste chaude. Depuis 2 jours…',ageLabel:'Âge du système',
+    ageSelect:'Choisir l’âge…',ageOpt0:'0–5 ans',ageOpt1:'5–10 ans',
+    ageOpt2:'10–15 ans',ageOpt3:'15–20 ans',ageOpt4:'Plus de 20 ans',
+    ageOpt5:'Je ne sais pas',btnAnalyze:'🔍 Analyser mon système',btnAnalyzing:'Analyse en cours…',
+    btnNew:'🔄 Nouveau',ftTagPro:'Plateforme d’intelligence terrain',ftTagHome:'Sachez ce qui ne va pas avant d’appeler.',
+    ftTerms:'Conditions',ftPrivacy:'Confidentialité',ftSupport:'Assistance',
+    ftLegal:'Les diagnostics sont fournis à titre indicatif uniquement. Toute réparation impliquant du fluide frigorigène, du gaz ou de la haute tension doit être réalisée par un technicien HVAC agréé. Mike est une IA — pas un professionnel agréé. L’utilisation de ce Service vaut acceptation de nos Conditions d’utilisation.',
     demoTitle:'UN VRAI DIAGNOSTIC',demoQ:'Carrier 58STA, pas de chauffe, verrouillage limite haute. Plénum à 182°F, statique 3.2" wc, soufflante 11A. Quelle est la panne et la réparation ?',demoTyping:'Mike lit le système…',demoCta:'Posez votre propre question à Mike →',demoClose:'Fermer'},
   pt:{reachCall:'LIGAR',reachFace:'FACETIME',clear:'LIMPAR',mikeName:'MIKE',headRole:'TÉCNICO MESTRE',headStatus:'SEMPRE ATIVO',diagHead:'FALHA IDENTIFICADA',mentorSig:'— Mike',composer:'Pergunte ao Mike…',
     heroPro:'Inteligência Profissional de Campo HVAC',heroHome:'Seu ar ou aquecimento não funciona?',
@@ -10770,6 +10876,24 @@ var V2_I18N={
     lndHomeCtaPrime:'Pergunte ao Mike →',lndHomeCtaGhost:'Encontrar um técnico local de confiança',lndHomeFoot:'PARECER HONESTO · SEM ACHISMO · NUNCA NO ESCURO',
     migHead:'Reconstruímos tudo. Você precisa de uma conta nova.',migBody:'Você esteve aqui desde o começo — isso importa. O Mike agora tem um lar totalmente novo, e ele não traz o antigo junto. Leva 30 segundos para voltar. O mesmo Mike, tudo melhor.',migCta:'Criar Minha Conta',
     obNext:'Próximo  →',obStart:'Começar →',seedTech:'E aí Mike — tenho uma plaqueta aqui, o que você acha?',seedHome:'Conte ao Mike o que está rolando com o seu sistema.',
+    // Homeowner diagnose form + footer (i18n coverage pass, 2026-11)
+    hiwTitle:'Como funciona',hiwStep1:'Tire uma foto do seu sistema ou descreva o que está acontecendo',hiwStep2:'Receba uma explicação em linguagem simples — sem termos técnicos',
+    hiwStep3:'Saiba exatamente o que dizer ao técnico quando ligar',dzLabel:'📷 Tire ou envie uma foto',dzSub:'Uma foto do seu ar-condicionado, aquecedor ou termostato nos ajuda a dar uma resposta mais precisa',
+    dzTitle:'Tire ou envie uma foto',dzMeta:'Foto · Vídeo · JPG · PNG · até 50MB',dzCamera:'📸 Câmera',
+    dzLibrary:'🖼️ Galeria',dzTipClose:'<span class="photo-tip-icon">✅</span><strong>Bem de perto</strong><br/>Preencha o quadro',dzTipLight:'<span class="photo-tip-icon">💡</span><strong>Boa luz</strong><br/>Sem sombras',
+    dzTipFocus:'<span class="photo-tip-icon">🔍</span><strong>Em foco</strong><br/>Texto legível',dzTipBlur:'<span class="photo-tip-icon">❌</span><strong>Sem borrão</strong><br/>Refaça se tremeu',symLabel:'O que o seu sistema está fazendo?',
+    symSub:'Selecione tudo o que se aplica',symNotCooling:'Não gela',symNotHeating:'Não aquece',
+    symWeakAir:'Fluxo de ar fraco',symWater:'Vazando água',symNoise:'Barulhos estranhos',
+    symBills:'Conta de luz alta',symUneven:'Temperatura desigual',symAirQ:'Ar de má qualidade',
+    symCycling:'Liga e desliga direto',symNoStart:'Não liga',symIce:'Gelo na unidade',
+    symFreeze:'Sistema congelando',symSmell:'Cheiro de queimado',descLabel:'Descreva o problema com suas palavras',
+    descSub:'Quando começou? Está piorando? Notou mais alguma coisa?',descPh:'Ex.: o ar fica ligado o dia todo mas a casa continua quente. Começou há 2 dias…',ageLabel:'Idade do sistema',
+    ageSelect:'Selecione a idade…',ageOpt0:'0–5 anos',ageOpt1:'5–10 anos',
+    ageOpt2:'10–15 anos',ageOpt3:'15–20 anos',ageOpt4:'Mais de 20 anos',
+    ageOpt5:'Não sei',btnAnalyze:'🔍 Analisar meu sistema',btnAnalyzing:'Analisando…',
+    btnNew:'🔄 Novo',ftTagPro:'Plataforma de Inteligência de Campo',ftTagHome:'Saiba o que há de errado antes de ligar.',
+    ftTerms:'Termos',ftPrivacy:'Privacidade',ftSupport:'Suporte',
+    ftLegal:'Os diagnósticos servem apenas como orientação. Reparos envolvendo fluido refrigerante, gás ou alta tensão devem sempre ser feitos por um técnico de HVAC licenciado. O Mike é uma IA — não um prestador licenciado. O uso deste Serviço constitui aceitação dos nossos Termos de Serviço.',
     demoTitle:'UM DIAGNÓSTICO REAL',demoQ:'Carrier 58STA, sem aquecer, bloqueio de limite alto. Pleno a 182°F, estática 3.2" wc, soprador 11A. Qual é a falha e o conserto?',demoTyping:'Mike está lendo o sistema…',demoCta:'Pergunte ao Mike o seu caso →',demoClose:'Fechar'}
 };
 function v2t(key){
@@ -10787,6 +10911,17 @@ function applyV2Lang(){
     // These come only from V2_I18N (no user input), so innerHTML is safe here.
     if(v.indexOf('<')>=0)el.innerHTML=v; else el.textContent=v;
   });
+  // Placeholder variant — data-v2i18n targets textContent, inputs/textareas need the
+  // placeholder attribute set instead.
+  document.querySelectorAll('[data-v2i18n-ph]').forEach(function(el){
+    var k=el.getAttribute('data-v2i18n-ph');
+    if(k)el.setAttribute('placeholder',v2t(k));
+  });
+  // JS-built homeowner form pieces repaint with the language (guards: both are defined
+  // later in the file; on the very first applyV2Lang they may not exist yet — the
+  // DOMContentLoaded builders then paint in the already-active language themselves).
+  if(typeof localizeHomeAgeSelect==='function')localizeHomeAgeSelect();
+  if(typeof buildHomeSymptomGrid==='function')buildHomeSymptomGrid();
   var nm=document.getElementById('v2HeadName');if(nm)nm.textContent=v2t('mikeName');
   var rl=document.getElementById('v2HeadRole');if(rl)rl.textContent=v2t('headRole');
   var st=document.getElementById('v2HeadStatus');if(st)st.textContent=v2t('headStatus');

@@ -3046,8 +3046,8 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     <div class="auth-logo-icon" style="background:none;overflow:hidden;"><img src="/icon-512.png" alt="Mike" style="width:100%;height:100%;object-fit:cover;border-radius:13px;"/></div>
     <div class="auth-logo-name">Trazer Intelligence</div>
   </div>
-  <div class="auth-hero">POWER <span class="t">ON.</span></div>
-  <div class="auth-hero-sub" id="authHeroSub">Sign in to your field instrument</div>
+  <div class="auth-hero" data-v2i18n="authHero">POWER <span class="t">ON.</span></div>
+  <div class="auth-hero-sub" id="authHeroSub" data-v2i18n="authSubIn">Sign in to your field instrument</div>
   <div class="auth-card">
     <!-- MIGRATION NOTICE (Variation A, Brandon-approved). V2 is a fresh-DB launch:
          returning/beta users must create a new account. B5 fix: this is existing-user
@@ -3060,10 +3060,10 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div class="auth-migration-body" data-v2i18n="migBody">You were here from the beginning — that matters. Mike's got a whole new home now, and it doesn't carry the old one over. Takes 30 seconds to get back in. Same Mike, better everything.</div>
       <button class="auth-migration-cta" type="button" onclick="authTab('up')" data-v2i18n="migCta">Create My Account</button>
     </div>
-    <div class="auth-trial-pill">🎯 14 days free — no credit card, cancel anytime</div>
+    <div class="auth-trial-pill" data-v2i18n="authTrialPill">🎯 14 days free — no credit card, cancel anytime</div>
     <div class="auth-tabs">
-      <button class="auth-tab active" id="tabSignIn" onclick="authTab('in')">Sign In</button>
-      <button class="auth-tab" id="tabSignUp" onclick="authTab('up')">Create Account</button>
+      <button class="auth-tab active" id="tabSignIn" onclick="authTab('in')" data-v2i18n="authTabIn">Sign In</button>
+      <button class="auth-tab" id="tabSignUp" onclick="authTab('up')" data-v2i18n="authTabUp">Create Account</button>
     </div>
     <div class="auth-err" id="authErr"></div>
 
@@ -3073,17 +3073,17 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
          broke signin in 7114234 (reverted in 91e70d1). onsubmit is a hard no-op. -->
     <form id="authInForm" onsubmit="event.preventDefault();return false;">
       <div class="auth-field">
-        <label class="auth-lbl">Email</label>
+        <label class="auth-lbl" data-v2i18n="authEmail">Email</label>
         <input class="auth-inp" type="email" id="siEmail" placeholder="you@company.com" autocomplete="username email" inputmode="email"/>
       </div>
       <div class="auth-field">
-        <label class="auth-lbl">Password</label>
+        <label class="auth-lbl" data-v2i18n="authPassword">Password</label>
         <input class="auth-inp" type="password" id="siPass" placeholder="••••••••" autocomplete="current-password"/>
       </div>
       <div style="text-align:right;margin-bottom:14px;">
-        <span class="auth-forgot" onclick="authForgot()" style="cursor:pointer;">Forgot password?</span>
+        <span class="auth-forgot" onclick="authForgot()" style="cursor:pointer;" data-v2i18n="authForgot">Forgot password?</span>
       </div>
-      <button class="auth-btn" id="siBtn" type="button" onclick="authSignIn()">Sign In</button>
+      <button class="auth-btn" id="siBtn" type="button" onclick="authSignIn()" data-v2i18n="authTabIn">Sign In</button>
     </form>
 
     <!-- SIGN UP FORM — same safe form-wrap; buttons stay type="button". -->
@@ -3091,32 +3091,32 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <!-- Role picker RESTORED (2026-08-06). Pre-selected from the first-open onboarding
            choice by authTab('up'); the user can still change it here. -->
       <div class="auth-field">
-        <label class="auth-lbl">I am a...</label>
+        <label class="auth-lbl" data-v2i18n="authIAm">I am a...</label>
         <div style="display:flex;gap:8px;margin-top:6px;">
-          <button type="button" id="roleHomeBtn" onclick="selectRoleInline('homeowner')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">🏠 Homeowner</button>
-          <button type="button" id="roleProBtn" onclick="selectRoleInline('contractor')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">🔧 Contractor</button>
+          <button type="button" id="roleHomeBtn" onclick="selectRoleInline('homeowner')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;" data-v2i18n="authRoleHome">🏠 Homeowner</button>
+          <button type="button" id="roleProBtn" onclick="selectRoleInline('contractor')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;" data-v2i18n="authRolePro">🔧 Contractor</button>
         </div>
       </div>
       <div class="auth-field">
-        <label class="auth-lbl">Full Name</label>
-        <input class="auth-inp" type="text" id="suName" placeholder="Your name" autocomplete="name"/>
+        <label class="auth-lbl" data-v2i18n="authFullName">Full Name</label>
+        <input class="auth-inp" type="text" id="suName" data-v2i18n-ph="authNamePh" placeholder="Your name" autocomplete="name"/>
       </div>
       <div class="auth-field">
-        <label class="auth-lbl">Email</label>
+        <label class="auth-lbl" data-v2i18n="authEmail">Email</label>
         <input class="auth-inp" type="email" id="suEmail" placeholder="you@company.com" autocomplete="email" inputmode="email"/>
       </div>
       <div class="auth-field">
-        <label class="auth-lbl">Password</label>
-        <input class="auth-inp" type="password" id="suPass" placeholder="Min 8 characters" autocomplete="new-password"/>
+        <label class="auth-lbl" data-v2i18n="authPassword">Password</label>
+        <input class="auth-inp" type="password" id="suPass" data-v2i18n-ph="authPassUpPh" placeholder="Min 8 characters" autocomplete="new-password"/>
       </div>
       <div class="auth-field" id="suCompanyField" style="display:none">
-        <label class="auth-lbl">Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
-        <input class="auth-inp" type="text" id="suCompany" placeholder="Your HVAC company" autocomplete="organization"/>
+        <label class="auth-lbl" data-v2i18n="authCompanyLbl">Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
+        <input class="auth-inp" type="text" id="suCompany" data-v2i18n-ph="authCompanyPh" placeholder="Your HVAC company" autocomplete="organization"/>
       </div>
-      <button class="auth-btn" id="suBtn" type="button" onclick="authSignUp()">Start Free Trial</button>
+      <button class="auth-btn" id="suBtn" type="button" onclick="authSignUp()" data-v2i18n="authStartTrial">Start Free Trial</button>
     </form>
 
-    <p class="auth-terms">By continuing you agree to our <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Terms</a> and <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Privacy Policy</a></p>
+    <p class="auth-terms" data-v2i18n="authTermsLine">By continuing you agree to our <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Terms</a> and <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Privacy Policy</a></p>
   </div>
 </div>
 </div>
@@ -4994,7 +4994,7 @@ function authTab(t){
   // brand-new tech filling out Create Account was told to sign in to an account he
   // does not have yet.
   var hs=document.getElementById('authHeroSub');
-  if(hs)hs.textContent=(t==='up')?'Set up your field instrument':'Sign in to your field instrument';
+  if(hs)hs.textContent=(t==='up')?v2t('authSubUp'):v2t('authSubIn');
   document.getElementById('authInForm').style.display=t==='in'?'block':'none';
   document.getElementById('authUpForm').style.display=t==='up'?'block':'none';
   var e=document.getElementById('authErr');if(e)e.classList.remove('show');
@@ -5035,7 +5035,7 @@ function authSignIn(){
         // Security: signin now returns a unified "Invalid email or password" for both an
         // unknown email and a wrong password (no account enumeration). Returning/migrated
         // users are nudged to re-create via the #authMigration card (stale-token path), not here.
-        showAuthErr(errMsg);if(btn){btn.disabled=false;btn.textContent='Sign In';}return;
+        showAuthErr(errMsg);if(btn){btn.disabled=false;btn.textContent=v2t('authTabIn');}return;
       }
       var user=result.data.user;user.token=result.data.token;
       var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
@@ -5054,7 +5054,7 @@ function authSignIn(){
       }
       setTimeout(requestTechLocation,2000);
     })
-    .catch(function(){showAuthErr('Connection error. Try again.');if(btn){btn.disabled=false;btn.textContent='Sign In';}});
+    .catch(function(){showAuthErr('Connection error. Try again.');if(btn){btn.disabled=false;btn.textContent=v2t('authTabIn');}});
   },50);
 }
 document.addEventListener('visibilitychange',function(){
@@ -5117,7 +5117,7 @@ function authSignUp(){
   fetch('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,password:pass,company:company,role:selectedRole})})
     .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
     .then(function(result){
-      if(!result.ok){showAuthErr(result.data.error||'Sign up failed.');if(btn){btn.disabled=false;btn.textContent='Start Free Trial';}return;}
+      if(!result.ok){showAuthErr(result.data.error||'Sign up failed.');if(btn){btn.disabled=false;btn.textContent=v2t('authStartTrial');}return;}
       var user=result.data.user;user.token=result.data.token;
       var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
       users[email]=user;localStorage.setItem('trazer_users',JSON.stringify(users,function(k,v){return k==='token'?undefined:v;}));
@@ -5139,7 +5139,7 @@ function authSignUp(){
       try{localStorage.setItem('trazer_onboarded','1');}catch(e){}
       setTimeout(requestTechLocation,2000);
     })
-    .catch(function(err){showAuthErr('Connection error — '+( err&&err.message?err.message:'try again'));if(btn){btn.disabled=false;btn.textContent='Start Free Trial';}});
+    .catch(function(err){showAuthErr('Connection error — '+( err&&err.message?err.message:'try again'));if(btn){btn.disabled=false;btn.textContent=v2t('authStartTrial');}});
   },50);
 }
 
@@ -5219,9 +5219,9 @@ function authSignOut(){
   // showing that frozen button — and the visibilitychange safety net skips it because
   // its text still includes "Signing". Reset both auth buttons explicitly here.
   var _siBtn=document.getElementById('siBtn');
-  if(_siBtn){_siBtn.disabled=false;_siBtn.textContent='Sign In';}
+  if(_siBtn){_siBtn.disabled=false;_siBtn.textContent=v2t('authTabIn');}
   var _suBtn=document.getElementById('suBtn');
-  if(_suBtn){_suBtn.disabled=false;_suBtn.textContent='Start Free Trial';}
+  if(_suBtn){_suBtn.disabled=false;_suBtn.textContent=v2t('authStartTrial');}
   authTab('in');
   chatHistory=[];techLocation=null;
 }
@@ -5356,21 +5356,71 @@ function recordEvent(type,payload,amount){
 })();
 // Announcement banner (server-flagged via /api/announcement; dismiss persists per announcement id).
 // Hidden in the native app build — App Store rules forbid pricing UI there (same rule as the paywall).
+// Known announcement ids carry client-side translations: the server emits English only,
+// and the banner is painted here, so localization lives with the paint. Unknown ids fall
+// back to the server strings untouched. Prices/units stay as the server wrote them ($50).
+var ANN_I18N={'price50-nov1':{
+  es:{title:'Mike cambia a $50/mes el 1 de noviembre',body:'Antes costaba $100. Con un solo retorno evitado, se paga solo. ¿Preguntas? Pregúntale a Mike.'},
+  zh:{title:'11月1日起Mike改为每月$50',body:'原价$100。省下一次返工他就回本了。有疑问？直接问Mike。'},
+  vi:{title:'Từ ngày 1 tháng 11, Mike đổi giá còn $50/tháng',body:'Giảm từ $100. Tránh được một lần quay lại sửa là đủ bù tiền. Có thắc mắc? Cứ hỏi Mike.'},
+  fr:{title:'Mike passe à $50/mois le 1er novembre',body:'Au lieu de $100. Un seul retour évité et il est rentabilisé. Des questions ? Demandez à Mike.'},
+  pt:{title:'O Mike vai custar $50/mês a partir de 1º de novembro',body:'Antes era $100. Um retorno evitado e ele já se paga. Dúvidas? É só perguntar ao Mike.'}
+}};
+function trzAnnStrings(a){
+  // currentLang is declared later in the file; on first paint read the persisted choice.
+  var lang='en';
+  try{lang=(typeof currentLang!=='undefined'&&currentLang)||localStorage.getItem('trazer_lang')||'en';}catch(e){}
+  var tr=(ANN_I18N[a.id]||{})[lang];
+  return {title:tr?tr.title:a.title,body:tr?tr.body:a.body};
+}
+// LAYOUT FIX — the fixed banner sat on top of the sticky .nav (z 100) and buried the
+// language switcher / profile controls in the top ~77px (worst on phones).
+// Minimal fix: push the page AND the nav's sticky offset down by the banner's real
+// rendered height so every nav control stays visible and tappable; dismissing the
+// banner restores both. Fixed/absolute overlays are unaffected (body margin does not
+// move them), so nothing else shifts.
+// Z-ORDER: banner sits at 9998 — UNDER #authOverlay (9999) and the onboarding overlay
+// (10000) so it can never paint over their top edge during full-screen moments, but
+// still above the nav (100) and page content. Nothing else lives between 9998 and
+// 9999 except #offlineBanner/#liveCameraOverlay (also 9998): the banner is appended
+// last in the DOM, so at equal z it paints over them exactly as it did from 9999.
+window._trzAnnOffset=function(){
+  var b=document.getElementById('trzAnnounce');
+  var h=b?b.offsetHeight:0;
+  document.body.style.marginTop=h?h+'px':'';
+  var nav=document.querySelector('.nav');if(nav)nav.style.top=h?h+'px':'';
+};
+// Language switches repaint the live banner (setLang calls this when present).
+window._trzAnnRepaint=function(){
+  var b=document.getElementById('trzAnnounce');
+  if(!b||!window._trzAnnData)return;
+  var t=trzAnnStrings(window._trzAnnData);
+  var te=document.getElementById('trzAnnTitle');if(te)te.textContent='📣 '+t.title;
+  var be=document.getElementById('trzAnnBody');if(be)be.textContent=t.body;
+  window._trzAnnOffset(); // translated copy can wrap to a different height
+};
 (function(){
   if(document.body&&document.body.getAttribute('data-native'))return;
   fetch('/api/announcement').then(function(r){return r.json();}).then(function(a){
     if(!a||!a.active||!a.id)return;
     if(localStorage.getItem('trz_ann_'+a.id))return;
     if(document.body&&document.body.getAttribute('data-native'))return;
+    window._trzAnnData=a;
+    var t=trzAnnStrings(a);
     var b=document.createElement('div');
     b.id='trzAnnounce';
     // Safe-area aware: on notched iPhones (PWA black-translucent) the webview runs under the
     // status bar, so the banner needs the inset or the X lands beneath the clock — untappable.
-    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#0e2a33;color:#eaf6f9;padding:calc(10px + env(safe-area-inset-top,0px)) 56px 10px 14px;font:600 13px/1.45 system-ui,-apple-system,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.35);';
-    b.innerHTML='<span style="opacity:.95">📣 '+a.title+'</span> <span style="opacity:.75;font-weight:400">'+a.body+'</span>'+
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9998;background:#0e2a33;color:#eaf6f9;padding:calc(10px + env(safe-area-inset-top,0px)) 56px 10px 14px;font:600 13px/1.45 system-ui,-apple-system,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.35);';
+    b.innerHTML='<span id="trzAnnTitle" style="opacity:.95"></span> <span id="trzAnnBody" style="opacity:.75;font-weight:400"></span>'+
       '<button aria-label="Dismiss" style="position:absolute;right:6px;top:calc(4px + env(safe-area-inset-top,0px));background:rgba(234,246,249,.12);border:none;border-radius:8px;color:#eaf6f9;font-size:24px;line-height:1;cursor:pointer;padding:8px 14px" '+
-      'onclick="localStorage.setItem(\'trz_ann_'+a.id+'\',1);document.getElementById(\'trzAnnounce\').remove();">×</button>';
+      'onclick="localStorage.setItem(\'trz_ann_'+a.id+'\',1);document.getElementById(\'trzAnnounce\').remove();window._trzAnnOffset();">×</button>';
     document.body.appendChild(b);
+    // textContent (not interpolated innerHTML) — title/body are plain text in every language.
+    document.getElementById('trzAnnTitle').textContent='📣 '+t.title;
+    document.getElementById('trzAnnBody').textContent=t.body;
+    window._trzAnnOffset();
+    window.addEventListener('resize',window._trzAnnOffset);
   }).catch(function(){});
 })();
 
@@ -10649,6 +10699,14 @@ var V2_I18N={
     btnNew:'🔄 New',ftTagPro:'Field Intelligence Platform',ftTagHome:'Know what\'s wrong before you call.',
     ftTerms:'Terms',ftPrivacy:'Privacy',ftSupport:'Support',
     ftLegal:'Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician. Mike is an AI — not a licensed contractor. Use of this Service constitutes acceptance of our Terms of Service.',
+    // Auth overlay (i18n coverage pass, 2026-11)
+    authHero:'POWER <span class="t">ON.</span>',authSubIn:'Sign in to your field instrument',authSubUp:'Set up your field instrument',
+    authTrialPill:'🎯 14 days free — no credit card, cancel anytime',authTabIn:'Sign In',authTabUp:'Create Account',
+    authEmail:'Email',authPassword:'Password',authForgot:'Forgot password?',
+    authIAm:'I am a...',authRoleHome:'🏠 Homeowner',authRolePro:'🔧 Contractor',
+    authFullName:'Full Name',authNamePh:'Your name',authPassUpPh:'Min 8 characters',
+    authCompanyLbl:'Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span>',authCompanyPh:'Your HVAC company',authStartTrial:'Start Free Trial',
+    authTermsLine:'By continuing you agree to our <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Terms</a> and <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Privacy Policy</a>',
     demoTitle:'A REAL DIAGNOSIS',demoQ:'Carrier 58STA, no heat, high-limit lockout. Plenum\'s 182°F, static 3.2" wc, blower 11A. What\'s the fault and the fix?',demoTyping:'Mike is reading the system…',demoCta:'Ask Mike your own →',demoClose:'Close'},
   es:{reachCall:'LLAMAR',reachFace:'FACETIME',clear:'BORRAR',mikeName:'MIKE',headRole:'TÉCNICO MAESTRO',headStatus:'SIEMPRE DISPONIBLE',diagHead:'FALLA IDENTIFICADA',mentorSig:'— Mike',composer:'Pregúntale a Mike…',
     heroPro:'Inteligencia Profesional de Campo HVAC',heroHome:'¿Tu aire o calefacción no funciona?',
@@ -10698,6 +10756,14 @@ var V2_I18N={
     btnNew:'🔄 Nuevo',ftTagPro:'Plataforma de Inteligencia de Campo',ftTagHome:'Sabe qué está mal antes de llamar.',
     ftTerms:'Términos',ftPrivacy:'Privacidad',ftSupport:'Soporte',
     ftLegal:'Los diagnósticos son solo una guía. Las reparaciones con refrigerante, gas o alto voltaje siempre deben hacerlas técnicos de HVAC con licencia. Mike es una IA — no un contratista con licencia. El uso de este Servicio constituye la aceptación de nuestros Términos de Servicio.',
+    // Auth overlay (i18n coverage pass, 2026-11)
+    authHero:'EQUIPO <span class="t">ENCENDIDO.</span>',authSubIn:'Inicia sesión en tu instrumento de campo',authSubUp:'Configura tu instrumento de campo',
+    authTrialPill:'🎯 14 días gratis — sin tarjeta, cancela cuando quieras',authTabIn:'Iniciar Sesión',authTabUp:'Crear Cuenta',
+    authEmail:'Correo',authPassword:'Contraseña',authForgot:'¿Olvidaste tu contraseña?',
+    authIAm:'Soy...',authRoleHome:'🏠 Propietario',authRolePro:'🔧 Contratista',
+    authFullName:'Nombre completo',authNamePh:'Tu nombre',authPassUpPh:'Mínimo 8 caracteres',
+    authCompanyLbl:'Empresa <span style="font-weight:400;text-transform:none;color:#444">(opcional)</span>',authCompanyPh:'Tu empresa de HVAC',authStartTrial:'Comenzar prueba gratis',
+    authTermsLine:'Al continuar aceptas nuestros <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Términos</a> y nuestra <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Política de Privacidad</a>',
     demoTitle:'UN DIAGNÓSTICO REAL',demoQ:'Carrier 58STA, sin calor, bloqueo por límite alto. Pleno a 182°F, estática 3.2" wc, motor 11A. ¿Cuál es la falla y el arreglo?',demoTyping:'Mike está leyendo el sistema…',demoCta:'Pregúntale a Mike lo tuyo →',demoClose:'Cerrar'},
   zh:{reachCall:'通话',reachFace:'视频',clear:'清除',mikeName:'MIKE',headRole:'高级技师',headStatus:'随时在线',diagHead:'已识别故障',mentorSig:'— Mike',composer:'问 Mike 任何问题…',
     heroPro:'专业暖通现场智能',heroHome:'您的空调或暖气坏了吗？',
@@ -10747,6 +10813,14 @@ var V2_I18N={
     btnNew:'🔄 重新开始',ftTagPro:'现场智能平台',ftTagHome:'打电话之前先弄清问题。',
     ftTerms:'条款',ftPrivacy:'隐私',ftSupport:'支持',
     ftLegal:'诊断结果仅供参考。涉及制冷剂、燃气或高压电的维修，请务必交由持证HVAC技师完成。Mike是人工智能 — 不是持证承包商。使用本服务即表示接受我们的服务条款。',
+    // Auth overlay (i18n coverage pass, 2026-11)
+    authHero:'设备<span class="t">启动。</span>',authSubIn:'登录你的现场工具',authSubUp:'设置你的现场工具',
+    authTrialPill:'🎯 免费14天 — 无需信用卡，随时取消',authTabIn:'登录',authTabUp:'创建账户',
+    authEmail:'邮箱',authPassword:'密码',authForgot:'忘记密码？',
+    authIAm:'我是...',authRoleHome:'🏠 业主',authRolePro:'🔧 承包商',
+    authFullName:'姓名',authNamePh:'你的姓名',authPassUpPh:'至少8个字符',
+    authCompanyLbl:'公司 <span style="font-weight:400;text-transform:none;color:#444">（可选）</span>',authCompanyPh:'你的HVAC公司',authStartTrial:'开始免费试用',
+    authTermsLine:'继续即表示你同意我们的<a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">条款</a>和<a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">隐私政策</a>',
     demoTitle:'真实诊断',demoQ:'Carrier 58STA，不制热，高温限位锁定。风室 182°F，静压 3.2" wc，风机 11A。故障是什么，怎么修？',demoTyping:'Mike 正在读取系统…',demoCta:'问 Mike 你自己的问题 →',demoClose:'关闭'},
   vi:{reachCall:'GỌI',reachFace:'FACETIME',clear:'XÓA',mikeName:'MIKE',headRole:'THỢ CẢ',headStatus:'LUÔN SẴN SÀNG',diagHead:'ĐÃ XÁC ĐỊNH LỖI',mentorSig:'— Mike',composer:'Hỏi Mike bất kỳ điều gì…',
     heroPro:'Trí Tuệ Hiện Trường HVAC Chuyên Nghiệp',heroHome:'Máy lạnh hay lò sưởi của bạn không chạy?',
@@ -10796,6 +10870,14 @@ var V2_I18N={
     btnNew:'🔄 Làm mới',ftTagPro:'Nền tảng Trí tuệ Hiện trường',ftTagHome:'Biết hỏng gì trước khi gọi thợ.',
     ftTerms:'Điều khoản',ftPrivacy:'Quyền riêng tư',ftSupport:'Hỗ trợ',
     ftLegal:'Chẩn đoán chỉ mang tính tham khảo. Mọi sửa chữa liên quan đến môi chất lạnh, gas hoặc điện cao áp phải do thợ HVAC có giấy phép thực hiện. Mike là AI — không phải nhà thầu có giấy phép. Việc sử dụng Dịch vụ này đồng nghĩa với việc chấp nhận Điều khoản Dịch vụ của chúng tôi.',
+    // Auth overlay (i18n coverage pass, 2026-11)
+    authHero:'BẬT <span class="t">NGUỒN.</span>',authSubIn:'Đăng nhập vào công cụ hiện trường của bạn',authSubUp:'Thiết lập công cụ hiện trường của bạn',
+    authTrialPill:'🎯 Miễn phí 14 ngày — không cần thẻ, hủy bất cứ lúc nào',authTabIn:'Đăng nhập',authTabUp:'Tạo tài khoản',
+    authEmail:'Email',authPassword:'Mật khẩu',authForgot:'Quên mật khẩu?',
+    authIAm:'Tôi là...',authRoleHome:'🏠 Chủ nhà',authRolePro:'🔧 Nhà thầu',
+    authFullName:'Họ và tên',authNamePh:'Tên của bạn',authPassUpPh:'Tối thiểu 8 ký tự',
+    authCompanyLbl:'Công ty <span style="font-weight:400;text-transform:none;color:#444">(không bắt buộc)</span>',authCompanyPh:'Công ty HVAC của bạn',authStartTrial:'Bắt đầu dùng thử miễn phí',
+    authTermsLine:'Khi tiếp tục, bạn đồng ý với <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Điều khoản</a> và <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Chính sách quyền riêng tư</a> của chúng tôi',
     demoTitle:'MỘT CHẨN ĐOÁN THẬT',demoQ:'Carrier 58STA, không nóng, khóa quá nhiệt. Khoang 182°F, tĩnh 3.2" wc, quạt 11A. Lỗi là gì và cách sửa?',demoTyping:'Mike đang đọc hệ thống…',demoCta:'Hỏi Mike chuyện của bạn →',demoClose:'Đóng'},
   fr:{reachCall:'APPELER',reachFace:'FACETIME',clear:'EFFACER',mikeName:'MIKE',headRole:'MAÎTRE TECH',headStatus:'TOUJOURS DISPO',diagHead:'PANNE IDENTIFIÉE',mentorSig:'— Mike',composer:'Demandez à Mike…',
     heroPro:'Intelligence de Terrain CVC Professionnelle',heroHome:'Votre clim ou chauffage ne marche pas ?',
@@ -10845,6 +10927,14 @@ var V2_I18N={
     btnNew:'🔄 Nouveau',ftTagPro:'Plateforme d’intelligence terrain',ftTagHome:'Sachez ce qui ne va pas avant d’appeler.',
     ftTerms:'Conditions',ftPrivacy:'Confidentialité',ftSupport:'Assistance',
     ftLegal:'Les diagnostics sont fournis à titre indicatif uniquement. Toute réparation impliquant du fluide frigorigène, du gaz ou de la haute tension doit être réalisée par un technicien HVAC agréé. Mike est une IA — pas un professionnel agréé. L’utilisation de ce Service vaut acceptation de nos Conditions d’utilisation.',
+    // Auth overlay (i18n coverage pass, 2026-11)
+    authHero:'SOUS <span class="t">TENSION.</span>',authSubIn:'Connectez-vous à votre instrument de terrain',authSubUp:'Configurez votre instrument de terrain',
+    authTrialPill:'🎯 14 jours gratuits — sans carte bancaire, annulable à tout moment',authTabIn:'Se connecter',authTabUp:'Créer un compte',
+    authEmail:'E-mail',authPassword:'Mot de passe',authForgot:'Mot de passe oublié ?',
+    authIAm:'Je suis...',authRoleHome:'🏠 Propriétaire',authRolePro:'🔧 Professionnel',
+    authFullName:'Nom complet',authNamePh:'Votre nom',authPassUpPh:'8 caractères minimum',
+    authCompanyLbl:'Société <span style="font-weight:400;text-transform:none;color:#444">(facultatif)</span>',authCompanyPh:'Votre société HVAC',authStartTrial:'Démarrer l’essai gratuit',
+    authTermsLine:'En continuant, vous acceptez nos <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Conditions</a> et notre <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Politique de confidentialité</a>',
     demoTitle:'UN VRAI DIAGNOSTIC',demoQ:'Carrier 58STA, pas de chauffe, verrouillage limite haute. Plénum à 182°F, statique 3.2" wc, soufflante 11A. Quelle est la panne et la réparation ?',demoTyping:'Mike lit le système…',demoCta:'Posez votre propre question à Mike →',demoClose:'Fermer'},
   pt:{reachCall:'LIGAR',reachFace:'FACETIME',clear:'LIMPAR',mikeName:'MIKE',headRole:'TÉCNICO MESTRE',headStatus:'SEMPRE ATIVO',diagHead:'FALHA IDENTIFICADA',mentorSig:'— Mike',composer:'Pergunte ao Mike…',
     heroPro:'Inteligência Profissional de Campo HVAC',heroHome:'Seu ar ou aquecimento não funciona?',
@@ -10894,6 +10984,14 @@ var V2_I18N={
     btnNew:'🔄 Novo',ftTagPro:'Plataforma de Inteligência de Campo',ftTagHome:'Saiba o que há de errado antes de ligar.',
     ftTerms:'Termos',ftPrivacy:'Privacidade',ftSupport:'Suporte',
     ftLegal:'Os diagnósticos servem apenas como orientação. Reparos envolvendo fluido refrigerante, gás ou alta tensão devem sempre ser feitos por um técnico de HVAC licenciado. O Mike é uma IA — não um prestador licenciado. O uso deste Serviço constitui aceitação dos nossos Termos de Serviço.',
+    // Auth overlay (i18n coverage pass, 2026-11)
+    authHero:'EQUIPAMENTO <span class="t">LIGADO.</span>',authSubIn:'Entre no seu instrumento de campo',authSubUp:'Configure seu instrumento de campo',
+    authTrialPill:'🎯 14 dias grátis — sem cartão, cancele quando quiser',authTabIn:'Entrar',authTabUp:'Criar conta',
+    authEmail:'E-mail',authPassword:'Senha',authForgot:'Esqueceu a senha?',
+    authIAm:'Eu sou...',authRoleHome:'🏠 Proprietário',authRolePro:'🔧 Profissional',
+    authFullName:'Nome completo',authNamePh:'Seu nome',authPassUpPh:'Mínimo de 8 caracteres',
+    authCompanyLbl:'Empresa <span style="font-weight:400;text-transform:none;color:#444">(opcional)</span>',authCompanyPh:'Sua empresa de HVAC',authStartTrial:'Começar teste grátis',
+    authTermsLine:'Ao continuar, você concorda com nossos <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Termos</a> e a <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Política de Privacidade</a>',
     demoTitle:'UM DIAGNÓSTICO REAL',demoQ:'Carrier 58STA, sem aquecer, bloqueio de limite alto. Pleno a 182°F, estática 3.2" wc, soprador 11A. Qual é a falha e o conserto?',demoTyping:'Mike está lendo o sistema…',demoCta:'Pergunte ao Mike o seu caso →',demoClose:'Fechar'}
 };
 function v2t(key){
@@ -16381,6 +16479,7 @@ function setLang(lang){
   var dd=document.getElementById('langDropdown');
   if(dd)dd.style.display='none';
   if(typeof applyV2Lang==='function')applyV2Lang(); // V2 chat header + composer in 6 langs
+  if(typeof window._trzAnnRepaint==='function')window._trzAnnRepaint(); // announcement banner follows the language
   // setMode() owns heroTitle/heroSub/modeDesc; those aren't [data-v2i18n] nodes, so a
   // language switch mid-session must re-paint them too (else they stay in the old lang).
   if(typeof mode!=='undefined'){

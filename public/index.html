@@ -2049,7 +2049,7 @@ body[data-mode="contractor"] .v2-hbtn.face .v2-hbtn-label,body[data-mode="contra
     <button type="button" onclick="mpDismissColdOpen()">Ask Mike a question &mdash; free</button>
     <!-- SIGN IN WAS BEHIND "GET STARTED". A tech who already had an account had to tap a
          button that says START to find SIGN IN. Both doors are visible now. -->
-    <button type="button" class="mpco-signin" onclick="mpDismissColdOpen();setTimeout(function(){openAuth('in');},380);">Already have an account? <b>Sign in</b></button>
+    <button type="button" class="mpco-signin" onclick="mpDismissColdOpen();setTimeout(function(){openAuth('in');},380);" data-v2i18n="lndSignIn">Already have an account? <b>Sign in</b></button>
   </div>
 </div>
 <div id="appLoader" style="position:fixed;inset:0;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s ease;pointer-events:none;">
@@ -3031,13 +3031,13 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
      expired session — had exactly two ways out, sign in or create an account. There is
      no account to sign into yet for most of them, so the front door became a dead end.
      Closing drops them back into the app, where texting Mike works without an account. -->
-<button id="authCloseBtn" type="button" aria-label="Close" onclick="closeAuth()"
+<button id="authCloseBtn" type="button" aria-label="Close" data-v2i18n-aria="ariaClose" onclick="closeAuth()"
   style="position:fixed;top:max(14px,env(safe-area-inset-top,14px));left:14px;z-index:10001;display:flex;align-items:center;justify-content:center;width:34px;height:34px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:999px;color:#fff;font-family:var(--font);font-size:17px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent;">&#10005;</button>
 <!-- C-BUG1/3 — pre-login language chooser. Without a trigger inside the auth overlay
      (z-index 9999), the nav lang switcher sits behind the overlay and is unreachable,
      so a non-English visitor can't pick a language before signing in. This globe opens
      the SAME #langDropdown (z-index lifted above the overlay) so it's a real chooser. -->
-<button id="authLangBtn" type="button" aria-label="Language" onclick="toggleLangMenu()"
+<button id="authLangBtn" type="button" aria-label="Language" data-v2i18n-aria="ariaLanguage" onclick="toggleLangMenu()"
   style="position:fixed;top:max(14px,env(safe-area-inset-top,14px));right:14px;z-index:10001;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 12px;color:#fff;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;">
   <span id="authLangFlag" aria-hidden="true">🌐</span><span id="authLangCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span>
 </button>
@@ -3434,31 +3434,31 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 
 <div class="profile-dd" id="profileDD">
 <div class="pdd-head"><div class="pdd-name" id="pddName">-</div><div class="pdd-email" id="pddEmail"></div><div class="pdd-plan" id="pddPlan">Trial</div></div>
-<div class="pdd-trial" id="pddTrial" style="display:none">🎯 <strong><span id="pddTrialDays">7</span> days</strong> left in free trial</div>
-<div class="pdd-usage"><div class="pdd-usage-lbl">Usage</div><div class="pdd-bar"><div class="pdd-bar-fill" id="pddBarFill" style="width:0%"></div></div><div class="pdd-usage-count" id="pddUsageCount">0 AI calls</div></div>
+<div class="pdd-trial" id="pddTrial" style="display:none"><span data-v2i18n="pddTrialPre">🎯 </span><strong><span id="pddTrialDays">7</span> <span data-v2i18n="pddTrialDaysWord">days</span></strong><span data-v2i18n="pddTrialPost"> left in free trial</span></div>
+<div class="pdd-usage"><div class="pdd-usage-lbl" data-v2i18n="pddUsage">Usage</div><div class="pdd-bar"><div class="pdd-bar-fill" id="pddBarFill" style="width:0%"></div></div><div class="pdd-usage-count" id="pddUsageCount">0 AI calls</div></div>
 <div class="pdd-menu">
   <div class="pdd-item" id="adminMenuItem" style="display:none;color:#3A8B8A;font-weight:700;" onclick="pddStats()"><span class="pdd-ic">📊</span>Mike HQ</div>
   <div class="pdd-item" onclick="closeProfileDD();toggleLangMenu();"><span class="pdd-ic">🌐</span><span data-v2i18n="qaLanguage">Language</span></div>
-  <div class="pdd-item" onclick="pddProfile()"><span class="pdd-ic">👤</span>Profile Settings</div>
-  <div class="pdd-item" id="pddBillingItem" onclick="pddBilling()"><span class="pdd-ic">💳</span>Billing &amp; Plan</div>
-  <div class="pdd-item" onclick="pddWhatsNew()"><span class="pdd-ic">🔔</span>What's New</div>
-  <div class="pdd-item" data-contractor-only onclick="pddPerformance()"><span class="pdd-ic">📊</span>My Performance</div>
-  <div class="pdd-item" data-contractor-only onclick="pddInvoice()"><span class="pdd-ic">🧾</span>Invoice Generator</div>
-  <div class="pdd-item" data-contractor-only onclick="pddCustomers()"><span class="pdd-ic">👥</span>Customers</div>
-  <div class="pdd-item" data-contractor-only onclick="pddRefLog()"><span class="pdd-ic">🧪</span>Refrigerant Log</div>
-  <div class="pdd-item" onclick="openSavedDiagrams()"><span class="pdd-ic">📐</span>Saved Diagrams</div>
-  <div class="pdd-item" onclick="pddHelp()"><span class="pdd-ic">❓</span>Help</div>
-  <div class="pdd-item" onclick="toggleDarkMode()"><span class="pdd-ic">🌙</span>Dark Mode</div>
+  <div class="pdd-item" onclick="pddProfile()"><span class="pdd-ic">👤</span><span data-v2i18n="pddProfile">Profile Settings</span></div>
+  <div class="pdd-item" id="pddBillingItem" onclick="pddBilling()"><span class="pdd-ic">💳</span><span data-v2i18n="pddBilling">Billing &amp; Plan</span></div>
+  <div class="pdd-item" onclick="pddWhatsNew()"><span class="pdd-ic">🔔</span><span data-v2i18n="pddWhatsNew">What's New</span></div>
+  <div class="pdd-item" data-contractor-only onclick="pddPerformance()"><span class="pdd-ic">📊</span><span data-v2i18n="pddPerformance">My Performance</span></div>
+  <div class="pdd-item" data-contractor-only onclick="pddInvoice()"><span class="pdd-ic">🧾</span><span data-v2i18n="pddInvoice">Invoice Generator</span></div>
+  <div class="pdd-item" data-contractor-only onclick="pddCustomers()"><span class="pdd-ic">👥</span><span data-v2i18n="pddCustomers">Customers</span></div>
+  <div class="pdd-item" data-contractor-only onclick="pddRefLog()"><span class="pdd-ic">🧪</span><span data-v2i18n="pddRefLog">Refrigerant Log</span></div>
+  <div class="pdd-item" onclick="openSavedDiagrams()"><span class="pdd-ic">📐</span><span data-v2i18n="pddDiagrams">Saved Diagrams</span></div>
+  <div class="pdd-item" onclick="pddHelp()"><span class="pdd-ic">❓</span><span data-v2i18n="pddHelp">Help</span></div>
+  <div class="pdd-item" onclick="toggleDarkMode()"><span class="pdd-ic">🌙</span><span data-v2i18n="pddDark">Dark Mode</span></div>
   <div class="pdd-sep"></div>
-  <div class="pdd-item" onclick="clearUserMemory()" style="color:#9499B0;"><span class="pdd-ic">🧹</span>Clear My Memory</div>
+  <div class="pdd-item" onclick="clearUserMemory()" style="color:#9499B0;"><span class="pdd-ic">🧹</span><span data-v2i18n="pddClearMem">Clear My Memory</span></div>
   <!-- A VISITOR WAS OFFERED A WAY TO SIGN *OUT* AND NO WAY TO SIGN IN. Someone who tried
        the free questions and wanted an account had nowhere to go from this menu — the only
        auth item said Sign Out. Brandon, 2026-09-02: "to go to a sign in you have to sign
        out which makes no sense." Which item shows is decided in updateProfileUI(). -->
-  <div class="pdd-item" id="pddSignIn" style="display:none;" onclick="closeProfileDD();openAuth('in');"><span class="pdd-ic">🔑</span>Sign In</div>
-  <div class="pdd-item" id="pddCreate" style="display:none;" onclick="closeProfileDD();openAuth('up');"><span class="pdd-ic">✨</span>Create Account</div>
-  <div class="pdd-item pdd-danger" id="pddSignOut" onclick="authSignOut()"><span class="pdd-ic">🚪</span>Sign Out</div>
-  <div class="pdd-item pdd-danger" id="pddDelete" onclick="deleteAccount()"><span class="pdd-ic">🗑️</span>Delete Account</div>
+  <div class="pdd-item" id="pddSignIn" style="display:none;" onclick="closeProfileDD();openAuth('in');"><span class="pdd-ic">🔑</span><span data-v2i18n="authTabIn">Sign In</span></div>
+  <div class="pdd-item" id="pddCreate" style="display:none;" onclick="closeProfileDD();openAuth('up');"><span class="pdd-ic">✨</span><span data-v2i18n="authTabUp">Create Account</span></div>
+  <div class="pdd-item pdd-danger" id="pddSignOut" onclick="authSignOut()"><span class="pdd-ic">🚪</span><span data-v2i18n="pddSignOut">Sign Out</span></div>
+  <div class="pdd-item pdd-danger" id="pddDelete" onclick="deleteAccount()"><span class="pdd-ic">🗑️</span><span data-v2i18n="pddDelete">Delete Account</span></div>
 </div>
 </div>
 <div id="trialBanner"><span>🎯 <strong><span id="trialDaysLeft">14</span> days</strong> left in your free trial</span><button class="trial-up-btn" onclick="showPaywall()">Manage</button></div>
@@ -3477,8 +3477,8 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn" data-homeowner-only><span id="langFlag" aria-hidden="true">🌐</span><span id="langCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span></button>
       <button onclick="newChat()" class="nav-icon-btn" id="navRefreshBtn" data-homeowner-only title="New chat — full intro in current language">&#x21BB;</button>
       <button class="nav-profile-btn" id="navProfileBtn" data-homeowner-only onclick="toggleProfileDD()">?</button>
-      <button class="nav-globe" data-contractor-only aria-label="Language" onclick="toggleLangMenu()"><i data-lucide="globe"></i><span id="navGlobeLangCode" class="nav-globe-lc">EN</span></button>
-      <button class="nav-more" data-contractor-only aria-label="Profile" onclick="toggleProfileDD()"><i data-lucide="circle-user"></i></button>
+      <button class="nav-globe" data-contractor-only aria-label="Language" data-v2i18n-aria="ariaLanguage" onclick="toggleLangMenu()"><i data-lucide="globe"></i><span id="navGlobeLangCode" class="nav-globe-lc">EN</span></button>
+      <button class="nav-more" data-contractor-only aria-label="Profile" data-v2i18n-aria="ariaProfile" onclick="toggleProfileDD()"><i data-lucide="circle-user"></i></button>
     </div>
   </div>
 </nav>
@@ -3580,9 +3580,9 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 
     <!-- THREE WAYS TO REACH MIKE -->
     <div class="v2-reach">
-      <div class="v2-reach-mode call" role="button" tabindex="0" onclick="v2Reach('call')" aria-label="Call Mike"><span class="ic">&#x1F4DE;</span><div class="t" data-v2i18n="reachCall">CALL</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachCall">Hands-free</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachCall">Talk it through</div></div>
-      <div class="v2-reach-mode face" role="button" tabindex="0" onclick="v2Reach('face')" aria-label="FaceTime Mike"><span class="ic">&#x1F4F9;</span><div class="t" data-v2i18n="reachFace">FACETIME</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachFace">See it. Sell it.</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachFace">Show him the unit</div></div>
-      <div class="v2-reach-mode text" role="button" tabindex="0" onclick="v2Reach('text')" aria-label="Text Mike"><span class="ic">&#x1F4AC;</span><div class="t" data-v2i18n="lndReachText">TEXT</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachText">Daily thread</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachText">Snap a photo</div></div>
+      <div class="v2-reach-mode call" role="button" tabindex="0" onclick="v2Reach('call')" aria-label="Call Mike" data-v2i18n-aria="ariaCallMike"><span class="ic">&#x1F4DE;</span><div class="t" data-v2i18n="reachCall">CALL</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachCall">Hands-free</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachCall">Talk it through</div></div>
+      <div class="v2-reach-mode face" role="button" tabindex="0" onclick="v2Reach('face')" aria-label="FaceTime Mike" data-v2i18n-aria="ariaFaceMike"><span class="ic">&#x1F4F9;</span><div class="t" data-v2i18n="reachFace">FACETIME</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachFace">See it. Sell it.</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachFace">Show him the unit</div></div>
+      <div class="v2-reach-mode text" role="button" tabindex="0" onclick="v2Reach('text')" aria-label="Text Mike" data-v2i18n-aria="ariaTextMike"><span class="ic">&#x1F4AC;</span><div class="t" data-v2i18n="lndReachText">TEXT</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachText">Daily thread</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachText">Snap a photo</div></div>
     </div>
 
     <!-- CTA DOCK -->
@@ -3590,7 +3590,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <button class="v2-cta prime" onclick="v2LandingAsk()"><span class="v2-aud-tech" data-v2i18n="lndTechCtaPrime">Ask Mike anything →</span><span class="v2-aud-home" data-v2i18n="lndHomeCtaPrime">Ask Mike anything →</span></button>
       <button class="v2-cta ghost v2-aud-tech" onclick="v2LandingDemo()" data-v2i18n="lndTechCtaGhost">See a real diagnosis →</button>
       <button class="v2-cta ghost v2-aud-home" onclick="findLocalTech()" data-v2i18n="lndHomeCtaGhost">Find a trusted local tech</button>
-      <button class="v2-lnd-signin" onclick="openAuth('in')">Already have an account? <b>Sign in</b></button>
+      <button class="v2-lnd-signin" onclick="openAuth('in')" data-v2i18n="lndSignIn">Already have an account? <b>Sign in</b></button>
       <div class="v2-lnd-foot"><span class="v2-aud-tech" data-v2i18n="lndTechFoot">EPA 608 · NATE · ASHRAE · 25 YEARS ON EVERY SYSTEM</span><span class="v2-aud-home" data-v2i18n="lndHomeFoot">HONEST READ · NO GUESSWORK · NEVER IN THE DARK</span></div>
     </div>
   </div>
@@ -3731,7 +3731,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         </div>
         <div class="mp-name">
           <h2>MIKE</h2>
-          <div class="mp-sub"><span class="lt">STATUS &middot;</span> ON THE LINE <span class="lt">&middot;</span> 25 YRS</div>
+          <div class="mp-sub" data-v2i18n="mpStatus"><span class="lt">STATUS &middot;</span> ON THE LINE <span class="lt">&middot;</span> 25 YRS</div>
         </div>
         <div class="mp-creds">
           <div class="mp-cred hot">NATE CERT</div><div class="mp-cred-sep"></div>
@@ -3739,20 +3739,20 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           <div class="mp-cred">MASTER TECH</div>
         </div>
         <div class="mp-reach">
-          <button class="mp-reach-btn call" onclick="if(!mpNeedAccount('call')){mpEnterChat();toggleVoiceMode();}" aria-label="Call Mike — hands-free voice"><span class="mp-rico">&#x1F4DE;</span>CALL</button>
-          <button class="mp-reach-btn chat" onclick="mpEnterChat();setTimeout(function(){var i=document.getElementById('chatInput');if(i)i.focus();},60);" aria-label="Text Mike — chat"><span class="mp-rico">&#x1F4AC;</span>TEXT</button>
-          <button class="mp-reach-btn face" onclick="if(!mpNeedAccount('face'))checkCameraAccess();" aria-label="FaceTime Mike — live visual"><span class="mp-rico">&#x1F4F7;</span>FACETIME</button>
+          <button class="mp-reach-btn call" onclick="if(!mpNeedAccount('call')){mpEnterChat();toggleVoiceMode();}" aria-label="Call Mike — hands-free voice" data-v2i18n-aria="ariaCallMike"><span class="mp-rico">&#x1F4DE;</span><span data-v2i18n="reachCall">CALL</span></button>
+          <button class="mp-reach-btn chat" onclick="mpEnterChat();setTimeout(function(){var i=document.getElementById('chatInput');if(i)i.focus();},60);" aria-label="Text Mike — chat" data-v2i18n-aria="ariaTextMike"><span class="mp-rico">&#x1F4AC;</span><span data-v2i18n="lndReachText">TEXT</span></button>
+          <button class="mp-reach-btn face" onclick="if(!mpNeedAccount('face'))checkCameraAccess();" aria-label="FaceTime Mike — live visual" data-v2i18n-aria="ariaFaceMike"><span class="mp-rico">&#x1F4F7;</span><span data-v2i18n="reachFace">FACETIME</span></button>
         </div>
         <div id="jobBar" class="job-bar"></div>
       </div>
-      <div class="mp-rail"><div class="mp-rail-label">&mdash; MIKE'S TOOLBELT &mdash;</div></div>
+      <div class="mp-rail"><div class="mp-rail-label" data-v2i18n="mpToolbelt">&mdash; MIKE'S TOOLBELT &mdash;</div></div>
       <div class="mp-belt">
-        <button class="mp-tool parts" onclick="mpOpenTool('parts',this)"><div class="mp-tool-ico">&#x1F529;</div><div class="mp-tool-name">Parts</div><div class="mp-tool-sub">Lookup &amp; order</div></button>
-        <button class="mp-tool warranty" onclick="mpOpenTool('warranty',this)"><div class="mp-tool-ico">&#x1F6E1;</div><div class="mp-tool-name">Warranty</div><div class="mp-tool-sub">Check coverage</div></button>
-        <button class="mp-tool wiring" onclick="mpOpenTool('wiring',this)"><div class="mp-tool-ico">&#x26A1;</div><div class="mp-tool-name">Wiring</div><div class="mp-tool-sub">Diagrams</div></button>
-        <button class="mp-tool jobs" onclick="mpOpenTool('jobs',this)"><div class="mp-tool-ico">&#x1F4CB;</div><div class="mp-tool-name">Close Job</div><div class="mp-tool-sub">Invoice &amp; sign-off</div></button>
-        <button class="mp-tool manual" onclick="mpOpenTool('manual',this)"><div class="mp-tool-ico">&#x1F4D6;</div><div class="mp-tool-name">Manuals</div><div class="mp-tool-sub">Tech docs</div></button>
-        <button class="mp-tool diagnose" onclick="mpOpenTool('diagnose',this)"><div class="mp-tool-ico">&#x1F52C;</div><div class="mp-tool-name">Diagnose</div><div class="mp-tool-sub">Fault codes</div></button>
+        <button class="mp-tool parts" onclick="mpOpenTool('parts',this)"><div class="mp-tool-ico">&#x1F529;</div><div class="mp-tool-name" data-v2i18n="mpTParts">Parts</div><div class="mp-tool-sub" data-v2i18n="mpTPartsSub">Lookup &amp; order</div></button>
+        <button class="mp-tool warranty" onclick="mpOpenTool('warranty',this)"><div class="mp-tool-ico">&#x1F6E1;</div><div class="mp-tool-name" data-v2i18n="mpTWarranty">Warranty</div><div class="mp-tool-sub" data-v2i18n="mpTWarrantySub">Check coverage</div></button>
+        <button class="mp-tool wiring" onclick="mpOpenTool('wiring',this)"><div class="mp-tool-ico">&#x26A1;</div><div class="mp-tool-name" data-v2i18n="mpTWiring">Wiring</div><div class="mp-tool-sub" data-v2i18n="mpTWiringSub">Diagrams</div></button>
+        <button class="mp-tool jobs" onclick="mpOpenTool('jobs',this)"><div class="mp-tool-ico">&#x1F4CB;</div><div class="mp-tool-name" data-v2i18n="mpTJobs">Close Job</div><div class="mp-tool-sub" data-v2i18n="mpTJobsSub">Invoice &amp; sign-off</div></button>
+        <button class="mp-tool manual" onclick="mpOpenTool('manual',this)"><div class="mp-tool-ico">&#x1F4D6;</div><div class="mp-tool-name" data-v2i18n="mpTManual">Manuals</div><div class="mp-tool-sub" data-v2i18n="mpTManualSub">Tech docs</div></button>
+        <button class="mp-tool diagnose" onclick="mpOpenTool('diagnose',this)"><div class="mp-tool-ico">&#x1F52C;</div><div class="mp-tool-name" data-v2i18n="mpTDiag">Diagnose</div><div class="mp-tool-sub" data-v2i18n="mpTDiagSub">Fault codes</div></button>
       </div>
     </div>
 
@@ -3762,7 +3762,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <!-- MIKE HEADER — V2 treatment: no face/avatar, teal presence pulse, Call + FaceTime one tap -->
       <div class="chat-header v2-chat-header">
         <div style="display:flex;align-items:center;gap:11px;flex:1;min-width:0;">
-          <button class="mp-back" onclick="mpGoHome()" aria-label="Back to Mike's home" title="Back to home" style="display:none;">&#x2039;</button>
+          <button class="mp-back" onclick="mpGoHome()" aria-label="Back to Mike's home" data-v2i18n-aria="ariaBack" title="Back to home" style="display:none;">&#x2039;</button>
           <div class="v2-hpres">
             <div class="ring"><img src="/icon-512.png" alt="Mike" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"/></div>
             <div class="v2-dot pd"></div>
@@ -5267,13 +5267,13 @@ function updateProfileUI(){
   var pn=document.getElementById('pddName');if(pn)pn.textContent=currentUser.name||'';
   var pe=document.getElementById('pddEmail');if(pe)pe.textContent=currentUser.email||'';
   var pp=document.getElementById('pddPlan');
-  var pm={trial:'Trial',starter:'Starter',pro:'Pro',team:'Team',enterprise:'Enterprise',admin:'Admin',homeowner:'Home',home:'Home',beta:'Beta'};
+  var pm={trial:v2t('pddPlanTrial'),starter:'Starter',pro:'Pro',team:'Team',enterprise:'Enterprise',admin:'Admin',homeowner:'Home',home:'Home',beta:'Beta'};
   // Don't default homeowners to "Pro" — that's a tech-tier label leaking onto consumers.
   var _planFallback=(currentUser.role==='homeowner')?'Home':'Pro';
   if(pp)pp.textContent=(currentUser.isAdmin?'👑 ':'')+( pm[currentUser.plan]||_planFallback);
   var u=currentUser.usageCount||0;
   var bf=document.getElementById('pddBarFill');if(bf)bf.style.width=Math.min(u/500*100,100)+'%';
-  var uc=document.getElementById('pddUsageCount');if(uc)uc.textContent=u+' AI calls this month';
+  var uc=document.getElementById('pddUsageCount');if(uc)uc.textContent=v2t('pddCallsMonth').replace('{n}',u);
   var ai=document.getElementById('adminMenuItem');
   if(ai)ai.style.display=(currentUser.role==='admin'||currentUser.role==='owner'||currentUser.plan==='admin'||currentUser.isAdmin)?'flex':'none';
   loadMyCoachingHistory();
@@ -10707,6 +10707,21 @@ var V2_I18N={
     authFullName:'Full Name',authNamePh:'Your name',authPassUpPh:'Min 8 characters',
     authCompanyLbl:'Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span>',authCompanyPh:'Your HVAC company',authStartTrial:'Start Free Trial',
     authTermsLine:'By continuing you agree to our <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Terms</a> and <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Privacy Policy</a>',
+    // Tech toolbelt home + profile drawer + sign-in CTA (i18n coverage pass, 2026-11)
+    mpStatus:'<span class="lt">STATUS &middot;</span> ON THE LINE <span class="lt">&middot;</span> 25 YRS',mpToolbelt:'— MIKE\'S TOOLBELT —',mpTParts:'Parts',
+    mpTPartsSub:'Lookup & order',mpTWarranty:'Warranty',mpTWarrantySub:'Check coverage',
+    mpTWiring:'Wiring',mpTWiringSub:'Diagrams',mpTJobs:'Close Job',
+    mpTJobsSub:'Invoice & sign-off',mpTManual:'Manuals',mpTManualSub:'Tech docs',
+    mpTDiag:'Diagnose',mpTDiagSub:'Fault codes',pddPlanTrial:'Trial',
+    pddTrialPre:'🎯 ',pddTrialDaysWord:'days',pddTrialPost:' left in free trial',
+    pddUsage:'Usage',pddCallsMonth:'{n} AI calls this month',pddProfile:'Profile Settings',
+    pddBilling:'Billing & Plan',pddWhatsNew:'What\'s New',pddPerformance:'My Performance',
+    pddInvoice:'Invoice Generator',pddCustomers:'Customers',pddRefLog:'Refrigerant Log',
+    pddDiagrams:'Saved Diagrams',pddHelp:'Help',pddDark:'Dark Mode',
+    pddClearMem:'Clear My Memory',pddSignOut:'Sign Out',pddDelete:'Delete Account',
+    lndSignIn:'Already have an account? <b>Sign in</b>',ariaCallMike:'Call Mike — hands-free voice',ariaTextMike:'Text Mike — chat',
+    ariaFaceMike:'FaceTime Mike — live visual',ariaLanguage:'Language',ariaProfile:'Profile',
+    ariaClose:'Close',ariaBack:'Back to Mike\'s home',
     demoTitle:'A REAL DIAGNOSIS',demoQ:'Carrier 58STA, no heat, high-limit lockout. Plenum\'s 182°F, static 3.2" wc, blower 11A. What\'s the fault and the fix?',demoTyping:'Mike is reading the system…',demoCta:'Ask Mike your own →',demoClose:'Close'},
   es:{reachCall:'LLAMAR',reachFace:'FACETIME',clear:'BORRAR',mikeName:'MIKE',headRole:'TÉCNICO MAESTRO',headStatus:'SIEMPRE DISPONIBLE',diagHead:'FALLA IDENTIFICADA',mentorSig:'— Mike',composer:'Pregúntale a Mike…',
     heroPro:'Inteligencia Profesional de Campo HVAC',heroHome:'¿Tu aire o calefacción no funciona?',
@@ -10764,6 +10779,21 @@ var V2_I18N={
     authFullName:'Nombre completo',authNamePh:'Tu nombre',authPassUpPh:'Mínimo 8 caracteres',
     authCompanyLbl:'Empresa <span style="font-weight:400;text-transform:none;color:#444">(opcional)</span>',authCompanyPh:'Tu empresa de HVAC',authStartTrial:'Comenzar prueba gratis',
     authTermsLine:'Al continuar aceptas nuestros <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Términos</a> y nuestra <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Política de Privacidad</a>',
+    // Tech toolbelt home + profile drawer + sign-in CTA (i18n coverage pass, 2026-11)
+    mpStatus:'<span class="lt">ESTADO &middot;</span> EN LÍNEA <span class="lt">&middot;</span> 25 AÑOS',mpToolbelt:'— HERRAMIENTAS DE MIKE —',mpTParts:'Piezas',
+    mpTPartsSub:'Buscar y pedir',mpTWarranty:'Garantía',mpTWarrantySub:'Verificar cobertura',
+    mpTWiring:'Cableado',mpTWiringSub:'Diagramas',mpTJobs:'Cerrar Trabajo',
+    mpTJobsSub:'Factura y cierre',mpTManual:'Manuales',mpTManualSub:'Docs técnicos',
+    mpTDiag:'Diagnosticar',mpTDiagSub:'Códigos de falla',pddPlanTrial:'Prueba',
+    pddTrialPre:'🎯 Te quedan ',pddTrialDaysWord:'días',pddTrialPost:' de prueba gratis',
+    pddUsage:'Uso',pddCallsMonth:'{n} consultas de IA este mes',pddProfile:'Configuración de Perfil',
+    pddBilling:'Facturación y Plan',pddWhatsNew:'Novedades',pddPerformance:'Mi Desempeño',
+    pddInvoice:'Generador de Facturas',pddCustomers:'Clientes',pddRefLog:'Registro de Refrigerante',
+    pddDiagrams:'Diagramas Guardados',pddHelp:'Ayuda',pddDark:'Modo Oscuro',
+    pddClearMem:'Borrar Mi Memoria',pddSignOut:'Cerrar Sesión',pddDelete:'Eliminar Cuenta',
+    lndSignIn:'¿Ya tienes cuenta? <b>Inicia sesión</b>',ariaCallMike:'Llamar a Mike — voz manos libres',ariaTextMike:'Escribirle a Mike — chat',
+    ariaFaceMike:'FaceTime con Mike — video en vivo',ariaLanguage:'Idioma',ariaProfile:'Perfil',
+    ariaClose:'Cerrar',ariaBack:'Volver al inicio de Mike',
     demoTitle:'UN DIAGNÓSTICO REAL',demoQ:'Carrier 58STA, sin calor, bloqueo por límite alto. Pleno a 182°F, estática 3.2" wc, motor 11A. ¿Cuál es la falla y el arreglo?',demoTyping:'Mike está leyendo el sistema…',demoCta:'Pregúntale a Mike lo tuyo →',demoClose:'Cerrar'},
   zh:{reachCall:'通话',reachFace:'视频',clear:'清除',mikeName:'MIKE',headRole:'高级技师',headStatus:'随时在线',diagHead:'已识别故障',mentorSig:'— Mike',composer:'问 Mike 任何问题…',
     heroPro:'专业暖通现场智能',heroHome:'您的空调或暖气坏了吗？',
@@ -10821,6 +10851,21 @@ var V2_I18N={
     authFullName:'姓名',authNamePh:'你的姓名',authPassUpPh:'至少8个字符',
     authCompanyLbl:'公司 <span style="font-weight:400;text-transform:none;color:#444">（可选）</span>',authCompanyPh:'你的HVAC公司',authStartTrial:'开始免费试用',
     authTermsLine:'继续即表示你同意我们的<a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">条款</a>和<a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">隐私政策</a>',
+    // Tech toolbelt home + profile drawer + sign-in CTA (i18n coverage pass, 2026-11)
+    mpStatus:'<span class="lt">状态 &middot;</span> 在线待命 <span class="lt">&middot;</span> 25年经验',mpToolbelt:'— MIKE的工具箱 —',mpTParts:'配件',
+    mpTPartsSub:'查询和订购',mpTWarranty:'保修',mpTWarrantySub:'查询保修范围',
+    mpTWiring:'接线',mpTWiringSub:'接线图',mpTJobs:'完工',
+    mpTJobsSub:'开票与签收',mpTManual:'手册',mpTManualSub:'技术文档',
+    mpTDiag:'诊断',mpTDiagSub:'故障代码',pddPlanTrial:'试用',
+    pddTrialPre:'🎯 免费试用还剩 ',pddTrialDaysWord:'天',pddTrialPost:'',
+    pddUsage:'用量',pddCallsMonth:'本月 {n} 次AI调用',pddProfile:'个人资料',
+    pddBilling:'账单与套餐',pddWhatsNew:'新功能',pddPerformance:'我的表现',
+    pddInvoice:'发票生成器',pddCustomers:'客户',pddRefLog:'制冷剂记录',
+    pddDiagrams:'已存图纸',pddHelp:'帮助',pddDark:'深色模式',
+    pddClearMem:'清除我的记忆',pddSignOut:'退出登录',pddDelete:'删除账户',
+    lndSignIn:'已有账户？<b>登录</b>',ariaCallMike:'呼叫Mike — 免提语音',ariaTextMike:'给Mike发消息 — 聊天',
+    ariaFaceMike:'和Mike视频 — 实时画面',ariaLanguage:'语言',ariaProfile:'个人资料',
+    ariaClose:'关闭',ariaBack:'返回Mike主页',
     demoTitle:'真实诊断',demoQ:'Carrier 58STA，不制热，高温限位锁定。风室 182°F，静压 3.2" wc，风机 11A。故障是什么，怎么修？',demoTyping:'Mike 正在读取系统…',demoCta:'问 Mike 你自己的问题 →',demoClose:'关闭'},
   vi:{reachCall:'GỌI',reachFace:'FACETIME',clear:'XÓA',mikeName:'MIKE',headRole:'THỢ CẢ',headStatus:'LUÔN SẴN SÀNG',diagHead:'ĐÃ XÁC ĐỊNH LỖI',mentorSig:'— Mike',composer:'Hỏi Mike bất kỳ điều gì…',
     heroPro:'Trí Tuệ Hiện Trường HVAC Chuyên Nghiệp',heroHome:'Máy lạnh hay lò sưởi của bạn không chạy?',
@@ -10878,6 +10923,21 @@ var V2_I18N={
     authFullName:'Họ và tên',authNamePh:'Tên của bạn',authPassUpPh:'Tối thiểu 8 ký tự',
     authCompanyLbl:'Công ty <span style="font-weight:400;text-transform:none;color:#444">(không bắt buộc)</span>',authCompanyPh:'Công ty HVAC của bạn',authStartTrial:'Bắt đầu dùng thử miễn phí',
     authTermsLine:'Khi tiếp tục, bạn đồng ý với <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Điều khoản</a> và <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Chính sách quyền riêng tư</a> của chúng tôi',
+    // Tech toolbelt home + profile drawer + sign-in CTA (i18n coverage pass, 2026-11)
+    mpStatus:'<span class="lt">TRẠNG THÁI &middot;</span> ĐANG TRỰC <span class="lt">&middot;</span> 25 NĂM',mpToolbelt:'— HỘP ĐỒ NGHỀ CỦA MIKE —',mpTParts:'Linh kiện',
+    mpTPartsSub:'Tra cứu & đặt hàng',mpTWarranty:'Bảo hành',mpTWarrantySub:'Kiểm tra phạm vi',
+    mpTWiring:'Đi dây',mpTWiringSub:'Sơ đồ điện',mpTJobs:'Chốt việc',
+    mpTJobsSub:'Hóa đơn & nghiệm thu',mpTManual:'Sổ tay',mpTManualSub:'Tài liệu kỹ thuật',
+    mpTDiag:'Chẩn đoán',mpTDiagSub:'Mã lỗi',pddPlanTrial:'Dùng thử',
+    pddTrialPre:'🎯 Còn ',pddTrialDaysWord:'ngày',pddTrialPost:' dùng thử miễn phí',
+    pddUsage:'Mức dùng',pddCallsMonth:'{n} lượt AI tháng này',pddProfile:'Cài đặt hồ sơ',
+    pddBilling:'Thanh toán & Gói',pddWhatsNew:'Có gì mới',pddPerformance:'Hiệu suất của tôi',
+    pddInvoice:'Tạo hóa đơn',pddCustomers:'Khách hàng',pddRefLog:'Nhật ký môi chất lạnh',
+    pddDiagrams:'Sơ đồ đã lưu',pddHelp:'Trợ giúp',pddDark:'Chế độ tối',
+    pddClearMem:'Xóa bộ nhớ của tôi',pddSignOut:'Đăng xuất',pddDelete:'Xóa tài khoản',
+    lndSignIn:'Đã có tài khoản? <b>Đăng nhập</b>',ariaCallMike:'Gọi Mike — đàm thoại rảnh tay',ariaTextMike:'Nhắn tin cho Mike — trò chuyện',
+    ariaFaceMike:'FaceTime với Mike — hình ảnh trực tiếp',ariaLanguage:'Ngôn ngữ',ariaProfile:'Hồ sơ',
+    ariaClose:'Đóng',ariaBack:'Về trang chính của Mike',
     demoTitle:'MỘT CHẨN ĐOÁN THẬT',demoQ:'Carrier 58STA, không nóng, khóa quá nhiệt. Khoang 182°F, tĩnh 3.2" wc, quạt 11A. Lỗi là gì và cách sửa?',demoTyping:'Mike đang đọc hệ thống…',demoCta:'Hỏi Mike chuyện của bạn →',demoClose:'Đóng'},
   fr:{reachCall:'APPELER',reachFace:'FACETIME',clear:'EFFACER',mikeName:'MIKE',headRole:'MAÎTRE TECH',headStatus:'TOUJOURS DISPO',diagHead:'PANNE IDENTIFIÉE',mentorSig:'— Mike',composer:'Demandez à Mike…',
     heroPro:'Intelligence de Terrain CVC Professionnelle',heroHome:'Votre clim ou chauffage ne marche pas ?',
@@ -10935,6 +10995,21 @@ var V2_I18N={
     authFullName:'Nom complet',authNamePh:'Votre nom',authPassUpPh:'8 caractères minimum',
     authCompanyLbl:'Société <span style="font-weight:400;text-transform:none;color:#444">(facultatif)</span>',authCompanyPh:'Votre société HVAC',authStartTrial:'Démarrer l’essai gratuit',
     authTermsLine:'En continuant, vous acceptez nos <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Conditions</a> et notre <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Politique de confidentialité</a>',
+    // Tech toolbelt home + profile drawer + sign-in CTA (i18n coverage pass, 2026-11)
+    mpStatus:'<span class="lt">STATUT &middot;</span> EN LIGNE <span class="lt">&middot;</span> 25 ANS',mpToolbelt:'— LES OUTILS DE MIKE —',mpTParts:'Pièces',
+    mpTPartsSub:'Recherche & commande',mpTWarranty:'Garantie',mpTWarrantySub:'Vérifier la couverture',
+    mpTWiring:'Câblage',mpTWiringSub:'Schémas',mpTJobs:'Clôturer',
+    mpTJobsSub:'Facture & signature',mpTManual:'Manuels',mpTManualSub:'Docs techniques',
+    mpTDiag:'Diagnostic',mpTDiagSub:'Codes défaut',pddPlanTrial:'Essai',
+    pddTrialPre:'🎯 ',pddTrialDaysWord:'jours',pddTrialPost:' d’essai gratuit restants',
+    pddUsage:'Utilisation',pddCallsMonth:'{n} requêtes IA ce mois-ci',pddProfile:'Paramètres du profil',
+    pddBilling:'Facturation & forfait',pddWhatsNew:'Nouveautés',pddPerformance:'Mes performances',
+    pddInvoice:'Générateur de factures',pddCustomers:'Clients',pddRefLog:'Registre frigorigène',
+    pddDiagrams:'Schémas enregistrés',pddHelp:'Aide',pddDark:'Mode sombre',
+    pddClearMem:'Effacer ma mémoire',pddSignOut:'Se déconnecter',pddDelete:'Supprimer le compte',
+    lndSignIn:'Déjà un compte ? <b>Connectez-vous</b>',ariaCallMike:'Appeler Mike — voix mains libres',ariaTextMike:'Écrire à Mike — chat',
+    ariaFaceMike:'FaceTime avec Mike — visuel en direct',ariaLanguage:'Langue',ariaProfile:'Profil',
+    ariaClose:'Fermer',ariaBack:'Retour à l’accueil de Mike',
     demoTitle:'UN VRAI DIAGNOSTIC',demoQ:'Carrier 58STA, pas de chauffe, verrouillage limite haute. Plénum à 182°F, statique 3.2" wc, soufflante 11A. Quelle est la panne et la réparation ?',demoTyping:'Mike lit le système…',demoCta:'Posez votre propre question à Mike →',demoClose:'Fermer'},
   pt:{reachCall:'LIGAR',reachFace:'FACETIME',clear:'LIMPAR',mikeName:'MIKE',headRole:'TÉCNICO MESTRE',headStatus:'SEMPRE ATIVO',diagHead:'FALHA IDENTIFICADA',mentorSig:'— Mike',composer:'Pergunte ao Mike…',
     heroPro:'Inteligência Profissional de Campo HVAC',heroHome:'Seu ar ou aquecimento não funciona?',
@@ -10992,6 +11067,21 @@ var V2_I18N={
     authFullName:'Nome completo',authNamePh:'Seu nome',authPassUpPh:'Mínimo de 8 caracteres',
     authCompanyLbl:'Empresa <span style="font-weight:400;text-transform:none;color:#444">(opcional)</span>',authCompanyPh:'Sua empresa de HVAC',authStartTrial:'Começar teste grátis',
     authTermsLine:'Ao continuar, você concorda com nossos <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Termos</a> e a <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Política de Privacidade</a>',
+    // Tech toolbelt home + profile drawer + sign-in CTA (i18n coverage pass, 2026-11)
+    mpStatus:'<span class="lt">STATUS &middot;</span> NA LINHA <span class="lt">&middot;</span> 25 ANOS',mpToolbelt:'— FERRAMENTAS DO MIKE —',mpTParts:'Peças',
+    mpTPartsSub:'Buscar e pedir',mpTWarranty:'Garantia',mpTWarrantySub:'Verificar cobertura',
+    mpTWiring:'Fiação',mpTWiringSub:'Diagramas',mpTJobs:'Fechar Serviço',
+    mpTJobsSub:'Fatura e assinatura',mpTManual:'Manuais',mpTManualSub:'Docs técnicos',
+    mpTDiag:'Diagnosticar',mpTDiagSub:'Códigos de falha',pddPlanTrial:'Teste',
+    pddTrialPre:'🎯 Faltam ',pddTrialDaysWord:'dias',pddTrialPost:' de teste grátis',
+    pddUsage:'Uso',pddCallsMonth:'{n} chamadas de IA neste mês',pddProfile:'Configurações do perfil',
+    pddBilling:'Cobrança e plano',pddWhatsNew:'Novidades',pddPerformance:'Meu desempenho',
+    pddInvoice:'Gerador de faturas',pddCustomers:'Clientes',pddRefLog:'Registro de fluido refrigerante',
+    pddDiagrams:'Diagramas salvos',pddHelp:'Ajuda',pddDark:'Modo escuro',
+    pddClearMem:'Limpar minha memória',pddSignOut:'Sair',pddDelete:'Excluir conta',
+    lndSignIn:'Já tem conta? <b>Entre</b>',ariaCallMike:'Ligar para o Mike — voz mãos livres',ariaTextMike:'Mandar mensagem pro Mike — chat',
+    ariaFaceMike:'FaceTime com o Mike — visual ao vivo',ariaLanguage:'Idioma',ariaProfile:'Perfil',
+    ariaClose:'Fechar',ariaBack:'Voltar ao início do Mike',
     demoTitle:'UM DIAGNÓSTICO REAL',demoQ:'Carrier 58STA, sem aquecer, bloqueio de limite alto. Pleno a 182°F, estática 3.2" wc, soprador 11A. Qual é a falha e o conserto?',demoTyping:'Mike está lendo o sistema…',demoCta:'Pergunte ao Mike o seu caso →',demoClose:'Fechar'}
 };
 function v2t(key){
@@ -11014,6 +11104,11 @@ function applyV2Lang(){
   document.querySelectorAll('[data-v2i18n-ph]').forEach(function(el){
     var k=el.getAttribute('data-v2i18n-ph');
     if(k)el.setAttribute('placeholder',v2t(k));
+  });
+  // ARIA variant — VoiceOver/TalkBack must announce in the UI's language, not English.
+  document.querySelectorAll('[data-v2i18n-aria]').forEach(function(el){
+    var k=el.getAttribute('data-v2i18n-aria');
+    if(k)el.setAttribute('aria-label',v2t(k));
   });
   // JS-built homeowner form pieces repaint with the language (guards: both are defined
   // later in the file; on the very first applyV2Lang they may not exist yet — the

@@ -2049,7 +2049,7 @@ body[data-mode="contractor"] .v2-hbtn.face .v2-hbtn-label,body[data-mode="contra
     <button type="button" onclick="mpDismissColdOpen()">Ask Mike a question &mdash; free</button>
     <!-- SIGN IN WAS BEHIND "GET STARTED". A tech who already had an account had to tap a
          button that says START to find SIGN IN. Both doors are visible now. -->
-    <button type="button" class="mpco-signin" onclick="mpDismissColdOpen();setTimeout(function(){openAuth('in');},380);">Already have an account? <b>Sign in</b></button>
+    <button type="button" class="mpco-signin" onclick="mpDismissColdOpen();setTimeout(function(){openAuth('in');},380);" data-v2i18n="lndSignIn">Already have an account? <b>Sign in</b></button>
   </div>
 </div>
 <div id="appLoader" style="position:fixed;inset:0;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s ease;pointer-events:none;">
@@ -3031,13 +3031,13 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
      expired session — had exactly two ways out, sign in or create an account. There is
      no account to sign into yet for most of them, so the front door became a dead end.
      Closing drops them back into the app, where texting Mike works without an account. -->
-<button id="authCloseBtn" type="button" aria-label="Close" onclick="closeAuth()"
+<button id="authCloseBtn" type="button" aria-label="Close" data-v2i18n-aria="ariaClose" onclick="closeAuth()"
   style="position:fixed;top:max(14px,env(safe-area-inset-top,14px));left:14px;z-index:10001;display:flex;align-items:center;justify-content:center;width:34px;height:34px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:999px;color:#fff;font-family:var(--font);font-size:17px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent;">&#10005;</button>
 <!-- C-BUG1/3 — pre-login language chooser. Without a trigger inside the auth overlay
      (z-index 9999), the nav lang switcher sits behind the overlay and is unreachable,
      so a non-English visitor can't pick a language before signing in. This globe opens
      the SAME #langDropdown (z-index lifted above the overlay) so it's a real chooser. -->
-<button id="authLangBtn" type="button" aria-label="Language" onclick="toggleLangMenu()"
+<button id="authLangBtn" type="button" aria-label="Language" data-v2i18n-aria="ariaLanguage" onclick="toggleLangMenu()"
   style="position:fixed;top:max(14px,env(safe-area-inset-top,14px));right:14px;z-index:10001;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 12px;color:#fff;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;">
   <span id="authLangFlag" aria-hidden="true">🌐</span><span id="authLangCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span>
 </button>
@@ -3046,8 +3046,8 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
     <div class="auth-logo-icon" style="background:none;overflow:hidden;"><img src="/icon-512.png" alt="Mike" style="width:100%;height:100%;object-fit:cover;border-radius:13px;"/></div>
     <div class="auth-logo-name">Trazer Intelligence</div>
   </div>
-  <div class="auth-hero">POWER <span class="t">ON.</span></div>
-  <div class="auth-hero-sub" id="authHeroSub">Sign in to your field instrument</div>
+  <div class="auth-hero" data-v2i18n="authHero">POWER <span class="t">ON.</span></div>
+  <div class="auth-hero-sub" id="authHeroSub" data-v2i18n="authSubIn">Sign in to your field instrument</div>
   <div class="auth-card">
     <!-- MIGRATION NOTICE (Variation A, Brandon-approved). V2 is a fresh-DB launch:
          returning/beta users must create a new account. B5 fix: this is existing-user
@@ -3060,10 +3060,10 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div class="auth-migration-body" data-v2i18n="migBody">You were here from the beginning — that matters. Mike's got a whole new home now, and it doesn't carry the old one over. Takes 30 seconds to get back in. Same Mike, better everything.</div>
       <button class="auth-migration-cta" type="button" onclick="authTab('up')" data-v2i18n="migCta">Create My Account</button>
     </div>
-    <div class="auth-trial-pill">🎯 14 days free — no credit card, cancel anytime</div>
+    <div class="auth-trial-pill" data-v2i18n="authTrialPill">🎯 14 days free — no credit card, cancel anytime</div>
     <div class="auth-tabs">
-      <button class="auth-tab active" id="tabSignIn" onclick="authTab('in')">Sign In</button>
-      <button class="auth-tab" id="tabSignUp" onclick="authTab('up')">Create Account</button>
+      <button class="auth-tab active" id="tabSignIn" onclick="authTab('in')" data-v2i18n="authTabIn">Sign In</button>
+      <button class="auth-tab" id="tabSignUp" onclick="authTab('up')" data-v2i18n="authTabUp">Create Account</button>
     </div>
     <div class="auth-err" id="authErr"></div>
 
@@ -3073,17 +3073,17 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
          broke signin in 7114234 (reverted in 91e70d1). onsubmit is a hard no-op. -->
     <form id="authInForm" onsubmit="event.preventDefault();return false;">
       <div class="auth-field">
-        <label class="auth-lbl">Email</label>
+        <label class="auth-lbl" data-v2i18n="authEmail">Email</label>
         <input class="auth-inp" type="email" id="siEmail" placeholder="you@company.com" autocomplete="username email" inputmode="email"/>
       </div>
       <div class="auth-field">
-        <label class="auth-lbl">Password</label>
+        <label class="auth-lbl" data-v2i18n="authPassword">Password</label>
         <input class="auth-inp" type="password" id="siPass" placeholder="••••••••" autocomplete="current-password"/>
       </div>
       <div style="text-align:right;margin-bottom:14px;">
-        <span class="auth-forgot" onclick="authForgot()" style="cursor:pointer;">Forgot password?</span>
+        <span class="auth-forgot" onclick="authForgot()" style="cursor:pointer;" data-v2i18n="authForgot">Forgot password?</span>
       </div>
-      <button class="auth-btn" id="siBtn" type="button" onclick="authSignIn()">Sign In</button>
+      <button class="auth-btn" id="siBtn" type="button" onclick="authSignIn()" data-v2i18n="authTabIn">Sign In</button>
     </form>
 
     <!-- SIGN UP FORM — same safe form-wrap; buttons stay type="button". -->
@@ -3091,32 +3091,32 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <!-- Role picker RESTORED (2026-08-06). Pre-selected from the first-open onboarding
            choice by authTab('up'); the user can still change it here. -->
       <div class="auth-field">
-        <label class="auth-lbl">I am a...</label>
+        <label class="auth-lbl" data-v2i18n="authIAm">I am a...</label>
         <div style="display:flex;gap:8px;margin-top:6px;">
-          <button type="button" id="roleHomeBtn" onclick="selectRoleInline('homeowner')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">🏠 Homeowner</button>
-          <button type="button" id="roleProBtn" onclick="selectRoleInline('contractor')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">🔧 Contractor</button>
+          <button type="button" id="roleHomeBtn" onclick="selectRoleInline('homeowner')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;" data-v2i18n="authRoleHome">🏠 Homeowner</button>
+          <button type="button" id="roleProBtn" onclick="selectRoleInline('contractor')" style="flex:1;padding:10px 8px;border:2px solid #2a2a2a;border-radius:10px;background:#0d0d0d;color:#888;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;" data-v2i18n="authRolePro">🔧 Contractor</button>
         </div>
       </div>
       <div class="auth-field">
-        <label class="auth-lbl">Full Name</label>
-        <input class="auth-inp" type="text" id="suName" placeholder="Your name" autocomplete="name"/>
+        <label class="auth-lbl" data-v2i18n="authFullName">Full Name</label>
+        <input class="auth-inp" type="text" id="suName" data-v2i18n-ph="authNamePh" placeholder="Your name" autocomplete="name"/>
       </div>
       <div class="auth-field">
-        <label class="auth-lbl">Email</label>
+        <label class="auth-lbl" data-v2i18n="authEmail">Email</label>
         <input class="auth-inp" type="email" id="suEmail" placeholder="you@company.com" autocomplete="email" inputmode="email"/>
       </div>
       <div class="auth-field">
-        <label class="auth-lbl">Password</label>
-        <input class="auth-inp" type="password" id="suPass" placeholder="Min 8 characters" autocomplete="new-password"/>
+        <label class="auth-lbl" data-v2i18n="authPassword">Password</label>
+        <input class="auth-inp" type="password" id="suPass" data-v2i18n-ph="authPassUpPh" placeholder="Min 8 characters" autocomplete="new-password"/>
       </div>
       <div class="auth-field" id="suCompanyField" style="display:none">
-        <label class="auth-lbl">Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
-        <input class="auth-inp" type="text" id="suCompany" placeholder="Your HVAC company" autocomplete="organization"/>
+        <label class="auth-lbl" data-v2i18n="authCompanyLbl">Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span></label>
+        <input class="auth-inp" type="text" id="suCompany" data-v2i18n-ph="authCompanyPh" placeholder="Your HVAC company" autocomplete="organization"/>
       </div>
-      <button class="auth-btn" id="suBtn" type="button" onclick="authSignUp()">Start Free Trial</button>
+      <button class="auth-btn" id="suBtn" type="button" onclick="authSignUp()" data-v2i18n="authStartTrial">Start Free Trial</button>
     </form>
 
-    <p class="auth-terms">By continuing you agree to our <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Terms</a> and <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Privacy Policy</a></p>
+    <p class="auth-terms" data-v2i18n="authTermsLine">By continuing you agree to our <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Terms</a> and <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Privacy Policy</a></p>
   </div>
 </div>
 </div>
@@ -3434,31 +3434,31 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 
 <div class="profile-dd" id="profileDD">
 <div class="pdd-head"><div class="pdd-name" id="pddName">-</div><div class="pdd-email" id="pddEmail"></div><div class="pdd-plan" id="pddPlan">Trial</div></div>
-<div class="pdd-trial" id="pddTrial" style="display:none">🎯 <strong><span id="pddTrialDays">7</span> days</strong> left in free trial</div>
-<div class="pdd-usage"><div class="pdd-usage-lbl">Usage</div><div class="pdd-bar"><div class="pdd-bar-fill" id="pddBarFill" style="width:0%"></div></div><div class="pdd-usage-count" id="pddUsageCount">0 AI calls</div></div>
+<div class="pdd-trial" id="pddTrial" style="display:none"><span data-v2i18n="pddTrialPre">🎯 </span><strong><span id="pddTrialDays">7</span> <span data-v2i18n="pddTrialDaysWord">days</span></strong><span data-v2i18n="pddTrialPost"> left in free trial</span></div>
+<div class="pdd-usage"><div class="pdd-usage-lbl" data-v2i18n="pddUsage">Usage</div><div class="pdd-bar"><div class="pdd-bar-fill" id="pddBarFill" style="width:0%"></div></div><div class="pdd-usage-count" id="pddUsageCount">0 AI calls</div></div>
 <div class="pdd-menu">
   <div class="pdd-item" id="adminMenuItem" style="display:none;color:#3A8B8A;font-weight:700;" onclick="pddStats()"><span class="pdd-ic">📊</span>Mike HQ</div>
   <div class="pdd-item" onclick="closeProfileDD();toggleLangMenu();"><span class="pdd-ic">🌐</span><span data-v2i18n="qaLanguage">Language</span></div>
-  <div class="pdd-item" onclick="pddProfile()"><span class="pdd-ic">👤</span>Profile Settings</div>
-  <div class="pdd-item" id="pddBillingItem" onclick="pddBilling()"><span class="pdd-ic">💳</span>Billing &amp; Plan</div>
-  <div class="pdd-item" onclick="pddWhatsNew()"><span class="pdd-ic">🔔</span>What's New</div>
-  <div class="pdd-item" data-contractor-only onclick="pddPerformance()"><span class="pdd-ic">📊</span>My Performance</div>
-  <div class="pdd-item" data-contractor-only onclick="pddInvoice()"><span class="pdd-ic">🧾</span>Invoice Generator</div>
-  <div class="pdd-item" data-contractor-only onclick="pddCustomers()"><span class="pdd-ic">👥</span>Customers</div>
-  <div class="pdd-item" data-contractor-only onclick="pddRefLog()"><span class="pdd-ic">🧪</span>Refrigerant Log</div>
-  <div class="pdd-item" onclick="openSavedDiagrams()"><span class="pdd-ic">📐</span>Saved Diagrams</div>
-  <div class="pdd-item" onclick="pddHelp()"><span class="pdd-ic">❓</span>Help</div>
-  <div class="pdd-item" onclick="toggleDarkMode()"><span class="pdd-ic">🌙</span>Dark Mode</div>
+  <div class="pdd-item" onclick="pddProfile()"><span class="pdd-ic">👤</span><span data-v2i18n="pddProfile">Profile Settings</span></div>
+  <div class="pdd-item" id="pddBillingItem" onclick="pddBilling()"><span class="pdd-ic">💳</span><span data-v2i18n="pddBilling">Billing &amp; Plan</span></div>
+  <div class="pdd-item" onclick="pddWhatsNew()"><span class="pdd-ic">🔔</span><span data-v2i18n="pddWhatsNew">What's New</span></div>
+  <div class="pdd-item" data-contractor-only onclick="pddPerformance()"><span class="pdd-ic">📊</span><span data-v2i18n="pddPerformance">My Performance</span></div>
+  <div class="pdd-item" data-contractor-only onclick="pddInvoice()"><span class="pdd-ic">🧾</span><span data-v2i18n="pddInvoice">Invoice Generator</span></div>
+  <div class="pdd-item" data-contractor-only onclick="pddCustomers()"><span class="pdd-ic">👥</span><span data-v2i18n="pddCustomers">Customers</span></div>
+  <div class="pdd-item" data-contractor-only onclick="pddRefLog()"><span class="pdd-ic">🧪</span><span data-v2i18n="pddRefLog">Refrigerant Log</span></div>
+  <div class="pdd-item" onclick="openSavedDiagrams()"><span class="pdd-ic">📐</span><span data-v2i18n="pddDiagrams">Saved Diagrams</span></div>
+  <div class="pdd-item" onclick="pddHelp()"><span class="pdd-ic">❓</span><span data-v2i18n="pddHelp">Help</span></div>
+  <div class="pdd-item" onclick="toggleDarkMode()"><span class="pdd-ic">🌙</span><span data-v2i18n="pddDark">Dark Mode</span></div>
   <div class="pdd-sep"></div>
-  <div class="pdd-item" onclick="clearUserMemory()" style="color:#9499B0;"><span class="pdd-ic">🧹</span>Clear My Memory</div>
+  <div class="pdd-item" onclick="clearUserMemory()" style="color:#9499B0;"><span class="pdd-ic">🧹</span><span data-v2i18n="pddClearMem">Clear My Memory</span></div>
   <!-- A VISITOR WAS OFFERED A WAY TO SIGN *OUT* AND NO WAY TO SIGN IN. Someone who tried
        the free questions and wanted an account had nowhere to go from this menu — the only
        auth item said Sign Out. Brandon, 2026-09-02: "to go to a sign in you have to sign
        out which makes no sense." Which item shows is decided in updateProfileUI(). -->
-  <div class="pdd-item" id="pddSignIn" style="display:none;" onclick="closeProfileDD();openAuth('in');"><span class="pdd-ic">🔑</span>Sign In</div>
-  <div class="pdd-item" id="pddCreate" style="display:none;" onclick="closeProfileDD();openAuth('up');"><span class="pdd-ic">✨</span>Create Account</div>
-  <div class="pdd-item pdd-danger" id="pddSignOut" onclick="authSignOut()"><span class="pdd-ic">🚪</span>Sign Out</div>
-  <div class="pdd-item pdd-danger" id="pddDelete" onclick="deleteAccount()"><span class="pdd-ic">🗑️</span>Delete Account</div>
+  <div class="pdd-item" id="pddSignIn" style="display:none;" onclick="closeProfileDD();openAuth('in');"><span class="pdd-ic">🔑</span><span data-v2i18n="authTabIn">Sign In</span></div>
+  <div class="pdd-item" id="pddCreate" style="display:none;" onclick="closeProfileDD();openAuth('up');"><span class="pdd-ic">✨</span><span data-v2i18n="authTabUp">Create Account</span></div>
+  <div class="pdd-item pdd-danger" id="pddSignOut" onclick="authSignOut()"><span class="pdd-ic">🚪</span><span data-v2i18n="pddSignOut">Sign Out</span></div>
+  <div class="pdd-item pdd-danger" id="pddDelete" onclick="deleteAccount()"><span class="pdd-ic">🗑️</span><span data-v2i18n="pddDelete">Delete Account</span></div>
 </div>
 </div>
 <div id="trialBanner"><span>🎯 <strong><span id="trialDaysLeft">14</span> days</strong> left in your free trial</span><button class="trial-up-btn" onclick="showPaywall()">Manage</button></div>
@@ -3477,8 +3477,8 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <button class="lang-btn" onclick="toggleLangMenu()" id="langBtn" data-homeowner-only><span id="langFlag" aria-hidden="true">🌐</span><span id="langCode">EN</span><span style="font-size:10px;opacity:.6;">▾</span></button>
       <button onclick="newChat()" class="nav-icon-btn" id="navRefreshBtn" data-homeowner-only title="New chat — full intro in current language">&#x21BB;</button>
       <button class="nav-profile-btn" id="navProfileBtn" data-homeowner-only onclick="toggleProfileDD()">?</button>
-      <button class="nav-globe" data-contractor-only aria-label="Language" onclick="toggleLangMenu()"><i data-lucide="globe"></i><span id="navGlobeLangCode" class="nav-globe-lc">EN</span></button>
-      <button class="nav-more" data-contractor-only aria-label="Profile" onclick="toggleProfileDD()"><i data-lucide="circle-user"></i></button>
+      <button class="nav-globe" data-contractor-only aria-label="Language" data-v2i18n-aria="ariaLanguage" onclick="toggleLangMenu()"><i data-lucide="globe"></i><span id="navGlobeLangCode" class="nav-globe-lc">EN</span></button>
+      <button class="nav-more" data-contractor-only aria-label="Profile" data-v2i18n-aria="ariaProfile" onclick="toggleProfileDD()"><i data-lucide="circle-user"></i></button>
     </div>
   </div>
 </nav>
@@ -3580,9 +3580,9 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
 
     <!-- THREE WAYS TO REACH MIKE -->
     <div class="v2-reach">
-      <div class="v2-reach-mode call" role="button" tabindex="0" onclick="v2Reach('call')" aria-label="Call Mike"><span class="ic">&#x1F4DE;</span><div class="t" data-v2i18n="reachCall">CALL</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachCall">Hands-free</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachCall">Talk it through</div></div>
-      <div class="v2-reach-mode face" role="button" tabindex="0" onclick="v2Reach('face')" aria-label="FaceTime Mike"><span class="ic">&#x1F4F9;</span><div class="t" data-v2i18n="reachFace">FACETIME</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachFace">See it. Sell it.</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachFace">Show him the unit</div></div>
-      <div class="v2-reach-mode text" role="button" tabindex="0" onclick="v2Reach('text')" aria-label="Text Mike"><span class="ic">&#x1F4AC;</span><div class="t" data-v2i18n="lndReachText">TEXT</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachText">Daily thread</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachText">Snap a photo</div></div>
+      <div class="v2-reach-mode call" role="button" tabindex="0" onclick="v2Reach('call')" aria-label="Call Mike" data-v2i18n-aria="ariaCallMike"><span class="ic">&#x1F4DE;</span><div class="t" data-v2i18n="reachCall">CALL</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachCall">Hands-free</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachCall">Talk it through</div></div>
+      <div class="v2-reach-mode face" role="button" tabindex="0" onclick="v2Reach('face')" aria-label="FaceTime Mike" data-v2i18n-aria="ariaFaceMike"><span class="ic">&#x1F4F9;</span><div class="t" data-v2i18n="reachFace">FACETIME</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachFace">See it. Sell it.</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachFace">Show him the unit</div></div>
+      <div class="v2-reach-mode text" role="button" tabindex="0" onclick="v2Reach('text')" aria-label="Text Mike" data-v2i18n-aria="ariaTextMike"><span class="ic">&#x1F4AC;</span><div class="t" data-v2i18n="lndReachText">TEXT</div><div class="d v2-aud-tech" data-v2i18n="lndTechReachText">Daily thread</div><div class="d v2-aud-home" data-v2i18n="lndHomeReachText">Snap a photo</div></div>
     </div>
 
     <!-- CTA DOCK -->
@@ -3590,7 +3590,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <button class="v2-cta prime" onclick="v2LandingAsk()"><span class="v2-aud-tech" data-v2i18n="lndTechCtaPrime">Ask Mike anything →</span><span class="v2-aud-home" data-v2i18n="lndHomeCtaPrime">Ask Mike anything →</span></button>
       <button class="v2-cta ghost v2-aud-tech" onclick="v2LandingDemo()" data-v2i18n="lndTechCtaGhost">See a real diagnosis →</button>
       <button class="v2-cta ghost v2-aud-home" onclick="findLocalTech()" data-v2i18n="lndHomeCtaGhost">Find a trusted local tech</button>
-      <button class="v2-lnd-signin" onclick="openAuth('in')">Already have an account? <b>Sign in</b></button>
+      <button class="v2-lnd-signin" onclick="openAuth('in')" data-v2i18n="lndSignIn">Already have an account? <b>Sign in</b></button>
       <div class="v2-lnd-foot"><span class="v2-aud-tech" data-v2i18n="lndTechFoot">EPA 608 · NATE · ASHRAE · 25 YEARS ON EVERY SYSTEM</span><span class="v2-aud-home" data-v2i18n="lndHomeFoot">HONEST READ · NO GUESSWORK · NEVER IN THE DARK</span></div>
     </div>
   </div>
@@ -3636,42 +3636,42 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
   <div id="panelHome">
     <!-- HOW IT WORKS strip — visible to new users -->
     <div style="background:linear-gradient(135deg,#0F0F0F,#1a2232);border-radius:12px;padding:16px 18px;margin-bottom:12px;">
-      <div style="font-size:13px;font-weight:700;color:var(--rust);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;">How it works</div>
+      <div style="font-size:13px;font-weight:700;color:var(--rust);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;" data-v2i18n="hiwTitle">How it works</div>
       <div style="display:flex;gap:0;flex-direction:column;gap:10px;">
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:28px;height:28px;background:var(--rust);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">1</div>
-          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;">Take a photo of your system or describe what's happening</span>
+          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;" data-v2i18n="hiwStep1">Take a photo of your system or describe what's happening</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:28px;height:28px;background:var(--rust);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">2</div>
-          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;">Get a plain-English explanation — no technical jargon</span>
+          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;" data-v2i18n="hiwStep2">Get a plain-English explanation — no technical jargon</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:28px;height:28px;background:var(--rust);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">3</div>
-          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;">Know exactly what to tell your technician when you call</span>
+          <span style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.4;" data-v2i18n="hiwStep3">Know exactly what to tell your technician when you call</span>
         </div>
       </div>
     </div>
     <div class="card">
-      <label class="field-label">📷 Take or Upload a Photo</label>
-      <p class="field-sub">A photo of your AC, furnace, or thermostat helps us give you a more accurate answer</p>
+      <label class="field-label" data-v2i18n="dzLabel">📷 Take or Upload a Photo</label>
+      <p class="field-sub" data-v2i18n="dzSub">A photo of your AC, furnace, or thermostat helps us give you a more accurate answer</p>
       <input type="file" id="homeFileInput" accept="video/*,image/*" style="display:none" onchange="handleHomeFileSelect(event)"/>
       <input type="file" id="homeFileInputCam" accept="image/*,video/*" capture="environment" style="display:none" onchange="handleHomeFileSelect(event)"/>
       <div class="drop-zone" id="homeDropZone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleHomeDrop(event)" onclick="document.getElementById('homeFileInput').click()">
         <div id="homeDropPrompt" style="padding:28px 20px 20px;text-align:center;">
           <div style="width:64px;height:64px;background:rgba(255,255,255,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:2px solid var(--line);"><i data-lucide="camera" style="width:28px;height:28px;color:var(--teal);"></i></div>
-          <div style="font-size:16px;font-weight:700;color:#F4EFE6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Take or Upload a Photo</div>
-          <div style="font-size:12px;color:#9499B0;margin-bottom:18px;">Photo · Video · JPG · PNG · up to 50MB</div>
+          <div style="font-size:16px;font-weight:700;color:#F4EFE6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;" data-v2i18n="dzTitle">Take or Upload a Photo</div>
+          <div style="font-size:12px;color:#9499B0;margin-bottom:18px;" data-v2i18n="dzMeta">Photo · Video · JPG · PNG · up to 50MB</div>
           <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;" onclick="event.stopPropagation()">
-            <label for="homeFileInputCam" style="display:flex;align-items:center;gap:7px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">📸 Camera</label>
-            <label for="homeFileInput" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.08);color:#F4EFE6;border:1.5px solid var(--line);border-radius:6px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">🖼️ Library</label>
+            <label for="homeFileInputCam" style="display:flex;align-items:center;gap:7px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;" data-v2i18n="dzCamera">📸 Camera</label>
+            <label for="homeFileInput" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.08);color:#F4EFE6;border:1.5px solid var(--line);border-radius:6px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;" data-v2i18n="dzLibrary">🖼️ Library</label>
           </div>
         </div>
         <div class="photo-tips" id="homeDropTips">
-          <div class="photo-tip"><span class="photo-tip-icon">✅</span><strong>Close up</strong><br/>Fill frame</div>
-          <div class="photo-tip"><span class="photo-tip-icon">💡</span><strong>Good light</strong><br/>No shadows</div>
-          <div class="photo-tip"><span class="photo-tip-icon">🔍</span><strong>In focus</strong><br/>Text readable</div>
-          <div class="photo-tip bad"><span class="photo-tip-icon">❌</span><strong>No blur</strong><br/>Retake if shaky</div>
+          <div class="photo-tip" data-v2i18n="dzTipClose"><span class="photo-tip-icon">✅</span><strong>Close up</strong><br/>Fill frame</div>
+          <div class="photo-tip" data-v2i18n="dzTipLight"><span class="photo-tip-icon">💡</span><strong>Good light</strong><br/>No shadows</div>
+          <div class="photo-tip" data-v2i18n="dzTipFocus"><span class="photo-tip-icon">🔍</span><strong>In focus</strong><br/>Text readable</div>
+          <div class="photo-tip bad" data-v2i18n="dzTipBlur"><span class="photo-tip-icon">❌</span><strong>No blur</strong><br/>Retake if shaky</div>
         </div>
       </div>
       <div id="homePreviewWrapper" style="display:none;margin-top:10px;position:relative;">
@@ -3682,22 +3682,22 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       </div>
     </div>
     <div class="card">
-      <label class="field-label">What is your system doing?</label>
-      <p class="field-sub">Select everything that applies</p>
+      <label class="field-label" data-v2i18n="symLabel">What is your system doing?</label>
+      <p class="field-sub" data-v2i18n="symSub">Select everything that applies</p>
       <div class="symptoms-grid" id="homeSymptoms"></div>
     </div>
     <div class="card">
-      <label class="field-label">Describe the problem in your own words</label>
-      <p class="field-sub">When did it start? Is it getting worse? Anything else you've noticed?</p>
-      <textarea id="homeDesc" placeholder="e.g. My AC runs all day but the house stays hot. Started 2 days ago…"></textarea>
+      <label class="field-label" data-v2i18n="descLabel">Describe the problem in your own words</label>
+      <p class="field-sub" data-v2i18n="descSub">When did it start? Is it getting worse? Anything else you've noticed?</p>
+      <textarea id="homeDesc" data-v2i18n-ph="descPh" placeholder="e.g. My AC runs all day but the house stays hot. Started 2 days ago…"></textarea>
     </div>
     <div class="card">
-      <label class="field-label">System Age</label>
-      <select id="homeSysAge"><option value="">Select age…</option></select>
+      <label class="field-label" data-v2i18n="ageLabel">System Age</label>
+      <select id="homeSysAge"><option value="" data-v2i18n="ageSelect">Select age…</option></select>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:16px;">
-      <button id="homeRunBtn" onclick="runHomeownerDiagnostic()" style="flex:1;padding:18px;border:none;border-radius:6px;cursor:pointer;background:var(--rust);color:#fff;font-family:var(--font);font-size:18px;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(0,181,181,.4);transition:all .15s;">🔍 Analyze My System</button>
-      <button onclick="resetHomeownerDiagnostic()" style="padding:18px 16px;border:2px solid #d0d0d0;border-radius:6px;cursor:pointer;background:#FFFFFF;color:#6B7190;font-family:var(--font);font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;">🔄 New</button>
+      <button id="homeRunBtn" onclick="runHomeownerDiagnostic()" style="flex:1;padding:18px;border:none;border-radius:6px;cursor:pointer;background:var(--rust);color:#fff;font-family:var(--font);font-size:18px;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(0,181,181,.4);transition:all .15s;" data-v2i18n="btnAnalyze">🔍 Analyze My System</button>
+      <button onclick="resetHomeownerDiagnostic()" style="padding:18px 16px;border:2px solid #d0d0d0;border-radius:6px;cursor:pointer;background:#FFFFFF;color:#6B7190;font-family:var(--font);font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;" data-v2i18n="btnNew">🔄 New</button>
     </div>
     <div id="homeResultPanel" style="display:none;margin-top:8px;" class="fi">
       <div style="margin-bottom:14px;"><span style="font-size:18px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;" class="result-title">Your Diagnostic Report</span></div>
@@ -3731,7 +3731,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         </div>
         <div class="mp-name">
           <h2>MIKE</h2>
-          <div class="mp-sub"><span class="lt">STATUS &middot;</span> ON THE LINE <span class="lt">&middot;</span> 25 YRS</div>
+          <div class="mp-sub" data-v2i18n="mpStatus"><span class="lt">STATUS &middot;</span> ON THE LINE <span class="lt">&middot;</span> 25 YRS</div>
         </div>
         <div class="mp-creds">
           <div class="mp-cred hot">NATE CERT</div><div class="mp-cred-sep"></div>
@@ -3739,20 +3739,20 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
           <div class="mp-cred">MASTER TECH</div>
         </div>
         <div class="mp-reach">
-          <button class="mp-reach-btn call" onclick="if(!mpNeedAccount('call')){mpEnterChat();toggleVoiceMode();}" aria-label="Call Mike — hands-free voice"><span class="mp-rico">&#x1F4DE;</span>CALL</button>
-          <button class="mp-reach-btn chat" onclick="mpEnterChat();setTimeout(function(){var i=document.getElementById('chatInput');if(i)i.focus();},60);" aria-label="Text Mike — chat"><span class="mp-rico">&#x1F4AC;</span>TEXT</button>
-          <button class="mp-reach-btn face" onclick="if(!mpNeedAccount('face'))checkCameraAccess();" aria-label="FaceTime Mike — live visual"><span class="mp-rico">&#x1F4F7;</span>FACETIME</button>
+          <button class="mp-reach-btn call" onclick="if(!mpNeedAccount('call')){mpEnterChat();toggleVoiceMode();}" aria-label="Call Mike — hands-free voice" data-v2i18n-aria="ariaCallMike"><span class="mp-rico">&#x1F4DE;</span><span data-v2i18n="reachCall">CALL</span></button>
+          <button class="mp-reach-btn chat" onclick="mpEnterChat();setTimeout(function(){var i=document.getElementById('chatInput');if(i)i.focus();},60);" aria-label="Text Mike — chat" data-v2i18n-aria="ariaTextMike"><span class="mp-rico">&#x1F4AC;</span><span data-v2i18n="lndReachText">TEXT</span></button>
+          <button class="mp-reach-btn face" onclick="if(!mpNeedAccount('face'))checkCameraAccess();" aria-label="FaceTime Mike — live visual" data-v2i18n-aria="ariaFaceMike"><span class="mp-rico">&#x1F4F7;</span><span data-v2i18n="reachFace">FACETIME</span></button>
         </div>
         <div id="jobBar" class="job-bar"></div>
       </div>
-      <div class="mp-rail"><div class="mp-rail-label">&mdash; MIKE'S TOOLBELT &mdash;</div></div>
+      <div class="mp-rail"><div class="mp-rail-label" data-v2i18n="mpToolbelt">&mdash; MIKE'S TOOLBELT &mdash;</div></div>
       <div class="mp-belt">
-        <button class="mp-tool parts" onclick="mpOpenTool('parts',this)"><div class="mp-tool-ico">&#x1F529;</div><div class="mp-tool-name">Parts</div><div class="mp-tool-sub">Lookup &amp; order</div></button>
-        <button class="mp-tool warranty" onclick="mpOpenTool('warranty',this)"><div class="mp-tool-ico">&#x1F6E1;</div><div class="mp-tool-name">Warranty</div><div class="mp-tool-sub">Check coverage</div></button>
-        <button class="mp-tool wiring" onclick="mpOpenTool('wiring',this)"><div class="mp-tool-ico">&#x26A1;</div><div class="mp-tool-name">Wiring</div><div class="mp-tool-sub">Diagrams</div></button>
-        <button class="mp-tool jobs" onclick="mpOpenTool('jobs',this)"><div class="mp-tool-ico">&#x1F4CB;</div><div class="mp-tool-name">Close Job</div><div class="mp-tool-sub">Invoice &amp; sign-off</div></button>
-        <button class="mp-tool manual" onclick="mpOpenTool('manual',this)"><div class="mp-tool-ico">&#x1F4D6;</div><div class="mp-tool-name">Manuals</div><div class="mp-tool-sub">Tech docs</div></button>
-        <button class="mp-tool diagnose" onclick="mpOpenTool('diagnose',this)"><div class="mp-tool-ico">&#x1F52C;</div><div class="mp-tool-name">Diagnose</div><div class="mp-tool-sub">Fault codes</div></button>
+        <button class="mp-tool parts" onclick="mpOpenTool('parts',this)"><div class="mp-tool-ico">&#x1F529;</div><div class="mp-tool-name" data-v2i18n="mpTParts">Parts</div><div class="mp-tool-sub" data-v2i18n="mpTPartsSub">Lookup &amp; order</div></button>
+        <button class="mp-tool warranty" onclick="mpOpenTool('warranty',this)"><div class="mp-tool-ico">&#x1F6E1;</div><div class="mp-tool-name" data-v2i18n="mpTWarranty">Warranty</div><div class="mp-tool-sub" data-v2i18n="mpTWarrantySub">Check coverage</div></button>
+        <button class="mp-tool wiring" onclick="mpOpenTool('wiring',this)"><div class="mp-tool-ico">&#x26A1;</div><div class="mp-tool-name" data-v2i18n="mpTWiring">Wiring</div><div class="mp-tool-sub" data-v2i18n="mpTWiringSub">Diagrams</div></button>
+        <button class="mp-tool jobs" onclick="mpOpenTool('jobs',this)"><div class="mp-tool-ico">&#x1F4CB;</div><div class="mp-tool-name" data-v2i18n="mpTJobs">Close Job</div><div class="mp-tool-sub" data-v2i18n="mpTJobsSub">Invoice &amp; sign-off</div></button>
+        <button class="mp-tool manual" onclick="mpOpenTool('manual',this)"><div class="mp-tool-ico">&#x1F4D6;</div><div class="mp-tool-name" data-v2i18n="mpTManual">Manuals</div><div class="mp-tool-sub" data-v2i18n="mpTManualSub">Tech docs</div></button>
+        <button class="mp-tool diagnose" onclick="mpOpenTool('diagnose',this)"><div class="mp-tool-ico">&#x1F52C;</div><div class="mp-tool-name" data-v2i18n="mpTDiag">Diagnose</div><div class="mp-tool-sub" data-v2i18n="mpTDiagSub">Fault codes</div></button>
       </div>
     </div>
 
@@ -3762,7 +3762,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <!-- MIKE HEADER — V2 treatment: no face/avatar, teal presence pulse, Call + FaceTime one tap -->
       <div class="chat-header v2-chat-header">
         <div style="display:flex;align-items:center;gap:11px;flex:1;min-width:0;">
-          <button class="mp-back" onclick="mpGoHome()" aria-label="Back to Mike's home" title="Back to home" style="display:none;">&#x2039;</button>
+          <button class="mp-back" onclick="mpGoHome()" aria-label="Back to Mike's home" data-v2i18n-aria="ariaBack" title="Back to home" style="display:none;">&#x2039;</button>
           <div class="v2-hpres">
             <div class="ring"><img src="/icon-512.png" alt="Mike" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"/></div>
             <div class="v2-dot pd"></div>
@@ -4495,15 +4495,15 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       <div style="width:36px;height:36px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;"><img src="/icon-512.png" alt="Mike" style="width:100%;height:100%;object-fit:cover;"/></div>
       <div>
         <div style="font-size:17px;font-weight:800;color:#0F0F0F;letter-spacing:-.3px;">Trazer Intelligence</div>
-        <div style="font-size:11px;color:#9499B0;font-weight:500;"><span data-contractor-only>Field Intelligence Platform</span><span data-homeowner-only>Know what's wrong before you call.</span></div>
+        <div style="font-size:11px;color:#9499B0;font-weight:500;"><span data-contractor-only data-v2i18n="ftTagPro">Field Intelligence Platform</span><span data-homeowner-only data-v2i18n="ftTagHome">Know what's wrong before you call.</span></div>
       </div>
     </div>
     <div style="display:flex;justify-content:center;gap:16px;margin-bottom:12px;">
-      <a href="#" onclick="showTermsModal();return false;" style="font-size:12px;color:#9499B0;text-decoration:none;">Terms</a>
-      <a href="#" onclick="showPrivacyModal();return false;" style="font-size:12px;color:#9499B0;text-decoration:none;">Privacy</a>
-      <a href="mailto:support@trazerintelligence.ai" style="font-size:12px;color:#9499B0;text-decoration:none;">Support</a>
+      <a href="#" onclick="showTermsModal();return false;" style="font-size:12px;color:#9499B0;text-decoration:none;" data-v2i18n="ftTerms">Terms</a>
+      <a href="#" onclick="showPrivacyModal();return false;" style="font-size:12px;color:#9499B0;text-decoration:none;" data-v2i18n="ftPrivacy">Privacy</a>
+      <a href="mailto:support@trazerintelligence.ai" style="font-size:12px;color:#9499B0;text-decoration:none;" data-v2i18n="ftSupport">Support</a>
     </div>
-    <p style="font-size:11px;color:#C8CBD8;line-height:1.6;max-width:400px;margin:0 auto;text-align:center;">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician. Mike is an AI — not a licensed contractor. Use of this Service constitutes acceptance of our Terms of Service.</p>
+    <p style="font-size:11px;color:#C8CBD8;line-height:1.6;max-width:400px;margin:0 auto;text-align:center;" data-v2i18n="ftLegal">Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician. Mike is an AI — not a licensed contractor. Use of this Service constitutes acceptance of our Terms of Service.</p>
   </div>
 <!-- LIVE CAMERA OVERLAY — Premium Quality -->
 <div id="liveCameraOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9998;flex-direction:column;font-family:'Plus Jakarta Sans',-apple-system,sans-serif;">
@@ -4994,7 +4994,7 @@ function authTab(t){
   // brand-new tech filling out Create Account was told to sign in to an account he
   // does not have yet.
   var hs=document.getElementById('authHeroSub');
-  if(hs)hs.textContent=(t==='up')?'Set up your field instrument':'Sign in to your field instrument';
+  if(hs)hs.textContent=(t==='up')?v2t('authSubUp'):v2t('authSubIn');
   document.getElementById('authInForm').style.display=t==='in'?'block':'none';
   document.getElementById('authUpForm').style.display=t==='up'?'block':'none';
   var e=document.getElementById('authErr');if(e)e.classList.remove('show');
@@ -5035,7 +5035,7 @@ function authSignIn(){
         // Security: signin now returns a unified "Invalid email or password" for both an
         // unknown email and a wrong password (no account enumeration). Returning/migrated
         // users are nudged to re-create via the #authMigration card (stale-token path), not here.
-        showAuthErr(errMsg);if(btn){btn.disabled=false;btn.textContent='Sign In';}return;
+        showAuthErr(errMsg);if(btn){btn.disabled=false;btn.textContent=v2t('authTabIn');}return;
       }
       var user=result.data.user;user.token=result.data.token;
       var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
@@ -5054,7 +5054,7 @@ function authSignIn(){
       }
       setTimeout(requestTechLocation,2000);
     })
-    .catch(function(){showAuthErr('Connection error. Try again.');if(btn){btn.disabled=false;btn.textContent='Sign In';}});
+    .catch(function(){showAuthErr('Connection error. Try again.');if(btn){btn.disabled=false;btn.textContent=v2t('authTabIn');}});
   },50);
 }
 document.addEventListener('visibilitychange',function(){
@@ -5117,7 +5117,7 @@ function authSignUp(){
   fetch('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,password:pass,company:company,role:selectedRole})})
     .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
     .then(function(result){
-      if(!result.ok){showAuthErr(result.data.error||'Sign up failed.');if(btn){btn.disabled=false;btn.textContent='Start Free Trial';}return;}
+      if(!result.ok){showAuthErr(result.data.error||'Sign up failed.');if(btn){btn.disabled=false;btn.textContent=v2t('authStartTrial');}return;}
       var user=result.data.user;user.token=result.data.token;
       var users=JSON.parse(localStorage.getItem('trazer_users')||'{}');
       users[email]=user;localStorage.setItem('trazer_users',JSON.stringify(users,function(k,v){return k==='token'?undefined:v;}));
@@ -5139,7 +5139,7 @@ function authSignUp(){
       try{localStorage.setItem('trazer_onboarded','1');}catch(e){}
       setTimeout(requestTechLocation,2000);
     })
-    .catch(function(err){showAuthErr('Connection error — '+( err&&err.message?err.message:'try again'));if(btn){btn.disabled=false;btn.textContent='Start Free Trial';}});
+    .catch(function(err){showAuthErr('Connection error — '+( err&&err.message?err.message:'try again'));if(btn){btn.disabled=false;btn.textContent=v2t('authStartTrial');}});
   },50);
 }
 
@@ -5219,9 +5219,9 @@ function authSignOut(){
   // showing that frozen button — and the visibilitychange safety net skips it because
   // its text still includes "Signing". Reset both auth buttons explicitly here.
   var _siBtn=document.getElementById('siBtn');
-  if(_siBtn){_siBtn.disabled=false;_siBtn.textContent='Sign In';}
+  if(_siBtn){_siBtn.disabled=false;_siBtn.textContent=v2t('authTabIn');}
   var _suBtn=document.getElementById('suBtn');
-  if(_suBtn){_suBtn.disabled=false;_suBtn.textContent='Start Free Trial';}
+  if(_suBtn){_suBtn.disabled=false;_suBtn.textContent=v2t('authStartTrial');}
   authTab('in');
   chatHistory=[];techLocation=null;
 }
@@ -5267,13 +5267,13 @@ function updateProfileUI(){
   var pn=document.getElementById('pddName');if(pn)pn.textContent=currentUser.name||'';
   var pe=document.getElementById('pddEmail');if(pe)pe.textContent=currentUser.email||'';
   var pp=document.getElementById('pddPlan');
-  var pm={trial:'Trial',starter:'Starter',pro:'Pro',team:'Team',enterprise:'Enterprise',admin:'Admin',homeowner:'Home',home:'Home',beta:'Beta'};
+  var pm={trial:v2t('pddPlanTrial'),starter:'Starter',pro:'Pro',team:'Team',enterprise:'Enterprise',admin:'Admin',homeowner:'Home',home:'Home',beta:'Beta'};
   // Don't default homeowners to "Pro" — that's a tech-tier label leaking onto consumers.
   var _planFallback=(currentUser.role==='homeowner')?'Home':'Pro';
   if(pp)pp.textContent=(currentUser.isAdmin?'👑 ':'')+( pm[currentUser.plan]||_planFallback);
   var u=currentUser.usageCount||0;
   var bf=document.getElementById('pddBarFill');if(bf)bf.style.width=Math.min(u/500*100,100)+'%';
-  var uc=document.getElementById('pddUsageCount');if(uc)uc.textContent=u+' AI calls this month';
+  var uc=document.getElementById('pddUsageCount');if(uc)uc.textContent=v2t('pddCallsMonth').replace('{n}',u);
   var ai=document.getElementById('adminMenuItem');
   if(ai)ai.style.display=(currentUser.role==='admin'||currentUser.role==='owner'||currentUser.plan==='admin'||currentUser.isAdmin)?'flex':'none';
   loadMyCoachingHistory();
@@ -5356,21 +5356,71 @@ function recordEvent(type,payload,amount){
 })();
 // Announcement banner (server-flagged via /api/announcement; dismiss persists per announcement id).
 // Hidden in the native app build — App Store rules forbid pricing UI there (same rule as the paywall).
+// Known announcement ids carry client-side translations: the server emits English only,
+// and the banner is painted here, so localization lives with the paint. Unknown ids fall
+// back to the server strings untouched. Prices/units stay as the server wrote them ($50).
+var ANN_I18N={'price50-nov1':{
+  es:{title:'Mike cambia a $50/mes el 1 de noviembre',body:'Antes costaba $100. Con un solo retorno evitado, se paga solo. ¿Preguntas? Pregúntale a Mike.'},
+  zh:{title:'11月1日起Mike改为每月$50',body:'原价$100。省下一次返工他就回本了。有疑问？直接问Mike。'},
+  vi:{title:'Từ ngày 1 tháng 11, Mike đổi giá còn $50/tháng',body:'Giảm từ $100. Tránh được một lần quay lại sửa là đủ bù tiền. Có thắc mắc? Cứ hỏi Mike.'},
+  fr:{title:'Mike passe à $50/mois le 1er novembre',body:'Au lieu de $100. Un seul retour évité et il est rentabilisé. Des questions ? Demandez à Mike.'},
+  pt:{title:'O Mike vai custar $50/mês a partir de 1º de novembro',body:'Antes era $100. Um retorno evitado e ele já se paga. Dúvidas? É só perguntar ao Mike.'}
+}};
+function trzAnnStrings(a){
+  // currentLang is declared later in the file; on first paint read the persisted choice.
+  var lang='en';
+  try{lang=(typeof currentLang!=='undefined'&&currentLang)||localStorage.getItem('trazer_lang')||'en';}catch(e){}
+  var tr=(ANN_I18N[a.id]||{})[lang];
+  return {title:tr?tr.title:a.title,body:tr?tr.body:a.body};
+}
+// LAYOUT FIX — the fixed banner sat on top of the sticky .nav (z 100) and buried the
+// language switcher / profile controls in the top ~77px (worst on phones).
+// Minimal fix: push the page AND the nav's sticky offset down by the banner's real
+// rendered height so every nav control stays visible and tappable; dismissing the
+// banner restores both. Fixed/absolute overlays are unaffected (body margin does not
+// move them), so nothing else shifts.
+// Z-ORDER: banner sits at 9998 — UNDER #authOverlay (9999) and the onboarding overlay
+// (10000) so it can never paint over their top edge during full-screen moments, but
+// still above the nav (100) and page content. Nothing else lives between 9998 and
+// 9999 except #offlineBanner/#liveCameraOverlay (also 9998): the banner is appended
+// last in the DOM, so at equal z it paints over them exactly as it did from 9999.
+window._trzAnnOffset=function(){
+  var b=document.getElementById('trzAnnounce');
+  var h=b?b.offsetHeight:0;
+  document.body.style.marginTop=h?h+'px':'';
+  var nav=document.querySelector('.nav');if(nav)nav.style.top=h?h+'px':'';
+};
+// Language switches repaint the live banner (setLang calls this when present).
+window._trzAnnRepaint=function(){
+  var b=document.getElementById('trzAnnounce');
+  if(!b||!window._trzAnnData)return;
+  var t=trzAnnStrings(window._trzAnnData);
+  var te=document.getElementById('trzAnnTitle');if(te)te.textContent='📣 '+t.title;
+  var be=document.getElementById('trzAnnBody');if(be)be.textContent=t.body;
+  window._trzAnnOffset(); // translated copy can wrap to a different height
+};
 (function(){
   if(document.body&&document.body.getAttribute('data-native'))return;
   fetch('/api/announcement').then(function(r){return r.json();}).then(function(a){
     if(!a||!a.active||!a.id)return;
     if(localStorage.getItem('trz_ann_'+a.id))return;
     if(document.body&&document.body.getAttribute('data-native'))return;
+    window._trzAnnData=a;
+    var t=trzAnnStrings(a);
     var b=document.createElement('div');
     b.id='trzAnnounce';
     // Safe-area aware: on notched iPhones (PWA black-translucent) the webview runs under the
     // status bar, so the banner needs the inset or the X lands beneath the clock — untappable.
-    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#0e2a33;color:#eaf6f9;padding:calc(10px + env(safe-area-inset-top,0px)) 56px 10px 14px;font:600 13px/1.45 system-ui,-apple-system,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.35);';
-    b.innerHTML='<span style="opacity:.95">📣 '+a.title+'</span> <span style="opacity:.75;font-weight:400">'+a.body+'</span>'+
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9998;background:#0e2a33;color:#eaf6f9;padding:calc(10px + env(safe-area-inset-top,0px)) 56px 10px 14px;font:600 13px/1.45 system-ui,-apple-system,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.35);';
+    b.innerHTML='<span id="trzAnnTitle" style="opacity:.95"></span> <span id="trzAnnBody" style="opacity:.75;font-weight:400"></span>'+
       '<button aria-label="Dismiss" style="position:absolute;right:6px;top:calc(4px + env(safe-area-inset-top,0px));background:rgba(234,246,249,.12);border:none;border-radius:8px;color:#eaf6f9;font-size:24px;line-height:1;cursor:pointer;padding:8px 14px" '+
-      'onclick="localStorage.setItem(\'trz_ann_'+a.id+'\',1);document.getElementById(\'trzAnnounce\').remove();">×</button>';
+      'onclick="localStorage.setItem(\'trz_ann_'+a.id+'\',1);document.getElementById(\'trzAnnounce\').remove();window._trzAnnOffset();">×</button>';
     document.body.appendChild(b);
+    // textContent (not interpolated innerHTML) — title/body are plain text in every language.
+    document.getElementById('trzAnnTitle').textContent='📣 '+t.title;
+    document.getElementById('trzAnnBody').textContent=t.body;
+    window._trzAnnOffset();
+    window.addEventListener('resize',window._trzAnnOffset);
   }).catch(function(){});
 })();
 
@@ -5928,7 +5978,7 @@ var OB_I18N={
     text:{k:'SEE HIM WORK · DIAGNOSE',l1:'HE DIAGNOSES IT',l2:'ON THE SPOT.',line:"Real answers from the actual manual — <b>cited to the page, never a guess.</b>",me:"My system keeps short cycling",mike:"Those numbers tell the story — you're <b>undercharged, low on refrigerant.</b> Look at your subcool: 1.6°F, basically zero. And superheat's 27.2°F, way high. High superheat + near-zero subcool = the system's starving. That's your short-cycle right there.",growic:'📖',grow:'<b>Backed by manuals across 74 brands — quoted to the page.</b><br>And he pulls the real warranty in seconds.',real:'↑ A real conversation with a tech using Mike today. Nothing scripted.',voice:"He diagnoses it on the spot. Real answers from the actual manual — cited to the page, never a guess. That exchange you're looking at is a real conversation with a tech using me today."},
     money:{k:'04 · THE MONEY',l1:'HE PAYS FOR',l2:'HIMSELF. TWICE.',line:"Any tool diagnoses. Mike catches the money you'd leave on the table — and hands you the words when they push back on price. <b>Done honest.</b>",mtag:'MIKE CAUGHT THIS',mctx:'JOB · CARRIER 80K · BLOWER REPAIR',catch:'“While you\'re in there — that filter rack\'s wide open and they\'ve got a kid with asthma. <b>Offer the media cabinet. That\'s an honest add, not a sell.</b>”',cl1:'YOUR TICKET',cl2:'WITH THE CATCH',gl:'SAME TRUCK ROLL',honest:'▲ <b>Real fix the customer actually needs</b> — not a part-swap on a guess.',ohd:'THEY PUSHED BACK · MIKE HAS YOUR LINE',cust:'“That price seems high — let me get another quote.”',say:'“Fair. Get your other quotes — I\'d want you to. Ask each of \'em if a <b>licensed tech is doing the work</b> and if the part\'s <b>OEM with a warranty</b>. Mine is, in writing, today. Cheaper usually means one of those is missing.”',osig:'— Mike, in your corner',voice:"He pays for himself, twice. Mike catches the money you'd leave on the table — and hands you the words when they push back on price. Done honest."},
     edge:{k:'WHY NOT JUST CHATGPT?',l1:'BECAUSE IT GUESSES.',l2:'MIKE DOESN\'T.',line:"Ask a generic AI for a spec and it'll make one up — confident, and wrong. <b>That's a callback.</b>",badme:"What's the charge on a Goodman GSX16 in a 3-ton?",badwho:'CHATGPT',bad:'Factory charge is about 6 lbs 4 oz of R-410A.',badflag:'← confidently made up',goodme:'Age of this system? [photo of the data plate]',good:"That's a Trane variable-speed air handler. Plate read: serial 182810YT3V — Trane's format puts year/week up front. <b>18 = 2018, 28 = 28th week</b>, so it was built about July 2018. Makes it ~8 years old.",real:'↑ A real tech showed Mike the plate. He read it — no guessing.',voice:"Why not just ChatGPT? Because it guesses — and I don't. I read the real plate or the real manual, or I say read it to me. I never fake a number."},
-    grow:{k:'EVERYTHING ELSE',l1:'AND HE GROWS',l2:'WITH YOU.',line:"Not a chatbot — <b>a partner that gets better every job.</b>",rows:[{i:'📸',t:'Show him the unit',s:'Point your camera at the nameplate or wiring — he reads it and walks you through it.'},{i:'🧠',t:'Remembers you',s:'Your brands, your area, the last job — picks up where you left off, like a partner.'},{i:'🔌',t:'Works with no signal',soon:1,s:"Attic, basement, out in the sticks — Mike's still there when the bars aren't."}],matht:'One callback he saves you = <em>6 months of Mike.</em>',maths:'A callback costs you a whole service call (~$650). Stop one and he\'s paid for himself.',voice:"And I grow with you. Show me the unit with your camera, I remember you job to job, and soon I'll work with no signal at all. One callback I save you pays for six months of me."},
+    grow:{k:'EVERYTHING ELSE',l1:'AND HE GROWS',l2:'WITH YOU.',line:"Not a chatbot — <b>a partner that gets better every job.</b>",soonLbl:'SOON',rows:[{i:'📸',t:'Show him the unit',s:'Point your camera at the nameplate or wiring — he reads it and walks you through it.'},{i:'🧠',t:'Remembers you',s:'Your brands, your area, the last job — picks up where you left off, like a partner.'},{i:'🔌',t:'Works with no signal',soon:1,s:"Attic, basement, out in the sticks — Mike's still there when the bars aren't."}],matht:'One callback he saves you = <em>6 months of Mike.</em>',maths:'A callback costs you a whole service call (~$650). Stop one and he\'s paid for himself.',voice:"And I grow with you. Show me the unit with your camera, I remember you job to job, and soon I'll work with no signal at all. One callback I save you pays for six months of me."},
     magic:{k:'YOUR FIRST CALL',h1a:'ASK MIKE',h1b:'ONE THING.',st:'READY · 25 YRS ON EVERY SYSTEM',free:'FREE TASTE',me:'R-410A system, 12° subcool, low suction. What am I looking at?',mike:'12° subcool with low suction? You\'re likely <b>overcharged with a restriction</b> downstream — check the TXV bulb and your liquid line temp first. Tell me the line temps and I\'ll walk you to it…',chip1:'What part do I need?',chip2:'Read me the fault code',chip3:'Send a nameplate photo',ph:'Tell Mike what you\'re working on…',gate:'First answer\'s on the house · <b>Create your account to keep Mike on speed-dial</b>',cta:'Start →',voice:"Ask me one thing. First answer's on the house — tell me what you're working on."}
   },
   homeEn:{
@@ -5951,6 +6001,8 @@ var OB_I18N={
     facetime:{k:'02 · FACETIME',l1:'APUNTA TU',l2:'TELÉFONO AHÍ.',line:"Hazle FaceTime y <b>ve lo que tú ves</b> — lee la placa, identifica la pieza, te ayuda a cerrar frente al cliente.",q:'“Ahí está — ¿ves la grieta fina en el encendedor? Muéstrasela al cliente. Esa es tu venta.”',sig:'— Mike, en FaceTime',voice:"Apunta tu teléfono ahí. Hazme FaceTime y veo lo que tú ves. Ahí está — ¿ves la grieta fina en el encendedor? Muéstrasela al cliente. Esa es tu venta."},
     text:{k:'03 · TEXTO · A DIARIO',l1:'EL TIPO QUE',l2:'TE HACE MEJOR.',line:"Preguntas rápidas, fotos de placas, las decisiones difíciles — <b>te recuerda</b> y te lleva hacia el sueldo de técnico senior.",me:"El cliente dice que prende y apaga. Goodman de 3 toneladas. ¿Cambio el capacitor o lo estoy persiguiendo?",mike:"Revisa el capacitor primero — mídelo con multímetro, no a ojo. Si está en rango, mira el contactor o un condensador sucio que sube la presión de alta. No cambies piezas adivinando.",grow:'<b>Llevas 14 llamadas con Mike.</b><br>Diagnosticas 2× más rápido que la primera semana.',voice:"El tipo que te hace mejor. Preguntas rápidas, fotos de placas, las decisiones difíciles — te recuerdo y te llevo hacia el sueldo de técnico senior."},
     money:{k:'04 · EL DINERO',l1:'SE PAGA SOLO.',l2:'DOS VECES.',line:"Cualquier herramienta diagnostica. Mike atrapa el dinero que dejarías sobre la mesa — y te da las palabras cuando objetan el precio. <b>Hecho con honestidad.</b>",mtag:'MIKE ATRAPÓ ESTO',mctx:'TRABAJO · CARRIER 80K · REPARAR SOPLADOR',catch:'“Ya que estás ahí — el rack del filtro está abierto y tienen un niño con asma. <b>Ofrece el gabinete de filtro. Es un extra honesto, no una venta.</b>”',cl1:'TU TICKET',cl2:'CON EL HALLAZGO',gl:'MISMA VISITA',honest:'▲ <b>Arreglo real que el cliente sí necesita</b> — no cambiar piezas adivinando.',ohd:'OBJETARON · MIKE TIENE TU RESPUESTA',cust:'“Ese precio parece alto — déjame pedir otra cotización.”',say:'“Justo. Pide tus otras cotizaciones — yo querría que lo hicieras. Pregúntale a cada uno si un <b>técnico con licencia hace el trabajo</b> y si la pieza es <b>OEM con garantía</b>. La mía sí, por escrito, hoy. Más barato suele significar que falta una de esas dos.”',osig:'— Mike, de tu lado',voice:"Se paga solo, dos veces. Mike atrapa el dinero que dejarías sobre la mesa — y te da las palabras cuando objetan el precio. Hecho con honestidad."},
+    edge:{k:'¿POR QUÉ NO SOLO CHATGPT?',l1:'PORQUE ADIVINA.',l2:'MIKE NO.',line:"Pídele una especificación a una IA genérica y se la inventa — con toda confianza, y mal. <b>Eso es un retorno.</b>",badme:'¿Cuál es la carga de un Goodman GSX16 de 3 toneladas?',badwho:'CHATGPT',bad:'La carga de fábrica es de unas 6 lbs 4 oz de R-410A.',badflag:'← inventado con toda confianza',goodme:'¿Edad de este sistema? [foto de la placa de datos]',good:"Es un manejador de aire Trane de velocidad variable. Lectura de placa: serie 182810YT3V — el formato de Trane pone año/semana al frente. <b>18 = 2018, 28 = semana 28</b>, así que se fabricó hacia julio de 2018. Tiene unos 8 años.",real:'↑ Un técnico real le mostró la placa a Mike. Él la leyó — sin adivinar.',voice:"¿Por qué no solo ChatGPT? Porque adivina — y yo no. Leo la placa real o el manual real, o te pido que me lo leas. Nunca invento un número."},
+    grow:{k:'TODO LO DEMÁS',l1:'Y CRECE',l2:'CONTIGO.',line:"No es un chatbot — <b>un compañero que mejora con cada trabajo.</b>",soonLbl:'PRONTO',rows:[{i:'📸',t:'Muéstrale la unidad',s:'Apunta tu cámara a la placa o al cableado — él lo lee y te guía paso a paso.'},{i:'🧠',t:'Te recuerda',s:'Tus marcas, tu zona, el último trabajo — retoma donde quedaron, como un compañero.'},{i:'🔌',t:'Funciona sin señal',soon:1,s:'Ático, sótano, en medio de la nada — Mike sigue ahí cuando no hay barras.'}],matht:'Un retorno que te evita = <em>6 meses de Mike.</em>',maths:'Un retorno te cuesta una visita completa (~$650). Evita uno y ya se pagó solo.',voice:"Y crezco contigo. Muéstrame la unidad con tu cámara, te recuerdo de trabajo en trabajo, y pronto funcionaré sin nada de señal. Un retorno que te evite paga seis meses de mí."},
     magic:{k:'TU PRIMERA LLAMADA',h1a:'PREGÚNTALE A MIKE',h1b:'UNA COSA.',st:'LISTO · 25 AÑOS EN CADA SISTEMA',free:'PRUEBA GRATIS',me:'Sistema R-410A, 12° de subenfriamiento, baja succión. ¿Qué estoy viendo?',mike:'¿12° de subenfriamiento con baja succión? Probablemente estés <b>sobrecargado con una restricción</b> aguas abajo — revisa el bulbo del TXV y la temperatura de la línea de líquido primero. Dime las temperaturas de línea y te llevo a ello…',chip1:'¿Qué pieza necesito?',chip2:'Léeme el código de falla',chip3:'Enviar foto de placa',ph:'Dile a Mike en qué estás trabajando…',gate:'La primera respuesta va por la casa · <b>Crea tu cuenta para tener a Mike a la mano</b>',cta:'Empezar →',voice:"Pregúntame una cosa. La primera respuesta va por la casa — dime en qué estás trabajando."}
   },
   homeEs:{
@@ -5972,6 +6024,8 @@ var OB_I18N={
     facetime:{k:'02 · FACETIME',l1:'把手机',l2:'对准它。',line:"给他 FaceTime，<b>他看到你看到的</b> — 读铭牌、点出零件、帮你当着客户的面把单子拿下。",q:'“就是这儿 — 看到点火器上的细裂纹了吗？给业主看那个。那就是你的单子。”',sig:'— Mike，FaceTime 上',voice:"把手机对准它。给我 FaceTime，我看到你看到的。就是这儿 — 看到点火器上的细裂纹了吗？给业主看那个。那就是你的单子。"},
     text:{k:'03 · 短信 · 每一天',l1:'让你',l2:'越来越强的人。',line:"小问题、铭牌照片、难判的活 — <b>他记得你</b>，带你走向高级技师的收入。",me:"客户说频繁启停。3 吨 Goodman。该换电容还是我在白折腾？",mike:"先查电容 — 用表测，别用眼估。如果在范围内，那就看接触器，或者脏的冷凝器把高压顶起来了。别凭猜换件。",grow:'<b>你已经和 Mike 通了 14 次。</b><br>你的诊断速度是第一周的 2 倍。',voice:"让你越来越强的人。小问题、铭牌照片、难判的活 — 我记得你，带你走向高级技师的收入。"},
     money:{k:'04 · 钱',l1:'他自己',l2:'赚回两倍。',line:"任何工具都能诊断。Mike 抓住你本会漏掉的钱 — 客户嫌贵时还把话递到你手上。<b>都干得正派。</b>",mtag:'MIKE 抓到了这个',mctx:'工单 · CARRIER 80K · 风机维修',catch:'“既然进去了 — 那个滤网架敞着，他们家有个哮喘的孩子。<b>推荐媒体过滤柜。这是诚实的加项，不是硬卖。</b>”',cl1:'你的单价',cl2:'抓到之后',gl:'同一趟出车',honest:'▲ <b>客户真正需要的实在维修</b> — 不是凭猜换件。',ohd:'他们提出异议 · MIKE 给你台词',cust:'“这价格好像偏高 — 让我再问一家。”',say:'“合理。去问别家吧 — 我也希望你问。问每一家：<b>是不是持证技师在干活</b>，零件是不是<b>原厂带保修</b>。我的都是，白纸黑字，今天就给。更便宜通常意味着这两样里少了一样。”',osig:'— Mike，站在你这边',voice:"他自己赚回两倍。Mike 抓住你本会漏掉的钱 — 客户嫌贵时还把话递到你手上。都干得正派。"},
+    edge:{k:'为什么不直接用CHATGPT？',l1:'因为它靠猜。',l2:'MIKE不猜。',line:"向通用AI要一个规格参数，它会编一个出来 — 说得很自信，但是错的。<b>那就是一次返工。</b>",badme:'Goodman GSX16 三吨机的标准充注量是多少？',badwho:'CHATGPT',bad:'出厂充注量大约是 6磅4盎司 的R-410A。',badflag:'← 一本正经地编造',goodme:'这台系统几年了？[铭牌照片]',good:"这是Trane变速空气处理机。铭牌读数：序列号 182810YT3V — Trane的格式把年/周放在最前面。<b>18 = 2018年，28 = 第28周</b>，所以大约是2018年7月生产的。差不多8年了。",real:'↑ 一位真实技师给Mike看了铭牌。他直接读出来了 — 没有猜。',voice:"为什么不直接用ChatGPT？因为它靠猜 — 我不猜。我读真实的铭牌或真实的手册，读不到就请你念给我听。我从不编数字。"},
+    grow:{k:'还有更多',l1:'他和你',l2:'一起成长。',line:"不是聊天机器人 — <b>是每干一单就更懂你的搭档。</b>",soonLbl:'即将推出',rows:[{i:'📸',t:'给他看机组',s:'把相机对准铭牌或接线 — 他读出来，一步步带你干。'},{i:'🧠',t:'记得你',s:'你常修的品牌、你的片区、上一单 — 接着上次聊，像老搭档一样。'},{i:'🔌',t:'没信号也能用',soon:1,s:'阁楼、地下室、偏远地带 — 没有信号格，Mike也在。'}],matht:'帮你省下一次返工 = <em>6个月的Mike。</em>',maths:'一次返工等于赔上一整次上门（约$650）。避免一次，他就回本了。',voice:"我和你一起成长。用相机给我看机组，我一单一单记住你，很快我连信号都不需要。帮你省下一次返工，就抵得上六个月的我。"},
     magic:{k:'你的第一通',h1a:'问 Mike',h1b:'一件事。',st:'就绪 · 25 年每一种系统',free:'免费体验',me:'R-410A 系统，过冷 12 度，吸气压力低。我这是什么情况？',mike:'过冷 12 度还吸气压力低？你很可能是<b>充注过量且下游有堵</b> — 先查 TXV 感温包和液管温度。把管温告诉我，我带你定位…',chip1:'我需要什么零件？',chip2:'帮我读故障码',chip3:'发一张铭牌照片',ph:'告诉 Mike 你在修什么…',gate:'第一个回答免费 · <b>创建账号，把 Mike 留在快捷拨号里</b>',cta:'开始 →',voice:"问我一件事。第一个回答免费 — 告诉我你在修什么。"}
   },
   homeZh:{
@@ -5986,6 +6040,8 @@ var OB_I18N={
     facetime:{k:'02 · FACETIME',l1:'CHĨA ĐIỆN THOẠI',l2:'VÀO NÓ.',line:"FaceTime anh và <b>anh thấy thứ bạn thấy</b> — đọc nhãn máy, gọi tên linh kiện, giúp bạn chốt ngay trước mặt khách.",q:'“Đó kìa — thấy vết nứt tóc trên bộ đánh lửa không? Cho chủ nhà xem cái đó. Đó là đơn của bạn.”',sig:'— Mike, trên FaceTime',voice:"Chĩa điện thoại vào nó. FaceTime tôi và tôi thấy thứ bạn thấy. Đó kìa — thấy vết nứt tóc trên bộ đánh lửa không? Cho chủ nhà xem cái đó. Đó là đơn của bạn."},
     text:{k:'03 · NHẮN TIN · MỖI NGÀY',l1:'NGƯỜI LÀM',l2:'BẠN GIỎI LÊN.',line:"Câu hỏi nhanh, ảnh nhãn máy, những ca khó — <b>anh nhớ bạn</b> và nâng bạn lên mức lương thợ cả.",me:"Khách nói máy chạy ngắt liên tục. Goodman 3 tấn. Thay tụ hay tôi đang đoán mò?",mike:"Kiểm tra tụ trước — đo bằng đồng hồ, đừng nhìn bằng mắt. Nếu trong khoảng cho phép thì xem công tắc tơ hoặc dàn nóng bẩn làm dội áp cao. Đừng thay linh kiện theo phỏng đoán.",grow:'<b>Bạn đã có 14 cuộc với Mike.</b><br>Bạn chẩn đoán nhanh gấp 2 lần tuần đầu.',voice:"Người làm bạn giỏi lên. Câu hỏi nhanh, ảnh nhãn máy, những ca khó — tôi nhớ bạn và nâng bạn lên mức lương thợ cả."},
     money:{k:'04 · TIỀN',l1:'ANH TỰ',l2:'GẤP ĐÔI LẠI.',line:"Công cụ nào cũng chẩn đoán. Mike bắt được khoản tiền bạn sẽ bỏ lại — và đưa bạn lời nói khi khách kêu giá cao. <b>Làm tử tế.</b>",mtag:'MIKE BẮT ĐƯỢC CÁI NÀY',mctx:'CA · CARRIER 80K · SỬA QUẠT GIÓ',catch:'“Đã vào tới đây rồi — giá lọc đang hở toang mà nhà có đứa nhỏ bị hen. <b>Mời gắn tủ lọc. Đó là thêm tử tế, không phải bán ép.</b>”',cl1:'ĐƠN CỦA BẠN',cl2:'SAU KHI BẮT ĐƯỢC',gl:'CÙNG MỘT CHUYẾN',honest:'▲ <b>Sửa thật mà khách thực sự cần</b> — không phải thay linh kiện theo phỏng đoán.',ohd:'KHÁCH PHẢN ĐỐI · MIKE CÓ LỜI CHO BẠN',cust:'“Giá đó hơi cao — để tôi lấy báo giá khác.”',say:'“Hợp lý. Cứ lấy báo giá khác — tôi cũng muốn bạn làm vậy. Hỏi từng nơi xem <b>có thợ có giấy phép làm không</b> và linh kiện có <b>chính hãng kèm bảo hành không</b>. Của tôi thì có, bằng văn bản, ngay hôm nay. Rẻ hơn thường nghĩa là thiếu một trong hai cái đó.”',osig:'— Mike, đứng về phía bạn',voice:"Anh tự gấp đôi lại. Mike bắt được khoản tiền bạn sẽ bỏ lại — và đưa bạn lời nói khi khách kêu giá cao. Làm tử tế."},
+    edge:{k:'SAO KHÔNG DÙNG CHATGPT?',l1:'VÌ NÓ ĐOÁN MÒ.',l2:'MIKE THÌ KHÔNG.',line:"Hỏi một AI đại trà về thông số là nó bịa ra ngay — rất tự tin, và sai. <b>Đó là một lần quay lại sửa.</b>",badme:'Lượng gas chuẩn của Goodman GSX16 loại 3 tấn là bao nhiêu?',badwho:'CHATGPT',bad:'Lượng nạp từ nhà máy khoảng 6 lbs 4 oz gas R-410A.',badflag:'← bịa ra mà nói rất tự tin',goodme:'Hệ thống này bao nhiêu tuổi? [ảnh tem thông số]',good:"Đó là bộ xử lý không khí Trane biến tần. Đọc tem: số sê-ri 182810YT3V — định dạng của Trane đặt năm/tuần lên đầu. <b>18 = 2018, 28 = tuần thứ 28</b>, vậy máy sản xuất khoảng tháng 7/2018. Tức là khoảng 8 năm tuổi.",real:'↑ Một người thợ thật đưa tem cho Mike xem. Anh ấy đọc ra — không đoán.',voice:"Sao không dùng ChatGPT? Vì nó đoán mò — còn tôi thì không. Tôi đọc tem thật hoặc sổ tay thật, hoặc tôi nhờ bạn đọc cho tôi. Tôi không bao giờ bịa số liệu."},
+    grow:{k:'MỌI THỨ CÒN LẠI',l1:'VÀ ANH ẤY LỚN LÊN',l2:'CÙNG BẠN.',line:"Không phải chatbot — <b>một người đồng đội giỏi hơn sau mỗi công việc.</b>",soonLbl:'SẮP RA MẮT',rows:[{i:'📸',t:'Cho anh ấy xem máy',s:'Hướng camera vào tem máy hoặc dây điện — anh ấy đọc và hướng dẫn bạn từng bước.'},{i:'🧠',t:'Nhớ bạn',s:'Hãng máy bạn hay gặp, khu vực của bạn, việc lần trước — tiếp nối từ chỗ dừng, như một người đồng đội.'},{i:'🔌',t:'Hoạt động không cần sóng',soon:1,s:'Gác mái, tầng hầm, nơi hẻo lánh — Mike vẫn ở đó khi điện thoại mất sóng.'}],matht:'Một lần quay lại sửa anh ấy giúp bạn tránh = <em>6 tháng dùng Mike.</em>',maths:'Một lần quay lại sửa tốn nguyên một chuyến đi (~$650). Tránh được một lần là anh ấy tự trả tiền cho mình.',voice:"Và tôi lớn lên cùng bạn. Cho tôi xem máy qua camera, tôi nhớ bạn qua từng công việc, và sắp tới tôi sẽ hoạt động không cần sóng. Một lần quay lại sửa tôi giúp bạn tránh là đủ trả sáu tháng dùng tôi."},
     magic:{k:'CUỘC GỌI ĐẦU TIÊN',h1a:'HỎI MIKE',h1b:'MỘT ĐIỀU.',st:'SẴN SÀNG · 25 NĂM TRÊN MỌI HỆ THỐNG',free:'DÙNG THỬ MIỄN PHÍ',me:'Hệ thống R-410A, quá lạnh 12°, hút thấp. Tôi đang gặp gì đây?',mike:'Quá lạnh 12° mà hút thấp? Khả năng bạn <b>nạp dư kèm tắc nghẽn</b> phía sau — kiểm tra bầu cảm biến TXV và nhiệt độ ống lỏng trước. Cho tôi nhiệt độ các ống, tôi dẫn bạn tới nó…',chip1:'Tôi cần linh kiện gì?',chip2:'Đọc giúp mã lỗi',chip3:'Gửi ảnh nhãn máy',ph:'Cho Mike biết bạn đang làm gì…',gate:'Câu trả lời đầu miễn phí · <b>Tạo tài khoản để giữ Mike trong danh bạ nhanh</b>',cta:'Bắt Đầu →',voice:"Hỏi tôi một điều. Câu trả lời đầu miễn phí — cho tôi biết bạn đang làm gì."}
   },
   homeVi:{
@@ -6000,6 +6056,8 @@ var OB_I18N={
     facetime:{k:'02 · FACETIME',l1:'POINTEZ VOTRE',l2:'TÉLÉPHONE DESSUS.',line:"Lancez FaceTime et <b>il voit ce que vous voyez</b> — il lit la plaque, nomme la pièce, vous aide à conclure devant le client.",q:'“La voilà — vous voyez la microfissure sur l\'allumeur ? Montrez ça au client. C\'est votre vente.”',sig:'— Mike, en FaceTime',voice:"Pointez votre téléphone dessus. FaceTime-moi et je vois ce que vous voyez. La voilà — vous voyez la microfissure sur l'allumeur ? Montrez ça au client. C'est votre vente."},
     text:{k:'03 · SMS · TOUS LES JOURS',l1:'CELUI QUI VOUS',l2:'REND MEILLEUR.',line:"Questions rapides, photos de plaques, les cas difficiles — <b>il se souvient de vous</b> et vous mène vers le salaire de technicien senior.",me:"Le client dit que ça cycle court. Goodman 3 tonnes. Je remplace le condensateur ou je cours après ?",mike:"Vérifiez le condensateur d\'abord — au multimètre, pas à l\'œil. S\'il est dans les specs, regardez le contacteur ou un condenseur sale qui fait monter la haute pression. Ne changez pas une pièce au pif.",grow:'<b>Vous avez 14 appels avec Mike.</b><br>Vous diagnostiquez 2× plus vite que la première semaine.',voice:"Celui qui vous rend meilleur. Questions rapides, photos de plaques, les cas difficiles — je me souviens de vous et je vous mène vers le salaire de technicien senior."},
     money:{k:'04 · L\'ARGENT',l1:'IL SE PAIE.',l2:'DEUX FOIS.',line:"N\'importe quel outil diagnostique. Mike attrape l\'argent que vous laisseriez sur la table — et vous donne les mots quand on conteste le prix. <b>Fait honnêtement.</b>",mtag:'MIKE A REPÉRÉ ÇA',mctx:'JOB · CARRIER 80K · RÉPARATION SOUFFLEUR',catch:'“Tant que vous y êtes — le rack du filtre est grand ouvert et ils ont un enfant asthmatique. <b>Proposez le caisson média. C\'est un ajout honnête, pas une vente.</b>”',cl1:'VOTRE TICKET',cl2:'AVEC LA TROUVAILLE',gl:'MÊME DÉPLACEMENT',honest:'▲ <b>Vraie réparation dont le client a besoin</b> — pas un changement de pièce au pif.',ohd:'ILS ONT CONTESTÉ · MIKE A VOTRE RÉPONSE',cust:'“Ce prix paraît élevé — laissez-moi un autre devis.”',say:'“Juste. Prenez vos autres devis — je le voudrais aussi. Demandez à chacun si un <b>technicien agréé fait le travail</b> et si la pièce est <b>d\'origine avec garantie</b>. La mienne l\'est, par écrit, aujourd\'hui. Moins cher veut souvent dire qu\'il manque l\'un des deux.”',osig:'— Mike, dans votre coin',voice:"Il se paie, deux fois. Mike attrape l'argent que vous laisseriez sur la table — et vous donne les mots quand on conteste le prix. Fait honnêtement."},
+    edge:{k:'POURQUOI PAS JUSTE CHATGPT ?',l1:'PARCE QU\'IL DEVINE.',l2:'PAS MIKE.',line:"Demandez une spec à une IA générique et elle l\'invente — sûre d\'elle, et fausse. <b>Ça, c\'est un retour.</b>",badme:'Quelle est la charge d\'un Goodman GSX16 en 3 tonnes ?',badwho:'CHATGPT',bad:'La charge d\'usine est d\'environ 6 lbs 4 oz de R-410A.',badflag:'← inventé avec aplomb',goodme:'L\'âge de ce système ? [photo de la plaque signalétique]',good:"C\'est une centrale de traitement d\'air Trane à vitesse variable. Lecture de plaque : série 182810YT3V — le format Trane met année/semaine en tête. <b>18 = 2018, 28 = 28e semaine</b>, donc fabriquée vers juillet 2018. Environ 8 ans.",real:'↑ Un vrai technicien a montré la plaque à Mike. Il l\'a lue — sans deviner.',voice:"Pourquoi pas juste ChatGPT ? Parce qu\'il devine — et pas moi. Je lis la vraie plaque ou le vrai manuel, ou je vous demande de me le lire. Je n\'invente jamais un chiffre."},
+    grow:{k:'TOUT LE RESTE',l1:'ET IL PROGRESSE',l2:'AVEC VOUS.',line:"Pas un chatbot — <b>un équipier qui s\'améliore à chaque intervention.</b>",soonLbl:'BIENTÔT',rows:[{i:'📸',t:'Montrez-lui l\'unité',s:'Pointez votre caméra sur la plaque ou le câblage — il lit et vous guide pas à pas.'},{i:'🧠',t:'Il se souvient de vous',s:'Vos marques, votre secteur, le dernier chantier — il reprend où vous en étiez, comme un équipier.'},{i:'🔌',t:'Fonctionne sans réseau',soon:1,s:'Combles, sous-sol, en pleine campagne — Mike est toujours là quand il n\'y a plus de barres.'}],matht:'Un retour évité = <em>6 mois de Mike.</em>',maths:'Un retour vous coûte une intervention complète (~$650). Évitez-en un et il est rentabilisé.',voice:"Et je progresse avec vous. Montrez-moi l\'unité avec votre caméra, je me souviens de vous d\'un chantier à l\'autre, et bientôt je fonctionnerai sans aucun réseau. Un retour évité paie six mois de moi."},
     magic:{k:'VOTRE PREMIER APPEL',h1a:'DEMANDEZ À MIKE',h1b:'UNE CHOSE.',st:'PRÊT · 25 ANS SUR CHAQUE SYSTÈME',free:'ESSAI GRATUIT',me:'Système R-410A, 12° de sous-refroidissement, basse aspiration. Qu\'est-ce que je regarde ?',mike:'12° de sous-refroidissement avec basse aspiration ? Vous êtes probablement <b>en surcharge avec une restriction</b> en aval — vérifiez le bulbe du détendeur et la température de la ligne liquide d\'abord. Donnez-moi les temps de ligne et je vous y mène…',chip1:'Quelle pièce me faut-il ?',chip2:'Lis-moi le code défaut',chip3:'Envoyer une photo de plaque',ph:'Dites à Mike sur quoi vous travaillez…',gate:'La première réponse est offerte · <b>Créez votre compte pour garder Mike à portée</b>',cta:'Commencer →',voice:"Demandez-moi une chose. La première réponse est offerte — dites-moi sur quoi vous travaillez."}
   },
   homeFr:{
@@ -6014,6 +6072,8 @@ var OB_I18N={
     facetime:{k:'02 · FACETIME',l1:'APONTE SEU',l2:'CELULAR PRA ELE.',line:"Faça FaceTime e <b>ele vê o que você vê</b> — lê a plaqueta, aponta a peça, te ajuda a fechar na frente do cliente.",q:'“Achei — viu a trinca fina no ignitor? Mostra isso pro cliente. Essa é a sua venda.”',sig:'— Mike, no FaceTime',voice:"Aponte seu celular pra ele. Faça FaceTime e eu vejo o que você vê. Achei — viu a trinca fina no ignitor? Mostra isso pro cliente. Essa é a sua venda."},
     text:{k:'03 · MENSAGEM · TODO DIA',l1:'O CARA QUE TE',l2:'FAZ MELHOR.',line:"Dúvidas rápidas, fotos de plaqueta, as decisões difíceis — <b>ele lembra de você</b> e te leva pro salário de técnico sênior.",me:"Cliente diz que tá ligando e desligando direto. Goodman de 3 toneladas. Troco o capacitor ou tô caçando à toa?",mike:"Confere o capacitor primeiro — mede com o multímetro, não no olho. Se tiver na faixa, olha o contator ou um condensador sujo subindo a pressão de alta. Não troca peça no chute.",grow:'<b>Você já tem 14 chamadas com o Mike.</b><br>Você diagnostica 2× mais rápido que na primeira semana.',voice:"O cara que te faz melhor. Dúvidas rápidas, fotos de plaqueta, as decisões difíceis — eu lembro de você e te levo pro salário de técnico sênior."},
     money:{k:'04 · O DINHEIRO',l1:'ELE SE PAGA.',l2:'DUAS VEZES.',line:"Qualquer ferramenta diagnostica. O Mike pega o dinheiro que você deixaria na mesa — e te dá as palavras quando reclamam do preço. <b>Feito com honestidade.</b>",mtag:'MIKE PEGOU ISSO',mctx:'SERVIÇO · CARRIER 80K · REPARO DO SOPRADOR',catch:'“Já que você tá aí — o suporte do filtro tá escancarado e eles têm uma criança com asma. <b>Ofereça o gabinete de filtro. É um extra honesto, não venda forçada.</b>”',cl1:'SEU TICKET',cl2:'COM O ACHADO',gl:'MESMA VISITA',honest:'▲ <b>Conserto real que o cliente precisa mesmo</b> — não troca de peça no chute.',ohd:'RECLAMARAM · MIKE TEM SUA RESPOSTA',cust:'“Esse preço parece alto — deixa eu pegar outro orçamento.”',say:'“Justo. Pega seus outros orçamentos — eu ia querer que você pegasse. Pergunta a cada um se é um <b>técnico licenciado fazendo o serviço</b> e se a peça é <b>original com garantia</b>. A minha é, por escrito, hoje. Mais barato costuma significar que falta uma dessas duas.”',osig:'— Mike, do seu lado',voice:"Ele se paga, duas vezes. O Mike pega o dinheiro que você deixaria na mesa — e te dá as palavras quando reclamam do preço. Feito com honestidade."},
+    edge:{k:'POR QUE NÃO SÓ O CHATGPT?',l1:'PORQUE ELE CHUTA.',l2:'O MIKE NÃO.',line:"Peça uma especificação a uma IA genérica e ela inventa — com toda a confiança, e errada. <b>Isso é um retorno.</b>",badme:'Qual é a carga de um Goodman GSX16 de 3 toneladas?',badwho:'CHATGPT',bad:'A carga de fábrica é de cerca de 6 lbs 4 oz de R-410A.',badflag:'← inventado com confiança',goodme:'Idade deste sistema? [foto da placa de dados]',good:"É um climatizador de ar Trane de velocidade variável. Leitura da placa: série 182810YT3V — o formato da Trane põe ano/semana na frente. <b>18 = 2018, 28 = 28ª semana</b>, então foi fabricado por volta de julho de 2018. Uns 8 anos de uso.",real:'↑ Um técnico de verdade mostrou a placa ao Mike. Ele leu — sem chutar.',voice:"Por que não só o ChatGPT? Porque ele chuta — e eu não. Eu leio a placa real ou o manual real, ou peço pra você ler pra mim. Eu nunca invento um número."},
+    grow:{k:'TODO O RESTO',l1:'E ELE CRESCE',l2:'COM VOCÊ.',line:"Não é um chatbot — <b>um parceiro que melhora a cada serviço.</b>",soonLbl:'EM BREVE',rows:[{i:'📸',t:'Mostre a unidade pra ele',s:'Aponte a câmera pra plaqueta ou a fiação — ele lê e te orienta passo a passo.'},{i:'🧠',t:'Lembra de você',s:'Suas marcas, sua região, o último serviço — retoma de onde pararam, como um parceiro.'},{i:'🔌',t:'Funciona sem sinal',soon:1,s:'Sótão, porão, no meio do nada — o Mike continua lá quando o sinal some.'}],matht:'Um retorno que ele evita = <em>6 meses de Mike.</em>',maths:'Um retorno custa uma visita inteira (~$650). Evite um e ele já se pagou.',voice:"E eu cresço com você. Me mostra a unidade pela câmera, eu lembro de você serviço a serviço, e logo vou funcionar sem sinal nenhum. Um retorno que eu evitar paga seis meses de mim."},
     magic:{k:'SUA PRIMEIRA CHAMADA',h1a:'PERGUNTE AO MIKE',h1b:'UMA COISA.',st:'PRONTO · 25 ANOS EM TODO SISTEMA',free:'TESTE GRÁTIS',me:'Sistema R-410A, 12° de sub-resfriamento, sucção baixa. O que eu tô vendo?',mike:'12° de sub-resfriamento com sucção baixa? Provável que esteja <b>sobrecarregado com uma restrição</b> à jusante — confere o bulbo da válvula de expansão e a temperatura da linha de líquido primeiro. Me passa as temperaturas de linha que eu te levo até lá…',chip1:'Que peça eu preciso?',chip2:'Lê o código de falha pra mim',chip3:'Enviar foto da plaqueta',ph:'Conta pro Mike no que você tá trabalhando…',gate:'A primeira resposta é por conta da casa · <b>Crie sua conta pra deixar o Mike na discagem rápida</b>',cta:'Começar →',voice:"Me pergunta uma coisa. A primeira resposta é por conta da casa — conta no que você tá trabalhando."}
   },
   homePt:{
@@ -6289,7 +6349,7 @@ function obFrameHTML(type,p){
     var rows='';
     for(var gi=0;gi<(c.rows||[]).length;gi++){
       var r=c.rows[gi];
-      rows+='<div class="ob-row2"><div class="i">'+obEsc(r.i)+'</div><div><h3>'+obEsc(r.t)+(r.soon?' <span class="soon">SOON</span>':'')+'</h3><p>'+obEsc(r.s)+'</p></div></div>';
+      rows+='<div class="ob-row2"><div class="i">'+obEsc(r.i)+'</div><div><h3>'+obEsc(r.t)+(r.soon?' <span class="soon">'+obEsc(c.soonLbl||'SOON')+'</span>':'')+'</h3><p>'+obEsc(r.s)+'</p></div></div>';
     }
     return '<div class="ob-kicker" style="color:var(--ob-brass)">'+obEsc(c.k)+'</div>'
       +'<h1 class="ob-h1"><span class="l1">'+obEsc(c.l1)+'</span><span class="l2" style="color:var(--ob-brass)">'+obEsc(c.l2)+'</span></h1>'
@@ -8016,8 +8076,8 @@ var SYS_TYPES=["Air Conditioner – Split System","Air Conditioner – Package U
 var SYS_AGES=["0–5 years","5–10 years","10–15 years","15–20 years","20+ years","Not sure"];
 var BRANDS=["Carrier","Bryant","Payne","Trane","American Standard","Lennox","Goodman","Amana","Daikin","Rheem","Ruud","York","Coleman","Heil","Tempstar","Mitsubishi Electric","Fujitsu","LG","Bosch","Weil-McLain","Other / Unknown"];
 var HOME_SIZES=["Under 1,000 sq ft","1,000–1,500 sq ft","1,500–2,000 sq ft","2,000–2,500 sq ft","2,500–3,000 sq ft","3,000–4,000 sq ft","4,000+ sq ft"];
-var HOME_SYMPTOMS=[{icon:"❄️",label:"Not cooling"},{icon:"🔥",label:"Not heating"},{icon:"💨",label:"Weak airflow"},{icon:"💧",label:"Water leaking"},{icon:"🔊",label:"Strange noises"},{icon:"💸",label:"High energy bills"},{icon:"🌡️",label:"Uneven temperatures"},{icon:"🤧",label:"Poor air quality"},{icon:"🔄",label:"Keeps cycling on/off"},{icon:"❌",label:"Won't turn on"},{icon:"🧊",label:"Ice forming on unit"},
-  {icon:"🧊",label:"System freezing up"},{icon:"👃",label:"Burning smell"}];
+var HOME_SYMPTOMS=[{icon:"❄️",label:"Not cooling",k:"symNotCooling"},{icon:"🔥",label:"Not heating",k:"symNotHeating"},{icon:"💨",label:"Weak airflow",k:"symWeakAir"},{icon:"💧",label:"Water leaking",k:"symWater"},{icon:"🔊",label:"Strange noises",k:"symNoise"},{icon:"💸",label:"High energy bills",k:"symBills"},{icon:"🌡️",label:"Uneven temperatures",k:"symUneven"},{icon:"🤧",label:"Poor air quality",k:"symAirQ"},{icon:"🔄",label:"Keeps cycling on/off",k:"symCycling"},{icon:"❌",label:"Won't turn on",k:"symNoStart"},{icon:"🧊",label:"Ice forming on unit",k:"symIce"},
+  {icon:"🧊",label:"System freezing up",k:"symFreeze"},{icon:"👃",label:"Burning smell",k:"symSmell"}];
 var PRO_SYMPTOMS=[{icon:"❄️",label:"Not cooling"},{icon:"🌡️",label:"High head pressure"},{icon:"📉",label:"Low suction pressure"},{icon:"🧊",label:"Freezing up"},{icon:"🌊",label:"Refrigerant leak"},{icon:"🔄",label:"Short cycling"},{icon:"🔥",label:"No heat"},{icon:"🔥",label:"Furnace not igniting"},{icon:"💨",label:"Furnace blowing cold"},{icon:"🔩",label:"Heat exchanger issue"},{icon:"🟡",label:"Inducer motor fail"},{icon:"🔌",label:"Pressure switch fault"},{icon:"🔃",label:"Reversing valve stuck"},{icon:"🌡️",label:"Heat pump not heating"},{icon:"❄️",label:"Heat pump not cooling"},{icon:"💨",label:"Weak airflow"},{icon:"🔧",label:"Blower motor fail"},{icon:"🔌",label:"Capacitor fault"},{icon:"💧",label:"Drain blockage"},{icon:"⚡",label:"Electrical fault"},{icon:"🔌",label:"Contactor fail"},{icon:"🔧",label:"Compressor failure"},{icon:"🔊",label:"Strange noise"},{icon:"👃",label:"Burning smell"}];
 var CONCERNS=[{icon:"😷",label:"Allergies or Asthma"},{icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},{icon:"🐾",label:"Pets in home"},{icon:"💧",label:"Humidity problems"},{icon:"🌡️",label:"Hot or cold rooms"},{icon:"💰",label:"High energy bills"},{icon:"🔒",label:"No service plan yet"},{icon:"🛢️",label:"Old R-22 system"},{icon:"🏚️",label:"Older home"},{icon:"🔥",label:"Gas appliances"},{icon:"💨",label:"Poor ventilation"}];
 var MAINT_CONCERNS=[{icon:"💸",label:"Worried about bills"},{icon:"🔒",label:"Wants peace of mind"},{icon:"😷",label:"Health / air quality"},{icon:"👶",label:"Young children"},{icon:"🧓",label:"Elderly resident"},{icon:"🏠",label:"Older home"},{icon:"💔",label:"Had a breakdown before"},{icon:"🔥",label:"Gas system"},{icon:"📅",label:"Snowbird / seasonal"}];
@@ -8183,6 +8243,7 @@ function populateSelects(){
     rBrandRefrig:BRANDS,rTypeRefrig:SYS_TYPES,rAgeRefrig:SYS_AGES,
     mSysType:SYS_TYPES,mSysAge:SYS_AGES,mBrand:BRANDS};
   for(var id in map){var el=document.getElementById(id);if(!el)continue;map[id].forEach(function(o){var opt=document.createElement("option");opt.value=opt.textContent=o;el.appendChild(opt);});}
+  if(typeof localizeHomeAgeSelect==='function')localizeHomeAgeSelect();
 }
 
 function setMode(m){
@@ -8518,11 +8579,26 @@ function buildHomeSymptomGrid(){
   var grid=document.getElementById("homeSymptoms");if(!grid)return;
   grid.innerHTML="";
   HOME_SYMPTOMS.forEach(function(s){
-    var btn=document.createElement("button");btn.className="chip";
-    btn.innerHTML='<span class="chip-icon">'+s.icon+'</span><span>'+s.label+'</span>';
+    var btn=document.createElement("button");
+    // Display localizes via V2_I18N; s.label (English) stays the canonical value in
+    // selectedHomeSymptoms and the diagnostic prompt. Rebuilds (language switch /
+    // reset) restore the selected state from that canonical list.
+    btn.className=selectedHomeSymptoms.indexOf(s.label)>-1?"chip selected":"chip";
+    var disp=(s.k&&typeof v2t==="function")?v2t(s.k):s.label;
+    btn.innerHTML='<span class="chip-icon">'+s.icon+'</span><span>'+disp+'</span>';
     btn.onclick=function(){var idx=selectedHomeSymptoms.indexOf(s.label);if(idx>-1){selectedHomeSymptoms.splice(idx,1);btn.className="chip";}else{selectedHomeSymptoms.push(s.label);btn.className="chip selected";}};
     grid.appendChild(btn);
   });
+}
+// Localize the homeowner System Age option labels in place. Option VALUES stay the
+// English SYS_AGES strings (profile.homeSysAge persistence + the prompt read .value),
+// only the visible text translates. Option[0] is the data-v2i18n="ageSelect" placeholder.
+function localizeHomeAgeSelect(){
+  var sel=document.getElementById("homeSysAge");if(!sel||typeof v2t!=="function")return;
+  for(var i=0;i<sel.options.length;i++){
+    var idx=SYS_AGES.indexOf(sel.options[i].value);
+    if(idx>-1)sel.options[i].textContent=v2t("ageOpt"+idx);
+  }
 }
 
 function buildConcernsGrid(){
@@ -8986,7 +9062,7 @@ async function runHomeownerDiagnostic(){
   }
   var btn=document.getElementById("homeRunBtn");
   btn.disabled=true;btn.style.background="#A8472F";
-  btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing" style="font-size:18px;">Analyzing…</span>';
+  btn.innerHTML='<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3);"></span><span class="pulsing" style="font-size:18px;">'+v2t('btnAnalyzing')+'</span>';
   try{
     var syms=selectedHomeSymptoms.length?selectedHomeSymptoms.join(", "):"None selected";
 
@@ -9070,7 +9146,7 @@ async function runHomeownerDiagnostic(){
     appendMessage('agent','Something went wrong — please try again.');
     setMode('home'); // Push 7.5 — same anchor on the failure path
   }finally{
-    btn.disabled=false;btn.style.background="#C7553B";btn.innerHTML="⚡ Run Diagnostic";
+    btn.disabled=false;btn.style.background="#C7553B";btn.textContent=v2t('btnAnalyze');
   }
 }
 function resetHomeownerDiagnostic(){
@@ -10615,6 +10691,47 @@ var V2_I18N={
     lndHomeCtaPrime:'Ask Mike anything →',lndHomeCtaGhost:'Find a trusted local tech',lndHomeFoot:'HONEST READ · NO GUESSWORK · NEVER IN THE DARK',
     migHead:'We rebuilt everything. You need a fresh account.',migBody:'You were here from the beginning — that matters. Mike\'s got a whole new home now, and it doesn\'t carry the old one over. Takes 30 seconds to get back in. Same Mike, better everything.',migCta:'Create My Account',
     obNext:'Next  →',obStart:'Get Started →',seedTech:'Hey Mike — got a nameplate here, what do you make of it?',seedHome:'Tell Mike what\'s going on with your system.',
+    // Homeowner diagnose form + footer (i18n coverage pass, 2026-11)
+    hiwTitle:'How it works',hiwStep1:'Take a photo of your system or describe what\'s happening',hiwStep2:'Get a plain-English explanation — no technical jargon',
+    hiwStep3:'Know exactly what to tell your technician when you call',dzLabel:'📷 Take or Upload a Photo',dzSub:'A photo of your AC, furnace, or thermostat helps us give you a more accurate answer',
+    dzTitle:'Take or Upload a Photo',dzMeta:'Photo · Video · JPG · PNG · up to 50MB',dzCamera:'📸 Camera',
+    dzLibrary:'🖼️ Library',dzTipClose:'<span class="photo-tip-icon">✅</span><strong>Close up</strong><br/>Fill frame',dzTipLight:'<span class="photo-tip-icon">💡</span><strong>Good light</strong><br/>No shadows',
+    dzTipFocus:'<span class="photo-tip-icon">🔍</span><strong>In focus</strong><br/>Text readable',dzTipBlur:'<span class="photo-tip-icon">❌</span><strong>No blur</strong><br/>Retake if shaky',symLabel:'What is your system doing?',
+    symSub:'Select everything that applies',symNotCooling:'Not cooling',symNotHeating:'Not heating',
+    symWeakAir:'Weak airflow',symWater:'Water leaking',symNoise:'Strange noises',
+    symBills:'High energy bills',symUneven:'Uneven temperatures',symAirQ:'Poor air quality',
+    symCycling:'Keeps cycling on/off',symNoStart:'Won\'t turn on',symIce:'Ice forming on unit',
+    symFreeze:'System freezing up',symSmell:'Burning smell',descLabel:'Describe the problem in your own words',
+    descSub:'When did it start? Is it getting worse? Anything else you\'ve noticed?',descPh:'e.g. My AC runs all day but the house stays hot. Started 2 days ago…',ageLabel:'System Age',
+    ageSelect:'Select age…',ageOpt0:'0–5 years',ageOpt1:'5–10 years',
+    ageOpt2:'10–15 years',ageOpt3:'15–20 years',ageOpt4:'20+ years',
+    ageOpt5:'Not sure',btnAnalyze:'🔍 Analyze My System',btnAnalyzing:'Analyzing…',
+    btnNew:'🔄 New',ftTagPro:'Field Intelligence Platform',ftTagHome:'Know what\'s wrong before you call.',
+    ftTerms:'Terms',ftPrivacy:'Privacy',ftSupport:'Support',
+    ftLegal:'Diagnostics are for guidance only. Always have repairs involving refrigerant, gas, or high voltage performed by a licensed HVAC technician. Mike is an AI — not a licensed contractor. Use of this Service constitutes acceptance of our Terms of Service.',
+    // Auth overlay (i18n coverage pass, 2026-11)
+    authHero:'POWER <span class="t">ON.</span>',authSubIn:'Sign in to your field instrument',authSubUp:'Set up your field instrument',
+    authTrialPill:'🎯 14 days free — no credit card, cancel anytime',authTabIn:'Sign In',authTabUp:'Create Account',
+    authEmail:'Email',authPassword:'Password',authForgot:'Forgot password?',
+    authIAm:'I am a...',authRoleHome:'🏠 Homeowner',authRolePro:'🔧 Contractor',
+    authFullName:'Full Name',authNamePh:'Your name',authPassUpPh:'Min 8 characters',
+    authCompanyLbl:'Company <span style="font-weight:400;text-transform:none;color:#444">(optional)</span>',authCompanyPh:'Your HVAC company',authStartTrial:'Start Free Trial',
+    authTermsLine:'By continuing you agree to our <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Terms</a> and <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Privacy Policy</a>',
+    // Tech toolbelt home + profile drawer + sign-in CTA (i18n coverage pass, 2026-11)
+    mpStatus:'<span class="lt">STATUS &middot;</span> ON THE LINE <span class="lt">&middot;</span> 25 YRS',mpToolbelt:'— MIKE\'S TOOLBELT —',mpTParts:'Parts',
+    mpTPartsSub:'Lookup & order',mpTWarranty:'Warranty',mpTWarrantySub:'Check coverage',
+    mpTWiring:'Wiring',mpTWiringSub:'Diagrams',mpTJobs:'Close Job',
+    mpTJobsSub:'Invoice & sign-off',mpTManual:'Manuals',mpTManualSub:'Tech docs',
+    mpTDiag:'Diagnose',mpTDiagSub:'Fault codes',pddPlanTrial:'Trial',
+    pddTrialPre:'🎯 ',pddTrialDaysWord:'days',pddTrialPost:' left in free trial',
+    pddUsage:'Usage',pddCallsMonth:'{n} AI calls this month',pddProfile:'Profile Settings',
+    pddBilling:'Billing & Plan',pddWhatsNew:'What\'s New',pddPerformance:'My Performance',
+    pddInvoice:'Invoice Generator',pddCustomers:'Customers',pddRefLog:'Refrigerant Log',
+    pddDiagrams:'Saved Diagrams',pddHelp:'Help',pddDark:'Dark Mode',
+    pddClearMem:'Clear My Memory',pddSignOut:'Sign Out',pddDelete:'Delete Account',
+    lndSignIn:'Already have an account? <b>Sign in</b>',ariaCallMike:'Call Mike — hands-free voice',ariaTextMike:'Text Mike — chat',
+    ariaFaceMike:'FaceTime Mike — live visual',ariaLanguage:'Language',ariaProfile:'Profile',
+    ariaClose:'Close',ariaBack:'Back to Mike\'s home',
     demoTitle:'A REAL DIAGNOSIS',demoQ:'Carrier 58STA, no heat, high-limit lockout. Plenum\'s 182°F, static 3.2" wc, blower 11A. What\'s the fault and the fix?',demoTyping:'Mike is reading the system…',demoCta:'Ask Mike your own →',demoClose:'Close'},
   es:{reachCall:'LLAMAR',reachFace:'FACETIME',clear:'BORRAR',mikeName:'MIKE',headRole:'TÉCNICO MAESTRO',headStatus:'SIEMPRE DISPONIBLE',diagHead:'FALLA IDENTIFICADA',mentorSig:'— Mike',composer:'Pregúntale a Mike…',
     heroPro:'Inteligencia Profesional de Campo HVAC',heroHome:'¿Tu aire o calefacción no funciona?',
@@ -10646,6 +10763,47 @@ var V2_I18N={
     lndHomeCtaPrime:'Pregúntale a Mike →',lndHomeCtaGhost:'Encontrar un técnico de confianza',lndHomeFoot:'LECTURA HONESTA · SIN ADIVINANZAS · NUNCA A OSCURAS',
     migHead:'Reconstruimos todo. Necesitas una cuenta nueva.',migBody:'Estuviste aquí desde el principio — eso importa. Mike ahora tiene un hogar completamente nuevo, y no traslada el anterior. Toma 30 segundos volver a entrar. El mismo Mike, todo mejor.',migCta:'Crear Mi Cuenta',
     obNext:'Siguiente  →',obStart:'Empezar →',seedTech:'Oye Mike — tengo una placa aquí, ¿qué opinas?',seedHome:'Cuéntale a Mike qué está pasando con tu sistema.',
+    // Homeowner diagnose form + footer (i18n coverage pass, 2026-11)
+    hiwTitle:'Cómo funciona',hiwStep1:'Toma una foto de tu sistema o describe lo que está pasando',hiwStep2:'Recibe una explicación en palabras claras — sin tecnicismos',
+    hiwStep3:'Sabe exactamente qué decirle a tu técnico cuando llames',dzLabel:'📷 Toma o sube una foto',dzSub:'Una foto de tu aire, calefacción o termostato nos ayuda a darte una respuesta más precisa',
+    dzTitle:'Toma o sube una foto',dzMeta:'Foto · Video · JPG · PNG · hasta 50MB',dzCamera:'📸 Cámara',
+    dzLibrary:'🖼️ Galería',dzTipClose:'<span class="photo-tip-icon">✅</span><strong>De cerca</strong><br/>Llene el cuadro',dzTipLight:'<span class="photo-tip-icon">💡</span><strong>Buena luz</strong><br/>Sin sombras',
+    dzTipFocus:'<span class="photo-tip-icon">🔍</span><strong>Enfocada</strong><br/>Texto legible',dzTipBlur:'<span class="photo-tip-icon">❌</span><strong>No borrosa</strong><br/>Repítela si tembló',symLabel:'¿Qué está haciendo tu sistema?',
+    symSub:'Selecciona todo lo que aplique',symNotCooling:'No enfría',symNotHeating:'No calienta',
+    symWeakAir:'Poco flujo de aire',symWater:'Gotea agua',symNoise:'Ruidos extraños',
+    symBills:'Facturas de luz altas',symUneven:'Temperaturas disparejas',symAirQ:'Mala calidad de aire',
+    symCycling:'Prende y apaga seguido',symNoStart:'No enciende',symIce:'Hielo en la unidad',
+    symFreeze:'Sistema congelado',symSmell:'Olor a quemado',descLabel:'Describe el problema con tus propias palabras',
+    descSub:'¿Cuándo empezó? ¿Está empeorando? ¿Algo más que haya notado?',descPh:'Ej.: Mi aire corre todo el día pero la casa sigue caliente. Empezó hace 2 días…',ageLabel:'Edad del sistema',
+    ageSelect:'Selecciona la edad…',ageOpt0:'0–5 años',ageOpt1:'5–10 años',
+    ageOpt2:'10–15 años',ageOpt3:'15–20 años',ageOpt4:'Más de 20 años',
+    ageOpt5:'No estoy seguro',btnAnalyze:'🔍 Analizar mi sistema',btnAnalyzing:'Analizando…',
+    btnNew:'🔄 Nuevo',ftTagPro:'Plataforma de Inteligencia de Campo',ftTagHome:'Sabe qué está mal antes de llamar.',
+    ftTerms:'Términos',ftPrivacy:'Privacidad',ftSupport:'Soporte',
+    ftLegal:'Los diagnósticos son solo una guía. Las reparaciones con refrigerante, gas o alto voltaje siempre deben hacerlas técnicos de HVAC con licencia. Mike es una IA — no un contratista con licencia. El uso de este Servicio constituye la aceptación de nuestros Términos de Servicio.',
+    // Auth overlay (i18n coverage pass, 2026-11)
+    authHero:'EQUIPO <span class="t">ENCENDIDO.</span>',authSubIn:'Inicia sesión en tu instrumento de campo',authSubUp:'Configura tu instrumento de campo',
+    authTrialPill:'🎯 14 días gratis — sin tarjeta, cancela cuando quieras',authTabIn:'Iniciar Sesión',authTabUp:'Crear Cuenta',
+    authEmail:'Correo',authPassword:'Contraseña',authForgot:'¿Olvidaste tu contraseña?',
+    authIAm:'Soy...',authRoleHome:'🏠 Propietario',authRolePro:'🔧 Contratista',
+    authFullName:'Nombre completo',authNamePh:'Tu nombre',authPassUpPh:'Mínimo 8 caracteres',
+    authCompanyLbl:'Empresa <span style="font-weight:400;text-transform:none;color:#444">(opcional)</span>',authCompanyPh:'Tu empresa de HVAC',authStartTrial:'Comenzar prueba gratis',
+    authTermsLine:'Al continuar aceptas nuestros <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Términos</a> y nuestra <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Política de Privacidad</a>',
+    // Tech toolbelt home + profile drawer + sign-in CTA (i18n coverage pass, 2026-11)
+    mpStatus:'<span class="lt">ESTADO &middot;</span> EN LÍNEA <span class="lt">&middot;</span> 25 AÑOS',mpToolbelt:'— HERRAMIENTAS DE MIKE —',mpTParts:'Piezas',
+    mpTPartsSub:'Buscar y pedir',mpTWarranty:'Garantía',mpTWarrantySub:'Verificar cobertura',
+    mpTWiring:'Cableado',mpTWiringSub:'Diagramas',mpTJobs:'Cerrar Trabajo',
+    mpTJobsSub:'Factura y cierre',mpTManual:'Manuales',mpTManualSub:'Docs técnicos',
+    mpTDiag:'Diagnosticar',mpTDiagSub:'Códigos de falla',pddPlanTrial:'Prueba',
+    pddTrialPre:'🎯 Te quedan ',pddTrialDaysWord:'días',pddTrialPost:' de prueba gratis',
+    pddUsage:'Uso',pddCallsMonth:'{n} consultas de IA este mes',pddProfile:'Configuración de Perfil',
+    pddBilling:'Facturación y Plan',pddWhatsNew:'Novedades',pddPerformance:'Mi Desempeño',
+    pddInvoice:'Generador de Facturas',pddCustomers:'Clientes',pddRefLog:'Registro de Refrigerante',
+    pddDiagrams:'Diagramas Guardados',pddHelp:'Ayuda',pddDark:'Modo Oscuro',
+    pddClearMem:'Borrar Mi Memoria',pddSignOut:'Cerrar Sesión',pddDelete:'Eliminar Cuenta',
+    lndSignIn:'¿Ya tienes cuenta? <b>Inicia sesión</b>',ariaCallMike:'Llamar a Mike — voz manos libres',ariaTextMike:'Escribirle a Mike — chat',
+    ariaFaceMike:'FaceTime con Mike — video en vivo',ariaLanguage:'Idioma',ariaProfile:'Perfil',
+    ariaClose:'Cerrar',ariaBack:'Volver al inicio de Mike',
     demoTitle:'UN DIAGNÓSTICO REAL',demoQ:'Carrier 58STA, sin calor, bloqueo por límite alto. Pleno a 182°F, estática 3.2" wc, motor 11A. ¿Cuál es la falla y el arreglo?',demoTyping:'Mike está leyendo el sistema…',demoCta:'Pregúntale a Mike lo tuyo →',demoClose:'Cerrar'},
   zh:{reachCall:'通话',reachFace:'视频',clear:'清除',mikeName:'MIKE',headRole:'高级技师',headStatus:'随时在线',diagHead:'已识别故障',mentorSig:'— Mike',composer:'问 Mike 任何问题…',
     heroPro:'专业暖通现场智能',heroHome:'您的空调或暖气坏了吗？',
@@ -10677,6 +10835,47 @@ var V2_I18N={
     lndHomeCtaPrime:'问 Mike 任何问题 →',lndHomeCtaGhost:'寻找信赖的本地技师',lndHomeFoot:'诚实判断 · 不靠猜测 · 永不蒙在鼓里',
     migHead:'我们重建了一切。你需要一个全新的账户。',migBody:'你从一开始就在 — 这很重要。Mike 现在有了一个全新的家，不会把旧的带过来。重新登录只需 30 秒。还是那个 Mike，一切都更好。',migCta:'创建我的账户',
     obNext:'下一步  →',obStart:'开始 →',seedTech:'嘿 Mike — 我这有一张铭牌，你怎么看？',seedHome:'告诉 Mike 你的系统出了什么情况。',
+    // Homeowner diagnose form + footer (i18n coverage pass, 2026-11)
+    hiwTitle:'使用方法',hiwStep1:'拍下您的系统，或描述出现的状况',hiwStep2:'获得通俗易懂的解释 — 没有专业术语',
+    hiwStep3:'打电话时清楚知道该对技师说什么',dzLabel:'📷 拍照或上传照片',dzSub:'空调、暖炉或温控器的照片能帮我们给出更准确的答案',
+    dzTitle:'拍照或上传照片',dzMeta:'照片 · 视频 · JPG · PNG · 最大50MB',dzCamera:'📸 拍照',
+    dzLibrary:'🖼️ 相册',dzTipClose:'<span class="photo-tip-icon">✅</span><strong>拍近些</strong><br/>填满画面',dzTipLight:'<span class="photo-tip-icon">💡</span><strong>光线充足</strong><br/>避免阴影',
+    dzTipFocus:'<span class="photo-tip-icon">🔍</span><strong>对准焦</strong><br/>文字清晰',dzTipBlur:'<span class="photo-tip-icon">❌</span><strong>不要模糊</strong><br/>拍糊了请重拍',symLabel:'您的系统出现什么状况？',
+    symSub:'选择所有符合的项',symNotCooling:'不制冷',symNotHeating:'不制热',
+    symWeakAir:'风量弱',symWater:'漏水',symNoise:'异响',
+    symBills:'电费偏高',symUneven:'温度不均',symAirQ:'空气质量差',
+    symCycling:'频繁启停',symNoStart:'无法启动',symIce:'机组结冰',
+    symFreeze:'系统结冰',symSmell:'烧焦味',descLabel:'用您自己的话描述问题',
+    descSub:'什么时候开始的？是否越来越严重？还注意到什么？',descPh:'例如：空调整天运转，屋里还是热。两天前开始的……',ageLabel:'系统年限',
+    ageSelect:'选择年限…',ageOpt0:'0–5年',ageOpt1:'5–10年',
+    ageOpt2:'10–15年',ageOpt3:'15–20年',ageOpt4:'20年以上',
+    ageOpt5:'不确定',btnAnalyze:'🔍 分析我的系统',btnAnalyzing:'分析中……',
+    btnNew:'🔄 重新开始',ftTagPro:'现场智能平台',ftTagHome:'打电话之前先弄清问题。',
+    ftTerms:'条款',ftPrivacy:'隐私',ftSupport:'支持',
+    ftLegal:'诊断结果仅供参考。涉及制冷剂、燃气或高压电的维修，请务必交由持证HVAC技师完成。Mike是人工智能 — 不是持证承包商。使用本服务即表示接受我们的服务条款。',
+    // Auth overlay (i18n coverage pass, 2026-11)
+    authHero:'设备<span class="t">启动。</span>',authSubIn:'登录你的现场工具',authSubUp:'设置你的现场工具',
+    authTrialPill:'🎯 免费14天 — 无需信用卡，随时取消',authTabIn:'登录',authTabUp:'创建账户',
+    authEmail:'邮箱',authPassword:'密码',authForgot:'忘记密码？',
+    authIAm:'我是...',authRoleHome:'🏠 业主',authRolePro:'🔧 承包商',
+    authFullName:'姓名',authNamePh:'你的姓名',authPassUpPh:'至少8个字符',
+    authCompanyLbl:'公司 <span style="font-weight:400;text-transform:none;color:#444">（可选）</span>',authCompanyPh:'你的HVAC公司',authStartTrial:'开始免费试用',
+    authTermsLine:'继续即表示你同意我们的<a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">条款</a>和<a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">隐私政策</a>',
+    // Tech toolbelt home + profile drawer + sign-in CTA (i18n coverage pass, 2026-11)
+    mpStatus:'<span class="lt">状态 &middot;</span> 在线待命 <span class="lt">&middot;</span> 25年经验',mpToolbelt:'— MIKE的工具箱 —',mpTParts:'配件',
+    mpTPartsSub:'查询和订购',mpTWarranty:'保修',mpTWarrantySub:'查询保修范围',
+    mpTWiring:'接线',mpTWiringSub:'接线图',mpTJobs:'完工',
+    mpTJobsSub:'开票与签收',mpTManual:'手册',mpTManualSub:'技术文档',
+    mpTDiag:'诊断',mpTDiagSub:'故障代码',pddPlanTrial:'试用',
+    pddTrialPre:'🎯 免费试用还剩 ',pddTrialDaysWord:'天',pddTrialPost:'',
+    pddUsage:'用量',pddCallsMonth:'本月 {n} 次AI调用',pddProfile:'个人资料',
+    pddBilling:'账单与套餐',pddWhatsNew:'新功能',pddPerformance:'我的表现',
+    pddInvoice:'发票生成器',pddCustomers:'客户',pddRefLog:'制冷剂记录',
+    pddDiagrams:'已存图纸',pddHelp:'帮助',pddDark:'深色模式',
+    pddClearMem:'清除我的记忆',pddSignOut:'退出登录',pddDelete:'删除账户',
+    lndSignIn:'已有账户？<b>登录</b>',ariaCallMike:'呼叫Mike — 免提语音',ariaTextMike:'给Mike发消息 — 聊天',
+    ariaFaceMike:'和Mike视频 — 实时画面',ariaLanguage:'语言',ariaProfile:'个人资料',
+    ariaClose:'关闭',ariaBack:'返回Mike主页',
     demoTitle:'真实诊断',demoQ:'Carrier 58STA，不制热，高温限位锁定。风室 182°F，静压 3.2" wc，风机 11A。故障是什么，怎么修？',demoTyping:'Mike 正在读取系统…',demoCta:'问 Mike 你自己的问题 →',demoClose:'关闭'},
   vi:{reachCall:'GỌI',reachFace:'FACETIME',clear:'XÓA',mikeName:'MIKE',headRole:'THỢ CẢ',headStatus:'LUÔN SẴN SÀNG',diagHead:'ĐÃ XÁC ĐỊNH LỖI',mentorSig:'— Mike',composer:'Hỏi Mike bất kỳ điều gì…',
     heroPro:'Trí Tuệ Hiện Trường HVAC Chuyên Nghiệp',heroHome:'Máy lạnh hay lò sưởi của bạn không chạy?',
@@ -10708,6 +10907,47 @@ var V2_I18N={
     lndHomeCtaPrime:'Hỏi Mike bất kỳ điều gì →',lndHomeCtaGhost:'Tìm thợ địa phương đáng tin',lndHomeFoot:'NHẬN ĐỊNH THẬT · KHÔNG ĐOÁN MÒ · KHÔNG MƠ HỒ',
     migHead:'Chúng tôi đã xây dựng lại mọi thứ. Bạn cần một tài khoản mới.',migBody:'Bạn đã ở đây từ những ngày đầu — điều đó rất quan trọng. Mike giờ có một ngôi nhà hoàn toàn mới, và nó không mang theo cái cũ. Chỉ mất 30 giây để vào lại. Vẫn là Mike đó, mọi thứ tốt hơn.',migCta:'Tạo Tài Khoản Của Tôi',
     obNext:'Tiếp  →',obStart:'Bắt Đầu →',seedTech:'Chào Mike — tôi có một tấm nhãn máy ở đây, anh thấy sao?',seedHome:'Hãy kể cho Mike biết hệ thống của bạn đang gặp chuyện gì.',
+    // Homeowner diagnose form + footer (i18n coverage pass, 2026-11)
+    hiwTitle:'Cách hoạt động',hiwStep1:'Chụp ảnh hệ thống của bạn hoặc mô tả tình trạng đang xảy ra',hiwStep2:'Nhận giải thích dễ hiểu — không có thuật ngữ kỹ thuật',
+    hiwStep3:'Biết chính xác cần nói gì với thợ khi bạn gọi',dzLabel:'📷 Chụp hoặc tải ảnh lên',dzSub:'Ảnh máy lạnh, lò sưởi hoặc bộ điều nhiệt giúp chúng tôi trả lời chính xác hơn',
+    dzTitle:'Chụp hoặc tải ảnh lên',dzMeta:'Ảnh · Video · JPG · PNG · tối đa 50MB',dzCamera:'📸 Máy ảnh',
+    dzLibrary:'🖼️ Thư viện',dzTipClose:'<span class="photo-tip-icon">✅</span><strong>Chụp gần</strong><br/>Lấp đầy khung hình',dzTipLight:'<span class="photo-tip-icon">💡</span><strong>Đủ sáng</strong><br/>Không bóng tối',
+    dzTipFocus:'<span class="photo-tip-icon">🔍</span><strong>Rõ nét</strong><br/>Chữ đọc được',dzTipBlur:'<span class="photo-tip-icon">❌</span><strong>Không mờ</strong><br/>Chụp lại nếu rung',symLabel:'Hệ thống của bạn đang bị gì?',
+    symSub:'Chọn tất cả những gì đúng',symNotCooling:'Không lạnh',symNotHeating:'Không ấm',
+    symWeakAir:'Gió yếu',symWater:'Rò rỉ nước',symNoise:'Tiếng ồn lạ',
+    symBills:'Tiền điện cao',symUneven:'Nhiệt độ không đều',symAirQ:'Không khí kém',
+    symCycling:'Bật tắt liên tục',symNoStart:'Không khởi động',symIce:'Đóng băng trên máy',
+    symFreeze:'Hệ thống đông đá',symSmell:'Mùi khét',descLabel:'Mô tả vấn đề bằng lời của bạn',
+    descSub:'Bắt đầu từ khi nào? Có nặng hơn không? Còn gì khác bạn nhận thấy?',descPh:'VD: Máy lạnh chạy cả ngày mà nhà vẫn nóng. Bắt đầu 2 ngày trước…',ageLabel:'Tuổi hệ thống',
+    ageSelect:'Chọn số năm…',ageOpt0:'0–5 năm',ageOpt1:'5–10 năm',
+    ageOpt2:'10–15 năm',ageOpt3:'15–20 năm',ageOpt4:'Trên 20 năm',
+    ageOpt5:'Không rõ',btnAnalyze:'🔍 Phân tích hệ thống',btnAnalyzing:'Đang phân tích…',
+    btnNew:'🔄 Làm mới',ftTagPro:'Nền tảng Trí tuệ Hiện trường',ftTagHome:'Biết hỏng gì trước khi gọi thợ.',
+    ftTerms:'Điều khoản',ftPrivacy:'Quyền riêng tư',ftSupport:'Hỗ trợ',
+    ftLegal:'Chẩn đoán chỉ mang tính tham khảo. Mọi sửa chữa liên quan đến môi chất lạnh, gas hoặc điện cao áp phải do thợ HVAC có giấy phép thực hiện. Mike là AI — không phải nhà thầu có giấy phép. Việc sử dụng Dịch vụ này đồng nghĩa với việc chấp nhận Điều khoản Dịch vụ của chúng tôi.',
+    // Auth overlay (i18n coverage pass, 2026-11)
+    authHero:'BẬT <span class="t">NGUỒN.</span>',authSubIn:'Đăng nhập vào công cụ hiện trường của bạn',authSubUp:'Thiết lập công cụ hiện trường của bạn',
+    authTrialPill:'🎯 Miễn phí 14 ngày — không cần thẻ, hủy bất cứ lúc nào',authTabIn:'Đăng nhập',authTabUp:'Tạo tài khoản',
+    authEmail:'Email',authPassword:'Mật khẩu',authForgot:'Quên mật khẩu?',
+    authIAm:'Tôi là...',authRoleHome:'🏠 Chủ nhà',authRolePro:'🔧 Nhà thầu',
+    authFullName:'Họ và tên',authNamePh:'Tên của bạn',authPassUpPh:'Tối thiểu 8 ký tự',
+    authCompanyLbl:'Công ty <span style="font-weight:400;text-transform:none;color:#444">(không bắt buộc)</span>',authCompanyPh:'Công ty HVAC của bạn',authStartTrial:'Bắt đầu dùng thử miễn phí',
+    authTermsLine:'Khi tiếp tục, bạn đồng ý với <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Điều khoản</a> và <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Chính sách quyền riêng tư</a> của chúng tôi',
+    // Tech toolbelt home + profile drawer + sign-in CTA (i18n coverage pass, 2026-11)
+    mpStatus:'<span class="lt">TRẠNG THÁI &middot;</span> ĐANG TRỰC <span class="lt">&middot;</span> 25 NĂM',mpToolbelt:'— HỘP ĐỒ NGHỀ CỦA MIKE —',mpTParts:'Linh kiện',
+    mpTPartsSub:'Tra cứu & đặt hàng',mpTWarranty:'Bảo hành',mpTWarrantySub:'Kiểm tra phạm vi',
+    mpTWiring:'Đi dây',mpTWiringSub:'Sơ đồ điện',mpTJobs:'Chốt việc',
+    mpTJobsSub:'Hóa đơn & nghiệm thu',mpTManual:'Sổ tay',mpTManualSub:'Tài liệu kỹ thuật',
+    mpTDiag:'Chẩn đoán',mpTDiagSub:'Mã lỗi',pddPlanTrial:'Dùng thử',
+    pddTrialPre:'🎯 Còn ',pddTrialDaysWord:'ngày',pddTrialPost:' dùng thử miễn phí',
+    pddUsage:'Mức dùng',pddCallsMonth:'{n} lượt AI tháng này',pddProfile:'Cài đặt hồ sơ',
+    pddBilling:'Thanh toán & Gói',pddWhatsNew:'Có gì mới',pddPerformance:'Hiệu suất của tôi',
+    pddInvoice:'Tạo hóa đơn',pddCustomers:'Khách hàng',pddRefLog:'Nhật ký môi chất lạnh',
+    pddDiagrams:'Sơ đồ đã lưu',pddHelp:'Trợ giúp',pddDark:'Chế độ tối',
+    pddClearMem:'Xóa bộ nhớ của tôi',pddSignOut:'Đăng xuất',pddDelete:'Xóa tài khoản',
+    lndSignIn:'Đã có tài khoản? <b>Đăng nhập</b>',ariaCallMike:'Gọi Mike — đàm thoại rảnh tay',ariaTextMike:'Nhắn tin cho Mike — trò chuyện',
+    ariaFaceMike:'FaceTime với Mike — hình ảnh trực tiếp',ariaLanguage:'Ngôn ngữ',ariaProfile:'Hồ sơ',
+    ariaClose:'Đóng',ariaBack:'Về trang chính của Mike',
     demoTitle:'MỘT CHẨN ĐOÁN THẬT',demoQ:'Carrier 58STA, không nóng, khóa quá nhiệt. Khoang 182°F, tĩnh 3.2" wc, quạt 11A. Lỗi là gì và cách sửa?',demoTyping:'Mike đang đọc hệ thống…',demoCta:'Hỏi Mike chuyện của bạn →',demoClose:'Đóng'},
   fr:{reachCall:'APPELER',reachFace:'FACETIME',clear:'EFFACER',mikeName:'MIKE',headRole:'MAÎTRE TECH',headStatus:'TOUJOURS DISPO',diagHead:'PANNE IDENTIFIÉE',mentorSig:'— Mike',composer:'Demandez à Mike…',
     heroPro:'Intelligence de Terrain CVC Professionnelle',heroHome:'Votre clim ou chauffage ne marche pas ?',
@@ -10718,7 +10958,7 @@ var V2_I18N={
     qaDiagSub:'Contrôle complet, 5 min',qaCamSub:'Mike voit ce que vous voyez',qaShieldSub:'Contrôle 5 points avant clôture',qaCloseSale:'Conclure<br>la Vente',qaCloseSaleSub:'Réparer ou remplacer',
     qaAllTools:'Tous les Outils',qaPinHint:'touchez l’épingle pour favori',qaManual:'Recherche<br>Manuel',qaHistory:'Historique<br>des Jobs',qaWarranty:'Demande de<br>Garantie',qaPriceBook:'Grille de<br>Prix',qaSafety:'Contrôle<br>Sécurité',qaRecap:'Vidéo<br>Récap',
     qaTodaysCalls:'Appels du Jour',qaJobDone:'Terminé',qaJobOpen:'Ouvert',qaJobProg:'En Cours',qaLanguage:'Langue',obBackLbl:'← RETOUR',obSkipLbl:'PASSER',
-    lndLive:'MIKE · EN DIRECT',lndImTech:'JE SUIS TECH',lndImHome:'JE SUIS PROPRIÉTAIRE',lndReachText:'TEXTO',lndMentorSig:'— Mike · 25 ans',
+    lndLive:'MIKE · EN DIRECT',lndImTech:'JE SUIS TECH',lndImHome:'JE SUIS PROPRIÉTAIRE',lndReachText:'TEXTE',lndMentorSig:'— Mike · 25 ans',
     isReady:'PRÊT · NOUVELLE SESSION',isWaiting:'À VOTRE ÉCOUTE',isStatusReady:'PRÊT',isSession:'SESSION · PRÊT',isIdle:'● INACTIF',
     lndTechH1a:'REGARDEZ MIKE',lndTechH1b:'TRAITER',lndTechH1c:'UN APPEL',lndTechH1d:'EN TEMPS RÉEL.',
     lndTechLede:'<b>25 ans d’instinct de maître technicien, en direct :</b> il lit le système, identifie la panne, trouve la pièce, donne le prix — puis vous rend meilleur pour la suivante.',
@@ -10739,6 +10979,47 @@ var V2_I18N={
     lndHomeCtaPrime:'Demandez à Mike →',lndHomeCtaGhost:'Trouver un technicien de confiance',lndHomeFoot:'AVIS HONNÊTE · SANS DEVINETTE · JAMAIS DANS LE FLOU',
     migHead:'Nous avons tout reconstruit. Il vous faut un nouveau compte.',migBody:'Vous étiez là depuis le début — ça compte. Mike a maintenant une toute nouvelle maison, et elle ne reprend pas l\'ancienne. Il faut 30 secondes pour revenir. Le même Mike, tout en mieux.',migCta:'Créer Mon Compte',
     obNext:'Suivant  →',obStart:'Commencer →',seedTech:'Salut Mike — j\'ai une plaque ici, qu\'est-ce que t\'en penses ?',seedHome:'Dites à Mike ce qui se passe avec votre système.',
+    // Homeowner diagnose form + footer (i18n coverage pass, 2026-11)
+    hiwTitle:'Comment ça marche',hiwStep1:'Prenez une photo de votre système ou décrivez ce qui se passe',hiwStep2:'Recevez une explication claire — sans jargon technique',
+    hiwStep3:'Sachez exactement quoi dire à votre technicien quand vous appelez',dzLabel:'📷 Prendre ou envoyer une photo',dzSub:'Une photo de votre climatisation, chaudière ou thermostat nous aide à vous répondre plus précisément',
+    dzTitle:'Prendre ou envoyer une photo',dzMeta:'Photo · Vidéo · JPG · PNG · jusqu’à 50MB',dzCamera:'📸 Caméra',
+    dzLibrary:'🖼️ Galerie',dzTipClose:'<span class="photo-tip-icon">✅</span><strong>En gros plan</strong><br/>Remplissez le cadre',dzTipLight:'<span class="photo-tip-icon">💡</span><strong>Bonne lumière</strong><br/>Pas d’ombres',
+    dzTipFocus:'<span class="photo-tip-icon">🔍</span><strong>Bien nette</strong><br/>Texte lisible',dzTipBlur:'<span class="photo-tip-icon">❌</span><strong>Pas de flou</strong><br/>Reprenez si bougé',symLabel:'Que fait votre système ?',
+    symSub:'Sélectionnez tout ce qui s’applique',symNotCooling:'Ne refroidit pas',symNotHeating:'Ne chauffe pas',
+    symWeakAir:'Débit d’air faible',symWater:'Fuite d’eau',symNoise:'Bruits étranges',
+    symBills:'Factures élevées',symUneven:'Températures inégales',symAirQ:'Air de mauvaise qualité',
+    symCycling:'Marche/arrêt en boucle',symNoStart:'Ne démarre pas',symIce:'Glace sur l’unité',
+    symFreeze:'Système qui gèle',symSmell:'Odeur de brûlé',descLabel:'Décrivez le problème avec vos mots',
+    descSub:'Depuis quand ? Est-ce que ça empire ? Autre chose à signaler ?',descPh:'Ex. : la clim tourne toute la journée mais la maison reste chaude. Depuis 2 jours…',ageLabel:'Âge du système',
+    ageSelect:'Choisir l’âge…',ageOpt0:'0–5 ans',ageOpt1:'5–10 ans',
+    ageOpt2:'10–15 ans',ageOpt3:'15–20 ans',ageOpt4:'Plus de 20 ans',
+    ageOpt5:'Je ne sais pas',btnAnalyze:'🔍 Analyser mon système',btnAnalyzing:'Analyse en cours…',
+    btnNew:'🔄 Nouveau',ftTagPro:'Plateforme d’intelligence terrain',ftTagHome:'Sachez ce qui ne va pas avant d’appeler.',
+    ftTerms:'Conditions',ftPrivacy:'Confidentialité',ftSupport:'Assistance',
+    ftLegal:'Les diagnostics sont fournis à titre indicatif uniquement. Toute réparation impliquant du fluide frigorigène, du gaz ou de la haute tension doit être réalisée par un technicien HVAC agréé. Mike est une IA — pas un professionnel agréé. L’utilisation de ce Service vaut acceptation de nos Conditions d’utilisation.',
+    // Auth overlay (i18n coverage pass, 2026-11)
+    authHero:'SOUS <span class="t">TENSION.</span>',authSubIn:'Connectez-vous à votre instrument de terrain',authSubUp:'Configurez votre instrument de terrain',
+    authTrialPill:'🎯 14 jours gratuits — sans carte bancaire, annulable à tout moment',authTabIn:'Se connecter',authTabUp:'Créer un compte',
+    authEmail:'E-mail',authPassword:'Mot de passe',authForgot:'Mot de passe oublié ?',
+    authIAm:'Je suis...',authRoleHome:'🏠 Propriétaire',authRolePro:'🔧 Professionnel',
+    authFullName:'Nom complet',authNamePh:'Votre nom',authPassUpPh:'8 caractères minimum',
+    authCompanyLbl:'Société <span style="font-weight:400;text-transform:none;color:#444">(facultatif)</span>',authCompanyPh:'Votre société HVAC',authStartTrial:'Démarrer l’essai gratuit',
+    authTermsLine:'En continuant, vous acceptez nos <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Conditions</a> et notre <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Politique de confidentialité</a>',
+    // Tech toolbelt home + profile drawer + sign-in CTA (i18n coverage pass, 2026-11)
+    mpStatus:'<span class="lt">STATUT &middot;</span> EN LIGNE <span class="lt">&middot;</span> 25 ANS',mpToolbelt:'— LES OUTILS DE MIKE —',mpTParts:'Pièces',
+    mpTPartsSub:'Recherche & commande',mpTWarranty:'Garantie',mpTWarrantySub:'Vérifier la couverture',
+    mpTWiring:'Câblage',mpTWiringSub:'Schémas',mpTJobs:'Clôturer',
+    mpTJobsSub:'Facture & signature',mpTManual:'Manuels',mpTManualSub:'Docs techniques',
+    mpTDiag:'Diagnostic',mpTDiagSub:'Codes défaut',pddPlanTrial:'Essai',
+    pddTrialPre:'🎯 ',pddTrialDaysWord:'jours',pddTrialPost:' d’essai gratuit restants',
+    pddUsage:'Utilisation',pddCallsMonth:'{n} requêtes IA ce mois-ci',pddProfile:'Paramètres du profil',
+    pddBilling:'Facturation & forfait',pddWhatsNew:'Nouveautés',pddPerformance:'Mes performances',
+    pddInvoice:'Générateur de factures',pddCustomers:'Clients',pddRefLog:'Registre frigorigène',
+    pddDiagrams:'Schémas enregistrés',pddHelp:'Aide',pddDark:'Mode sombre',
+    pddClearMem:'Effacer ma mémoire',pddSignOut:'Se déconnecter',pddDelete:'Supprimer le compte',
+    lndSignIn:'Déjà un compte ? <b>Connectez-vous</b>',ariaCallMike:'Appeler Mike — voix mains libres',ariaTextMike:'Écrire à Mike — chat',
+    ariaFaceMike:'FaceTime avec Mike — visuel en direct',ariaLanguage:'Langue',ariaProfile:'Profil',
+    ariaClose:'Fermer',ariaBack:'Retour à l’accueil de Mike',
     demoTitle:'UN VRAI DIAGNOSTIC',demoQ:'Carrier 58STA, pas de chauffe, verrouillage limite haute. Plénum à 182°F, statique 3.2" wc, soufflante 11A. Quelle est la panne et la réparation ?',demoTyping:'Mike lit le système…',demoCta:'Posez votre propre question à Mike →',demoClose:'Fermer'},
   pt:{reachCall:'LIGAR',reachFace:'FACETIME',clear:'LIMPAR',mikeName:'MIKE',headRole:'TÉCNICO MESTRE',headStatus:'SEMPRE ATIVO',diagHead:'FALHA IDENTIFICADA',mentorSig:'— Mike',composer:'Pergunte ao Mike…',
     heroPro:'Inteligência Profissional de Campo HVAC',heroHome:'Seu ar ou aquecimento não funciona?',
@@ -10770,6 +11051,47 @@ var V2_I18N={
     lndHomeCtaPrime:'Pergunte ao Mike →',lndHomeCtaGhost:'Encontrar um técnico local de confiança',lndHomeFoot:'PARECER HONESTO · SEM ACHISMO · NUNCA NO ESCURO',
     migHead:'Reconstruímos tudo. Você precisa de uma conta nova.',migBody:'Você esteve aqui desde o começo — isso importa. O Mike agora tem um lar totalmente novo, e ele não traz o antigo junto. Leva 30 segundos para voltar. O mesmo Mike, tudo melhor.',migCta:'Criar Minha Conta',
     obNext:'Próximo  →',obStart:'Começar →',seedTech:'E aí Mike — tenho uma plaqueta aqui, o que você acha?',seedHome:'Conte ao Mike o que está rolando com o seu sistema.',
+    // Homeowner diagnose form + footer (i18n coverage pass, 2026-11)
+    hiwTitle:'Como funciona',hiwStep1:'Tire uma foto do seu sistema ou descreva o que está acontecendo',hiwStep2:'Receba uma explicação em linguagem simples — sem termos técnicos',
+    hiwStep3:'Saiba exatamente o que dizer ao técnico quando ligar',dzLabel:'📷 Tire ou envie uma foto',dzSub:'Uma foto do seu ar-condicionado, aquecedor ou termostato nos ajuda a dar uma resposta mais precisa',
+    dzTitle:'Tire ou envie uma foto',dzMeta:'Foto · Vídeo · JPG · PNG · até 50MB',dzCamera:'📸 Câmera',
+    dzLibrary:'🖼️ Galeria',dzTipClose:'<span class="photo-tip-icon">✅</span><strong>Bem de perto</strong><br/>Preencha o quadro',dzTipLight:'<span class="photo-tip-icon">💡</span><strong>Boa luz</strong><br/>Sem sombras',
+    dzTipFocus:'<span class="photo-tip-icon">🔍</span><strong>Em foco</strong><br/>Texto legível',dzTipBlur:'<span class="photo-tip-icon">❌</span><strong>Sem borrão</strong><br/>Refaça se tremeu',symLabel:'O que o seu sistema está fazendo?',
+    symSub:'Selecione tudo o que se aplica',symNotCooling:'Não gela',symNotHeating:'Não aquece',
+    symWeakAir:'Fluxo de ar fraco',symWater:'Vazando água',symNoise:'Barulhos estranhos',
+    symBills:'Conta de luz alta',symUneven:'Temperatura desigual',symAirQ:'Ar de má qualidade',
+    symCycling:'Liga e desliga direto',symNoStart:'Não liga',symIce:'Gelo na unidade',
+    symFreeze:'Sistema congelando',symSmell:'Cheiro de queimado',descLabel:'Descreva o problema com suas palavras',
+    descSub:'Quando começou? Está piorando? Notou mais alguma coisa?',descPh:'Ex.: o ar fica ligado o dia todo mas a casa continua quente. Começou há 2 dias…',ageLabel:'Idade do sistema',
+    ageSelect:'Selecione a idade…',ageOpt0:'0–5 anos',ageOpt1:'5–10 anos',
+    ageOpt2:'10–15 anos',ageOpt3:'15–20 anos',ageOpt4:'Mais de 20 anos',
+    ageOpt5:'Não sei',btnAnalyze:'🔍 Analisar meu sistema',btnAnalyzing:'Analisando…',
+    btnNew:'🔄 Novo',ftTagPro:'Plataforma de Inteligência de Campo',ftTagHome:'Saiba o que há de errado antes de ligar.',
+    ftTerms:'Termos',ftPrivacy:'Privacidade',ftSupport:'Suporte',
+    ftLegal:'Os diagnósticos servem apenas como orientação. Reparos envolvendo fluido refrigerante, gás ou alta tensão devem sempre ser feitos por um técnico de HVAC licenciado. O Mike é uma IA — não um prestador licenciado. O uso deste Serviço constitui aceitação dos nossos Termos de Serviço.',
+    // Auth overlay (i18n coverage pass, 2026-11)
+    authHero:'EQUIPAMENTO <span class="t">LIGADO.</span>',authSubIn:'Entre no seu instrumento de campo',authSubUp:'Configure seu instrumento de campo',
+    authTrialPill:'🎯 14 dias grátis — sem cartão, cancele quando quiser',authTabIn:'Entrar',authTabUp:'Criar conta',
+    authEmail:'E-mail',authPassword:'Senha',authForgot:'Esqueceu a senha?',
+    authIAm:'Eu sou...',authRoleHome:'🏠 Proprietário',authRolePro:'🔧 Profissional',
+    authFullName:'Nome completo',authNamePh:'Seu nome',authPassUpPh:'Mínimo de 8 caracteres',
+    authCompanyLbl:'Empresa <span style="font-weight:400;text-transform:none;color:#444">(opcional)</span>',authCompanyPh:'Sua empresa de HVAC',authStartTrial:'Começar teste grátis',
+    authTermsLine:'Ao continuar, você concorda com nossos <a href="#" onclick="showTermsModal();return false;" style="color:var(--rust);">Termos</a> e a <a href="#" onclick="showPrivacyModal();return false;" style="color:var(--rust);">Política de Privacidade</a>',
+    // Tech toolbelt home + profile drawer + sign-in CTA (i18n coverage pass, 2026-11)
+    mpStatus:'<span class="lt">STATUS &middot;</span> NA LINHA <span class="lt">&middot;</span> 25 ANOS',mpToolbelt:'— FERRAMENTAS DO MIKE —',mpTParts:'Peças',
+    mpTPartsSub:'Buscar e pedir',mpTWarranty:'Garantia',mpTWarrantySub:'Verificar cobertura',
+    mpTWiring:'Fiação',mpTWiringSub:'Diagramas',mpTJobs:'Fechar Serviço',
+    mpTJobsSub:'Fatura e assinatura',mpTManual:'Manuais',mpTManualSub:'Docs técnicos',
+    mpTDiag:'Diagnosticar',mpTDiagSub:'Códigos de falha',pddPlanTrial:'Teste',
+    pddTrialPre:'🎯 Faltam ',pddTrialDaysWord:'dias',pddTrialPost:' de teste grátis',
+    pddUsage:'Uso',pddCallsMonth:'{n} chamadas de IA neste mês',pddProfile:'Configurações do perfil',
+    pddBilling:'Cobrança e plano',pddWhatsNew:'Novidades',pddPerformance:'Meu desempenho',
+    pddInvoice:'Gerador de faturas',pddCustomers:'Clientes',pddRefLog:'Registro de fluido refrigerante',
+    pddDiagrams:'Diagramas salvos',pddHelp:'Ajuda',pddDark:'Modo escuro',
+    pddClearMem:'Limpar minha memória',pddSignOut:'Sair',pddDelete:'Excluir conta',
+    lndSignIn:'Já tem conta? <b>Entre</b>',ariaCallMike:'Ligar para o Mike — voz mãos livres',ariaTextMike:'Mandar mensagem pro Mike — chat',
+    ariaFaceMike:'FaceTime com o Mike — visual ao vivo',ariaLanguage:'Idioma',ariaProfile:'Perfil',
+    ariaClose:'Fechar',ariaBack:'Voltar ao início do Mike',
     demoTitle:'UM DIAGNÓSTICO REAL',demoQ:'Carrier 58STA, sem aquecer, bloqueio de limite alto. Pleno a 182°F, estática 3.2" wc, soprador 11A. Qual é a falha e o conserto?',demoTyping:'Mike está lendo o sistema…',demoCta:'Pergunte ao Mike o seu caso →',demoClose:'Fechar'}
 };
 function v2t(key){
@@ -10787,6 +11109,22 @@ function applyV2Lang(){
     // These come only from V2_I18N (no user input), so innerHTML is safe here.
     if(v.indexOf('<')>=0)el.innerHTML=v; else el.textContent=v;
   });
+  // Placeholder variant — data-v2i18n targets textContent, inputs/textareas need the
+  // placeholder attribute set instead.
+  document.querySelectorAll('[data-v2i18n-ph]').forEach(function(el){
+    var k=el.getAttribute('data-v2i18n-ph');
+    if(k)el.setAttribute('placeholder',v2t(k));
+  });
+  // ARIA variant — VoiceOver/TalkBack must announce in the UI's language, not English.
+  document.querySelectorAll('[data-v2i18n-aria]').forEach(function(el){
+    var k=el.getAttribute('data-v2i18n-aria');
+    if(k)el.setAttribute('aria-label',v2t(k));
+  });
+  // JS-built homeowner form pieces repaint with the language (guards: both are defined
+  // later in the file; on the very first applyV2Lang they may not exist yet — the
+  // DOMContentLoaded builders then paint in the already-active language themselves).
+  if(typeof localizeHomeAgeSelect==='function')localizeHomeAgeSelect();
+  if(typeof buildHomeSymptomGrid==='function')buildHomeSymptomGrid();
   var nm=document.getElementById('v2HeadName');if(nm)nm.textContent=v2t('mikeName');
   var rl=document.getElementById('v2HeadRole');if(rl)rl.textContent=v2t('headRole');
   var st=document.getElementById('v2HeadStatus');if(st)st.textContent=v2t('headStatus');
@@ -16246,6 +16584,7 @@ function setLang(lang){
   var dd=document.getElementById('langDropdown');
   if(dd)dd.style.display='none';
   if(typeof applyV2Lang==='function')applyV2Lang(); // V2 chat header + composer in 6 langs
+  if(typeof window._trzAnnRepaint==='function')window._trzAnnRepaint(); // announcement banner follows the language
   // setMode() owns heroTitle/heroSub/modeDesc; those aren't [data-v2i18n] nodes, so a
   // language switch mid-session must re-paint them too (else they stay in the old lang).
   if(typeof mode!=='undefined'){

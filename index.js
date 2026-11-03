@@ -5796,8 +5796,30 @@ async function sendTrialReminders() {
   }
 }
 
-setInterval(sendTrialReminders, TRIAL_SWEEP_INTERVAL_MS);
-setTimeout(sendTrialReminders, 60000);   // once a minute after boot, not during cold start
+// ── BACKGROUND SPENDERS RUN ON RAILWAY ONLY ──────────────────────────────────
+// 2026-11-03, Brandon's direct order after a -$56 credit burn: three leaked LOCAL
+// test boots (started for verification, orphaned when their ports were reclaimed)
+// ran the nightly manual-learner, the field-alert sweep and the trial-reminder
+// sweep for two days on the production API key. The schedulers below spend money
+// (model calls, web searches) or send email, so a boot that is not actually the
+// Railway deployment must never start them. The gate variable is
+// RAILWAY_GIT_COMMIT_SHA — set ONLY on real Railway deploys. (NOT
+// RAILWAY_ENVIRONMENT: `railway run` injects that into LOCAL shells too, which
+// is exactly how the burning boots were started — verified 2026-11-03.) A
+// deliberate local test can opt in with ALLOW_LOCAL_SCHEDULERS=1 and owns the
+// spend it causes.
+const RUN_SCHEDULERS = !!process.env.RAILWAY_GIT_COMMIT_SHA || process.env.ALLOW_LOCAL_SCHEDULERS === '1';
+// A Railway boot that fails the gate is an ANOMALY, not a local boot — scream, don't smile.
+// (RAILWAY_ENVIRONMENT present without a commit sha = image-based deploy or platform change;
+// trial reminders/learner/digest would silently die on prod otherwise.)
+if (!RUN_SCHEDULERS && process.env.RAILWAY_ENVIRONMENT)
+  console.error('[schedulers] ANOMALY: Railway environment detected but RAILWAY_GIT_COMMIT_SHA is unset — background jobs DISABLED on what looks like a real deploy. Investigate immediately.');
+if (RUN_SCHEDULERS) {
+  setInterval(sendTrialReminders, TRIAL_SWEEP_INTERVAL_MS);
+  setTimeout(sendTrialReminders, 60000);   // once a minute after boot, not during cold start
+} else {
+  console.log('[schedulers] local boot — trial-reminder sweep NOT started (spend/email guard)');
+}
 
 // ── NEVER CRASH ───────────────────────────────────────────────────────────────
 process.on('uncaughtException', (err) => { console.error('UNCAUGHT EXCEPTION — staying alive:', err.message); });
@@ -5805,9 +5827,13 @@ process.on('unhandledRejection', (reason) => { console.error('UNHANDLED REJECTIO
 
 // ── START ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  try { nightlyLearn.start(); } catch (e) { console.error('learn scheduler failed (non-fatal):', e.message); }
-  try { fieldAlert.start(); } catch (e) { console.error('field alert failed (non-fatal):', e.message); }
-  try { dailyDigest.start(); } catch (e) { console.error('daily digest failed (non-fatal):', e.message); }
+  if (RUN_SCHEDULERS) {
+    try { nightlyLearn.start(); } catch (e) { console.error('learn scheduler failed (non-fatal):', e.message); }
+    try { fieldAlert.start(); } catch (e) { console.error('field alert failed (non-fatal):', e.message); }
+    try { dailyDigest.start(); } catch (e) { console.error('daily digest failed (non-fatal):', e.message); }
+  } else {
+    console.log('[schedulers] local boot — learner/field-alert/digest NOT started (spend guard)');
+  }
   console.log(`Trazer Intelligence running on port ${PORT}`);
   console.log(`AI: ${ANTHROPIC_API_KEY?'ready':'MISSING'} | TTS: ${ELEVENLABS_API_KEY?'ready':'not set'} | DB: ${SUPABASE_URL?'ready':'not set'} | Billing: ${STRIPE_SECRET_KEY?'ready':'not set'}`);
 });

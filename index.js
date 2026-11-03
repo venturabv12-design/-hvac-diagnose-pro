@@ -54,20 +54,17 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY; // Optional — password rese
 // New techs sign up with NO card → 14 days of full Mike → card collected on day 15.
 // (Was card-upfront until 2026-08-07; the card in front of the product converted 66
 // site visitors into zero signups. The trial now has to earn the card, not precede it.)
-// EXISTING/founding techs are grandfathered: any account created before CARD_WALL_CUTOFF
-// is never walled (belt-and-suspenders with the explicit plan='founder' backfill).
-// The cutoff is env-overridable so it can be set to the exact prod-deploy instant at ship.
 const TRIAL_DAYS = 14;
-// Time-based grandfather safety net. MUST default to a PAST instant so an unset/forgotten env
-// can never future-date the window and let fresh signups slip through the wall (a leak the crew
-// caught). At ship, override CARD_WALL_CUTOFF to the exact prod-deploy instant. The PRIMARY
-// grandfather protection is the explicit plan='founder' backfill (scripts/grandfather-founders.js),
-// which flips every existing account regardless of date — this cutoff is only the belt-and-suspenders.
-const CARD_WALL_CUTOFF = process.env.CARD_WALL_CUTOFF || '2026-07-24T00:00:00Z';
-const CARD_WALL_CUTOFF_MS = new Date(CARD_WALL_CUTOFF).getTime();
-// Plans that always have access (paying + legacy/grandfathered free). 'founder' = the
-// grandfathered founding techs; 'beta' = pre-Phase-1 legacy; 'homeowner' = revivable legacy.
-const ALLOWED_PLANS = ['admin', 'pro', 'team', 'starter', 'founder', 'beta', 'homeowner'];
+// EVERYONE PAYS (Brandon, 2026-10-26: "everyone pays $50, founders included — it's a
+// business"). Two grandfather paths used to exist and BOTH are retired by that decision:
+//   1. The created_at < CARD_WALL_CUTOFF time window (the old belt-and-suspenders) —
+//      constants CARD_WALL_CUTOFF / CARD_WALL_CUTOFF_MS removed with it.
+//   2. 'founder' as a forever-free plan — it is no longer in ALLOWED_PLANS. The plan
+//      value itself stays on the rows (checkPaywall uses it to serve founder-specific
+//      wall copy at the founding rate), but it no longer grants free access.
+// Plans that always have access (paying + legacy). 'beta' = pre-Phase-1 legacy and the
+// smoke-test harness account — must keep working; 'homeowner' = revivable legacy.
+const ALLOWED_PLANS = ['admin', 'pro', 'team', 'starter', 'beta', 'homeowner'];
 
 // JWT_SECRET signs every auth token. Must be set in Railway env vars — a missing
 // secret means tokens from a previous deploy would be accepted, which is worse
@@ -610,7 +607,7 @@ app.post('/api/webhook', express.raw({type: 'application/json'}), async (req, re
           to: email,
           subject: 'Your Mike free trial ends in 3 days',
           html: `<p>Heads up — your 14-day free trial ends in 3 days.</p>
-                 <p>Nothing to do: you'll be charged <strong>$100/mo</strong> and keep full access to Mike.
+                 <p>Nothing to do: you'll be charged <strong>$50/mo</strong> and keep full access to Mike.
                  Want to cancel? Do it anytime from your account, no charge if you cancel before the trial ends.</p>
                  <p>— Mike @ Trazer</p>`,
         });
@@ -629,7 +626,7 @@ app.post('/api/webhook', express.raw({type: 'application/json'}), async (req, re
         await sendEmail({
           to: email,
           subject: 'Your Mike payment didn’t go through — please update your card',
-          html: `<p>We couldn’t process your $100/mo payment. No worries — your access to Mike is still on
+          html: `<p>We couldn’t process your $50/mo payment. No worries — your access to Mike is still on
                  while we retry over the next few days.</p>
                  <p>Please update your card to avoid any interruption: <a href="${APP_URL}">open Mike</a> → Account → Billing.</p>
                  <p>— Mike @ Trazer</p>`,
@@ -1256,6 +1253,45 @@ app.post('/api/auth/signup', authLimiter, async (req, res) => {
       return res.status(500).json({ error: 'Failed to create account' });
 
     const user = users[0];
+
+    // ABUSE VISIBILITY, LOG-ONLY (the backstop in Brandon's everyone-pays plan,
+    // 2026-10-26). With the founder free ride and the date grandfather gone, the one
+    // abuse route left is serial re-signups for fresh 14-day trials. We do NOT block
+    // and we add NO new client fingerprinting — we only write the signal down so the
+    // HQ/admin side can see it. Fingerprint = the existing device id if the request
+    // carries one (header x-trazer-did or body.did — note: today's signup client sends
+    // NEITHER, so this leg is dormant until the client ever includes it) + the existing
+    // IP/UA hash (weak on Railway — edge IPs rotate — so treat it as a hint, not proof).
+    // Every signup logs a 'signup_fingerprint' event; when the same hash already appears
+    // on 2+ PRIOR accounts, an additional 'signup_dupe_signal' event is logged.
+    // Fire-and-forget: a logging failure must never delay or fail a signup.
+    (async () => {
+      const rawDid = String(req.headers['x-trazer-did'] || (req.body && req.body.did) || '').slice(0, 64);
+      const didHash = /^[A-Za-z0-9_-]{8,64}$/.test(rawDid)
+        ? crypto.createHmac('sha256', JWT_SECRET).update('did|' + rawDid).digest('hex').slice(0, 16)
+        : null;
+      const ipHash = _visitorHash(req);
+      logUsage(user.id, 'signup_fingerprint', { did_hash: didHash, ip_hash: ipHash });
+      const priorAccounts = async (field, hash) => {
+        if (!hash) return 0;
+        const rows = await supabase('GET', 'events', null,
+          `?type=eq.signup_fingerprint&payload->>${field}=eq.${encodeURIComponent(hash)}&user_id=neq.${encodeURIComponent(user.id)}&select=user_id&limit=50`);
+        return Array.isArray(rows) ? new Set(rows.map(r => r.user_id).filter(Boolean)).size : 0;
+      };
+      const [priorDid, priorIp] = await Promise.all([
+        priorAccounts('did_hash', didHash),
+        priorAccounts('ip_hash', ipHash),
+      ]);
+      if (priorDid >= 2 || priorIp >= 2) {
+        logUsage(user.id, 'signup_dupe_signal', {
+          did_hash: didHash, ip_hash: ipHash,
+          prior_did_accounts: priorDid, prior_ip_accounts: priorIp,
+          // Which leg fired — did is the strong signal, ip is the weak one.
+          signal: priorDid >= 2 ? 'did' : 'ip',
+        });
+      }
+    })().catch(e => console.error('signup dupe-signal failed (non-fatal):', e.message));
+
     // Issue a signed JWT — the client treats this opaquely, same as before
     const token = signToken(user);
     
@@ -1610,7 +1646,8 @@ app.post('/api/billing/checkout', authenticateToken, async (req, res) => {
         // checkPaywall off trial_start, BEFORE the tech ever reaches Checkout. Passing
         // trial_period_days as well would hand them a second free 14 days on top of the 14 they
         // already used — 28 days free per signup. They arrive here because the free look ended,
-        // so this charges today. Grandfathered/founder accounts never reach this route.
+        // so this charges today. Founders reach this route too now (everyone pays,
+        // 2026-10-26) — their checkout runs at the same $50 'pro' price.
         'payment_method_collection': 'always',
         // Also stamp the trial on the subscription for our own webhook bookkeeping.
         'subscription_data[metadata][email]': email,
@@ -2860,8 +2897,11 @@ app.post('/api/redraw', aiLimiter, authenticateToken, requirePaidAccess, async (
 
 // ── AI ────────────────────────────────────────────────────────────────────────
 // ── SERVER-SIDE PAYWALL CHECK ─────────────────────────────────────────────────
-// Allow-set: admin/pro/team/starter/founder/homeowner/beta (forever) + trial (≤TRIAL_DAYS,
+// Allow-set: admin/pro/team/starter/homeowner/beta (forever) + trial (≤TRIAL_DAYS,
 // no card required — the card is collected when the window closes, not before).
+// 'founder' is NOT in the allow-set anymore (Brandon, 2026-10-26: "everyone pays $50,
+// founders included — it's a business") — founders without a subscription get a 402
+// with founder-specific copy at the founding rate.
 // No token / invalid / expired / unknown plan → denied (402, paywall flag).
 // DB error → fail-open so an outage never locks out paying users/techs.
 async function checkPaywall(token) {
@@ -2899,15 +2939,34 @@ async function checkPaywall(token) {
       return { allowed: false, reason: 'Account not found' };
 
     const { plan, trial_start, created_at, stripe_subscription_id } = users[0];
+    // NORMALIZE BEFORE COMPARING (W4 pre-flight, 2026-11-03): Brandon's own admin row
+    // carried plan="Admin" — includes('Admin') is false, and with the date grandfather
+    // gone the OWNER would have been walled. A hand-edited DB value must never read as
+    // "no plan", so every plan comparison below is case-insensitive + whitespace-tolerant.
+    const _plan = String(plan || '').trim().toLowerCase();
 
-    // Paying + legacy/grandfathered-free plans → always allowed.
-    if (ALLOWED_PLANS.includes(plan)) return { allowed: true };
+    // Paying + legacy plans → always allowed.
+    if (ALLOWED_PLANS.includes(_plan)) return { allowed: true };
 
-    // GRANDFATHER SAFETY NET: any account created before the card-wall launch is a founding
-    // tech — never walled, even if still carrying the legacy 'trial' plan. Belt-and-suspenders
-    // with the plan='founder' backfill so a missed row can never lock out an early user.
-    if (created_at && new Date(created_at).getTime() < CARD_WALL_CUTOFF_MS)
-      return { allowed: true };
+    // THE DATE GRANDFATHER IS GONE (Brandon, 2026-10-26: "everyone pays $50, founders
+    // included — it's a business"). The created_at < CARD_WALL_CUTOFF_MS allow-branch
+    // that lived here let any pre-Jul-24 account through forever; his decision
+    // supersedes it. created_at is still selected above — it remains the trial_start
+    // backstop in the trial branch below, nothing more.
+
+    // FOUNDERS (plan='founder'): no longer a free ride, but they get their own wall.
+    // A founder who PAID keeps access instantly two ways: (1) the webhook flips plan to
+    // the checkout plan ('pro'), which is in ALLOWED_PLANS and returns above; (2) if the
+    // row still says 'founder' but a subscription is on file (webhook race / manual
+    // backfill), the sub itself is the proof — allow. Only a founder with NO sub is walled,
+    // with founding-rate copy the client renders as the founder paywall screen.
+    if (_plan === 'founder') {
+      if (stripe_subscription_id) return { allowed: true };
+      return {
+        allowed: false, paywall: true, founder: true,
+        reason: 'Add a card to keep Mike — $50/month, your founding rate, locked in for good. Your jobs, your memory, your history — all saved and waiting.',
+      };
+    }
 
     // NEW SIGNUPS on 'trial' — NO CARD UP FRONT (Brandon, 2026-08-07). A tech signs up and gets
     // TRIAL_DAYS of real, unrestricted Mike with nothing on file. The card is collected at the
@@ -2920,7 +2979,7 @@ async function checkPaywall(token) {
     // from there). Otherwise fall back to our own window off trial_start, which /api/auth/signup
     // stamps on every new row. created_at is the backstop for any legacy row missing trial_start —
     // without it a null trial_start would read as epoch 0 and wall a brand-new account instantly.
-    if (plan === 'trial') {
+    if (_plan === 'trial') {
       if (stripe_subscription_id) return { allowed: true };
       const startedAt = new Date(trial_start || created_at || 0).getTime();
       if (startedAt && Date.now() - startedAt < TRIAL_DAYS * 86400000) return { allowed: true };
@@ -2944,7 +3003,7 @@ async function requirePaidAccess(req, res, next) {
     || req.body?.token;
   const access = await checkPaywall(token);
   if (!access.allowed)
-    return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
+    return res.status(402).json({ error: access.reason, paywall: access.paywall || false, founder: !!access.founder });
   next();
 }
 
@@ -2961,7 +3020,8 @@ const TTS_GRACE_LINES = 15;
 // exactly the people who hadn't bought yet. Found 2026-08-04 on Kirk Livingston's
 // signup: he heard a robot, not Mike.
 //
-// Paying/founder accounts are unaffected. Everyone else gets a LIFETIME allowance of
+// Paying accounts are unaffected (founders count once they subscribe — everyone pays,
+// 2026-10-26). Everyone else gets a LIFETIME allowance of
 // TTS_GRACE_LINES calls — enough to hear the real Mike through onboarding — after
 // which the wall resumes. The counter is server-side (events rows), so a client can't
 // spoof it, and it's lifetime-scoped so it can't be farmed by signing out and back in.
@@ -2973,7 +3033,7 @@ async function requireVoiceAccess(req, res, next) {
 
   const uid = req.user && req.user.id;
   if (!uid || !SUPABASE_URL)
-    return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
+    return res.status(402).json({ error: access.reason, paywall: access.paywall || false, founder: !!access.founder });
 
   try {
     const used = await supabase('GET', 'events', null,
@@ -2988,7 +3048,7 @@ async function requireVoiceAccess(req, res, next) {
     // Never let a counter failure hand out unlimited voice — fail closed to the wall.
     console.error('tts grace check failed (falling back to paywall):', e.message);
   }
-  return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
+  return res.status(402).json({ error: access.reason, paywall: access.paywall || false, founder: !!access.founder });
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -3272,7 +3332,7 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
   if (!_isTaste) {
     const access = await checkPaywall(authToken);
     if (!access.allowed)
-      return res.status(402).json({ error: access.reason, paywall: access.paywall || false });
+      return res.status(402).json({ error: access.reason, paywall: access.paywall || false, founder: !!access.founder });
   }
 
   const { messages, system, systemExtra = '', max_tokens = 1024, use_search = false, stream = false } = req.body;
@@ -5098,10 +5158,109 @@ app.post('/api/hq/ask', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// ── HQ: MONEY (owner-only) ────────────────────────────────────────────────────
+// The MONEY strip on the Founder Command Center home tab (everyone pays $50 —
+// Brandon, 2026-10-26). LIVE numbers pulled SERVER-SIDE from Stripe's REST API with
+// the secret key (never from the client — no client-side Stripe calls, ever) plus
+// trial-pipeline counts from our own DB. Gated exactly like /api/hq/ask.
+// Fail-soft on every leg: a Stripe or DB hiccup nulls that slice instead of 500ing
+// the cockpit. limit=100 per Stripe list is an honest cap at the current scale
+// (~tens of subs); revisit pagination before sub #101.
+app.get('/api/hq/money', authenticateToken, requireAdmin, async (req, res) => {
+  const PRICE = 50; // $50/mo — the locked rate, founders included
+
+  // Stripe slice (server-side only).
+  let stripeSlice = null;
+  if (STRIPE_SECRET_KEY) {
+    const sGet = async (path) => {
+      const r = await fetch(`https://api.stripe.com/v1/${path}`, {
+        headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}` },
+      });
+      if (!r.ok) throw new Error(`stripe ${path} → ${r.status}`);
+      return r.json();
+    };
+    try {
+      const since = Math.floor(Date.now() / 1000) - 30 * 86400;
+      const [act, past, inv] = await Promise.all([
+        sGet('subscriptions?status=active&limit=100'),
+        sGet('subscriptions?status=past_due&limit=100'),
+        sGet(`invoices?status=paid&created[gte]=${since}&limit=100`),
+      ]);
+      const subs = [...(act.data || []), ...(past.data || [])];
+      // MRR from the real price objects, not an assumed $50 — the number must be
+      // what Stripe will actually bill, including any legacy-priced sub.
+      let mrrCents = 0;
+      for (const s of (act.data || []))
+        for (const it of ((s.items && s.items.data) || []))
+          mrrCents += (it.price && it.price.unit_amount || 0) * (it.quantity || 1);
+      const cardCustomers = new Set(subs.map(s => s.customer).filter(Boolean));
+      stripeSlice = {
+        activeSubs: (act.data || []).length,
+        pastDue: (past.data || []).length,
+        mrr: Math.round(mrrCents / 100),
+        paidLast30: Math.round((inv.data || []).reduce((t, i) => t + (i.amount_paid || 0), 0) / 100),
+        cardsOnFile: cardCustomers.size,
+      };
+    } catch (e) {
+      console.error('hq/money stripe slice failed (non-fatal):', e.message);
+    }
+  }
+
+  // DB slice — trial pipeline + unpaid founders (the conversion targets).
+  let dbSlice = null;
+  let weeklyActiveUnpaid = null;
+  if (SUPABASE_URL) {
+    try {
+      const users = await supabase('GET', 'users', null,
+        '?select=id,plan,trial_start,created_at,stripe_subscription_id&limit=10000');
+      if (Array.isArray(users)) {
+        const now = Date.now();
+        const inWindow = (u) => {
+          const t = new Date(u.trial_start || u.created_at || 0).getTime();
+          return t && now - t < TRIAL_DAYS * 86400000;
+        };
+        const unpaidTrial   = users.filter(u => u.plan === 'trial'   && !u.stripe_subscription_id);
+        const unpaidFounder = users.filter(u => u.plan === 'founder' && !u.stripe_subscription_id);
+        dbSlice = {
+          trialsActive: unpaidTrial.filter(inWindow).length,
+          trialsAtWall: unpaidTrial.filter(u => !inWindow(u)).length,
+          foundersUnpaid: unpaidFounder.length,
+        };
+        // Unpaid accounts that asked Mike in the last 7 days — the honest "if converted"
+        // base: people the product is actively working for who aren't paying yet.
+        // beta/admin house accounts are excluded by construction (trial/founder only).
+        const unpaidIds = new Set([...unpaidTrial, ...unpaidFounder].map(u => u.id));
+        const asked = await supabase('GET', 'events', null,
+          `?type=eq.mike_ask&created_at=gte.${new Date(now - 7 * 86400000).toISOString()}&select=user_id&limit=10000`);
+        if (Array.isArray(asked)) {
+          const activeIds = new Set(asked.map(e => e.user_id).filter(Boolean));
+          weeklyActiveUnpaid = [...activeIds].filter(id => unpaidIds.has(id)).length;
+        }
+      }
+    } catch (e) {
+      console.error('hq/money db slice failed (non-fatal):', e.message);
+    }
+  }
+
+  // Simple honest forecast: what's booked now + what converts if every unpaid tech who
+  // actually used Mike this week adds a card. Labeled "if converted" — a target, not revenue.
+  const forecast = {
+    mrrNow: stripeSlice ? stripeSlice.mrr : null,
+    weeklyActiveUnpaid,
+    // Real-MRR base + the unpaid-active techs at $50 — never active_subs*assumed-price,
+    // which double-counted against the mrrNow field beside it (Jordan, 2026-11-03).
+    ifConverted: (weeklyActiveUnpaid != null)
+      ? (stripeSlice ? stripeSlice.mrr : 0) + weeklyActiveUnpaid * PRICE
+      : null,
+  };
+
+  res.json({ price: PRICE, stripe: stripeSlice, db: dbSlice, forecast });
+});
+
 // ── TTS ───────────────────────────────────────────────────────────────────────
 // Auth + rate-limited: token comes from body (existing frontend pattern, same as /api/ai)
 // or Authorization: Bearer header. authenticateToken reads both. (Security fix C3.)
-// requireVoiceAccess (not requirePaidAccess): paying/founder accounts pass as before;
+// requireVoiceAccess (not requirePaidAccess): paying accounts pass as before;
 // a brand-new account gets a small lifetime allowance so ONBOARDING speaks in Mike's
 // real voice instead of falling back to the browser robot. See the middleware comment.
 // ── ONBOARDING VOICE FOR VISITORS WITHOUT AN ACCOUNT ────────────────────────────
@@ -5617,7 +5776,7 @@ async function sendTrialReminders() {
         to: u.email,
         subject: `${daysLeft} ${dayWord} left on your free trial`,
         html: `<p>${firstName} — you've got <strong>${daysLeft} ${dayWord}</strong> left of Mike on the house.</p>
-               <p>After that, keeping him is <strong>$100/mo</strong>. Cancel whenever.</p>
+               <p>After that, keeping him is <strong>$50/mo</strong>. Cancel whenever.</p>
                <p><strong>Nothing happens automatically.</strong> We don't have a card for you, so you
                won't be charged a cent — Mike just stops answering until you add one.</p>
                <p><a href="${APP_URL}">Keep Mike in your pocket →</a></p>

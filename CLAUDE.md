@@ -131,6 +131,19 @@ git revert HEAD --no-edit && git push origin <branch>
 - **Railway**: push to `main` triggers automatic redeploy. Typical end-to-end: 90–180 seconds.
 - **Polling cadence**: 15-second intervals, 10-minute cap. Stop when both signals flip.
 
+## Credit-burn protection (hard rule, 2026-11-03)
+
+Background spenders (nightly learner, field-alert, daily digest, trial-reminder
+emails) start ONLY on real Railway deploys — gated on `RAILWAY_GIT_COMMIT_SHA`
+(NOT `RAILWAY_ENVIRONMENT`, which `railway run` injects into local shells).
+Deliberate local scheduler testing requires `ALLOW_LOCAL_SCHEDULERS=1`.
+
+**Any local boot of `index.js` (including via `railway run`) MUST end with
+`pkill -f "node index.js"` and a verified `pgrep` count of zero before the
+session moves on.** Three orphaned local boots once ran the learner on the
+production key for two days and put the Anthropic account $56 negative.
+`app-smoke.sh` alarms on stray local Mike processes — never remove that check.
+
 ## Platform notes
 
 Scripts in `scripts/` assume macOS bash + BSD grep/awk + `shasum -a 256` (not `sha256sum`). Linux contributors need GNU `coreutils` equivalents. Hooks are macOS-tested only.

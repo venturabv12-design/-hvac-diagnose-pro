@@ -3175,22 +3175,25 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
       </div>
     </div>
   </div>
-  <!-- Contractor plans — one plan, $100/mo; Enterprise custom for crews -->
+  <!-- Contractor plans — one plan, $50/mo; Enterprise custom for crews -->
   <div id="pwContractor">
     <div class="pw-plans" style="justify-content:center;">
       <div class="pw-plan sel" onclick="selectPlan('pro',this)">
-        <div class="pw-badge">EVERYTHING INCLUDED</div>
+        <!-- Card internals carry data-v2i18n so applyV2Lang repaints them on every
+             language switch — the payment moment must never be mixed-language
+             (visual review, 2026-11-03). "Mike Pro" is the tier brand name: untranslated. -->
+        <div class="pw-badge" data-v2i18n="pwBadgeAll">EVERYTHING INCLUDED</div>
         <div class="pw-name">Mike Pro</div>
         <div class="pw-price">$50</div>
         <div class="pw-period">/tech/mo</div>
         <div class="pw-features">
-          <div class="pw-feat">✅ Live chat &amp; voice with Mike</div>
-          <div class="pw-feat">✅ Live camera diagnosis</div>
-          <div class="pw-feat">✅ Full diagnostic form</div>
-          <div class="pw-feat">✅ Revenue coaching &amp; parts pricing</div>
-          <div class="pw-feat">✅ Nameplate scanner</div>
-          <div class="pw-feat">✅ SVG wiring diagrams</div>
-          <div class="pw-feat">✅ Priority support</div>
+          <div class="pw-feat" data-v2i18n="pwFeatChat">✅ Live chat &amp; voice with Mike</div>
+          <div class="pw-feat" data-v2i18n="pwFeatCamera">✅ Live camera diagnosis</div>
+          <div class="pw-feat" data-v2i18n="pwFeatForm">✅ Full diagnostic form</div>
+          <div class="pw-feat" data-v2i18n="pwFeatRevenue">✅ Revenue coaching &amp; parts pricing</div>
+          <div class="pw-feat" data-v2i18n="pwFeatNameplate">✅ Nameplate scanner</div>
+          <div class="pw-feat" data-v2i18n="pwFeatDiagrams">✅ SVG wiring diagrams</div>
+          <div class="pw-feat" data-v2i18n="pwFeatSupport">✅ Priority support</div>
         </div>
       </div>
       <!-- Enterprise is a LINK, not a selectable card. As a card it hijacked the
@@ -3199,7 +3202,7 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
            buyable plan, one button, one result. -->
       </div>
       <div style="text-align:center;margin-top:14px;">
-        <a href="#" onclick="contactEnterprise();return false;"
+        <a href="#" onclick="contactEnterprise();return false;" data-v2i18n="pwTeamLink"
            style="font-size:13px;color:#9ca3af;text-decoration:underline;text-underline-offset:3px;">
           Running a crew of 5 or more? Get team pricing
         </a>
@@ -3377,6 +3380,18 @@ body[data-mode="contractor"] .v2-msg-mike .time,body[data-mode="contractor"] .v2
         <div class="hq-stat"><div class="n warn" id="hqStatPaying">–</div><div class="l">paying</div></div>
         <div class="hq-stat"><div class="n" id="hqStatAsks">–</div><div class="l">questions · 7d</div></div>
       </div>
+
+      <!-- MONEY — everyone pays $50 (2026-10-26). Live Stripe numbers, pulled
+           SERVER-SIDE by /api/hq/money (owner-gated); nothing here talks to Stripe
+           from the browser. English-only like the rest of the owner cockpit. -->
+      <div class="hq-sectlabel">Money <span class="ct" id="hqMoneyCt"></span></div>
+      <div class="hq-stats">
+        <div class="hq-stat"><div class="n" id="hqMonCards">–</div><div class="l">cards on file</div></div>
+        <div class="hq-stat"><div class="n good" id="hqMonSubs">–</div><div class="l">active subs</div></div>
+        <div class="hq-stat"><div class="n" id="hqMonBooked">–</div><div class="l">booked · 30d</div></div>
+        <div class="hq-stat"><div class="n warn" id="hqMonTrials">–</div><div class="l">trial pipeline</div></div>
+      </div>
+      <div class="hq-note" id="hqMonForecast">Pulling live money numbers…</div>
 
       <div class="hq-sectlabel">Today's mission <span class="ct" id="hqMissCt"></span></div>
       <div class="hq-mission" id="hqMission">
@@ -5885,9 +5900,12 @@ function submitFeedback(){
   if(typeof showToast==='function')showToast('Thank you — your feedback has been sent ✓','success',3000);
   closeModal('helpModal');
 }
-function showPaywall(){
-  // END-OF-TRIAL WALL (new techs only; founding techs are grandfathered server-side and never
-  // see this). The 14 free days run with NO card — this only appears once they're spent.
+function showPaywall(founderFlag){
+  // END-OF-TRIAL + FOUNDER WALL. Since 2026-10-26 ("everyone pays $50, founders included —
+  // it's a business") founding techs are NOT grandfathered anymore: a founder without a
+  // subscription gets this wall too, in its founder framing (founding rate, everything
+  // saved). founderFlag arrives from a 402 carrying founder:true; belt-and-suspenders,
+  // the signed-in plan==='founder' triggers the same framing at every other entry point.
   closeProfileDD();
   // Close the live camera first. Belt-and-suspenders with the z-index fix: a walled tech
   // who taps the camera must SEE this, not have it open behind a running video feed.
@@ -5909,23 +5927,49 @@ function showPaywall(){
     return;
   }
   // Homeowner side restored 2026-08-06 — show the one plan set this account belongs to.
-  // selPlan is forced to match, so goCheckout can never bill a homeowner the $100 tech
+  // selPlan is forced to match, so goCheckout can never bill a homeowner the $50 tech
   // plan (or vice versa) just because the default was left on 'pro'.
   var isHome=!!(currentUser&&currentUser.role==='homeowner');
   var proDiv=document.getElementById('pwContractor');
   var homeDiv=document.getElementById('pwHomeowner');
-  var title=document.getElementById('pwTitle');
-  var sub=document.getElementById('pwSub');
   if(proDiv)proDiv.style.display=isHome?'none':'block';
   if(homeDiv)homeDiv.style.display=isHome?'block':'none';
   selPlan=isHome?'homeowner':'pro';
-  // This modal is now END-of-trial only. checkPaywall lets a no-card account through for the
-  // full 14 days, so anyone reaching this screen has already had the free look and WILL be
-  // charged on adding a card. The old "no charge today" copy would be a false billing promise.
-  if(title)title.textContent='Your 14 free days are up';
-  if(sub)sub.textContent='Add a card to keep Mike in your pocket — $50/mo, cancel anytime.';
+  // Remember the framing so a language switch while the wall is open can repaint the
+  // SAME framing (applyV2Lang calls _pwPaintDynamic when the overlay is showing).
+  window._pwIsFounder=!isHome&&(founderFlag===true||!!(currentUser&&currentUser.plan==='founder'));
+  _pwPaintDynamic();
   e.style.display='';           // clear the leftover inline display:none from the beta short-circuit
   e.classList.add('show');
+}
+// Paint the paywall's DYNAMIC strings (title/sub/CTA/footer) in the active language for
+// the remembered framing. The static card internals (badge, feature list, team link)
+// carry data-v2i18n and are repainted by applyV2Lang itself. All strings via v2t ×6
+// languages — the payment moment must never be mixed-language (visual review, 2026-11-03).
+function _pwPaintDynamic(){
+  var e=document.getElementById('paywallOverlay');if(!e)return;
+  var title=document.getElementById('pwTitle');
+  var sub=document.getElementById('pwSub');
+  var ctaBtn=e.querySelector('.pw-btn');
+  var note=e.querySelector('.pw-note');
+  if(window._pwIsFounder){
+    // FOUNDER FRAMING — founding rate locked, everything saved, one card, no drama.
+    // CTA runs the SAME goCheckout flow: selPlan='pro' → /api/billing/checkout at the
+    // $50 STRIPE_PRICE_PRO → webhook flips plan to 'pro' → instant unlock. The footer
+    // deliberately does NOT say "free days are up" — founders never had trial framing.
+    if(title)title.textContent=v2t('pwFounderTitle');
+    if(sub)sub.textContent=v2t('pwFounderSub');
+    if(ctaBtn)ctaBtn.textContent=v2t('pwFounderCta');
+    if(note)note.textContent=v2t('pwFounderNote');
+  }else{
+    // This modal is now END-of-trial only. checkPaywall lets a no-card account through for the
+    // full 14 days, so anyone reaching this screen has already had the free look and WILL be
+    // charged on adding a card. The old "no charge today" copy would be a false billing promise.
+    if(title)title.textContent=v2t('pwTrialTitle');
+    if(sub)sub.textContent=v2t('pwTrialSub');
+    if(ctaBtn)ctaBtn.textContent=v2t('pwTrialCta');
+    if(note)note.textContent=v2t('pwNote');
+  }
 }
 // Enterprise is its own action now, not a plan you can accidentally select. Keeps the
 // main button honest: it always starts the trial, never silently becomes an email draft.
@@ -7795,6 +7839,28 @@ function hqLoadData(){
     .then(function(d){ try{ hqRenderStats(d); }catch(e){} });
   fetch('/api/admin/users',{headers:hdr}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
     .then(function(d){ try{ hqRenderTeam((d&&d.users)||[]); }catch(e){} });
+  // MONEY strip — live Stripe + trial pipeline, server-side via /api/hq/money.
+  fetch('/api/hq/money',{headers:hdr}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+    .then(function(d){ try{ hqRenderMoney(d); }catch(e){} });
+}
+
+// Paint the MONEY strip. Every slice is fail-soft server-side, so render what came
+// back and say plainly when a slice didn't — a dash is honest, a stale number isn't.
+function hqRenderMoney(d){
+  if(!d){hqSet('hqMonForecast','Money numbers unavailable right now — Stripe/DB didn\'t answer. The rest of HQ still works.');return;}
+  var s=d.stripe, db=d.db, f=d.forecast||{};
+  hqSet('hqMonCards',(s&&s.cardsOnFile!=null)?s.cardsOnFile:'–');
+  hqSet('hqMonSubs',(s&&s.activeSubs!=null)?s.activeSubs:'–');
+  hqSet('hqMonBooked',(s&&s.paidLast30!=null)?('$'+s.paidLast30):'–');
+  var pipeline=db?((db.trialsActive||0)+(db.trialsAtWall||0)+(db.foundersUnpaid||0)):null;
+  hqSet('hqMonTrials',pipeline!=null?pipeline:'–');
+  hqSet('hqMoneyCt',(s&&s.mrr!=null)?('$'+s.mrr+'/mo booked'):(s?'':'Stripe not answering'));
+  var line='';
+  if(f.mrrNow!=null)line+='Booked now: $'+f.mrrNow+'/mo.';
+  if(f.ifConverted!=null)line+=' If the '+(f.weeklyActiveUnpaid||0)+' unpaid techs who used Mike this week convert: $'+f.ifConverted+'/mo.';
+  if(db)line+=' Pipeline: '+(db.trialsActive||0)+' in trial, '+(db.trialsAtWall||0)+' at the wall, '+(db.foundersUnpaid||0)+' founders unpaid.';
+  if(s&&s.pastDue)line+=' ⚠ '+s.pastDue+' past due.';
+  hqSet('hqMonForecast',line||'No money data yet.');
 }
 
 function hqSet(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
@@ -8898,9 +8964,10 @@ async function callAI(system,messages,max_tokens,useSearch){
         }
         throw new Error('Your session expired. Please sign in again.');
       }
-      // 402 with paywall:true = real paywall (trial expired, no subscription).
+      // 402 with paywall:true = real paywall (trial expired — or a founder with no
+      // subscription; founder:true selects the founding-rate framing. 2026-10-26).
       if(res.status===402){
-        showPaywall();
+        showPaywall(data&&data.founder===true);
         throw new Error(data.error||'Subscription required.');
       }
       // 502 = a transient upstream hiccup (Anthropic/web_search blipped) — these fail
@@ -8966,7 +9033,7 @@ async function callAIStream(system,messages,max_tokens,onToken){
       // genuinely dead. One blip never ejects a signed-in tech. currentUser is left intact.
       throw new Error('stream auth blip — retrying on non-stream path');
     }
-    if(res.status===402){showPaywall();throw new Error(ed.error||'Subscription required.');}
+    if(res.status===402){showPaywall(ed&&ed.founder===true);throw new Error(ed.error||'Subscription required.');}
     if(res.status===429){throw new Error('Busy right now — hit send again and I\'ll grab it.');}
     throw new Error(ed.error||('Mike hit an error ('+res.status+'). Tap send again.'));
   }
@@ -10661,7 +10728,27 @@ var WELCOME_I18N={
 };
 // P1-4 — localized suggested follow-up chips, keyed by detected topic category.
 var V2_I18N={
-  en:{reachCall:'CALL',reachFace:'FACETIME',clear:'CLEAR',mikeName:'MIKE',headRole:'MASTER TECH',headStatus:'ALWAYS ON',diagHead:'FAULT IDENTIFIED',mentorSig:'— Mike',composer:'Ask Mike anything…',
+  en:{
+    // FOUNDER PAYWALL (everyone pays $50 — Brandon, 2026-10-26). Shown when the 402
+    // carries founder:true (or the signed-in plan is 'founder'). See showPaywall.
+    pwFounderTitle:'FOUNDING TECH RATE — $50/MO LOCKED',
+    pwFounderSub:'Everything you built with Mike — your jobs, his memory of you, your history — is saved and waiting. One card, no drama: $50/month, locked in as a founding tech.',
+    pwFounderCta:'Keep Mike — $50/mo',
+    pwFounderNote:'🔒 Founding rate, locked for good — cancel anytime · Secured by Stripe',
+    pwTrialTitle:'Your 14 free days are up',
+    pwTrialSub:'Add a card to keep Mike in your pocket — $50/mo, cancel anytime.',
+    pwTrialCta:'Keep Mike — $50/mo',
+    pwNote:'🔒 Your free days are up — $50/mo from today, cancel anytime · Secured by Stripe',
+    pwBadgeAll:'EVERYTHING INCLUDED',
+    pwFeatChat:'✅ Live chat & voice with Mike',
+    pwFeatCamera:'✅ Live camera diagnosis',
+    pwFeatForm:'✅ Full diagnostic form',
+    pwFeatRevenue:'✅ Revenue coaching & parts pricing',
+    pwFeatNameplate:'✅ Nameplate scanner',
+    pwFeatDiagrams:'✅ SVG wiring diagrams',
+    pwFeatSupport:'✅ Priority support',
+    pwTeamLink:'Running a crew of 5 or more? Get team pricing',
+    reachCall:'CALL',reachFace:'FACETIME',clear:'CLEAR',mikeName:'MIKE',headRole:'MASTER TECH',headStatus:'ALWAYS ON',diagHead:'FAULT IDENTIFIED',mentorSig:'— Mike',composer:'Ask Mike anything…',
     heroPro:'Professional HVAC Field Intelligence',heroHome:'Is Your AC or Heat Not Working?',
     heroSubPro:'Mike — your AI master tech. Diagnostics, live camera, parts pricing, revenue coaching.',heroSubHome:'Take a photo, describe what\'s happening, and get a clear answer in seconds. No HVAC knowledge needed.',
     descPro:'Mike handles diagnostics, revenue, refrigerant, maintenance — everything in one chat.',descHome:'Plain English explanations. Know if it\'s safe, how urgent it is, and exactly what to tell your technician.',
@@ -10733,7 +10820,25 @@ var V2_I18N={
     ariaFaceMike:'FaceTime Mike — live visual',ariaLanguage:'Language',ariaProfile:'Profile',
     ariaClose:'Close',ariaBack:'Back to Mike\'s home',
     demoTitle:'A REAL DIAGNOSIS',demoQ:'Carrier 58STA, no heat, high-limit lockout. Plenum\'s 182°F, static 3.2" wc, blower 11A. What\'s the fault and the fix?',demoTyping:'Mike is reading the system…',demoCta:'Ask Mike your own →',demoClose:'Close'},
-  es:{reachCall:'LLAMAR',reachFace:'FACETIME',clear:'BORRAR',mikeName:'MIKE',headRole:'TÉCNICO MAESTRO',headStatus:'SIEMPRE DISPONIBLE',diagHead:'FALLA IDENTIFICADA',mentorSig:'— Mike',composer:'Pregúntale a Mike…',
+  es:{
+    pwFounderTitle:'TARIFA DE TÉCNICO FUNDADOR — $50/MES, FIJA',
+    pwFounderSub:'Todo lo que construiste con Mike — tus trabajos, lo que él recuerda de ti, tu historial — está guardado y esperándote. Una tarjeta y listo, sin drama: $50 al mes, tarifa fija por ser técnico fundador.',
+    pwFounderCta:'Quédate con Mike — $50/mes',
+    pwFounderNote:'🔒 Tarifa de fundador, fija para siempre — cancela cuando quieras · Protegido por Stripe',
+    pwTrialTitle:'Tus 14 días gratis se acabaron',
+    pwTrialSub:'Agrega una tarjeta para que Mike siga en tu bolsillo — $50/mes, cancela cuando quieras.',
+    pwTrialCta:'Quédate con Mike — $50/mes',
+    pwNote:'🔒 Tus días gratis se acabaron — $50/mes desde hoy, cancela cuando quieras · Protegido por Stripe',
+    pwBadgeAll:'TODO INCLUIDO',
+    pwFeatChat:'✅ Chat y voz en vivo con Mike',
+    pwFeatCamera:'✅ Diagnóstico con cámara en vivo',
+    pwFeatForm:'✅ Formulario de diagnóstico completo',
+    pwFeatRevenue:'✅ Coaching de ingresos y precios de repuestos',
+    pwFeatNameplate:'✅ Escáner de placa de datos',
+    pwFeatDiagrams:'✅ Diagramas de cableado SVG',
+    pwFeatSupport:'✅ Soporte prioritario',
+    pwTeamLink:'¿Tienes una cuadrilla de 5 o más? Consigue precio de equipo',
+    reachCall:'LLAMAR',reachFace:'FACETIME',clear:'BORRAR',mikeName:'MIKE',headRole:'TÉCNICO MAESTRO',headStatus:'SIEMPRE DISPONIBLE',diagHead:'FALLA IDENTIFICADA',mentorSig:'— Mike',composer:'Pregúntale a Mike…',
     heroPro:'Inteligencia Profesional de Campo HVAC',heroHome:'¿Tu aire o calefacción no funciona?',
     heroSubPro:'Mike — tu técnico maestro con IA. Diagnósticos, cámara en vivo, precios de piezas, asesoría de ingresos.',heroSubHome:'Toma una foto, describe lo que pasa y recibe una respuesta clara en segundos. Sin conocimientos de HVAC.',
     descPro:'Mike maneja diagnósticos, ingresos, refrigerante, mantenimiento — todo en un solo chat.',descHome:'Explicaciones en palabras claras. Sabe si es seguro, qué tan urgente y exactamente qué decirle a tu técnico.',
@@ -10805,7 +10910,25 @@ var V2_I18N={
     ariaFaceMike:'FaceTime con Mike — video en vivo',ariaLanguage:'Idioma',ariaProfile:'Perfil',
     ariaClose:'Cerrar',ariaBack:'Volver al inicio de Mike',
     demoTitle:'UN DIAGNÓSTICO REAL',demoQ:'Carrier 58STA, sin calor, bloqueo por límite alto. Pleno a 182°F, estática 3.2" wc, motor 11A. ¿Cuál es la falla y el arreglo?',demoTyping:'Mike está leyendo el sistema…',demoCta:'Pregúntale a Mike lo tuyo →',demoClose:'Cerrar'},
-  zh:{reachCall:'通话',reachFace:'视频',clear:'清除',mikeName:'MIKE',headRole:'高级技师',headStatus:'随时在线',diagHead:'已识别故障',mentorSig:'— Mike',composer:'问 Mike 任何问题…',
+  zh:{
+    pwFounderTitle:'创始技师价 — 每月$50，锁定',
+    pwFounderSub:'你和Mike一起积累的一切 — 你的工单、他对你的记忆、全部历史 — 都已保存，等你回来。绑一张卡就行，不折腾：每月$50，创始技师价锁定。',
+    pwFounderCta:'留住Mike — 每月$50',
+    pwFounderNote:'🔒 创始价锁定 — 随时可取消 · 由Stripe保障',
+    pwTrialTitle:'你的14天免费期已结束',
+    pwTrialSub:'绑一张卡，让Mike继续留在你口袋里 — 每月$50，随时可取消。',
+    pwTrialCta:'留住Mike — 每月$50',
+    pwNote:'🔒 免费天数已用完 — 今起每月$50，随时可取消 · 由Stripe保障',
+    pwBadgeAll:'全部包含',
+    pwFeatChat:'✅ 与Mike实时聊天和语音',
+    pwFeatCamera:'✅ 实时摄像头诊断',
+    pwFeatForm:'✅ 完整诊断表单',
+    pwFeatRevenue:'✅ 创收指导与配件报价',
+    pwFeatNameplate:'✅ 铭牌扫描',
+    pwFeatDiagrams:'✅ SVG接线图',
+    pwFeatSupport:'✅ 优先支持',
+    pwTeamLink:'带5人以上的班组？获取团队价',
+    reachCall:'通话',reachFace:'视频',clear:'清除',mikeName:'MIKE',headRole:'高级技师',headStatus:'随时在线',diagHead:'已识别故障',mentorSig:'— Mike',composer:'问 Mike 任何问题…',
     heroPro:'专业暖通现场智能',heroHome:'您的空调或暖气坏了吗？',
     heroSubPro:'Mike — 您的 AI 高级技师。诊断、实时摄像、配件报价、营收指导。',heroSubHome:'拍张照片，描述情况，几秒内得到清晰答案。无需任何暖通知识。',
     descPro:'Mike 处理诊断、营收、制冷剂、保养 — 全部在一个对话里。',descHome:'用大白话解释。知道是否安全、有多紧急，以及该跟技师说什么。',
@@ -10877,7 +11000,25 @@ var V2_I18N={
     ariaFaceMike:'和Mike视频 — 实时画面',ariaLanguage:'语言',ariaProfile:'个人资料',
     ariaClose:'关闭',ariaBack:'返回Mike主页',
     demoTitle:'真实诊断',demoQ:'Carrier 58STA，不制热，高温限位锁定。风室 182°F，静压 3.2" wc，风机 11A。故障是什么，怎么修？',demoTyping:'Mike 正在读取系统…',demoCta:'问 Mike 你自己的问题 →',demoClose:'关闭'},
-  vi:{reachCall:'GỌI',reachFace:'FACETIME',clear:'XÓA',mikeName:'MIKE',headRole:'THỢ CẢ',headStatus:'LUÔN SẴN SÀNG',diagHead:'ĐÃ XÁC ĐỊNH LỖI',mentorSig:'— Mike',composer:'Hỏi Mike bất kỳ điều gì…',
+  vi:{
+    pwFounderTitle:'GIÁ THỢ SÁNG LẬP — $50/THÁNG, GIỮ NGUYÊN',
+    pwFounderSub:'Mọi thứ bạn đã gây dựng cùng Mike — công việc của bạn, những gì Mike nhớ về bạn, toàn bộ lịch sử — đều được lưu và đang chờ bạn. Chỉ cần một thẻ, không rắc rối: $50/tháng, giá thợ sáng lập giữ nguyên.',
+    pwFounderCta:'Giữ Mike — $50/tháng',
+    pwFounderNote:'🔒 Giá sáng lập, giữ nguyên mãi mãi — hủy bất cứ lúc nào · Bảo mật bởi Stripe',
+    pwTrialTitle:'14 ngày miễn phí của bạn đã hết',
+    pwTrialSub:'Thêm thẻ để giữ Mike trong túi bạn — $50/tháng, hủy bất cứ lúc nào.',
+    pwTrialCta:'Giữ Mike — $50/tháng',
+    pwNote:'🔒 Số ngày miễn phí đã hết — $50/tháng từ hôm nay, hủy bất cứ lúc nào · Bảo mật bởi Stripe',
+    pwBadgeAll:'TRỌN GÓI',
+    pwFeatChat:'✅ Chat và gọi thoại trực tiếp với Mike',
+    pwFeatCamera:'✅ Chẩn đoán qua camera trực tiếp',
+    pwFeatForm:'✅ Biểu mẫu chẩn đoán đầy đủ',
+    pwFeatRevenue:'✅ Tư vấn tăng doanh thu & giá phụ tùng',
+    pwFeatNameplate:'✅ Quét tem thông số máy',
+    pwFeatDiagrams:'✅ Sơ đồ đấu dây SVG',
+    pwFeatSupport:'✅ Hỗ trợ ưu tiên',
+    pwTeamLink:'Đội của bạn từ 5 người trở lên? Nhận giá theo đội',
+    reachCall:'GỌI',reachFace:'FACETIME',clear:'XÓA',mikeName:'MIKE',headRole:'THỢ CẢ',headStatus:'LUÔN SẴN SÀNG',diagHead:'ĐÃ XÁC ĐỊNH LỖI',mentorSig:'— Mike',composer:'Hỏi Mike bất kỳ điều gì…',
     heroPro:'Trí Tuệ Hiện Trường HVAC Chuyên Nghiệp',heroHome:'Máy lạnh hay lò sưởi của bạn không chạy?',
     heroSubPro:'Mike — thợ cả AI của bạn. Chẩn đoán, camera trực tiếp, giá linh kiện, cố vấn doanh thu.',heroSubHome:'Chụp một tấm ảnh, mô tả tình hình, và nhận câu trả lời rõ ràng trong vài giây. Không cần biết về HVAC.',
     descPro:'Mike lo chẩn đoán, doanh thu, gas, bảo trì — tất cả trong một cuộc trò chuyện.',descHome:'Giải thích dễ hiểu. Biết có an toàn không, gấp đến đâu, và chính xác phải nói gì với thợ.',
@@ -10949,7 +11090,25 @@ var V2_I18N={
     ariaFaceMike:'FaceTime với Mike — hình ảnh trực tiếp',ariaLanguage:'Ngôn ngữ',ariaProfile:'Hồ sơ',
     ariaClose:'Đóng',ariaBack:'Về trang chính của Mike',
     demoTitle:'MỘT CHẨN ĐOÁN THẬT',demoQ:'Carrier 58STA, không nóng, khóa quá nhiệt. Khoang 182°F, tĩnh 3.2" wc, quạt 11A. Lỗi là gì và cách sửa?',demoTyping:'Mike đang đọc hệ thống…',demoCta:'Hỏi Mike chuyện của bạn →',demoClose:'Đóng'},
-  fr:{reachCall:'APPELER',reachFace:'FACETIME',clear:'EFFACER',mikeName:'MIKE',headRole:'MAÎTRE TECH',headStatus:'TOUJOURS DISPO',diagHead:'PANNE IDENTIFIÉE',mentorSig:'— Mike',composer:'Demandez à Mike…',
+  fr:{
+    pwFounderTitle:'TARIF TECH FONDATEUR — $50/MOIS, VERROUILLÉ',
+    pwFounderSub:'Tout ce que vous avez bâti avec Mike — vos interventions, ce qu\'il sait de vous, votre historique — est sauvegardé et vous attend. Une carte, zéro tracas : $50/mois, tarif fondateur verrouillé.',
+    pwFounderCta:'Gardez Mike — $50/mois',
+    pwFounderNote:'🔒 Tarif fondateur, verrouillé pour de bon — annulez quand vous voulez · Sécurisé par Stripe',
+    pwTrialTitle:'Vos 14 jours gratuits sont épuisés',
+    pwTrialSub:'Ajoutez une carte pour garder Mike dans votre poche — $50/mois, annulez quand vous voulez.',
+    pwTrialCta:'Gardez Mike — $50/mois',
+    pwNote:'🔒 Vos jours gratuits sont épuisés — $50/mois dès aujourd\'hui, annulez quand vous voulez · Sécurisé par Stripe',
+    pwBadgeAll:'TOUT INCLUS',
+    pwFeatChat:'✅ Chat et voix en direct avec Mike',
+    pwFeatCamera:'✅ Diagnostic caméra en direct',
+    pwFeatForm:'✅ Formulaire de diagnostic complet',
+    pwFeatRevenue:'✅ Coaching revenus et prix des pièces',
+    pwFeatNameplate:'✅ Scanner de plaque signalétique',
+    pwFeatDiagrams:'✅ Schémas de câblage SVG',
+    pwFeatSupport:'✅ Support prioritaire',
+    pwTeamLink:'Une équipe de 5 ou plus ? Obtenez le tarif équipe',
+    reachCall:'APPELER',reachFace:'FACETIME',clear:'EFFACER',mikeName:'MIKE',headRole:'MAÎTRE TECH',headStatus:'TOUJOURS DISPO',diagHead:'PANNE IDENTIFIÉE',mentorSig:'— Mike',composer:'Demandez à Mike…',
     heroPro:'Intelligence de Terrain CVC Professionnelle',heroHome:'Votre clim ou chauffage ne marche pas ?',
     heroSubPro:'Mike — votre maître technicien IA. Diagnostics, caméra en direct, prix des pièces, coaching de revenus.',heroSubHome:'Prenez une photo, décrivez le problème et obtenez une réponse claire en quelques secondes. Aucune connaissance CVC requise.',
     descPro:'Mike gère diagnostics, revenus, fluide frigorigène, entretien — tout dans une seule conversation.',descHome:'Des explications en clair. Savoir si c’est sûr, l’urgence, et exactement quoi dire à votre technicien.',
@@ -11021,7 +11180,25 @@ var V2_I18N={
     ariaFaceMike:'FaceTime avec Mike — visuel en direct',ariaLanguage:'Langue',ariaProfile:'Profil',
     ariaClose:'Fermer',ariaBack:'Retour à l’accueil de Mike',
     demoTitle:'UN VRAI DIAGNOSTIC',demoQ:'Carrier 58STA, pas de chauffe, verrouillage limite haute. Plénum à 182°F, statique 3.2" wc, soufflante 11A. Quelle est la panne et la réparation ?',demoTyping:'Mike lit le système…',demoCta:'Posez votre propre question à Mike →',demoClose:'Fermer'},
-  pt:{reachCall:'LIGAR',reachFace:'FACETIME',clear:'LIMPAR',mikeName:'MIKE',headRole:'TÉCNICO MESTRE',headStatus:'SEMPRE ATIVO',diagHead:'FALHA IDENTIFICADA',mentorSig:'— Mike',composer:'Pergunte ao Mike…',
+  pt:{
+    pwFounderTitle:'TARIFA DE TÉCNICO FUNDADOR — $50/MÊS, TRAVADA',
+    pwFounderSub:'Tudo o que você construiu com o Mike — seus trabalhos, o que ele lembra de você, seu histórico — está salvo e te esperando. Um cartão e pronto, sem drama: $50 por mês, tarifa travada como técnico fundador.',
+    pwFounderCta:'Fique com o Mike — $50/mês',
+    pwFounderNote:'🔒 Tarifa de fundador, travada para sempre — cancele quando quiser · Protegido por Stripe',
+    pwTrialTitle:'Seus 14 dias grátis acabaram',
+    pwTrialSub:'Adicione um cartão para manter o Mike no seu bolso — $50/mês, cancele quando quiser.',
+    pwTrialCta:'Fique com o Mike — $50/mês',
+    pwNote:'🔒 Seus dias grátis acabaram — $50/mês a partir de hoje, cancele quando quiser · Protegido por Stripe',
+    pwBadgeAll:'TUDO INCLUÍDO',
+    pwFeatChat:'✅ Chat e voz ao vivo com o Mike',
+    pwFeatCamera:'✅ Diagnóstico por câmera ao vivo',
+    pwFeatForm:'✅ Formulário de diagnóstico completo',
+    pwFeatRevenue:'✅ Coaching de faturamento e preços de peças',
+    pwFeatNameplate:'✅ Leitor de placa de dados',
+    pwFeatDiagrams:'✅ Diagramas de fiação SVG',
+    pwFeatSupport:'✅ Suporte prioritário',
+    pwTeamLink:'Tem uma equipe de 5 ou mais? Garanta o preço de equipe',
+    reachCall:'LIGAR',reachFace:'FACETIME',clear:'LIMPAR',mikeName:'MIKE',headRole:'TÉCNICO MESTRE',headStatus:'SEMPRE ATIVO',diagHead:'FALHA IDENTIFICADA',mentorSig:'— Mike',composer:'Pergunte ao Mike…',
     heroPro:'Inteligência Profissional de Campo HVAC',heroHome:'Seu ar ou aquecimento não funciona?',
     heroSubPro:'Mike — seu técnico mestre com IA. Diagnósticos, câmera ao vivo, preço de peças, treino de receita.',heroSubHome:'Tire uma foto, descreva o que está acontecendo e receba uma resposta clara em segundos. Sem precisar entender de HVAC.',
     descPro:'Mike cuida de diagnósticos, receita, gás, manutenção — tudo em uma conversa.',descHome:'Explicações em bom português. Saiba se é seguro, quão urgente e exatamente o que dizer ao seu técnico.',
@@ -11129,6 +11306,11 @@ function applyV2Lang(){
   var rl=document.getElementById('v2HeadRole');if(rl)rl.textContent=v2t('headRole');
   var st=document.getElementById('v2HeadStatus');if(st)st.textContent=v2t('headStatus');
   var ci=document.getElementById('chatInput');if(ci)ci.setAttribute('placeholder',v2t('composer'));
+  // Paywall DYNAMIC strings (title/sub/CTA/footer) are painted per-framing by
+  // _pwPaintDynamic, not via data-v2i18n — repaint them here so switching language
+  // while the wall is open never leaves the payment moment mixed-language.
+  try{var _pw=document.getElementById('paywallOverlay');
+    if(_pw&&_pw.classList.contains('show')&&typeof _pwPaintDynamic==='function')_pwPaintDynamic();}catch(_e){}
 }
 // Mike's message label, localized ("MIKE"). escapeHtml-safe by construction.
 function labelV2(){return escapeHtml(v2t('mikeName'));}

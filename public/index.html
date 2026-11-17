@@ -11869,7 +11869,7 @@ function clearChatAttach(){chatAttachment=null;document.getElementById("chatAtta
 function checkAndLearn(resp){
   try{
     // Match LEARN tag — only fires after Mike verified the correction is accurate
-    var m=resp.match(/LEARN:\{"fact":"([^"]+)","topic":"([^"]+)"\}/);
+    var m=resp.match(/\[?LEARN\]?:?\s*\{"fact":"([^"]+)","topic":"([^"]+)"\}/);
     if(m&&m[1]&&m[2]){
       var fact=m[1].trim();
       var topic=m[2].trim();
@@ -11890,9 +11890,10 @@ function checkAndLearn(resp){
           showCorrectionAlert('Mike verified and saved that correction.');
         }
       }
-      // Strip the LEARN tag from the displayed response
-      return resp.replace(/\nLEARN:\{[^\n]+\}/,'').replace(/LEARN:\{[^}]+\}/,'').trim();
+      // Strip the LEARN tag from the displayed response (accepts LEARN:{...} and [LEARN]{...})
+      return resp.replace(/\[?LEARN\]?:?\s*\{[^}]*\}/g,'').trim();
     }
+    else if(/\[?LEARN\]?:?\s*\{/.test(resp)){ return resp.replace(/\[?LEARN\]?:?\s*\{[^}]*\}/g,'').trim(); }
   }catch(learnErr){}
   // Detect refrigerant mentions for EPA log prompt
   try{
